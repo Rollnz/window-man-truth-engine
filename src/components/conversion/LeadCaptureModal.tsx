@@ -121,6 +121,7 @@ export function LeadCaptureModal({
   const isComparisonTool = sourceTool === 'comparison-tool';
   const isRiskDiagnostic = sourceTool === 'risk-diagnostic';
   const isFastWin = sourceTool === 'fast-win';
+  const isEvidenceLocker = sourceTool === 'evidence-locker';
   
   let modalTitle = 'Save Your Conversation';
   let modalDescription = 'Enter your email to save your conversation and get personalized recommendations.';
@@ -146,6 +147,12 @@ export function LeadCaptureModal({
     buttonText = 'Email My Fast Win';
     successTitle = 'Fast Win Saved!';
     successDescription = 'Check your inbox for your personalized upgrade recommendation.';
+  } else if (isEvidenceLocker) {
+    modalTitle = 'Download Case Study';
+    modalDescription = 'Enter your email to receive this case study as a PDF.';
+    buttonText = 'Send Case Study';
+    successTitle = 'Case Study Sent!';
+    successDescription = 'Check your inbox for your PDF.';
   }
 
   return (
