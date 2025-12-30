@@ -20,6 +20,8 @@ export interface SessionData {
   realityCheckScore?: number;
   costOfInactionTotal?: number;
   quizScore?: number;
+  quizVulnerability?: 'CRITICAL' | 'MODERATE' | 'LOW';
+  quizAttempted?: boolean;
   comparisonViewed?: boolean;
   // Risk Diagnostic results
   riskDiagnosticCompleted?: boolean;
