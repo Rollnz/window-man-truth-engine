@@ -10,6 +10,7 @@ import Expert from "./pages/Expert";
 import Comparison from "./pages/Comparison";
 import RiskDiagnostic from "./pages/RiskDiagnostic";
 import FastWin from "./pages/FastWin";
+import Evidence from "./pages/Evidence";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/comparison" element={<Comparison />} />
           <Route path="/risk-diagnostic" element={<RiskDiagnostic />} />
           <Route path="/fast-win" element={<FastWin />} />
+          <Route path="/evidence" element={<Evidence />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

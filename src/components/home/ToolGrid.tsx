@@ -7,7 +7,7 @@ import {
   GitCompare, 
   Shield, 
   Zap, 
-  Users 
+  FolderSearch 
 } from 'lucide-react';
 
 interface Tool {
@@ -85,12 +85,12 @@ const tools: Tool[] = [
     gated: true,
   },
   {
-    id: 'proof',
-    title: 'Proof Aggregator',
-    description: 'Explore real case studies and data from other homeowners.',
-    cta: 'See What Others Discovered',
-    icon: <Users className="w-6 h-6" />,
-    path: '/proof',
+    id: 'evidence',
+    title: 'Evidence Locker',
+    description: 'Review verified case files from 47 completed missions.',
+    cta: 'Review the Evidence',
+    icon: <FolderSearch className="w-6 h-6" />,
+    path: '/evidence',
     gated: true,
   },
 ];

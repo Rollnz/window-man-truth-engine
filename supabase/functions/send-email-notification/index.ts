@@ -7,7 +7,7 @@ const corsHeaders = {
 
 interface EmailPayload {
   email: string;
-  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report' | 'fast-win-report';
+  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report' | 'fast-win-report' | 'evidence-locker-report';
   data: Record<string, unknown>;
 }
 
@@ -117,6 +117,44 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           </ul>
           
           <p>One of our window experts will contact you shortly to confirm your appointment.</p>
+          
+          <p>Best regards,<br>The Window Man Team</p>
+        `,
+      };
+
+    case 'evidence-locker-report':
+      return {
+        subject: `📁 Case Study: ${data.caseNumber || 'Verified Mission'} - The Window Man`,
+        html: `
+          <h1>CASE FILE: ${data.caseNumber || 'Verified Mission'}</h1>
+          <p><strong>Agent:</strong> ${data.agentName || 'Verified Agent'}</p>
+          <p><strong>Location:</strong> ${data.location || 'Florida'}</p>
+          <p><strong>Mission:</strong> ${data.missionObjective || 'Window Upgrade'}</p>
+          
+          <h2>The Problem</h2>
+          <p>${data.theProblem || 'Homeowner faced significant window-related challenges.'}</p>
+          
+          <h2>The Solution</h2>
+          <p><strong>${data.theSolution || 'High-performance impact windows'}</strong></p>
+          
+          <h2>Verified Results</h2>
+          <ul>
+            ${data.verifiedStats && Array.isArray(data.verifiedStats) 
+              ? (data.verifiedStats as Array<{icon: string; label: string; change: string}>).map(stat => 
+                  `<li>${stat.icon} <strong>${stat.label}:</strong> ${stat.change}</li>`
+                ).join('') 
+              : '<li>Significant improvements verified</li>'}
+          </ul>
+          
+          ${data.testimonialQuote ? `
+          <h2>Testimonial</h2>
+          <blockquote style="border-left: 4px solid #00D4FF; padding-left: 16px; font-style: italic;">
+            "${data.testimonialQuote}"
+          </blockquote>
+          ` : ''}
+          
+          <h2>Ready to Open Your Own Case?</h2>
+          <p><a href="https://thewindowman.com/consultation" style="background: #00D4FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Schedule Your Free Consultation</a></p>
           
           <p>Best regards,<br>The Window Man Team</p>
         `,

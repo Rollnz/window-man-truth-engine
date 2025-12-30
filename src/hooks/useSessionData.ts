@@ -34,6 +34,10 @@ export interface SessionData {
   fastWinPainPoint?: string;
   fastWinOrientation?: string;
   fastWinBudgetPriority?: string;
+  // Evidence Locker results
+  evidenceLockerViewed?: boolean;
+  caseStudiesViewed?: string[];
+  lastCaseViewed?: string;
   // Lead capture
   leadId?: string;
   consultationRequested?: boolean;
