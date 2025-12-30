@@ -7,7 +7,7 @@ const corsHeaders = {
 
 interface EmailPayload {
   email: string;
-  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report';
+  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report' | 'fast-win-report';
   data: Record<string, unknown>;
 }
 
@@ -117,6 +117,36 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           </ul>
           
           <p>One of our window experts will contact you shortly to confirm your appointment.</p>
+          
+          <p>Best regards,<br>The Window Man Team</p>
+        `,
+      };
+
+    case 'fast-win-report':
+      return {
+        subject: '🏆 Your #1 Window Upgrade - The Window Man',
+        html: `
+          <h1>Your Fast Win: ${data.productName || 'Your Top Upgrade'}</h1>
+          
+          <div style="background: linear-gradient(135deg, #FFD700, #FFA500); padding: 24px; border-radius: 12px; margin: 20px 0;">
+            <h2 style="margin: 0 0 10px 0; color: #1a1a1a;">${data.headline || 'Your #1 Upgrade'}</h2>
+            <p style="font-size: 18px; margin: 0; color: #333;">"${data.statistic || 'Maximum impact for your investment'}"</p>
+          </div>
+          
+          <h3>Why This Is Your Best Move</h3>
+          <p><strong>💡 80% of results for 20% of cost</strong></p>
+          <p>${data.roiStatement || 'This upgrade delivers the highest ROI based on your specific situation.'}</p>
+          
+          ${data.honorableMentions && Array.isArray(data.honorableMentions) && data.honorableMentions.length > 0 ? `
+          <h3>Honorable Mentions</h3>
+          <ul>
+            ${(data.honorableMentions as Array<{name: string; reason: string}>).map((m) => `<li><strong>${m.name}:</strong> ${m.reason}</li>`).join('')}
+          </ul>
+          ` : ''}
+          
+          <h3>Ready to Get Started?</h3>
+          <p>Schedule a free consultation to discuss your ${data.productName || 'upgrade'} options.</p>
+          <p><a href="https://thewindowman.com/consultation" style="background: #00D4FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Get a Price Quote</a></p>
           
           <p>Best regards,<br>The Window Man Team</p>
         `,

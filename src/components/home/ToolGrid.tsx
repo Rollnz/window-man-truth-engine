@@ -77,9 +77,9 @@ const tools: Tool[] = [
   },
   {
     id: 'fast-win',
-    title: 'Fast Win Tool',
-    description: 'Get instant value in 60 seconds with our energy audit.',
-    cta: 'Get Your Instant Energy Boost',
+    title: 'Fast Win Detector',
+    description: 'Find your highest-ROI upgrade in 45 seconds. No lecture, just results.',
+    cta: 'Find My #1 Upgrade',
     icon: <Zap className="w-6 h-6" />,
     path: '/fast-win',
     gated: true,
