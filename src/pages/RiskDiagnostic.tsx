@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useSessionData } from '@/hooks/useSessionData';
-import { riskCategories, getQuestionByIndex, getTotalQuestions } from '@/data/riskDiagnosticData';
+import { getQuestionByIndex, getTotalQuestions } from '@/data/riskDiagnosticData';
 import { calculateRiskScores, RiskAnswers } from '@/lib/riskCalculations';
 import { RiskHero } from '@/components/risk-diagnostic/RiskHero';
 import { RiskQuestion } from '@/components/risk-diagnostic/RiskQuestion';
@@ -9,6 +9,7 @@ import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 
 type Phase = 'hero' | 'questions' | 'results';
+type Direction = 'forward' | 'backward';
 
 export default function RiskDiagnostic() {
   const { sessionData, updateField, updateFields, markToolCompleted } = useSessionData();
@@ -17,6 +18,8 @@ export default function RiskDiagnostic() {
   const [answers, setAnswers] = useState<RiskAnswers>({});
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [direction, setDirection] = useState<Direction>('forward');
 
   const totalQuestions = getTotalQuestions();
   const questionData = getQuestionByIndex(currentQuestionIndex);
@@ -27,12 +30,16 @@ export default function RiskDiagnostic() {
   };
 
   const handleSelectAnswer = useCallback((value: string) => {
-    if (!questionData) return;
+    if (!questionData || isAnimating) return;
 
     const newAnswers = { ...answers, [questionData.question.id]: value };
     setAnswers(newAnswers);
 
-    // Auto-advance after brief delay
+    // Start exit animation
+    setIsAnimating(true);
+    setDirection('forward');
+
+    // After animation, advance to next question or complete
     setTimeout(() => {
       if (currentQuestionIndex < totalQuestions - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
@@ -50,12 +57,18 @@ export default function RiskDiagnostic() {
         markToolCompleted('risk-diagnostic');
         setPhase('results');
       }
-    }, 300);
-  }, [answers, currentQuestionIndex, totalQuestions, questionData, updateFields, markToolCompleted]);
+      setIsAnimating(false);
+    }, 250);
+  }, [answers, currentQuestionIndex, totalQuestions, questionData, updateFields, markToolCompleted, isAnimating]);
 
   const handleBack = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+    if (currentQuestionIndex > 0 && !isAnimating) {
+      setIsAnimating(true);
+      setDirection('backward');
+      setTimeout(() => {
+        setCurrentQuestionIndex(prev => prev - 1);
+        setIsAnimating(false);
+      }, 250);
     }
   };
 
@@ -75,6 +88,7 @@ export default function RiskDiagnostic() {
 
       {phase === 'questions' && questionData && (
         <RiskQuestion
+          key={currentQuestionIndex}
           category={questionData.category}
           question={questionData.question}
           currentQuestionIndex={currentQuestionIndex}
@@ -83,6 +97,8 @@ export default function RiskDiagnostic() {
           onSelect={handleSelectAnswer}
           onBack={handleBack}
           canGoBack={currentQuestionIndex > 0}
+          isAnimating={isAnimating}
+          direction={direction}
         />
       )}
 

@@ -68,9 +68,9 @@ const tools: Tool[] = [
   },
   {
     id: 'risk-diagnostic',
-    title: 'Risk Reversal Diagnostic',
-    description: 'Discover the warranties and protections you deserve.',
-    cta: 'See Your Protection Plan',
+    title: 'Protection Gap Analysis',
+    description: 'Identify vulnerabilities and unlock potential insurance savings up to 20%.',
+    cta: 'Analyze Your Protection Gaps',
     icon: <Shield className="w-6 h-6" />,
     path: '/risk-diagnostic',
     gated: true,
