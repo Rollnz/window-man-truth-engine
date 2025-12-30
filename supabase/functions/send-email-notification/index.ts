@@ -7,7 +7,7 @@ const corsHeaders = {
 
 interface EmailPayload {
   email: string;
-  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report' | 'fast-win-report' | 'evidence-locker-report';
+  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report' | 'fast-win-report' | 'evidence-locker-report' | 'intel-resource-delivery';
   data: Record<string, unknown>;
 }
 
@@ -185,6 +185,34 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           <h3>Ready to Get Started?</h3>
           <p>Schedule a free consultation to discuss your ${data.productName || 'upgrade'} options.</p>
           <p><a href="https://thewindowman.com/consultation" style="background: #00D4FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Get a Price Quote</a></p>
+          
+          <p>Best regards,<br>The Window Man Team</p>
+        `,
+      };
+
+    case 'intel-resource-delivery':
+      return {
+        subject: `📂 Your Document: ${data.resourceTitle || 'Declassified Intel'} - The Window Man`,
+        html: `
+          <h1>🔓 DECLASSIFIED: ${data.resourceTitle || 'Your Document'}</h1>
+          <p style="color: #00D4FF; font-weight: bold;">${data.resourceTagline || 'Intel Library Document'}</p>
+          
+          <p>${data.resourceDescription || 'Your requested document is ready for download.'}</p>
+          
+          <h2>What's Inside</h2>
+          <ul>
+            ${data.previewPoints && Array.isArray(data.previewPoints) 
+              ? (data.previewPoints as string[]).map(point => `<li>${point}</li>`).join('') 
+              : '<li>Expert insights and actionable strategies</li>'}
+          </ul>
+          
+          <p style="margin: 24px 0;">
+            <a href="${data.pdfUrl || '#'}" style="background: #00D4FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Download PDF (${data.pageCount || '?'} pages)</a>
+          </p>
+          
+          <h2>Ready for Personalized Intel?</h2>
+          <p>These guides are just the beginning. Get a custom analysis of your specific situation.</p>
+          <p><a href="https://thewindowman.com/consultation">Schedule Your Free Consultation</a></p>
           
           <p>Best regards,<br>The Window Man Team</p>
         `,

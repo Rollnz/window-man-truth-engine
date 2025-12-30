@@ -113,8 +113,8 @@ export const quizResults: QuizResult[] = [
     title: 'VULNERABILITY LEVEL: CRITICAL',
     subtitle: 'High-Risk Buyer Profile Detected',
     prescription: 'You are a prime target for predatory contractors. Without intervention, you could overpay by $5,000-$15,000 on your next window purchase.',
-    ctaText: 'Download the Kitchen Table Defense Kit',
-    ctaPath: '/expert',
+    ctaText: 'Get the Kitchen Table Defense Kit',
+    ctaPath: '/intel?resource=defense-kit',
     badgeColor: 'bg-destructive',
   },
   {

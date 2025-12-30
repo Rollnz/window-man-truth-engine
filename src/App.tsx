@@ -12,6 +12,7 @@ import RiskDiagnostic from "./pages/RiskDiagnostic";
 import FastWin from "./pages/FastWin";
 import Evidence from "./pages/Evidence";
 import VulnerabilityTest from "./pages/VulnerabilityTest";
+import Intel from "./pages/Intel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/fast-win" element={<FastWin />} />
           <Route path="/evidence" element={<Evidence />} />
           <Route path="/vulnerability-test" element={<VulnerabilityTest />} />
+          <Route path="/intel" element={<Intel />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

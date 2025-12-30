@@ -7,7 +7,8 @@ import {
   GitCompare, 
   Shield, 
   Zap, 
-  FolderSearch 
+  FolderSearch,
+  FileStack
 } from 'lucide-react';
 
 interface Tool {
@@ -93,6 +94,15 @@ const tools: Tool[] = [
     path: '/evidence',
     gated: true,
   },
+  {
+    id: 'intel-library',
+    title: 'Intel Library',
+    description: 'Download declassified guides: negotiation tactics, claim survival kits, and more.',
+    cta: 'Access the Vault',
+    icon: <FileStack className="w-6 h-6" />,
+    path: '/intel',
+    gated: true,
+  },
 ];
 
 function ToolCard({ tool, index }: { tool: Tool; index: number }) {
@@ -140,7 +150,7 @@ export function ToolGrid() {
         {/* Section header */}
         <div className="max-w-3xl mx-auto text-center mb-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            8 Tools to <span className="text-primary">Discover the Truth</span>
+            9 Tools to <span className="text-primary">Discover the Truth</span>
           </h2>
           <p className="text-lg text-muted-foreground">
             Explore our interactive tools designed to help you make an informed decision. 

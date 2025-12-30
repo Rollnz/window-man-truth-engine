@@ -123,6 +123,7 @@ export function LeadCaptureModal({
   const isFastWin = sourceTool === 'fast-win';
   const isVulnerabilityTest = sourceTool === 'vulnerability-test';
   const isEvidenceLocker = sourceTool === 'evidence-locker';
+  const isIntelLibrary = sourceTool === 'intel-library';
   
   let modalTitle = 'Save Your Conversation';
   let modalDescription = 'Enter your email to save your conversation and get personalized recommendations.';
@@ -160,6 +161,12 @@ export function LeadCaptureModal({
     buttonText = 'Send Answer Key';
     successTitle = 'Answer Key Sent!';
     successDescription = 'Check your inbox for your complete Window IQ breakdown.';
+  } else if (isIntelLibrary) {
+    modalTitle = 'Declassify This Document';
+    modalDescription = 'Enter your email to unlock this file and save it to your vault.';
+    buttonText = 'Unlock & Download';
+    successTitle = 'Document Declassified!';
+    successDescription = 'Your download is ready. A backup copy has been sent to your email.';
   }
 
   return (
