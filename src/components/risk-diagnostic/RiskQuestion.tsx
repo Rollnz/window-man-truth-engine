@@ -13,6 +13,8 @@ interface RiskQuestionProps {
   onSelect: (value: string) => void;
   onBack: () => void;
   canGoBack: boolean;
+  isAnimating?: boolean;
+  direction?: 'forward' | 'backward';
 }
 
 export function RiskQuestion({
@@ -24,13 +26,29 @@ export function RiskQuestion({
   onSelect,
   onBack,
   canGoBack,
+  isAnimating = false,
+  direction = 'forward',
 }: RiskQuestionProps) {
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
   const Icon = category.icon;
 
+  // Determine animation classes
+  const getAnimationClass = () => {
+    if (isAnimating) {
+      // Exit animation
+      return direction === 'forward' 
+        ? 'animate-slide-out-left' 
+        : 'animate-slide-out-right';
+    }
+    // Enter animation
+    return direction === 'forward'
+      ? 'animate-slide-in-right'
+      : 'animate-slide-in-left';
+  };
+
   return (
-    <div className="px-4 py-6 max-w-lg mx-auto">
-      {/* Progress section */}
+    <div className="px-4 py-6 max-w-lg mx-auto overflow-hidden">
+      {/* Progress section - no animation */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -40,6 +58,7 @@ export function RiskQuestion({
                 size="sm"
                 onClick={onBack}
                 className="p-1 h-auto"
+                disabled={isAnimating}
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
@@ -53,52 +72,58 @@ export function RiskQuestion({
             {currentQuestionIndex + 1} of {totalQuestions}
           </span>
         </div>
-        <Progress value={progress} className="h-2" />
+        <Progress value={progress} className="h-2 transition-all duration-300" />
       </div>
 
-      {/* Question */}
-      <div className="text-center mb-8">
-        <h2 className="text-xl sm:text-2xl font-semibold mb-3">
-          {question.question}
-        </h2>
-        {question.description && (
-          <p className="text-muted-foreground text-sm sm:text-base">
-            {question.description}
-          </p>
-        )}
-      </div>
+      {/* Question content with animation */}
+      <div className={`transition-all duration-250 ease-out ${getAnimationClass()}`}>
+        {/* Question */}
+        <div className="text-center mb-8">
+          <h2 className="text-xl sm:text-2xl font-semibold mb-3">
+            {question.question}
+          </h2>
+          {question.description && (
+            <p className="text-muted-foreground text-sm sm:text-base">
+              {question.description}
+            </p>
+          )}
+        </div>
 
-      {/* Options */}
-      <div className="space-y-3">
-        {question.options.map((option) => {
-          const isSelected = selectedValue === option.value;
-          return (
-            <Button
-              key={option.value}
-              variant={isSelected ? 'default' : 'outline'}
-              className={`w-full h-auto py-4 px-4 text-left justify-start transition-all ${
-                isSelected 
-                  ? 'border-primary glow-sm' 
-                  : 'hover:border-primary/50'
-              }`}
-              onClick={() => onSelect(option.value)}
-            >
-              <span className="text-base">{option.label}</span>
-            </Button>
-          );
-        })}
-      </div>
+        {/* Options */}
+        <div className="space-y-3">
+          {question.options.map((option, index) => {
+            const isSelected = selectedValue === option.value;
+            return (
+              <Button
+                key={option.value}
+                variant={isSelected ? 'default' : 'outline'}
+                className={`w-full h-auto py-4 px-4 text-left justify-start transition-all ${
+                  isSelected 
+                    ? 'border-primary glow-sm' 
+                    : 'hover:border-primary/50'
+                }`}
+                onClick={() => onSelect(option.value)}
+                disabled={isAnimating}
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <span className="text-base">{option.label}</span>
+              </Button>
+            );
+          })}
+        </div>
 
-      {/* Skip option */}
-      <div className="mt-6 text-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onSelect('skip')}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          Skip this question
-        </Button>
+        {/* Skip option */}
+        <div className="mt-6 text-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onSelect('skip')}
+            className="text-muted-foreground hover:text-foreground"
+            disabled={isAnimating}
+          >
+            Skip this question
+          </Button>
+        </div>
       </div>
     </div>
   );
