@@ -120,6 +120,7 @@ export function LeadCaptureModal({
   // Dynamic content based on source tool
   const isComparisonTool = sourceTool === 'comparison-tool';
   const isRiskDiagnostic = sourceTool === 'risk-diagnostic';
+  const isFastWin = sourceTool === 'fast-win';
   
   let modalTitle = 'Save Your Conversation';
   let modalDescription = 'Enter your email to save your conversation and get personalized recommendations.';
@@ -139,6 +140,12 @@ export function LeadCaptureModal({
     buttonText = 'Send My Plan';
     successTitle = 'Plan Sent!';
     successDescription = 'Check your inbox for your protection gap analysis.';
+  } else if (isFastWin) {
+    modalTitle = 'Save Your Fast Win';
+    modalDescription = 'Get your #1 upgrade recommendation emailed to you for future reference.';
+    buttonText = 'Email My Fast Win';
+    successTitle = 'Fast Win Saved!';
+    successDescription = 'Check your inbox for your personalized upgrade recommendation.';
   }
 
   return (

@@ -12,6 +12,7 @@ export interface SessionData {
   email?: string;
   name?: string;
   phone?: string;
+  notes?: string;
   // Reality Check specific
   draftinessLevel?: 'none' | 'slight' | 'moderate' | 'severe';
   noiseLevel?: 'none' | 'slight' | 'moderate' | 'severe';
@@ -27,6 +28,12 @@ export interface SessionData {
   insuranceRiskScore?: number;
   warrantyRiskScore?: number;
   overallProtectionScore?: number;
+  // Fast Win results
+  fastWinCompleted?: boolean;
+  fastWinResult?: string;
+  fastWinPainPoint?: string;
+  fastWinOrientation?: string;
+  fastWinBudgetPriority?: string;
   // Lead capture
   leadId?: string;
   consultationRequested?: boolean;
