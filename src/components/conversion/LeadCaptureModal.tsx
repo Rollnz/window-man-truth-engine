@@ -124,6 +124,7 @@ export function LeadCaptureModal({
   const isVulnerabilityTest = sourceTool === 'vulnerability-test';
   const isEvidenceLocker = sourceTool === 'evidence-locker';
   const isIntelLibrary = sourceTool === 'intel-library';
+  const isClaimSurvivalKit = sourceTool === 'claim-survival-kit';
   
   let modalTitle = 'Save Your Conversation';
   let modalDescription = 'Enter your email to save your conversation and get personalized recommendations.';
@@ -167,6 +168,12 @@ export function LeadCaptureModal({
     buttonText = 'Unlock & Download';
     successTitle = 'Document Declassified!';
     successDescription = 'Your download is ready. A backup copy has been sent to your email.';
+  } else if (isClaimSurvivalKit) {
+    modalTitle = "Don't Lose Your Progress";
+    modalDescription = "You've already started documenting. Enter your email to secure your vault and continue from any device.";
+    buttonText = 'Create My Vault';
+    successTitle = 'Vault Created!';
+    successDescription = 'Your progress is now saved. Uploading your document...';
   }
 
   return (
