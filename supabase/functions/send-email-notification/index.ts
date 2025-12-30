@@ -7,7 +7,7 @@ const corsHeaders = {
 
 interface EmailPayload {
   email: string;
-  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report' | 'fast-win-report' | 'evidence-locker-report' | 'intel-resource-delivery';
+  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report' | 'fast-win-report' | 'evidence-locker-report' | 'intel-resource-delivery' | 'claim-vault-upload-confirmation';
   data: Record<string, unknown>;
 }
 
@@ -213,6 +213,35 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           <h2>Ready for Personalized Intel?</h2>
           <p>These guides are just the beginning. Get a custom analysis of your specific situation.</p>
           <p><a href="https://thewindowman.com/consultation">Schedule Your Free Consultation</a></p>
+          
+          <p>Best regards,<br>The Window Man Team</p>
+        `,
+      };
+
+    case 'claim-vault-upload-confirmation':
+      return {
+        subject: `✅ CONFIRMED: Your ${data.documentName || 'Document'} is Secured in the Vault`,
+        html: `
+          <h1 style="color: #00D4FF;">🔒 Document Secured</h1>
+          
+          <div style="background: linear-gradient(135deg, #1a1a2e, #0d0d1a); padding: 24px; border-radius: 12px; margin: 20px 0; border: 1px solid #00D4FF;">
+            <h2 style="margin: 0 0 10px 0; color: #fff;">Your ${data.documentName || 'document'} has been received.</h2>
+            <p style="font-size: 16px; margin: 0; color: #ccc;">It is now encrypted and stored in your Claim Survival Vault.</p>
+          </div>
+          
+          <h3 style="color: #00D4FF;">✓ What This Means</h3>
+          <ul style="color: #333;">
+            <li>Your document is safely backed up in the cloud</li>
+            <li>You can access it anytime from your vault</li>
+            <li>One step closer to a bulletproof claim</li>
+          </ul>
+          
+          <h3 style="color: #00D4FF;">📋 Your Progress</h3>
+          <p>Every document you upload strengthens your claim documentation. A complete vault = maximum protection against claim denials.</p>
+          
+          <p style="margin: 24px 0;">
+            <a href="https://thewindowman.com/claim-survival" style="background: #00D4FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Return to Your Vault</a>
+          </p>
           
           <p>Best regards,<br>The Window Man Team</p>
         `,

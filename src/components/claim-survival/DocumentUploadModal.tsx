@@ -11,6 +11,8 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, FileText, Image, Loader2, CheckCircle } from 'lucide-react';
 import { claimDocuments } from '@/data/claimSurvivalData';
+import { supabase } from '@/integrations/supabase/client';
+import { useSessionData } from '@/hooks/useSessionData';
 
 interface DocumentUploadModalProps {
   isOpen: boolean;
@@ -31,6 +33,7 @@ export function DocumentUploadModal({
   sessionId,
 }: DocumentUploadModalProps) {
   const { toast } = useToast();
+  const { sessionData } = useSessionData();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -141,6 +144,27 @@ export function DocumentUploadModal({
 
       if (data.success && data.signedUrl) {
         setIsComplete(true);
+        
+        // Send upload confirmation email (fire and forget)
+        const userEmail = sessionData?.email;
+        if (userEmail) {
+          supabase.functions.invoke('send-email-notification', {
+            body: {
+              email: userEmail,
+              type: 'claim-vault-upload-confirmation',
+              data: {
+                documentName: document?.title || selectedFile.name,
+              },
+            },
+          }).then(({ error }) => {
+            if (error) {
+              console.error('Email notification error:', error);
+            } else {
+              console.log('Upload confirmation email triggered');
+            }
+          });
+        }
+        
         // Delay before calling success to show completion state
         setTimeout(() => {
           onSuccess(documentId, data.signedUrl);
