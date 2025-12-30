@@ -1,6 +1,33 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Helper to trigger email notification (fire-and-forget)
+async function triggerEmailNotification(payload: {
+  email: string;
+  type: string;
+  data: Record<string, unknown>;
+}) {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-email-notification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    const result = await response.json();
+    console.log('Email notification triggered:', result);
+  } catch (error) {
+    // Don't fail the main request if email fails
+    console.error('Email notification failed (non-blocking):', error);
+  }
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -100,6 +127,17 @@ serve(async (req) => {
 
         leadId = newLead.id;
         console.log('Created new lead:', leadId);
+        
+        // Trigger admin notification for new lead (fire-and-forget)
+        triggerEmailNotification({
+          email: 'admin@thewindowman.com', // Admin email
+          type: 'new-lead',
+          data: {
+            leadEmail: email.trim().toLowerCase(),
+            sourceTool: sourceTool || 'expert-system',
+            sessionData,
+          },
+        });
       }
     } catch (dbError) {
       console.error('Database operation failed:', dbError);
@@ -149,6 +187,29 @@ serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+    }
+
+    // Trigger customer email based on source tool (fire-and-forget)
+    if (sourceTool === 'comparison-tool') {
+      triggerEmailNotification({
+        email: email.trim().toLowerCase(),
+        type: 'comparison-report',
+        data: {
+          windowCount: sessionData?.windowCount,
+          currentEnergyBill: sessionData?.currentEnergyBill,
+          windowAge: sessionData?.windowAge,
+        },
+      });
+    } else if (sourceTool === 'cost-calculator') {
+      triggerEmailNotification({
+        email: email.trim().toLowerCase(),
+        type: 'cost-calculator-report',
+        data: {
+          windowCount: sessionData?.windowCount,
+          currentEnergyBill: sessionData?.currentEnergyBill,
+          windowAge: sessionData?.windowAge,
+        },
+      });
     }
 
     // Return success

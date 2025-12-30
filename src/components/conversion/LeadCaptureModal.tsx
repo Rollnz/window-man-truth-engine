@@ -117,6 +117,18 @@ export function LeadCaptureModal({
     }
   };
 
+  // Dynamic content based on source tool
+  const isComparisonTool = sourceTool === 'comparison-tool';
+  const modalTitle = isComparisonTool ? 'Email Me This Comparison' : 'Save Your Conversation';
+  const modalDescription = isComparisonTool 
+    ? 'Enter your email to receive a personalized comparison report with your 10-year cost analysis.'
+    : 'Enter your email to save your conversation and get personalized recommendations.';
+  const buttonText = isComparisonTool ? 'Send My Report' : 'Save My Conversation';
+  const successTitle = isComparisonTool ? 'Report Sent!' : 'Saved Successfully!';
+  const successDescription = isComparisonTool 
+    ? 'Check your inbox for your personalized comparison report.'
+    : 'We\'ve saved your conversation and session data.';
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
@@ -125,9 +137,9 @@ export function LeadCaptureModal({
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
               <Check className="w-8 h-8 text-primary" />
             </div>
-            <DialogTitle className="text-xl mb-2">Saved Successfully!</DialogTitle>
+            <DialogTitle className="text-xl mb-2">{successTitle}</DialogTitle>
             <DialogDescription>
-              We've saved your conversation and session data.
+              {successDescription}
             </DialogDescription>
           </div>
         ) : (
@@ -138,9 +150,9 @@ export function LeadCaptureModal({
                   <Mail className="w-6 h-6 text-primary" />
                 </div>
               </div>
-              <DialogTitle className="text-center">Save Your Conversation</DialogTitle>
+              <DialogTitle className="text-center">{modalTitle}</DialogTitle>
               <DialogDescription className="text-center">
-                Enter your email to save your conversation and get personalized recommendations.
+                {modalDescription}
               </DialogDescription>
             </DialogHeader>
 
@@ -166,12 +178,12 @@ export function LeadCaptureModal({
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    Sending...
                   </>
                 ) : (
                   <>
                     <Mail className="mr-2 h-4 w-4" />
-                    Save My Conversation
+                    {buttonText}
                   </>
                 )}
               </Button>
