@@ -17,6 +17,8 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
 
   switch (type) {
     case 'new-lead':
+      // Use sanitized session summary instead of raw session data
+      const sessionSummary = data.sessionSummary as Record<string, unknown> | undefined;
       return {
         subject: `🎯 New Lead from ${data.sourceTool || 'Website'}`,
         html: `
@@ -24,7 +26,16 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           <p><strong>Email:</strong> ${payload.email}</p>
           <p><strong>Source Tool:</strong> ${data.sourceTool || 'Unknown'}</p>
           <p><strong>Time:</strong> ${new Date().toISOString()}</p>
-          ${data.sessionData ? `<p><strong>Session Data:</strong> <pre>${JSON.stringify(data.sessionData, null, 2)}</pre></p>` : ''}
+          ${sessionSummary ? `
+          <h2>Lead Summary</h2>
+          <ul>
+            <li><strong>Tools Completed:</strong> ${sessionSummary.toolsCompletedCount || 0}</li>
+            <li><strong>Last Tool:</strong> ${sessionSummary.lastToolCompleted || 'None'}</li>
+            <li><strong>Est. Value:</strong> ${sessionSummary.estimatedValue || 'N/A'}</li>
+            <li><strong>Scored:</strong> ${sessionSummary.hasRealityCheckScore ? 'Yes' : 'No'}</li>
+          </ul>
+          ` : ''}
+          ${data.leadId ? `<p><a href="https://itswindowman.com/admin/leads/${data.leadId}">View Full Details in Dashboard</a></p>` : ''}
         `,
       };
 
