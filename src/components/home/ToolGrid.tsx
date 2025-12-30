@@ -41,11 +41,11 @@ const tools: Tool[] = [
   },
   {
     id: 'quiz',
-    title: 'Pattern Interrupt Quiz',
-    description: 'Test your window knowledge with our 5-question challenge.',
-    cta: 'Test Your Window IQ',
+    title: 'Window IQ Challenge',
+    description: '90% of Florida homeowners fail this test and overpay by $5,000+.',
+    cta: 'Test Your Vulnerability',
     icon: <Brain className="w-6 h-6" />,
-    path: '/quiz',
+    path: '/vulnerability-test',
     gated: false,
   },
   {

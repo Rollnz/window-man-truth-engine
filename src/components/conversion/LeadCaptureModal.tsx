@@ -121,6 +121,7 @@ export function LeadCaptureModal({
   const isComparisonTool = sourceTool === 'comparison-tool';
   const isRiskDiagnostic = sourceTool === 'risk-diagnostic';
   const isFastWin = sourceTool === 'fast-win';
+  const isVulnerabilityTest = sourceTool === 'vulnerability-test';
   const isEvidenceLocker = sourceTool === 'evidence-locker';
   
   let modalTitle = 'Save Your Conversation';
@@ -153,6 +154,12 @@ export function LeadCaptureModal({
     buttonText = 'Send Case Study';
     successTitle = 'Case Study Sent!';
     successDescription = 'Check your inbox for your PDF.';
+  } else if (isVulnerabilityTest) {
+    modalTitle = 'Get the Full Answer Key';
+    modalDescription = 'Unlock detailed explanations for all 5 questions plus bonus protection strategies.';
+    buttonText = 'Send Answer Key';
+    successTitle = 'Answer Key Sent!';
+    successDescription = 'Check your inbox for your complete Window IQ breakdown.';
   }
 
   return (
