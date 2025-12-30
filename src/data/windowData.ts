@@ -77,7 +77,7 @@ export const windowTiers: WindowTier[] = [
   },
   {
     id: 'tier3',
-    name: 'The Window Man Standard',
+    name: 'Its Window Man Standard',
     subtitle: 'High-Performance Impact',
     upfrontCostPerWindow: 850,
     energyEfficiencyFactor: 0.85, // 15% better than baseline (lower = less energy cost)
