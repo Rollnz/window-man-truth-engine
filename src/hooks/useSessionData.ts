@@ -40,6 +40,9 @@ export interface SessionData {
   evidenceLockerViewed?: boolean;
   caseStudiesViewed?: string[];
   lastCaseViewed?: string;
+  // Intel Library results
+  intelLibraryViewed?: boolean;
+  unlockedResources?: string[];
   // Lead capture
   leadId?: string;
   consultationRequested?: boolean;
