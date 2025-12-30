@@ -1,0 +1,20 @@
+{
+  "name": "The Window Man",
+  "short_name": "Window Man",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#1e40af",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}
