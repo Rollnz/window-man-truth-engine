@@ -43,6 +43,12 @@ export interface SessionData {
   // Intel Library results
   intelLibraryViewed?: boolean;
   unlockedResources?: string[];
+  // Claim Survival Vault results
+  claimVaultViewed?: boolean;
+  claimVaultProgress?: Record<string, boolean>;
+  claimVaultFiles?: Record<string, string>;
+  claimVaultSessionId?: string;
+  emergencyModeUsed?: boolean;
   // Lead capture
   leadId?: string;
   consultationRequested?: boolean;

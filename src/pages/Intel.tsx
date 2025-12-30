@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSessionData } from '@/hooks/useSessionData';
@@ -13,6 +13,7 @@ import { intelResources, IntelResource, getResourceById } from '@/data/intelData
 
 export default function Intel() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { sessionData, updateField, updateFields, markToolCompleted } = useSessionData();
   const { toast } = useToast();
 
@@ -76,9 +77,17 @@ export default function Intel() {
       leadId,
     });
 
-    // Close lead modal and show success overlay
+    // Close lead modal
     setShowLeadCapture(false);
     clearUrlParams();
+
+    // Special handling for claim-survival: redirect to the tool
+    if (selectedResource.id === 'claim-survival') {
+      navigate('/claim-survival');
+      return;
+    }
+
+    // All other resources: show success overlay with download
     setShowSuccessOverlay(true);
   };
 
