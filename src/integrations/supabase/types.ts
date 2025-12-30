@@ -14,7 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      consultations: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          lead_id: string | null
+          name: string
+          notes: string | null
+          phone: string
+          preferred_time: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          lead_id?: string | null
+          name: string
+          notes?: string | null
+          phone: string
+          preferred_time: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          lead_id?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string
+          preferred_time?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          chat_history: Json | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string | null
+          phone: string | null
+          session_data: Json | null
+          source_tool: string
+          updated_at: string | null
+        }
+        Insert: {
+          chat_history?: Json | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name?: string | null
+          phone?: string | null
+          session_data?: Json | null
+          source_tool?: string
+          updated_at?: string | null
+        }
+        Update: {
+          chat_history?: Json | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+          phone?: string | null
+          session_data?: Json | null
+          source_tool?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

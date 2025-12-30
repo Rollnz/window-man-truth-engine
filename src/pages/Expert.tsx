@@ -8,7 +8,9 @@ import { ChatMessage } from '@/components/expert/ChatMessage';
 import { ChatInput } from '@/components/expert/ChatInput';
 import { SuggestedQuestions } from '@/components/expert/SuggestedQuestions';
 import { ContextBanner } from '@/components/expert/ContextBanner';
-import { ArrowLeft, Bot } from 'lucide-react';
+import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
+import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
+import { ArrowLeft, Bot, Save, Calendar, Check } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -16,11 +18,16 @@ interface Message {
 }
 
 export default function Expert() {
-  const { sessionData, markToolCompleted } = useSessionData();
+  const { sessionData, markToolCompleted, updateFields } = useSessionData();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Conversion state
+  const [showLeadModal, setShowLeadModal] = useState(false);
+  const [showConsultationModal, setShowConsultationModal] = useState(false);
+  const [isSaved, setIsSaved] = useState(!!sessionData.leadId);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -138,11 +145,22 @@ export default function Expert() {
 
   const hasContext = sessionData.costOfInactionTotal || sessionData.realityCheckScore;
 
+  const handleLeadCaptureSuccess = (leadId: string) => {
+    updateFields({ leadId, email: sessionData.email });
+    setIsSaved(true);
+    setShowLeadModal(false);
+  };
+
+  const handleConsultationSuccess = () => {
+    updateFields({ consultationRequested: true });
+    setShowConsultationModal(false);
+  };
+
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <Link 
               to="/" 
@@ -151,6 +169,40 @@ export default function Expert() {
               <ArrowLeft className="h-4 w-4" />
               Back to Tools
             </Link>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              {messages.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowLeadModal(true)}
+                  disabled={isSaved}
+                  className="hidden sm:flex"
+                >
+                  {isSaved ? (
+                    <>
+                      <Check className="h-4 w-4 mr-1" />
+                      Saved
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-1" />
+                      Save Conversation
+                    </>
+                  )}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                onClick={() => setShowConsultationModal(true)}
+                className="bg-primary hover:bg-primary/90"
+              >
+                <Calendar className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Schedule Consultation</span>
+                <span className="sm:hidden">Book</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -212,6 +264,24 @@ export default function Expert() {
           isLoading={isLoading}
         />
       </div>
+
+      {/* Modals */}
+      <LeadCaptureModal
+        isOpen={showLeadModal}
+        onClose={() => setShowLeadModal(false)}
+        onSuccess={handleLeadCaptureSuccess}
+        sourceTool="expert-system"
+        sessionData={sessionData}
+        chatHistory={messages}
+      />
+
+      <ConsultationBookingModal
+        isOpen={showConsultationModal}
+        onClose={() => setShowConsultationModal(false)}
+        onSuccess={handleConsultationSuccess}
+        leadId={sessionData.leadId}
+        sessionData={sessionData}
+      />
     </div>
   );
 }
