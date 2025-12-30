@@ -11,6 +11,7 @@ export interface SessionData {
   zipCode?: string;
   email?: string;
   name?: string;
+  phone?: string;
   // Reality Check specific
   draftinessLevel?: 'none' | 'slight' | 'moderate' | 'severe';
   noiseLevel?: 'none' | 'slight' | 'moderate' | 'severe';
@@ -19,6 +20,9 @@ export interface SessionData {
   costOfInactionTotal?: number;
   quizScore?: number;
   comparisonViewed?: boolean;
+  // Lead capture
+  leadId?: string;
+  consultationRequested?: boolean;
   // Timestamps
   lastVisit?: string;
   toolsCompleted?: string[];
