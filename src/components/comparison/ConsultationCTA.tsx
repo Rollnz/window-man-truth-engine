@@ -13,7 +13,7 @@ export function ConsultationCTA({ onBookConsultation }: ConsultationCTAProps) {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 text-primary text-sm font-medium mb-6">
             <Award className="w-4 h-4" />
-            Tier 3: The Window Man Standard
+            Tier 3: Its Window Man Standard
           </div>
 
           {/* Headline */}

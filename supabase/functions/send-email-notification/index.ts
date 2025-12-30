@@ -30,7 +30,7 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
 
     case 'comparison-report':
       return {
-        subject: '📊 Your Window Comparison Report - The Window Man',
+        subject: '📊 Your Window Comparison Report - Its Window Man',
         html: `
           <h1>Your Personalized Window Comparison</h1>
           <p>Thank you for using our Window Comparison Tool!</p>
@@ -51,15 +51,15 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           
           <h2>Next Steps</h2>
           <p>Ready to see the difference in person? Schedule a free consultation with our window experts.</p>
-          <p><a href="https://thewindowman.com/consultation">Book Your Free Consultation</a></p>
+          <p><a href="https://itswindowman.com/consultation">Book Your Free Consultation</a></p>
           
-          <p>Best regards,<br>The Window Man Team</p>
+          <p>Best regards,<br>Its Window Man Team</p>
         `,
       };
 
     case 'cost-calculator-report':
       return {
-        subject: '💰 Your Energy Cost Analysis - The Window Man',
+        subject: '💰 Your Energy Cost Analysis - Its Window Man',
         html: `
           <h1>Your Personalized Energy Cost Report</h1>
           <p>Here's your detailed analysis of potential energy savings with high-performance windows.</p>
@@ -73,13 +73,13 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           
           <p>Contact us to learn more about how you can reduce your energy costs!</p>
           
-          <p>Best regards,<br>The Window Man Team</p>
+          <p>Best regards,<br>Its Window Man Team</p>
         `,
       };
 
     case 'risk-diagnostic-report':
       return {
-        subject: '🛡️ Your Window Protection Gap Analysis - The Window Man',
+        subject: '🛡️ Your Window Protection Gap Analysis - Its Window Man',
         html: `
           <h1>Your Protection Score: ${data.protectionScore || 0}/100</h1>
           
@@ -96,18 +96,18 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           
           <h2>Next Steps</h2>
           <p>Schedule a free consultation to discuss how to close your protection gaps.</p>
-          <p><a href="https://thewindowman.com/consultation">Book Your Free Consultation</a></p>
+          <p><a href="https://itswindowman.com/consultation">Book Your Free Consultation</a></p>
           
-          <p>Best regards,<br>The Window Man Team</p>
+          <p>Best regards,<br>Its Window Man Team</p>
         `,
       };
 
     case 'consultation-booked':
       return {
-        subject: '✅ Consultation Confirmed - The Window Man',
+        subject: '✅ Consultation Confirmed - Its Window Man',
         html: `
           <h1>Your Consultation is Booked!</h1>
-          <p>Thank you for scheduling a consultation with The Window Man.</p>
+          <p>Thank you for scheduling a consultation with Its Window Man.</p>
           
           <h2>Consultation Details</h2>
           <ul>
@@ -118,13 +118,13 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           
           <p>One of our window experts will contact you shortly to confirm your appointment.</p>
           
-          <p>Best regards,<br>The Window Man Team</p>
+          <p>Best regards,<br>Its Window Man Team</p>
         `,
       };
 
     case 'evidence-locker-report':
       return {
-        subject: `📁 Case Study: ${data.caseNumber || 'Verified Mission'} - The Window Man`,
+        subject: `📁 Case Study: ${data.caseNumber || 'Verified Mission'} - Its Window Man`,
         html: `
           <h1>CASE FILE: ${data.caseNumber || 'Verified Mission'}</h1>
           <p><strong>Agent:</strong> ${data.agentName || 'Verified Agent'}</p>
@@ -154,15 +154,15 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           ` : ''}
           
           <h2>Ready to Open Your Own Case?</h2>
-          <p><a href="https://thewindowman.com/consultation" style="background: #00D4FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Schedule Your Free Consultation</a></p>
+          <p><a href="https://itswindowman.com/consultation" style="background: #00D4FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Schedule Your Free Consultation</a></p>
           
-          <p>Best regards,<br>The Window Man Team</p>
+          <p>Best regards,<br>Its Window Man Team</p>
         `,
       };
 
     case 'fast-win-report':
       return {
-        subject: '🏆 Your #1 Window Upgrade - The Window Man',
+        subject: '🏆 Your #1 Window Upgrade - Its Window Man',
         html: `
           <h1>Your Fast Win: ${data.productName || 'Your Top Upgrade'}</h1>
           
@@ -184,15 +184,15 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           
           <h3>Ready to Get Started?</h3>
           <p>Schedule a free consultation to discuss your ${data.productName || 'upgrade'} options.</p>
-          <p><a href="https://thewindowman.com/consultation" style="background: #00D4FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Get a Price Quote</a></p>
+          <p><a href="https://itswindowman.com/consultation" style="background: #00D4FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Get a Price Quote</a></p>
           
-          <p>Best regards,<br>The Window Man Team</p>
+          <p>Best regards,<br>Its Window Man Team</p>
         `,
       };
 
     case 'intel-resource-delivery':
       return {
-        subject: `📂 Your Document: ${data.resourceTitle || 'Declassified Intel'} - The Window Man`,
+        subject: `📂 Your Document: ${data.resourceTitle || 'Declassified Intel'} - Its Window Man`,
         html: `
           <h1>🔓 DECLASSIFIED: ${data.resourceTitle || 'Your Document'}</h1>
           <p style="color: #00D4FF; font-weight: bold;">${data.resourceTagline || 'Intel Library Document'}</p>
@@ -212,9 +212,9 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           
           <h2>Ready for Personalized Intel?</h2>
           <p>These guides are just the beginning. Get a custom analysis of your specific situation.</p>
-          <p><a href="https://thewindowman.com/consultation">Schedule Your Free Consultation</a></p>
+          <p><a href="https://itswindowman.com/consultation">Schedule Your Free Consultation</a></p>
           
-          <p>Best regards,<br>The Window Man Team</p>
+          <p>Best regards,<br>Its Window Man Team</p>
         `,
       };
 
@@ -240,17 +240,17 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           <p>Every document you upload strengthens your claim documentation. A complete vault = maximum protection against claim denials.</p>
           
           <p style="margin: 24px 0;">
-            <a href="https://thewindowman.com/claim-survival" style="background: #00D4FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Return to Your Vault</a>
+            <a href="https://itswindowman.com/claim-survival" style="background: #00D4FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Return to Your Vault</a>
           </p>
           
-          <p>Best regards,<br>The Window Man Team</p>
+          <p>Best regards,<br>Its Window Man Team</p>
         `,
       };
 
     default:
       return {
-        subject: 'Notification from The Window Man',
-        html: `<p>Thank you for your interest in The Window Man.</p>`,
+        subject: 'Notification from Its Window Man',
+        html: `<p>Thank you for your interest in Its Window Man.</p>`,
       };
   }
 }
@@ -321,7 +321,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'The Window Man <notifications@thewindowman.com>',
+        from: 'Its Window Man <notifications@itswindowman.com>',
         to: [email],
         subject,
         html,
