@@ -1,0 +1,217 @@
+import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { useSessionData } from '@/hooks/useSessionData';
+import { ChatMessage } from '@/components/expert/ChatMessage';
+import { ChatInput } from '@/components/expert/ChatInput';
+import { SuggestedQuestions } from '@/components/expert/SuggestedQuestions';
+import { ContextBanner } from '@/components/expert/ContextBanner';
+import { ArrowLeft, Bot } from 'lucide-react';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export default function Expert() {
+  const { sessionData, markToolCompleted } = useSessionData();
+  const { toast } = useToast();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const sendMessage = async (userMessage: string) => {
+    const userMsg: Message = { role: 'user', content: userMessage };
+    setMessages(prev => [...prev, userMsg]);
+    setIsLoading(true);
+
+    let assistantContent = '';
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/expert-chat`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            messages: [...messages, userMsg],
+            context: {
+              costOfInactionTotal: sessionData.costOfInactionTotal,
+              realityCheckScore: sessionData.realityCheckScore,
+              windowAge: sessionData.windowAge,
+              currentEnergyBill: sessionData.currentEnergyBill,
+              homeSize: sessionData.homeSize,
+              windowCount: sessionData.windowCount,
+              draftinessLevel: sessionData.draftinessLevel,
+              noiseLevel: sessionData.noiseLevel,
+            },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get response');
+      }
+
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+
+      // Add empty assistant message that we'll update
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        textBuffer += decoder.decode(value, { stream: true });
+
+        // Process line-by-line
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: 'assistant', content: assistantContent };
+                return updated;
+              });
+            }
+          } catch {
+            // Incomplete JSON, put it back
+            textBuffer = line + '\n' + textBuffer;
+            break;
+          }
+        }
+      }
+
+      // Mark tool as completed on first successful message
+      if (messages.length === 0) {
+        markToolCompleted('expert');
+      }
+
+    } catch (error) {
+      console.error('Chat error:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to send message',
+        variant: 'destructive',
+      });
+      // Remove the empty assistant message if there was an error
+      if (assistantContent === '') {
+        setMessages(prev => prev.filter(m => m.content !== ''));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const hasContext = sessionData.costOfInactionTotal || sessionData.realityCheckScore;
+
+  return (
+    <div className="flex flex-col h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link 
+              to="/" 
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Tools
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden container mx-auto max-w-3xl">
+        {/* Title Section */}
+        <div className="p-4 sm:p-6 text-center border-b border-border/50">
+          <div className="flex justify-center mb-3">
+            <div className="p-3 rounded-full bg-primary/10">
+              <Bot className="h-8 w-8 text-primary" />
+            </div>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+            Window <span className="text-primary">Expert</span> System
+          </h1>
+          <p className="text-muted-foreground text-sm max-w-lg mx-auto">
+            Get personalized advice about impact windows based on your specific situation. 
+            Ask anything about costs, savings, installation, or contractors.
+          </p>
+        </div>
+
+        {/* Context Banner */}
+        {hasContext && (
+          <div className="px-4 pt-4">
+            <ContextBanner sessionData={sessionData} />
+          </div>
+        )}
+
+        {/* Chat Area */}
+        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+          <div className="space-y-4">
+            {messages.length === 0 ? (
+              <div className="py-8">
+                <SuggestedQuestions
+                  sessionData={sessionData}
+                  onSelect={sendMessage}
+                  disabled={isLoading}
+                />
+              </div>
+            ) : (
+              <>
+                {messages.map((message, index) => (
+                  <ChatMessage
+                    key={index}
+                    role={message.role}
+                    content={message.content}
+                    isStreaming={isLoading && index === messages.length - 1 && message.role === 'assistant'}
+                  />
+                ))}
+              </>
+            )}
+          </div>
+        </ScrollArea>
+
+        {/* Input Area */}
+        <ChatInput
+          onSend={sendMessage}
+          isLoading={isLoading}
+        />
+      </div>
+    </div>
+  );
+}
