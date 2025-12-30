@@ -119,15 +119,27 @@ export function LeadCaptureModal({
 
   // Dynamic content based on source tool
   const isComparisonTool = sourceTool === 'comparison-tool';
-  const modalTitle = isComparisonTool ? 'Email Me This Comparison' : 'Save Your Conversation';
-  const modalDescription = isComparisonTool 
-    ? 'Enter your email to receive a personalized comparison report with your 10-year cost analysis.'
-    : 'Enter your email to save your conversation and get personalized recommendations.';
-  const buttonText = isComparisonTool ? 'Send My Report' : 'Save My Conversation';
-  const successTitle = isComparisonTool ? 'Report Sent!' : 'Saved Successfully!';
-  const successDescription = isComparisonTool 
-    ? 'Check your inbox for your personalized comparison report.'
-    : 'We\'ve saved your conversation and session data.';
+  const isRiskDiagnostic = sourceTool === 'risk-diagnostic';
+  
+  let modalTitle = 'Save Your Conversation';
+  let modalDescription = 'Enter your email to save your conversation and get personalized recommendations.';
+  let buttonText = 'Save My Conversation';
+  let successTitle = 'Saved Successfully!';
+  let successDescription = 'We\'ve saved your conversation and session data.';
+
+  if (isComparisonTool) {
+    modalTitle = 'Email Me This Comparison';
+    modalDescription = 'Enter your email to receive a personalized comparison report with your 10-year cost analysis.';
+    buttonText = 'Send My Report';
+    successTitle = 'Report Sent!';
+    successDescription = 'Check your inbox for your personalized comparison report.';
+  } else if (isRiskDiagnostic) {
+    modalTitle = 'Email My Protection Plan';
+    modalDescription = 'Get your complete protection gap analysis with personalized recommendations and insurance savings.';
+    buttonText = 'Send My Plan';
+    successTitle = 'Plan Sent!';
+    successDescription = 'Check your inbox for your protection gap analysis.';
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

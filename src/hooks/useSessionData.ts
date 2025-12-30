@@ -20,6 +20,13 @@ export interface SessionData {
   costOfInactionTotal?: number;
   quizScore?: number;
   comparisonViewed?: boolean;
+  // Risk Diagnostic results
+  riskDiagnosticCompleted?: boolean;
+  stormRiskScore?: number;
+  securityRiskScore?: number;
+  insuranceRiskScore?: number;
+  warrantyRiskScore?: number;
+  overallProtectionScore?: number;
   // Lead capture
   leadId?: string;
   consultationRequested?: boolean;

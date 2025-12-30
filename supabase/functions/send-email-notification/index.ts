@@ -7,7 +7,7 @@ const corsHeaders = {
 
 interface EmailPayload {
   email: string;
-  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report';
+  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report';
   data: Record<string, unknown>;
 }
 
@@ -72,6 +72,31 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           </ul>
           
           <p>Contact us to learn more about how you can reduce your energy costs!</p>
+          
+          <p>Best regards,<br>The Window Man Team</p>
+        `,
+      };
+
+    case 'risk-diagnostic-report':
+      return {
+        subject: '🛡️ Your Window Protection Gap Analysis - The Window Man',
+        html: `
+          <h1>Your Protection Score: ${data.protectionScore || 0}/100</h1>
+          
+          <h2>Risk Breakdown</h2>
+          <ul>
+            <li><strong>Storm Protection:</strong> ${data.stormRiskScore || 0}% protected</li>
+            <li><strong>Security:</strong> ${data.securityRiskScore || 0}% protected</li>
+            <li><strong>Insurance Coverage:</strong> ${data.insuranceRiskScore || 0}% protected</li>
+            <li><strong>Warranty Status:</strong> ${data.warrantyRiskScore || 0}% protected</li>
+          </ul>
+          
+          <h2>💰 Insurance Savings Opportunity</h2>
+          <p>Impact windows can save Florida homeowners up to <strong>20% on insurance premiums</strong>.</p>
+          
+          <h2>Next Steps</h2>
+          <p>Schedule a free consultation to discuss how to close your protection gaps.</p>
+          <p><a href="https://thewindowman.com/consultation">Book Your Free Consultation</a></p>
           
           <p>Best regards,<br>The Window Man Team</p>
         `,
