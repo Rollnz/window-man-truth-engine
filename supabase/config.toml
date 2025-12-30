@@ -1,0 +1,4 @@
+project_id = "uzulqexlgavggcyizabf"
+
+[functions.expert-chat]
+verify_jwt = false
