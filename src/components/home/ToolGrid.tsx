@@ -6,6 +6,7 @@ import {
   MessageSquare, 
   GitCompare, 
   Shield, 
+  ShieldCheck,
   Zap, 
   FolderSearch,
   FileStack
@@ -74,6 +75,15 @@ const tools: Tool[] = [
     cta: 'Analyze Your Protection Gaps',
     icon: <Shield className="w-6 h-6" />,
     path: '/risk-diagnostic',
+    gated: true,
+  },
+  {
+    id: 'claim-survival',
+    title: 'Claim Survival Vault',
+    description: 'The 7-point documentation system insurers expect. Prevent claim denials before they happen.',
+    cta: 'Protect Your Claim',
+    icon: <ShieldCheck className="w-6 h-6" />,
+    path: '/claim-survival',
     gated: true,
   },
   {
