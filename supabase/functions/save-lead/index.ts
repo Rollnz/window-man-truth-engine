@@ -1,5 +1,79 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+
+// ============= Input Validation Schemas =============
+
+const phoneRegex = /^[+]?[0-9\s\-()]{10,20}$/;
+
+const allowedSourceTools = [
+  'expert-system',
+  'comparison-tool',
+  'cost-calculator',
+  'claim-survival-kit',
+  'fast-win',
+  'intel-library',
+  'risk-diagnostic',
+  'reality-check',
+  'evidence-locker'
+] as const;
+
+// Session data schema with size limit
+const sessionDataSchema = z.record(z.unknown()).refine(
+  (data) => JSON.stringify(data).length < 50000,
+  { message: 'Session data too large (max 50KB)' }
+).optional().nullable();
+
+// Chat history schema with limits
+const chatHistorySchema = z.array(
+  z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string().max(5000, 'Chat message too long')
+  })
+).max(100, 'Too many chat messages (max 100)').optional().nullable();
+
+// Consultation schema
+const consultationSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(100, 'Name too long'),
+  email: z.string().trim().email('Invalid email').max(255, 'Email too long'),
+  phone: z.string().regex(phoneRegex, 'Invalid phone format').max(20, 'Phone too long'),
+  preferredTime: z.string().trim().min(1, 'Preferred time is required').max(100, 'Preferred time too long'),
+  notes: z.string().max(2000, 'Notes too long').optional().nullable()
+}).optional().nullable();
+
+// Main lead schema
+const leadSchema = z.object({
+  email: z.string().trim().email('Invalid email format').max(255, 'Email too long'),
+  name: z.string().trim().max(100, 'Name too long').optional().nullable(),
+  phone: z.string().regex(phoneRegex, 'Invalid phone format').max(20, 'Phone too long').optional().nullable().or(z.literal('')),
+  sourceTool: z.enum(allowedSourceTools).default('expert-system'),
+  sessionData: sessionDataSchema,
+  chatHistory: chatHistorySchema,
+  consultation: consultationSchema
+});
+
+// ============= Helper Functions =============
+
+// Sanitize session data for admin emails (remove sensitive details)
+function sanitizeSessionDataForEmail(sessionData: unknown): Record<string, unknown> {
+  if (!sessionData || typeof sessionData !== 'object') {
+    return { toolsCompletedCount: 0, estimatedValue: 'Not calculated' };
+  }
+
+  const data = sessionData as Record<string, unknown>;
+  
+  return {
+    toolsCompletedCount: Array.isArray(data.toolsCompleted) ? data.toolsCompleted.length : 0,
+    lastToolCompleted: Array.isArray(data.toolsCompleted) && data.toolsCompleted.length > 0
+      ? data.toolsCompleted[data.toolsCompleted.length - 1]
+      : 'None',
+    hasRealityCheckScore: !!data.realityCheckScore,
+    estimatedValue: typeof data.costOfInactionTotal === 'number'
+      ? `$${Math.round(data.costOfInactionTotal / 1000)}k+`
+      : 'Not calculated',
+    hasCompletedComparison: !!data.comparisonViewed
+  };
+}
 
 // Helper to trigger email notification (fire-and-forget)
 async function triggerEmailNotification(payload: {
@@ -33,12 +107,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Simple email validation
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -47,22 +115,26 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { email, name, phone, sourceTool, sessionData, chatHistory, consultation } = body;
 
-    // Validate email
-    if (!email || typeof email !== 'string') {
+    // ============= Validate All Inputs with Zod =============
+    const parseResult = leadSchema.safeParse(body);
+    
+    if (!parseResult.success) {
+      console.error('Validation failed:', parseResult.error.errors);
       return new Response(
-        JSON.stringify({ success: false, error: 'Email is required' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid input', 
+          details: parseResult.error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+          }))
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!isValidEmail(email.trim())) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid email format' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const { email, name, phone, sourceTool, sessionData, chatHistory, consultation } = parseResult.data;
 
     // Create Supabase client with service role for bypassing RLS
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -70,13 +142,14 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     let leadId: string;
+    const normalizedEmail = email.trim().toLowerCase();
 
     // Try to find existing lead by email
     try {
       const { data: existingLead, error: selectError } = await supabase
         .from('leads')
         .select('id')
-        .eq('email', email.trim().toLowerCase())
+        .eq('email', normalizedEmail)
         .maybeSingle();
 
       if (selectError) {
@@ -92,7 +165,7 @@ serve(async (req) => {
           .update({
             name: name || undefined,
             phone: phone || undefined,
-            source_tool: sourceTool || 'expert-system',
+            source_tool: sourceTool,
             session_data: sessionData || {},
             chat_history: chatHistory || [],
             updated_at: new Date().toISOString(),
@@ -110,10 +183,10 @@ serve(async (req) => {
         const { data: newLead, error: insertError } = await supabase
           .from('leads')
           .insert({
-            email: email.trim().toLowerCase(),
+            email: normalizedEmail,
             name: name || null,
             phone: phone || null,
-            source_tool: sourceTool || 'expert-system',
+            source_tool: sourceTool,
             session_data: sessionData || {},
             chat_history: chatHistory || [],
           })
@@ -128,14 +201,15 @@ serve(async (req) => {
         leadId = newLead.id;
         console.log('Created new lead:', leadId);
         
-        // Trigger admin notification for new lead (fire-and-forget)
+        // Trigger admin notification for new lead with SANITIZED data
         triggerEmailNotification({
-          email: 'admin@thewindowman.com', // Admin email
+          email: 'admin@thewindowman.com',
           type: 'new-lead',
           data: {
-            leadEmail: email.trim().toLowerCase(),
-            sourceTool: sourceTool || 'expert-system',
-            sessionData,
+            leadEmail: normalizedEmail,
+            leadId,
+            sourceTool,
+            sessionSummary: sanitizeSessionDataForEmail(sessionData),
           },
         });
       }
@@ -151,20 +225,12 @@ serve(async (req) => {
     let consultationId: string | null = null;
     if (consultation && consultation.preferredTime) {
       try {
-        // Validate consultation fields
-        if (!consultation.name || !consultation.phone) {
-          return new Response(
-            JSON.stringify({ success: false, error: 'Name and phone are required for consultation' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-
         const { data: newConsultation, error: consultError } = await supabase
           .from('consultations')
           .insert({
             lead_id: leadId,
             name: consultation.name,
-            email: email.trim().toLowerCase(),
+            email: normalizedEmail,
             phone: consultation.phone,
             preferred_time: consultation.preferredTime,
             notes: consultation.notes || null,
@@ -190,25 +256,24 @@ serve(async (req) => {
     }
 
     // Trigger customer email based on source tool (fire-and-forget)
+    // Only include safe, non-sensitive data
+    const safeSessionData = {
+      windowCount: sessionData?.windowCount,
+      currentEnergyBill: sessionData?.currentEnergyBill,
+      windowAge: sessionData?.windowAge,
+    };
+
     if (sourceTool === 'comparison-tool') {
       triggerEmailNotification({
-        email: email.trim().toLowerCase(),
+        email: normalizedEmail,
         type: 'comparison-report',
-        data: {
-          windowCount: sessionData?.windowCount,
-          currentEnergyBill: sessionData?.currentEnergyBill,
-          windowAge: sessionData?.windowAge,
-        },
+        data: safeSessionData,
       });
     } else if (sourceTool === 'cost-calculator') {
       triggerEmailNotification({
-        email: email.trim().toLowerCase(),
+        email: normalizedEmail,
         type: 'cost-calculator-report',
-        data: {
-          windowCount: sessionData?.windowCount,
-          currentEnergyBill: sessionData?.currentEnergyBill,
-          windowAge: sessionData?.windowAge,
-        },
+        data: safeSessionData,
       });
     }
 
