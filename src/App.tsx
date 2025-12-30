@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import RealityCheck from "./pages/RealityCheck";
 import CostCalculator from "./pages/CostCalculator";
 import Expert from "./pages/Expert";
+import Comparison from "./pages/Comparison";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/reality-check" element={<RealityCheck />} />
           <Route path="/cost-calculator" element={<CostCalculator />} />
           <Route path="/expert" element={<Expert />} />
+          <Route path="/comparison" element={<Comparison />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
