@@ -3,12 +3,17 @@ import { useState, useEffect, useCallback } from 'react';
 export interface SessionData {
   homeSize?: number;
   windowCount?: number;
-  windowAge?: number;
-  currentEnergyBill?: number;
+  windowAge?: string;
+  windowAgeYears?: number;
+  currentEnergyBill?: string;
+  currentEnergyBillAmount?: number;
   homeType?: 'single-family' | 'condo' | 'townhouse' | 'multi-family' | 'other';
   zipCode?: string;
   email?: string;
   name?: string;
+  // Reality Check specific
+  draftinessLevel?: 'none' | 'slight' | 'moderate' | 'severe';
+  noiseLevel?: 'none' | 'slight' | 'moderate' | 'severe';
   // Tool-specific results
   realityCheckScore?: number;
   costOfInactionTotal?: number;
