@@ -25,7 +25,7 @@ export function FloatingBookImage({
           hidden sm:block
           w-24 md:w-28 lg:w-32
           transition-all duration-300 ease-out
-          animate-bob
+          animate-float
           group-hover:[animation-play-state:paused]
           group-hover:scale-110 group-hover:rotate-3
         `}
@@ -33,7 +33,7 @@ export function FloatingBookImage({
         <img 
           src={imageUrl} 
           alt={alt}
-          className="w-full h-auto drop-shadow-[0_8px_24px_hsl(var(--primary)/0.4)]"
+          className="w-full h-auto animate-glow-pulse"
         />
       </div>
 
