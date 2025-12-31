@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { useVaultNotifications } from '@/hooks/useVaultNotifications';
 import { Vault, LogIn, Menu, X } from 'lucide-react';
@@ -7,7 +8,7 @@ import { useState } from 'react';
 
 export function Navbar() {
   const { isAuthenticated, loading } = useAuth();
-  const { hasNotifications } = useVaultNotifications();
+  const { hasNotifications, incompleteToolsCount, hasMissingDocuments } = useVaultNotifications();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -47,7 +48,16 @@ export function Navbar() {
                   <Vault className="w-4 h-4 mr-2" />
                   My Vault
                   {hasNotifications && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-destructive rounded-full" />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-destructive rounded-full cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{incompleteToolsCount} tools incomplete{hasMissingDocuments ? ', documents missing' : ''}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </Link>
               </Button>
@@ -105,7 +115,16 @@ export function Navbar() {
                   <Vault className="w-4 h-4 mr-2" />
                   My Vault
                   {hasNotifications && (
-                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-destructive rounded-full" />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-destructive rounded-full cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{incompleteToolsCount} tools incomplete{hasMissingDocuments ? ', documents missing' : ''}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </Link>
               </Button>
