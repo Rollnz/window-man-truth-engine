@@ -49,6 +49,19 @@ export interface SessionData {
   claimVaultFiles?: Record<string, string>;
   claimVaultSessionId?: string;
   emergencyModeUsed?: boolean;
+  // AI Analysis results
+  claimAnalysisResult?: {
+    overallScore: number;
+    status: 'critical' | 'warning' | 'ready';
+    summary: string;
+    documentStatus: {
+      docId: string;
+      status: 'complete' | 'missing' | 'weak';
+      recommendation: string;
+    }[];
+    nextSteps: string[];
+    analyzedAt: string;
+  };
   // Lead capture
   leadId?: string;
   consultationRequested?: boolean;

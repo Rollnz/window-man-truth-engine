@@ -29,6 +29,7 @@ interface AnalysisResult {
     recommendation: string;
   }[];
   nextSteps: string[];
+  analyzedAt?: string;
 }
 
 interface EvidenceAnalysisModalProps {
@@ -172,6 +173,19 @@ export function EvidenceAnalysisModal({
           {/* Results state */}
           {analysisResult && !isAnalyzing && (
             <div className="space-y-6">
+              {/* Timestamp */}
+              {analysisResult.analyzedAt && (
+                <div className="text-center text-xs text-muted-foreground font-mono">
+                  LAST ANALYZED: {new Date(analysisResult.analyzedAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </div>
+              )}
+
               {/* Overall Score */}
               <div className={`rounded-lg border-2 p-6 text-center ${getOverallStatusStyles(analysisResult.status)}`}>
                 <div className="text-5xl font-bold font-mono mb-2">
