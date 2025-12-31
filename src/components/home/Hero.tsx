@@ -37,7 +37,7 @@ export function Hero() {
                 <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="text-base px-8 py-6 border-border hover:border-primary/50 hover:bg-primary/5">
+            <Button asChild variant="high-contrast" size="lg" className="text-base px-8 py-6">
               <Link to="/comparison">
                 Compare Windows Now
               </Link>
