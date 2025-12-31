@@ -104,9 +104,13 @@ export default {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
-        "bob": {
+        "float": {
           "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-6px)" },
+          "50%": { transform: "translateY(-8px)" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { filter: "drop-shadow(0 8px 24px hsl(var(--primary) / 0.3))" },
+          "50%": { filter: "drop-shadow(0 12px 32px hsl(var(--primary) / 0.5))" },
         },
       },
       animation: {
@@ -117,7 +121,8 @@ export default {
         "count-up": "count-up 0.4s ease-out forwards",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "shimmer": "shimmer 2s linear infinite",
-        "bob": "bob 16s ease-in-out infinite",
+        "float": "float 6s ease-in-out infinite",
+        "glow-pulse": "glow-pulse 3s ease-in-out infinite",
       },
     },
   },
