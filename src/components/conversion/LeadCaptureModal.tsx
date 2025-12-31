@@ -28,7 +28,7 @@ interface LeadCaptureModalProps {
   chatHistory?: Message[];
 }
 
-const emailSchema = z.string().email('Please enter a valid email address');
+const emailSchema = z.string().min(1, 'Email is required').email('Please enter a valid email address');
 
 export function LeadCaptureModal({
   isOpen,
@@ -42,20 +42,39 @@ export function LeadCaptureModal({
   const [email, setEmail] = useState(sessionData.email || '');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [emailError, setEmailError] = useState<string | undefined>();
+
+  const validateEmail = (value: string): string | undefined => {
+    const result = emailSchema.safeParse(value.trim());
+    return result.success ? undefined : result.error.errors[0].message;
+  };
+
+  const handleBlur = () => {
+    const error = validateEmail(email);
+    setEmailError(error);
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (emailError) setEmailError(undefined);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate email with zod
-    const validation = emailSchema.safeParse(email.trim());
-    if (!validation.success) {
+    // Validate email
+    const error = validateEmail(email);
+    if (error) {
+      setEmailError(error);
       toast({
         title: 'Invalid Email',
-        description: validation.error.errors[0].message,
+        description: error,
         variant: 'destructive',
       });
       return;
     }
+
+    setEmailError(undefined);
 
     setIsLoading(true);
 
@@ -205,16 +224,25 @@ export function LeadCaptureModal({
 
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email" className={emailError ? 'text-destructive' : ''}>
+                  Email Address
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  onBlur={handleBlur}
                   disabled={isLoading}
                   autoFocus
+                  className={emailError ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  aria-invalid={!!emailError}
+                  aria-describedby={emailError ? 'email-error' : undefined}
                 />
+                {emailError && (
+                  <p id="email-error" className="text-sm text-destructive">{emailError}</p>
+                )}
               </div>
 
               <Button
