@@ -13,6 +13,8 @@ export interface IntelResource {
   pdfUrl: string;
   recommended?: boolean;
   forVulnerabilityLevel?: 'CRITICAL' | 'MODERATE' | 'LOW';
+  bookImageUrl?: string;
+  imagePosition?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 }
 
 export const intelResources: IntelResource[] = [
@@ -65,6 +67,8 @@ export const intelResources: IntelResource[] = [
       'Emergency Contractor Vetting Guide',
     ],
     pdfUrl: 'https://www.africau.edu/images/default/sample.pdf',
+    bookImageUrl: '/images/claim-kit-book.webp',
+    imagePosition: 'bottom-right',
   },
   {
     id: 'spec-checklist',
