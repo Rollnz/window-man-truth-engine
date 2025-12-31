@@ -9,7 +9,8 @@ import {
   ShieldCheck,
   Zap, 
   FolderSearch,
-  FileStack
+  FileStack,
+  ScanSearch
 } from 'lucide-react';
 
 interface Tool {
@@ -113,6 +114,15 @@ const tools: Tool[] = [
     path: '/intel',
     gated: true,
   },
+  {
+    id: 'quote-scanner',
+    title: 'AI Quote Scanner',
+    description: 'Upload your quote and let AI flag hidden risks, missing scope, and overpricing in 30 seconds.',
+    cta: 'Scan Your Quote',
+    icon: <ScanSearch className="w-6 h-6" />,
+    path: '/quote-scanner',
+    gated: true,
+  },
 ];
 
 function ToolCard({ tool, index }: { tool: Tool; index: number }) {
@@ -160,7 +170,7 @@ export function ToolGrid() {
         {/* Section header */}
         <div className="max-w-3xl mx-auto text-center mb-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            9 Tools to <span className="text-primary">Discover the Truth</span>
+            10 Tools to <span className="text-primary">Discover the Truth</span>
           </h2>
           <p className="text-lg text-muted-foreground">
             Explore our interactive tools designed to help you make an informed decision. 
