@@ -1,10 +1,13 @@
 import { useSessionData } from '@/hooks/useSessionData';
+import { useAuth } from '@/hooks/useAuth';
 import { ToolProgressTracker } from '@/components/vault/ToolProgressTracker';
 import { MyResultsSection } from '@/components/vault/MyResultsSection';
 import { MyDocumentsSection } from '@/components/vault/MyDocumentsSection';
 import { MyChecklistsSection } from '@/components/vault/MyChecklistsSection';
+import { EmailResultsButton } from '@/components/vault/EmailResultsButton';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { 
   AlertTriangle, 
   TrendingDown, 
@@ -17,7 +20,8 @@ import {
   BookOpen,
   ShieldCheck,
   ArrowLeft,
-  Vault as VaultIcon
+  Vault as VaultIcon,
+  LogOut
 } from 'lucide-react';
 
 const tools = [
@@ -35,11 +39,24 @@ const tools = [
 
 export default function Vault() {
   const { sessionData, isToolCompleted } = useSessionData();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
 
   const toolsWithCompletion = tools.map(tool => ({
     ...tool,
     completed: isToolCompleted(tool.id)
   }));
+
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({
+        title: "Error signing out",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,9 +71,16 @@ export default function Vault() {
               </Link>
             </Button>
           </div>
-          <div className="flex items-center gap-2">
-            <VaultIcon className="w-5 h-5 text-primary" />
-            <span className="font-semibold text-foreground">My Vault</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <VaultIcon className="w-5 h-5 text-primary" />
+              <span className="font-semibold text-foreground">My Vault</span>
+            </div>
+            <EmailResultsButton sessionData={sessionData} userEmail={user?.email} />
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </header>
