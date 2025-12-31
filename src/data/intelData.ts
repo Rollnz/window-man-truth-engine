@@ -101,6 +101,8 @@ export const intelResources: IntelResource[] = [
       'Stack Multiple Discount Programs',
     ],
     pdfUrl: 'https://www.africau.edu/images/default/sample.pdf',
+    bookImageUrl: '/images/insurance-savings-book.webp',
+    imagePosition: 'bottom-right',
   },
 ];
 
