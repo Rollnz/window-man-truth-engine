@@ -93,6 +93,7 @@ export type Database = {
           session_data: Json | null
           source_tool: string
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           chat_history?: Json | null
@@ -104,6 +105,7 @@ export type Database = {
           session_data?: Json | null
           source_tool?: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           chat_history?: Json | null
@@ -115,6 +117,34 @@ export type Database = {
           session_data?: Json | null
           source_tool?: string
           updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
