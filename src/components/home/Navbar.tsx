@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useVaultNotifications } from '@/hooks/useVaultNotifications';
 import { Vault, LogIn, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
 export function Navbar() {
   const { isAuthenticated, loading } = useAuth();
+  const { hasNotifications } = useVaultNotifications();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -40,10 +42,13 @@ export function Navbar() {
           {/* Auth Button */}
           {!loading && (
             isAuthenticated ? (
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="sm" asChild className="relative">
                 <Link to="/vault">
                   <Vault className="w-4 h-4 mr-2" />
                   My Vault
+                  {hasNotifications && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-destructive rounded-full" />
+                  )}
                 </Link>
               </Button>
             ) : (
@@ -95,10 +100,13 @@ export function Navbar() {
           
           {!loading && (
             isAuthenticated ? (
-              <Button variant="outline" size="sm" asChild className="w-full">
+              <Button variant="outline" size="sm" asChild className="w-full relative">
                 <Link to="/vault" onClick={() => setMobileMenuOpen(false)}>
                   <Vault className="w-4 h-4 mr-2" />
                   My Vault
+                  {hasNotifications && (
+                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-destructive rounded-full" />
+                  )}
                 </Link>
               </Button>
             ) : (
