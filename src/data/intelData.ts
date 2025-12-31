@@ -85,6 +85,8 @@ export const intelResources: IntelResource[] = [
       'Installation Quality Indicators',
     ],
     pdfUrl: 'https://www.africau.edu/images/default/sample.pdf',
+    bookImageUrl: '/images/spec-checklist-book.webp',
+    imagePosition: 'bottom-right',
   },
   {
     id: 'insurance-savings',
