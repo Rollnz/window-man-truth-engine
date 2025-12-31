@@ -156,7 +156,7 @@ export function QuoteUploadZone({
               {imagePreview ? 'Analyze Another Quote' : 'Upload Your Estimate'}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              Take a photo or upload a screenshot. JPG, PNG, or PDF.
+              JPG, PNG, or PDF up to 10MB
             </p>
           </div>
 
