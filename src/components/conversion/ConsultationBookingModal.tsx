@@ -96,6 +96,7 @@ export function ConsultationBookingModal({
             sessionData,
             consultation: {
               name: formData.name.trim(),
+              email: formData.email.trim(),
               phone: formData.phone.trim(),
               preferredTime: formData.preferredTime,
               notes: formData.notes.trim() || undefined,

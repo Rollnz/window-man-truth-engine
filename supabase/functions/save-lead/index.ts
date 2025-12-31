@@ -35,7 +35,7 @@ const chatHistorySchema = z.array(
 // Consultation schema
 const consultationSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100, 'Name too long'),
-  email: z.string().trim().email('Invalid email').max(255, 'Email too long'),
+  email: z.string().trim().email('Invalid email').max(255, 'Email too long').optional(),
   phone: z.string().regex(phoneRegex, 'Invalid phone format').max(20, 'Phone too long'),
   preferredTime: z.string().trim().min(1, 'Preferred time is required').max(100, 'Preferred time too long'),
   notes: z.string().max(2000, 'Notes too long').optional().nullable()
@@ -230,7 +230,7 @@ serve(async (req) => {
           .insert({
             lead_id: leadId,
             name: consultation.name,
-            email: normalizedEmail,
+            email: consultation.email || normalizedEmail,
             phone: consultation.phone,
             preferred_time: consultation.preferredTime,
             notes: consultation.notes || null,
