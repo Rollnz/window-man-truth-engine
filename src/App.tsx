@@ -15,6 +15,7 @@ import VulnerabilityTest from "./pages/VulnerabilityTest";
 import Intel from "./pages/Intel";
 import ClaimSurvival from "./pages/ClaimSurvival";
 import NotFound from "./pages/NotFound";
+import { FloatingCardDemo } from "./components/intel/FloatingCardDemo";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/vulnerability-test" element={<VulnerabilityTest />} />
           <Route path="/intel" element={<Intel />} />
           <Route path="/claim-survival" element={<ClaimSurvival />} />
+          <Route path="/demo-floating-card" element={<FloatingCardDemo />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
