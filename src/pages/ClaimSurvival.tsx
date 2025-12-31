@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar } from 'lucide-react';
+import { ArrowLeft, Calendar, FileSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useToast } from '@/hooks/use-toast';
+import { useEvidenceAnalysis } from '@/hooks/useEvidenceAnalysis';
 import { ClaimHero } from '@/components/claim-survival/ClaimHero';
 import { ReadinessScore } from '@/components/claim-survival/ReadinessScore';
 import { StickyProgress } from '@/components/claim-survival/StickyProgress';
@@ -15,6 +16,8 @@ import { CommonMistakes } from '@/components/claim-survival/CommonMistakes';
 import { ToolEcosystem } from '@/components/claim-survival/ToolEcosystem';
 import { ClaimFinalCTA } from '@/components/claim-survival/ClaimFinalCTA';
 import { DocumentUploadModal } from '@/components/claim-survival/DocumentUploadModal';
+import { EvidenceTagFilter, EvidenceTag, getDefaultTagForDocument } from '@/components/claim-survival/EvidenceTagFilter';
+import { EvidenceAnalysisModal } from '@/components/claim-survival/EvidenceAnalysisModal';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { claimDocuments } from '@/data/claimSurvivalData';
@@ -45,11 +48,15 @@ export default function ClaimSurvival() {
   const [showLeadCapture, setShowLeadCapture] = useState(false);
   const [showConsultation, setShowConsultation] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [pendingUploadDocId, setPendingUploadDocId] = useState<string | null>(null);
   const [selectedDocForUpload, setSelectedDocForUpload] = useState<string | null>(null);
 
   // Scroll tracking for sticky header
   const [showStickyProgress, setShowStickyProgress] = useState(false);
+
+  // Tag filter state
+  const [selectedTags, setSelectedTags] = useState<EvidenceTag[]>([]);
 
   // Emergency mode from URL
   const isEmergencyMode = searchParams.get('mode') === 'emergency';
@@ -65,6 +72,42 @@ export default function ClaimSurvival() {
   const completedCount = claimDocuments.filter(doc => 
     vaultProgress[doc.id] || vaultFiles[doc.id]
   ).length;
+
+  // Document tags - assign based on document IDs
+  const documentTags = useMemo(() => {
+    const tags: Record<string, EvidenceTag[]> = {};
+    claimDocuments.forEach(doc => {
+      if (vaultProgress[doc.id] || vaultFiles[doc.id]) {
+        tags[doc.id] = [getDefaultTagForDocument(doc.id)];
+      }
+    });
+    return tags;
+  }, [vaultProgress, vaultFiles]);
+
+  // AI Analysis hook
+  const { isAnalyzing, analysisResult, analyzeEvidence, resetAnalysis } = useEvidenceAnalysis({
+    documents: claimDocuments,
+    progress: vaultProgress,
+    files: vaultFiles,
+  });
+
+  // Tag toggle handler
+  const handleTagToggle = useCallback((tag: EvidenceTag) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag) 
+        : [...prev, tag]
+    );
+  }, []);
+
+  // Filter documents by selected tags
+  const filteredDocuments = useMemo(() => {
+    if (selectedTags.length === 0) return claimDocuments;
+    return claimDocuments.filter(doc => {
+      const docTag = getDefaultTagForDocument(doc.id);
+      return selectedTags.includes(docTag);
+    });
+  }, [selectedTags]);
 
   // Mark tool as viewed on mount
   useEffect(() => {
@@ -249,18 +292,61 @@ export default function ClaimSurvival() {
       {/* Document Checklist */}
       <section id="document-checklist" className="py-12">
         <div className="container px-4">
-          <h2 className="text-2xl font-bold mb-2">Your 7 Critical Documents</h2>
-          <p className="text-muted-foreground mb-8">
-            These are the documents insurance adjusters expect. Missing even one can delay or deny your claim.
-          </p>
+          {/* Section Header with AI Analyze Button */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2 font-mono uppercase tracking-wide">
+                YOUR 7 CRITICAL DOCUMENTS
+              </h2>
+              <p className="text-muted-foreground">
+                These are the documents insurance adjusters expect. Missing even one can delay or deny your claim.
+              </p>
+            </div>
+            <Button 
+              onClick={() => setShowAnalysisModal(true)}
+              className="font-mono uppercase shrink-0"
+              disabled={completedCount === 0}
+            >
+              <FileSearch className="mr-2 h-4 w-4" />
+              Analyze Readiness
+            </Button>
+          </div>
+
+          {/* Tag Filter */}
+          <div className="mb-6">
+            <EvidenceTagFilter
+              selectedTags={selectedTags}
+              onTagToggle={handleTagToggle}
+              documentTags={documentTags}
+            />
+          </div>
+
+          {/* Document List */}
           <DocumentChecklist 
-            documents={claimDocuments}
+            documents={filteredDocuments}
             progress={vaultProgress}
             files={vaultFiles}
             onCheckboxToggle={handleCheckboxToggle}
             onUploadClick={handleUploadClick}
             onViewDocument={handleViewDocument}
           />
+
+          {/* Empty state for filtered results */}
+          {filteredDocuments.length === 0 && selectedTags.length > 0 && (
+            <div className="text-center py-12 border border-dashed border-border rounded-lg">
+              <p className="text-muted-foreground font-mono text-sm">
+                No documents match the selected filters.
+              </p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setSelectedTags([])}
+                className="mt-2 font-mono text-xs"
+              >
+                Clear Filters
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -342,6 +428,18 @@ export default function ClaimSurvival() {
           });
         }}
         sessionData={sessionData}
+      />
+
+      {/* Evidence Analysis Modal */}
+      <EvidenceAnalysisModal
+        isOpen={showAnalysisModal}
+        onClose={() => setShowAnalysisModal(false)}
+        documents={claimDocuments}
+        progress={vaultProgress}
+        files={vaultFiles}
+        isAnalyzing={isAnalyzing}
+        analysisResult={analysisResult}
+        onAnalyze={analyzeEvidence}
       />
     </div>
   );

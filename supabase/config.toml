@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.email-vault-summary]
 verify_jwt = false
+
+[functions.analyze-evidence]
+verify_jwt = false
