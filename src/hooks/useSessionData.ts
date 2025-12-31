@@ -62,6 +62,22 @@ export interface SessionData {
     nextSteps: string[];
     analyzedAt: string;
   };
+  // Quote Scanner results
+  quoteAnalysisResult?: {
+    overallScore: number;
+    safetyScore: number;
+    scopeScore: number;
+    priceScore: number;
+    finePrintScore: number;
+    warrantyScore: number;
+    pricePerOpening: string;
+    warnings: string[];
+    missingItems: string[];
+    summary: string;
+    analyzedAt?: string;
+  };
+  quoteDraftEmail?: string | null;
+  quotePhoneScript?: string | null;
   // Lead capture
   leadId?: string;
   consultationRequested?: boolean;
