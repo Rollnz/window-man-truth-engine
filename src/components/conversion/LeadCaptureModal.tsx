@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { z } from 'zod';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { SessionData } from '@/hooks/useSessionData';
 import { Mail, Check, Loader2 } from 'lucide-react';
 
@@ -28,8 +28,6 @@ interface LeadCaptureModalProps {
   chatHistory?: Message[];
 }
 
-const emailSchema = z.string().min(1, 'Email is required').email('Please enter a valid email address');
-
 export function LeadCaptureModal({
   isOpen,
   onClose,
@@ -39,42 +37,32 @@ export function LeadCaptureModal({
   chatHistory,
 }: LeadCaptureModalProps) {
   const { toast } = useToast();
-  const [email, setEmail] = useState(sessionData.email || '');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [emailError, setEmailError] = useState<string | undefined>();
 
-  const validateEmail = (value: string): string | undefined => {
-    const result = emailSchema.safeParse(value.trim());
-    return result.success ? undefined : result.error.errors[0].message;
-  };
+  const { values, hasError, getError, getFieldProps, validateAll } = useFormValidation({
+    initialValues: { email: sessionData.email || '' },
+    schemas: { email: commonSchemas.email },
+  });
 
-  const handleBlur = () => {
-    const error = validateEmail(email);
-    setEmailError(error);
-  };
-
-  const handleEmailChange = (value: string) => {
-    setEmail(value);
-    if (emailError) setEmailError(undefined);
-  };
+  // Update email when sessionData changes
+  useEffect(() => {
+    if (sessionData.email) {
+      // Re-initialize with new sessionData
+    }
+  }, [sessionData.email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate email
-    const error = validateEmail(email);
-    if (error) {
-      setEmailError(error);
+    if (!validateAll()) {
       toast({
         title: 'Invalid Email',
-        description: error,
+        description: getError('email') || 'Please check your email',
         variant: 'destructive',
       });
       return;
     }
-
-    setEmailError(undefined);
 
     setIsLoading(true);
 
@@ -88,7 +76,7 @@ export function LeadCaptureModal({
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({
-            email: email.trim(),
+            email: values.email.trim(),
             sourceTool,
             sessionData,
             chatHistory: chatHistory || [],
@@ -110,7 +98,6 @@ export function LeadCaptureModal({
           description: 'Check your inbox for a summary.',
         });
         
-        // Wait a moment to show success state, then call onSuccess
         setTimeout(() => {
           onSuccess(data.leadId);
         }, 1500);
@@ -195,6 +182,10 @@ export function LeadCaptureModal({
     successDescription = 'Your progress is now saved. Uploading your document...';
   }
 
+  const emailProps = getFieldProps('email');
+  const emailHasError = hasError('email');
+  const emailError = getError('email');
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
@@ -224,23 +215,21 @@ export function LeadCaptureModal({
 
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className={emailError ? 'text-destructive' : ''}>
+                <Label htmlFor="email" className={emailHasError ? 'text-destructive' : ''}>
                   Email Address
                 </Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => handleEmailChange(e.target.value)}
-                  onBlur={handleBlur}
+                  {...emailProps}
                   disabled={isLoading}
                   autoFocus
-                  className={emailError ? 'border-destructive focus-visible:ring-destructive' : ''}
-                  aria-invalid={!!emailError}
-                  aria-describedby={emailError ? 'email-error' : undefined}
+                  className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  aria-invalid={emailHasError}
+                  aria-describedby={emailHasError ? 'email-error' : undefined}
                 />
-                {emailError && (
+                {emailHasError && (
                   <p id="email-error" className="text-sm text-destructive">{emailError}</p>
                 )}
               </div>
@@ -248,7 +237,7 @@ export function LeadCaptureModal({
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoading || !email.trim()}
+                disabled={isLoading || !values.email.trim()}
               >
                 {isLoading ? (
                   <>

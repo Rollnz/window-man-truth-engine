@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { z } from 'zod';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { SessionData } from '@/hooks/useSessionData';
 import { Calendar, Check, Loader2 } from 'lucide-react';
 
@@ -30,26 +30,12 @@ interface ConsultationBookingModalProps {
   sessionData: SessionData;
 }
 
-const consultationSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
-  email: z.string().email('Please enter a valid email'),
-  phone: z.string().min(10, 'Please enter a valid phone number').max(20, 'Phone number is too long'),
-  preferredTime: z.string().min(1, 'Please select a preferred time'),
-});
-
 const timeOptions = [
   { value: 'morning', label: 'Morning (9am - 12pm)' },
   { value: 'afternoon', label: 'Afternoon (12pm - 5pm)' },
   { value: 'evening', label: 'Evening (5pm - 8pm)' },
   { value: 'asap', label: 'ASAP - Call me now!' },
 ];
-
-type FieldErrors = {
-  name?: string;
-  email?: string;
-  phone?: string;
-  preferredTime?: string;
-};
 
 export function ConsultationBookingModal({
   isOpen,
@@ -59,48 +45,32 @@ export function ConsultationBookingModal({
   sessionData,
 }: ConsultationBookingModalProps) {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: sessionData.name || '',
-    email: sessionData.email || '',
-    phone: sessionData.phone || '',
-    preferredTime: '',
-    notes: '',
-  });
+  const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [errors, setErrors] = useState<FieldErrors>({});
 
-  const validateField = (field: keyof FieldErrors, value: string): string | undefined => {
-    const fieldSchemas = {
-      name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
-      email: z.string().min(1, 'Email is required').email('Please enter a valid email'),
-      phone: z.string().min(10, 'Please enter a valid phone number').max(20, 'Phone number is too long'),
-      preferredTime: z.string().min(1, 'Please select a preferred time'),
-    };
-    
-    const result = fieldSchemas[field].safeParse(value);
-    return result.success ? undefined : result.error.errors[0].message;
-  };
-
-  const handleBlur = (field: keyof FieldErrors) => {
-    const error = validateField(field, formData[field]);
-    setErrors(prev => ({ ...prev, [field]: error }));
-  };
+  const { values, errors, setValue, setValues, hasError, getError, getFieldProps, validateAll, clearErrors } = useFormValidation({
+    initialValues: {
+      name: sessionData.name || '',
+      email: sessionData.email || '',
+      phone: sessionData.phone || '',
+      preferredTime: '',
+    },
+    schemas: {
+      name: commonSchemas.name,
+      email: commonSchemas.email,
+      phone: commonSchemas.phone,
+      preferredTime: commonSchemas.required('Please select a preferred time'),
+    },
+    formatters: {
+      phone: formatPhoneNumber,
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate all fields
-    const newErrors: FieldErrors = {};
-    (Object.keys(formData) as Array<keyof typeof formData>).forEach(field => {
-      if (field !== 'notes') {
-        const error = validateField(field as keyof FieldErrors, formData[field]);
-        if (error) newErrors[field as keyof FieldErrors] = error;
-      }
-    });
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    if (!validateAll()) {
       toast({
         title: 'Please fix the errors',
         description: 'Some fields need your attention.',
@@ -108,8 +78,6 @@ export function ConsultationBookingModal({
       });
       return;
     }
-
-    setErrors({});
 
     setIsLoading(true);
 
@@ -123,17 +91,17 @@ export function ConsultationBookingModal({
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({
-            email: formData.email.trim(),
-            name: formData.name.trim(),
-            phone: formData.phone.trim(),
+            email: values.email.trim(),
+            name: values.name.trim(),
+            phone: values.phone.trim(),
             sourceTool: 'expert-system',
             sessionData,
             consultation: {
-              name: formData.name.trim(),
-              email: formData.email.trim(),
-              phone: formData.phone.trim(),
-              preferredTime: formData.preferredTime,
-              notes: formData.notes.trim() || undefined,
+              name: values.name.trim(),
+              email: values.email.trim(),
+              phone: values.phone.trim(),
+              preferredTime: values.preferredTime,
+              notes: notes.trim() || undefined,
             },
           }),
         }
@@ -174,41 +142,21 @@ export function ConsultationBookingModal({
   const handleClose = () => {
     if (!isLoading) {
       setIsSuccess(false);
-      setFormData({
+      setValues({
         name: sessionData.name || '',
         email: sessionData.email || '',
         phone: sessionData.phone || '',
         preferredTime: '',
-        notes: '',
       });
+      setNotes('');
+      clearErrors();
       onClose();
     }
   };
 
-  const formatPhoneNumber = (value: string): string => {
-    // Remove all non-digit characters
-    const digits = value.replace(/\D/g, '');
-    
-    // Format as (XXX) XXX-XXXX
-    if (digits.length <= 3) {
-      return digits.length > 0 ? `(${digits}` : '';
-    } else if (digits.length <= 6) {
-      return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-    } else {
-      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-    }
-  };
-
-  const updateField = (field: string, value: string) => {
-    // Apply phone formatting if it's the phone field
-    const processedValue = field === 'phone' ? formatPhoneNumber(value) : value;
-    
-    setFormData(prev => ({ ...prev, [field]: processedValue }));
-    // Clear error when user starts typing
-    if (errors[field as keyof FieldErrors]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
-    }
-  };
+  const nameProps = getFieldProps('name');
+  const emailProps = getFieldProps('email');
+  const phoneProps = getFieldProps('phone');
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -239,84 +187,75 @@ export function ConsultationBookingModal({
 
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className={errors.name ? 'text-destructive' : ''}>
+                <Label htmlFor="name" className={hasError('name') ? 'text-destructive' : ''}>
                   Your Name
                 </Label>
                 <Input
                   id="name"
                   placeholder="John Smith"
-                  value={formData.name}
-                  onChange={(e) => updateField('name', e.target.value)}
-                  onBlur={() => handleBlur('name')}
+                  {...nameProps}
                   disabled={isLoading}
-                  className={errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
-                  aria-invalid={!!errors.name}
-                  aria-describedby={errors.name ? 'name-error' : undefined}
+                  className={hasError('name') ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  aria-invalid={hasError('name')}
+                  aria-describedby={hasError('name') ? 'name-error' : undefined}
                 />
-                {errors.name && (
-                  <p id="name-error" className="text-sm text-destructive">{errors.name}</p>
+                {hasError('name') && (
+                  <p id="name-error" className="text-sm text-destructive">{getError('name')}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="consult-email" className={errors.email ? 'text-destructive' : ''}>
+                <Label htmlFor="consult-email" className={hasError('email') ? 'text-destructive' : ''}>
                   Email Address
                 </Label>
                 <Input
                   id="consult-email"
                   type="email"
                   placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={(e) => updateField('email', e.target.value)}
-                  onBlur={() => handleBlur('email')}
+                  {...emailProps}
                   disabled={isLoading}
-                  className={errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
-                  aria-invalid={!!errors.email}
-                  aria-describedby={errors.email ? 'email-error' : undefined}
+                  className={hasError('email') ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  aria-invalid={hasError('email')}
+                  aria-describedby={hasError('email') ? 'email-error' : undefined}
                 />
-                {errors.email && (
-                  <p id="email-error" className="text-sm text-destructive">{errors.email}</p>
+                {hasError('email') && (
+                  <p id="email-error" className="text-sm text-destructive">{getError('email')}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className={errors.phone ? 'text-destructive' : ''}>
+                <Label htmlFor="phone" className={hasError('phone') ? 'text-destructive' : ''}>
                   Phone Number
                 </Label>
                 <Input
                   id="phone"
                   type="tel"
                   placeholder="(555) 123-4567"
-                  value={formData.phone}
-                  onChange={(e) => updateField('phone', e.target.value)}
-                  onBlur={() => handleBlur('phone')}
+                  {...phoneProps}
                   disabled={isLoading}
-                  className={errors.phone ? 'border-destructive focus-visible:ring-destructive' : ''}
-                  aria-invalid={!!errors.phone}
-                  aria-describedby={errors.phone ? 'phone-error' : undefined}
+                  className={hasError('phone') ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  aria-invalid={hasError('phone')}
+                  aria-describedby={hasError('phone') ? 'phone-error' : undefined}
                 />
-                {errors.phone && (
-                  <p id="phone-error" className="text-sm text-destructive">{errors.phone}</p>
+                {hasError('phone') && (
+                  <p id="phone-error" className="text-sm text-destructive">{getError('phone')}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="preferred-time" className={errors.preferredTime ? 'text-destructive' : ''}>
+                <Label htmlFor="preferred-time" className={hasError('preferredTime') ? 'text-destructive' : ''}>
                   Best Time to Call
                 </Label>
                 <Select
-                  value={formData.preferredTime}
-                  onValueChange={(value) => {
-                    updateField('preferredTime', value);
-                    if (errors.preferredTime) setErrors(prev => ({ ...prev, preferredTime: undefined }));
-                  }}
+                  value={values.preferredTime}
+                  onValueChange={(value) => setValue('preferredTime', value)}
                   disabled={isLoading}
                 >
                   <SelectTrigger 
                     id="preferred-time"
-                    className={errors.preferredTime ? 'border-destructive focus:ring-destructive' : ''}
-                    aria-invalid={!!errors.preferredTime}
-                    aria-describedby={errors.preferredTime ? 'time-error' : undefined}
+                    className={hasError('preferredTime') ? 'border-destructive focus:ring-destructive' : ''}
+                    aria-invalid={hasError('preferredTime')}
+                    aria-describedby={hasError('preferredTime') ? 'time-error' : undefined}
                   >
                     <SelectValue placeholder="Select a time..." />
                   </SelectTrigger>
@@ -328,8 +267,8 @@ export function ConsultationBookingModal({
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.preferredTime && (
-                  <p id="time-error" className="text-sm text-destructive">{errors.preferredTime}</p>
+                {hasError('preferredTime') && (
+                  <p id="time-error" className="text-sm text-destructive">{getError('preferredTime')}</p>
                 )}
               </div>
 
@@ -338,8 +277,8 @@ export function ConsultationBookingModal({
                 <Textarea
                   id="notes"
                   placeholder="Any specific questions or concerns?"
-                  value={formData.notes}
-                  onChange={(e) => updateField('notes', e.target.value)}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
                   disabled={isLoading}
                   rows={3}
                 />
@@ -348,7 +287,7 @@ export function ConsultationBookingModal({
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoading || !formData.name || !formData.email || !formData.phone || !formData.preferredTime}
+                disabled={isLoading || !values.name || !values.email || !values.phone || !values.preferredTime}
               >
                 {isLoading ? (
                   <>
