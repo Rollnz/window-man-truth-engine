@@ -4,6 +4,7 @@ import { IntelResource } from '@/data/intelData';
 import { ResourcePreview } from './ResourcePreview';
 import { FloatingBookImage } from './FloatingBookImage';
 import { GenerateCoverButton } from './GenerateCoverButton';
+import { CoverSkeleton } from './CoverSkeleton';
 
 interface ResourceCardProps {
   resource: IntelResource;
@@ -30,7 +31,7 @@ export function ResourceCard({
 
   // Use provided coverUrl or fallback to static bookImageUrl
   const displayCoverUrl = coverUrl || resource.bookImageUrl;
-  const hasFloatingImage = !!displayCoverUrl;
+  const hasFloatingImage = !!displayCoverUrl || isGenerating;
 
   return (
     <div className={`group relative flex flex-col p-6 rounded-xl bg-card border transition-all duration-300 ${
@@ -38,10 +39,15 @@ export function ResourceCard({
         ? 'border-primary/50 glow-sm' 
         : 'border-border hover:border-primary/30'
     } ${hasFloatingImage ? 'overflow-visible' : ''}`}>
+      {/* Loading skeleton while generating */}
+      {isGenerating && !displayCoverUrl && (
+        <CoverSkeleton position={resource.imagePosition} />
+      )}
+
       {/* Floating book image */}
-      {hasFloatingImage && (
+      {displayCoverUrl && !isGenerating && (
         <FloatingBookImage
-          imageUrl={displayCoverUrl!}
+          imageUrl={displayCoverUrl}
           position={resource.imagePosition}
           alt={resource.title}
         />
