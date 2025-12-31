@@ -20,7 +20,7 @@
 
     /* Neon Blue #00D4FF = hsl(189, 100%, 50%) */
     --primary: 189 100% 50%;
-    --primary-foreground: 220 20% 6%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 220 20% 14%;
     --secondary-foreground: 210 40% 98%;
