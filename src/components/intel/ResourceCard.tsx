@@ -2,6 +2,7 @@ import { Lock, Unlock, Download, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IntelResource } from '@/data/intelData';
 import { ResourcePreview } from './ResourcePreview';
+import { FloatingBookImage } from './FloatingBookImage';
 
 interface ResourceCardProps {
   resource: IntelResource;
@@ -20,12 +21,23 @@ export function ResourceCard({
 }: ResourceCardProps) {
   const Icon = resource.icon;
 
+  const hasFloatingImage = !!resource.bookImageUrl;
+
   return (
-    <div className={`relative flex flex-col p-6 rounded-xl bg-card border transition-all duration-300 ${
+    <div className={`group relative flex flex-col p-6 rounded-xl bg-card border transition-all duration-300 ${
       isUnlocked 
         ? 'border-primary/50 glow-sm' 
         : 'border-border hover:border-primary/30'
-    }`}>
+    } ${hasFloatingImage ? 'overflow-visible' : ''}`}>
+      {/* Floating book image */}
+      {hasFloatingImage && (
+        <FloatingBookImage
+          imageUrl={resource.bookImageUrl!}
+          position={resource.imagePosition}
+          alt={resource.title}
+        />
+      )}
+
       {/* Classified/Declassified stamp */}
       <div className={`absolute top-4 right-4 px-2 py-1 rounded text-xs font-bold tracking-wider ${
         isUnlocked 
