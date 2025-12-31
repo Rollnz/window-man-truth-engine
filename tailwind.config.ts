@@ -117,7 +117,7 @@ export default {
         "count-up": "count-up 0.4s ease-out forwards",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "shimmer": "shimmer 2s linear infinite",
-        "bob": "bob 4s ease-in-out infinite",
+        "bob": "bob 16s ease-in-out infinite",
       },
     },
   },

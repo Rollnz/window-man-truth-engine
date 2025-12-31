@@ -33,7 +33,7 @@ export function FloatingBookImage({
         <img 
           src={imageUrl} 
           alt={alt}
-          className="w-full h-auto drop-shadow-lg"
+          className="w-full h-auto drop-shadow-[0_8px_24px_hsl(var(--primary)/0.4)]"
         />
       </div>
 
