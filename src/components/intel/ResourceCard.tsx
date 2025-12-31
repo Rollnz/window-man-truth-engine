@@ -34,10 +34,10 @@ export function ResourceCard({
   const hasFloatingImage = !!displayCoverUrl || isGenerating;
 
   return (
-    <div className={`group relative flex flex-col p-6 rounded-xl bg-card border transition-all duration-300 ${
+    <div className={`group relative flex flex-col p-6 rounded-xl bg-white border-[6px] transition-all duration-300 shadow-[inset_0_0_0_2px_rgba(0,0,0,0.08)] ${
       isUnlocked 
-        ? 'border-primary/50 glow-sm' 
-        : 'border-border hover:border-primary/30'
+        ? 'border-gray-400 glow-sm' 
+        : 'border-gray-300 hover:border-primary/50'
     } ${hasFloatingImage ? 'overflow-visible' : ''}`}>
       {/* Loading skeleton while generating */}
       {isGenerating && !displayCoverUrl && (
@@ -84,7 +84,7 @@ export function ResourceCard({
       <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${
         isUnlocked 
           ? 'bg-primary/20 text-primary' 
-          : 'bg-muted text-muted-foreground'
+          : 'bg-gray-100 text-gray-500'
       }`}>
         <Icon className="w-6 h-6" />
       </div>
@@ -95,10 +95,10 @@ export function ResourceCard({
       </span>
 
       {/* Title */}
-      <h3 className="text-lg font-semibold mb-2">{resource.title}</h3>
+      <h3 className="text-lg font-semibold mb-2 text-gray-900">{resource.title}</h3>
 
       {/* Description */}
-      <p className="text-sm text-muted-foreground mb-4">
+      <p className="text-sm text-gray-700 mb-4">
         {resource.description}
       </p>
 
@@ -111,7 +111,7 @@ export function ResourceCard({
       </div>
 
       {/* Page count */}
-      <p className="text-xs text-muted-foreground mb-4">
+      <p className="text-xs text-gray-500 mb-4">
         {resource.pageCount} pages • PDF format
       </p>
 
