@@ -58,6 +58,30 @@ export type Database = {
           },
         ]
       }
+      generated_book_covers: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          prompt_used: string | null
+          resource_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          prompt_used?: string | null
+          resource_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          prompt_used?: string | null
+          resource_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           chat_history: Json | null

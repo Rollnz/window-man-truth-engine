@@ -3,6 +3,9 @@ project_id = "uzulqexlgavggcyizabf"
 [functions.expert-chat]
 verify_jwt = false
 
+[functions.generate-book-cover]
+verify_jwt = false
+
 [functions.save-lead]
 verify_jwt = false
 

@@ -3,25 +3,34 @@ import { Button } from '@/components/ui/button';
 import { IntelResource } from '@/data/intelData';
 import { ResourcePreview } from './ResourcePreview';
 import { FloatingBookImage } from './FloatingBookImage';
+import { GenerateCoverButton } from './GenerateCoverButton';
 
 interface ResourceCardProps {
   resource: IntelResource;
   isUnlocked: boolean;
   isRecommended?: boolean;
+  coverUrl?: string;
+  isGenerating?: boolean;
   onUnlock: () => void;
   onDownload: () => void;
+  onGenerateCover?: (regenerate: boolean) => void;
 }
 
 export function ResourceCard({ 
   resource, 
   isUnlocked, 
   isRecommended,
+  coverUrl,
+  isGenerating = false,
   onUnlock, 
-  onDownload 
+  onDownload,
+  onGenerateCover,
 }: ResourceCardProps) {
   const Icon = resource.icon;
 
-  const hasFloatingImage = !!resource.bookImageUrl;
+  // Use provided coverUrl or fallback to static bookImageUrl
+  const displayCoverUrl = coverUrl || resource.bookImageUrl;
+  const hasFloatingImage = !!displayCoverUrl;
 
   return (
     <div className={`group relative flex flex-col p-6 rounded-xl bg-card border transition-all duration-300 ${
@@ -32,9 +41,19 @@ export function ResourceCard({
       {/* Floating book image */}
       {hasFloatingImage && (
         <FloatingBookImage
-          imageUrl={resource.bookImageUrl!}
+          imageUrl={displayCoverUrl!}
           position={resource.imagePosition}
           alt={resource.title}
+        />
+      )}
+
+      {/* Generate/Regenerate cover button */}
+      {onGenerateCover && (
+        <GenerateCoverButton
+          resource={resource}
+          hasExistingCover={!!coverUrl && !resource.bookImageUrl}
+          isGenerating={isGenerating}
+          onGenerate={onGenerateCover}
         />
       )}
 
