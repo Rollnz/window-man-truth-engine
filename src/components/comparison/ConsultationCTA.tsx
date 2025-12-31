@@ -41,7 +41,8 @@ export function ConsultationCTA({ onBookConsultation }: ConsultationCTAProps) {
           {/* CTA Button */}
           <Button 
             size="lg" 
-            className="glow text-lg px-8 py-6"
+            variant="high-contrast"
+            className="text-lg px-8 py-6"
             onClick={onBookConsultation}
           >
             Get a Quote for High-Performance Windows
