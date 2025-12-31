@@ -19,8 +19,9 @@ export function ClaimFinalCTA({ onCreateVaultClick, isUnlocked }: ClaimFinalCTAP
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
         <Button 
           size="lg" 
+          variant="high-contrast"
           onClick={onCreateVaultClick}
-          className="w-full sm:w-auto glow"
+          className="w-full sm:w-auto"
         >
           <Shield className="mr-2 h-5 w-5" />
           {isUnlocked ? 'Return to My Vault' : 'Create Free Vault Account'}
