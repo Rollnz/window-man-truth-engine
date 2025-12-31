@@ -39,6 +39,10 @@ export function LeadCaptureModal({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [name, setName] = useState(sessionData.name || '');
+  const [phone, setPhone] = useState(sessionData.phone || '');
+
+  const requiresFullContact = sourceTool === 'quote-scanner';
 
   const { values, hasError, getError, getFieldProps, validateAll } = useFormValidation({
     initialValues: { email: sessionData.email || '' },
@@ -64,6 +68,16 @@ export function LeadCaptureModal({
       return;
     }
 
+    // For quote-scanner, require name and phone
+    if (requiresFullContact && (!name.trim() || !phone.trim())) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please enter your name and phone number.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -77,6 +91,8 @@ export function LeadCaptureModal({
           },
           body: JSON.stringify({
             email: values.email.trim(),
+            name: name.trim() || sessionData.name || null,
+            phone: phone.trim() || sessionData.phone || null,
             sourceTool,
             sessionData,
             chatHistory: chatHistory || [],
@@ -131,6 +147,7 @@ export function LeadCaptureModal({
   const isEvidenceLocker = sourceTool === 'evidence-locker';
   const isIntelLibrary = sourceTool === 'intel-library';
   const isClaimSurvivalKit = sourceTool === 'claim-survival-kit';
+  const isQuoteScanner = sourceTool === 'quote-scanner';
   
   let modalTitle = 'Save Your Conversation';
   let modalDescription = 'Enter your email to save your conversation and get personalized recommendations.';
@@ -138,7 +155,13 @@ export function LeadCaptureModal({
   let successTitle = 'Saved Successfully!';
   let successDescription = 'We\'ve saved your conversation and session data.';
 
-  if (isComparisonTool) {
+  if (isQuoteScanner) {
+    modalTitle = 'Unlock Your Quote Analysis';
+    modalDescription = 'Get your complete 5-point breakdown plus AI-generated negotiation scripts to save thousands.';
+    buttonText = 'Unlock My Report';
+    successTitle = 'Report Unlocked!';
+    successDescription = 'Your full analysis is now available.';
+  } else if (isComparisonTool) {
     modalTitle = 'Email Me This Comparison';
     modalDescription = 'Enter your email to receive a personalized comparison report with your 10-year cost analysis.';
     buttonText = 'Send My Report';
@@ -214,6 +237,21 @@ export function LeadCaptureModal({
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              {requiresFullContact && (
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isLoading}
+                    autoFocus
+                  />
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email" className={emailHasError ? 'text-destructive' : ''}>
                   Email Address
@@ -224,7 +262,7 @@ export function LeadCaptureModal({
                   placeholder="you@example.com"
                   {...emailProps}
                   disabled={isLoading}
-                  autoFocus
+                  autoFocus={!requiresFullContact}
                   className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''}
                   aria-invalid={emailHasError}
                   aria-describedby={emailHasError ? 'email-error' : undefined}
@@ -234,10 +272,24 @@ export function LeadCaptureModal({
                 )}
               </div>
 
+              {requiresFullContact && (
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="(555) 123-4567"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoading || !values.email.trim()}
+                disabled={isLoading || !values.email.trim() || (requiresFullContact && (!name.trim() || !phone.trim()))}
               >
                 {isLoading ? (
                   <>
