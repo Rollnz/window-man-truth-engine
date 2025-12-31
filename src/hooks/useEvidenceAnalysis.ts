@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimDocument } from '@/data/claimSurvivalData';
 import { useToast } from '@/hooks/use-toast';
+import { useSessionData } from '@/hooks/useSessionData';
 
 export interface AnalysisResult {
   overallScore: number;
@@ -13,6 +14,7 @@ export interface AnalysisResult {
     recommendation: string;
   }[];
   nextSteps: string[];
+  analyzedAt?: string;
 }
 
 interface UseEvidenceAnalysisProps {
@@ -27,8 +29,18 @@ export function useEvidenceAnalysis({
   files,
 }: UseEvidenceAnalysisProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const { sessionData, updateField } = useSessionData();
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
+    sessionData.claimAnalysisResult || null
+  );
   const { toast } = useToast();
+
+  // Load saved analysis on mount
+  useEffect(() => {
+    if (sessionData.claimAnalysisResult && !analysisResult) {
+      setAnalysisResult(sessionData.claimAnalysisResult);
+    }
+  }, [sessionData.claimAnalysisResult]);
 
   const analyzeEvidence = useCallback(async () => {
     setIsAnalyzing(true);
@@ -62,7 +74,13 @@ export function useEvidenceAnalysis({
         throw error;
       }
 
-      setAnalysisResult(data);
+      // Add timestamp and save to session
+      const resultWithTimestamp = {
+        ...data,
+        analyzedAt: new Date().toISOString(),
+      };
+      setAnalysisResult(resultWithTimestamp);
+      updateField('claimAnalysisResult', resultWithTimestamp);
     } catch (error) {
       console.error('Analysis error:', error);
       toast({
