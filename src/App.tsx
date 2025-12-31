@@ -17,6 +17,9 @@ import ClaimSurvival from "./pages/ClaimSurvival";
 import Vault from "./pages/Vault";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Privacy from "./pages/legal/Privacy";
+import Terms from "./pages/legal/Terms";
+import Disclaimer from "./pages/legal/Disclaimer";
 import { AuthGuard } from "./components/auth/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -41,6 +44,9 @@ const App = () => (
           <Route path="/claim-survival" element={<ClaimSurvival />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/vault" element={<AuthGuard><Vault /></AuthGuard>} />
+          <Route path="/legal/privacy" element={<Privacy />} />
+          <Route path="/legal/terms" element={<Terms />} />
+          <Route path="/legal/disclaimer" element={<Disclaimer />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
