@@ -34,10 +34,10 @@ export function ResourceCard({
   const hasFloatingImage = !!displayCoverUrl || isGenerating;
 
   return (
-    <div className={`group relative flex flex-col p-6 rounded-xl bg-white border-[6px] transition-all duration-300 shadow-[inset_0_0_0_2px_rgba(0,0,0,0.08)] ${
+    <div className={`group relative flex flex-col p-6 rounded-xl bg-white transition-all duration-300 border-2 sm:border-[6px] sm:shadow-[inset_0_0_0_2px_rgba(0,0,0,0.08)] ${
       isUnlocked 
-        ? 'border-gray-400 glow-sm' 
-        : 'border-gray-300 hover:border-primary/50'
+        ? 'border-gray-200 sm:border-gray-400 glow-sm' 
+        : 'border-gray-100 sm:border-gray-300 hover:border-primary/50'
     } ${hasFloatingImage ? 'overflow-visible' : ''}`}>
       {/* Loading skeleton while generating */}
       {isGenerating && !displayCoverUrl && (
@@ -102,13 +102,24 @@ export function ResourceCard({
         {resource.description}
       </p>
 
-      {/* Preview points */}
-      <div className="mb-6 flex-grow">
+      {/* Preview points - hidden on mobile */}
+      <div className="mb-6 flex-grow hidden sm:block">
         <ResourcePreview 
           previewPoints={resource.previewPoints} 
           isLocked={!isUnlocked} 
         />
       </div>
+
+      {/* Mobile: Centered book replaces preview */}
+      {displayCoverUrl && (
+        <div className="mb-6 flex-grow flex items-center justify-center sm:hidden">
+          <img 
+            src={displayCoverUrl} 
+            alt={resource.title}
+            className="w-28 h-auto drop-shadow-lg"
+          />
+        </div>
+      )}
 
       {/* Page count */}
       <p className="text-xs text-gray-500 mb-4">

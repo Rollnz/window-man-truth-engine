@@ -65,22 +65,7 @@ export function FloatingBookImage({
         />
       </div>
 
-      {/* Mobile: Corner tuck with reduced opacity */}
-      <div 
-        className={`
-          absolute bottom-2 right-2 z-10
-          sm:hidden
-          w-16 opacity-30
-          pointer-events-none
-        `}
-      >
-        <img 
-          src={imageUrl} 
-          alt=""
-          aria-hidden="true"
-          className="w-full h-auto"
-        />
-      </div>
+      {/* Mobile: Hidden - book is now centered in ResourceCard */}
     </>
   );
 }
