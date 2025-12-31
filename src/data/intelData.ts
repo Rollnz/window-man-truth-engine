@@ -35,6 +35,8 @@ export const intelResources: IntelResource[] = [
     pdfUrl: 'https://www.africau.edu/images/default/sample.pdf',
     recommended: true,
     forVulnerabilityLevel: 'CRITICAL',
+    bookImageUrl: '/images/defense-kit-book.webp',
+    imagePosition: 'bottom-right',
   },
   {
     id: 'sales-tactics',
