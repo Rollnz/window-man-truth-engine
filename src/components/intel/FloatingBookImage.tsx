@@ -26,6 +26,7 @@ export function FloatingBookImage({
           w-24 md:w-28 lg:w-32
           transition-all duration-300 ease-out
           group-hover:scale-110 group-hover:rotate-3
+          animate-fade-in [animation-delay:300ms] opacity-0
         `}
       >
         <img 
