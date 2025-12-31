@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,6 +25,83 @@ interface RequestBody {
   };
 }
 
+// Rate limiting configuration
+const RATE_LIMITS = {
+  perMinute: 5,
+  perHour: 20,
+  perDay: 50
+};
+
+async function checkRateLimit(identifier: string): Promise<{ allowed: boolean; retryAfter?: number }> {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
+  const now = new Date();
+  const oneMinuteAgo = new Date(now.getTime() - 60000);
+  const oneHourAgo = new Date(now.getTime() - 3600000);
+  const oneDayAgo = new Date(now.getTime() - 86400000);
+
+  try {
+    // Check minute limit
+    const { count: minuteCount } = await supabase
+      .from('rate_limits')
+      .select('*', { count: 'exact', head: true })
+      .eq('identifier', identifier)
+      .eq('endpoint', 'expert-chat')
+      .gte('created_at', oneMinuteAgo.toISOString());
+
+    if (minuteCount && minuteCount >= RATE_LIMITS.perMinute) {
+      console.log(`Rate limit exceeded for ${identifier}: ${minuteCount} requests in last minute`);
+      return { allowed: false, retryAfter: 60 };
+    }
+
+    // Check hour limit
+    const { count: hourCount } = await supabase
+      .from('rate_limits')
+      .select('*', { count: 'exact', head: true })
+      .eq('identifier', identifier)
+      .eq('endpoint', 'expert-chat')
+      .gte('created_at', oneHourAgo.toISOString());
+
+    if (hourCount && hourCount >= RATE_LIMITS.perHour) {
+      console.log(`Rate limit exceeded for ${identifier}: ${hourCount} requests in last hour`);
+      return { allowed: false, retryAfter: 3600 };
+    }
+
+    // Check day limit
+    const { count: dayCount } = await supabase
+      .from('rate_limits')
+      .select('*', { count: 'exact', head: true })
+      .eq('identifier', identifier)
+      .eq('endpoint', 'expert-chat')
+      .gte('created_at', oneDayAgo.toISOString());
+
+    if (dayCount && dayCount >= RATE_LIMITS.perDay) {
+      console.log(`Rate limit exceeded for ${identifier}: ${dayCount} requests in last day`);
+      return { allowed: false, retryAfter: 86400 };
+    }
+
+    // Record this request
+    await supabase.from('rate_limits').insert({
+      identifier,
+      endpoint: 'expert-chat'
+    });
+
+    // Cleanup old records periodically (1 in 100 requests)
+    if (Math.random() < 0.01) {
+      await supabase.rpc('cleanup_rate_limits');
+    }
+
+    return { allowed: true };
+  } catch (error) {
+    console.error("Rate limit check error:", error);
+    // Allow the request if rate limiting fails (fail-open for availability)
+    return { allowed: true };
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -31,6 +109,31 @@ serve(async (req) => {
   }
 
   try {
+    // Get client IP for rate limiting
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+               req.headers.get('x-real-ip') || 
+               'unknown';
+
+    // Check rate limit
+    const rateLimitCheck = await checkRateLimit(ip);
+    if (!rateLimitCheck.allowed) {
+      console.log(`Rate limit blocked request from IP: ${ip}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded. Please try again later.',
+          retryAfter: rateLimitCheck.retryAfter 
+        }),
+        { 
+          status: 429,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': String(rateLimitCheck.retryAfter)
+          }
+        }
+      );
+    }
+
     const { messages, context }: RequestBody = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
