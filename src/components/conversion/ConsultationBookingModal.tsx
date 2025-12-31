@@ -44,6 +44,13 @@ const timeOptions = [
   { value: 'asap', label: 'ASAP - Call me now!' },
 ];
 
+type FieldErrors = {
+  name?: string;
+  email?: string;
+  phone?: string;
+  preferredTime?: string;
+};
+
 export function ConsultationBookingModal({
   isOpen,
   onClose,
@@ -61,21 +68,48 @@ export function ConsultationBookingModal({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+
+  const validateField = (field: keyof FieldErrors, value: string): string | undefined => {
+    const fieldSchemas = {
+      name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
+      email: z.string().min(1, 'Email is required').email('Please enter a valid email'),
+      phone: z.string().min(10, 'Please enter a valid phone number').max(20, 'Phone number is too long'),
+      preferredTime: z.string().min(1, 'Please select a preferred time'),
+    };
+    
+    const result = fieldSchemas[field].safeParse(value);
+    return result.success ? undefined : result.error.errors[0].message;
+  };
+
+  const handleBlur = (field: keyof FieldErrors) => {
+    const error = validateField(field, formData[field]);
+    setErrors(prev => ({ ...prev, [field]: error }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate with zod
-    const validation = consultationSchema.safeParse(formData);
-    if (!validation.success) {
-      const firstError = validation.error.errors[0];
+    // Validate all fields
+    const newErrors: FieldErrors = {};
+    (Object.keys(formData) as Array<keyof typeof formData>).forEach(field => {
+      if (field !== 'notes') {
+        const error = validateField(field as keyof FieldErrors, formData[field]);
+        if (error) newErrors[field as keyof FieldErrors] = error;
+      }
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       toast({
-        title: 'Missing Information',
-        description: firstError.message,
+        title: 'Please fix the errors',
+        description: 'Some fields need your attention.',
         variant: 'destructive',
       });
       return;
     }
+
+    setErrors({});
 
     setIsLoading(true);
 
@@ -153,6 +187,10 @@ export function ConsultationBookingModal({
 
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field as keyof FieldErrors]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
   };
 
   return (
@@ -184,48 +222,85 @@ export function ConsultationBookingModal({
 
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Your Name</Label>
+                <Label htmlFor="name" className={errors.name ? 'text-destructive' : ''}>
+                  Your Name
+                </Label>
                 <Input
                   id="name"
                   placeholder="John Smith"
                   value={formData.name}
                   onChange={(e) => updateField('name', e.target.value)}
+                  onBlur={() => handleBlur('name')}
                   disabled={isLoading}
+                  className={errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? 'name-error' : undefined}
                 />
+                {errors.name && (
+                  <p id="name-error" className="text-sm text-destructive">{errors.name}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="consult-email">Email Address</Label>
+                <Label htmlFor="consult-email" className={errors.email ? 'text-destructive' : ''}>
+                  Email Address
+                </Label>
                 <Input
                   id="consult-email"
                   type="email"
                   placeholder="you@example.com"
                   value={formData.email}
                   onChange={(e) => updateField('email', e.target.value)}
+                  onBlur={() => handleBlur('email')}
                   disabled={isLoading}
+                  className={errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? 'email-error' : undefined}
                 />
+                {errors.email && (
+                  <p id="email-error" className="text-sm text-destructive">{errors.email}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone" className={errors.phone ? 'text-destructive' : ''}>
+                  Phone Number
+                </Label>
                 <Input
                   id="phone"
                   type="tel"
                   placeholder="(555) 123-4567"
                   value={formData.phone}
                   onChange={(e) => updateField('phone', e.target.value)}
+                  onBlur={() => handleBlur('phone')}
                   disabled={isLoading}
+                  className={errors.phone ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  aria-invalid={!!errors.phone}
+                  aria-describedby={errors.phone ? 'phone-error' : undefined}
                 />
+                {errors.phone && (
+                  <p id="phone-error" className="text-sm text-destructive">{errors.phone}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="preferred-time">Best Time to Call</Label>
+                <Label htmlFor="preferred-time" className={errors.preferredTime ? 'text-destructive' : ''}>
+                  Best Time to Call
+                </Label>
                 <Select
                   value={formData.preferredTime}
-                  onValueChange={(value) => updateField('preferredTime', value)}
+                  onValueChange={(value) => {
+                    updateField('preferredTime', value);
+                    if (errors.preferredTime) setErrors(prev => ({ ...prev, preferredTime: undefined }));
+                  }}
                   disabled={isLoading}
                 >
-                  <SelectTrigger id="preferred-time">
+                  <SelectTrigger 
+                    id="preferred-time"
+                    className={errors.preferredTime ? 'border-destructive focus:ring-destructive' : ''}
+                    aria-invalid={!!errors.preferredTime}
+                    aria-describedby={errors.preferredTime ? 'time-error' : undefined}
+                  >
                     <SelectValue placeholder="Select a time..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -236,6 +311,9 @@ export function ConsultationBookingModal({
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.preferredTime && (
+                  <p id="time-error" className="text-sm text-destructive">{errors.preferredTime}</p>
+                )}
               </div>
 
               <div className="space-y-2">
