@@ -14,6 +14,7 @@ import Evidence from "./pages/Evidence";
 import VulnerabilityTest from "./pages/VulnerabilityTest";
 import Intel from "./pages/Intel";
 import ClaimSurvival from "./pages/ClaimSurvival";
+import Vault from "./pages/Vault";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/vulnerability-test" element={<VulnerabilityTest />} />
           <Route path="/intel" element={<Intel />} />
           <Route path="/claim-survival" element={<ClaimSurvival />} />
+          <Route path="/vault" element={<Vault />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
