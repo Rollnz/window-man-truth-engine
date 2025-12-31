@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Lock, Unlock, Download, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IntelResource } from '@/data/intelData';
@@ -27,6 +28,7 @@ export function ResourceCard({
   onDownload,
   onGenerateCover,
 }: ResourceCardProps) {
+  const [mobileBookEnlarged, setMobileBookEnlarged] = useState(false);
   const Icon = resource.icon;
 
   // Use provided coverUrl or fallback to static bookImageUrl
@@ -112,11 +114,18 @@ export function ResourceCard({
 
       {/* Mobile: Centered book replaces preview */}
       {displayCoverUrl && (
-        <div className="mb-6 flex-grow flex items-center justify-center sm:hidden">
+        <div 
+          className="mb-6 flex-grow flex items-center justify-center sm:hidden cursor-pointer"
+          onClick={() => setMobileBookEnlarged(!mobileBookEnlarged)}
+        >
           <img 
             src={displayCoverUrl} 
             alt={resource.title}
-            className="w-28 h-auto drop-shadow-lg"
+            className={`h-auto drop-shadow-lg transition-all duration-300 ease-out ${
+              mobileBookEnlarged 
+                ? 'w-36 shadow-[0_0_20px_rgba(0,212,255,0.3)]' 
+                : 'w-28 shadow-[0_4px_12px_rgba(0,0,0,0.15)]'
+            }`}
           />
         </div>
       )}
