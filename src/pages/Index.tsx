@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/home/Navbar';
 import { Hero } from '@/components/home/Hero';
+import { MascotTransition } from '@/components/home/MascotTransition';
 import { UncomfortableTruth } from '@/components/home/UncomfortableTruth';
 import { ToolGrid } from '@/components/home/ToolGrid';
 import { SocialProof } from '@/components/home/SocialProof';
@@ -11,6 +12,7 @@ const Index = () => {
       <Navbar />
       <div className="pt-14"> {/* Padding for fixed navbar */}
         <Hero />
+        <MascotTransition />
         <UncomfortableTruth />
         <ToolGrid />
         <SocialProof />
