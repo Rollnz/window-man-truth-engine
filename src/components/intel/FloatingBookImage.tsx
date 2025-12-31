@@ -21,7 +21,7 @@ export function FloatingBookImage({
       {/* Desktop/Tablet: Floating position */}
       <div 
         className={`
-          absolute ${positionClasses[position]} z-10
+          absolute ${positionClasses[position]} z-20
           hidden sm:block
           w-24 md:w-28 lg:w-32
           transition-all duration-300 ease-out
@@ -39,7 +39,7 @@ export function FloatingBookImage({
       {/* Mobile: Corner tuck with reduced opacity */}
       <div 
         className={`
-          absolute bottom-2 right-2 z-0
+          absolute bottom-2 right-2 z-10
           sm:hidden
           w-16 opacity-30
           pointer-events-none
