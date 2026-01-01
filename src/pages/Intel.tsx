@@ -81,9 +81,14 @@ export default function Intel() {
     setShowLeadCapture(false);
     clearUrlParams();
 
-    // Special handling for claim-survival: redirect to the tool
+    // Special handling for resources with dedicated pages
     if (selectedResource.id === 'claim-survival') {
       navigate('/claim-survival');
+      return;
+    }
+
+    if (selectedResource.id === 'defense-kit') {
+      navigate('/kitchen-table-guide');
       return;
     }
 
