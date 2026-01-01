@@ -9,6 +9,7 @@ import { ComparisonCards } from '@/components/comparison/ComparisonCards';
 import { SavingsBanner } from '@/components/comparison/SavingsBanner';
 import { FloatingEmailButton } from '@/components/comparison/FloatingEmailButton';
 import { ConsultationCTA } from '@/components/comparison/ConsultationCTA';
+import { GenerateComparisonReportButton } from '@/components/comparison/GenerateComparisonReportButton';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 
@@ -43,8 +44,16 @@ export default function Comparison() {
       {/* Main Comparison Section */}
       <section className="py-12 md:py-16">
         <div className="container px-4">
-          {/* View Mode Toggle */}
-          <ViewModeToggle value={viewMode} onChange={setViewMode} />
+          {/* View Mode Toggle + Report Button */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+            <ViewModeToggle value={viewMode} onChange={setViewMode} />
+            <GenerateComparisonReportButton 
+              windowCount={windowCount}
+              trueCosts={trueCosts}
+              viewMode={viewMode}
+              homeownerName={sessionData.name}
+            />
+          </div>
 
           {/* Savings Banner (only show in long-term view) */}
           {viewMode === 'longterm' && trueCosts.tier1 && trueCosts.tier3 && (
