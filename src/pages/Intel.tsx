@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { IntelHero } from '@/components/intel/IntelHero';
 import { ResourceGrid } from '@/components/intel/ResourceGrid';
 import { UnlockSuccessOverlay } from '@/components/intel/UnlockSuccessOverlay';
-import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
+import { IntelLeadModal } from '@/components/intel/IntelLeadModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { intelResources, IntelResource, getResourceById } from '@/data/intelData';
 
@@ -21,7 +21,7 @@ export default function Intel() {
   const unlockedResources = sessionData.unlockedResources || [];
 
   // Modal states
-  const [showLeadCapture, setShowLeadCapture] = useState(false);
+  const [showIntelModal, setShowIntelModal] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [showConsultation, setShowConsultation] = useState(false);
   const [selectedResource, setSelectedResource] = useState<IntelResource | null>(null);
@@ -45,7 +45,7 @@ export default function Intel() {
       if (resource && !unlockedResources.includes(resourceId)) {
         // Auto-open unlock modal for this resource
         setSelectedResource(resource);
-        setShowLeadCapture(true);
+        setShowIntelModal(true);
       }
     }
   }, [searchParams, unlockedResources]);
@@ -58,16 +58,24 @@ export default function Intel() {
   };
 
   const handleUnlock = (resource: IntelResource) => {
-    // Check if already unlocked
+    // Check if already unlocked - returning user logic
     if (unlockedResources.includes(resource.id)) {
+      // If this resource has a dedicated landing page, ALWAYS go there
+      if (resource.landingPageUrl) {
+        navigate(resource.landingPageUrl);
+        return;
+      }
+      // Otherwise, just download the PDF
       handleDownload(resource);
       return;
     }
+    // Not unlocked yet - open modal
     setSelectedResource(resource);
-    setShowLeadCapture(true);
+    setShowIntelModal(true);
   };
 
-  const handleLeadSuccess = (leadId: string) => {
+  // Handle successful email submission
+  const handleIntelSuccess = (leadId: string) => {
     if (!selectedResource) return;
 
     // Analytics: Track successful email capture
@@ -75,6 +83,7 @@ export default function Intel() {
       resourceId: selectedResource.id,
       resourceTitle: selectedResource.title,
       category: selectedResource.category,
+      hasLandingPage: !!selectedResource.landingPageUrl,
       timestamp: new Date().toISOString(),
     });
 
@@ -85,39 +94,41 @@ export default function Intel() {
       leadId,
     });
 
-    // Close lead modal
-    setShowLeadCapture(false);
+    // Close modal
+    setShowIntelModal(false);
     clearUrlParams();
 
-    // Special handling for resources with dedicated pages
-    if (selectedResource.id === 'claim-survival') {
-      navigate('/claim-survival');
-      return;
+    // Route based on resource config
+    if (selectedResource.landingPageUrl) {
+      navigate(selectedResource.landingPageUrl);
+    } else {
+      // Fallback: show success overlay for PDF download
+      setShowSuccessOverlay(true);
     }
-
-    if (selectedResource.id === 'defense-kit') {
-      navigate('/kitchen-table-guide');
-      return;
-    }
-
-    // All other resources: show success overlay with download
-    setShowSuccessOverlay(true);
   };
 
-  const handleLeadClose = () => {
-    // Analytics: Track modal skip/close
-    if (selectedResource) {
-      console.log('[Analytics] intel_modal_skipped', {
-        resourceId: selectedResource.id,
-        resourceTitle: selectedResource.title,
-        category: selectedResource.category,
-        timestamp: new Date().toISOString(),
-      });
-    }
+  // Handle skip (X button click) - soft gate behavior
+  const handleIntelSkip = () => {
+    if (!selectedResource) return;
 
-    setShowLeadCapture(false);
-    setSelectedResource(null);
+    // Analytics: Track modal skip
+    console.log('[Analytics] intel_modal_skipped', {
+      resourceId: selectedResource.id,
+      resourceTitle: selectedResource.title,
+      category: selectedResource.category,
+      hasLandingPage: !!selectedResource.landingPageUrl,
+      timestamp: new Date().toISOString(),
+    });
+
+    setShowIntelModal(false);
     clearUrlParams();
+
+    // Soft gate: still redirect if landing page exists
+    if (selectedResource.landingPageUrl) {
+      navigate(selectedResource.landingPageUrl);
+    }
+    // No landing page = just close, user stays on Intel page
+    setSelectedResource(null);
   };
 
   const handleDownload = (resource: IntelResource) => {
@@ -195,12 +206,12 @@ export default function Intel() {
         </div>
       </section>
 
-      {/* Lead Capture Modal */}
-      <LeadCaptureModal
-        isOpen={showLeadCapture}
-        onClose={handleLeadClose}
-        onSuccess={handleLeadSuccess}
-        sourceTool="intel-library"
+      {/* Intel Lead Modal (Soft Gate) */}
+      <IntelLeadModal
+        isOpen={showIntelModal}
+        resource={selectedResource}
+        onClose={handleIntelSkip}
+        onSuccess={handleIntelSuccess}
         sessionData={sessionData}
       />
 

@@ -15,6 +15,7 @@ export interface IntelResource {
   forVulnerabilityLevel?: 'CRITICAL' | 'MODERATE' | 'LOW';
   bookImageUrl?: string;
   imagePosition?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  landingPageUrl?: string; // Optional dedicated landing page route
 }
 
 export const intelResources: IntelResource[] = [
@@ -37,6 +38,7 @@ export const intelResources: IntelResource[] = [
     forVulnerabilityLevel: 'CRITICAL',
     bookImageUrl: '/images/defense-kit-book.webp',
     imagePosition: 'bottom-right',
+    landingPageUrl: '/kitchen-table-guide',
   },
   {
     id: 'sales-tactics',
@@ -71,6 +73,7 @@ export const intelResources: IntelResource[] = [
     pdfUrl: 'https://www.africau.edu/images/default/sample.pdf',
     bookImageUrl: '/images/claim-kit-book.webp',
     imagePosition: 'bottom-right',
+    landingPageUrl: '/claim-survival',
   },
   {
     id: 'spec-checklist',
