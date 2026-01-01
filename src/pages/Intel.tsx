@@ -70,6 +70,14 @@ export default function Intel() {
   const handleLeadSuccess = (leadId: string) => {
     if (!selectedResource) return;
 
+    // Analytics: Track successful email capture
+    console.log('[Analytics] intel_lead_captured', {
+      resourceId: selectedResource.id,
+      resourceTitle: selectedResource.title,
+      category: selectedResource.category,
+      timestamp: new Date().toISOString(),
+    });
+
     // Add to unlocked resources
     const newUnlocked = [...unlockedResources, selectedResource.id];
     updateFields({
@@ -97,6 +105,16 @@ export default function Intel() {
   };
 
   const handleLeadClose = () => {
+    // Analytics: Track modal skip/close
+    if (selectedResource) {
+      console.log('[Analytics] intel_modal_skipped', {
+        resourceId: selectedResource.id,
+        resourceTitle: selectedResource.title,
+        category: selectedResource.category,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     setShowLeadCapture(false);
     setSelectedResource(null);
     clearUrlParams();
