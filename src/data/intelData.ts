@@ -55,6 +55,7 @@ export const intelResources: IntelResource[] = [
       'The Fake Competitor Quote Game',
     ],
     pdfUrl: 'https://www.africau.edu/images/default/sample.pdf',
+    landingPageUrl: '/sales-tactics-guide',
   },
   {
     id: 'claim-survival',
@@ -92,6 +93,7 @@ export const intelResources: IntelResource[] = [
     pdfUrl: 'https://www.africau.edu/images/default/sample.pdf',
     bookImageUrl: '/images/spec-checklist-book.webp',
     imagePosition: 'bottom-right',
+    landingPageUrl: '/spec-checklist-guide',
   },
   {
     id: 'insurance-savings',
@@ -110,6 +112,7 @@ export const intelResources: IntelResource[] = [
     pdfUrl: 'https://www.africau.edu/images/default/sample.pdf',
     bookImageUrl: '/images/insurance-savings-book.webp',
     imagePosition: 'bottom-right',
+    landingPageUrl: '/insurance-savings-guide',
   },
 ];
 
