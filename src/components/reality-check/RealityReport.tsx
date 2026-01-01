@@ -1,16 +1,18 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, AlertTriangle, Thermometer, Volume2, Clock, Home } from "lucide-react";
+import { ArrowRight, AlertTriangle, Thermometer, Volume2, Clock, Home, Mail, Calendar } from "lucide-react";
 import ScoreGauge from "./ScoreGauge";
 import { SessionData } from "@/hooks/useSessionData";
 
 interface RealityReportProps {
   score: number;
   sessionData: SessionData;
+  onEmailReport?: () => void;
+  onScheduleConsult?: () => void;
 }
 
-const RealityReport = ({ score, sessionData }: RealityReportProps) => {
+const RealityReport = ({ score, sessionData, onEmailReport, onScheduleConsult }: RealityReportProps) => {
   const getInterpretation = () => {
     if (score <= 30) return {
       title: "Your Windows May Be Adequate",
@@ -120,6 +122,40 @@ const RealityReport = ({ score, sessionData }: RealityReportProps) => {
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* NEW: Conversion CTAs */}
+      <Card className="border-primary/50 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-center">Ready to Take Action?</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-center text-muted-foreground text-sm mb-4">
+            {score >= 76 
+              ? "Your score indicates urgent action is needed. Let's create your personalized action plan."
+              : "Get your complete Reality Report with detailed recommendations and next steps."
+            }
+          </p>
+          
+          <Button 
+            size="lg" 
+            onClick={onEmailReport}
+            className="w-full bg-primary hover:bg-primary/90"
+          >
+            <Mail className="mr-2 h-5 w-5" />
+            Email My Reality Report
+          </Button>
+          
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={onScheduleConsult}
+            className="w-full"
+          >
+            <Calendar className="mr-2 h-5 w-5" />
+            Schedule Free Consultation
+          </Button>
         </CardContent>
       </Card>
 
