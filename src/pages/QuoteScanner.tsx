@@ -6,6 +6,7 @@ import { QuoteUploadZone } from '@/components/quote-scanner/QuoteUploadZone';
 import { QuoteAnalysisResults } from '@/components/quote-scanner/QuoteAnalysisResults';
 import { NegotiationTools } from '@/components/quote-scanner/NegotiationTools';
 import { QuoteQA } from '@/components/quote-scanner/QuoteQA';
+import { GenerateProposalButton } from '@/components/quote-scanner/GenerateProposalButton';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { useQuoteScanner } from '@/hooks/useQuoteScanner';
 import { useSessionData } from '@/hooks/useSessionData';
@@ -78,6 +79,11 @@ export default function QuoteScanner() {
 
                 {isUnlocked && analysisResult && (
                   <>
+                    <GenerateProposalButton 
+                      analysisResult={analysisResult}
+                      homeownerName={sessionData.name}
+                    />
+
                     <NegotiationTools
                       emailDraft={emailDraft}
                       phoneScript={phoneScript}
