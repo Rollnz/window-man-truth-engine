@@ -15,6 +15,9 @@ import VulnerabilityTest from "./pages/VulnerabilityTest";
 import Intel from "./pages/Intel";
 import ClaimSurvival from "./pages/ClaimSurvival";
 import KitchenTableGuide from "./pages/KitchenTableGuide";
+import SalesTacticsGuide from "./pages/SalesTacticsGuide";
+import SpecChecklistGuide from "./pages/SpecChecklistGuide";
+import InsuranceSavingsGuide from "./pages/InsuranceSavingsGuide";
 import QuoteScanner from "./pages/QuoteScanner";
 import Vault from "./pages/Vault";
 import Auth from "./pages/Auth";
@@ -45,6 +48,9 @@ const App = () => (
           <Route path="/intel" element={<Intel />} />
           <Route path="/claim-survival" element={<ClaimSurvival />} />
           <Route path="/kitchen-table-guide" element={<KitchenTableGuide />} />
+          <Route path="/sales-tactics-guide" element={<SalesTacticsGuide />} />
+          <Route path="/spec-checklist-guide" element={<SpecChecklistGuide />} />
+          <Route path="/insurance-savings-guide" element={<InsuranceSavingsGuide />} />
           <Route path="/quote-scanner" element={<QuoteScanner />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/vault" element={<AuthGuard><Vault /></AuthGuard>} />
