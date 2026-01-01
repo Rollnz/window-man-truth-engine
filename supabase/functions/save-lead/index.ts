@@ -15,7 +15,11 @@ const allowedSourceTools = [
   'intel-library',
   'risk-diagnostic',
   'reality-check',
-  'evidence-locker'
+  'evidence-locker',
+  'kitchen-table-guide',
+  'sales-tactics-guide',
+  'spec-checklist-guide',
+  'insurance-savings-guide'
 ] as const;
 
 // Session data schema with size limit
