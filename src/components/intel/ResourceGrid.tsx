@@ -4,18 +4,14 @@ import { useBookCoverGenerator } from '@/hooks/useBookCoverGenerator';
 
 interface ResourceGridProps {
   resources: IntelResource[];
-  unlockedResources: string[];
   highlightedResourceId?: string;
-  onUnlock: (resource: IntelResource) => void;
-  onDownload: (resource: IntelResource) => void;
+  onAccess: (resource: IntelResource) => void;
 }
 
 export function ResourceGrid({ 
   resources, 
-  unlockedResources, 
   highlightedResourceId,
-  onUnlock, 
-  onDownload 
+  onAccess,
 }: ResourceGridProps) {
   const { generateCover, getCoverUrl, isGenerating } = useBookCoverGenerator();
 
@@ -32,12 +28,10 @@ export function ResourceGrid({
             <ResourceCard
               key={resource.id}
               resource={resource}
-              isUnlocked={unlockedResources.includes(resource.id)}
               isRecommended={resource.id === highlightedResourceId || resource.recommended}
               coverUrl={getCoverUrl(resource)}
               isGenerating={isGenerating(resource.id)}
-              onUnlock={() => onUnlock(resource)}
-              onDownload={() => onDownload(resource)}
+              onAccess={() => onAccess(resource)}
               onGenerateCover={(regenerate) => handleGenerateCover(resource, regenerate)}
             />
           ))}

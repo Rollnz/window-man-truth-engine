@@ -1,30 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 import { IntelHero } from '@/components/intel/IntelHero';
 import { ResourceGrid } from '@/components/intel/ResourceGrid';
-import { UnlockSuccessOverlay } from '@/components/intel/UnlockSuccessOverlay';
-import { IntelLeadModal } from '@/components/intel/IntelLeadModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
-import { intelResources, IntelResource, getResourceById } from '@/data/intelData';
+import { intelResources, IntelResource } from '@/data/intelData';
 
 export default function Intel() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { sessionData, updateField, updateFields, markToolCompleted } = useSessionData();
+  const { sessionData, updateField, markToolCompleted } = useSessionData();
   const { toast } = useToast();
 
-  // Get unlocked resources from session
-  const unlockedResources = sessionData.unlockedResources || [];
-
-  // Modal states
-  const [showIntelModal, setShowIntelModal] = useState(false);
-  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  // Modal state (consultation only)
   const [showConsultation, setShowConsultation] = useState(false);
-  const [selectedResource, setSelectedResource] = useState<IntelResource | null>(null);
 
   // Get highlighted resource from URL params
   const highlightedResourceId = searchParams.get('resource') || undefined;
@@ -37,118 +30,21 @@ export default function Intel() {
     }
   }, []);
 
-  // Handle deep link - auto-open modal for specific resource
-  useEffect(() => {
-    const resourceId = searchParams.get('resource');
-    if (resourceId) {
-      const resource = getResourceById(resourceId);
-      if (resource && !unlockedResources.includes(resourceId)) {
-        // Auto-open unlock modal for this resource
-        setSelectedResource(resource);
-        setShowIntelModal(true);
-      }
-    }
-  }, [searchParams, unlockedResources]);
-
-  // Clean URL when modal closes (prevents refresh/share trap)
-  const clearUrlParams = () => {
-    if (searchParams.has('resource')) {
-      setSearchParams({}, { replace: true });
-    }
-  };
-
-  const handleUnlock = (resource: IntelResource) => {
-    // Check if already unlocked - returning user logic
-    if (unlockedResources.includes(resource.id)) {
-      // If this resource has a dedicated landing page, ALWAYS go there
-      if (resource.landingPageUrl) {
-        navigate(resource.landingPageUrl);
-        return;
-      }
-      // Otherwise, just download the PDF
-      handleDownload(resource);
-      return;
-    }
-    // Not unlocked yet - open modal
-    setSelectedResource(resource);
-    setShowIntelModal(true);
-  };
-
-  // Handle successful email submission
-  const handleIntelSuccess = (leadId: string) => {
-    if (!selectedResource) return;
-
-    // Analytics: Track successful email capture
-    console.log('[Analytics] intel_lead_captured', {
-      resourceId: selectedResource.id,
-      resourceTitle: selectedResource.title,
-      category: selectedResource.category,
-      hasLandingPage: !!selectedResource.landingPageUrl,
+  // Direct navigation - no modals
+  const handleAccess = (resource: IntelResource) => {
+    // Analytics: Track resource click
+    console.log('[Analytics] intel_resource_clicked', {
+      resourceId: resource.id,
+      resourceTitle: resource.title,
+      category: resource.category,
+      destination: resource.landingPageUrl,
       timestamp: new Date().toISOString(),
     });
 
-    // Add to unlocked resources
-    const newUnlocked = [...unlockedResources, selectedResource.id];
-    updateFields({
-      unlockedResources: newUnlocked,
-      leadId,
-    });
-
-    // Close modal
-    setShowIntelModal(false);
-    clearUrlParams();
-
-    // Route based on resource config
-    if (selectedResource.landingPageUrl) {
-      navigate(selectedResource.landingPageUrl);
-    } else {
-      // Fallback: show success overlay for PDF download
-      setShowSuccessOverlay(true);
+    // Navigate directly to landing page
+    if (resource.landingPageUrl) {
+      navigate(resource.landingPageUrl);
     }
-  };
-
-  // Handle skip (X button click) - soft gate behavior
-  const handleIntelSkip = () => {
-    if (!selectedResource) return;
-
-    // Analytics: Track modal skip
-    console.log('[Analytics] intel_modal_skipped', {
-      resourceId: selectedResource.id,
-      resourceTitle: selectedResource.title,
-      category: selectedResource.category,
-      hasLandingPage: !!selectedResource.landingPageUrl,
-      timestamp: new Date().toISOString(),
-    });
-
-    setShowIntelModal(false);
-    clearUrlParams();
-
-    // Soft gate: still redirect if landing page exists
-    if (selectedResource.landingPageUrl) {
-      navigate(selectedResource.landingPageUrl);
-    }
-    // No landing page = just close, user stays on Intel page
-    setSelectedResource(null);
-  };
-
-  const handleDownload = (resource: IntelResource) => {
-    // Manual click triggers download - opens in new tab
-    window.open(resource.pdfUrl, '_blank', 'noopener,noreferrer');
-    toast({
-      title: 'Download Started',
-      description: `Opening ${resource.title} in a new tab.`,
-    });
-  };
-
-  const handleSuccessDownload = () => {
-    if (selectedResource) {
-      handleDownload(selectedResource);
-    }
-  };
-
-  const handleSuccessClose = () => {
-    setShowSuccessOverlay(false);
-    setSelectedResource(null);
   };
 
   return (
@@ -179,10 +75,8 @@ export default function Intel() {
       {/* Resource Grid */}
       <ResourceGrid
         resources={intelResources}
-        unlockedResources={unlockedResources}
         highlightedResourceId={highlightedResourceId}
-        onUnlock={handleUnlock}
-        onDownload={handleDownload}
+        onAccess={handleAccess}
       />
 
       {/* Bottom CTA */}
@@ -205,24 +99,6 @@ export default function Intel() {
           </Button>
         </div>
       </section>
-
-      {/* Intel Lead Modal (Soft Gate) */}
-      <IntelLeadModal
-        isOpen={showIntelModal}
-        resource={selectedResource}
-        onClose={handleIntelSkip}
-        onSuccess={handleIntelSuccess}
-        sessionData={sessionData}
-      />
-
-      {/* Success Overlay */}
-      {showSuccessOverlay && selectedResource && (
-        <UnlockSuccessOverlay
-          resource={selectedResource}
-          onDownload={handleSuccessDownload}
-          onClose={handleSuccessClose}
-        />
-      )}
 
       {/* Consultation Modal */}
       <ConsultationBookingModal

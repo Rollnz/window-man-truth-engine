@@ -1,4 +1,4 @@
-import { Lock, Unlock, Download, Star } from 'lucide-react';
+import { ArrowRight, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IntelResource } from '@/data/intelData';
 import { ResourcePreview } from './ResourcePreview';
@@ -8,23 +8,19 @@ import { CoverSkeleton } from './CoverSkeleton';
 
 interface ResourceCardProps {
   resource: IntelResource;
-  isUnlocked: boolean;
   isRecommended?: boolean;
   coverUrl?: string;
   isGenerating?: boolean;
-  onUnlock: () => void;
-  onDownload: () => void;
+  onAccess: () => void;
   onGenerateCover?: (regenerate: boolean) => void;
 }
 
 export function ResourceCard({ 
   resource, 
-  isUnlocked, 
   isRecommended,
   coverUrl,
   isGenerating = false,
-  onUnlock, 
-  onDownload,
+  onAccess,
   onGenerateCover,
 }: ResourceCardProps) {
   const Icon = resource.icon;
@@ -33,12 +29,11 @@ export function ResourceCard({
   const displayCoverUrl = coverUrl || resource.bookImageUrl;
   const hasFloatingImage = !!displayCoverUrl || isGenerating;
 
+  // Button text: "Access System" for claim-survival, "Access Guide" for all others
+  const buttonText = resource.id === 'claim-survival' ? 'Access System' : 'Access Guide';
+
   return (
-    <div className={`group relative flex flex-col p-6 rounded-xl bg-white transition-all duration-300 border-2 sm:border-[6px] sm:shadow-[inset_0_0_0_2px_rgba(0,0,0,0.08)] ${
-      isUnlocked 
-        ? 'border-gray-200 sm:border-gray-400 glow-sm' 
-        : 'border-gray-100 sm:border-gray-300 hover:border-primary/50'
-    } ${hasFloatingImage ? 'overflow-visible' : ''}`}>
+    <div className={`group relative flex flex-col p-6 rounded-xl bg-white transition-all duration-300 border-2 sm:border-[6px] sm:shadow-[inset_0_0_0_2px_rgba(0,0,0,0.08)] border-gray-200 sm:border-gray-400 hover:border-primary/50 ${hasFloatingImage ? 'overflow-visible' : ''}`}>
       {/* Loading skeleton while generating */}
       {isGenerating && !displayCoverUrl && (
         <CoverSkeleton position={resource.imagePosition} />
@@ -63,17 +58,8 @@ export function ResourceCard({
         />
       )}
 
-      {/* Classified/Declassified stamp */}
-      <div className={`absolute top-4 right-4 px-2 py-1 rounded text-xs font-bold tracking-wider ${
-        isUnlocked 
-          ? 'bg-primary/20 text-primary' 
-          : 'bg-destructive/20 text-destructive'
-      }`}>
-        {isUnlocked ? 'DECLASSIFIED' : 'CLASSIFIED'}
-      </div>
-
       {/* Recommended badge */}
-      {isRecommended && !isUnlocked && (
+      {isRecommended && (
         <div className="absolute -top-3 left-4 px-3 py-1 rounded-full bg-warning text-warning-foreground text-xs font-bold flex items-center gap-1">
           <Star className="w-3 h-3" />
           Recommended
@@ -81,11 +67,7 @@ export function ResourceCard({
       )}
 
       {/* Icon */}
-      <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${
-        isUnlocked 
-          ? 'bg-primary/20 text-primary' 
-          : 'bg-gray-100 text-gray-500'
-      }`}>
+      <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-primary/20 text-primary">
         <Icon className="w-6 h-6" />
       </div>
 
@@ -106,7 +88,7 @@ export function ResourceCard({
       <div className="mb-6 flex-grow hidden sm:block">
         <ResourcePreview 
           previewPoints={resource.previewPoints} 
-          isLocked={!isUnlocked} 
+          isLocked={false} 
         />
       </div>
 
@@ -126,19 +108,11 @@ export function ResourceCard({
         {resource.pageCount} pages • PDF format
       </p>
 
-      {/* Action button */}
-      {isUnlocked ? (
-        <Button onClick={onDownload} variant="default" className="w-full">
-          <Download className="mr-2 h-4 w-4" />
-          Download PDF
-        </Button>
-      ) : (
-        <Button onClick={onUnlock} variant="outline" className="w-full group">
-          <Lock className="mr-2 h-4 w-4 group-hover:hidden" />
-          <Unlock className="mr-2 h-4 w-4 hidden group-hover:block" />
-          Unlock File
-        </Button>
-      )}
+      {/* Action button - direct navigation */}
+      <Button onClick={onAccess} variant="default" className="w-full">
+        {buttonText}
+        <ArrowRight className="ml-2 h-4 w-4" />
+      </Button>
     </div>
   );
 }
