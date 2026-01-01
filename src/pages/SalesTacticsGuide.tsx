@@ -21,15 +21,70 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 const SalesTacticsGuide = () => {
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const {
+    values,
+    getFieldProps,
+    hasError,
+    getError,
+    validateAll,
+  } = useFormValidation({
+    initialValues: { name: '', email: '' },
+    schemas: {
+      name: commonSchemas.name,
+      email: commonSchemas.email,
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', { name, email });
+    
+    if (!validateAll()) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('save-lead', {
+        body: {
+          email: values.email,
+          name: values.name,
+          sourceTool: 'sales-tactics-guide',
+        },
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Guide Unlocked!",
+        description: "Check your inbox - the guide is on its way.",
+      });
+      
+      console.log('[Analytics] landing_page_lead_captured', {
+        source: 'sales-tactics-guide',
+        timestamp: new Date().toISOString(),
+      });
+      
+      setTimeout(() => {
+        navigate('/comparison');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Form submission error:', error);
+      toast({
+        title: "Something went wrong",
+        description: "Please try again or contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -268,26 +323,33 @@ const SalesTacticsGuide = () => {
                 <Label htmlFor="name" className="text-foreground">First Name</Label>
                 <Input 
                   id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  {...getFieldProps('name')}
                   placeholder="Your name"
-                  className="bg-background"
+                  className={`bg-background ${hasError('name') ? 'border-destructive' : ''}`}
+                  disabled={isSubmitting}
                 />
+                {hasError('name') && (
+                  <p className="text-xs text-destructive">{getError('name')}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-foreground">Email Address</Label>
                 <Input 
                   id="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  {...getFieldProps('email')}
                   placeholder="you@example.com"
-                  className="bg-background"
+                  className={`bg-background ${hasError('email') ? 'border-destructive' : ''}`}
+                  disabled={isSubmitting}
                 />
+                {hasError('email') && (
+                  <p className="text-xs text-destructive">{getError('email')}</p>
+                )}
               </div>
               
-              <Button type="submit" size="lg" className="w-full gap-2">
-                Send Me the Guide <ArrowRight className="w-4 h-4" />
+              <Button type="submit" size="lg" className="w-full gap-2" disabled={isSubmitting}>
+                {isSubmitting ? 'Sending...' : 'Send Me the Guide'}
+                {!isSubmitting && <ArrowRight className="w-4 h-4" />}
               </Button>
               
               <p className="text-xs text-muted-foreground text-center">
@@ -401,7 +463,7 @@ const SalesTacticsGuide = () => {
                 <h3 className="font-semibold text-foreground">Cost Calculator</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Understand fair pricing before your next conversation.
+                See what windows should actually cost in your area.
               </p>
               <Button 
                 variant="outline" 
@@ -409,29 +471,32 @@ const SalesTacticsGuide = () => {
                 className="w-full gap-2"
                 onClick={() => navigate('/cost-calculator')}
               >
-                Calculate Fair Price <ArrowRight className="w-4 h-4" />
+                Calculate Costs <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="py-8 bg-card border-t border-border">
+      {/* Footer */}
+      <footer className="py-12 bg-card border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Windowman Vault. Independent homeowner resource.
-            </p>
-            <div className="flex gap-6 text-sm">
-              <button onClick={() => navigate('/intel')} className="text-muted-foreground hover:text-foreground transition-colors">
-                Intel Library
-              </button>
-              <button onClick={() => navigate('/legal/privacy')} className="text-muted-foreground hover:text-foreground transition-colors">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 bg-primary rounded flex items-center justify-center text-primary-foreground font-bold text-xs">
+                W
+              </div>
+              <span className="text-sm text-muted-foreground">© 2025 Windowman Vault</span>
+            </div>
+            <div className="flex gap-6 text-sm text-muted-foreground">
+              <button onClick={() => navigate('/privacy')} className="hover:text-foreground transition-colors">
                 Privacy
               </button>
-              <button onClick={() => navigate('/legal/terms')} className="text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={() => navigate('/terms')} className="hover:text-foreground transition-colors">
                 Terms
+              </button>
+              <button onClick={() => navigate('/intel')} className="hover:text-foreground transition-colors">
+                Intel Library
               </button>
             </div>
           </div>
