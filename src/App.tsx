@@ -19,6 +19,7 @@ import SalesTacticsGuide from "./pages/SalesTacticsGuide";
 import SpecChecklistGuide from "./pages/SpecChecklistGuide";
 import InsuranceSavingsGuide from "./pages/InsuranceSavingsGuide";
 import QuoteScanner from "./pages/QuoteScanner";
+import CalculateEstimate from "./pages/CalculateEstimate";
 import Vault from "./pages/Vault";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/spec-checklist-guide" element={<SpecChecklistGuide />} />
           <Route path="/insurance-savings-guide" element={<InsuranceSavingsGuide />} />
           <Route path="/quote-scanner" element={<QuoteScanner />} />
+          <Route path="/calculate-your-estimate" element={<CalculateEstimate />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/vault" element={<AuthGuard><Vault /></AuthGuard>} />
           <Route path="/legal/privacy" element={<Privacy />} />

@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.generate-presentation]
 verify_jwt = false
+
+[functions.generate-quote]
+verify_jwt = false
