@@ -21,6 +21,7 @@ interface Tool {
   icon: React.ReactNode;
   path: string;
   gated: boolean;
+  badge?: string;
 }
 
 const tools: Tool[] = [
@@ -123,6 +124,16 @@ const tools: Tool[] = [
     path: '/quote-scanner',
     gated: true,
   },
+  {
+    id: 'quote-builder',
+    title: 'Project Quote Builder',
+    description: 'Get an AI-powered estimate for your window or door project in seconds.',
+    cta: 'Build Your Estimate',
+    icon: <Calculator className="w-6 h-6" />,
+    path: '/calculate-your-estimate',
+    gated: true,
+    badge: 'Beta',
+  },
 ];
 
 function ToolCard({ tool, index }: { tool: Tool; index: number }) {
@@ -132,12 +143,19 @@ function ToolCard({ tool, index }: { tool: Tool; index: number }) {
       className="group relative flex flex-col p-6 rounded-xl bg-card border border-border card-hover"
       style={{ animationDelay: `${index * 0.1}s` }}
     >
-      {/* Gated badge */}
-      {tool.gated && (
-        <div className="absolute top-4 right-4 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-          Email to save
-        </div>
-      )}
+      {/* Badges */}
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        {tool.badge && (
+          <div className="text-xs text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded font-medium">
+            {tool.badge}
+          </div>
+        )}
+        {tool.gated && (
+          <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+            Email to save
+          </div>
+        )}
+      </div>
 
       {/* Icon */}
       <div className="w-12 h-12 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 text-primary group-hover:bg-primary/20 transition-colors">
@@ -170,7 +188,7 @@ export function ToolGrid() {
         {/* Section header */}
         <div className="max-w-3xl mx-auto text-center mb-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            10 Tools to <span className="text-primary">Discover the Truth</span>
+            12 Tools to <span className="text-primary">Discover the Truth</span>
           </h2>
           <p className="text-lg text-muted-foreground">
             Explore our interactive tools designed to help you make an informed decision. 
