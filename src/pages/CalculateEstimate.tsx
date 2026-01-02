@@ -560,14 +560,53 @@ const QuoteBuilderV2 = () => {
     }, 2000);
   };
 
-  const handleLeadSubmit = (data: any) => {
+  const handleLeadSubmit = async (data: { name: string; email: string; phone: string }) => {
     setIsSubmitting(true);
-    setTimeout(() => {
-        setIsSubmitting(false);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            email: data.email.trim(),
+            name: data.name.trim() || null,
+            phone: data.phone.trim() || null,
+            sourceTool: 'quote-builder',
+            sessionData: {
+              cartItems: cart.length,
+              estimateTotal: grandTotal,
+              zipCode: state.zipCode,
+            },
+            chatHistory: [],
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to save lead');
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.leadId) {
         setShowModal(false);
         setState(prev => ({ ...prev, isUnlocked: true, isLeadSubmitted: true }));
-        toast.success("Quote Unlocked!");
-    }, 1500);
+        toast.success("Quote Unlocked! Check your email for a copy.");
+      } else {
+        throw new Error(result.error || 'Unexpected error');
+      }
+    } catch (error) {
+      console.error('Lead submission error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const FieldLabel = ({ label, tooltip }: { label: string, tooltip: string }) => (
