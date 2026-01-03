@@ -13,6 +13,7 @@ import { ConsultationCTA } from '@/components/comparison/ConsultationCTA';
 import { GenerateComparisonReportButton } from '@/components/comparison/GenerateComparisonReportButton';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 
 export default function Comparison() {
   usePageTracking('comparison-tool');
@@ -100,6 +101,9 @@ export default function Comparison() {
         onSuccess={() => setShowConsultationModal(false)}
         sessionData={sessionData}
       />
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

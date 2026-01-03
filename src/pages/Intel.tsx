@@ -10,6 +10,7 @@ import { IntelHero } from '@/components/intel/IntelHero';
 import { ResourceGrid } from '@/components/intel/ResourceGrid';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { intelResources, IntelResource } from '@/data/intelData';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 
 export default function Intel() {
   usePageTracking('intel-library');
@@ -115,6 +116,9 @@ export default function Intel() {
         }}
         sessionData={sessionData}
       />
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

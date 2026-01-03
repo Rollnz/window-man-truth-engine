@@ -9,6 +9,7 @@ import { RiskQuestion } from '@/components/risk-diagnostic/RiskQuestion';
 import { ProtectionReport } from '@/components/risk-diagnostic/ProtectionReport';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 
 type Phase = 'hero' | 'questions' | 'results';
 type Direction = 'forward' | 'backward';
@@ -144,6 +145,9 @@ export default function RiskDiagnostic() {
         onSuccess={() => setShowBookingModal(false)}
         sessionData={sessionData}
       />
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }
