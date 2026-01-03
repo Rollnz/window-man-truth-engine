@@ -66,6 +66,21 @@ export default function Privacy() {
               You may access, update, or delete your "Vault" account at any time by contacting us at [Insert Support Email]. You may also opt-out of marketing emails via the "Unsubscribe" link.
             </p>
           </section>
+
+          <section className="rounded-lg border border-border p-4 bg-card/40 space-y-3">
+            <h3 className="text-lg font-semibold">Next step</h3>
+            <p className="text-sm text-muted-foreground">
+              Want us to review your project under these privacy commitments? Book an inspection or grab the Claim Kit to start your evidence trail.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild>
+                <Link to="/free-estimate">Book an Inspection</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/claim-survival">Download the Claim Kit</Link>
+              </Button>
+            </div>
+          </section>
         </div>
       </div>
     </div>
