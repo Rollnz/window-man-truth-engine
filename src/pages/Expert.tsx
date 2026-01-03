@@ -5,6 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { ChatMessage } from '@/components/expert/ChatMessage';
 import { ChatInput } from '@/components/expert/ChatInput';
 import { SuggestedQuestions } from '@/components/expert/SuggestedQuestions';
@@ -284,6 +285,9 @@ export default function Expert() {
         leadId={sessionData.leadId}
         sessionData={sessionData}
       />
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

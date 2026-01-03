@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, Users, MousePointerClick, Mail, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import {
   BarChart,
   Bar,
@@ -593,6 +594,9 @@ export default function Analytics() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

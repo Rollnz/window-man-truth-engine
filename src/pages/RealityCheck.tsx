@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Home } from "lucide-react";
 import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { logEvent } from "@/lib/windowTruthClient";
+import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import ProgressBar from "@/components/reality-check/ProgressBar";
 import QuestionStep from "@/components/reality-check/QuestionStep";
 import RealityReport from "@/components/reality-check/RealityReport";
@@ -249,6 +250,9 @@ const RealityCheck = () => {
           </Button>
         </div>
       </main>
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 };

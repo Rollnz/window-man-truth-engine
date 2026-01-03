@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { logEvent } from '@/lib/windowTruthClient';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { fastWinQuestions } from '@/data/fastWinData';
 import { calculateFastWin, type FastWinAnswers, type FastWinResult } from '@/lib/fastWinLogic';
 import { FastWinHero } from '@/components/fast-win/FastWinHero';
@@ -189,6 +190,9 @@ export default function FastWin() {
           notes: result ? `Interested in: ${result.product.name}` : undefined,
         }}
       />
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

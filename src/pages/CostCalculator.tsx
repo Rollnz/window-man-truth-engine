@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { logEvent } from '@/lib/windowTruthClient';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { CalculatorInputs, ValidatedInputs } from '@/components/cost-calculator/CalculatorInputs';
 import { CostBreakdown } from '@/components/cost-calculator/CostBreakdown';
 import { TimelineChart } from '@/components/cost-calculator/TimelineChart';
@@ -187,6 +188,9 @@ export default function CostCalculator() {
           </div>
         )}
       </main>
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { caseStudies, MissionType } from '@/data/evidenceData';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { EvidenceHero } from '@/components/evidence/EvidenceHero';
 import { FilterBar } from '@/components/evidence/FilterBar';
 import { CaseFileGrid } from '@/components/evidence/CaseFileGrid';
@@ -171,6 +172,9 @@ export default function Evidence() {
         onConsultation={handleConsultation}
         isModalOpen={!!activeCase || showLeadCapture || showConsultation}
       />
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 
 const NotFound = () => {
   usePageTracking('404');
@@ -19,6 +20,9 @@ const NotFound = () => {
           Return to Home
         </a>
       </div>
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 };

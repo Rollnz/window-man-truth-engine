@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Mail, ArrowLeft, Vault, CheckCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 
@@ -186,6 +187,9 @@ export default function Auth() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }
