@@ -201,7 +201,20 @@ const TheaterMode = ({ isActive, message, subtext }: { isActive: boolean, messag
   );
 };
 
-const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: any) => {
+interface LeadFormData {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+interface LeadModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: LeadFormData) => void;
+  isSubmitting: boolean;
+}
+
+const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModalProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -281,7 +294,15 @@ const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: any) => {
   );
 };
 
-const AiResultModal = ({ isOpen, onClose, title, content, isLoading }: any) => {
+interface AiResultModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  content: string;
+  isLoading: boolean;
+}
+
+const AiResultModal = ({ isOpen, onClose, title, content, isLoading }: AiResultModalProps) => {
   if (!isOpen) return null;
 
   return (
@@ -325,7 +346,7 @@ const AiResultModal = ({ isOpen, onClose, title, content, isLoading }: any) => {
 
 interface CartItem {
   id: number;
-  productType: string;
+  productType: keyof typeof PRODUCT_TYPE_CONFIG;
   name: string;
   desc: string;
   details: string;
@@ -411,13 +432,21 @@ const QuoteBuilderV2 = () => {
     try {
         const result = await callGemini(prompt);
         const jsonString = result.replace(/```json/g, '').replace(/```/g, '').trim();
-        const items = JSON.parse(jsonString);
+        const items = JSON.parse(jsonString) as unknown;
+        type QuickBuildItem = {
+          productType: CartItem['productType'];
+          qty?: number;
+          name: string;
+          desc: string;
+        };
         
         if (Array.isArray(items)) {
-            const newCartItems = items.map((item: any) => {
+            const newCartItems = items.map((item: QuickBuildItem) => {
                 let unitPrice = defaultWindowPrice;
                 if (item.productType === 'slider') unitPrice = defaultSliderPrice;
                 if (item.productType === 'french') unitPrice = defaultFrenchPrice;
+
+                const quantity = item.qty ?? 1;
 
                 return {
                     id: Date.now() + Math.random(),
@@ -425,9 +454,9 @@ const QuoteBuilderV2 = () => {
                     name: item.name,
                     desc: item.desc,
                     details: "Standard • Impact Glass",
-                    qty: item.qty || 1,
+                    qty: quantity,
                     unit: unitPrice,
-                    total: unitPrice * (item.qty || 1)
+                    total: unitPrice * quantity
                 };
             });
             
@@ -706,7 +735,8 @@ const QuoteBuilderV2 = () => {
                                     className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 transition-colors outline-none"
                                     value={state.productType}
                                     onChange={e => {
-                                        setState(prev => ({ ...prev, productType: e.target.value as any, basePrice: 0, baseName: "", selectedFrameIndex: -1, selectedGlassIndex: -1 }));
+                                        const nextProduct = e.target.value as keyof typeof CONFIG.prices;
+                                        setState(prev => ({ ...prev, productType: nextProduct, basePrice: 0, baseName: "", selectedFrameIndex: -1, selectedGlassIndex: -1 }));
                                         setStyleValue(1.0);
                                     }}
                                 >

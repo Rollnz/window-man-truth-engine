@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Home } from "lucide-react";
-import { useSessionData } from "@/hooks/useSessionData";
+import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import ProgressBar from "@/components/reality-check/ProgressBar";
 import QuestionStep from "@/components/reality-check/QuestionStep";
 import RealityReport from "@/components/reality-check/RealityReport";
@@ -125,7 +125,7 @@ const RealityCheck = () => {
     if (Object.keys(prefilled).length > 0) {
       setAnswers(prefilled);
     }
-  }, []);
+  }, [getPrefilledValue]);
 
   const currentQuestion = QUESTIONS[currentStep - 1];
   const isLastStep = currentStep === QUESTIONS.length;
@@ -136,7 +136,7 @@ const RealityCheck = () => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
     
     // Save to session immediately
-    updateField(questionId as keyof typeof sessionData, value as any);
+    updateField(questionId as keyof SessionData, value as SessionData[keyof SessionData]);
   };
 
   const handleNext = () => {
@@ -147,10 +147,10 @@ const RealityCheck = () => {
       updateFields({
         realityCheckScore: finalScore,
         homeSize: Number(answers.homeSize) || undefined,
-        windowAge: answers.windowAge as string,
-        currentEnergyBill: answers.currentEnergyBill as string,
-        draftinessLevel: answers.draftinessLevel as any,
-        noiseLevel: answers.noiseLevel as any,
+        windowAge: answers.windowAge as string | undefined,
+        currentEnergyBill: answers.currentEnergyBill as string | undefined,
+        draftinessLevel: answers.draftinessLevel as SessionData['draftinessLevel'],
+        noiseLevel: answers.noiseLevel as SessionData['noiseLevel'],
       });
       markToolCompleted('reality-check');
       setShowResults(true);

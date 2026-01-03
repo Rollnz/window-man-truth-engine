@@ -2,14 +2,42 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+/**
+ * Ensures we have the environment variables we need.
+ * Throws a readable error early instead of letting Supabase throw later.
+ */
+const requireEnv = (value: string | undefined, name: string) => {
+  if (!value) {
+    throw new Error(`Missing Supabase environment variable: ${name}`);
+  }
+  return value;
+};
+
+/**
+ * Lovable Cloud sometimes only provides the project ID.
+ * When that happens we can derive the full Supabase URL ourselves.
+ */
+const resolveSupabaseUrl = () => {
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+
+  // Prefer explicit URL, otherwise build it from the project ID.
+  if (url) return url;
+  if (projectId) return `https://${projectId}.supabase.co`;
+
+  return undefined;
+};
+
+// Resolve and validate config before creating the client.
+const SUPABASE_URL = requireEnv(resolveSupabaseUrl(), 'VITE_SUPABASE_URL or VITE_SUPABASE_PROJECT_ID');
+const SUPABASE_PUBLISHABLE_KEY = requireEnv(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, 'VITE_SUPABASE_PUBLISHABLE_KEY');
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
+    // Keep using localStorage for persistence in the browser.
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,

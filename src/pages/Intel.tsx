@@ -28,7 +28,7 @@ export default function Intel() {
       updateField('intelLibraryViewed', true);
       markToolCompleted('intel-library');
     }
-  }, []);
+  }, [markToolCompleted, sessionData.intelLibraryViewed, updateField]);
 
   // Direct navigation - no modals
   const handleAccess = (resource: IntelResource) => {

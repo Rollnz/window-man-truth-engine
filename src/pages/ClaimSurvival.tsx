@@ -67,8 +67,8 @@ export default function ClaimSurvival() {
     !!sessionData.email;
 
   // Progress tracking
-  const vaultProgress = sessionData.claimVaultProgress || {};
-  const vaultFiles = sessionData.claimVaultFiles || {};
+  const vaultProgress = useMemo(() => sessionData.claimVaultProgress || {}, [sessionData.claimVaultProgress]);
+  const vaultFiles = useMemo(() => sessionData.claimVaultFiles || {}, [sessionData.claimVaultFiles]);
   const completedCount = claimDocuments.filter(doc => 
     vaultProgress[doc.id] || vaultFiles[doc.id]
   ).length;
@@ -115,7 +115,7 @@ export default function ClaimSurvival() {
       updateField('claimVaultViewed', true);
       markToolCompleted('claim-survival');
     }
-  }, []);
+  }, [markToolCompleted, sessionData.claimVaultViewed, updateField]);
 
   // Handle emergency mode auto-scroll
   useEffect(() => {
