@@ -26,6 +26,10 @@ interface AnalyticsStats {
   conversionRate: number;
   modalOpens: number;
   modalConversionRate: number;
+  pageViews: number;
+  toolCompletions: number;
+  modalAbandons: number;
+  modalAbandonRate: number;
 }
 
 interface ToolPerformance {
@@ -60,10 +64,16 @@ export default function Analytics() {
     conversionRate: 0,
     modalOpens: 0,
     modalConversionRate: 0,
+    pageViews: 0,
+    toolCompletions: 0,
+    modalAbandons: 0,
+    modalAbandonRate: 0,
   });
   const [toolPerformance, setToolPerformance] = useState<ToolPerformance[]>([]);
   const [funnelData, setFunnelData] = useState<FunnelStep[]>([]);
   const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
+  const [pageViewData, setPageViewData] = useState<Array<{ page: string; views: number }>>([]);
+  const [toolCompletionData, setToolCompletionData] = useState<Array<{ tool: string; completions: number }>>([]);
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('7d');
 
   useEffect(() => {
@@ -106,6 +116,9 @@ export default function Analytics() {
       const modalOpens = events.filter((e) => e.event_name === 'modal_open').length;
       const leadsCaptured = events.filter((e) => e.event_name === 'lead_captured').length;
       const consultationsBooked = events.filter((e) => e.event_name === 'consultation_booked').length;
+      const pageViews = events.filter((e) => e.event_name === 'page_view').length;
+      const toolCompletions = events.filter((e) => e.event_name === 'tool_completed').length;
+      const modalAbandons = events.filter((e) => e.event_name === 'modal_abandon').length;
 
       setStats({
         totalSessions: sessionCount || 0,
@@ -114,6 +127,10 @@ export default function Analytics() {
         conversionRate: sessionCount ? ((leadsCaptured + consultationsBooked) / sessionCount) * 100 : 0,
         modalOpens,
         modalConversionRate: modalOpens ? (leadsCaptured / modalOpens) * 100 : 0,
+        pageViews,
+        toolCompletions,
+        modalAbandons,
+        modalAbandonRate: modalOpens ? (modalAbandons / (modalOpens + modalAbandons)) * 100 : 0,
       });
 
       // Calculate tool performance
@@ -141,6 +158,33 @@ export default function Analytics() {
         .sort((a, b) => b.leads_captured - a.leads_captured);
 
       setToolPerformance(performanceData);
+
+      // Calculate page view data
+      const pageViewMap = new Map<string, number>();
+      events.filter((e) => e.event_name === 'page_view').forEach((event) => {
+        const toolName = event.tool_name || 'unknown';
+        pageViewMap.set(toolName, (pageViewMap.get(toolName) || 0) + 1);
+      });
+
+      const pageViewStats = Array.from(pageViewMap.entries())
+        .map(([page, views]) => ({ page, views }))
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 10); // Top 10 pages
+
+      setPageViewData(pageViewStats);
+
+      // Calculate tool completion data
+      const completionMap = new Map<string, number>();
+      events.filter((e) => e.event_name === 'tool_completed').forEach((event) => {
+        const toolName = event.tool_name || 'unknown';
+        completionMap.set(toolName, (completionMap.get(toolName) || 0) + 1);
+      });
+
+      const completionStats = Array.from(completionMap.entries())
+        .map(([tool, completions]) => ({ tool, completions }))
+        .sort((a, b) => b.completions - a.completions);
+
+      setToolCompletionData(completionStats);
 
       // Build funnel data
       const uniqueSessions = new Set(events.map((e) => e.session_id).filter(Boolean));
@@ -235,7 +279,7 @@ export default function Analytics() {
       </div>
 
       <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* KPI Cards */}
+        {/* KPI Cards - Row 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -278,6 +322,53 @@ export default function Analytics() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.modalConversionRate.toFixed(1)}%</div>
               <p className="text-xs text-slate-600 mt-1">Modal → Lead</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* KPI Cards - Row 2: New Events */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Page Views</CardTitle>
+              <MousePointerClick className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.pageViews.toLocaleString()}</div>
+              <p className="text-xs text-slate-600 mt-1">Total page visits</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tool Completions</CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.toolCompletions.toLocaleString()}</div>
+              <p className="text-xs text-slate-600 mt-1">Tools finished</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Modal Abandons</CardTitle>
+              <MousePointerClick className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.modalAbandons.toLocaleString()}</div>
+              <p className="text-xs text-slate-600 mt-1">Closed without submit</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Abandon Rate</CardTitle>
+              <TrendingUp className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.modalAbandonRate.toFixed(1)}%</div>
+              <p className="text-xs text-slate-600 mt-1">Of total modal interactions</p>
             </CardContent>
           </Card>
         </div>
@@ -354,6 +445,57 @@ export default function Analytics() {
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Page Views & Tool Completions */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Pages</CardTitle>
+              <CardDescription>Most visited pages in selected timeframe</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pageViewData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={pageViewData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="page" angle={-45} textAnchor="end" height={100} fontSize={12} />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="views" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-slate-500">
+                  No page view data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Tool Completions</CardTitle>
+              <CardDescription>Tools finished by users</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {toolCompletionData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={toolCompletionData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="tool" angle={-45} textAnchor="end" height={100} fontSize={12} />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="completions" fill="#10b981" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-slate-500">
+                  No tool completion data available
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
