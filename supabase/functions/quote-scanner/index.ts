@@ -781,8 +781,23 @@ serve(async (req) => {
       );
     }
 
-    let messages: any[] = [];
-    let responseFormat: any = undefined;
+    type ImageUrlPart = { type: "image_url"; image_url: { url: string } };
+    type TextPart = { type: "text"; text: string };
+    type ChatMessage = {
+      role: "system" | "user" | "assistant";
+      content: string | Array<TextPart | ImageUrlPart>;
+    };
+    type JsonSchemaResponseFormat = {
+      type: "json_schema";
+      json_schema: {
+        name: string;
+        strict: boolean;
+        schema: unknown;
+      };
+    };
+
+    let messages: ChatMessage[] = [];
+    let responseFormat: JsonSchemaResponseFormat | undefined = undefined;
 
     if (mode === "analyze") {
       const userPrompt = USER_PROMPT_TEMPLATE(
@@ -873,7 +888,11 @@ Format the output with clear section headers and make it easy to read during a p
       ];
     }
 
-    const body: any = {
+    const body: {
+      model: string;
+      messages: ChatMessage[];
+      response_format?: JsonSchemaResponseFormat;
+    } = {
       model: "google/gemini-2.5-flash",
       messages,
     };

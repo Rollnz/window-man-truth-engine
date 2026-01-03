@@ -40,7 +40,7 @@ export function useEvidenceAnalysis({
     if (sessionData.claimAnalysisResult && !analysisResult) {
       setAnalysisResult(sessionData.claimAnalysisResult);
     }
-  }, [sessionData.claimAnalysisResult]);
+  }, [analysisResult, sessionData.claimAnalysisResult]);
 
   const analyzeEvidence = useCallback(async () => {
     setIsAnalyzing(true);
@@ -91,7 +91,7 @@ export function useEvidenceAnalysis({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [documents, progress, files, toast]);
+  }, [documents, progress, files, toast, updateField]);
 
   const resetAnalysis = useCallback(() => {
     setAnalysisResult(null);
