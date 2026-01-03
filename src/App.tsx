@@ -25,10 +25,10 @@ import Vault from "./pages/Vault";
 import Auth from "./pages/Auth";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
-import Privacy from "./pages/legal/Privacy";
-import Terms from "./pages/legal/Terms";
-import Disclaimer from "./pages/legal/Disclaimer";
-import Accessibility from "./pages/legal/Accessibility";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Disclaimer from "./pages/Disclaimer";
+import Accessibility from "./pages/Accessibility";
 import { AuthGuard } from "./components/auth/AuthGuard";
 
 const queryClient = new QueryClient();
