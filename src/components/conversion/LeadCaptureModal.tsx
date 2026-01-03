@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -13,9 +12,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { SessionData } from '@/hooks/useSessionData';
-import { Mail, Check, Loader2, Calendar, Shield, ArrowRight } from 'lucide-react';
+import { Mail, Check, Loader2 } from 'lucide-react';
 import { logEvent } from '@/lib/windowTruthClient';
-import { supabase } from '@/lib/supabase';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -40,12 +38,8 @@ export function LeadCaptureModal({
   chatHistory,
 }: LeadCaptureModalProps) {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [showNextStep, setShowNextStep] = useState(false); // NEW: booking→vault choice
-  const [capturedLeadId, setCapturedLeadId] = useState<string>('');
-  const [capturedEmail, setCapturedEmail] = useState<string>('');
   const [name, setName] = useState(sessionData.name || '');
   const [phone, setPhone] = useState(sessionData.phone || '');
   const [modalOpenTime, setModalOpenTime] = useState<number>(0);
@@ -133,8 +127,7 @@ export function LeadCaptureModal({
       const data = await response.json();
 
       if (data.success && data.leadId) {
-        setCapturedLeadId(data.leadId);
-        setCapturedEmail(values.email.trim());
+        setIsSuccess(true);
 
         // Track successful lead capture
         logEvent({
@@ -146,11 +139,13 @@ export function LeadCaptureModal({
           },
         });
 
-        // Instead of closing, show next step (booking→vault choice)
-        setIsSuccess(true);
+        toast({
+          title: 'Conversation Saved!',
+          description: 'Check your inbox for a summary.',
+        });
 
         setTimeout(() => {
-          setShowNextStep(true);
+          onSuccess(data.leadId);
         }, 1500);
       } else {
         throw new Error(data.error || 'Failed to save');
@@ -183,80 +178,7 @@ export function LeadCaptureModal({
       }
 
       setIsSuccess(false);
-      setShowNextStep(false);
       onClose();
-    }
-  };
-
-  const handleBooking = () => {
-    // Track booking click
-    logEvent({
-      event_name: 'booking_cta_clicked',
-      tool_name: sourceTool,
-      params: {
-        lead_id: capturedLeadId,
-        source: 'lead_capture_modal',
-      },
-    });
-
-    // Close modal and redirect to expert/booking page
-    onClose();
-    navigate('/expert');
-  };
-
-  const handleVault = async () => {
-    setIsLoading(true);
-
-    try {
-      // Create vault account seamlessly (they already gave email)
-      // Generate a temporary password or use magic link
-      const tempPassword = Math.random().toString(36).slice(-12) + 'Aa1!';
-
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: capturedEmail,
-        password: tempPassword,
-        options: {
-          data: {
-            full_name: name || null,
-            phone: phone || null,
-            source_tool: sourceTool,
-            lead_id: capturedLeadId,
-            created_from_modal: true,
-          },
-        },
-      });
-
-      if (authError) throw authError;
-
-      // Track vault creation
-      logEvent({
-        event_name: 'vault_created',
-        tool_name: sourceTool,
-        params: {
-          lead_id: capturedLeadId,
-          source: 'lead_capture_modal',
-        },
-      });
-
-      toast({
-        title: 'Vault Created!',
-        description: 'Redirecting to your secure vault...',
-      });
-
-      // Redirect to vault welcome page
-      setTimeout(() => {
-        onClose();
-        navigate(`/vault/welcome?source=${sourceTool}&leadId=${capturedLeadId}`);
-      }, 1000);
-    } catch (error) {
-      console.error('Vault creation error:', error);
-      toast({
-        title: 'Unable to Create Vault',
-        description: 'Please try again or contact support.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -333,84 +255,7 @@ export function LeadCaptureModal({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
-        {showNextStep ? (
-          // NEW: Booking → Vault choice screen
-          <div className="py-6">
-            <DialogHeader className="mb-6">
-              <DialogTitle className="text-center text-2xl">
-                What Would You Like to Do Next?
-              </DialogTitle>
-              <DialogDescription className="text-center">
-                Choose the option that works best for you
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              {/* Primary CTA: Book Measurement */}
-              <button
-                onClick={handleBooking}
-                className="w-full p-6 rounded-lg border-2 border-primary bg-primary/5 hover:bg-primary/10 transition-colors text-left group"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Calendar className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
-                      Book Free Measurement
-                      <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">
-                        Recommended
-                      </span>
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Get a professional on-site assessment and accurate quote for your home
-                    </p>
-                    <div className="flex items-center gap-2 text-sm text-primary font-medium">
-                      <span>Schedule Now</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </div>
-                  </div>
-                </div>
-              </button>
-
-              {/* Secondary CTA: Save to Vault */}
-              <button
-                onClick={handleVault}
-                disabled={isLoading}
-                className="w-full p-6 rounded-lg border border-border hover:border-primary hover:bg-muted/50 transition-colors text-left group disabled:opacity-50"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Shield className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-1">
-                      Save to Vault Instead
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Not ready to book? Save your results and access them anytime in your secure vault
-                    </p>
-                    {isLoading ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Creating vault...</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
-                        <span>Create Free Vault</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </button>
-            </div>
-
-            <p className="text-center text-xs text-muted-foreground mt-6">
-              You can always access both options later from your vault
-            </p>
-          </div>
-        ) : isSuccess ? (
+        {isSuccess ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
               <Check className="w-8 h-8 text-primary" />
