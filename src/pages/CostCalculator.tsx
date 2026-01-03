@@ -15,6 +15,7 @@ import {
   CostProjection 
 } from '@/lib/calculations';
 import { ArrowLeft, ArrowRight, MessageCircle, Sparkles } from 'lucide-react';
+import { ConversionBar } from '@/components/conversion/ConversionBar';
 
 export default function CostCalculator() {
   const { sessionData, updateFields, markToolCompleted } = useSessionData();
@@ -93,6 +94,13 @@ export default function CostCalculator() {
             See exactly how much money you're losing every day, month, and year by 
             delaying your window upgrade. The numbers might surprise you.
           </p>
+        </div>
+
+        <div className="mb-6">
+          <ConversionBar
+            headline="See your savings, then lock in a free inspection."
+            subheadline="Use this calculator to model the waste, then book your free estimate to stop the bleed."
+          />
         </div>
 
         {/* Reality Check Callout */}

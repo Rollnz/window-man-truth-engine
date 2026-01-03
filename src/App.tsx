@@ -27,6 +27,9 @@ import Privacy from "./pages/legal/Privacy";
 import Terms from "./pages/legal/Terms";
 import Disclaimer from "./pages/legal/Disclaimer";
 import { AuthGuard } from "./components/auth/AuthGuard";
+import About from "./pages/About";
+import FAQ from "./pages/FAQ";
+import Defense from "./pages/Defense";
 
 const queryClient = new QueryClient();
 
@@ -50,15 +53,25 @@ const App = () => (
           <Route path="/claim-survival" element={<ClaimSurvival />} />
           <Route path="/kitchen-table-guide" element={<KitchenTableGuide />} />
           <Route path="/sales-tactics-guide" element={<SalesTacticsGuide />} />
+          <Route path="/11tactics" element={<SalesTacticsGuide />} />
           <Route path="/spec-checklist-guide" element={<SpecChecklistGuide />} />
           <Route path="/insurance-savings-guide" element={<InsuranceSavingsGuide />} />
           <Route path="/quote-scanner" element={<QuoteScanner />} />
+          <Route path="/ai-scanner" element={<QuoteScanner />} />
+          <Route path="/scanner" element={<QuoteScanner />} />
           <Route path="/calculate-your-estimate" element={<CalculateEstimate />} />
+          <Route path="/free-estimate" element={<CalculateEstimate />} />
+          <Route path="/impact-window-calculator" element={<CostCalculator />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/vault" element={<AuthGuard><Vault /></AuthGuard>} />
           <Route path="/legal/privacy" element={<Privacy />} />
           <Route path="/legal/terms" element={<Terms />} />
           <Route path="/legal/disclaimer" element={<Disclaimer />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/defense" element={<Defense />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -26,7 +26,7 @@ const jsonResponse = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const sanitizeFilename = (name: string) => name.replace(/[^\w.\-]+/g, "_").slice(0, 200);
+const sanitizeFilename = (name: string) => name.replace(/[^\w.-]+/g, "_").slice(0, 200);
 
 const ensureSession = async (supabase: SupabaseClient, sessionId?: string) => {
   if (!sessionId) return null;
