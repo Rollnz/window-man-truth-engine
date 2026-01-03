@@ -28,6 +28,7 @@ import NotFound from "./pages/NotFound";
 import Privacy from "./pages/legal/Privacy";
 import Terms from "./pages/legal/Terms";
 import Disclaimer from "./pages/legal/Disclaimer";
+import Accessibility from "./pages/legal/Accessibility";
 import { AuthGuard } from "./components/auth/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -60,9 +61,10 @@ const App = () => (
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/vault" element={<AuthGuard><Vault /></AuthGuard>} />
-          <Route path="/legal/privacy" element={<Privacy />} />
-          <Route path="/legal/terms" element={<Terms />} />
-          <Route path="/legal/disclaimer" element={<Disclaimer />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/disclaimer" element={<Disclaimer />} />
+          <Route path="/accessibility" element={<Accessibility />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

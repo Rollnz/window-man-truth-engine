@@ -57,6 +57,12 @@ export function MinimalFooter() {
           >
             Terms
           </Link>
+          <Link
+            to="/accessibility"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Accessibility
+          </Link>
         </div>
       </div>
     </footer>
