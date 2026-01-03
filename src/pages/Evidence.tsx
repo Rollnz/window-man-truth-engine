@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { caseStudies, MissionType } from '@/data/evidenceData';
 import { useSessionData } from '@/hooks/useSessionData';
+import { usePageTracking } from '@/hooks/usePageTracking';
 import { EvidenceHero } from '@/components/evidence/EvidenceHero';
 import { FilterBar } from '@/components/evidence/FilterBar';
 import { CaseFileGrid } from '@/components/evidence/CaseFileGrid';
@@ -14,6 +15,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Evidence() {
+  usePageTracking('evidence-locker');
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { sessionData, updateFields, markToolCompleted } = useSessionData();

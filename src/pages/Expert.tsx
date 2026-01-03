@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useSessionData } from '@/hooks/useSessionData';
+import { usePageTracking } from '@/hooks/usePageTracking';
 import { ChatMessage } from '@/components/expert/ChatMessage';
 import { ChatInput } from '@/components/expert/ChatInput';
 import { SuggestedQuestions } from '@/components/expert/SuggestedQuestions';
@@ -18,6 +19,7 @@ interface Message {
 }
 
 export default function Expert() {
+  usePageTracking('expert-system');
   const { sessionData, markToolCompleted, updateFields } = useSessionData();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);

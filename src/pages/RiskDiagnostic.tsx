@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useSessionData } from '@/hooks/useSessionData';
+import { usePageTracking } from '@/hooks/usePageTracking';
+import { logEvent } from '@/lib/windowTruthClient';
 import { getQuestionByIndex, getTotalQuestions } from '@/data/riskDiagnosticData';
 import { calculateRiskScores, RiskAnswers } from '@/lib/riskCalculations';
 import { RiskHero } from '@/components/risk-diagnostic/RiskHero';
@@ -12,6 +14,7 @@ type Phase = 'hero' | 'questions' | 'results';
 type Direction = 'forward' | 'backward';
 
 export default function RiskDiagnostic() {
+  usePageTracking('risk-diagnostic');
   const { sessionData, updateField, updateFields, markToolCompleted } = useSessionData();
   const [phase, setPhase] = useState<Phase>('hero');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -55,6 +58,20 @@ export default function RiskDiagnostic() {
           overallProtectionScore: finalBreakdown.protectionScore,
         });
         markToolCompleted('risk-diagnostic');
+
+        // Track tool completion
+        logEvent({
+          event_name: 'tool_completed',
+          tool_name: 'risk-diagnostic',
+          params: {
+            overall_protection_score: finalBreakdown.protectionScore,
+            storm_protection: Math.round(finalBreakdown.storm.protectionPercentage),
+            security_protection: Math.round(finalBreakdown.security.protectionPercentage),
+            insurance_protection: Math.round(finalBreakdown.insurance.protectionPercentage),
+            warranty_protection: Math.round(finalBreakdown.warranty.protectionPercentage),
+          },
+        });
+
         setPhase('results');
       }
       setIsAnimating(false);

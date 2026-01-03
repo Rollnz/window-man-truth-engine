@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, FileSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSessionData } from '@/hooks/useSessionData';
+import { usePageTracking } from '@/hooks/usePageTracking';
 import { useToast } from '@/hooks/use-toast';
 import { useEvidenceAnalysis } from '@/hooks/useEvidenceAnalysis';
 import { ClaimHero } from '@/components/claim-survival/ClaimHero';
@@ -23,6 +24,7 @@ import { ConsultationBookingModal } from '@/components/conversion/ConsultationBo
 import { claimDocuments } from '@/data/claimSurvivalData';
 
 export default function ClaimSurvival() {
+  usePageTracking('claim-survival-kit');
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { sessionData, updateField, updateFields, markToolCompleted } = useSessionData();

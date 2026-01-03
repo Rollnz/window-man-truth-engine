@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { usePageTracking } from '@/hooks/usePageTracking';
 
 export default function Terms() {
+  usePageTracking('legal-terms');
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-12">

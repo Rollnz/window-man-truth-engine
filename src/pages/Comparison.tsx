@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSessionData } from '@/hooks/useSessionData';
+import { usePageTracking } from '@/hooks/usePageTracking';
 import { windowTiers } from '@/data/windowData';
 import { calculateTierTrueCost, TrueCostBreakdown } from '@/lib/comparisonCalculations';
 import { ComparisonHero } from '@/components/comparison/ComparisonHero';
@@ -14,6 +15,7 @@ import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 
 export default function Comparison() {
+  usePageTracking('comparison-tool');
   const { sessionData, markToolCompleted, updateField } = useSessionData();
   const [viewMode, setViewMode] = useState<ViewMode>('longterm');
   const [showLeadModal, setShowLeadModal] = useState(false);

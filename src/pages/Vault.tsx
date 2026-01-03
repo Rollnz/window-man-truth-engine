@@ -1,5 +1,6 @@
 import { useSessionData } from '@/hooks/useSessionData';
 import { useAuth } from '@/hooks/useAuth';
+import { usePageTracking } from '@/hooks/usePageTracking';
 import { ToolProgressTracker } from '@/components/vault/ToolProgressTracker';
 import { MyResultsSection } from '@/components/vault/MyResultsSection';
 import { MyDocumentsSection } from '@/components/vault/MyDocumentsSection';
@@ -8,15 +9,15 @@ import { EmailResultsButton } from '@/components/vault/EmailResultsButton';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  AlertTriangle, 
-  TrendingDown, 
-  Brain, 
-  MessageSquare, 
-  GitCompare, 
-  Shield, 
-  Zap, 
-  FileSearch, 
+import {
+  AlertTriangle,
+  TrendingDown,
+  Brain,
+  MessageSquare,
+  GitCompare,
+  Shield,
+  Zap,
+  FileSearch,
   BookOpen,
   ShieldCheck,
   ArrowLeft,
@@ -38,6 +39,7 @@ const tools = [
 ];
 
 export default function Vault() {
+  usePageTracking('vault');
   const { sessionData, isToolCompleted } = useSessionData();
   const { user, signOut } = useAuth();
   const { toast } = useToast();

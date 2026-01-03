@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Home } from "lucide-react";
 import { SessionData, useSessionData } from "@/hooks/useSessionData";
+import { usePageTracking } from "@/hooks/usePageTracking";
+import { logEvent } from "@/lib/windowTruthClient";
 import ProgressBar from "@/components/reality-check/ProgressBar";
 import QuestionStep from "@/components/reality-check/QuestionStep";
 import RealityReport from "@/components/reality-check/RealityReport";
@@ -107,6 +109,7 @@ const calculateScore = (answers: Record<string, string | number | undefined>) =>
 };
 
 const RealityCheck = () => {
+  usePageTracking('reality-check');
   const { sessionData, updateField, updateFields, markToolCompleted, getPrefilledValue } = useSessionData();
   const [currentStep, setCurrentStep] = useState(1);
   const [answers, setAnswers] = useState<Record<string, string | number | undefined>>({});
@@ -153,6 +156,18 @@ const RealityCheck = () => {
         noiseLevel: answers.noiseLevel as SessionData['noiseLevel'],
       });
       markToolCompleted('reality-check');
+
+      // Track tool completion
+      logEvent({
+        event_name: 'tool_completed',
+        tool_name: 'reality-check',
+        params: {
+          score: finalScore,
+          window_age: answers.windowAge,
+          energy_bill: answers.currentEnergyBill,
+        },
+      });
+
       setShowResults(true);
     } else {
       setCurrentStep(prev => prev + 1);

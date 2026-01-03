@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSessionData } from '@/hooks/useSessionData';
+import { usePageTracking } from '@/hooks/usePageTracking';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { IntelHero } from '@/components/intel/IntelHero';
@@ -11,6 +12,7 @@ import { ConsultationBookingModal } from '@/components/conversion/ConsultationBo
 import { intelResources, IntelResource } from '@/data/intelData';
 
 export default function Intel() {
+  usePageTracking('intel-library');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { sessionData, updateField, markToolCompleted } = useSessionData();

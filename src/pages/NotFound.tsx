@@ -1,7 +1,9 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { usePageTracking } from "@/hooks/usePageTracking";
 
 const NotFound = () => {
+  usePageTracking('404');
   const location = useLocation();
 
   useEffect(() => {
