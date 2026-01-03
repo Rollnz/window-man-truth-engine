@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { SessionData } from '@/hooks/useSessionData';
 import { Mail, Check, Loader2 } from 'lucide-react';
+import { logEvent } from '@/lib/windowTruthClient';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -48,6 +49,20 @@ export function LeadCaptureModal({
     initialValues: { email: sessionData.email || '' },
     schemas: { email: commonSchemas.email },
   });
+
+  // Track modal open - fires ONLY when modal opens, not on form changes
+  useEffect(() => {
+    if (isOpen) {
+      logEvent({
+        event_name: 'modal_open',
+        tool_name: sourceTool,
+        params: {
+          modal_type: 'lead_capture',
+          source_tool: sourceTool,
+        },
+      });
+    }
+  }, [isOpen, sourceTool]); // ONLY these dependencies - NO form values!
 
   // Update email when sessionData changes
   useEffect(() => {
@@ -109,11 +124,22 @@ export function LeadCaptureModal({
 
       if (data.success && data.leadId) {
         setIsSuccess(true);
+
+        // Track successful lead capture
+        logEvent({
+          event_name: 'lead_captured',
+          tool_name: sourceTool,
+          params: {
+            modal_type: 'lead_capture',
+            lead_id: data.leadId,
+          },
+        });
+
         toast({
           title: 'Conversation Saved!',
           description: 'Check your inbox for a summary.',
         });
-        
+
         setTimeout(() => {
           onSuccess(data.leadId);
         }, 1500);

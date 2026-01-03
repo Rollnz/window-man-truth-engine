@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { SessionData } from '@/hooks/useSessionData';
 import { Calendar, Check, Loader2 } from 'lucide-react';
+import { logEvent } from '@/lib/windowTruthClient';
 
 interface ConsultationBookingModalProps {
   isOpen: boolean;
@@ -66,6 +67,19 @@ export function ConsultationBookingModal({
       phone: formatPhoneNumber,
     },
   });
+
+  // Track modal open - fires ONLY when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      logEvent({
+        event_name: 'modal_open',
+        tool_name: 'expert-system',
+        params: {
+          modal_type: 'consultation_booking',
+        },
+      });
+    }
+  }, [isOpen]); // Only isOpen dependency
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,11 +130,22 @@ export function ConsultationBookingModal({
 
       if (data.success) {
         setIsSuccess(true);
+
+        // Track successful consultation booking
+        logEvent({
+          event_name: 'consultation_booked',
+          tool_name: 'expert-system',
+          params: {
+            preferred_time: values.preferredTime,
+            lead_id: data.leadId,
+          },
+        });
+
         toast({
           title: 'Consultation Requested!',
           description: "We'll contact you within 24 hours.",
         });
-        
+
         setTimeout(() => {
           onSuccess();
         }, 2000);
