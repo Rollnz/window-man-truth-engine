@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { SessionData } from '@/hooks/useSessionData';
 import { IntelResource } from '@/data/intelData';
 import { Mail, Check, Loader2, Unlock } from 'lucide-react';
+import { logEvent } from '@/lib/windowTruthClient';
 
 interface IntelLeadModalProps {
   isOpen: boolean;
@@ -38,6 +39,21 @@ export function IntelLeadModal({
     initialValues: { email: sessionData.email || '' },
     schemas: { email: commonSchemas.email },
   });
+
+  // Track modal open with resource details - fires ONLY when modal opens
+  useEffect(() => {
+    if (isOpen && resource) {
+      logEvent({
+        event_name: 'modal_open',
+        tool_name: 'intel-library',
+        params: {
+          modal_type: 'intel_lead',
+          resource_id: resource.id,
+          resource_title: resource.title,
+        },
+      });
+    }
+  }, [isOpen, resource?.id]); // resource.id is stable, safe dependency
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,11 +98,32 @@ export function IntelLeadModal({
 
       if (data.success && data.leadId) {
         setIsSuccess(true);
+
+        // Track lead capture and intel unlock
+        logEvent({
+          event_name: 'lead_captured',
+          tool_name: 'intel-library',
+          params: {
+            modal_type: 'intel_lead',
+            lead_id: data.leadId,
+          },
+        });
+
+        logEvent({
+          event_name: 'intel_unlocked',
+          tool_name: 'intel-library',
+          params: {
+            resource_id: resource?.id,
+            resource_title: resource?.title,
+            lead_id: data.leadId,
+          },
+        });
+
         toast({
           title: 'Document Unlocked!',
           description: 'Access granted. Redirecting...',
         });
-        
+
         setTimeout(() => {
           onSuccess(data.leadId);
         }, 1000);
