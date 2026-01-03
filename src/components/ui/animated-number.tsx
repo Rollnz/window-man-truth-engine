@@ -56,7 +56,7 @@ export function AnimatedNumber({
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [value, duration]);
+  }, [value, duration, displayValue]);
 
   const formattedValue = displayValue.toLocaleString('en-US', {
     minimumFractionDigits: decimals,

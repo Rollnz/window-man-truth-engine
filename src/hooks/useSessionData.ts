@@ -121,7 +121,7 @@ export function useSessionData() {
     if (JSON.stringify(stored) !== JSON.stringify(sessionData)) {
       setSessionData(stored);
     }
-  }, []);
+  }, [sessionData]);
 
   // Update a single field
   const updateField = useCallback(<K extends keyof SessionData>(
