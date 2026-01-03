@@ -24,6 +24,8 @@ import Tools from "./pages/Tools";
 import Vault from "./pages/Vault";
 import VaultPricing from "./pages/VaultPricing";
 import VaultSignup from "./pages/VaultSignup";
+import VaultWelcome from "./pages/VaultWelcome";
+import VaultUpload from "./pages/VaultUpload";
 import Auth from "./pages/Auth";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
@@ -64,6 +66,8 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/vault-pricing" element={<VaultPricing />} />
           <Route path="/vault/signup" element={<VaultSignup />} />
+          <Route path="/vault/welcome" element={<VaultWelcome />} />
+          <Route path="/vault/upload" element={<AuthGuard><VaultUpload /></AuthGuard>} />
           <Route path="/vault" element={<AuthGuard><Vault /></AuthGuard>} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
