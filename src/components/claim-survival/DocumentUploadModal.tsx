@@ -68,7 +68,7 @@ export function DocumentUploadModal({
     return null;
   };
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = useCallback((file: File) => {
     const error = validateFile(file);
     if (error) {
       toast({
@@ -79,7 +79,7 @@ export function DocumentUploadModal({
       return;
     }
     setSelectedFile(file);
-  };
+  }, [toast]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -98,7 +98,7 @@ export function DocumentUploadModal({
     if (file) {
       handleFileSelect(file);
     }
-  }, []);
+  }, [handleFileSelect]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -16,7 +16,7 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
   const { type, data } = payload;
 
   switch (type) {
-    case 'new-lead':
+    case 'new-lead': {
       // Use sanitized session summary instead of raw session data
       const sessionSummary = data.sessionSummary as Record<string, unknown> | undefined;
       return {
@@ -38,6 +38,7 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           ${data.leadId ? `<p><a href="https://itswindowman.com/admin/leads/${data.leadId}">View Full Details in Dashboard</a></p>` : ''}
         `,
       };
+    }
 
     case 'comparison-report':
       return {
