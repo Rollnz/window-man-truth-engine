@@ -3,20 +3,24 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSessionData } from '@/hooks/useSessionData';
+import { usePageTracking } from '@/hooks/usePageTracking';
+import { logEvent } from '@/lib/windowTruthClient';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { CalculatorInputs, ValidatedInputs } from '@/components/cost-calculator/CalculatorInputs';
 import { CostBreakdown } from '@/components/cost-calculator/CostBreakdown';
 import { TimelineChart } from '@/components/cost-calculator/TimelineChart';
 import { LiveWasteCounter } from '@/components/cost-calculator/LiveWasteCounter';
 import { BreakEvenIndicator } from '@/components/cost-calculator/BreakEvenIndicator';
-import { 
-  calculateCostOfInaction, 
-  convertBillRangeToNumber, 
+import {
+  calculateCostOfInaction,
+  convertBillRangeToNumber,
   convertAgeRangeToMultiplier,
-  CostProjection 
+  CostProjection
 } from '@/lib/calculations';
 import { ArrowLeft, ArrowRight, MessageCircle, Sparkles } from 'lucide-react';
 
 export default function CostCalculator() {
+  usePageTracking('cost-calculator');
   const { sessionData, updateFields, markToolCompleted } = useSessionData();
   const [projection, setProjection] = useState<CostProjection | null>(null);
   const [showResults, setShowResults] = useState(false);
@@ -57,6 +61,18 @@ export default function CostCalculator() {
 
       // Mark tool as completed
       markToolCompleted('cost-calculator');
+
+      // Track tool completion
+      logEvent({
+        event_name: 'tool_completed',
+        tool_name: 'cost-calculator',
+        params: {
+          year1_cost: result.year1,
+          year5_cost: result.year5,
+          window_age: inputs.windowAge,
+          window_count: inputs.windowCount,
+        },
+      });
     }, 800);
   };
 
@@ -172,6 +188,9 @@ export default function CostCalculator() {
           </div>
         )}
       </main>
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

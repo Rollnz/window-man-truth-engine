@@ -49,6 +49,7 @@ export function ConsultationBookingModal({
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [modalOpenTime, setModalOpenTime] = useState<number>(0);
 
   const { values, errors, setValue, setValues, hasError, getError, getFieldProps, validateAll, clearErrors } = useFormValidation({
     initialValues: {
@@ -71,6 +72,9 @@ export function ConsultationBookingModal({
   // Track modal open - fires ONLY when modal opens
   useEffect(() => {
     if (isOpen) {
+      const now = Date.now();
+      setModalOpenTime(now);
+
       logEvent({
         event_name: 'modal_open',
         tool_name: 'expert-system',
@@ -166,6 +170,19 @@ export function ConsultationBookingModal({
 
   const handleClose = () => {
     if (!isLoading) {
+      // Track modal abandonment if not successful
+      if (!isSuccess && modalOpenTime > 0) {
+        const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000); // seconds
+        logEvent({
+          event_name: 'modal_abandon',
+          tool_name: 'expert-system',
+          params: {
+            modal_type: 'consultation_booking',
+            time_spent_seconds: timeSpent,
+          },
+        });
+      }
+
       setIsSuccess(false);
       setValues({
         name: sessionData.name || '',

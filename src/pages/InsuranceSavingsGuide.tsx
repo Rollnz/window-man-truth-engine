@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Wallet, 
-  Download, 
-  Smartphone, 
-  Clock, 
-  FileText, 
-  CheckCircle2, 
+import { usePageTracking } from '@/hooks/usePageTracking';
+import {
+  Wallet,
+  Download,
+  Smartphone,
+  Clock,
+  FileText,
+  CheckCircle2,
   ArrowRight,
   ScanSearch,
   Scale,
@@ -25,6 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 const InsuranceSavingsGuide = () => {
+  usePageTracking('insurance-savings-guide');
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

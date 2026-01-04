@@ -22,11 +22,18 @@ import QuoteScanner from "./pages/QuoteScanner";
 import CalculateEstimate from "./pages/CalculateEstimate";
 import Tools from "./pages/Tools";
 import Vault from "./pages/Vault";
+import VaultPricing from "./pages/VaultPricing";
+import VaultSignup from "./pages/VaultSignup";
+import VaultWelcome from "./pages/VaultWelcome";
+import VaultUpload from "./pages/VaultUpload";
+import VaultDocuments from "./pages/VaultDocuments";
 import Auth from "./pages/Auth";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
-import Privacy from "./pages/legal/Privacy";
-import Terms from "./pages/legal/Terms";
-import Disclaimer from "./pages/legal/Disclaimer";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Disclaimer from "./pages/Disclaimer";
+import Accessibility from "./pages/Accessibility";
 import { AuthGuard } from "./components/auth/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -56,11 +63,18 @@ const App = () => (
           <Route path="/quote-scanner" element={<QuoteScanner />} />
           <Route path="/calculate-your-estimate" element={<CalculateEstimate />} />
           <Route path="/tools" element={<Tools />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/vault-pricing" element={<VaultPricing />} />
+          <Route path="/vault/signup" element={<VaultSignup />} />
+          <Route path="/vault/welcome" element={<VaultWelcome />} />
+          <Route path="/vault/upload" element={<AuthGuard><VaultUpload /></AuthGuard>} />
+          <Route path="/vault/documents/:category" element={<AuthGuard><VaultDocuments /></AuthGuard>} />
           <Route path="/vault" element={<AuthGuard><Vault /></AuthGuard>} />
-          <Route path="/legal/privacy" element={<Privacy />} />
-          <Route path="/legal/terms" element={<Terms />} />
-          <Route path="/legal/disclaimer" element={<Disclaimer />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/disclaimer" element={<Disclaimer />} />
+          <Route path="/accessibility" element={<Accessibility />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

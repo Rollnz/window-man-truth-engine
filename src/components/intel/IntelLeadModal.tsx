@@ -34,6 +34,7 @@ export function IntelLeadModal({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [modalOpenTime, setModalOpenTime] = useState<number>(0);
 
   const { values, hasError, getError, getFieldProps, validateAll } = useFormValidation({
     initialValues: { email: sessionData.email || '' },
@@ -43,6 +44,9 @@ export function IntelLeadModal({
   // Track modal open with resource details - fires ONLY when modal opens
   useEffect(() => {
     if (isOpen && resource) {
+      const now = Date.now();
+      setModalOpenTime(now);
+
       logEvent({
         event_name: 'modal_open',
         tool_name: 'intel-library',
@@ -145,6 +149,21 @@ export function IntelLeadModal({
   // Soft gate: close button triggers skip behavior
   const handleClose = () => {
     if (!isLoading) {
+      // Track modal abandonment if not successful
+      if (!isSuccess && modalOpenTime > 0 && resource) {
+        const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000); // seconds
+        logEvent({
+          event_name: 'modal_abandon',
+          tool_name: 'intel-library',
+          params: {
+            modal_type: 'intel_lead',
+            resource_id: resource.id,
+            resource_title: resource.title,
+            time_spent_seconds: timeSpent,
+          },
+        });
+      }
+
       setIsSuccess(false);
       onClose(); // Parent handles skip logic (redirect if landing page exists)
     }

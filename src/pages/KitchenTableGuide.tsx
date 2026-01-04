@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ShieldCheck, 
-  Download, 
-  Smartphone, 
-  Clock, 
-  FileText, 
-  AlertTriangle, 
-  PauseCircle, 
-  CheckCircle2, 
+import { usePageTracking } from '@/hooks/usePageTracking';
+import {
+  ShieldCheck,
+  Download,
+  Smartphone,
+  Clock,
+  FileText,
+  AlertTriangle,
+  PauseCircle,
+  CheckCircle2,
   ArrowRight,
   ScanSearch,
   Scale,
@@ -23,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 const KitchenTableGuide = () => {
+  usePageTracking('kitchen-table-guide');
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

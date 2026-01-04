@@ -1,8 +1,11 @@
 import { Navbar } from "@/components/home/Navbar";
 import { Footer } from "@/components/home/Footer";
 import { ToolGrid } from "@/components/home/ToolGrid";
+import { usePageTracking } from "@/hooks/usePageTracking";
 
 const Tools = () => {
+  usePageTracking('tools-page');
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

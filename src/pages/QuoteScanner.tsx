@@ -10,8 +10,10 @@ import { GenerateProposalButton } from '@/components/quote-scanner/GeneratePropo
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { useQuoteScanner } from '@/hooks/useQuoteScanner';
 import { useSessionData } from '@/hooks/useSessionData';
+import { usePageTracking } from '@/hooks/usePageTracking';
 
 export default function QuoteScanner() {
+  usePageTracking('quote-scanner');
   const {
     isAnalyzing,
     isDraftingEmail,

@@ -42,6 +42,7 @@ export function LeadCaptureModal({
   const [isSuccess, setIsSuccess] = useState(false);
   const [name, setName] = useState(sessionData.name || '');
   const [phone, setPhone] = useState(sessionData.phone || '');
+  const [modalOpenTime, setModalOpenTime] = useState<number>(0);
 
   const requiresFullContact = sourceTool === 'quote-scanner';
 
@@ -53,6 +54,9 @@ export function LeadCaptureModal({
   // Track modal open - fires ONLY when modal opens, not on form changes
   useEffect(() => {
     if (isOpen) {
+      const now = Date.now();
+      setModalOpenTime(now);
+
       logEvent({
         event_name: 'modal_open',
         tool_name: sourceTool,
@@ -160,6 +164,19 @@ export function LeadCaptureModal({
 
   const handleClose = () => {
     if (!isLoading) {
+      // Track modal abandonment if not successful
+      if (!isSuccess && modalOpenTime > 0) {
+        const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000); // seconds
+        logEvent({
+          event_name: 'modal_abandon',
+          tool_name: sourceTool,
+          params: {
+            modal_type: 'lead_capture',
+            time_spent_seconds: timeSpent,
+          },
+        });
+      }
+
       setIsSuccess(false);
       onClose();
     }

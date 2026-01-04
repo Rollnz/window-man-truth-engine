@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSessionData } from '@/hooks/useSessionData';
+import { usePageTracking } from '@/hooks/usePageTracking';
 import { windowTiers } from '@/data/windowData';
 import { calculateTierTrueCost, TrueCostBreakdown } from '@/lib/comparisonCalculations';
 import { ComparisonHero } from '@/components/comparison/ComparisonHero';
@@ -12,8 +13,10 @@ import { ConsultationCTA } from '@/components/comparison/ConsultationCTA';
 import { GenerateComparisonReportButton } from '@/components/comparison/GenerateComparisonReportButton';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 
 export default function Comparison() {
+  usePageTracking('comparison-tool');
   const { sessionData, markToolCompleted, updateField } = useSessionData();
   const [viewMode, setViewMode] = useState<ViewMode>('longterm');
   const [showLeadModal, setShowLeadModal] = useState(false);
@@ -98,6 +101,9 @@ export default function Comparison() {
         onSuccess={() => setShowConsultationModal(false)}
         sessionData={sessionData}
       />
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

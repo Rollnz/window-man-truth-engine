@@ -3,8 +3,10 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, FileSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSessionData } from '@/hooks/useSessionData';
+import { usePageTracking } from '@/hooks/usePageTracking';
 import { useToast } from '@/hooks/use-toast';
 import { useEvidenceAnalysis } from '@/hooks/useEvidenceAnalysis';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { ClaimHero } from '@/components/claim-survival/ClaimHero';
 import { ReadinessScore } from '@/components/claim-survival/ReadinessScore';
 import { StickyProgress } from '@/components/claim-survival/StickyProgress';
@@ -23,6 +25,7 @@ import { ConsultationBookingModal } from '@/components/conversion/ConsultationBo
 import { claimDocuments } from '@/data/claimSurvivalData';
 
 export default function ClaimSurvival() {
+  usePageTracking('claim-survival-kit');
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { sessionData, updateField, updateFields, markToolCompleted } = useSessionData();
@@ -441,6 +444,9 @@ export default function ClaimSurvival() {
         analysisResult={analysisResult}
         onAnalyze={analyzeEvidence}
       />
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

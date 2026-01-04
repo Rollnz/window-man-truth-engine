@@ -3,14 +3,17 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSessionData } from '@/hooks/useSessionData';
+import { usePageTracking } from '@/hooks/usePageTracking';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { IntelHero } from '@/components/intel/IntelHero';
 import { ResourceGrid } from '@/components/intel/ResourceGrid';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { intelResources, IntelResource } from '@/data/intelData';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 
 export default function Intel() {
+  usePageTracking('intel-library');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { sessionData, updateField, markToolCompleted } = useSessionData();
@@ -113,6 +116,9 @@ export default function Intel() {
         }}
         sessionData={sessionData}
       />
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }
