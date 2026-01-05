@@ -22,12 +22,17 @@ export function trackEvent(eventName: string, params: Record<string, unknown> = 
 /**
  * Track a virtual pageview for SPA navigation
  */
-export function trackPageView(pagePath: string, pageTitle?: string) {
-  trackEvent('virtual_pageview', {
-    page_path: pagePath,
-    page_title: pageTitle || document.title,
+export const trackToolCompletion = (params: { 
+  toolName: string; 
+  score?: number; 
+  duration?: number; 
+}) => {
+  trackEvent('tool_completed', {
+    tool_name: params.toolName,
+    score: params.score,
+    duration_seconds: params.duration ? Math.round(params.duration / 1000) : undefined,
   });
-}
+};
 
 /**
  * Track modal open events
