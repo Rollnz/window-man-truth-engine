@@ -1,4 +1,6 @@
-// GTM Tracking Utilities
+```typescript
+// Google Tag Manager utilities
+export const GTM_ID = 'GTM-NHVFR5QZ';
 
 declare global {
   interface Window {
@@ -9,18 +11,57 @@ declare global {
 /**
  * Push an event to the GTM dataLayer
  */
-export function trackEvent(eventName: string, params: Record<string, unknown> = {}) {
-  if (typeof window === 'undefined') return;
-  
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push({
-    event: eventName,
-    ...params,
-  });
-}
+export const trackEvent = (eventName: string, eventData?: Record<string, any>) => {
+  if (typeof window !== 'undefined' && (window as any).dataLayer) {
+    (window as any).dataLayer.push({
+      event: eventName,
+      ...eventData,
+    });
+  }
+};
+
+export const trackPageView = (url: string) => {
+  trackEvent('page_view', { page_path: url });
+};
 
 /**
- * Track a virtual pageview for SPA navigation
+ * Track lead capture (email submitted)
+ */
+export const trackLeadCapture = (params: {
+  sourceTool: string;
+  email: string;
+  leadScore?: number;
+  hasPhone?: boolean;
+}) => {
+  trackEvent('lead_captured', {
+    source_tool: params.sourceTool,
+    email_domain: params.email.split('@')[1] || 'unknown',
+    lead_score: params.leadScore || 0,
+    has_phone: params.hasPhone || false,
+    conversion_type: 'lead',
+  });
+};
+
+/**
+ * Track consultation booking
+ */
+export const trackConsultation = (params: {
+  name: string;
+  phone: string;
+  email: string;
+  leadScore?: number;
+}) => {
+  trackEvent('consultation_booked', {
+    has_name: !!params.name,
+    has_phone: !!params.phone,
+    has_email: !!params.email,
+    lead_score: params.leadScore || 0,
+    conversion_type: 'consultation',
+  });
+};
+
+/**
+ * Track tool completion events
  */
 export const trackToolCompletion = (params: { 
   toolName: string; 
@@ -37,49 +78,21 @@ export const trackToolCompletion = (params: {
 /**
  * Track modal open events
  */
-export function trackModalOpen(modalName: string, additionalParams?: Record<string, unknown>) {
+export const trackModalOpen = (modalName: string, additionalParams?: Record<string, unknown>) => {
   trackEvent('modal_open', {
     modal_name: modalName,
     ...additionalParams,
   });
-}
+};
 
 /**
  * Track form submissions
  */
-export function trackFormSubmit(formName: string, additionalParams?: Record<string, unknown>) {
+export const trackFormSubmit = (formName: string, additionalParams?: Record<string, unknown>) => {
   trackEvent('form_submit', {
     form_name: formName,
     ...additionalParams,
   });
-}
+};
 
-/**
- * Track lead capture events
- */
-export function trackLeadCapture(toolName: string, additionalParams?: Record<string, unknown>) {
-  trackEvent('lead_captured', {
-    tool_name: toolName,
-    ...additionalParams,
-  });
-}
-
-/**
- * Track consultation booking events
- */
-export function trackConsultation(toolName: string, additionalParams?: Record<string, unknown>) {
-  trackEvent('consultation_booked', {
-    tool_name: toolName,
-    ...additionalParams,
-  });
-}
-
-/**
- * Track tool completion events
- */
-export function trackToolCompletion(toolName: string, additionalParams?: Record<string, unknown>) {
-  trackEvent('tool_completed', {
-    tool_name: toolName,
-    ...additionalParams,
-  });
-}
+```
