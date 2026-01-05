@@ -177,7 +177,10 @@ const RealityCheck = () => {
       });
       
       // Track completion in GTM
-      trackToolCompletion('reality-check', { score: finalScore });
+      trackToolCompletion({
+        toolName: 'reality-check',
+        score: finalScore,
+      });
       
       setShowResults(true);
     } else {
@@ -204,7 +207,8 @@ const RealityCheck = () => {
     setShowLeadModal(false);
     
     // Track lead capture in GTM
-    trackLeadCapture('reality-check', {
+    trackLeadCapture({
+      sourceTool: 'reality-check',
       email: sessionData.email || '',
       leadScore: score,
     });
@@ -215,7 +219,7 @@ const RealityCheck = () => {
     setShowConsultModal(false);
     
     // Track consultation in GTM
-    trackConsultation('reality-check', {
+    trackConsultation({
       name: sessionData.name || '',
       phone: sessionData.phone || '',
       email: sessionData.email || '',
