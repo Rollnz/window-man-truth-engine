@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MessageSquare, Shield, Lock } from 'lucide-react';
-
 export function Footer() {
-  return (
-    <footer className="py-16 border-t border-border bg-card/30">
+  return <footer className="py-16 border-t border-border bg-card/30">
       <div className="container px-4">
         <div className="max-w-6xl mx-auto">
           {/* Top section */}
@@ -17,10 +15,7 @@ export function Footer() {
                 Helping Florida homeowners make informed decisions about window investments 
                 since 2010.
               </p>
-              <Link 
-                to="/expert" 
-                className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-              >
+              <Link to="/expert" className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors">
                 <MessageSquare className="w-4 h-4" />
                 <span>Ask a Question</span>
               </Link>
@@ -64,7 +59,7 @@ export function Footer() {
                 <div className="flex items-start gap-3">
                   <Lock className="w-4 h-4 text-primary mt-0.5" />
                   <p className="text-sm text-muted-foreground">
-                    Your data stays private. We never sell your information.
+                    Your data stays private 
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
@@ -101,6 +96,5 @@ export function Footer() {
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 }
