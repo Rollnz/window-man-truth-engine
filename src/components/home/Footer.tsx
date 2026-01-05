@@ -65,7 +65,7 @@ export function Footer() {
                 <div className="flex items-start gap-3">
                   <Shield className="w-4 h-4 text-primary mt-0.5" />
                   <p className="text-sm text-muted-foreground">
-                    No pressure. No sales calls unless you request them.
+                    No sales calls unless you request them.
                   </p>
                 </div>
               </div>
