@@ -26,7 +26,7 @@ const jsonResponse = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const sanitizeFilename = (name: string) => name.replace(/[^\w.\-]+/g, "_").slice(0, 200);
+const sanitizeFilename = (name: string) => name.replace(/[^\w.-]+/g, "_").slice(0, 200);
 
 const ensureSession = async (supabase: SupabaseClient, sessionId?: string) => {
   if (!sessionId) return null;
@@ -149,7 +149,7 @@ const handleUploadUrl = async (supabase: SupabaseClient, reqBody: JsonRecord) =>
 
   const { data: urlData, error: urlError } = await supabase.storage
     .from("quotes")
-    .createSignedUploadUrl(storagePath, 60 * 10, { upsert: false });
+    .createSignedUploadUrl(storagePath);
 
   if (urlError || !urlData) {
     return jsonResponse({ error: "failed to create upload url" }, 500);

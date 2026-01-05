@@ -882,7 +882,7 @@ Format the output with clear section headers and make it easy to read during a p
           role: "user",
           content: [
             { type: "text", text: `Context: ${sanitizedContext}\n\nQuestion: ${sanitizedQuestion}` },
-            ...(imageBase64 ? [{ type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } }] : []),
+            ...(imageBase64 ? [{ type: "image_url" as const, image_url: { url: `data:${mimeType};base64,${imageBase64}` } }] : []),
           ],
         },
       ];

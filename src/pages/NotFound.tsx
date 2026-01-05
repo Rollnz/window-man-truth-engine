@@ -1,15 +1,24 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 
+const ADMIN_ONLY_PREFIXES = ["/admin", "/dashboard", "/vault", "/internal"];
+
 const NotFound = () => {
   usePageTracking('404');
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
-  }, [location.pathname]);
+    const isAdminPath = ADMIN_ONLY_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
+
+    if (isAdminPath) {
+      // Redirect to the lead capture funnel so the visitor continues their journey
+      navigate("/free-estimate", { replace: true, state: { from: location.pathname } });
+    }
+  }, [location.pathname, navigate]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted">

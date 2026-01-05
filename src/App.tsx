@@ -25,11 +25,11 @@ import Vault from "./pages/Vault";
 import Auth from "./pages/Auth";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
-import Privacy from "./pages/legal/Privacy";
-import Terms from "./pages/legal/Terms";
-import Disclaimer from "./pages/legal/Disclaimer";
-import Accessibility from "./pages/legal/Accessibility";
 import { AuthGuard } from "./components/auth/AuthGuard";
+import About from "./pages/About";
+import FAQ from "./pages/FAQ";
+import Defense from "./pages/Defense";
+import Roleplay from "./pages/Roleplay";
 
 const queryClient = new QueryClient();
 
@@ -53,18 +53,21 @@ const App = () => (
           <Route path="/claim-survival" element={<ClaimSurvival />} />
           <Route path="/kitchen-table-guide" element={<KitchenTableGuide />} />
           <Route path="/sales-tactics-guide" element={<SalesTacticsGuide />} />
+          <Route path="/11tactics" element={<SalesTacticsGuide />} />
           <Route path="/spec-checklist-guide" element={<SpecChecklistGuide />} />
           <Route path="/insurance-savings-guide" element={<InsuranceSavingsGuide />} />
-          <Route path="/quote-scanner" element={<QuoteScanner />} />
+          <Route path="/ai-scanner" element={<QuoteScanner />} />
           <Route path="/calculate-your-estimate" element={<CalculateEstimate />} />
-          <Route path="/tools" element={<Tools />} />
-          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/free-estimate" element={<CalculateEstimate />} />
+          <Route path="/impact-window-calculator" element={<CostCalculator />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/vault" element={<AuthGuard><Vault /></AuthGuard>} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
-          <Route path="/disclaimer" element={<Disclaimer />} />
-          <Route path="/accessibility" element={<Accessibility />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/defense" element={<Defense />} />
+          <Route path="/roleplay" element={<Roleplay />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

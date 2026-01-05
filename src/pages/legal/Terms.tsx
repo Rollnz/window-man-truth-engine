@@ -54,6 +54,21 @@ export default function Terms() {
               To the fullest extent permitted by law, Window Truth Engine shall not be liable for any indirect, incidental, or consequential damages arising from your use of the Site or any services provided by contractors you find through us.
             </p>
           </section>
+
+          <section className="rounded-lg border border-border p-4 bg-card/40 space-y-3">
+            <h3 className="text-lg font-semibold">Keep momentum</h3>
+            <p className="text-sm text-muted-foreground">
+              These terms exist to protect your data and decisions. Ready to act under these rules? Book an inspection or download the Claim Kit to move forward confidently.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild>
+                <Link to="/free-estimate">Book an Inspection</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/claim-survival">Download the Claim Kit</Link>
+              </Button>
+            </div>
+          </section>
         </div>
       </div>
     </div>
