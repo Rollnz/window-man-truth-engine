@@ -48,3 +48,33 @@ export function trackFormSubmit(formName: string, additionalParams?: Record<stri
     ...additionalParams,
   });
 }
+
+/**
+ * Track lead capture events
+ */
+export function trackLeadCapture(toolName: string, additionalParams?: Record<string, unknown>) {
+  trackEvent('lead_captured', {
+    tool_name: toolName,
+    ...additionalParams,
+  });
+}
+
+/**
+ * Track consultation booking events
+ */
+export function trackConsultation(toolName: string, additionalParams?: Record<string, unknown>) {
+  trackEvent('consultation_booked', {
+    tool_name: toolName,
+    ...additionalParams,
+  });
+}
+
+/**
+ * Track tool completion events
+ */
+export function trackToolCompletion(toolName: string, additionalParams?: Record<string, unknown>) {
+  trackEvent('tool_completed', {
+    tool_name: toolName,
+    ...additionalParams,
+  });
+}
