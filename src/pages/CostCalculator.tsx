@@ -68,7 +68,7 @@ export default function CostCalculator() {
         event_name: 'tool_completed',
         tool_name: 'cost-calculator',
         params: {
-          year1_cost: result.year1,
+          year1_cost: result.annual,
           year5_cost: result.year5,
           window_age: inputs.windowAge,
           window_count: inputs.windowCount,

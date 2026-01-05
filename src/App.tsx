@@ -30,6 +30,8 @@ import About from "./pages/About";
 import FAQ from "./pages/FAQ";
 import Defense from "./pages/Defense";
 import Roleplay from "./pages/Roleplay";
+import Privacy from "./pages/legal/Privacy";
+import Terms from "./pages/legal/Terms";
 
 const queryClient = new QueryClient();
 

@@ -147,9 +147,9 @@ const handleUploadUrl = async (supabase: SupabaseClient, reqBody: JsonRecord) =>
   const random = crypto.randomUUID();
   const storagePath = `quotes/${validSession}/${timestamp}-${random}-${sanitized}`;
 
-  const { data: urlData, error: urlError } = await supabase.storage
-    .from("quotes")
-    .createSignedUploadUrl(storagePath);
+const { data: urlData, error: urlError } = await supabase.storage
+      .from("quotes")
+      .createSignedUploadUrl(storagePath, { upsert: false });
 
   if (urlError || !urlData) {
     return jsonResponse({ error: "failed to create upload url" }, 500);
