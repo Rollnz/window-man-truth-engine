@@ -20,12 +20,11 @@ import SpecChecklistGuide from "./pages/SpecChecklistGuide";
 import InsuranceSavingsGuide from "./pages/InsuranceSavingsGuide";
 import QuoteScanner from "./pages/QuoteScanner";
 import CalculateEstimate from "./pages/CalculateEstimate";
+import Tools from "./pages/Tools";
 import Vault from "./pages/Vault";
 import Auth from "./pages/Auth";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
-import Privacy from "./pages/legal/Privacy";
-import Terms from "./pages/legal/Terms";
-import Disclaimer from "./pages/legal/Disclaimer";
 import { AuthGuard } from "./components/auth/AuthGuard";
 import About from "./pages/About";
 import FAQ from "./pages/FAQ";
@@ -57,17 +56,12 @@ const App = () => (
           <Route path="/11tactics" element={<SalesTacticsGuide />} />
           <Route path="/spec-checklist-guide" element={<SpecChecklistGuide />} />
           <Route path="/insurance-savings-guide" element={<InsuranceSavingsGuide />} />
-          <Route path="/quote-scanner" element={<QuoteScanner />} />
           <Route path="/ai-scanner" element={<QuoteScanner />} />
-          <Route path="/scanner" element={<QuoteScanner />} />
           <Route path="/calculate-your-estimate" element={<CalculateEstimate />} />
           <Route path="/free-estimate" element={<CalculateEstimate />} />
           <Route path="/impact-window-calculator" element={<CostCalculator />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/vault" element={<AuthGuard><Vault /></AuthGuard>} />
-          <Route path="/legal/privacy" element={<Privacy />} />
-          <Route path="/legal/terms" element={<Terms />} />
-          <Route path="/legal/disclaimer" element={<Disclaimer />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/about" element={<About />} />

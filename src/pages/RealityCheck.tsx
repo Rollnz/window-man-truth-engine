@@ -3,9 +3,15 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Home } from "lucide-react";
 import { SessionData, useSessionData } from "@/hooks/useSessionData";
+import { usePageTracking } from "@/hooks/usePageTracking";
+import { logEvent } from "@/lib/windowTruthClient";
+import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import ProgressBar from "@/components/reality-check/ProgressBar";
 import QuestionStep from "@/components/reality-check/QuestionStep";
 import RealityReport from "@/components/reality-check/RealityReport";
+import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
+import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
+import { trackLeadCapture, trackConsultation, trackToolCompletion } from "@/lib/gtm";
 
 const QUESTIONS = [
   {
@@ -107,11 +113,16 @@ const calculateScore = (answers: Record<string, string | number | undefined>) =>
 };
 
 const RealityCheck = () => {
+  usePageTracking('reality-check');
   const { sessionData, updateField, updateFields, markToolCompleted, getPrefilledValue } = useSessionData();
   const [currentStep, setCurrentStep] = useState(1);
   const [answers, setAnswers] = useState<Record<string, string | number | undefined>>({});
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState(0);
+  
+  // Conversion modals
+  const [showLeadModal, setShowLeadModal] = useState(false);
+  const [showConsultModal, setShowConsultModal] = useState(false);
 
   // Initialize answers from session data
   useEffect(() => {
@@ -153,6 +164,24 @@ const RealityCheck = () => {
         noiseLevel: answers.noiseLevel as SessionData['noiseLevel'],
       });
       markToolCompleted('reality-check');
+
+      // Track tool completion in existing system
+      logEvent({
+        event_name: 'tool_completed',
+        tool_name: 'reality-check',
+        params: {
+          score: finalScore,
+          window_age: answers.windowAge,
+          energy_bill: answers.currentEnergyBill,
+        },
+      });
+      
+      // Track completion in GTM
+      trackToolCompletion({
+        toolName: 'reality-check',
+        score: finalScore,
+      });
+      
       setShowResults(true);
     } else {
       setCurrentStep(prev => prev + 1);
@@ -163,6 +192,39 @@ const RealityCheck = () => {
     if (currentStep > 1) {
       setCurrentStep(prev => prev - 1);
     }
+  };
+
+  const handleEmailReport = () => {
+    setShowLeadModal(true);
+  };
+  
+  const handleScheduleConsult = () => {
+    setShowConsultModal(true);
+  };
+  
+  const handleLeadSuccess = (leadId: string) => {
+    updateFields({ leadId });
+    setShowLeadModal(false);
+    
+    // Track lead capture in GTM
+    trackLeadCapture({
+      sourceTool: 'reality-check',
+      email: sessionData.email || '',
+      leadScore: score,
+    });
+  };
+  
+  const handleConsultSuccess = () => {
+    updateFields({ consultationRequested: true });
+    setShowConsultModal(false);
+    
+    // Track consultation in GTM
+    trackConsultation({
+      name: sessionData.name || '',
+      phone: sessionData.phone || '',
+      email: sessionData.email || '',
+      leadScore: score,
+    });
   };
 
   if (showResults) {
@@ -178,8 +240,29 @@ const RealityCheck = () => {
         </header>
         
         <main className="container mx-auto px-4 py-12 max-w-2xl">
-          <RealityReport score={score} sessionData={sessionData} />
+          <RealityReport 
+            score={score} 
+            sessionData={sessionData}
+            onEmailReport={handleEmailReport}
+            onScheduleConsult={handleScheduleConsult}
+          />
         </main>
+        
+        {/* Conversion Modals */}
+        <LeadCaptureModal
+          isOpen={showLeadModal}
+          onClose={() => setShowLeadModal(false)}
+          onSuccess={handleLeadSuccess}
+          sourceTool="reality-check"
+          sessionData={sessionData}
+        />
+        
+        <ConsultationBookingModal
+          isOpen={showConsultModal}
+          onClose={() => setShowConsultModal(false)}
+          onSuccess={handleConsultSuccess}
+          sessionData={sessionData}
+        />
       </div>
     );
   }
@@ -234,6 +317,9 @@ const RealityCheck = () => {
           </Button>
         </div>
       </main>
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 };

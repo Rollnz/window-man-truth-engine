@@ -2,6 +2,9 @@ import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useSessionData } from '@/hooks/useSessionData';
+import { usePageTracking } from '@/hooks/usePageTracking';
+import { logEvent } from '@/lib/windowTruthClient';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { fastWinQuestions } from '@/data/fastWinData';
 import { calculateFastWin, type FastWinAnswers, type FastWinResult } from '@/lib/fastWinLogic';
 import { FastWinHero } from '@/components/fast-win/FastWinHero';
@@ -14,6 +17,7 @@ import { ConsultationBookingModal } from '@/components/conversion/ConsultationBo
 type Phase = 'hero' | 'questions' | 'calculating' | 'result';
 
 export default function FastWin() {
+  usePageTracking('fast-win');
   const { sessionData, updateFields, markToolCompleted, hasExistingData } = useSessionData();
   
   const [phase, setPhase] = useState<Phase>('hero');
@@ -92,6 +96,18 @@ export default function FastWin() {
     });
 
     markToolCompleted('fast-win');
+
+    // Track tool completion
+    logEvent({
+      event_name: 'tool_completed',
+      tool_name: 'fast-win',
+      params: {
+        winning_product: finalResult.product.id,
+        pain_point: answers.painPoint,
+        budget_priority: answers.budgetPriority,
+      },
+    });
+
     setPhase('result');
   }, [answers, updateFields, markToolCompleted]);
 
@@ -174,6 +190,9 @@ export default function FastWin() {
           notes: result ? `Interested in: ${result.product.name}` : undefined,
         }}
       />
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

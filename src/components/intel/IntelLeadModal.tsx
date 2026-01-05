@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { SessionData } from '@/hooks/useSessionData';
 import { IntelResource } from '@/data/intelData';
 import { Mail, Check, Loader2, Unlock } from 'lucide-react';
+import { logEvent } from '@/lib/windowTruthClient';
 
 interface IntelLeadModalProps {
   isOpen: boolean;
@@ -33,11 +34,30 @@ export function IntelLeadModal({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [modalOpenTime, setModalOpenTime] = useState<number>(0);
 
   const { values, hasError, getError, getFieldProps, validateAll } = useFormValidation({
     initialValues: { email: sessionData.email || '' },
     schemas: { email: commonSchemas.email },
   });
+
+  // Track modal open with resource details - fires ONLY when modal opens
+  useEffect(() => {
+    if (isOpen && resource) {
+      const now = Date.now();
+      setModalOpenTime(now);
+
+      logEvent({
+        event_name: 'modal_open',
+        tool_name: 'intel-library',
+        params: {
+          modal_type: 'intel_lead',
+          resource_id: resource.id,
+          resource_title: resource.title,
+        },
+      });
+    }
+  }, [isOpen, resource?.id]); // resource.id is stable, safe dependency
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,11 +102,32 @@ export function IntelLeadModal({
 
       if (data.success && data.leadId) {
         setIsSuccess(true);
+
+        // Track lead capture and intel unlock
+        logEvent({
+          event_name: 'lead_captured',
+          tool_name: 'intel-library',
+          params: {
+            modal_type: 'intel_lead',
+            lead_id: data.leadId,
+          },
+        });
+
+        logEvent({
+          event_name: 'intel_unlocked',
+          tool_name: 'intel-library',
+          params: {
+            resource_id: resource?.id,
+            resource_title: resource?.title,
+            lead_id: data.leadId,
+          },
+        });
+
         toast({
           title: 'Document Unlocked!',
           description: 'Access granted. Redirecting...',
         });
-        
+
         setTimeout(() => {
           onSuccess(data.leadId);
         }, 1000);
@@ -108,6 +149,21 @@ export function IntelLeadModal({
   // Soft gate: close button triggers skip behavior
   const handleClose = () => {
     if (!isLoading) {
+      // Track modal abandonment if not successful
+      if (!isSuccess && modalOpenTime > 0 && resource) {
+        const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000); // seconds
+        logEvent({
+          event_name: 'modal_abandon',
+          tool_name: 'intel-library',
+          params: {
+            modal_type: 'intel_lead',
+            resource_id: resource.id,
+            resource_title: resource.title,
+            time_spent_seconds: timeSpent,
+          },
+        });
+      }
+
       setIsSuccess(false);
       onClose(); // Parent handles skip logic (redirect if landing page exists)
     }

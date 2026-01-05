@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { usePageTracking } from '@/hooks/usePageTracking';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,10 +9,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Mail, ArrowLeft, Vault, CheckCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 
 export default function Auth() {
+  usePageTracking('auth');
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -184,6 +187,9 @@ export default function Auth() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { SessionData } from '@/hooks/useSessionData';
 import { Calendar, Check, Loader2 } from 'lucide-react';
+import { logEvent } from '@/lib/windowTruthClient';
 
 interface ConsultationBookingModalProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ export function ConsultationBookingModal({
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [modalOpenTime, setModalOpenTime] = useState<number>(0);
 
   const { values, errors, setValue, setValues, hasError, getError, getFieldProps, validateAll, clearErrors } = useFormValidation({
     initialValues: {
@@ -66,6 +68,22 @@ export function ConsultationBookingModal({
       phone: formatPhoneNumber,
     },
   });
+
+  // Track modal open - fires ONLY when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const now = Date.now();
+      setModalOpenTime(now);
+
+      logEvent({
+        event_name: 'modal_open',
+        tool_name: 'expert-system',
+        params: {
+          modal_type: 'consultation_booking',
+        },
+      });
+    }
+  }, [isOpen]); // Only isOpen dependency
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,11 +134,22 @@ export function ConsultationBookingModal({
 
       if (data.success) {
         setIsSuccess(true);
+
+        // Track successful consultation booking
+        logEvent({
+          event_name: 'consultation_booked',
+          tool_name: 'expert-system',
+          params: {
+            preferred_time: values.preferredTime,
+            lead_id: data.leadId,
+          },
+        });
+
         toast({
           title: 'Consultation Requested!',
           description: "We'll contact you within 24 hours.",
         });
-        
+
         setTimeout(() => {
           onSuccess();
         }, 2000);
@@ -141,6 +170,19 @@ export function ConsultationBookingModal({
 
   const handleClose = () => {
     if (!isLoading) {
+      // Track modal abandonment if not successful
+      if (!isSuccess && modalOpenTime > 0) {
+        const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000); // seconds
+        logEvent({
+          event_name: 'modal_abandon',
+          tool_name: 'expert-system',
+          params: {
+            modal_type: 'consultation_booking',
+            time_spent_seconds: timeSpent,
+          },
+        });
+      }
+
       setIsSuccess(false);
       setValues({
         name: sessionData.name || '',

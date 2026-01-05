@@ -5,8 +5,11 @@ import { UncomfortableTruth } from '@/components/home/UncomfortableTruth';
 import { ToolGrid } from '@/components/home/ToolGrid';
 import { SocialProof } from '@/components/home/SocialProof';
 import { Footer } from '@/components/home/Footer';
+import { usePageTracking } from '@/hooks/usePageTracking';
 
 const Index = () => {
+  usePageTracking('homepage');
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

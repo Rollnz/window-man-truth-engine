@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Target, 
-  Download, 
-  Smartphone, 
-  Clock, 
-  FileText, 
-  AlertTriangle, 
-  Eye, 
-  CheckCircle2, 
+import { usePageTracking } from '@/hooks/usePageTracking';
+import {
+  Target,
+  Download,
+  Smartphone,
+  Clock,
+  FileText,
+  AlertTriangle,
+  Eye,
+  CheckCircle2,
   ArrowRight,
   ScanSearch,
   Scale,
@@ -27,6 +28,7 @@ import { toast } from '@/hooks/use-toast';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
 
 const SalesTacticsGuide = () => {
+  usePageTracking('sales-tactics-guide');
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

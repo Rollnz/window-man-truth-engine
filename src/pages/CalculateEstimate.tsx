@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { usePageTracking } from "@/hooks/usePageTracking";
+import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import {
   Calendar, Phone, HelpCircle, Check, Shield, Info, ArrowRight,
   Loader2, X, ArrowDown, Sparkles, MessageSquare, Mail,
@@ -1084,6 +1086,8 @@ const QuoteBuilderV2 = () => {
 };
 
 export default function CalculateEstimate() {
+  usePageTracking('calculate-estimate');
+
   return (
     <div className="min-h-screen bg-white text-slate-900">
       {/* Back navigation */}
@@ -1105,6 +1109,9 @@ export default function CalculateEstimate() {
       <HowItWorks />
       <WhoIsThisFor />
       <RelatedToolsSection />
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 }

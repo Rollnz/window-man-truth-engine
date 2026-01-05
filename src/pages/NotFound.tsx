@@ -1,9 +1,12 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { usePageTracking } from "@/hooks/usePageTracking";
+import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 
 const ADMIN_ONLY_PREFIXES = ["/admin", "/dashboard", "/vault", "/internal"];
 
 const NotFound = () => {
+  usePageTracking('404');
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -26,6 +29,9 @@ const NotFound = () => {
           Return to Home
         </a>
       </div>
+
+      {/* Minimal Footer */}
+      <MinimalFooter />
     </div>
   );
 };
