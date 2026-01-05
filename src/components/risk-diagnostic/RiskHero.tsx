@@ -33,8 +33,14 @@ export function RiskHero({ sessionData, onStart, hasStarted }: RiskHeroProps) {
         </Link>
 
         {/* Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-6">
-          <Shield className="w-8 h-8 text-primary" />
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-6 relative">
+          <Shield className="w-8 h-8 text-primary opacity-40" />
+          <img 
+  src="/favicon.png" 
+  alt="Logo" 
+  className="absolute w-4 h-4 object-contain" 
+  style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+/>
         </div>
 
         {/* Badge */}
