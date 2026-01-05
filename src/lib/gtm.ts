@@ -1,4 +1,3 @@
-```typescript
 // Google Tag Manager utilities
 export const GTM_ID = 'GTM-NHVFR5QZ';
 
@@ -94,5 +93,3 @@ export const trackFormSubmit = (formName: string, additionalParams?: Record<stri
     ...additionalParams,
   });
 };
-
-```
