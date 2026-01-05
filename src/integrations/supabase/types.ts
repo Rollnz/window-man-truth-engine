@@ -169,6 +169,106 @@ export type Database = {
         }
         Relationships: []
       }
+      wm_events: {
+        Row: {
+          created_at: string
+          event_category: string | null
+          event_data: Json | null
+          event_name: string
+          id: string
+          page_path: string | null
+          page_title: string | null
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_category?: string | null
+          event_data?: Json | null
+          event_name: string
+          id?: string
+          page_path?: string | null
+          page_title?: string | null
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          event_category?: string | null
+          event_data?: Json | null
+          event_name?: string
+          id?: string
+          page_path?: string | null
+          page_title?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wm_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "wm_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wm_sessions: {
+        Row: {
+          anonymous_id: string
+          created_at: string
+          id: string
+          ip_hash: string | null
+          landing_page: string | null
+          lead_id: string | null
+          referrer: string | null
+          updated_at: string
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          anonymous_id: string
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          landing_page?: string | null
+          lead_id?: string | null
+          referrer?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          anonymous_id?: string
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          landing_page?: string | null
+          lead_id?: string | null
+          referrer?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wm_sessions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
