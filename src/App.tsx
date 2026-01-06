@@ -32,6 +32,7 @@ import Defense from "./pages/Defense";
 import Roleplay from "./pages/Roleplay";
 import Privacy from "./pages/legal/Privacy";
 import Terms from "./pages/legal/Terms";
+import BeatYourQuote from "./pages/BeatYourQuote";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
           <Route path="/faq" element={<FAQ />} />
           <Route path="/defense" element={<Defense />} />
           <Route path="/roleplay" element={<Roleplay />} />
+          <Route path="/beat-your-quote" element={<BeatYourQuote />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, Home, Leaf, ShieldCheck, Sparkles, Wand2, X } from 'lucide-react';
+import { ArrowRight, Home, Leaf, ShieldCheck, Sparkles, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
+import { useSessionData } from '@/hooks/useSessionData';
+import { logEvent } from '@/lib/windowTruthClient';
+import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
+import { trackModalOpen, trackLeadCapture } from '@/lib/gtm';
 
 type CalculatorInputs = {
   projectCost: number;
@@ -33,7 +43,7 @@ const SAVINGS_HIGHLIGHTS: SavingsHighlight[] = [
     title: 'Energy Bill Savings',
     borderClass: 'border-emerald-100',
     badgeClass: 'bg-emerald-100 text-emerald-700',
-    icon: <Leaf className="h-5 w-5" />, // conveys efficiency
+    icon: <Leaf className="h-5 w-5" />,
     points: [
       'Energy-efficient impact windows can cut cooling energy use by roughly 12–25% in hot climates.',
       'Your AC runs shorter, gentler cycles all summer.',
@@ -44,7 +54,7 @@ const SAVINGS_HIGHLIGHTS: SavingsHighlight[] = [
     title: 'Insurance Discounts',
     borderClass: 'border-sky-100',
     badgeClass: 'bg-sky-100 text-sky-700',
-    icon: <ShieldCheck className="h-5 w-5" />, // coverage and protection
+    icon: <ShieldCheck className="h-5 w-5" />,
     points: [
       'Florida insurers offer wind-mitigation credits when you harden all openings.',
       'Many homeowners see meaningful savings on the hurricane portion of their premium.',
@@ -55,7 +65,7 @@ const SAVINGS_HIGHLIGHTS: SavingsHighlight[] = [
     title: 'Tax Credits & Grants',
     borderClass: 'border-amber-100',
     badgeClass: 'bg-amber-100 text-amber-700',
-    icon: <Sparkles className="h-5 w-5" />, // incentive/bonus
+    icon: <Sparkles className="h-5 w-5" />,
     points: [
       'Federal energy-efficiency incentives can offset part of your upgrade cost.',
       'State programs like My Safe Florida Home offer grants for hardening upgrades.',
@@ -66,7 +76,7 @@ const SAVINGS_HIGHLIGHTS: SavingsHighlight[] = [
     title: 'Home Value & Less Hassle',
     borderClass: 'border-violet-100',
     badgeClass: 'bg-violet-100 text-violet-700',
-    icon: <Home className="h-5 w-5" />, // property value
+    icon: <Home className="h-5 w-5" />,
     points: [
       'Impact windows boost resale appeal and make your home stand out.',
       'No more buying plywood or paying someone to board up every storm.',
@@ -103,7 +113,6 @@ function calculateMonthlyPayment({ projectCost, termYears, aprPercent }: Calcula
   }
 
   const growth = Math.pow(1 + monthlyRate, totalMonths);
-  // Standard amortization formula: payment = P * r * (1+r)^n / ((1+r)^n - 1)
   return (projectCost * monthlyRate * growth) / (growth - 1);
 }
 
@@ -157,7 +166,7 @@ function FadeInSection({
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsVisible(true);
-            observer.unobserve(entry.target); // stop observing once visible to reduce work
+            observer.unobserve(entry.target);
           }
         });
       },
@@ -192,6 +201,9 @@ function FadeInSection({
 }
 
 export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalculatorProps) {
+  const { toast } = useToast();
+  const { sessionData, updateFields } = useSessionData();
+  
   const [inputs, setInputs] = useState<CalculatorInputs>(defaults);
   const [scenarioPrompt, setScenarioPrompt] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -199,7 +211,26 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
   const [flashFields, setFlashFields] = useState<Set<keyof CalculatorInputs>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
-  const modalRef = useRef<HTMLDivElement | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form state with validation - all fields validated via useFormValidation
+  const { values, hasError, getError, getFieldProps, validateAll, clearErrors } = useFormValidation({
+    initialValues: {
+      email: sessionData.email || '',
+      firstName: sessionData.name?.split(' ')[0] || '',
+      lastName: sessionData.name?.split(' ').slice(1).join(' ') || '',
+      phone: sessionData.phone || '',
+    },
+    schemas: {
+      email: commonSchemas.email,
+      firstName: commonSchemas.firstName,
+      lastName: commonSchemas.lastName,
+      phone: commonSchemas.phone,
+    },
+    formatters: {
+      phone: formatPhoneNumber,
+    },
+  });
 
   const monthlyPayment = useMemo(() => calculateMonthlyPayment(inputs), [inputs]);
   const netCost = useMemo(
@@ -216,6 +247,22 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
   );
   const showSavingsNotice = netCost === 0 && monthlyPayment > 0;
 
+  // Track modal open
+  useEffect(() => {
+    if (isModalOpen) {
+      trackModalOpen('true-cost-quote-modal', {
+        project_cost: inputs.projectCost,
+        estimated_payment: monthlyPayment,
+        net_cost: netCost,
+      });
+      logEvent({
+        event_name: 'modal_open',
+        tool_name: 'true-cost-calculator',
+        params: { modal_type: 'quote_request' },
+      });
+    }
+  }, [isModalOpen, inputs.projectCost, monthlyPayment, netCost]);
+
   useEffect(() => {
     if (flashFields.size === 0) return undefined;
 
@@ -226,8 +273,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
   const updateField = (field: keyof CalculatorInputs, value: number) => {
     setInputs((prev) => {
       const nextValue = sanitizePositiveNumber(value, prev[field]);
-      const next = { ...prev, [field]: nextValue } as CalculatorInputs;
-      return next;
+      return { ...prev, [field]: nextValue };
     });
   };
 
@@ -247,13 +293,8 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
     }
 
     setInputs((prev) => {
-      const next: CalculatorInputs = {
-        ...prev,
-        ...updates,
-      };
-
       setFlashFields(new Set(Object.keys(updates) as (keyof CalculatorInputs)[]));
-      return next;
+      return { ...prev, ...updates };
     });
 
     setScenarioPrompt('');
@@ -266,48 +307,109 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
     setAiFeedback(null);
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const leadData = Object.fromEntries(formData.entries());
-    console.log('Lead captured:', leadData);
-    setIsFormSubmitted(true);
+
+    if (!validateAll()) {
+      const firstError = getError('firstName') || getError('lastName') || getError('email') || getError('phone');
+      toast({
+        title: 'Please fix the errors',
+        description: firstError || 'Check the form for issues',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const fullName = `${values.firstName.trim()} ${values.lastName.trim()}`;
+      
+      const enrichedSessionData = {
+        ...sessionData,
+        projectCost: inputs.projectCost,
+        estimatedPayment: monthlyPayment,
+        estimatedMonthlySavings: inputs.estimatedMonthlySavings,
+        netMonthlyCost: netCost,
+        termYears: inputs.termYears,
+        aprPercent: inputs.aprPercent,
+      };
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            email: values.email.trim(),
+            name: fullName,
+            phone: values.phone.trim(),
+            sourceTool: 'true-cost-calculator',
+            sessionData: enrichedSessionData,
+            attribution: getAttributionData(),
+            aiContext: buildAIContextFromSession(sessionData, 'true-cost-calculator'),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to save');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.leadId) {
+        trackLeadCapture({
+          sourceTool: 'true-cost-calculator',
+          email: values.email,
+          hasPhone: true,
+        });
+
+        updateFields({
+          email: values.email,
+          name: fullName,
+          phone: values.phone,
+        });
+
+        logEvent({
+          event_name: 'lead_captured',
+          tool_name: 'true-cost-calculator',
+          params: {
+            project_cost: inputs.projectCost,
+            net_cost: netCost,
+          },
+        });
+
+        setIsFormSubmitted(true);
+        
+        toast({
+          title: 'Quote Request Sent!',
+          description: "We'll be in touch with your customized numbers.",
+        });
+      } else {
+        throw new Error(data.error || 'Failed to save');
+      }
+    } catch (error) {
+      console.error('Lead capture error:', error);
+      toast({
+        title: 'Unable to submit',
+        description: error instanceof Error ? error.message : 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setIsFormSubmitted(false);
+    clearErrors();
   };
-
-  useEffect(() => {
-    if (!isModalOpen || !modalRef.current) return undefined;
-
-    const focusableSelector =
-      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
-    const focusable = Array.from(modalRef.current.querySelectorAll<HTMLElement>(focusableSelector));
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    if (first) {
-      first.focus();
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab' || focusable.length === 0) return;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last?.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first?.focus();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isFormSubmitted, isModalOpen]);
 
   const renderHighlightCard = (highlight: SavingsHighlight, index: number) => (
     <FadeInSection key={highlight.title} delay={index * 100}>
@@ -549,114 +651,106 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
         </div>
       </div>
 
-      {isModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="quote-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              handleCloseModal();
-            }
-          }}
-        >
-          <div ref={modalRef} className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-              <h2 id="quote-modal-title" className="text-2xl font-black text-gray-900">
-                Request Your Quote
-              </h2>
-              <button
-                type="button"
-                aria-label="Close"
-                onClick={handleCloseModal}
-                className="text-gray-400 transition-colors hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
+      {/* Quote Request Modal */}
+      <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black">Request Your Quote</DialogTitle>
+            <DialogDescription>
+              Get your personalized numbers based on your project details.
+            </DialogDescription>
+          </DialogHeader>
 
-            {!isFormSubmitted ? (
-              <form onSubmit={handleSubmit} className="space-y-4 px-8 py-6">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase text-gray-500" htmlFor="firstName">
-                      First Name
-                    </label>
-                    <input
-                      id="firstName"
-                      name="firstName"
-                      required
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:ring-2 focus:ring-sky-500"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase text-gray-500" htmlFor="lastName">
-                      Last Name
-                    </label>
-                    <input
-                      id="lastName"
-                      name="lastName"
-                      required
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:ring-2 focus:ring-sky-500"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500" htmlFor="email">
-                    Email Address
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:ring-2 focus:ring-sky-500"
+          {!isFormSubmitted ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-xs font-bold uppercase text-muted-foreground">
+                    First Name
+                  </Label>
+                  <Input
+                    id="firstName"
+                    {...getFieldProps('firstName')}
+                    className={cn('h-12', hasError('firstName') && 'border-destructive')}
                   />
+                  {hasError('firstName') && (
+                    <p className="text-xs text-destructive">{getError('firstName')}</p>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500" htmlFor="phone">
-                    Phone Number
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:ring-2 focus:ring-sky-500"
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-xs font-bold uppercase text-muted-foreground">
+                    Last Name
+                  </Label>
+                  <Input
+                    id="lastName"
+                    {...getFieldProps('lastName')}
+                    className={cn('h-12', hasError('lastName') && 'border-destructive')}
                   />
+                  {hasError('lastName') && (
+                    <p className="text-xs text-destructive">{getError('lastName')}</p>
+                  )}
                 </div>
-                <div className="pt-4">
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl bg-sky-600 py-4 font-bold text-white shadow-lg shadow-sky-200 transition-colors hover:bg-sky-700"
-                  >
-                    Send My Request
-                  </button>
-                  <p className="mt-4 text-center text-[10px] text-gray-400">
-                    By clicking, you agree to be contacted regarding your window estimate.
-                  </p>
-                </div>
-              </form>
-            ) : (
-                <div className="px-8 py-12 text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                    <ShieldCheck className="h-8 w-8" strokeWidth={3} />
-                  </div>
-                  <h3 className="mb-2 text-xl font-bold text-gray-900">Request Sent!</h3>
-                  <p className="text-sm text-gray-600">We'll be in touch with your customized quote shortly.</p>
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="mt-6 text-sm font-bold text-sky-600"
-                  >
-                    Close
-                  </button>
-                </div>
-            )}
-          </div>
-        </div>
-      )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-xs font-bold uppercase text-muted-foreground">
+                  Email Address
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...getFieldProps('email')}
+                  className={cn('h-12', hasError('email') && 'border-destructive')}
+                />
+                {hasError('email') && (
+                  <p className="text-xs text-destructive">{getError('email')}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-xs font-bold uppercase text-muted-foreground">
+                  Phone Number
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  {...getFieldProps('phone')}
+                  placeholder="(555) 123-4567"
+                  className={cn('h-12', hasError('phone') && 'border-destructive')}
+                />
+                {hasError('phone') && (
+                  <p className="text-xs text-destructive">{getError('phone')}</p>
+                )}
+              </div>
+              <div className="pt-4">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full h-12 font-bold"
+                >
+                  {isSubmitting ? 'Sending...' : 'Send My Request'}
+                </Button>
+                <p className="mt-4 text-center text-[10px] text-muted-foreground">
+                  By clicking, you agree to be contacted regarding your window estimate.
+                </p>
+              </div>
+            </form>
+          ) : (
+            <div className="py-8 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                <ShieldCheck className="h-8 w-8" strokeWidth={3} />
+              </div>
+              <h3 className="mb-2 text-xl font-bold">Request Sent!</h3>
+              <p className="text-sm text-muted-foreground">We'll be in touch with your customized quote shortly.</p>
+              <Button
+                variant="link"
+                onClick={handleCloseModal}
+                className="mt-6 font-bold text-primary"
+              >
+                Close
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
