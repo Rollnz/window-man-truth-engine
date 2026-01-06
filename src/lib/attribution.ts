@@ -4,6 +4,8 @@
  * so attribution is preserved across the user's session.
  */
 
+import { SessionData } from '@/hooks/useSessionData';
+
 const ATTRIBUTION_STORAGE_KEY = 'wm_attribution_data';
 
 export interface AttributionData {
@@ -136,13 +138,17 @@ export const initializeAttribution = (): void => {
 /**
  * Build AI context data from session data
  */
-export const buildAIContextFromSession = (sessionData: Record<string, unknown>): AIContextData => {
+export const buildAIContextFromSession = (
+  sessionData: Partial<SessionData>,
+  sourceToolOverride?: string
+): AIContextData => {
   return {
-    source_form: sessionData.sourceTool as string || undefined,
+    // Prefer the explicit source tool passed in; fall back to session data
+    source_form: sourceToolOverride || sessionData.sourceTool || undefined,
     window_count: typeof sessionData.windowCount === 'number' ? sessionData.windowCount : undefined,
-    insurance_carrier: sessionData.insuranceCarrier as string || undefined,
-    urgency_level: sessionData.urgencyLevel as string || undefined,
-    emotional_state: sessionData.emotionalState as string || undefined,
-    specific_detail: sessionData.specificDetail as string || undefined,
+    insurance_carrier: sessionData.insuranceCarrier || undefined,
+    urgency_level: sessionData.urgencyLevel || undefined,
+    emotional_state: sessionData.emotionalState || undefined,
+    specific_detail: sessionData.specificDetail || undefined,
   };
 };

@@ -4,15 +4,20 @@ export interface SessionData {
   homeSize?: number;
   windowCount?: number;
   windowAge?: string;
+  sourceTool?: string;
   windowAgeYears?: number;
   currentEnergyBill?: string;
   currentEnergyBillAmount?: number;
+  insuranceCarrier?: string;
   homeType?: 'single-family' | 'condo' | 'townhouse' | 'multi-family' | 'other';
   zipCode?: string;
   email?: string;
   name?: string;
   phone?: string;
   notes?: string;
+  urgencyLevel?: string;
+  emotionalState?: string;
+  specificDetail?: string;
   // Reality Check specific
   draftinessLevel?: 'none' | 'slight' | 'moderate' | 'severe';
   noiseLevel?: 'none' | 'slight' | 'moderate' | 'severe';

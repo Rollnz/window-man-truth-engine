@@ -91,7 +91,7 @@ export function IntelLeadModal({
             sessionData,
             chatHistory: [],
             attribution: getAttributionData(),
-            aiContext: buildAIContextFromSession(sessionData as Record<string, unknown>),
+            aiContext: buildAIContextFromSession(sessionData, 'intel-library'),
           }),
         }
       );

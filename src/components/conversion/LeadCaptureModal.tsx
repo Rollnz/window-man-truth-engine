@@ -117,7 +117,7 @@ export function LeadCaptureModal({
             sessionData,
             chatHistory: chatHistory || [],
             attribution: getAttributionData(),
-            aiContext: buildAIContextFromSession(sessionData as Record<string, unknown>),
+            aiContext: buildAIContextFromSession(sessionData, sourceTool),
           }),
         }
       );
