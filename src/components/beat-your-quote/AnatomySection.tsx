@@ -49,21 +49,13 @@ export function AnatomySection() {
   const [hasEntered, setHasEntered] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [visibleBloatIndex, setVisibleBloatIndex] = useState(-1);
-  const [dissolvedBloatIndex, setDissolvedBloatIndex] = useState(-1);
   const [showRemains, setShowRemains] = useState(false);
   const [showOutcomes, setShowOutcomes] = useState(false);
-  const [counterGlitching, setCounterGlitching] = useState(false);
 
-  // Calculate exposed bloat based on visible (non-dissolved) cards
+  // Calculate exposed bloat based on visible cards
   const exposedBloat = BLOAT_ITEMS
     .slice(0, visibleBloatIndex + 1)
     .reduce((sum, item) => sum + item.amount, 0);
-
-  // Trigger counter glitch when a card dissolves
-  const triggerCounterGlitch = () => {
-    setCounterGlitching(true);
-    setTimeout(() => setCounterGlitching(false), 100);
-  };
 
   // Intersection Observer for scroll-triggered animations
   useEffect(() => {
@@ -87,33 +79,23 @@ export function AnatomySection() {
     return () => observer.disconnect();
   }, [hasEntered]);
 
-  // Animated scan sequence with dissolve effect
+  // Animated scan sequence
   const startScanSequence = () => {
-    const progressSteps = [25, 50, 75, 100];
+    // Start progress bar
+    const progressSteps = [15, 30, 50, 70, 85, 100];
     let stepIndex = 0;
 
     const progressInterval = setInterval(() => {
       if (stepIndex < progressSteps.length) {
         setScanProgress(progressSteps[stepIndex]);
         
-        // Reveal bloat card at this step
+        // Reveal bloat cards at specific progress points
         if (stepIndex < BLOAT_ITEMS.length) {
           setTimeout(() => {
             setVisibleBloatIndex(stepIndex);
             trackEvent('bloat_revealed', { 
               item: BLOAT_ITEMS[stepIndex].id 
             });
-            
-            // Dissolve previous card after a hold period
-            if (stepIndex > 0) {
-              setTimeout(() => {
-                setDissolvedBloatIndex(stepIndex - 1);
-                triggerCounterGlitch();
-                trackEvent('bloat_dissolved', { 
-                  item: BLOAT_ITEMS[stepIndex - 1].id 
-                });
-              }, 800);
-            }
           }, 400);
         }
         
@@ -121,27 +103,17 @@ export function AnatomySection() {
       } else {
         clearInterval(progressInterval);
         
-        // Dissolve the last card
-        setTimeout(() => {
-          setDissolvedBloatIndex(BLOAT_ITEMS.length - 1);
-          triggerCounterGlitch();
-          trackEvent('bloat_dissolved', { 
-            item: BLOAT_ITEMS[BLOAT_ITEMS.length - 1].id 
-          });
-        }, 600);
-        
-        // Show remains after all bloat dissolved
+        // Show remains after all bloat revealed
         setTimeout(() => {
           setShowRemains(true);
-          trackEvent('anatomy_complete');
-        }, 1200);
+        }, 800);
         
         // Show outcomes after remains
         setTimeout(() => {
           setShowOutcomes(true);
-        }, 1900);
+        }, 1500);
       }
-    }, 1800);
+    }, 1200);
   };
 
   return (
@@ -209,7 +181,6 @@ export function AnatomySection() {
         <BloatExposedCounter 
           amount={exposedBloat} 
           isVisible={visibleBloatIndex >= 0 && !showRemains}
-          isGlitching={counterGlitching}
         />
 
         {/* Bloat Cards */}
@@ -222,7 +193,6 @@ export function AnatomySection() {
               amount={item.amount}
               description={item.description}
               isVisible={index <= visibleBloatIndex}
-              isDissolving={index <= dissolvedBloatIndex}
               delay={index * 100}
             />
           ))}

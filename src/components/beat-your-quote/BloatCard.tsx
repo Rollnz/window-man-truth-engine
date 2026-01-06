@@ -6,31 +6,21 @@ interface BloatCardProps {
   amount: number;
   description: string;
   isVisible: boolean;
-  isDissolving?: boolean;
   delay?: number;
 }
 
-export function BloatCard({ title, percentage, amount, description, isVisible, isDissolving = false, delay = 0 }: BloatCardProps) {
-  // Three states: hidden -> visible -> dissolved
-  const getStateClasses = () => {
-    if (isDissolving) {
-      return 'opacity-0 scale-95 blur-sm translate-y-0 pointer-events-none';
-    }
-    if (isVisible) {
-      return 'opacity-100 translate-y-0 scale-100 blur-0';
-    }
-    return 'opacity-0 translate-y-8 scale-100 blur-0 pointer-events-none';
-  };
-
+export function BloatCard({ title, percentage, amount, description, isVisible, delay = 0 }: BloatCardProps) {
   return (
     <div 
       className={`
         relative p-6 rounded-lg border-2 border-red-500/60 bg-red-950/20
-        transition-all ease-out
-        ${isDissolving ? 'duration-600' : 'duration-700'}
-        ${getStateClasses()}
+        transition-all duration-700 ease-out
+        ${isVisible 
+          ? 'opacity-100 translate-y-0' 
+          : 'opacity-0 translate-y-8 pointer-events-none'
+        }
       `}
-      style={{ transitionDelay: isDissolving ? '0ms' : `${delay}ms` }}
+      style={{ transitionDelay: `${delay}ms` }}
     >
       {/* Warning Icon */}
       <AlertTriangle className="absolute top-4 right-4 w-6 h-6 text-red-400" />
