@@ -28,7 +28,7 @@ export default function Roleplay() {
   const { isNavbarVisible } = useScrollLock({ enabled: isPlaying });
 
   useEffect(() => {
-    trackPageView('/roleplay', 'Beat The Closer - Sales Resistance Training');
+    trackPageView('/roleplay');
   }, []);
 
   const handleStart = (difficulty: Difficulty) => {
