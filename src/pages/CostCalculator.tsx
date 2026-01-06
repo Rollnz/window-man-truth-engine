@@ -19,6 +19,7 @@ import {
 } from '@/lib/calculations';
 import { ArrowLeft, ArrowRight, MessageCircle, Sparkles } from 'lucide-react';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
+import { TrueCostCalculator } from '@/components/cost-calculator/TrueCostCalculator';
 
 export default function CostCalculator() {
   usePageTracking('cost-calculator');
@@ -196,6 +197,12 @@ export default function CostCalculator() {
           </div>
         )}
       </main>
+
+      <div className="px-4 pb-12">
+        <div className="mx-auto max-w-6xl">
+          <TrueCostCalculator />
+        </div>
+      </div>
 
       {/* Minimal Footer */}
       <MinimalFooter />
