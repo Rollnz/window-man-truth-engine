@@ -1,70 +1,39 @@
-import { useEffect, useState } from 'react';
-
 interface ScanProgressBarProps {
-  progress: number; // 0-100
-  isScanning: boolean;
+  isVisible: boolean;
 }
 
-export function ScanProgressBar({ progress, isScanning }: ScanProgressBarProps) {
-  const [displayProgress, setDisplayProgress] = useState(0);
-
-  useEffect(() => {
-    if (isScanning) {
-      const timer = setTimeout(() => {
-        setDisplayProgress(progress);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [progress, isScanning]);
-
+export function ScanProgressBar({ isVisible }: ScanProgressBarProps) {
   return (
-    <div className="relative w-full py-6">
+    <div 
+      className={`
+        fixed left-0 right-0 z-40 pointer-events-none
+        transition-opacity duration-500
+        ${isVisible ? 'opacity-100' : 'opacity-0'}
+      `}
+      style={{ top: '70vh' }}
+    >
       {/* Label */}
-      <div className="text-center mb-3">
-        <span className="text-xs font-mono tracking-[0.3em] text-[#00D4FF]">
-          {isScanning ? 'SCANNING' : 'SCAN COMPLETE'}
+      <div className="text-center mb-2">
+        <span className="text-xs font-mono tracking-[0.3em] text-[#00D4FF] bg-[#0A0F14]/90 px-4 py-1">
+          SCANNING
         </span>
       </div>
       
-      {/* Progress Bar Container */}
-      <div className="relative h-1 bg-[#0A0F14] rounded-full overflow-hidden">
-        {/* Glow Background */}
+      {/* Progress Bar - Full Width */}
+      <div className="relative h-1 bg-transparent">
+        {/* Main Line */}
         <div 
-          className="absolute inset-0 blur-sm bg-gradient-to-r from-transparent via-[#00D4FF]/30 to-transparent"
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00D4FF] to-transparent"
           style={{ 
-            width: `${displayProgress}%`,
-            transition: 'width 0.8s ease-out'
-          }}
-        />
-        
-        {/* Main Progress */}
-        <div 
-          className="absolute h-full bg-gradient-to-r from-[#00D4FF]/60 via-[#00D4FF] to-[#00D4FF]/60 rounded-full"
-          style={{ 
-            width: `${displayProgress}%`,
-            transition: 'width 0.8s ease-out',
             boxShadow: '0 0 20px #00D4FF, 0 0 40px #00D4FF50'
           }}
         />
         
-        {/* Scanning Pulse */}
-        {isScanning && (
-          <div 
-            className="absolute h-full w-24 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"
-            style={{ 
-              left: `${displayProgress - 10}%`,
-              transition: 'left 0.8s ease-out'
-            }}
-          />
-        )}
+        {/* Sweeping Glow Animation */}
+        <div 
+          className="absolute h-full w-32 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[scan-sweep_2s_ease-in-out_infinite]"
+        />
       </div>
-      
-      {/* Side Glows */}
-      <div className="absolute left-0 top-1/2 w-8 h-8 -translate-y-1/2 bg-[#00D4FF]/20 blur-xl rounded-full" />
-      <div 
-        className="absolute top-1/2 w-8 h-8 -translate-y-1/2 bg-[#00D4FF]/40 blur-xl rounded-full transition-all duration-800"
-        style={{ left: `${displayProgress}%` }}
-      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { FileSearch, Calculator, Shield, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/gtm';
+import { StampBadge } from './StampBadge';
 
 const TOOLS = [
   {
@@ -49,10 +50,8 @@ export function ToolsSection() {
       <div className="container max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#00D4FF]/30 bg-[#00D4FF]/10 mb-6">
-            <span className="text-sm font-mono tracking-wider text-[#00D4FF]">
-              MISSION SUPPORT TOOLS
-            </span>
+          <div className="flex justify-center mb-6">
+            <StampBadge variant="cyan">Intelligence Assets</StampBadge>
           </div>
           
           <h2 className="text-3xl md:text-4xl font-bold font-mono mb-4">

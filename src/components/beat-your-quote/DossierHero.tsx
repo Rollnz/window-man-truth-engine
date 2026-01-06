@@ -1,5 +1,6 @@
 import { Shield, ChevronDown, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { StampBadge } from './StampBadge';
 
 export function DossierHero() {
   const scrollToSection = (id: string) => {
@@ -24,8 +25,8 @@ export function DossierHero() {
       {/* Content - z-10 */}
       <div className="relative z-10 container px-4 text-center max-w-4xl">
         {/* Classified Stamp */}
-        <div className="stamp stamp-red mb-8 animate-fade-in">
-          CLASSIFIED
+        <div className="mb-8 animate-fade-in">
+          <StampBadge variant="red">Classified</StampBadge>
         </div>
 
         {/* Shield Icon */}
