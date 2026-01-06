@@ -213,14 +213,23 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form state with validation
-  const [firstName, setFirstName] = useState(sessionData.name?.split(' ')[0] || '');
-  const [lastName, setLastName] = useState(sessionData.name?.split(' ').slice(1).join(' ') || '');
-  const [phone, setPhone] = useState(sessionData.phone || '');
-
+  // Form state with validation - all fields validated via useFormValidation
   const { values, hasError, getError, getFieldProps, validateAll, clearErrors } = useFormValidation({
-    initialValues: { email: sessionData.email || '' },
-    schemas: { email: commonSchemas.email },
+    initialValues: {
+      email: sessionData.email || '',
+      firstName: sessionData.name?.split(' ')[0] || '',
+      lastName: sessionData.name?.split(' ').slice(1).join(' ') || '',
+      phone: sessionData.phone || '',
+    },
+    schemas: {
+      email: commonSchemas.email,
+      firstName: commonSchemas.firstName,
+      lastName: commonSchemas.lastName,
+      phone: commonSchemas.phone,
+    },
+    formatters: {
+      phone: formatPhoneNumber,
+    },
   });
 
   const monthlyPayment = useMemo(() => calculateMonthlyPayment(inputs), [inputs]);
@@ -298,26 +307,14 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
     setAiFeedback(null);
   };
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPhone(formatPhoneNumber(e.target.value));
-  };
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!validateAll()) {
+      const firstError = getError('firstName') || getError('lastName') || getError('email') || getError('phone');
       toast({
-        title: 'Invalid Email',
-        description: getError('email') || 'Please check your email',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!firstName.trim() || !lastName.trim() || !phone.trim()) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please fill in all required fields.',
+        title: 'Please fix the errors',
+        description: firstError || 'Check the form for issues',
         variant: 'destructive',
       });
       return;
@@ -326,7 +323,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
     setIsSubmitting(true);
 
     try {
-      const fullName = `${firstName.trim()} ${lastName.trim()}`;
+      const fullName = `${values.firstName.trim()} ${values.lastName.trim()}`;
       
       const enrichedSessionData = {
         ...sessionData,
@@ -349,7 +346,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
           body: JSON.stringify({
             email: values.email.trim(),
             name: fullName,
-            phone: phone.trim(),
+            phone: values.phone.trim(),
             sourceTool: 'true-cost-calculator',
             sessionData: enrichedSessionData,
             attribution: getAttributionData(),
@@ -375,7 +372,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
         updateFields({
           email: values.email,
           name: fullName,
-          phone: phone,
+          phone: values.phone,
         });
 
         logEvent({
@@ -673,11 +670,12 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
                   </Label>
                   <Input
                     id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                    className="h-12"
+                    {...getFieldProps('firstName')}
+                    className={cn('h-12', hasError('firstName') && 'border-destructive')}
                   />
+                  {hasError('firstName') && (
+                    <p className="text-xs text-destructive">{getError('firstName')}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName" className="text-xs font-bold uppercase text-muted-foreground">
@@ -685,11 +683,12 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
                   </Label>
                   <Input
                     id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                    className="h-12"
+                    {...getFieldProps('lastName')}
+                    className={cn('h-12', hasError('lastName') && 'border-destructive')}
                   />
+                  {hasError('lastName') && (
+                    <p className="text-xs text-destructive">{getError('lastName')}</p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
@@ -700,7 +699,6 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
                   id="email"
                   type="email"
                   {...getFieldProps('email')}
-                  required
                   className={cn('h-12', hasError('email') && 'border-destructive')}
                 />
                 {hasError('email') && (
@@ -714,12 +712,13 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
                 <Input
                   id="phone"
                   type="tel"
-                  value={phone}
-                  onChange={handlePhoneChange}
+                  {...getFieldProps('phone')}
                   placeholder="(555) 123-4567"
-                  required
-                  className="h-12"
+                  className={cn('h-12', hasError('phone') && 'border-destructive')}
                 />
+                {hasError('phone') && (
+                  <p className="text-xs text-destructive">{getError('phone')}</p>
+                )}
               </div>
               <div className="pt-4">
                 <Button
