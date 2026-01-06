@@ -4,6 +4,8 @@ import { Navbar } from '@/components/home/Navbar';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { DossierHero } from '@/components/beat-your-quote/DossierHero';
 import { ConceptSection } from '@/components/beat-your-quote/ConceptSection';
+import { AnatomySection } from '@/components/beat-your-quote/AnatomySection';
+import { ToolsSection } from '@/components/beat-your-quote/ToolsSection';
 
 export default function BeatYourQuote() {
   usePageTracking('beat-your-quote');
@@ -15,6 +17,8 @@ export default function BeatYourQuote() {
       <main>
         <DossierHero />
         <ConceptSection />
+        <AnatomySection />
+        <ToolsSection />
       </main>
       <MinimalFooter />
     </div>
