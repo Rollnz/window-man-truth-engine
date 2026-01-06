@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { trackEvent } from '@/lib/gtm';
+import { StampBadge } from './StampBadge';
 
 interface FAQItem {
   id: string;
@@ -166,11 +167,9 @@ export function InterrogationFAQ() {
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
           }`}
         >
-          <div className="inline-block border border-primary/30 bg-primary/5 px-4 py-1 mb-6">
-            <span className="text-primary text-xs font-mono uppercase tracking-widest">
-              Intelligence Debrief
-            </span>
-          </div>
+          <StampBadge variant="cyan" className="mb-6">
+            Intelligence Debrief
+          </StampBadge>
           
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 font-typewriter">
             INTERROGATION TRANSCRIPT

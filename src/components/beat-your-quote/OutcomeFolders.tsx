@@ -32,11 +32,17 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
   const [name, setName] = useState(sessionData.name || '');
   const [phone, setPhone] = useState(sessionData.phone || '');
   const [projectCost, setProjectCost] = useState('');
+  const [windowCount, setWindowCount] = useState(sessionData.windowCount?.toString() || '');
 
   const { values, hasError, getError, getFieldProps, validateAll } = useFormValidation({
     initialValues: { email: sessionData.email || '' },
     schemas: { email: commonSchemas.email },
   });
+
+  // Field validation states
+  const isNameValid = name.trim().length >= 2;
+  const isEmailValid = values.email.trim() && !hasError('email') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim());
+  const isPhoneValid = phone.replace(/\D/g, '').length === 10;
 
   const handleOutcomeClick = (outcome: 'alpha' | 'bravo') => {
     setActiveOutcome(activeOutcome === outcome ? null : outcome);
@@ -102,6 +108,7 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
             sessionData: {
               ...sessionData,
               projectCost: projectCost.replace(/[^0-9]/g, ''),
+              windowCount: windowCount ? parseInt(windowCount) : undefined,
             },
             attribution: getAttributionData(),
             aiContext: buildAIContextFromSession(sessionData, 'beat-your-quote'),
@@ -124,12 +131,14 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
           email: values.email.trim(),
           name: name.trim(),
           phone: phone.trim(),
+          windowCount: windowCount ? parseInt(windowCount) : undefined,
         });
 
         trackEvent('lead_captured', {
           source_tool: 'beat-your-quote',
           lead_id: data.leadId,
           has_project_cost: !!projectCost,
+          has_window_count: !!windowCount,
         });
 
         toast({
@@ -383,7 +392,10 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
 
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="mission-name">Name</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="mission-name">Name</Label>
+                    {isNameValid && <CheckCircle className="w-4 h-4 text-green-500" />}
+                  </div>
                   <Input
                     id="mission-name"
                     type="text"
@@ -396,9 +408,12 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="mission-email" className={emailHasError ? 'text-destructive' : ''}>
-                    Email Address
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="mission-email" className={emailHasError ? 'text-destructive' : ''}>
+                      Email Address
+                    </Label>
+                    {isEmailValid && <CheckCircle className="w-4 h-4 text-green-500" />}
+                  </div>
                   <Input
                     id="mission-email"
                     type="email"
@@ -415,7 +430,10 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="mission-phone">Phone Number</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="mission-phone">Phone Number</Label>
+                    {isPhoneValid && <CheckCircle className="w-4 h-4 text-green-500" />}
+                  </div>
                   <Input
                     id="mission-phone"
                     type="tel"
@@ -426,16 +444,37 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="mission-cost">Project Cost (from your quote)</Label>
-                  <Input
-                    id="mission-cost"
-                    type="text"
-                    placeholder="$15,000"
-                    value={projectCost}
-                    onChange={handleProjectCostChange}
-                    disabled={isLoading}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="mission-cost">Project Cost</Label>
+                      {projectCost && <CheckCircle className="w-4 h-4 text-green-500" />}
+                    </div>
+                    <Input
+                      id="mission-cost"
+                      type="text"
+                      placeholder="$15,000"
+                      value={projectCost}
+                      onChange={handleProjectCostChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="mission-windows">Window Count</Label>
+                      {windowCount && <CheckCircle className="w-4 h-4 text-green-500" />}
+                    </div>
+                    <Input
+                      id="mission-windows"
+                      type="number"
+                      placeholder="10"
+                      min="1"
+                      max="100"
+                      value={windowCount}
+                      onChange={(e) => setWindowCount(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
                 </div>
 
                 <Button
