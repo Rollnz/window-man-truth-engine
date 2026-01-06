@@ -1,33 +1,54 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export interface SessionData {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CORE PROJECT FIELDS - Home & window information
+  // ═══════════════════════════════════════════════════════════════════════════
   homeSize?: number;
   windowCount?: number;
   windowAge?: string;
-  sourceTool?: string;
   windowAgeYears?: number;
-  currentEnergyBill?: string;
-  currentEnergyBillAmount?: number;
-  insuranceCarrier?: string;
   homeType?: 'single-family' | 'condo' | 'townhouse' | 'multi-family' | 'other';
   zipCode?: string;
+  currentEnergyBill?: string;
+  currentEnergyBillAmount?: number;
+  draftinessLevel?: 'none' | 'slight' | 'moderate' | 'severe';
+  noiseLevel?: 'none' | 'slight' | 'moderate' | 'severe';
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CONTACT INFORMATION - User-provided details
+  // ═══════════════════════════════════════════════════════════════════════════
   email?: string;
   name?: string;
   phone?: string;
   notes?: string;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // AI CONTEXT FIELDS - For lead enrichment and personalization
+  // These fields are passed to the save-lead function for CRM/sales context
+  // ═══════════════════════════════════════════════════════════════════════════
+  sourceTool?: string;
+  insuranceCarrier?: string;
   urgencyLevel?: string;
   emotionalState?: string;
   specificDetail?: string;
-  // Reality Check specific
-  draftinessLevel?: 'none' | 'slight' | 'moderate' | 'severe';
-  noiseLevel?: 'none' | 'slight' | 'moderate' | 'severe';
-  // Tool-specific results
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TOOL-SPECIFIC RESULTS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Reality Check results
   realityCheckScore?: number;
   costOfInactionTotal?: number;
+
+  // Quiz results
   quizScore?: number;
   quizVulnerability?: 'CRITICAL' | 'MODERATE' | 'LOW';
   quizAttempted?: boolean;
+
+  // Comparison results
   comparisonViewed?: boolean;
+
   // Risk Diagnostic results
   riskDiagnosticCompleted?: boolean;
   stormRiskScore?: number;
@@ -35,26 +56,31 @@ export interface SessionData {
   insuranceRiskScore?: number;
   warrantyRiskScore?: number;
   overallProtectionScore?: number;
+
   // Fast Win results
   fastWinCompleted?: boolean;
   fastWinResult?: string;
   fastWinPainPoint?: string;
   fastWinOrientation?: string;
   fastWinBudgetPriority?: string;
+
   // Evidence Locker results
   evidenceLockerViewed?: boolean;
   caseStudiesViewed?: string[];
   lastCaseViewed?: string;
+
   // Intel Library results
   intelLibraryViewed?: boolean;
   unlockedResources?: string[];
+
   // Claim Survival Vault results
   claimVaultViewed?: boolean;
   claimVaultProgress?: Record<string, boolean>;
   claimVaultFiles?: Record<string, string>;
   claimVaultSessionId?: string;
   emergencyModeUsed?: boolean;
-  // AI Analysis results
+
+  // AI Claim Analysis results
   claimAnalysisResult?: {
     overallScore: number;
     status: 'critical' | 'warning' | 'ready';
@@ -67,6 +93,7 @@ export interface SessionData {
     nextSteps: string[];
     analyzedAt: string;
   };
+
   // Quote Scanner results
   quoteAnalysisResult?: {
     overallScore: number;
@@ -83,10 +110,12 @@ export interface SessionData {
   };
   quoteDraftEmail?: string | null;
   quotePhoneScript?: string | null;
-  // Lead capture
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LEAD CAPTURE & TRACKING
+  // ═══════════════════════════════════════════════════════════════════════════
   leadId?: string;
   consultationRequested?: boolean;
-  // Timestamps
   lastVisit?: string;
   toolsCompleted?: string[];
 }
