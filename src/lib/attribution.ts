@@ -32,8 +32,44 @@ export interface AIContextData {
 }
 
 /**
+ * Get a Facebook cookie value by name
+ */
+const getFbCookie = (name: string): string | undefined => {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+    return match?.[1] || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Set a first-party cookie for Facebook attribution.
+ * This ensures Meta Pixel accuracy even if their script is blocked.
+ */
+const setFbCookie = (name: string, value: string): void => {
+  if (typeof window === 'undefined' || !value) return;
+  try {
+    const domain = window.location.hostname;
+    const expires = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toUTCString(); // 90 days
+    document.cookie = `${name}=${value}; expires=${expires}; path=/; domain=${domain}; SameSite=Lax`;
+  } catch (error) {
+    console.warn('[Attribution] Failed to set FB cookie:', error);
+  }
+};
+
+/**
+ * Convert fbclid URL parameter to _fbc cookie format.
+ * Format: fb.1.{timestamp}.{fbclid}
+ */
+const formatFbcValue = (fbclid: string): string => {
+  return `fb.1.${Date.now()}.${fbclid}`;
+};
+
+/**
  * Get attribution parameters from URL and cookies, then persist to localStorage.
- * Call this on app init and on each lead capture.
+ * Also mirrors Facebook values to first-party cookies for Meta Pixel accuracy.
  */
 const captureAttributionFromUrl = (): AttributionData => {
   if (typeof window === 'undefined') return {};
@@ -41,15 +77,20 @@ const captureAttributionFromUrl = (): AttributionData => {
   const url = new URL(window.location.href);
   const pick = (key: string) => url.searchParams.get(key) ?? undefined;
   
-  // Get Facebook cookies
-  const getFbCookie = (name: string): string | undefined => {
-    try {
-      const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-      return match?.[1] || undefined;
-    } catch {
-      return undefined;
-    }
-  };
+  const fbclid = pick('fbclid');
+  let fbc = getFbCookie('_fbc');
+  const fbp = getFbCookie('_fbp');
+  
+  // If we have fbclid in URL, convert to _fbc format and set cookie
+  if (fbclid) {
+    fbc = formatFbcValue(fbclid);
+    setFbCookie('_fbc', fbc);
+  }
+  
+  // Mirror fbp to first-party cookie if it exists but cookie doesn't
+  if (fbp && !getFbCookie('_fbp')) {
+    setFbCookie('_fbp', fbp);
+  }
   
   const urlAttribution: AttributionData = {
     utm_source: pick('utm_source'),
@@ -59,9 +100,8 @@ const captureAttributionFromUrl = (): AttributionData => {
     utm_content: pick('utm_content'),
     gclid: pick('gclid'),
     msclkid: pick('msclkid'),
-    // Facebook: fbclid in URL becomes fbc, also check for existing fbc cookie
-    fbc: pick('fbclid') || getFbCookie('_fbc'),
-    fbp: getFbCookie('_fbp'),
+    fbc,
+    fbp,
   };
   
   return urlAttribution;
