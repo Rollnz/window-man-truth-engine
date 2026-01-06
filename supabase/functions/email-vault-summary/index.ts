@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -173,9 +174,44 @@ serve(async (req) => {
   }
 
   try {
+    // ===== AUTHENTICATION CHECK =====
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error('Auth error:', claimsError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+    const userEmail = claimsData.claims.email;
+    console.log(`Authenticated user: ${userId}`);
+    // ===== END AUTHENTICATION CHECK =====
+
     const { email, sessionData }: EmailRequest = await req.json();
 
-    if (!email) {
+    // Use authenticated user's email if not provided, or validate email matches
+    const targetEmail = email || userEmail;
+    
+    if (!targetEmail) {
       return new Response(
         JSON.stringify({ success: false, error: 'Email is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -194,7 +230,7 @@ serve(async (req) => {
       console.log('================================================');
       console.log('📧 SIMULATED VAULT SUMMARY EMAIL');
       console.log('================================================');
-      console.log(`To: ${email}`);
+      console.log(`To: ${targetEmail}`);
       console.log(`Subject: ${subject}`);
       console.log('================================================');
 
@@ -217,7 +253,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: 'Its Window Man <notifications@itswindowman.com>',
-        to: [email],
+        to: [targetEmail],
         subject,
         html,
       }),
