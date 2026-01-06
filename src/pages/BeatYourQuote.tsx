@@ -23,18 +23,18 @@ export default function BeatYourQuote() {
         <ConceptSection />
         <ManipulationTactics />
         <AnatomySection />
+        {/* Two Possible Outcomes - between CTA and Testimonials */}
+        <section className="py-16 md:py-24 bg-background">
+          <div className="container">
+            <OutcomeFolders isVisible={true} />
+          </div>
+        </section>
         {/* Mission Outcomes - Testimonials */}
         <MissionOutcomes />
         {/* Interrogation FAQ */}
         <InterrogationFAQ />
         {/* Your Arsenal */}
         <ToolsSection />
-        {/* What Happens When You Upload + CTA */}
-        <section className="py-16 md:py-24 bg-background">
-          <div className="container">
-            <OutcomeFolders isVisible={true} />
-          </div>
-        </section>
       </main>
       <MinimalFooter />
     </div>
