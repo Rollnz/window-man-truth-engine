@@ -269,8 +269,8 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const submission = Object.fromEntries(formData.entries()) as Record<string, FormDataEntryValue>;
-    console.info('Quote request submission', submission);
+    const leadData = Object.fromEntries(formData.entries());
+    console.log('Lead captured:', leadData);
     setIsFormSubmitted(true);
   };
 
