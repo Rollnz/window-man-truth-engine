@@ -7,6 +7,9 @@ import { ConceptSection } from '@/components/beat-your-quote/ConceptSection';
 import { ManipulationTactics } from '@/components/beat-your-quote/ManipulationTactics';
 import { AnatomySection } from '@/components/beat-your-quote/AnatomySection';
 import { ToolsSection } from '@/components/beat-your-quote/ToolsSection';
+import { MissionOutcomes } from '@/components/beat-your-quote/MissionOutcomes';
+import { InterrogationFAQ } from '@/components/beat-your-quote/InterrogationFAQ';
+import { OutcomeFolders } from '@/components/beat-your-quote/OutcomeFolders';
 
 export default function BeatYourQuote() {
   usePageTracking('beat-your-quote');
@@ -20,7 +23,18 @@ export default function BeatYourQuote() {
         <ConceptSection />
         <ManipulationTactics />
         <AnatomySection />
+        {/* Mission Outcomes - Testimonials */}
+        <MissionOutcomes />
+        {/* Interrogation FAQ */}
+        <InterrogationFAQ />
+        {/* Your Arsenal */}
         <ToolsSection />
+        {/* What Happens When You Upload + CTA */}
+        <section className="py-16 md:py-24 bg-background">
+          <div className="container">
+            <OutcomeFolders isVisible={true} />
+          </div>
+        </section>
       </main>
       <MinimalFooter />
     </div>
