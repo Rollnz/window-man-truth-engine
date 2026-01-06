@@ -22,6 +22,7 @@ import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/use
 import { SessionData } from '@/hooks/useSessionData';
 import { Calendar, Check, Loader2 } from 'lucide-react';
 import { logEvent } from '@/lib/windowTruthClient';
+import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 
 interface ConsultationBookingModalProps {
   isOpen: boolean;
@@ -121,6 +122,8 @@ export function ConsultationBookingModal({
               preferredTime: values.preferredTime,
               notes: notes.trim() || undefined,
             },
+            attribution: getAttributionData(),
+            aiContext: buildAIContextFromSession(sessionData),
           }),
         }
       );

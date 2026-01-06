@@ -46,6 +46,29 @@ const consultationSchema = z.object({
   notes: z.string().max(2000, 'Notes too long').optional().nullable()
 }).optional().nullable();
 
+// Attribution schema
+const attributionSchema = z.object({
+  utm_source: z.string().max(255).optional().nullable(),
+  utm_medium: z.string().max(255).optional().nullable(),
+  utm_campaign: z.string().max(255).optional().nullable(),
+  utm_term: z.string().max(255).optional().nullable(),
+  utm_content: z.string().max(255).optional().nullable(),
+  fbc: z.string().max(255).optional().nullable(),
+  fbp: z.string().max(255).optional().nullable(),
+  gclid: z.string().max(255).optional().nullable(),
+  msclkid: z.string().max(255).optional().nullable(),
+}).optional().nullable();
+
+// AI Context schema
+const aiContextSchema = z.object({
+  source_form: z.string().max(100).optional().nullable(),
+  specific_detail: z.string().max(1000).optional().nullable(),
+  emotional_state: z.string().max(100).optional().nullable(),
+  urgency_level: z.string().max(100).optional().nullable(),
+  insurance_carrier: z.string().max(100).optional().nullable(),
+  window_count: z.number().int().min(0).max(500).optional().nullable(),
+}).optional().nullable();
+
 // Main lead schema
 const leadSchema = z.object({
   email: z.string().trim().email('Invalid email format').max(255, 'Email too long'),
@@ -54,7 +77,9 @@ const leadSchema = z.object({
   sourceTool: z.enum(allowedSourceTools).default('expert-system'),
   sessionData: sessionDataSchema,
   chatHistory: chatHistorySchema,
-  consultation: consultationSchema
+  consultation: consultationSchema,
+  attribution: attributionSchema,
+  aiContext: aiContextSchema,
 });
 
 // ============= Helper Functions =============
@@ -139,7 +164,10 @@ serve(async (req) => {
       );
     }
 
-    const { email, name, phone, sourceTool, sessionData, chatHistory, consultation } = parseResult.data;
+    const { 
+      email, name, phone, sourceTool, sessionData, chatHistory, consultation,
+      attribution, aiContext 
+    } = parseResult.data;
 
     // Create Supabase client with service role for bypassing RLS
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -148,6 +176,33 @@ serve(async (req) => {
 
     let leadId: string;
     const normalizedEmail = email.trim().toLowerCase();
+
+    // Build the lead record with all fields
+    const leadRecord = {
+      email: normalizedEmail,
+      name: name || null,
+      phone: phone || null,
+      source_tool: sourceTool,
+      session_data: sessionData || {},
+      chat_history: chatHistory || [],
+      // Attribution fields
+      utm_source: attribution?.utm_source || null,
+      utm_medium: attribution?.utm_medium || null,
+      utm_campaign: attribution?.utm_campaign || null,
+      utm_term: attribution?.utm_term || null,
+      utm_content: attribution?.utm_content || null,
+      fbc: attribution?.fbc || null,
+      fbp: attribution?.fbp || null,
+      gclid: attribution?.gclid || null,
+      msclkid: attribution?.msclkid || null,
+      // AI Context fields
+      source_form: aiContext?.source_form || null,
+      specific_detail: aiContext?.specific_detail || null,
+      emotional_state: aiContext?.emotional_state || null,
+      urgency_level: aiContext?.urgency_level || null,
+      insurance_carrier: aiContext?.insurance_carrier || null,
+      window_count: aiContext?.window_count || null,
+    };
 
     // Try to find existing lead by email
     try {
@@ -163,18 +218,55 @@ serve(async (req) => {
       }
 
       if (existingLead) {
-        // Update existing lead
+        // Update existing lead - preserve first-touch attribution if already set
         leadId = existingLead.id;
+        
+        // Get current lead to check for existing attribution
+        const { data: currentLead } = await supabase
+          .from('leads')
+          .select('utm_source, gclid, fbc, msclkid')
+          .eq('id', leadId)
+          .single();
+        
+        // Only update attribution if not already set (first-touch attribution model)
+        const updateRecord: Record<string, unknown> = {
+          name: name || undefined,
+          phone: phone || undefined,
+          source_tool: sourceTool,
+          session_data: sessionData || {},
+          chat_history: chatHistory || [],
+          updated_at: new Date().toISOString(),
+          // AI Context always updates (last-touch for context)
+          source_form: aiContext?.source_form || undefined,
+          specific_detail: aiContext?.specific_detail || undefined,
+          emotional_state: aiContext?.emotional_state || undefined,
+          urgency_level: aiContext?.urgency_level || undefined,
+          insurance_carrier: aiContext?.insurance_carrier || undefined,
+          window_count: aiContext?.window_count || undefined,
+        };
+        
+        // Only set attribution if not already present (first-touch)
+        if (!currentLead?.utm_source && attribution?.utm_source) {
+          updateRecord.utm_source = attribution.utm_source;
+          updateRecord.utm_medium = attribution?.utm_medium;
+          updateRecord.utm_campaign = attribution?.utm_campaign;
+          updateRecord.utm_term = attribution?.utm_term;
+          updateRecord.utm_content = attribution?.utm_content;
+        }
+        if (!currentLead?.gclid && attribution?.gclid) {
+          updateRecord.gclid = attribution.gclid;
+        }
+        if (!currentLead?.fbc && (attribution?.fbc || attribution?.fbp)) {
+          updateRecord.fbc = attribution?.fbc;
+          updateRecord.fbp = attribution?.fbp;
+        }
+        if (!currentLead?.msclkid && attribution?.msclkid) {
+          updateRecord.msclkid = attribution.msclkid;
+        }
+
         const { error: updateError } = await supabase
           .from('leads')
-          .update({
-            name: name || undefined,
-            phone: phone || undefined,
-            source_tool: sourceTool,
-            session_data: sessionData || {},
-            chat_history: chatHistory || [],
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateRecord)
           .eq('id', leadId);
 
         if (updateError) {
@@ -184,17 +276,10 @@ serve(async (req) => {
 
         console.log('Updated existing lead:', leadId);
       } else {
-        // Create new lead
+        // Create new lead with all fields
         const { data: newLead, error: insertError } = await supabase
           .from('leads')
-          .insert({
-            email: normalizedEmail,
-            name: name || null,
-            phone: phone || null,
-            source_tool: sourceTool,
-            session_data: sessionData || {},
-            chat_history: chatHistory || [],
-          })
+          .insert(leadRecord)
           .select('id')
           .single();
 
@@ -215,6 +300,12 @@ serve(async (req) => {
             leadId,
             sourceTool,
             sessionSummary: sanitizeSessionDataForEmail(sessionData),
+            attribution: {
+              utm_source: attribution?.utm_source,
+              utm_medium: attribution?.utm_medium,
+              gclid: attribution?.gclid ? 'present' : undefined,
+              fbc: attribution?.fbc ? 'present' : undefined,
+            },
           },
         });
       }
