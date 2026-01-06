@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { useVaultNotifications } from '@/hooks/useVaultNotifications';
-import { Vault, LogIn, Menu, X } from 'lucide-react';
+import { Vault, LogIn, Menu, X, Target } from 'lucide-react';
 import { useState } from 'react';
 
 export function Navbar() {
@@ -38,6 +38,13 @@ export function Navbar() {
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Intel Library
+          </Link>
+          <Link 
+            to="/beat-your-quote" 
+            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+          >
+            <Target className="w-4 h-4" />
+            Beat Your Quote
           </Link>
           
           {/* Auth Button */}
@@ -106,6 +113,16 @@ export function Navbar() {
             onClick={() => setMobileMenuOpen(false)}
           >
             Intel Library
+          </Link>
+          <Link 
+            to="/beat-your-quote" 
+            className="block text-sm font-medium text-primary hover:text-primary/80"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <span className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Beat Your Quote
+            </span>
           </Link>
           
           {!loading && (
