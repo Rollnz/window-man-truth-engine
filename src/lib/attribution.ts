@@ -138,9 +138,13 @@ export const initializeAttribution = (): void => {
 /**
  * Build AI context data from session data
  */
-export const buildAIContextFromSession = (sessionData: Partial<SessionData>): AIContextData => {
+export const buildAIContextFromSession = (
+  sessionData: Partial<SessionData>,
+  sourceToolOverride?: string
+): AIContextData => {
   return {
-    source_form: sessionData.sourceTool || undefined,
+    // Prefer the explicit source tool passed in; fall back to session data
+    source_form: sourceToolOverride || sessionData.sourceTool || undefined,
     window_count: typeof sessionData.windowCount === 'number' ? sessionData.windowCount : undefined,
     insurance_carrier: sessionData.insuranceCarrier || undefined,
     urgency_level: sessionData.urgencyLevel || undefined,
