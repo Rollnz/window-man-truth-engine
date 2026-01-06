@@ -316,11 +316,9 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
-    const leadData = Object.fromEntries(formData.entries());
-    const name = `${leadData.firstName ?? ''} ${leadData.lastName ?? ''}`.trim();
-    const email = (leadData.email as string)?.trim() || '';
-    const phone = (leadData.phone as string)?.trim() || '';
+    const name = `${contactValues.firstName} ${contactValues.lastName}`.trim();
+    const email = contactValues.email.trim();
+    const phone = contactValues.phone.trim();
 
     try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`, {
@@ -519,7 +517,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
                       type="number"
                       inputMode="decimal"
                       value={inputs.projectCost}
-                      onChange={(event) => updateField('projectCost', parseFloat(event.target.value))}
+                      onChange={(event) => updateField('projectCost', parseFloat(event.target.value) || 0)}
                       className={cn(
                         'block w-full rounded-lg border border-gray-300 py-2 pl-7 pr-4 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500',
                         flashFields.has('projectCost') && 'border-emerald-500 bg-emerald-50'
@@ -540,7 +538,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
                       min={1}
                       max={40}
                       value={inputs.termYears}
-                      onChange={(event) => updateField('termYears', parseFloat(event.target.value))}
+                      onChange={(event) => updateField('termYears', parseFloat(event.target.value) || 0)}
                       className={cn(
                         'block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500',
                         flashFields.has('termYears') && 'border-emerald-500 bg-emerald-50'
@@ -558,7 +556,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
                       inputMode="decimal"
                       step="0.01"
                       value={inputs.aprPercent}
-                      onChange={(event) => updateField('aprPercent', parseFloat(event.target.value))}
+                      onChange={(event) => updateField('aprPercent', parseFloat(event.target.value) || 0)}
                       className={cn(
                         'block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500',
                         flashFields.has('aprPercent') && 'border-emerald-500 bg-emerald-50'
@@ -580,7 +578,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
                       type="number"
                       inputMode="decimal"
                       value={inputs.estimatedMonthlySavings}
-                      onChange={(event) => updateField('estimatedMonthlySavings', parseFloat(event.target.value))}
+                      onChange={(event) => updateField('estimatedMonthlySavings', parseFloat(event.target.value) || 0)}
                       className={cn(
                         'block w-full rounded-lg border border-gray-300 py-2 pl-7 pr-4 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500',
                         flashFields.has('estimatedMonthlySavings') && 'border-emerald-500 bg-emerald-50'
