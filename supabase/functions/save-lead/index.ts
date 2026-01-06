@@ -2,6 +2,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
+// ============= Rate Limiting Configuration =============
+const RATE_LIMITS = {
+  ipPerHour: 10,      // Max 10 leads per IP per hour
+  ipPerDay: 50,       // Max 50 leads per IP per day
+  emailPerHour: 3     // Max 3 submissions per email per hour
+};
+
 // ============= Input Validation Schemas =============
 
 const phoneRegex = /^[+]?[0-9\s\-()]{10,20}$/;
@@ -84,6 +91,74 @@ const leadSchema = z.object({
 });
 
 // ============= Helper Functions =============
+
+// Extract client IP from request headers
+function getClientIp(req: Request): string {
+  // Try common proxy headers in order of preference
+  const cfConnectingIp = req.headers.get('cf-connecting-ip');
+  if (cfConnectingIp) return cfConnectingIp;
+
+  const xForwardedFor = req.headers.get('x-forwarded-for');
+  if (xForwardedFor) {
+    // Take the first IP in the chain (original client)
+    return xForwardedFor.split(',')[0].trim();
+  }
+
+  const xRealIp = req.headers.get('x-real-ip');
+  if (xRealIp) return xRealIp;
+
+  return 'unknown';
+}
+
+// Check rate limit against the rate_limits table
+async function checkRateLimit(
+  supabase: any,
+  identifier: string,
+  endpoint: string,
+  maxRequests: number,
+  windowHours: number
+): Promise<{ allowed: boolean; count: number }> {
+  try {
+    const windowStart = new Date(Date.now() - windowHours * 60 * 60 * 1000).toISOString();
+
+    const { count, error } = await supabase
+      .from('rate_limits')
+      .select('*', { count: 'exact', head: true })
+      .eq('identifier', identifier)
+      .eq('endpoint', endpoint)
+      .gte('created_at', windowStart);
+
+    if (error) {
+      console.error('Rate limit check failed:', error);
+      // Fail open - allow the request if rate limiting check fails
+      return { allowed: true, count: 0 };
+    }
+
+    const currentCount = count || 0;
+    return { allowed: currentCount < maxRequests, count: currentCount };
+  } catch (error) {
+    console.error('Rate limit check error:', error);
+    // Fail open
+    return { allowed: true, count: 0 };
+  }
+}
+
+// Record a rate limit entry
+async function recordRateLimitEntry(
+  supabase: any,
+  identifier: string,
+  endpoint: string
+): Promise<void> {
+  try {
+    await supabase.from('rate_limits').insert({
+      identifier,
+      endpoint,
+    });
+  } catch (error) {
+    console.error('Failed to record rate limit entry:', error);
+    // Non-blocking - don't fail the request
+  }
+}
 
 // Sanitize session data for admin emails (remove sensitive details)
 function sanitizeSessionDataForEmail(sessionData: unknown): Record<string, unknown> {
@@ -206,6 +281,56 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Create Supabase client early for rate limiting
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // ============= Rate Limiting =============
+  const clientIp = getClientIp(req);
+  
+  // Check IP hourly limit first (quick reject for spam)
+  const ipHourlyCheck = await checkRateLimit(
+    supabase,
+    clientIp,
+    'save-lead',
+    RATE_LIMITS.ipPerHour,
+    1
+  );
+
+  if (!ipHourlyCheck.allowed) {
+    console.warn(`Rate limit exceeded for IP ${clientIp}: ${ipHourlyCheck.count}/${RATE_LIMITS.ipPerHour} per hour`);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Too many requests. Please try again later.',
+        retryAfter: 3600
+      }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Check IP daily limit
+  const ipDailyCheck = await checkRateLimit(
+    supabase,
+    clientIp,
+    'save-lead-daily',
+    RATE_LIMITS.ipPerDay,
+    24
+  );
+
+  if (!ipDailyCheck.allowed) {
+    console.warn(`Daily rate limit exceeded for IP ${clientIp}: ${ipDailyCheck.count}/${RATE_LIMITS.ipPerDay} per day`);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Daily limit reached. Please try again tomorrow.',
+        retryAfter: 86400
+      }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const body = await req.json();
 
@@ -232,18 +357,34 @@ serve(async (req) => {
       attribution, aiContext 
     } = parseResult.data;
 
+    // Check email hourly limit (after validation so we have a valid email)
+    const normalizedEmail = email.trim().toLowerCase();
+    const emailHourlyCheck = await checkRateLimit(
+      supabase,
+      normalizedEmail,
+      'save-lead-email',
+      RATE_LIMITS.emailPerHour,
+      1
+    );
+
+    if (!emailHourlyCheck.allowed) {
+      console.warn(`Email rate limit exceeded for ${normalizedEmail}: ${emailHourlyCheck.count}/${RATE_LIMITS.emailPerHour} per hour`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Too many submissions with this email. Please try again later.',
+          retryAfter: 3600
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Capture server-side attribution when client-side data is missing (e.g., JS blocked)
     const refererHeader = req.headers.get('referer');
     const clientAttributionPresent = hasClientAttribution(attribution);
     const fallbackAttribution = buildFallbackAttribution(refererHeader, !clientAttributionPresent);
 
-    // Create Supabase client with service role for bypassing RLS
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     let leadId: string;
-    const normalizedEmail = email.trim().toLowerCase();
 
     // Build the lead record with all fields
     const leadRecord = {
@@ -444,6 +585,12 @@ serve(async (req) => {
         data: safeSessionData,
       });
     }
+
+    // Record successful request for rate limiting (fire-and-forget)
+    // We record both IP and email entries to track limits
+    recordRateLimitEntry(supabase, clientIp, 'save-lead');
+    recordRateLimitEntry(supabase, clientIp, 'save-lead-daily');
+    recordRateLimitEntry(supabase, normalizedEmail, 'save-lead-email');
 
     // Return success
     return new Response(
