@@ -7,21 +7,21 @@ export function DossierHero() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background with Dark Overlay */}
-      <div className="absolute inset-0">
-        <img 
-          src="/images/beat-your-quote/hero-dossier.webp"
-          alt=""
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0A0F14]/60 via-[#0A0F14]/40 to-[#0A0F14]/90" />
-      </div>
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0A0F14]">
+      {/* Background Image - z-0 */}
+      <img 
+        src="/images/beat-your-quote/hero-dossier.webp"
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover opacity-40 z-0"
+      />
+      
+      {/* Dark Overlay - z-[1] */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0A0F14]/70 via-[#0A0F14]/50 to-[#0A0F14] z-[1]" />
 
-      {/* Scan Line Effect */}
-      <div className="scanline-overlay" />
+      {/* Scan Line Effect - z-[2] */}
+      <div className="scanline-overlay z-[2]" />
 
-      {/* Content */}
+      {/* Content - z-10 */}
       <div className="relative z-10 container px-4 text-center max-w-4xl">
         {/* Classified Stamp */}
         <div className="stamp stamp-red mb-8 animate-fade-in">
