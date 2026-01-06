@@ -1,26 +1,66 @@
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
 interface BloatCardProps {
+  id: string;
   title: string;
   percentage: number;
   amount: number;
   description: string;
-  isVisible: boolean;
-  delay?: number;
+  onDissolveChange?: (id: string, isDissolved: boolean) => void;
 }
 
-export function BloatCard({ title, percentage, amount, description, isVisible, delay = 0 }: BloatCardProps) {
+export function BloatCard({ 
+  id,
+  title, 
+  percentage, 
+  amount, 
+  description, 
+  onDissolveChange 
+}: BloatCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isDissolved, setIsDissolved] = useState(false);
+
+  useEffect(() => {
+    let rafId: number;
+    
+    const handleScroll = () => {
+      rafId = requestAnimationFrame(() => {
+        if (!cardRef.current) return;
+        
+        const rect = cardRef.current.getBoundingClientRect();
+        const scanLineY = window.innerHeight * 0.7;
+        
+        // Card dissolves when its BOTTOM edge passes above the scan line
+        const shouldDissolve = rect.bottom < scanLineY;
+        
+        if (shouldDissolve !== isDissolved) {
+          setIsDissolved(shouldDissolve);
+          onDissolveChange?.(id, shouldDissolve);
+        }
+      });
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial state
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(rafId);
+    };
+  }, [id, isDissolved, onDissolveChange]);
+
   return (
     <div 
+      ref={cardRef}
       className={`
         relative p-6 rounded-lg border-2 border-red-500/60 bg-red-950/20
-        transition-all duration-700 ease-out
-        ${isVisible 
-          ? 'opacity-100 translate-y-0' 
-          : 'opacity-0 translate-y-8 pointer-events-none'
+        transition-all duration-500 ease-out
+        ${isDissolved 
+          ? 'opacity-0 scale-95 blur-sm' 
+          : 'opacity-100 scale-100 blur-0'
         }
       `}
-      style={{ transitionDelay: `${delay}ms` }}
     >
       {/* Warning Icon */}
       <AlertTriangle className="absolute top-4 right-4 w-6 h-6 text-red-400" />
