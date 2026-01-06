@@ -157,6 +157,7 @@ function FadeInSection({
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsVisible(true);
+            observer.unobserve(entry.target); // stop observing once visible to reduce work
           }
         });
       },
@@ -198,6 +199,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
   const [flashFields, setFlashFields] = useState<Set<keyof CalculatorInputs>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
+  const modalRef = useRef<HTMLDivElement | null>(null);
 
   const monthlyPayment = useMemo(() => calculateMonthlyPayment(inputs), [inputs]);
   const netCost = useMemo(
@@ -266,8 +268,51 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const submission = {
+      firstName: (formData.get('firstName') as string) || '',
+      lastName: (formData.get('lastName') as string) || '',
+      email: (formData.get('email') as string) || '',
+      phone: (formData.get('phone') as string) || '',
+    };
+    console.info('Quote request submission', submission);
     setIsFormSubmitted(true);
   };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setIsFormSubmitted(false);
+  };
+
+  useEffect(() => {
+    if (!isModalOpen || !modalRef.current) return undefined;
+
+    const focusableSelector =
+      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+    const focusable = Array.from(modalRef.current.querySelectorAll<HTMLElement>(focusableSelector));
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (first) {
+      first.focus();
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || focusable.length === 0) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFormSubmitted, isModalOpen]);
 
   const renderHighlightCard = (highlight: SavingsHighlight, index: number) => (
     <FadeInSection key={highlight.title} delay={index * 100}>
@@ -510,17 +555,26 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quote-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              handleCloseModal();
+            }
+          }}
+        >
+          <div ref={modalRef} className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-              <h2 className="text-2xl font-black text-gray-900">Request Your Quote</h2>
+              <h2 id="quote-modal-title" className="text-2xl font-black text-gray-900">
+                Request Your Quote
+              </h2>
               <button
                 type="button"
                 aria-label="Close"
-                onClick={() => {
-                  setIsModalOpen(false);
-                  setIsFormSubmitted(false);
-                }}
+                onClick={handleCloseModal}
                 className="text-gray-400 transition-colors hover:text-gray-600"
               >
                 <X className="h-6 w-6" />
@@ -531,31 +585,47 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
               <form onSubmit={handleSubmit} className="space-y-4 px-8 py-6">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase text-gray-500">First Name</label>
+                    <label className="text-xs font-bold uppercase text-gray-500" htmlFor="firstName">
+                      First Name
+                    </label>
                     <input
+                      id="firstName"
+                      name="firstName"
                       required
                       className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:ring-2 focus:ring-sky-500"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase text-gray-500">Last Name</label>
+                    <label className="text-xs font-bold uppercase text-gray-500" htmlFor="lastName">
+                      Last Name
+                    </label>
                     <input
+                      id="lastName"
+                      name="lastName"
                       required
                       className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:ring-2 focus:ring-sky-500"
                     />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Email Address</label>
+                  <label className="text-xs font-bold uppercase text-gray-500" htmlFor="email">
+                    Email Address
+                  </label>
                   <input
+                    id="email"
+                    name="email"
                     type="email"
                     required
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Phone Number</label>
+                  <label className="text-xs font-bold uppercase text-gray-500" htmlFor="phone">
+                    Phone Number
+                  </label>
                   <input
+                    id="phone"
+                    name="phone"
                     type="tel"
                     required
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:ring-2 focus:ring-sky-500"
@@ -574,23 +644,20 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
                 </div>
               </form>
             ) : (
-              <div className="px-8 py-12 text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                  <ShieldCheck className="h-8 w-8" strokeWidth={3} />
+                <div className="px-8 py-12 text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                    <ShieldCheck className="h-8 w-8" strokeWidth={3} />
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold text-gray-900">Request Sent!</h3>
+                  <p className="text-sm text-gray-600">We'll be in touch with your customized quote shortly.</p>
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    className="mt-6 text-sm font-bold text-sky-600"
+                  >
+                    Close
+                  </button>
                 </div>
-                <h3 className="mb-2 text-xl font-bold text-gray-900">Request Sent!</h3>
-                <p className="text-sm text-gray-600">We'll be in touch with your customized quote shortly.</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setIsFormSubmitted(false);
-                  }}
-                  className="mt-6 text-sm font-bold text-sky-600"
-                >
-                  Close
-                </button>
-              </div>
             )}
           </div>
         </div>
