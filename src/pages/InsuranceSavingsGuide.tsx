@@ -24,6 +24,7 @@ import { Label } from '@/components/ui/label';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { getAttributionData } from '@/lib/attribution';
 
 const InsuranceSavingsGuide = () => {
   usePageTracking('insurance-savings-guide');
@@ -57,6 +58,8 @@ const InsuranceSavingsGuide = () => {
           email: values.email,
           name: values.name,
           sourceTool: 'insurance-savings-guide',
+          attribution: getAttributionData(),
+          aiContext: { source_form: 'insurance-savings-guide' },
         },
       });
       

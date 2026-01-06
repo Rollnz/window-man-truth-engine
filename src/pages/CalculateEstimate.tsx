@@ -14,6 +14,7 @@ import { HowItWorks } from "@/components/quote-builder/HowItWorks";
 import { WhoIsThisFor } from "@/components/quote-builder/WhoIsThisFor";
 import { RelatedToolsSection } from "@/components/quote-builder/RelatedToolsSection";
 import { supabase } from "@/integrations/supabase/client";
+import { getAttributionData } from "@/lib/attribution";
 
 // Rate limit error with upsell message
 class RateLimitError extends Error {
@@ -614,6 +615,11 @@ const QuoteBuilderV2 = () => {
               zipCode: state.zipCode,
             },
             chatHistory: [],
+            attribution: getAttributionData(),
+            aiContext: {
+              source_form: 'quote-builder',
+              window_count: cart.length,
+            },
           }),
         }
       );

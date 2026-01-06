@@ -26,6 +26,7 @@ import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
+import { getAttributionData } from '@/lib/attribution';
 
 const SalesTacticsGuide = () => {
   usePageTracking('sales-tactics-guide');
@@ -59,6 +60,8 @@ const SalesTacticsGuide = () => {
           email: values.email,
           name: values.name,
           sourceTool: 'sales-tactics-guide',
+          attribution: getAttributionData(),
+          aiContext: { source_form: 'sales-tactics-guide' },
         },
       });
       

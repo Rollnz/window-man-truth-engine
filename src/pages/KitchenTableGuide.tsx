@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { getAttributionData } from '@/lib/attribution';
 
 const KitchenTableGuide = () => {
   usePageTracking('kitchen-table-guide');
@@ -55,6 +56,8 @@ const KitchenTableGuide = () => {
           email: values.email,
           name: values.name,
           sourceTool: 'kitchen-table-guide',
+          attribution: getAttributionData(),
+          aiContext: { source_form: 'kitchen-table-guide' },
         },
       });
       
