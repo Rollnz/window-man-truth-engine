@@ -1,8 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Shield, ArrowRight, ClipboardCheck } from 'lucide-react';
+import { CheckCircle, Shield, ArrowRight, ClipboardCheck, Loader2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { trackEvent } from '@/lib/gtm';
+import { useToast } from '@/hooks/use-toast';
+import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
+import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
+import { useSessionData } from '@/hooks/useSessionData';
 
 interface OutcomeFoldersProps {
   isVisible: boolean;
@@ -10,7 +23,20 @@ interface OutcomeFoldersProps {
 
 export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { sessionData, updateFields } = useSessionData();
   const [activeOutcome, setActiveOutcome] = useState<'alpha' | 'bravo' | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [name, setName] = useState(sessionData.name || '');
+  const [phone, setPhone] = useState(sessionData.phone || '');
+  const [projectCost, setProjectCost] = useState('');
+
+  const { values, hasError, getError, getFieldProps, validateAll } = useFormValidation({
+    initialValues: { email: sessionData.email || '' },
+    schemas: { email: commonSchemas.email },
+  });
 
   const handleOutcomeClick = (outcome: 'alpha' | 'bravo') => {
     setActiveOutcome(activeOutcome === outcome ? null : outcome);
@@ -19,8 +45,127 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
 
   const handleStartMission = () => {
     trackEvent('start_mission_clicked');
-    navigate('/quote-scanner');
+    setIsModalOpen(true);
   };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhone(formatPhoneNumber(e.target.value));
+  };
+
+  const handleProjectCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Format as currency
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    if (value) {
+      setProjectCost(`$${parseInt(value).toLocaleString()}`);
+    } else {
+      setProjectCost('');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateAll()) {
+      toast({
+        title: 'Invalid Email',
+        description: getError('email') || 'Please check your email',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!name.trim() || !phone.trim()) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please enter your name and phone number.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            email: values.email.trim(),
+            name: name.trim(),
+            phone: phone.trim(),
+            sourceTool: 'beat-your-quote',
+            sessionData: {
+              ...sessionData,
+              projectCost: projectCost.replace(/[^0-9]/g, ''),
+            },
+            attribution: getAttributionData(),
+            aiContext: buildAIContextFromSession(sessionData, 'beat-your-quote'),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to save');
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsSuccess(true);
+
+        // Update session data
+        updateFields({
+          email: values.email.trim(),
+          name: name.trim(),
+          phone: phone.trim(),
+        });
+
+        trackEvent('lead_captured', {
+          source_tool: 'beat-your-quote',
+          lead_id: data.leadId,
+          has_project_cost: !!projectCost,
+        });
+
+        toast({
+          title: 'Mission Started!',
+          description: 'Redirecting to Quote Scanner...',
+        });
+
+        setTimeout(() => {
+          navigate('/quote-scanner');
+        }, 1500);
+      } else {
+        throw new Error(data.error || 'Failed to save');
+      }
+    } catch (error) {
+      console.error('Lead capture error:', error);
+      toast({
+        title: 'Unable to start mission',
+        description: error instanceof Error ? error.message : 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleModalClose = () => {
+    if (!isLoading) {
+      setIsModalOpen(false);
+      setIsSuccess(false);
+    }
+  };
+
+  const emailProps = getFieldProps('email');
+  const emailHasError = hasError('email');
+  const emailError = getError('email');
+  const isFormValid = values.email.trim() && name.trim() && phone.trim();
 
   return (
     <div className={`
@@ -208,6 +353,113 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
           Upload your quote. Get results in 24 hours.
         </p>
       </div>
+
+      {/* Lead Capture Modal */}
+      <Dialog open={isModalOpen} onOpenChange={handleModalClose}>
+        <DialogContent className="sm:max-w-md">
+          {isSuccess ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-16 h-16 rounded-full bg-[#00D4FF]/20 flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-[#00D4FF]" />
+              </div>
+              <DialogTitle className="text-xl mb-2">Mission Initiated!</DialogTitle>
+              <DialogDescription>
+                Redirecting you to the Quote Scanner...
+              </DialogDescription>
+            </div>
+          ) : (
+            <>
+              <DialogHeader>
+                <div className="flex justify-center mb-2">
+                  <div className="w-12 h-12 rounded-full bg-[#00D4FF]/10 flex items-center justify-center">
+                    <Mail className="w-6 h-6 text-[#00D4FF]" />
+                  </div>
+                </div>
+                <DialogTitle className="text-center">Start Your Mission</DialogTitle>
+                <DialogDescription className="text-center">
+                  Enter your details to upload your quote and receive your personalized analysis within 24 hours.
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="mission-name">Name</Label>
+                  <Input
+                    id="mission-name"
+                    type="text"
+                    placeholder="Your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isLoading}
+                    autoFocus
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="mission-email" className={emailHasError ? 'text-destructive' : ''}>
+                    Email Address
+                  </Label>
+                  <Input
+                    id="mission-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    {...emailProps}
+                    disabled={isLoading}
+                    className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''}
+                    aria-invalid={emailHasError}
+                    aria-describedby={emailHasError ? 'mission-email-error' : undefined}
+                  />
+                  {emailHasError && (
+                    <p id="mission-email-error" className="text-sm text-destructive">{emailError}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="mission-phone">Phone Number</Label>
+                  <Input
+                    id="mission-phone"
+                    type="tel"
+                    placeholder="(555) 123-4567"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="mission-cost">Project Cost (from your quote)</Label>
+                  <Input
+                    id="mission-cost"
+                    type="text"
+                    placeholder="$15,000"
+                    value={projectCost}
+                    onChange={handleProjectCostChange}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-[#00D4FF] hover:bg-[#00D4FF]/90 text-black font-bold"
+                  disabled={isLoading || !isFormValid}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Initiating Mission...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                      Continue to Quote Scanner
+                    </>
+                  )}
+                </Button>
+              </form>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
