@@ -269,12 +269,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const submission = {
-      firstName: (formData.get('firstName') as string) || '',
-      lastName: (formData.get('lastName') as string) || '',
-      email: (formData.get('email') as string) || '',
-      phone: (formData.get('phone') as string) || '',
-    };
+    const submission = Object.fromEntries(formData.entries()) as Record<string, FormDataEntryValue>;
     console.info('Quote request submission', submission);
     setIsFormSubmitted(true);
   };
