@@ -262,16 +262,8 @@ serve(async (req) => {
       fbp: attribution?.fbp || null,
       gclid: attribution?.gclid || null,
       msclkid: attribution?.msclkid || null,
-      fallback_referer: fallbackAttribution.fallback_referer,
-      fallback_utm_source: fallbackAttribution.fallback_utm_source,
-      fallback_utm_medium: fallbackAttribution.fallback_utm_medium,
-      fallback_utm_campaign: fallbackAttribution.fallback_utm_campaign,
-      fallback_utm_term: fallbackAttribution.fallback_utm_term,
-      fallback_utm_content: fallbackAttribution.fallback_utm_content,
-      fallback_gclid: fallbackAttribution.fallback_gclid,
-      fallback_msclkid: fallbackAttribution.fallback_msclkid,
-      fallback_fbc: fallbackAttribution.fallback_fbc,
-      fallback_fbp: fallbackAttribution.fallback_fbp,
+      // Spread fallback attribution so we capture referer + any parsed params in one place
+      ...fallbackAttribution,
       // AI Context fields
       source_form: aiContext?.source_form || null,
       specific_detail: aiContext?.specific_detail || null,
@@ -316,33 +308,12 @@ serve(async (req) => {
           window_count: aiContext?.window_count || undefined,
         };
 
-        // Only update fallback attribution when we parsed values to avoid wiping prior data
-        if (fallbackAttribution.fallback_utm_source) {
-          updateRecord.fallback_utm_source = fallbackAttribution.fallback_utm_source;
-        }
-        if (fallbackAttribution.fallback_utm_medium) {
-          updateRecord.fallback_utm_medium = fallbackAttribution.fallback_utm_medium;
-        }
-        if (fallbackAttribution.fallback_utm_campaign) {
-          updateRecord.fallback_utm_campaign = fallbackAttribution.fallback_utm_campaign;
-        }
-        if (fallbackAttribution.fallback_utm_term) {
-          updateRecord.fallback_utm_term = fallbackAttribution.fallback_utm_term;
-        }
-        if (fallbackAttribution.fallback_utm_content) {
-          updateRecord.fallback_utm_content = fallbackAttribution.fallback_utm_content;
-        }
-        if (fallbackAttribution.fallback_gclid) {
-          updateRecord.fallback_gclid = fallbackAttribution.fallback_gclid;
-        }
-        if (fallbackAttribution.fallback_msclkid) {
-          updateRecord.fallback_msclkid = fallbackAttribution.fallback_msclkid;
-        }
-        if (fallbackAttribution.fallback_fbc) {
-          updateRecord.fallback_fbc = fallbackAttribution.fallback_fbc;
-        }
-        if (fallbackAttribution.fallback_fbp) {
-          updateRecord.fallback_fbp = fallbackAttribution.fallback_fbp;
+        // Only update fallback attribution when we have parsed values (avoid wiping prior data)
+        for (const [key, value] of Object.entries(fallbackAttribution)) {
+          if (key === 'fallback_referer') continue; // already set unconditionally above
+          if (value) {
+            updateRecord[key] = value;
+          }
         }
         
         // Only set attribution if not already present (first-touch)
