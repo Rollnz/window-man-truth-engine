@@ -10,14 +10,12 @@ export function DossierHero() {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background with Dark Overlay */}
       <div className="absolute inset-0">
-        <div 
-          className="w-full h-full bg-cover bg-center opacity-30"
-          style={{ 
-            backgroundImage: 'url(/images/beat-your-quote/hero-dossier.webp)',
-            backgroundColor: 'hsl(var(--background))'
-          }}
+        <img 
+          src="/images/beat-your-quote/hero-dossier.webp"
+          alt=""
+          className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0A0F14]/80 via-[#0A0F14]/60 to-[#0A0F14]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0A0F14]/60 via-[#0A0F14]/40 to-[#0A0F14]/90" />
       </div>
 
       {/* Scan Line Effect */}
