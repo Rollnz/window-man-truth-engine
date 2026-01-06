@@ -208,7 +208,7 @@ serve(async (req) => {
     try {
       const { data: existingLead, error: selectError } = await supabase
         .from('leads')
-        .select('id')
+        .select('id, utm_source, gclid, fbc, msclkid')
         .eq('email', normalizedEmail)
         .maybeSingle();
 
@@ -220,13 +220,6 @@ serve(async (req) => {
       if (existingLead) {
         // Update existing lead - preserve first-touch attribution if already set
         leadId = existingLead.id;
-        
-        // Get current lead to check for existing attribution
-        const { data: currentLead } = await supabase
-          .from('leads')
-          .select('utm_source, gclid, fbc, msclkid')
-          .eq('id', leadId)
-          .single();
         
         // Only update attribution if not already set (first-touch attribution model)
         const updateRecord: Record<string, unknown> = {
@@ -246,21 +239,21 @@ serve(async (req) => {
         };
         
         // Only set attribution if not already present (first-touch)
-        if (!currentLead?.utm_source && attribution?.utm_source) {
+        if (!existingLead?.utm_source && attribution?.utm_source) {
           updateRecord.utm_source = attribution.utm_source;
           updateRecord.utm_medium = attribution?.utm_medium;
           updateRecord.utm_campaign = attribution?.utm_campaign;
           updateRecord.utm_term = attribution?.utm_term;
           updateRecord.utm_content = attribution?.utm_content;
         }
-        if (!currentLead?.gclid && attribution?.gclid) {
+        if (!existingLead?.gclid && attribution?.gclid) {
           updateRecord.gclid = attribution.gclid;
         }
-        if (!currentLead?.fbc && (attribution?.fbc || attribution?.fbp)) {
+        if (!existingLead?.fbc && (attribution?.fbc || attribution?.fbp)) {
           updateRecord.fbc = attribution?.fbc;
           updateRecord.fbp = attribution?.fbp;
         }
-        if (!currentLead?.msclkid && attribution?.msclkid) {
+        if (!existingLead?.msclkid && attribution?.msclkid) {
           updateRecord.msclkid = attribution.msclkid;
         }
 
