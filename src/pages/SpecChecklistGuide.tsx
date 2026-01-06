@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { getAttributionData } from '@/lib/attribution';
 
 const SpecChecklistGuide = () => {
   usePageTracking('spec-checklist-guide');
@@ -56,6 +57,8 @@ const SpecChecklistGuide = () => {
           email: values.email,
           name: values.name,
           sourceTool: 'spec-checklist-guide',
+          attribution: getAttributionData(),
+          aiContext: { source_form: 'spec-checklist-guide' },
         },
       });
       

@@ -87,37 +87,82 @@ export type Database = {
           chat_history: Json | null
           created_at: string | null
           email: string
+          emotional_state: string | null
+          fbc: string | null
+          fbp: string | null
+          gclid: string | null
           id: string
+          insurance_carrier: string | null
+          msclkid: string | null
           name: string | null
           phone: string | null
           session_data: Json | null
+          source_form: string | null
           source_tool: string
+          specific_detail: string | null
           updated_at: string | null
+          urgency_level: string | null
           user_id: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          window_count: number | null
         }
         Insert: {
           chat_history?: Json | null
           created_at?: string | null
           email: string
+          emotional_state?: string | null
+          fbc?: string | null
+          fbp?: string | null
+          gclid?: string | null
           id?: string
+          insurance_carrier?: string | null
+          msclkid?: string | null
           name?: string | null
           phone?: string | null
           session_data?: Json | null
+          source_form?: string | null
           source_tool?: string
+          specific_detail?: string | null
           updated_at?: string | null
+          urgency_level?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          window_count?: number | null
         }
         Update: {
           chat_history?: Json | null
           created_at?: string | null
           email?: string
+          emotional_state?: string | null
+          fbc?: string | null
+          fbp?: string | null
+          gclid?: string | null
           id?: string
+          insurance_carrier?: string | null
+          msclkid?: string | null
           name?: string | null
           phone?: string | null
           session_data?: Json | null
+          source_form?: string | null
           source_tool?: string
+          specific_detail?: string | null
           updated_at?: string | null
+          urgency_level?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          window_count?: number | null
         }
         Relationships: []
       }

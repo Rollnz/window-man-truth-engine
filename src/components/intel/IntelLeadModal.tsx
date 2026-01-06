@@ -15,6 +15,7 @@ import { SessionData } from '@/hooks/useSessionData';
 import { IntelResource } from '@/data/intelData';
 import { Mail, Check, Loader2, Unlock } from 'lucide-react';
 import { logEvent } from '@/lib/windowTruthClient';
+import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 
 interface IntelLeadModalProps {
   isOpen: boolean;
@@ -89,6 +90,8 @@ export function IntelLeadModal({
             sourceTool: 'intel-library',
             sessionData,
             chatHistory: [],
+            attribution: getAttributionData(),
+            aiContext: buildAIContextFromSession(sessionData as Record<string, unknown>),
           }),
         }
       );

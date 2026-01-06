@@ -14,6 +14,7 @@ import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { SessionData } from '@/hooks/useSessionData';
 import { Mail, Check, Loader2 } from 'lucide-react';
 import { logEvent } from '@/lib/windowTruthClient';
+import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -115,6 +116,8 @@ export function LeadCaptureModal({
             sourceTool,
             sessionData,
             chatHistory: chatHistory || [],
+            attribution: getAttributionData(),
+            aiContext: buildAIContextFromSession(sessionData as Record<string, unknown>),
           }),
         }
       );
