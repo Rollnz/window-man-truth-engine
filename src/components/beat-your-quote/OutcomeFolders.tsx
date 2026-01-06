@@ -397,7 +397,7 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
           onClick={handleStartMission}
           className="bg-[#00D4FF] hover:bg-[#00D4FF]/90 text-black font-bold px-8 py-6 text-lg uppercase tracking-wider"
         >
-          Start Your Mission
+          Let Me Beat Your Quote
           <ArrowRight className="ml-2 w-5 h-5" />
         </Button>
         <p className="text-sm text-muted-foreground mt-3">
