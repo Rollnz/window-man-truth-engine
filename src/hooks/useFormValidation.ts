@@ -148,8 +148,31 @@ export const formatPhoneNumber = (value: string): string => {
 
 // Common schemas
 export const commonSchemas = {
-  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
-  name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
-  phone: z.string().min(10, 'Please enter a valid phone number').max(20, 'Phone number is too long'),
+  email: z.string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+  
+  name: z.string()
+    .min(1, 'Name is required')
+    .max(100, 'Name is too long'),
+  
+  firstName: z.string()
+    .min(3, 'First name must be at least 3 characters')
+    .max(50, 'First name is too long'),
+  
+  lastName: z.string()
+    .min(1, 'Last name is required')
+    .max(50, 'Last name is too long'),
+  
+  phone: z.string()
+    .min(1, 'Phone number is required')
+    .refine(
+      (val) => {
+        const digits = val.replace(/\D/g, '');
+        return digits.length === 10;
+      },
+      { message: 'Please enter a valid 10-digit phone number' }
+    ),
+  
   required: (message = 'This field is required') => z.string().min(1, message),
 };
