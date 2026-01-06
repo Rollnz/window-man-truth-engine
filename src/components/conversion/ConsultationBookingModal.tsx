@@ -123,7 +123,7 @@ export function ConsultationBookingModal({
               notes: notes.trim() || undefined,
             },
             attribution: getAttributionData(),
-            aiContext: buildAIContextFromSession(sessionData as Record<string, unknown>),
+            aiContext: buildAIContextFromSession(sessionData),
           }),
         }
       );

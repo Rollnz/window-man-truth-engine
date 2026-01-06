@@ -224,7 +224,7 @@ serve(async (req) => {
         // Get current lead to check for existing attribution
         const { data: currentLead } = await supabase
           .from('leads')
-          .select('utm_source, gclid, fbc')
+          .select('utm_source, gclid, fbc, msclkid')
           .eq('id', leadId)
           .single();
         
@@ -260,7 +260,7 @@ serve(async (req) => {
           updateRecord.fbc = attribution?.fbc;
           updateRecord.fbp = attribution?.fbp;
         }
-        if (attribution?.msclkid) {
+        if (!currentLead?.msclkid && attribution?.msclkid) {
           updateRecord.msclkid = attribution.msclkid;
         }
 
