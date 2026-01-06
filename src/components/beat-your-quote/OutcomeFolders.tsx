@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { trackEvent } from '@/lib/gtm';
+import { trackEvent, trackModalOpen, trackFormSubmit, trackLeadCapture } from '@/lib/gtm';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
@@ -33,6 +33,8 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
   const [phone, setPhone] = useState(sessionData.phone || '');
   const [projectCost, setProjectCost] = useState('');
   const [windowCount, setWindowCount] = useState(sessionData.windowCount?.toString() || '');
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [modalOpenTime, setModalOpenTime] = useState<number | null>(null);
 
   const { values, hasError, getError, getFieldProps, validateAll } = useFormValidation({
     initialValues: { email: sessionData.email || '' },
@@ -44,14 +46,30 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
   const isEmailValid = values.email.trim() && !hasError('email') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim());
   const isPhoneValid = phone.replace(/\D/g, '').length === 10;
 
+  // Count completed fields for funnel tracking
+  const completedFieldsCount = [isNameValid, isEmailValid, isPhoneValid].filter(Boolean).length;
+
   const handleOutcomeClick = (outcome: 'alpha' | 'bravo') => {
     setActiveOutcome(activeOutcome === outcome ? null : outcome);
-    trackEvent('outcome_folder_opened', { outcome });
+    trackEvent('byq_outcome_folder_clicked', { 
+      outcome,
+      action: activeOutcome === outcome ? 'collapse' : 'expand'
+    });
   };
 
   const handleStartMission = () => {
-    trackEvent('start_mission_clicked');
+    trackEvent('byq_cta_clicked', { location: 'outcome_folders' });
+    trackModalOpen('beat_your_quote_lead_capture');
     setIsModalOpen(true);
+    setModalOpenTime(Date.now());
+  };
+
+  // Track first field interaction
+  const handleFieldFocus = (fieldName: string) => {
+    if (!hasInteracted) {
+      setHasInteracted(true);
+      trackEvent('byq_form_started', { first_field: fieldName });
+    }
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,11 +152,22 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
           windowCount: windowCount ? parseInt(windowCount) : undefined,
         });
 
-        trackEvent('lead_captured', {
-          source_tool: 'beat-your-quote',
-          lead_id: data.leadId,
+        // Calculate time to complete form
+        const timeToComplete = modalOpenTime ? Math.round((Date.now() - modalOpenTime) / 1000) : undefined;
+
+        // Track successful submission with funnel data
+        trackFormSubmit('beat_your_quote_lead_capture', {
+          fields_completed: completedFieldsCount,
           has_project_cost: !!projectCost,
           has_window_count: !!windowCount,
+          time_to_complete_seconds: timeToComplete,
+        });
+
+        trackLeadCapture({
+          sourceTool: 'beat-your-quote',
+          email: values.email.trim(),
+          hasPhone: true,
+          leadScore: completedFieldsCount + (projectCost ? 1 : 0) + (windowCount ? 1 : 0),
         });
 
         toast({
@@ -166,8 +195,21 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
 
   const handleModalClose = () => {
     if (!isLoading) {
+      // Track abandonment if user interacted but didn't complete
+      if (hasInteracted && !isSuccess) {
+        const timeSpent = modalOpenTime ? Math.round((Date.now() - modalOpenTime) / 1000) : undefined;
+        trackEvent('byq_form_abandoned', {
+          fields_completed: completedFieldsCount,
+          time_spent_seconds: timeSpent,
+          had_name: isNameValid,
+          had_email: isEmailValid,
+          had_phone: isPhoneValid,
+        });
+      }
       setIsModalOpen(false);
       setIsSuccess(false);
+      setHasInteracted(false);
+      setModalOpenTime(null);
     }
   };
 
@@ -402,6 +444,7 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
                     placeholder="Your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    onFocus={() => handleFieldFocus('name')}
                     disabled={isLoading}
                     autoFocus
                   />
@@ -419,6 +462,7 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
                     type="email"
                     placeholder="you@example.com"
                     {...emailProps}
+                    onFocus={() => handleFieldFocus('email')}
                     disabled={isLoading}
                     className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''}
                     aria-invalid={emailHasError}
@@ -440,6 +484,7 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
                     placeholder="(555) 123-4567"
                     value={phone}
                     onChange={handlePhoneChange}
+                    onFocus={() => handleFieldFocus('phone')}
                     disabled={isLoading}
                   />
                 </div>
