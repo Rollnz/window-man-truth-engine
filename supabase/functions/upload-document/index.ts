@@ -22,6 +22,38 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ===== AUTHENTICATION CHECK =====
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    // Create client with user's auth token
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error('Auth error:', claimsError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+    console.log(`Authenticated user: ${userId}`);
+    // ===== END AUTHENTICATION CHECK =====
+
     const formData = await req.formData();
     const file = formData.get('file') as File;
     const sessionId = formData.get('sessionId') as string;
@@ -73,15 +105,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    // Create Supabase client with service role for storage operations
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Generate unique file path: sessionId/documentType/timestamp-filename
+    // Generate unique file path: userId/documentType/timestamp-filename
+    // Use userId for path isolation (security best practice)
     const timestamp = Date.now();
     const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const filePath = `${sessionId}/${documentType}/${timestamp}-${sanitizedFilename}`;
+    const filePath = `${userId}/${documentType}/${timestamp}-${sanitizedFilename}`;
 
     console.log(`Uploading file: ${filePath}, size: ${file.size}, type: ${file.type}`);
 

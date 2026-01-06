@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -274,6 +275,37 @@ serve(async (req) => {
   }
 
   try {
+    // ===== AUTHENTICATION CHECK =====
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error('Auth error:', claimsError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+    console.log(`Authenticated user: ${userId}`);
+    // ===== END AUTHENTICATION CHECK =====
+
     const payload: EmailPayload = await req.json();
     const { email, type, data } = payload;
 
@@ -304,11 +336,6 @@ serve(async (req) => {
       console.log(`Type: ${type}`);
       console.log(`Subject: ${subject}`);
       console.log('------------------------------------------------');
-      console.log('Body (HTML):');
-      console.log(html);
-      console.log('------------------------------------------------');
-      console.log(`Data: ${JSON.stringify(data, null, 2)}`);
-      console.log('================================================');
       console.log('Note: Set RESEND_API_KEY to enable real email sending');
       console.log('================================================');
 
