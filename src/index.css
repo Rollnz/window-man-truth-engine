@@ -237,14 +237,16 @@
     inset: 0;
     pointer-events: none;
     overflow: hidden;
+    z-index: 10;
   }
 
   .scanline-overlay::before {
     content: '';
     position: absolute;
+    top: 0;
     left: 0;
     right: 0;
-    height: 2px;
+    height: 3px;
     background: linear-gradient(
       90deg,
       transparent 0%,
@@ -253,8 +255,17 @@
       hsl(var(--primary) / 0.8) 80%,
       transparent 100%
     );
-    box-shadow: 0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary) / 0.5);
-    animation: scan-line 4s linear infinite;
+    box-shadow: 0 0 15px hsl(var(--primary)), 0 0 30px hsl(var(--primary) / 0.6), 0 0 45px hsl(var(--primary) / 0.3);
+    animation: scan-line 3s ease-in-out infinite;
+  }
+
+  @keyframes scan-line {
+    0% {
+      top: 0;
+    }
+    100% {
+      top: 100%;
+    }
   }
 
   .glow-cyan {
