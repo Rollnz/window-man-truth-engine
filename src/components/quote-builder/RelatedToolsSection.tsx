@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { FileSearch, Shield, Calculator, ArrowRight } from "lucide-react";
+import { ROUTES } from "@/config/navigation";
 
 export const RelatedToolsSection = () => {
   const tools = [
@@ -7,21 +8,21 @@ export const RelatedToolsSection = () => {
       icon: FileSearch,
       title: "Quote Scanner",
       description: "Upload a contractor quote and let AI analyze it for red flags and hidden fees.",
-      href: "/ai-scanner",
+      href: ROUTES.QUOTE_SCANNER,
       color: "blue"
     },
     {
       icon: Shield,
       title: "Risk Diagnostic",
       description: "Assess your home's vulnerability and discover protection gaps.",
-      href: "/risk-diagnostic",
+      href: ROUTES.RISK_DIAGNOSTIC,
       color: "emerald"
     },
     {
       icon: Calculator,
       title: "Cost Calculator",
       description: "Calculate long-term costs and savings for hurricane protection.",
-      href: "/cost-calculator",
+      href: ROUTES.COST_CALCULATOR,
       color: "orange"
     }
   ];
