@@ -130,10 +130,12 @@ const upsertSession = async (supabase: SupabaseClient, payload: JsonRecord & { s
   }
 
   const insertData = {
+    anonymous_id: (payload.anonymous_id as string | undefined) || crypto.randomUUID(),
     entry_point: payload.entry_point,
     device_type: payload.device_type,
     user_agent: payload.user_agent,
     referrer: payload.referrer,
+    landing_page: (payload.landing_page as string | undefined) || (payload.entry_point as string | undefined) || null,
     utm_source: payload.utm_source,
     utm_medium: payload.utm_medium,
     utm_campaign: payload.utm_campaign,
