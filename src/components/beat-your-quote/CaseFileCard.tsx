@@ -44,8 +44,10 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
   };
 
   return (
-    <div 
-      className="bg-card/50 border border-border/50 rounded-lg overflow-hidden transition-all duration-300 hover:border-primary/30"
+    <div
+      className={`bg-[hsl(220_20%_14%)] border border-white/5 rounded-lg overflow-hidden shadow-xl transition-all duration-300 hover:border-white/10 ${
+        index % 2 === 0 ? 'rotate-1' : '-rotate-1'
+      }`}
       style={{
         animationDelay: `${index * 150}ms`,
       }}
@@ -53,14 +55,14 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
       {/* Header */}
       <div className="p-5 pb-4">
         {/* Case Number */}
-        <div className="text-xs font-mono text-muted-foreground/60 mb-2 tracking-wider">
+        <div className="text-sm font-mono text-zinc-100 mb-3 tracking-[0.2em] uppercase font-bold">
           {data.caseNumber}
         </div>
 
         {/* Headline - Typewriter effect */}
-        <h3 
-          className="text-lg font-bold text-foreground mb-3 font-typewriter"
-          style={{ 
+        <h3
+          className="text-lg font-bold text-zinc-100 mb-3 font-typewriter"
+          style={{
             textDecoration: 'underline',
             textDecorationColor: 'hsl(var(--primary) / 0.4)',
             textUnderlineOffset: '4px',
@@ -70,8 +72,8 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
         </h3>
 
         {/* Homeowner Info */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-          <span className="font-semibold text-foreground">{data.homeowner}</span>
+        <div className="flex items-center gap-2 text-sm text-zinc-300 mb-3">
+          <span className="font-semibold text-zinc-100">{data.homeowner}</span>
           <span>•</span>
           <span>{data.location}</span>
         </div>
@@ -182,8 +184,8 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
 
       {/* Status Badge */}
       <div className="px-5 pb-5">
-        <div 
-          className={`inline-block px-4 py-2 rounded border font-mono text-xs tracking-widest ${statusColors[data.status]}`}
+        <div
+          className={`inline-block px-4 py-2 rounded border-2 font-mono text-xs tracking-[0.2em] uppercase font-bold transform -rotate-2 ${statusColors[data.status]}`}
         >
           STATUS: {data.status}
         </div>
