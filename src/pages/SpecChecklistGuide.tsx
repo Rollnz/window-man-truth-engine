@@ -188,7 +188,7 @@ const SpecChecklistGuide = () => {
                   
                   <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-lg">
                     <ClipboardList className="w-3.5 h-3.5" />
-                    Print-Ready
+                    Complete Spec Sheet
                   </div>
                 </div>
 
