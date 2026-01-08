@@ -44,17 +44,17 @@ const SpecChecklistHero: React.FC<SpecChecklistHeroProps> = ({ onCtaClick }) => 
                 <Download className="w-4 h-4" />
               </Button>
               
-              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" /> 35-page guide
-                </span>
-                <span className="flex items-center gap-1">
-                  <Smartphone className="w-4 h-4" /> Print or digital
-                </span>
-                <span className="flex items-center gap-1">
-                  <Shield className="w-4 h-4" /> 4-Packet System
-                </span>
-              </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-4 h-4 flex-shrink-0" /> 35-page guide
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Smartphone className="w-4 h-4 flex-shrink-0" /> Print or digital
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Shield className="w-4 h-4 flex-shrink-0" /> 4-Packet System
+              </span>
+            </div>
             </div>
 
             <div className="pt-4 border-t border-border">
