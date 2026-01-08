@@ -46,7 +46,7 @@ const About = () => {
               <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link to={ROUTES.CLAIM_SURVIVAL}>Download the Claim Kit</Link>
+              <Link to={ROUTES.SPEC_CHECKLIST_GUIDE}>Download Spec Checklist</Link>
             </Button>
           </div>
         </section>
