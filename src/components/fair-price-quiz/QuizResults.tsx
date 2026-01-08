@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Phone, AlertTriangle, TrendingDown, Info, Bot } from 'lucide-react';
+import { Phone, AlertTriangle, TrendingDown, Info, Bot, CheckCircle } from 'lucide-react';
 import { PriceAnalysis, formatCurrency, getRedFlagDescriptions } from '@/lib/fairPriceCalculations';
 import { gradeConfig } from '@/data/fairPriceQuizData';
 import { QuizAnswers } from '@/lib/fairPriceCalculations';
@@ -182,14 +182,19 @@ export function QuizResults({
 
             <div className="space-y-3">
               <Label htmlFor="phone">Enter your phone number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={handlePhoneChange}
-                placeholder="(555) 123-4567"
-                className={`w-full ${phoneError ? 'border-destructive' : ''}`}
-              />
+              <div className="relative">
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  placeholder="(555) 123-4567"
+                  className={`w-full pr-10 ${phoneError ? 'border-destructive' : phone.replace(/\D/g, '').length === 10 ? 'border-success' : ''}`}
+                />
+                {phone.replace(/\D/g, '').length === 10 && !phoneError && (
+                  <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-success" />
+                )}
+              </div>
               <Button
                 onClick={handlePhoneSubmit}
                 disabled={isSubmitting}
