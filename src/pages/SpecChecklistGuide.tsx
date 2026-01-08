@@ -222,7 +222,7 @@ const SpecChecklistGuide = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">Spec Checklist</p>
-                    <p className="text-sm text-muted-foreground">8 Pages • PDF • 0.8MB</p>
+                    <p className="text-sm text-muted-foreground">42 Pages • PDF • 0.8MB</p>
                   </div>
                 </div>
                 <div className="space-y-2 mb-6">
