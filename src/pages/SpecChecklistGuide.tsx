@@ -19,10 +19,14 @@ import FAQSection from '@/components/spec-checklist/FAQSection';
 import SecondaryCTASection from '@/components/spec-checklist/SecondaryCTASection';
 import ExitIntentModal from '@/components/spec-checklist/ExitIntentModal';
 
+const CONVERSION_STORAGE_KEY = 'spec_checklist_converted';
+
 const SpecChecklistGuide = () => {
   usePageTracking('spec-checklist-guide');
   const navigate = useNavigate();
-  const [hasConverted, setHasConverted] = useState(false);
+  const [hasConverted, setHasConverted] = useState(() => {
+    return localStorage.getItem(CONVERSION_STORAGE_KEY) === 'true';
+  });
   const mainCtaRef = useRef<HTMLDivElement>(null);
 
   // Track page view on mount
@@ -40,6 +44,7 @@ const SpecChecklistGuide = () => {
 
   const handleConversionSuccess = () => {
     setHasConverted(true);
+    localStorage.setItem(CONVERSION_STORAGE_KEY, 'true');
   };
 
   return (
