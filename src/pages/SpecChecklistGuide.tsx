@@ -124,7 +124,7 @@ const SpecChecklistGuide = () => {
                   <span className="flex items-center gap-1">
                     <Clock className="w-4 h-4" /> 3 min read
                   </span>
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-primary-foreground">
                     <Smartphone className="w-4 h-4" /> Print or digital
                   </span>
                   <span className="flex items-center gap-1 text-primary-foreground">
