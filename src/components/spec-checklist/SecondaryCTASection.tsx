@@ -14,9 +14,10 @@ import { trustSignals } from '@/data/specChecklistData';
 interface SecondaryCTASectionProps {
   id?: string;
   onSuccess?: () => void;
+  hasConverted?: boolean;
 }
 
-const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess }) => {
+const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess, hasConverted }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
 
@@ -100,6 +101,23 @@ const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess
       setIsSubmitting(false);
     }
   };
+
+  // Show success state if already converted
+  if (hasConverted) {
+    return (
+      <section id={id} className="py-16 sm:py-24 bg-muted/30">
+        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="bg-card rounded-xl p-6 sm:p-8 shadow-lg border border-border">
+            <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">Checklist Unlocked!</h2>
+            <p className="text-muted-foreground">
+              Check your email for your Pre-Installation Audit Checklist.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id={id} className="py-16 sm:py-24 bg-muted/30">
