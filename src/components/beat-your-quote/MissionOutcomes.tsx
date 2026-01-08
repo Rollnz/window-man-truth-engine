@@ -116,9 +116,9 @@ export function MissionOutcomes() {
         </div>
 
         {/* Case Files Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10 px-2">
           {caseFiles.map((caseFile, index) => (
-            <div 
+            <div
               key={caseFile.caseNumber}
               className={`transition-all duration-700 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
