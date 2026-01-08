@@ -63,6 +63,7 @@ const App = () => (
           <Route path="/calculate-your-estimate" element={<CalculateEstimate />} />
           <Route path="/free-estimate" element={<CalculateEstimate />} />
           <Route path="/impact-window-calculator" element={<CostCalculator />} />
+          <Route path="/tools" element={<Tools />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/vault" element={<AuthGuard><Vault /></AuthGuard>} />
           <Route path="/privacy" element={<Privacy />} />

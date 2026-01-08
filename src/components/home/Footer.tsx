@@ -88,9 +88,6 @@ export function Footer() {
                 <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Terms of Service
                 </Link>
-                <Link to="/accessibility" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Accessibility
-                </Link>
               </div>
             </div>
           </div>
