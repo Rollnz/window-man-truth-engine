@@ -127,7 +127,7 @@ const SpecChecklistGuide = () => {
                   <span className="flex items-center gap-1">
                     <Smartphone className="w-4 h-4" /> Print or digital
                   </span>
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-primary-foreground">
                     <CheckCircle2 className="w-4 h-4" /> Side-by-side format
                   </span>
                 </div>
