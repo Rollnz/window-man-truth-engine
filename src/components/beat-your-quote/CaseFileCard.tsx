@@ -45,7 +45,7 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
 
   return (
     <div
-      className={`bg-[hsl(220_20%_14%)] border border-white/5 rounded-lg overflow-hidden shadow-xl transition-all duration-300 hover:border-white/10 ${
+      className={`bg-dossier-folder border border-white/5 rounded-lg overflow-hidden shadow-xl transition-all duration-300 hover:border-white/10 ${
         index % 2 === 0 ? 'rotate-1' : '-rotate-1'
       }`}
       style={{
@@ -55,7 +55,7 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
       {/* Header */}
       <div className="p-5 pb-4">
         {/* Case Number */}
-        <div className="text-sm font-mono text-zinc-100 mb-3 tracking-[0.2em] uppercase font-bold">
+        <div className="text-sm font-mono text-zinc-100 mb-3 tracking-declassified uppercase font-bold">
           {data.caseNumber}
         </div>
 
@@ -185,7 +185,7 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
       {/* Status Badge */}
       <div className="px-5 pb-5">
         <div
-          className={`inline-block px-4 py-2 rounded border-2 font-mono text-xs tracking-[0.2em] uppercase font-bold transform -rotate-2 ${statusColors[data.status]}`}
+          className={`inline-block px-4 py-2 rounded border-2 font-mono text-xs tracking-declassified uppercase font-bold transform -rotate-2 ${statusColors[data.status]}`}
         >
           STATUS: {data.status}
         </div>

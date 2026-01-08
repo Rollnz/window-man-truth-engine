@@ -14,18 +14,18 @@ export function ScanProgressBar({ isVisible }: ScanProgressBarProps) {
     >
       {/* Label */}
       <div className="text-center mb-2">
-        <span className="text-xs font-mono tracking-[0.3em] text-[#00D4FF] bg-[#0A0F14]/90 px-4 py-1">
+        <span className="text-xs font-mono tracking-redacted text-tools-truth-engine bg-dossier-page/90 px-4 py-1">
           SCANNING
         </span>
       </div>
-      
+
       {/* Progress Bar - Full Width */}
       <div className="relative h-1 bg-transparent">
         {/* Main Line */}
-        <div 
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00D4FF] to-transparent"
-          style={{ 
-            boxShadow: '0 0 20px #00D4FF, 0 0 40px #00D4FF50'
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-tools-truth-engine to-transparent"
+          style={{
+            boxShadow: '0 0 20px hsl(189 100% 50%), 0 0 40px hsl(189 100% 50% / 0.3)'
           }}
         />
         

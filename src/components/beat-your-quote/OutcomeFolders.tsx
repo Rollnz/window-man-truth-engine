@@ -225,16 +225,16 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
     `}>
       {/* Section Divider */}
       <div className="flex items-center justify-center gap-4 py-8">
-        <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#00D4FF]/30" />
-        <Zap className="w-5 h-5 text-[#00D4FF]" />
-        <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#00D4FF]/30" />
+        <div className="h-px flex-1 bg-gradient-to-r from-transparent to-tools-truth-engine/30" />
+        <Zap className="w-5 h-5 text-tools-truth-engine" />
+        <div className="h-px flex-1 bg-gradient-to-l from-transparent to-tools-truth-engine/30" />
       </div>
 
       {/* Header Badge */}
       <div className="flex justify-center">
-        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#00D4FF]/40 bg-[#00D4FF]/10">
-          <ClipboardCheck className="w-4 h-4 text-[#00D4FF]" />
-          <span className="text-sm font-mono tracking-wider text-[#00D4FF]">
+        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-tools-truth-engine/40 bg-tools-truth-engine/10">
+          <ClipboardCheck className="w-4 h-4 text-tools-truth-engine" />
+          <span className="text-sm font-mono tracking-wider text-tools-truth-engine">
             MISSION OUTCOME BRIEFING
           </span>
         </div>
@@ -243,7 +243,7 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
       {/* Title */}
       <h3 className="text-3xl md:text-4xl font-bold text-center font-mono">
         <span className="text-white">TWO POSSIBLE </span>
-        <span className="text-[#00D4FF]">OUTCOMES</span>
+        <span className="text-tools-truth-engine">OUTCOMES</span>
       </h3>
       
       <p className="text-center text-muted-foreground">
@@ -317,12 +317,12 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
         </div>
 
         {/* Outcome Bravo - Quote Validated */}
-        <div 
+        <div
           className={`
             cursor-pointer rounded-lg border transition-all duration-300
-            ${activeOutcome === 'bravo' 
-              ? 'border-[#00D4FF]/60 bg-[#00D4FF]/5' 
-              : 'border-border/40 bg-background/5 hover:border-[#00D4FF]/40'
+            ${activeOutcome === 'bravo'
+              ? 'border-tools-truth-engine/60 bg-tools-truth-engine/5'
+              : 'border-border/40 bg-background/5 hover:border-tools-truth-engine/40'
             }
           `}
           onClick={() => handleOutcomeClick('bravo')}
@@ -330,50 +330,50 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
           <div className="p-4 flex items-center gap-4">
             <div className={`
               w-10 h-10 rounded-full flex items-center justify-center
-              ${activeOutcome === 'bravo' ? 'bg-[#00D4FF]/20' : 'bg-[#00D4FF]/10'}
+              ${activeOutcome === 'bravo' ? 'bg-tools-truth-engine/20' : 'bg-tools-truth-engine/10'}
             `}>
-              <Shield className="w-5 h-5 text-[#00D4FF]" />
+              <Shield className="w-5 h-5 text-tools-truth-engine" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-[#00D4FF] uppercase tracking-wide font-mono">
+              <h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono">
                 QUOTE VALIDATED
               </h4>
               <p className="text-sm text-muted-foreground">We can't beat it</p>
             </div>
             {activeOutcome === 'bravo' && (
-              <span className="text-xs font-mono text-[#00D4FF]/60 tracking-wider">OUTCOME BRAVO</span>
+              <span className="text-xs font-mono text-tools-truth-engine/60 tracking-wider">OUTCOME BRAVO</span>
             )}
           </div>
-          
+
           {/* Expanded Content */}
           {activeOutcome === 'bravo' && (
             <div className="px-4 pb-6 animate-fade-in">
-              <div className="flex items-center gap-2 text-[#00D4FF] mb-4">
+              <div className="flex items-center gap-2 text-tools-truth-engine mb-4">
                 <Shield className="w-5 h-5" />
                 <span className="font-bold uppercase tracking-wide font-mono">Intel Confirmed</span>
               </div>
-              
-              <div className="p-4 rounded-lg bg-[#00D4FF]/10 border border-[#00D4FF]/20 mb-4">
+
+              <div className="p-4 rounded-lg bg-tools-truth-engine/10 border border-tools-truth-engine/20 mb-4">
                 <div className="text-sm text-muted-foreground mb-1">Your Quote Status</div>
-                <div className="text-2xl font-bold text-[#00D4FF] font-mono">COMPETITIVE</div>
+                <div className="text-2xl font-bold text-tools-truth-engine font-mono">COMPETITIVE</div>
               </div>
-              
+
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <span className="text-[#00D4FF]">✓</span>
+                  <span className="text-tools-truth-engine">✓</span>
                   Your original quote is confirmed as fair market value
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-[#00D4FF]">✓</span>
+                  <span className="text-tools-truth-engine">✓</span>
                   No hidden markups detected
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-[#00D4FF]">✓</span>
+                  <span className="text-tools-truth-engine">✓</span>
                   Proceed with your contractor confidently
                 </li>
               </ul>
-              
-              <p className="text-center text-sm text-[#00D4FF]/60 italic mt-4">
+
+              <p className="text-center text-sm text-tools-truth-engine/60 italic mt-4">
                 "We'll even tell you to take it."
               </p>
             </div>
@@ -384,18 +384,18 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
       {/* Win-Win Message */}
       <div className="max-w-lg mx-auto p-6 rounded-lg border border-border/30 bg-background/5 text-center">
         <p className="text-lg">
-          Either way, <span className="text-[#00D4FF] font-bold">you win.</span>
+          Either way, <span className="text-tools-truth-engine font-bold">you win.</span>
         </p>
-        <p className="text-sm text-[#00D4FF]/60 italic mt-2">
+        <p className="text-sm text-tools-truth-engine/60 italic mt-2">
           "The only failed mission is the one you never start."
         </p>
       </div>
 
       {/* CTA */}
       <div className="text-center pt-4">
-        <Button 
+        <Button
           onClick={handleStartMission}
-          className="bg-[#00D4FF] hover:bg-[#00D4FF]/90 text-black font-bold px-8 py-6 text-lg uppercase tracking-wider"
+          className="bg-tools-truth-engine hover:bg-tools-truth-engine/90 text-black font-bold px-8 py-6 text-lg uppercase tracking-wider"
         >
           Let Me Beat Your Quote
           <ArrowRight className="ml-2 w-5 h-5" />
@@ -407,11 +407,11 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
 
       {/* Lead Capture Modal */}
       <Dialog open={isModalOpen} onOpenChange={handleModalClose}>
-        <DialogContent className="sm:max-w-md bg-[hsl(220_20%_12%)] border border-white/10 shadow-2xl shadow-[#00D4FF]/5">
+        <DialogContent className="sm:max-w-md bg-dossier-modal border border-white/10 shadow-2xl shadow-tools-truth-engine/5">
           {isSuccess ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="w-16 h-16 rounded-full bg-[#00D4FF]/20 flex items-center justify-center mb-4">
-                <CheckCircle className="w-8 h-8 text-[#00D4FF]" />
+              <div className="w-16 h-16 rounded-full bg-tools-truth-engine/20 flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-tools-truth-engine" />
               </div>
               <DialogTitle className="text-xl mb-2">Mission Initiated!</DialogTitle>
               <DialogDescription>
@@ -422,8 +422,8 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
             <>
               <DialogHeader>
                 <div className="flex justify-center mb-2">
-                  <div className="w-12 h-12 rounded-full bg-[#00D4FF]/10 flex items-center justify-center">
-                    <Mail className="w-6 h-6 text-[#00D4FF]" />
+                  <div className="w-12 h-12 rounded-full bg-tools-truth-engine/10 flex items-center justify-center">
+                    <Mail className="w-6 h-6 text-tools-truth-engine" />
                   </div>
                 </div>
                 <DialogTitle className="text-center">Start Your Mission</DialogTitle>
@@ -524,7 +524,7 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
 
                 <Button
                   type="submit"
-                  className="w-full bg-[#00D4FF] hover:bg-[#00D4FF]/90 text-black font-bold"
+                  className="w-full bg-tools-truth-engine hover:bg-tools-truth-engine/90 text-black font-bold"
                   disabled={isLoading || !isFormValid}
                 >
                   {isLoading ? (

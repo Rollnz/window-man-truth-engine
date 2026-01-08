@@ -73,13 +73,13 @@ export function RemainsBreakdown({
       </div>
       
       {/* Total Bloat Eliminated Summary */}
-      <div className="p-6 rounded-lg border border-[#00D4FF]/30 bg-[#00D4FF]/5 text-center">
+      <div className="p-6 rounded-lg border border-tools-truth-engine/30 bg-tools-truth-engine/5 text-center">
         <div className="text-sm text-muted-foreground mb-2">Total Bloat Eliminated</div>
-        <div className="text-4xl font-bold text-[#00D4FF] font-mono mb-2">
+        <div className="text-4xl font-bold text-tools-truth-engine font-mono mb-2">
           ${totalBloat.toLocaleString()}
         </div>
         <p className="text-sm text-muted-foreground">
-          That's <span className="text-[#00D4FF] font-medium">{bloatPercentage}%</span> of your quote going to people who never touch a window.
+          That's <span className="text-tools-truth-engine font-medium">{bloatPercentage}%</span> of your quote going to people who never touch a window.
         </p>
       </div>
     </div>
