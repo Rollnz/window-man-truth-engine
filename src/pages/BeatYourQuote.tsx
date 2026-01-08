@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useSessionData } from '@/hooks/useSessionData';
 import { Navbar } from '@/components/home/Navbar';
@@ -15,14 +16,18 @@ export default function BeatYourQuote() {
   usePageTracking('beat-your-quote');
   useSessionData();
 
+  // State to trigger modal from hero buttons
+  const [modalTriggerCount, setModalTriggerCount] = useState(0);
+  const handleOpenModal = () => setModalTriggerCount(prev => prev + 1);
+
   return (
     <div className="min-h-screen dossier-bg">
       <Navbar />
       <main>
-        <DossierHero />
+        <DossierHero onOpenModal={handleOpenModal} />
         <ConceptSection />
         <ManipulationTactics />
-        <AnatomySection />
+        <AnatomySection modalTriggerCount={modalTriggerCount} />
         {/* Mission Outcomes - Testimonials */}
         <MissionOutcomes />
         {/* Interrogation FAQ */}

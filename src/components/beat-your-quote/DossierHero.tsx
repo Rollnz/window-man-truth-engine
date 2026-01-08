@@ -2,7 +2,11 @@ import { Shield, ChevronDown, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StampBadge } from './StampBadge';
 
-export function DossierHero() {
+interface DossierHeroProps {
+  onOpenModal?: () => void;
+}
+
+export function DossierHero({ onOpenModal }: DossierHeroProps) {
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -50,18 +54,18 @@ export function DossierHero() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="lg"
-            onClick={() => scrollToSection('concept')}
+            onClick={onOpenModal}
             className="border-border text-muted-foreground hover:bg-secondary"
           >
             <Shield className="mr-2 w-5 h-5" />
             Access Dossier
           </Button>
-          <Button 
+          <Button
             size="lg"
-            onClick={() => scrollToSection('beat-quote')}
+            onClick={onOpenModal}
             className="glow group"
           >
             Beat Your Quote

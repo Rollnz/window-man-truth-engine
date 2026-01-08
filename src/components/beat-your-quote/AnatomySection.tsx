@@ -44,7 +44,11 @@ const TOTAL_BLOAT = BLOAT_ITEMS.reduce((sum, item) => sum + item.amount, 0);
 const REAL_PRICE = ORIGINAL_QUOTE - TOTAL_BLOAT;
 const BLOAT_PERCENTAGE = Math.round((TOTAL_BLOAT / ORIGINAL_QUOTE) * 100 * 10) / 10;
 
-export function AnatomySection() {
+interface AnatomySectionProps {
+  modalTriggerCount?: number;
+}
+
+export function AnatomySection({ modalTriggerCount = 0 }: AnatomySectionProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [sectionInView, setSectionInView] = useState(false);
   const [dissolvedCards, setDissolvedCards] = useState<Set<string>>(new Set());
@@ -106,7 +110,8 @@ export function AnatomySection() {
   }, []);
 
   return (
-    <section 
+    <section
+      id="beat-quote"
       ref={sectionRef}
       className="relative py-20 px-4 bg-[#0A0F14]"
     >
@@ -174,7 +179,10 @@ export function AnatomySection() {
 
         {/* Outcome Folders */}
         <div className="mt-16">
-          <OutcomeFolders isVisible={allCardsDissolved} />
+          <OutcomeFolders
+            isVisible={allCardsDissolved}
+            triggerCount={modalTriggerCount}
+          />
         </div>
       </div>
     </section>

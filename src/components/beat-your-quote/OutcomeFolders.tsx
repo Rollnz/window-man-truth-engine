@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Shield, ArrowRight, ClipboardCheck, Loader2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,9 +19,10 @@ import { useSessionData } from '@/hooks/useSessionData';
 
 interface OutcomeFoldersProps {
   isVisible: boolean;
+  triggerCount?: number;
 }
 
-export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
+export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { sessionData, updateFields } = useSessionData();
@@ -63,6 +64,13 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
     setIsModalOpen(true);
     setModalOpenTime(Date.now());
   };
+
+  // Watch for external trigger (hero buttons, etc.)
+  useEffect(() => {
+    if (triggerCount > 0 && !isModalOpen) {
+      handleStartMission();
+    }
+  }, [triggerCount]);
 
   // Track first field interaction
   const handleFieldFocus = (fieldName: string) => {
