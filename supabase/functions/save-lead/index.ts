@@ -524,8 +524,34 @@ serve(async (req) => {
       }
     } catch (dbError) {
       console.error('Database operation failed:', dbError);
+
+      // Extract detailed Postgres error information for debugging
+      const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
+      const errorCode = (dbError as any)?.code || 'UNKNOWN';
+      const errorDetails = (dbError as any)?.details || null;
+      const errorHint = (dbError as any)?.hint || null;
+
+      // Log full error details server-side
+      console.error('Postgres Error Details:', {
+        code: errorCode,
+        message: errorMessage,
+        details: errorDetails,
+        hint: errorHint
+      });
+
       return new Response(
-        JSON.stringify({ success: false, error: 'Database error' }),
+        JSON.stringify({
+          success: false,
+          error: 'Database error',
+          // Include debug info in development/staging (filtered by env var)
+          ...(Deno.env.get('ENVIRONMENT') !== 'production' && {
+            debug: {
+              code: errorCode,
+              message: errorMessage,
+              details: errorDetails
+            }
+          })
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -557,8 +583,27 @@ serve(async (req) => {
         console.log('Created consultation:', consultationId);
       } catch (consultDbError) {
         console.error('Consultation creation failed:', consultDbError);
+
+        // Extract detailed error information
+        const errorMessage = consultDbError instanceof Error ? consultDbError.message : 'Unknown error';
+        const errorCode = (consultDbError as any)?.code || 'UNKNOWN';
+
+        console.error('Consultation Error Details:', {
+          code: errorCode,
+          message: errorMessage
+        });
+
         return new Response(
-          JSON.stringify({ success: false, error: 'Failed to schedule consultation' }),
+          JSON.stringify({
+            success: false,
+            error: 'Failed to schedule consultation',
+            ...(Deno.env.get('ENVIRONMENT') !== 'production' && {
+              debug: {
+                code: errorCode,
+                message: errorMessage
+              }
+            })
+          }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
