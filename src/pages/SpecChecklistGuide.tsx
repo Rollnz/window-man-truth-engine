@@ -182,7 +182,7 @@ const SpecChecklistGuide = () => {
                 <div className="relative bg-card rounded-xl shadow-2xl p-2 border border-border">
                   <img 
                     src="/images/spec-checklist-book.webp"
-                    alt="Window Specification Checklist Preview"
+                    alt="Impact Window Audit Packet - Homeowner's Spec Check"
                     className="w-64 sm:w-80 h-auto rounded-lg"
                   />
                   
