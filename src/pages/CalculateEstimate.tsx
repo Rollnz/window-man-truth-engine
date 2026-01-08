@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Calendar, Phone, HelpCircle, Check, Shield, Info, ArrowRight,
   Loader2, X, ArrowDown, Sparkles, MessageSquare, Mail,
@@ -218,9 +221,32 @@ interface LeadModalProps {
 }
 
 const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModalProps) => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const { values, getFieldProps, hasError, getError, validateAll } = useFormValidation({
+    initialValues: { name: '', email: '', phone: '' },
+    schemas: {
+      name: commonSchemas.name,
+      email: commonSchemas.email,
+      phone: commonSchemas.phone
+    },
+    formatters: {
+      phone: formatPhoneNumber
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateAll()) {
+      toast.error("Please fix the errors before submitting");
+      return;
+    }
+
+    onSubmit({
+      name: values.name,
+      email: values.email,
+      phone: values.phone
+    });
+  };
 
   if (!isOpen) return null;
 
@@ -230,7 +256,7 @@ const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModalProps) 
         <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
           <X size={24} />
         </button>
-        
+
         <div className="text-center mb-6">
           <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100">
             <Check className="w-6 h-6 text-blue-600" />
@@ -241,38 +267,49 @@ const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModalProps) 
           </p>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); onSubmit({ name, email, phone }); }} className="space-y-4">
-          <div>
-            <input
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="lead-name" className="text-slate-700 font-semibold">Full Name</Label>
+            <Input
+              id="lead-name"
               type="text"
-              placeholder="Full Name"
-              className="w-full px-4 py-3 bg-white rounded-lg border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              required
-              value={name}
-              onChange={e => setName(e.target.value)}
+              placeholder="John Smith"
+              className={`bg-white ${hasError('name') ? 'border-red-500 focus-visible:ring-red-500' : 'border-slate-300'}`}
+              {...getFieldProps('name')}
             />
+            {hasError('name') && (
+              <p className="text-sm text-red-600 font-medium">{getError('name')}</p>
+            )}
           </div>
-          <div>
-            <input
+
+          <div className="space-y-2">
+            <Label htmlFor="lead-email" className="text-slate-700 font-semibold">Email Address</Label>
+            <Input
+              id="lead-email"
               type="email"
-              placeholder="Email Address"
-              className="w-full px-4 py-3 bg-white rounded-lg border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
+              placeholder="john@example.com"
+              className={`bg-white ${hasError('email') ? 'border-red-500 focus-visible:ring-red-500' : 'border-slate-300'}`}
+              {...getFieldProps('email')}
             />
+            {hasError('email') && (
+              <p className="text-sm text-red-600 font-medium">{getError('email')}</p>
+            )}
           </div>
-          <div>
-            <input
+
+          <div className="space-y-2">
+            <Label htmlFor="lead-phone" className="text-slate-700 font-semibold">Phone Number</Label>
+            <Input
+              id="lead-phone"
               type="tel"
-              placeholder="Phone Number"
-              className="w-full px-4 py-3 bg-white rounded-lg border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              required
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
+              placeholder="(555) 123-4567"
+              className={`bg-white ${hasError('phone') ? 'border-red-500 focus-visible:ring-red-500' : 'border-slate-300'}`}
+              {...getFieldProps('phone')}
             />
+            {hasError('phone') && (
+              <p className="text-sm text-red-600 font-medium">{getError('phone')}</p>
+            )}
           </div>
-          
+
           <button
             type="submit"
             disabled={isSubmitting}
@@ -288,7 +325,7 @@ const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModalProps) 
             )}
           </button>
         </form>
-        
+
         <p className="text-xs text-slate-400 text-center mt-4">
           Window GUY respects your privacy. No spam, ever.
         </p>
