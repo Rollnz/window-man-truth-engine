@@ -11,6 +11,7 @@ import { exitIntentData } from '@/data/specChecklistData';
 
 interface ExitIntentModalProps {
   hasConverted: boolean;
+  onSuccess?: () => void;
 }
 
 const STORAGE_KEY = 'spec_checklist_exit_intent_shown';
@@ -18,7 +19,7 @@ const MIN_TIME_ON_PAGE = 15000; // 15 seconds
 const MIN_SCROLL_DEPTH = 0.4; // 40%
 const MOBILE_SCROLL_THRESHOLD = 0.6; // 60% scroll for mobile trigger
 
-const ExitIntentModal: React.FC<ExitIntentModalProps> = ({ hasConverted }) => {
+const ExitIntentModal: React.FC<ExitIntentModalProps> = ({ hasConverted, onSuccess }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pageLoadTime] = useState(Date.now());
@@ -167,11 +168,12 @@ const ExitIntentModal: React.FC<ExitIntentModalProps> = ({ hasConverted }) => {
       });
       
       toast({
-        title: "Checklist Sent!",
-        description: "Check your email for your Pre-Installation Audit Checklist.",
+        title: "Checklist Unlocked!",
+        description: "Check your email! Your Pre-Installation Audit Checklist is on its way.",
       });
       
       setIsOpen(false);
+      onSuccess?.(); // Mark as converted to hide other CTAs
       
     } catch (error) {
       console.error('Exit intent form error:', error);

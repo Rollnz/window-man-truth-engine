@@ -84,7 +84,7 @@ const SpecChecklistGuide = () => {
       
       {/* Primary CTA Gate */}
       <div ref={mainCtaRef}>
-        <MainCTASection id="main-cta" onSuccess={handleConversionSuccess} />
+        <MainCTASection id="main-cta" onSuccess={handleConversionSuccess} hasConverted={hasConverted} />
       </div>
       
       <SocialProofSection />
@@ -94,7 +94,7 @@ const SpecChecklistGuide = () => {
       <FAQSection />
       
       {/* Secondary CTA Gate */}
-      <SecondaryCTASection id="secondary-cta" onSuccess={handleConversionSuccess} />
+      <SecondaryCTASection id="secondary-cta" onSuccess={handleConversionSuccess} hasConverted={hasConverted} />
 
       {/* Related Tools Section */}
       <section className="py-16 sm:py-24 bg-background">
@@ -166,7 +166,7 @@ const SpecChecklistGuide = () => {
       </footer>
 
       {/* Exit Intent Modal */}
-      <ExitIntentModal hasConverted={hasConverted} />
+      <ExitIntentModal hasConverted={hasConverted} onSuccess={handleConversionSuccess} />
     </div>
   );
 };

@@ -14,9 +14,10 @@ import { trustSignals } from '@/data/specChecklistData';
 interface MainCTASectionProps {
   id?: string;
   onSuccess?: () => void;
+  hasConverted?: boolean;
 }
 
-const MainCTASection: React.FC<MainCTASectionProps> = ({ id, onSuccess }) => {
+const MainCTASection: React.FC<MainCTASectionProps> = ({ id, onSuccess, hasConverted }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
   const [formStarted, setFormStarted] = useState(false);
@@ -121,6 +122,23 @@ const MainCTASection: React.FC<MainCTASectionProps> = ({ id, onSuccess }) => {
       setIsSubmitting(false);
     }
   };
+
+  // Show success state if already converted
+  if (hasConverted) {
+    return (
+      <section id={id} className="py-16 sm:py-24 bg-primary text-primary-foreground">
+        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="bg-background rounded-xl p-6 sm:p-8 shadow-2xl">
+            <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">Checklist Unlocked!</h2>
+            <p className="text-muted-foreground">
+              Check your email for your Pre-Installation Audit Checklist. Don't forget to check your spam folder!
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id={id} className="py-16 sm:py-24 bg-primary text-primary-foreground">
