@@ -103,7 +103,7 @@ export function QuizQuestion({
               <Button
                 key={option.id}
                 variant="outline"
-                className="w-full py-6 text-lg justify-start hover:bg-primary/10 hover:border-primary transition-all"
+                className="w-full py-6 text-lg justify-start hover:bg-white hover:text-black hover:border-primary transition-all"
                 onClick={() => handleSelectOption(option.value)}
               >
                 {option.label}
