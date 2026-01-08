@@ -7,7 +7,7 @@ export const RelatedToolsSection = () => {
       icon: FileSearch,
       title: "Quote Scanner",
       description: "Upload a contractor quote and let AI analyze it for red flags and hidden fees.",
-      href: "/quote-scanner",
+      href: "/ai-scanner",
       color: "blue"
     },
     {
