@@ -14,6 +14,7 @@ import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ROUTES } from '@/config/navigation';
 
 export default function Evidence() {
   usePageTracking('evidence-locker');
@@ -103,7 +104,7 @@ export default function Evidence() {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
         <div className="container px-4 py-4 flex items-center justify-between">
-          <Link to="/">
+          <Link to={ROUTES.HOME}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Tools

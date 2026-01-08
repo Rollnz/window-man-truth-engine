@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Shield } from 'lucide-react';
+import { ROUTES } from '@/config/navigation';
 
 export function Hero() {
   return (
@@ -32,13 +33,13 @@ export function Hero() {
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
             <Button asChild size="lg" className="glow-sm hover:glow text-base px-8 py-6 group">
-              <Link to="/reality-check">
+              <Link to={ROUTES.REALITY_CHECK}>
                 Start Your Discovery
                 <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
             <Button asChild variant="high-contrast" size="lg" className="text-base px-8 py-6">
-              <Link to="/comparison">
+              <Link to={ROUTES.COMPARISON}>
                 Compare Windows Now
               </Link>
             </Button>

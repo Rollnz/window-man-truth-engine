@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Construction } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+import { ROUTES } from '@/config/navigation';
 
 export default function Analytics() {
   return (
@@ -9,7 +10,7 @@ export default function Analytics() {
       {/* Header */}
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-6">
-          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-4">
+          <Link to={ROUTES.HOME} className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-4">
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm font-medium">Back to Tools</span>
           </Link>

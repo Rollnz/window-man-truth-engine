@@ -1,8 +1,9 @@
 import { SessionData } from '@/hooks/useSessionData';
 import { VaultSection } from './VaultSection';
-import { FileText, Download, ExternalLink } from 'lucide-react';
+import { FileText, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { ROUTES } from '@/config/navigation';
 
 interface MyDocumentsSectionProps {
   sessionData: SessionData;
@@ -32,7 +33,7 @@ export function MyDocumentsSection({ sessionData }: MyDocumentsSectionProps) {
       emptyState={{
         message: "Upload your first document to start building your claim-ready file",
         ctaText: "Go to Claim Survival Vault",
-        ctaPath: "/claim-survival"
+        ctaPath: ROUTES.CLAIM_SURVIVAL
       }}
     >
       <div className="space-y-3">
@@ -66,7 +67,7 @@ export function MyDocumentsSection({ sessionData }: MyDocumentsSectionProps) {
       {docEntries.length > 0 && (
         <div className="mt-4 pt-4 border-t border-border">
           <Button variant="outline" size="sm" asChild>
-            <Link to="/claim-survival">
+            <Link to={ROUTES.CLAIM_SURVIVAL}>
               Upload More Documents
             </Link>
           </Button>

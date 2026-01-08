@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useVaultNotifications } from '@/hooks/useVaultNotifications';
 import { Vault, LogIn, Menu, X, Target } from 'lucide-react';
 import { useState } from 'react';
+import { ROUTES } from '@/config/navigation';
 
 export function Navbar() {
   const { isAuthenticated, loading } = useAuth();
@@ -15,32 +16,32 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 font-bold text-lg text-foreground">
+        <Link to={ROUTES.HOME} className="flex items-center gap-2 font-bold text-lg text-foreground">
           Its Window Man
         </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-4">
           <Link 
-            to="/tools" 
+            to={ROUTES.TOOLS} 
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Tools
           </Link>
           <Link 
-            to="/evidence" 
+            to={ROUTES.EVIDENCE} 
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Evidence
           </Link>
           <Link 
-            to="/intel" 
+            to={ROUTES.INTEL} 
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Intel Library
           </Link>
           <Link 
-            to="/beat-your-quote" 
+            to={ROUTES.BEAT_YOUR_QUOTE} 
             className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
           >
             <Target className="w-4 h-4" />
@@ -51,7 +52,7 @@ export function Navbar() {
           {!loading && (
             isAuthenticated ? (
               <Button variant="outline" size="sm" asChild className="relative">
-                <Link to="/vault">
+                <Link to={ROUTES.VAULT}>
                   <Vault className="w-4 h-4 mr-2" />
                   My Vault
                   {hasNotifications && (
@@ -70,7 +71,7 @@ export function Navbar() {
               </Button>
             ) : (
               <Button variant="outline" size="sm" asChild>
-                <Link to="/auth">
+                <Link to={ROUTES.AUTH}>
                   <LogIn className="w-4 h-4 mr-2" />
                   Login
                 </Link>
@@ -94,28 +95,28 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background px-4 py-4 space-y-3">
           <Link 
-            to="/tools" 
+            to={ROUTES.TOOLS} 
             className="block text-sm text-muted-foreground hover:text-foreground"
             onClick={() => setMobileMenuOpen(false)}
           >
             Tools
           </Link>
           <Link 
-            to="/evidence" 
+            to={ROUTES.EVIDENCE} 
             className="block text-sm text-muted-foreground hover:text-foreground"
             onClick={() => setMobileMenuOpen(false)}
           >
             Evidence
           </Link>
           <Link 
-            to="/intel" 
+            to={ROUTES.INTEL} 
             className="block text-sm text-muted-foreground hover:text-foreground"
             onClick={() => setMobileMenuOpen(false)}
           >
             Intel Library
           </Link>
           <Link 
-            to="/beat-your-quote" 
+            to={ROUTES.BEAT_YOUR_QUOTE} 
             className="block text-sm font-medium text-primary hover:text-primary/80"
             onClick={() => setMobileMenuOpen(false)}
           >
@@ -128,7 +129,7 @@ export function Navbar() {
           {!loading && (
             isAuthenticated ? (
               <Button variant="outline" size="sm" asChild className="w-full relative">
-                <Link to="/vault" onClick={() => setMobileMenuOpen(false)}>
+                <Link to={ROUTES.VAULT} onClick={() => setMobileMenuOpen(false)}>
                   <Vault className="w-4 h-4 mr-2" />
                   My Vault
                   {hasNotifications && (
@@ -147,7 +148,7 @@ export function Navbar() {
               </Button>
             ) : (
               <Button variant="outline" size="sm" asChild className="w-full">
-                <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                <Link to={ROUTES.AUTH} onClick={() => setMobileMenuOpen(false)}>
                   <LogIn className="w-4 h-4 mr-2" />
                   Login
                 </Link>

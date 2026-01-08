@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { SessionData } from '@/hooks/useSessionData';
+import { ROUTES } from '@/config/navigation';
 
 interface RiskHeroProps {
   sessionData: SessionData;
@@ -25,7 +26,7 @@ export function RiskHero({ sessionData, onStart, hasStarted }: RiskHeroProps) {
       <div className="relative px-4 py-8 sm:py-12 text-center max-w-2xl mx-auto">
         {/* Back link */}
         <Link 
-          to="/" 
+          to={ROUTES.HOME} 
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />

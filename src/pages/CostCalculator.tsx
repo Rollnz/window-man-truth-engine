@@ -20,6 +20,7 @@ import {
 import { ArrowLeft, ArrowRight, MessageCircle, Sparkles } from 'lucide-react';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
 import { TrueCostCalculator } from '@/components/cost-calculator/TrueCostCalculator';
+import { ROUTES } from '@/config/navigation';
 
 export default function CostCalculator() {
   usePageTracking('cost-calculator');
@@ -85,7 +86,7 @@ export default function CostCalculator() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link 
-              to="/" 
+              to={ROUTES.HOME} 
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -187,7 +188,7 @@ export default function CostCalculator() {
                 size="lg" 
                 className="shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_40px_hsl(var(--primary)/0.5)]"
               >
-                <Link to="/expert">
+                <Link to={ROUTES.EXPERT}>
                   <MessageCircle className="mr-2 h-5 w-5" />
                   Get Expert Advice
                   <ArrowRight className="ml-2 h-5 w-5" />

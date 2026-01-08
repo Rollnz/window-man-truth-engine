@@ -1,13 +1,14 @@
-import { CheckCircle2, ShieldAlert, Siren, Sparkles } from "lucide-react";
+import { CheckCircle2, ShieldAlert, Siren } from "lucide-react";
 import { Navbar } from "@/components/home/Navbar";
 import { Footer } from "@/components/home/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
+import { ROUTES } from "@/config/navigation";
 
 const redFlags = [
   "Quotes without line-item pricing for glass, frames, and installation.",
-  "Pressure tactics like “today only” discounts or unverified rebates.",
+  "Pressure tactics like 'today only' discounts or unverified rebates.",
   "Missing wind-load or Miami-Dade approvals for hurricane zones.",
 ];
 
@@ -22,7 +23,7 @@ const Defense = () => {
             <p className="text-sm font-semibold text-primary">Defense Mode</p>
             <h1 className="text-3xl sm:text-4xl font-bold">Red flags to watch for before you sign.</h1>
             <p className="text-muted-foreground">
-              Use these checks to protect your home and insurance claims. When you’re ready, let us capture the details and schedule a vetted estimator.
+              Use these checks to protect your home and insurance claims. When you're ready, let us capture the details and schedule a vetted estimator.
             </p>
           </div>
 
@@ -49,10 +50,10 @@ const Defense = () => {
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild>
-                <Link to="/free-estimate">Book an Inspection</Link>
+                <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
               </Button>
               <Button asChild variant="outline">
-                <Link to="/claim-survival">Download the Claim Kit</Link>
+                <Link to={ROUTES.CLAIM_SURVIVAL}>Download the Claim Kit</Link>
               </Button>
             </div>
           </div>
@@ -61,7 +62,7 @@ const Defense = () => {
         <section className="container px-4 pb-16">
           <ConversionBar
             headline="Want a human to double-check these red flags?"
-            subheadline="Jump into a free estimate and we’ll verify specs, pricing, and insurance readiness for your home."
+            subheadline="Jump into a free estimate and we'll verify specs, pricing, and insurance readiness for your home."
           />
         </section>
       </main>

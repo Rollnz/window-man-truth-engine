@@ -1,8 +1,9 @@
 import { SessionData } from '@/hooks/useSessionData';
 import { VaultSection } from './VaultSection';
-import { BarChart3, Shield, Zap, Brain, TrendingDown, AlertTriangle, FileCheck } from 'lucide-react';
+import { BarChart3, Shield, Zap, Brain, TrendingDown, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { ROUTES } from '@/config/navigation';
 
 interface MyResultsSectionProps {
   sessionData: SessionData;
@@ -22,7 +23,7 @@ const resultCards: ResultCard[] = [
   {
     id: 'reality-check',
     name: 'Reality Check',
-    path: '/reality-check',
+    path: ROUTES.REALITY_CHECK,
     icon: <AlertTriangle className="w-5 h-5" />,
     getValue: (data) => data.realityCheckScore !== undefined ? `${data.realityCheckScore}%` : null,
     getLabel: () => 'Readiness Score',
@@ -36,7 +37,7 @@ const resultCards: ResultCard[] = [
   {
     id: 'cost-calculator',
     name: 'Cost of Inaction',
-    path: '/cost-calculator',
+    path: ROUTES.COST_CALCULATOR,
     icon: <TrendingDown className="w-5 h-5" />,
     getValue: (data) => data.costOfInactionTotal ? `$${data.costOfInactionTotal.toLocaleString()}` : null,
     getLabel: () => '5-Year Cost',
@@ -45,7 +46,7 @@ const resultCards: ResultCard[] = [
   {
     id: 'vulnerability-test',
     name: 'Window IQ',
-    path: '/vulnerability-test',
+    path: ROUTES.VULNERABILITY_TEST,
     icon: <Brain className="w-5 h-5" />,
     getValue: (data) => data.quizScore !== undefined ? `${data.quizScore}%` : null,
     getLabel: (data) => data.quizVulnerability || 'Score',
@@ -58,7 +59,7 @@ const resultCards: ResultCard[] = [
   {
     id: 'risk-diagnostic',
     name: 'Risk Diagnostic',
-    path: '/risk-diagnostic',
+    path: ROUTES.RISK_DIAGNOSTIC,
     icon: <Shield className="w-5 h-5" />,
     getValue: (data) => data.overallProtectionScore !== undefined ? `${data.overallProtectionScore}%` : null,
     getLabel: () => 'Protection Score',
@@ -72,7 +73,7 @@ const resultCards: ResultCard[] = [
   {
     id: 'fast-win',
     name: 'Fast Win',
-    path: '/fast-win',
+    path: ROUTES.FAST_WIN,
     icon: <Zap className="w-5 h-5" />,
     getValue: (data) => data.fastWinResult || null,
     getLabel: () => 'Recommendation',
@@ -100,7 +101,7 @@ export function MyResultsSection({ sessionData }: MyResultsSectionProps) {
       emptyState={{
         message: "Complete an assessment tool to see your results here",
         ctaText: "Start Reality Check",
-        ctaPath: "/reality-check"
+        ctaPath: ROUTES.REALITY_CHECK
       }}
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
