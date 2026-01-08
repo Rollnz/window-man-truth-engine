@@ -103,7 +103,7 @@ const SpecChecklistGuide = () => {
             <div className="space-y-6">
               <div className="flex items-center space-x-2 text-xs text-muted-foreground uppercase tracking-wider">
                 <ClipboardList className="w-4 h-4 text-primary" />
-                <span>Comparison Guide • 8 Pages</span>
+                <span>​Complete Checklist </span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
