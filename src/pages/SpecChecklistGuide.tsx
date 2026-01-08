@@ -134,7 +134,7 @@ const SpecChecklistGuide = () => {
               </div>
 
               <div className="pt-4 border-t border-border">
-                <p className="text-sm text-muted-foreground mb-2">Have multiple quotes already?</p>
+                <p className="text-sm mb-2 text-secondary-foreground">Have multiple quotes already?</p>
                 <Button variant="outline" className="gap-2" onClick={() => navigate('/comparison')}>
                   Use our Comparison Tool <ArrowRight className="w-4 h-4" />
                 </Button>
