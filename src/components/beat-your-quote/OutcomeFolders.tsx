@@ -407,7 +407,7 @@ export function OutcomeFolders({ isVisible }: OutcomeFoldersProps) {
 
       {/* Lead Capture Modal */}
       <Dialog open={isModalOpen} onOpenChange={handleModalClose}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-[hsl(220_20%_12%)] border border-white/10 shadow-2xl shadow-[#00D4FF]/5">
           {isSuccess ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <div className="w-16 h-16 rounded-full bg-[#00D4FF]/20 flex items-center justify-center mb-4">
