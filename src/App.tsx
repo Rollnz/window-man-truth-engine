@@ -33,6 +33,7 @@ import Roleplay from "./pages/Roleplay";
 import Privacy from "./pages/legal/Privacy";
 import Terms from "./pages/legal/Terms";
 import BeatYourQuote from "./pages/BeatYourQuote";
+import FairPriceQuiz from "./pages/FairPriceQuiz";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
           <Route path="/defense" element={<Defense />} />
           <Route path="/roleplay" element={<Roleplay />} />
           <Route path="/beat-your-quote" element={<BeatYourQuote />} />
+          <Route path="/fair-price-quiz" element={<FairPriceQuiz />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
