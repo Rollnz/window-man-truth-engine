@@ -1,22 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTracking } from '@/hooks/usePageTracking';
-import {
-  ClipboardList,
-  Download,
-  Smartphone,
-  Clock,
-  FileText,
-  CheckCircle2,
-  ArrowRight,
-  ScanSearch,
-  Scale,
-  Calculator,
-  Lock,
-  HelpCircle,
-  Zap,
-  Shield
-} from 'lucide-react';
+import { ClipboardList, Download, Smartphone, Clock, FileText, CheckCircle2, ArrowRight, ScanSearch, Scale, Calculator, Lock, HelpCircle, Zap, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,82 +9,74 @@ import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { getAttributionData } from '@/lib/attribution';
-
 const SpecChecklistGuide = () => {
   usePageTracking('spec-checklist-guide');
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const {
     values,
     getFieldProps,
     hasError,
     getError,
-    validateAll,
+    validateAll
   } = useFormValidation({
-    initialValues: { name: '', email: '' },
+    initialValues: {
+      name: '',
+      email: ''
+    },
     schemas: {
       name: commonSchemas.name,
-      email: commonSchemas.email,
-    },
+      email: commonSchemas.email
+    }
   });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateAll()) return;
-    
     setIsSubmitting(true);
-    
     try {
-      const { data, error } = await supabase.functions.invoke('save-lead', {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('save-lead', {
         body: {
           email: values.email,
           name: values.name,
           sourceTool: 'spec-checklist-guide',
           attribution: getAttributionData(),
-          aiContext: { source_form: 'spec-checklist-guide' },
-        },
+          aiContext: {
+            source_form: 'spec-checklist-guide'
+          }
+        }
       });
-      
       if (error) throw error;
-      
       toast({
         title: "Checklist Unlocked!",
-        description: "Check your inbox - the checklist is on its way.",
+        description: "Check your inbox - the checklist is on its way."
       });
-      
       console.log('[Analytics] landing_page_lead_captured', {
         source: 'spec-checklist-guide',
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       });
-      
       setTimeout(() => {
         navigate('/quote-scanner');
       }, 1500);
-      
     } catch (error) {
       console.error('Form submission error:', error);
       toast({
         title: "Something went wrong",
         description: "Please try again or contact support.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  return (
-    <div className="min-h-screen bg-background text-foreground">
+  return <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
       <nav className="bg-card/80 backdrop-blur-md sticky top-0 z-50 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <button 
-              onClick={() => navigate('/')}
-              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-            >
+            <button onClick={() => navigate('/')} className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-sm">
                 W
               </div>
@@ -107,16 +84,10 @@ const SpecChecklistGuide = () => {
             </button>
 
             <div className="hidden md:flex items-center space-x-6">
-              <button 
-                onClick={() => navigate('/comparison')}
-                className="text-muted-foreground hover:text-foreground transition-colors text-sm"
-              >
+              <button onClick={() => navigate('/comparison')} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                 Compare Windows
               </button>
-              <button 
-                onClick={() => navigate('/intel')}
-                className="text-muted-foreground hover:text-foreground transition-colors text-sm"
-              >
+              <button onClick={() => navigate('/intel')} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                 Intel Library
               </button>
             </div>
@@ -139,7 +110,7 @@ const SpecChecklistGuide = () => {
                 Stop Comparing Apples to Oranges. Get the Spec Checklist.
               </h1>
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg leading-relaxed text-primary-foreground">
                 Every contractor uses different terms for the same specs. This checklist standardizes everything — so you can finally compare quotes side-by-side like a pro.
               </p>
 
@@ -164,11 +135,7 @@ const SpecChecklistGuide = () => {
 
               <div className="pt-4 border-t border-border">
                 <p className="text-sm text-muted-foreground mb-2">Have multiple quotes already?</p>
-                <Button 
-                  variant="outline" 
-                  className="gap-2"
-                  onClick={() => navigate('/comparison')}
-                >
+                <Button variant="outline" className="gap-2" onClick={() => navigate('/comparison')}>
                   Use our Comparison Tool <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
@@ -180,11 +147,7 @@ const SpecChecklistGuide = () => {
               
               <div className="relative">
                 <div className="relative bg-card rounded-xl shadow-2xl p-2 border border-border">
-                  <img 
-                    src="/images/spec-checklist-book.webp"
-                    alt="Impact Window Audit Packet - Homeowner's Spec Check"
-                    className="w-64 sm:w-80 h-auto rounded-lg"
-                  />
+                  <img src="/images/spec-checklist-book.webp" alt="Impact Window Audit Packet - Homeowner's Spec Check" className="w-64 sm:w-80 h-auto rounded-lg" />
                   
                   <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-lg">
                     <ClipboardList className="w-3.5 h-3.5" />
@@ -215,19 +178,12 @@ const SpecChecklistGuide = () => {
             </p>
             
             <div className="space-y-3">
-              {[
-                "U-Factor vs SHGC vs VLT — which actually matters for Florida?",
-                "What ASTM ratings should you actually demand?",
-                "How to spot warranty red flags before signing",
-                "Installation quality indicators you can verify yourself"
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3">
+              {["U-Factor vs SHGC vs VLT — which actually matters for Florida?", "What ASTM ratings should you actually demand?", "How to spot warranty red flags before signing", "Installation quality indicators you can verify yourself"].map((item, i) => <div key={i} className="flex items-start gap-3">
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <HelpCircle className="w-3.5 h-3.5 text-primary" />
                   </div>
                   <span className="text-foreground">{item}</span>
-                </div>
-              ))}
+                </div>)}
             </div>
 
             <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground">
@@ -289,18 +245,10 @@ const SpecChecklistGuide = () => {
               </p>
               
               <div className="space-y-3">
-                {[
-                  "ASTM Ratings Explained Simply",
-                  "U-Factor vs SHGC: What Actually Matters",
-                  "Warranty Red Flags to Watch For",
-                  "Installation Quality Indicators",
-                  "Side-by-Side Comparison Grid"
-                ].map((feature, i) => (
-                  <div key={i} className="flex items-center gap-3">
+                {["ASTM Ratings Explained Simply", "U-Factor vs SHGC: What Actually Matters", "Warranty Red Flags to Watch For", "Installation Quality Indicators", "Side-by-Side Comparison Grid"].map((feature, i) => <div key={i} className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
                     <span className="text-foreground">{feature}</span>
-                  </div>
-                ))}
+                  </div>)}
               </div>
               
               <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
@@ -325,30 +273,13 @@ const SpecChecklistGuide = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-foreground">First Name</Label>
-                <Input 
-                  id="name"
-                  {...getFieldProps('name')}
-                  placeholder="Your name"
-                  className={`bg-background ${hasError('name') ? 'border-destructive' : ''}`}
-                  disabled={isSubmitting}
-                />
-                {hasError('name') && (
-                  <p className="text-xs text-destructive">{getError('name')}</p>
-                )}
+                <Input id="name" {...getFieldProps('name')} placeholder="Your name" className={`bg-background ${hasError('name') ? 'border-destructive' : ''}`} disabled={isSubmitting} />
+                {hasError('name') && <p className="text-xs text-destructive">{getError('name')}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-foreground">Email Address</Label>
-                <Input 
-                  id="email"
-                  type="email"
-                  {...getFieldProps('email')}
-                  placeholder="you@example.com"
-                  className={`bg-background ${hasError('email') ? 'border-destructive' : ''}`}
-                  disabled={isSubmitting}
-                />
-                {hasError('email') && (
-                  <p className="text-xs text-destructive">{getError('email')}</p>
-                )}
+                <Input id="email" type="email" {...getFieldProps('email')} placeholder="you@example.com" className={`bg-background ${hasError('email') ? 'border-destructive' : ''}`} disabled={isSubmitting} />
+                {hasError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
               </div>
               
               <Button type="submit" size="lg" className="w-full gap-2" disabled={isSubmitting}>
@@ -433,12 +364,7 @@ const SpecChecklistGuide = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Input your specs and see 10-year true costs side-by-side.
               </p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full gap-2"
-                onClick={() => navigate('/comparison')}
-              >
+              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate('/comparison')}>
                 Compare Options <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
@@ -451,12 +377,7 @@ const SpecChecklistGuide = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Upload your quote for AI-powered spec verification.
               </p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full gap-2"
-                onClick={() => navigate('/quote-scanner')}
-              >
+              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate('/quote-scanner')}>
                 Scan My Quote <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
@@ -469,12 +390,7 @@ const SpecChecklistGuide = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Estimate what you should pay for your window project.
               </p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full gap-2"
-                onClick={() => navigate('/cost-calculator')}
-              >
+              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate('/cost-calculator')}>
                 Calculate Costs <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
@@ -506,8 +422,6 @@ const SpecChecklistGuide = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default SpecChecklistGuide;
