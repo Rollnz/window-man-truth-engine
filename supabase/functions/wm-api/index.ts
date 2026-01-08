@@ -15,6 +15,10 @@ const MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB
 const RATE_LIMITS = {
   sessionPerIpPerHour: 5,      // Max 5 sessions per IP per hour
   eventPerSessionPerHour: 100, // Max 100 events per session per hour
+  endpoints: {
+    session: 'wm-api:/session',
+    event: 'wm-api:/event',
+  }
 };
 
 const getSupabase = () => {
@@ -37,7 +41,8 @@ const sanitizeFilename = (name: string) => name.replace(/[^\w.-]+/g, "_").slice(
 // ============= Helper Functions =============
 
 // Extract client IP from request headers
-function getClientIp(req: Request): string {
+// Returns null if IP cannot be reliably determined (prevents DoS via 'unknown' identifier)
+function getClientIp(req: Request): string | null {
   const cfConnectingIp = req.headers.get('cf-connecting-ip');
   if (cfConnectingIp) return cfConnectingIp;
 
@@ -49,7 +54,7 @@ function getClientIp(req: Request): string {
   const xRealIp = req.headers.get('x-real-ip');
   if (xRealIp) return xRealIp;
 
-  return 'unknown';
+  return null;  // Reject requests where IP cannot be determined
 }
 
 // Check rate limit against the rate_limits table
@@ -151,12 +156,24 @@ const upsertSession = async (supabase: SupabaseClient, payload: JsonRecord & { s
   return data.id as string;
 };
 
-const handleSession = async (supabase: SupabaseClient, reqBody: JsonRecord, clientIp: string) => {
-  // Rate limit: 5 sessions per IP per hour
+const handleSession = async (supabase: SupabaseClient, reqBody: JsonRecord, clientIp: string | null) => {
+  // Reject requests where IP cannot be determined (prevents DoS via 'unknown' identifier)
+  if (!clientIp) {
+    console.warn('Request rejected: Could not determine client IP for rate limiting');
+    return jsonResponse(
+      { error: 'Could not determine client IP for rate limiting.' },
+      403
+    );
+  }
+
+  // Record first to prevent race condition (Option B: record-first pattern)
+  await recordRateLimitEntry(supabase, clientIp, RATE_LIMITS.endpoints.session);
+
+  // Then check rate limit (allows slight over-limit but prevents race condition)
   const rateLimitCheck = await checkRateLimit(
     supabase,
     clientIp,
-    'wm-api:/session',
+    RATE_LIMITS.endpoints.session,
     RATE_LIMITS.sessionPerIpPerHour,
     1
   );
@@ -173,9 +190,6 @@ const handleSession = async (supabase: SupabaseClient, reqBody: JsonRecord, clie
     );
   }
 
-  // Record this request
-  await recordRateLimitEntry(supabase, clientIp, 'wm-api:/session');
-
   const sessionId = await upsertSession(supabase, reqBody);
   return jsonResponse({ session_id: sessionId });
 };
@@ -187,11 +201,14 @@ const handleEvent = async (supabase: SupabaseClient, reqBody: JsonRecord) => {
   const validSession = await ensureSession(supabase, sessionId);
   if (!validSession) return jsonResponse({ error: "invalid session_id" }, 400);
 
-  // Rate limit: 100 events per session per hour
+  // Record first to prevent race condition (Option B: record-first pattern)
+  await recordRateLimitEntry(supabase, sessionId, RATE_LIMITS.endpoints.event);
+
+  // Then check rate limit (allows slight over-limit but prevents race condition)
   const rateLimitCheck = await checkRateLimit(
     supabase,
     sessionId,
-    'wm-api:/event',
+    RATE_LIMITS.endpoints.event,
     RATE_LIMITS.eventPerSessionPerHour,
     1
   );
@@ -207,9 +224,6 @@ const handleEvent = async (supabase: SupabaseClient, reqBody: JsonRecord) => {
       429
     );
   }
-
-  // Record this event request
-  await recordRateLimitEntry(supabase, sessionId, 'wm-api:/event');
 
   const eventName = reqBody.event_name as string | undefined;
   if (!eventName) return jsonResponse({ error: "event_name required" }, 400);
