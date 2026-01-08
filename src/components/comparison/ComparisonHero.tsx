@@ -2,6 +2,7 @@ import { ArrowLeft, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SessionData } from '@/hooks/useSessionData';
 import { convertBillRangeToNumber } from '@/lib/calculations';
+import { ROUTES } from '@/config/navigation';
 
 interface ComparisonHeroProps {
   sessionData: SessionData;
@@ -17,7 +18,7 @@ export function ComparisonHero({ sessionData }: ComparisonHeroProps) {
       <div className="container px-4">
         {/* Back button */}
         <Link 
-          to="/" 
+          to={ROUTES.HOME} 
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -45,7 +46,7 @@ export function ComparisonHero({ sessionData }: ComparisonHeroProps) {
             </div>
           ) : (
             <Link 
-              to="/cost-calculator"
+              to={ROUTES.COST_CALCULATOR}
               className="inline-flex items-center gap-3 px-4 py-3 rounded-lg bg-muted border border-border hover:border-primary/50 transition-colors"
             >
               <Info className="w-5 h-5 text-muted-foreground flex-shrink-0" />

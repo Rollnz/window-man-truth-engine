@@ -11,6 +11,7 @@ import { ResourceGrid } from '@/components/intel/ResourceGrid';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { intelResources, IntelResource } from '@/data/intelData';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+import { ROUTES } from '@/config/navigation';
 
 export default function Intel() {
   usePageTracking('intel-library');
@@ -55,7 +56,7 @@ export default function Intel() {
       {/* Header */}
       <header className="border-b border-border">
         <div className="container px-4 py-4 flex items-center justify-between">
-          <Link to="/">
+          <Link to={ROUTES.HOME}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Tools

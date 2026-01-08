@@ -4,6 +4,7 @@ import { Navbar } from "@/components/home/Navbar";
 import { Footer } from "@/components/home/Footer";
 import { Button } from "@/components/ui/button";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
+import { ROUTES } from "@/config/navigation";
 
 const About = () => {
   return (
@@ -42,10 +43,10 @@ const About = () => {
 
           <div className="flex flex-wrap gap-3">
             <Button asChild>
-              <Link to="/free-estimate">Book an Inspection</Link>
+              <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link to="/claim-survival">Download the Claim Kit</Link>
+              <Link to={ROUTES.CLAIM_SURVIVAL}>Download the Claim Kit</Link>
             </Button>
           </div>
         </section>
@@ -53,7 +54,7 @@ const About = () => {
         <section className="container px-4 pb-16">
           <ConversionBar
             headline="Need a human sanity check?"
-            subheadline="Tap through to your free estimate and we’ll pair you with a vetted impact window specialist."
+            subheadline="Tap through to your free estimate and we'll pair you with a vetted impact window specialist."
           />
         </section>
       </main>

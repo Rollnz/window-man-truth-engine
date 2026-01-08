@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { FolderSearch, CheckCircle, ArrowRight } from 'lucide-react';
 import { receiptRescueItems } from '@/data/claimSurvivalData';
 import { Link } from 'react-router-dom';
+import { ROUTES } from '@/config/navigation';
 
 export function ReceiptRescue() {
   return (
@@ -53,7 +54,7 @@ export function ReceiptRescue() {
         <p className="text-sm text-muted-foreground mb-3">
           Need help finding your window documentation?
         </p>
-        <Link to="/expert">
+        <Link to={ROUTES.EXPERT}>
           <Button variant="outline">
             Ask Windowman AI
             <ArrowRight className="ml-2 h-4 w-4" />

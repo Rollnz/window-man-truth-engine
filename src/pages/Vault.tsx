@@ -9,6 +9,7 @@ import { EmailResultsButton } from '@/components/vault/EmailResultsButton';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { ROUTES } from '@/config/navigation';
 import {
   AlertTriangle,
   TrendingDown,
@@ -26,16 +27,16 @@ import {
 } from 'lucide-react';
 
 const tools = [
-  { id: 'reality-check', name: 'Reality Check', path: '/reality-check', icon: <AlertTriangle className="w-5 h-5" /> },
-  { id: 'cost-calculator', name: 'Cost Calculator', path: '/cost-calculator', icon: <TrendingDown className="w-5 h-5" /> },
-  { id: 'vulnerability-test', name: 'Window IQ', path: '/vulnerability-test', icon: <Brain className="w-5 h-5" /> },
-  { id: 'expert', name: 'AI Expert', path: '/expert', icon: <MessageSquare className="w-5 h-5" /> },
-  { id: 'comparison', name: 'Compare Quotes', path: '/comparison', icon: <GitCompare className="w-5 h-5" /> },
-  { id: 'risk-diagnostic', name: 'Risk Diagnostic', path: '/risk-diagnostic', icon: <Shield className="w-5 h-5" /> },
-  { id: 'fast-win', name: 'Fast Win', path: '/fast-win', icon: <Zap className="w-5 h-5" /> },
-  { id: 'evidence', name: 'Evidence Locker', path: '/evidence', icon: <FileSearch className="w-5 h-5" /> },
-  { id: 'intel', name: 'Intel Library', path: '/intel', icon: <BookOpen className="w-5 h-5" /> },
-  { id: 'claim-survival', name: 'Claim Vault', path: '/claim-survival', icon: <ShieldCheck className="w-5 h-5" /> }
+  { id: 'reality-check', name: 'Reality Check', path: ROUTES.REALITY_CHECK, icon: <AlertTriangle className="w-5 h-5" /> },
+  { id: 'cost-calculator', name: 'Cost Calculator', path: ROUTES.COST_CALCULATOR, icon: <TrendingDown className="w-5 h-5" /> },
+  { id: 'vulnerability-test', name: 'Window IQ', path: ROUTES.VULNERABILITY_TEST, icon: <Brain className="w-5 h-5" /> },
+  { id: 'expert', name: 'AI Expert', path: ROUTES.EXPERT, icon: <MessageSquare className="w-5 h-5" /> },
+  { id: 'comparison', name: 'Compare Quotes', path: ROUTES.COMPARISON, icon: <GitCompare className="w-5 h-5" /> },
+  { id: 'risk-diagnostic', name: 'Risk Diagnostic', path: ROUTES.RISK_DIAGNOSTIC, icon: <Shield className="w-5 h-5" /> },
+  { id: 'fast-win', name: 'Fast Win', path: ROUTES.FAST_WIN, icon: <Zap className="w-5 h-5" /> },
+  { id: 'evidence', name: 'Evidence Locker', path: ROUTES.EVIDENCE, icon: <FileSearch className="w-5 h-5" /> },
+  { id: 'intel', name: 'Intel Library', path: ROUTES.INTEL, icon: <BookOpen className="w-5 h-5" /> },
+  { id: 'claim-survival', name: 'Claim Vault', path: ROUTES.CLAIM_SURVIVAL, icon: <ShieldCheck className="w-5 h-5" /> }
 ];
 
 export default function Vault() {
@@ -67,7 +68,7 @@ export default function Vault() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/">
+              <Link to={ROUTES.HOME}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Home
               </Link>
@@ -115,7 +116,7 @@ export default function Vault() {
             Ready to get expert guidance on your specific situation?
           </p>
           <Button variant="high-contrast" size="lg" asChild>
-            <Link to="/expert">
+            <Link to={ROUTES.EXPERT}>
               <MessageSquare className="w-5 h-5 mr-2" />
               Talk to Windowman AI
             </Link>

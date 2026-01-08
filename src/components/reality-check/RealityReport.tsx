@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, AlertTriangle, Thermometer, Volume2, Clock, Home, Mail, Calendar } from "lucide-react";
 import ScoreGauge from "./ScoreGauge";
 import { SessionData } from "@/hooks/useSessionData";
+import { ROUTES } from "@/config/navigation";
 
 interface RealityReportProps {
   score: number;
@@ -160,7 +161,7 @@ const RealityReport = ({ score, sessionData, onEmailReport, onScheduleConsult }:
       </Card>
 
       <div className="flex flex-col gap-4 pt-4">
-        <Link to="/cost-calculator" className="w-full">
+        <Link to={ROUTES.COST_CALCULATOR} className="w-full">
           <Button 
             size="lg" 
             className="w-full py-6 text-lg bg-primary hover:bg-primary/90 shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_40px_hsl(var(--primary)/0.6)] transition-all"
@@ -169,7 +170,7 @@ const RealityReport = ({ score, sessionData, onEmailReport, onScheduleConsult }:
             <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
         </Link>
-        <Link to="/" className="w-full">
+        <Link to={ROUTES.HOME} className="w-full">
           <Button variant="ghost" size="lg" className="w-full">
             Explore Other Tools
           </Button>

@@ -4,6 +4,7 @@ import { CheckSquare, Check } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { ROUTES } from '@/config/navigation';
 
 interface MyChecklistsSectionProps {
   sessionData: SessionData;
@@ -34,7 +35,7 @@ export function MyChecklistsSection({ sessionData }: MyChecklistsSectionProps) {
       emptyState={{
         message: "Start your claim readiness checklist to protect your investment",
         ctaText: "Start Claim Checklist",
-        ctaPath: "/claim-survival"
+        ctaPath: ROUTES.CLAIM_SURVIVAL
       }}
     >
       <div className="space-y-4">
@@ -71,7 +72,7 @@ export function MyChecklistsSection({ sessionData }: MyChecklistsSectionProps) {
 
           {completedCount < checklistItems.length && (
             <Button variant="outline" size="sm" className="mt-4" asChild>
-              <Link to="/claim-survival">
+              <Link to={ROUTES.CLAIM_SURVIVAL}>
                 Continue Checklist
               </Link>
             </Button>
@@ -86,7 +87,7 @@ export function MyChecklistsSection({ sessionData }: MyChecklistsSectionProps) {
               {sessionData.unlockedResources.length} resource{sessionData.unlockedResources.length !== 1 ? 's' : ''} unlocked from Intel Library
             </p>
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/intel">View Resources →</Link>
+              <Link to={ROUTES.INTEL}>View Resources →</Link>
             </Button>
           </div>
         )}
@@ -99,7 +100,7 @@ export function MyChecklistsSection({ sessionData }: MyChecklistsSectionProps) {
               {sessionData.caseStudiesViewed.length} case{sessionData.caseStudiesViewed.length !== 1 ? 's' : ''} studied
             </p>
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/evidence">View Evidence →</Link>
+              <Link to={ROUTES.EVIDENCE}>View Evidence →</Link>
             </Button>
           </div>
         )}

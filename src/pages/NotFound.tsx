@@ -1,7 +1,8 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+import { ROUTES } from "@/config/navigation";
 
 const ADMIN_ONLY_PREFIXES = ["/admin", "/dashboard", "/vault", "/internal"];
 
@@ -16,7 +17,7 @@ const NotFound = () => {
 
     if (isAdminPath) {
       // Redirect to the lead capture funnel so the visitor continues their journey
-      navigate("/free-estimate", { replace: true, state: { from: location.pathname } });
+      navigate(ROUTES.FREE_ESTIMATE, { replace: true, state: { from: location.pathname } });
     }
   }, [location.pathname, navigate]);
 
@@ -25,9 +26,9 @@ const NotFound = () => {
       <div className="text-center">
         <h1 className="mb-4 text-4xl font-bold">404</h1>
         <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
-        <a href="/" className="text-primary underline hover:text-primary/90">
+        <Link to={ROUTES.HOME} className="text-primary underline hover:text-primary/90">
           Return to Home
-        </a>
+        </Link>
       </div>
 
       {/* Minimal Footer */}

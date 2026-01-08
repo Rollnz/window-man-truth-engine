@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { ROUTES } from '@/config/navigation';
 
 export default function Terms() {
   usePageTracking('legal-terms');
@@ -10,7 +11,7 @@ export default function Terms() {
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-12">
         <Button variant="ghost" asChild className="mb-8">
-          <Link to="/">
+          <Link to={ROUTES.HOME}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
           </Link>
@@ -62,10 +63,10 @@ export default function Terms() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild>
-                <Link to="/free-estimate">Book an Inspection</Link>
+                <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
               </Button>
               <Button asChild variant="outline">
-                <Link to="/claim-survival">Download the Claim Kit</Link>
+                <Link to={ROUTES.CLAIM_SURVIVAL}>Download the Claim Kit</Link>
               </Button>
             </div>
           </section>

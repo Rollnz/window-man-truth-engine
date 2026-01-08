@@ -10,6 +10,7 @@ import { Mail, ArrowLeft, Vault, CheckCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+import { ROUTES } from '@/config/navigation';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 
@@ -28,7 +29,7 @@ export default function Auth() {
   // Redirect if already authenticated
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      const redirectTo = searchParams.get('redirect') || '/vault';
+      const redirectTo = searchParams.get('redirect') || ROUTES.VAULT;
       navigate(redirectTo);
     }
   }, [isAuthenticated, loading, navigate, searchParams]);
@@ -86,7 +87,7 @@ export default function Auth() {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/">
+            <Link to={ROUTES.HOME}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Home
             </Link>
@@ -174,11 +175,11 @@ export default function Auth() {
                 
                 <p className="text-xs text-center text-muted-foreground">
                   By continuing, you agree to our{' '}
-                  <Link to="/legal/terms" className="underline hover:text-foreground">
+                  <Link to={ROUTES.TERMS} className="underline hover:text-foreground">
                     Terms
                   </Link>{' '}
                   and{' '}
-                  <Link to="/legal/privacy" className="underline hover:text-foreground">
+                  <Link to={ROUTES.PRIVACY} className="underline hover:text-foreground">
                     Privacy Policy
                   </Link>
                 </p>
