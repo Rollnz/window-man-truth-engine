@@ -182,24 +182,22 @@ export function QuizResults({
 
             <div className="space-y-3">
               <Label htmlFor="phone">Enter your phone number</Label>
-              <div className="flex gap-3">
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={handlePhoneChange}
-                  placeholder="(555) 123-4567"
-                  className={`flex-1 ${phoneError ? 'border-destructive' : ''}`}
-                />
-                <Button
-                  onClick={handlePhoneSubmit}
-                  disabled={isSubmitting}
-                  className="glow"
-                >
-                  <Phone className="w-4 h-4 mr-2" />
-                  {isSubmitting ? 'Scheduling...' : 'Call Me in 5 Minutes'}
-                </Button>
-              </div>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={handlePhoneChange}
+                placeholder="(555) 123-4567"
+                className={`w-full ${phoneError ? 'border-destructive' : ''}`}
+              />
+              <Button
+                onClick={handlePhoneSubmit}
+                disabled={isSubmitting}
+                className="w-full glow"
+              >
+                <Phone className="w-4 h-4 mr-2" />
+                {isSubmitting ? 'Scheduling...' : 'Call Me in 5 Minutes'}
+              </Button>
               {phoneError && (
                 <p className="text-sm text-destructive">{phoneError}</p>
               )}
