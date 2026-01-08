@@ -20,6 +20,10 @@ export default function BeatYourQuote() {
   const [modalTriggerCount, setModalTriggerCount] = useState(0);
   const handleOpenModal = () => setModalTriggerCount(prev => prev + 1);
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen dossier-bg">
       <Navbar />
@@ -35,7 +39,7 @@ export default function BeatYourQuote() {
         {/* Your Arsenal */}
         <ToolsSection />
       </main>
-      <MinimalFooter />
+      <MinimalFooter onGetQuoteClick={scrollToTop} />
     </div>
   );
 }

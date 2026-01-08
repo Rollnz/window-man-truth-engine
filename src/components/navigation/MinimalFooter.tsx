@@ -2,7 +2,18 @@ import { Link } from 'react-router-dom';
 import { Calculator, ScanSearch, Home, Grid3x3 } from 'lucide-react';
 import { FOOTER_NAV } from '@/config/navigation';
 
-export function MinimalFooter() {
+interface MinimalFooterProps {
+  onGetQuoteClick?: () => void;
+}
+
+export function MinimalFooter({ onGetQuoteClick }: MinimalFooterProps) {
+  const handleGetQuoteClick = (e: React.MouseEvent) => {
+    if (onGetQuoteClick) {
+      e.preventDefault();
+      onGetQuoteClick();
+    }
+  };
+
   return (
     <footer className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border py-4 z-40">
       <div className="container px-4">
@@ -10,6 +21,7 @@ export function MinimalFooter() {
           {/* Primary Actions */}
           <Link
             to={FOOTER_NAV.GET_QUOTE}
+            onClick={handleGetQuoteClick}
             className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 font-medium transition-colors"
           >
             <Calculator className="w-4 h-4" />
