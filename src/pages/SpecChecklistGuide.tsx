@@ -204,7 +204,7 @@ const SpecChecklistGuide = () => {
             <FileText className="w-6 h-6 text-primary" />
           </div>
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">From the Windowman Vault Archives</p>
-          <p className="text-muted-foreground text-sm max-w-xl mx-auto">
+          <p className="text-sm max-w-xl mx-auto text-secondary-foreground">
             Compiled from Florida building codes, AAMA standards, and real-world installation audits by licensed contractors.
           </p>
         </div>
