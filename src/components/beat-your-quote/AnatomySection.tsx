@@ -106,7 +106,8 @@ export function AnatomySection() {
   }, []);
 
   return (
-    <section 
+    <section
+      id="beat-quote"
       ref={sectionRef}
       className="relative py-20 px-4 bg-[#0A0F14]"
     >
