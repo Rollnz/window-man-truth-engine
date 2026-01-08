@@ -11,6 +11,12 @@ const corsHeaders = {
 const ALLOWED_MIME = new Set(["application/pdf", "image/png", "image/jpeg", "image/jpg"]);
 const MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB
 
+// ============= Rate Limiting Configuration =============
+const RATE_LIMITS = {
+  sessionPerIpPerHour: 5,      // Max 5 sessions per IP per hour
+  eventPerSessionPerHour: 100, // Max 100 events per session per hour
+};
+
 const getSupabase = () => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -27,6 +33,71 @@ const jsonResponse = (body: unknown, status = 200) =>
   });
 
 const sanitizeFilename = (name: string) => name.replace(/[^\w.-]+/g, "_").slice(0, 200);
+
+// ============= Helper Functions =============
+
+// Extract client IP from request headers
+function getClientIp(req: Request): string {
+  const cfConnectingIp = req.headers.get('cf-connecting-ip');
+  if (cfConnectingIp) return cfConnectingIp;
+
+  const xForwardedFor = req.headers.get('x-forwarded-for');
+  if (xForwardedFor) {
+    return xForwardedFor.split(',')[0].trim();
+  }
+
+  const xRealIp = req.headers.get('x-real-ip');
+  if (xRealIp) return xRealIp;
+
+  return 'unknown';
+}
+
+// Check rate limit against the rate_limits table
+async function checkRateLimit(
+  supabase: SupabaseClient,
+  identifier: string,
+  endpoint: string,
+  maxRequests: number,
+  windowHours: number
+): Promise<{ allowed: boolean; count: number }> {
+  try {
+    const windowStart = new Date(Date.now() - windowHours * 60 * 60 * 1000).toISOString();
+
+    const { count, error } = await supabase
+      .from('rate_limits')
+      .select('*', { count: 'exact', head: true })
+      .eq('identifier', identifier)
+      .eq('endpoint', endpoint)
+      .gte('created_at', windowStart);
+
+    if (error) {
+      console.error('Rate limit check failed:', error);
+      return { allowed: true, count: 0 }; // Fail open
+    }
+
+    const currentCount = count || 0;
+    return { allowed: currentCount < maxRequests, count: currentCount };
+  } catch (error) {
+    console.error('Rate limit check error:', error);
+    return { allowed: true, count: 0 }; // Fail open
+  }
+}
+
+// Record a rate limit entry
+async function recordRateLimitEntry(
+  supabase: SupabaseClient,
+  identifier: string,
+  endpoint: string
+): Promise<void> {
+  try {
+    await supabase.from('rate_limits').insert({
+      identifier,
+      endpoint,
+    });
+  } catch (error) {
+    console.error('Failed to record rate limit entry:', error);
+  }
+}
 
 const ensureSession = async (supabase: SupabaseClient, sessionId?: string) => {
   if (!sessionId) return null;
@@ -80,7 +151,31 @@ const upsertSession = async (supabase: SupabaseClient, payload: JsonRecord & { s
   return data.id as string;
 };
 
-const handleSession = async (supabase: SupabaseClient, reqBody: JsonRecord) => {
+const handleSession = async (supabase: SupabaseClient, reqBody: JsonRecord, clientIp: string) => {
+  // Rate limit: 5 sessions per IP per hour
+  const rateLimitCheck = await checkRateLimit(
+    supabase,
+    clientIp,
+    'wm-api:/session',
+    RATE_LIMITS.sessionPerIpPerHour,
+    1
+  );
+
+  if (!rateLimitCheck.allowed) {
+    console.warn(`Rate limit exceeded for IP ${clientIp} on /session (${rateLimitCheck.count} requests)`);
+    return jsonResponse(
+      {
+        error: 'Rate limit exceeded. Please try again later.',
+        limit: RATE_LIMITS.sessionPerIpPerHour,
+        window: '1 hour'
+      },
+      429
+    );
+  }
+
+  // Record this request
+  await recordRateLimitEntry(supabase, clientIp, 'wm-api:/session');
+
   const sessionId = await upsertSession(supabase, reqBody);
   return jsonResponse({ session_id: sessionId });
 };
@@ -91,6 +186,30 @@ const handleEvent = async (supabase: SupabaseClient, reqBody: JsonRecord) => {
 
   const validSession = await ensureSession(supabase, sessionId);
   if (!validSession) return jsonResponse({ error: "invalid session_id" }, 400);
+
+  // Rate limit: 100 events per session per hour
+  const rateLimitCheck = await checkRateLimit(
+    supabase,
+    sessionId,
+    'wm-api:/event',
+    RATE_LIMITS.eventPerSessionPerHour,
+    1
+  );
+
+  if (!rateLimitCheck.allowed) {
+    console.warn(`Rate limit exceeded for session ${sessionId} on /event (${rateLimitCheck.count} events)`);
+    return jsonResponse(
+      {
+        error: 'Rate limit exceeded. Too many events for this session.',
+        limit: RATE_LIMITS.eventPerSessionPerHour,
+        window: '1 hour'
+      },
+      429
+    );
+  }
+
+  // Record this event request
+  await recordRateLimitEntry(supabase, sessionId, 'wm-api:/event');
 
   const eventName = reqBody.event_name as string | undefined;
   if (!eventName) return jsonResponse({ error: "event_name required" }, 400);
@@ -237,9 +356,10 @@ serve(async (req) => {
     const path = url.pathname;
     const supabase = getSupabase();
     const body = (await req.json().catch(() => ({}))) as JsonRecord;
+    const clientIp = getClientIp(req);
 
     if (req.method === "POST" && path.endsWith("/session")) {
-      return await handleSession(supabase, body);
+      return await handleSession(supabase, body, clientIp);
     }
 
     if (req.method === "POST" && path.endsWith("/event")) {
