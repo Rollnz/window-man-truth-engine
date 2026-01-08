@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Calculator, ScanSearch, Home, Grid3x3 } from 'lucide-react';
+import { FOOTER_NAV } from '@/config/navigation';
 
 export function MinimalFooter() {
   return (
@@ -8,7 +9,7 @@ export function MinimalFooter() {
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
           {/* Primary Actions */}
           <Link
-            to="/calculate-estimate"
+            to={FOOTER_NAV.GET_QUOTE}
             className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 font-medium transition-colors"
           >
             <Calculator className="w-4 h-4" />
@@ -16,7 +17,7 @@ export function MinimalFooter() {
           </Link>
 
           <Link
-            to="/quote-scanner"
+            to={FOOTER_NAV.SCAN_QUOTE}
             className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 font-medium transition-colors"
           >
             <ScanSearch className="w-4 h-4" />
@@ -27,7 +28,7 @@ export function MinimalFooter() {
 
           {/* Navigation */}
           <Link
-            to="/"
+            to={FOOTER_NAV.HOME}
             className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
           >
             <Home className="w-3.5 h-3.5" />
@@ -35,7 +36,7 @@ export function MinimalFooter() {
           </Link>
 
           <Link
-            to="/tools"
+            to={FOOTER_NAV.ALL_TOOLS}
             className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
           >
             <Grid3x3 className="w-3.5 h-3.5" />
@@ -46,22 +47,16 @@ export function MinimalFooter() {
 
           {/* Legal */}
           <Link
-            to="/privacy"
+            to={FOOTER_NAV.PRIVACY}
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             Privacy
           </Link>
           <Link
-            to="/terms"
+            to={FOOTER_NAV.TERMS}
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             Terms
-          </Link>
-          <Link
-            to="/accessibility"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Accessibility
           </Link>
         </div>
       </div>
