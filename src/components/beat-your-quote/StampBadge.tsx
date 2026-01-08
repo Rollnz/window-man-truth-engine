@@ -7,19 +7,19 @@ interface StampBadgeProps {
 export function StampBadge({ children, variant = 'red', className = '' }: StampBadgeProps) {
   const variantStyles = {
     red: 'border-red-500/60 bg-red-950/40 text-red-400',
-    cyan: 'border-[#00D4FF]/60 bg-[#00D4FF]/10 text-[#00D4FF]'
+    cyan: 'border-tools-truth-engine/60 bg-tools-truth-engine/10 text-tools-truth-engine'
   };
 
   return (
-    <div 
+    <div
       className={`
-        inline-block px-4 py-2 border-2 
+        inline-block px-4 py-2 border-2
         transform -rotate-3
         ${variantStyles[variant]}
         ${className}
       `}
     >
-      <span className="text-sm font-mono tracking-[0.2em] uppercase font-bold">
+      <span className="text-sm font-mono tracking-declassified uppercase font-bold">
         {children}
       </span>
     </div>

@@ -46,17 +46,17 @@ export function ToolsSection() {
   };
 
   return (
-    <section className="py-20 px-4 bg-[#0A0F14]">
+    <section className="py-20 px-4 bg-dossier-page">
       <div className="container max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex justify-center mb-6">
             <StampBadge variant="cyan">Intelligence Assets</StampBadge>
           </div>
-          
+
           <h2 className="text-3xl md:text-4xl font-bold font-mono mb-4">
             <span className="text-white">YOUR </span>
-            <span className="text-[#00D4FF]">ARSENAL</span>
+            <span className="text-tools-truth-engine">ARSENAL</span>
           </h2>
           
           <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -67,20 +67,20 @@ export function ToolsSection() {
         {/* Tool Cards Grid */}
         <div className="grid md:grid-cols-3 gap-6">
           {TOOLS.map((tool) => (
-            <div 
+            <div
               key={tool.id}
-              className="group relative rounded-xl border border-border/40 bg-background/5 
+              className="group relative rounded-xl border border-border/40 bg-background/5
                          overflow-hidden transition-all duration-300
-                         hover:border-[#00D4FF]/40 hover:shadow-lg hover:shadow-[#00D4FF]/10"
+                         hover:border-tools-truth-engine/40 hover:shadow-lg hover:shadow-tools-truth-engine/10"
             >
               {/* Image */}
               <div className="relative h-48 overflow-hidden">
-                <img 
+                <img
                   src={tool.image}
                   alt={tool.title}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0F14] via-[#0A0F14]/50 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-dossier-page via-dossier-page/50 to-transparent" />
                 
                 {/* Icon Badge */}
                 <div 
@@ -100,10 +100,10 @@ export function ToolsSection() {
                   {tool.description}
                 </p>
                 
-                <Button 
+                <Button
                   onClick={() => handleToolClick(tool)}
                   variant="ghost"
-                  className="w-full justify-between text-[#00D4FF] hover:text-[#00D4FF] hover:bg-[#00D4FF]/10"
+                  className="w-full justify-between text-tools-truth-engine hover:text-tools-truth-engine hover:bg-tools-truth-engine/10"
                 >
                   <span>Launch Tool</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

@@ -70,6 +70,96 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Global Dossier/Forensic Theme
+        dossier: {
+          page: "hsl(220 20% 6%)",      // #0A0F14 - page background
+          folder: "hsl(220 20% 14%)",   // Case file cards, elevated surfaces
+          modal: "hsl(220 20% 12%)",    // Modal/dialog surfaces
+          surface: "hsl(220 20% 10%)",  // Alternative elevated surface
+        },
+        // Tool-Specific Themes
+        tools: {
+          "truth-engine": {
+            DEFAULT: "hsl(189 100% 50%)",     // #00D4FF - Neon cyan
+            light: "hsl(189 100% 60%)",
+            dark: "hsl(189 100% 40%)",
+            glow: "hsl(189 100% 50% / 0.2)",
+          },
+          "claim-survival": {
+            DEFAULT: "hsl(0 100% 63%)",       // #FF4444 - Red alert
+            light: "hsl(0 100% 70%)",
+            dark: "hsl(0 100% 50%)",
+            glow: "hsl(0 100% 63% / 0.2)",
+          },
+          "tool-3": {
+            DEFAULT: "hsl(220 20% 65%)",
+            light: "hsl(220 20% 75%)",
+            dark: "hsl(220 20% 55%)",
+            glow: "hsl(220 20% 65% / 0.2)",
+          },
+          "tool-4": {
+            DEFAULT: "hsl(220 20% 65%)",
+            light: "hsl(220 20% 75%)",
+            dark: "hsl(220 20% 55%)",
+            glow: "hsl(220 20% 65% / 0.2)",
+          },
+          "tool-5": {
+            DEFAULT: "hsl(220 20% 65%)",
+            light: "hsl(220 20% 75%)",
+            dark: "hsl(220 20% 55%)",
+            glow: "hsl(220 20% 65% / 0.2)",
+          },
+          "tool-6": {
+            DEFAULT: "hsl(220 20% 65%)",
+            light: "hsl(220 20% 75%)",
+            dark: "hsl(220 20% 55%)",
+            glow: "hsl(220 20% 65% / 0.2)",
+          },
+          "tool-7": {
+            DEFAULT: "hsl(220 20% 65%)",
+            light: "hsl(220 20% 75%)",
+            dark: "hsl(220 20% 55%)",
+            glow: "hsl(220 20% 65% / 0.2)",
+          },
+          "tool-8": {
+            DEFAULT: "hsl(220 20% 65%)",
+            light: "hsl(220 20% 75%)",
+            dark: "hsl(220 20% 55%)",
+            glow: "hsl(220 20% 65% / 0.2)",
+          },
+          "tool-9": {
+            DEFAULT: "hsl(220 20% 65%)",
+            light: "hsl(220 20% 75%)",
+            dark: "hsl(220 20% 55%)",
+            glow: "hsl(220 20% 65% / 0.2)",
+          },
+          "tool-10": {
+            DEFAULT: "hsl(220 20% 65%)",
+            light: "hsl(220 20% 75%)",
+            dark: "hsl(220 20% 55%)",
+            glow: "hsl(220 20% 65% / 0.2)",
+          },
+          "tool-11": {
+            DEFAULT: "hsl(220 20% 65%)",
+            light: "hsl(220 20% 75%)",
+            dark: "hsl(220 20% 55%)",
+            glow: "hsl(220 20% 65% / 0.2)",
+          },
+          "tool-12": {
+            DEFAULT: "hsl(220 20% 65%)",
+            light: "hsl(220 20% 75%)",
+            dark: "hsl(220 20% 55%)",
+            glow: "hsl(220 20% 65% / 0.2)",
+          },
+        },
+      },
+      letterSpacing: {
+        declassified: "0.2em",      // Forensic/monospace headers
+        "stamp-wide": "0.15em",     // Slightly tighter for small text
+        redacted: "0.3em",          // Extra wide for censored/redacted text
+      },
+      fontFamily: {
+        typewriter: ["Courier New", "Courier", "monospace"],
       },
       borderRadius: {
         lg: "var(--radius)",
