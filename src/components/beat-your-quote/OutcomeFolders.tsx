@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Shield, ArrowRight, ClipboardCheck, Loader2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -65,11 +65,15 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
     setModalOpenTime(Date.now());
   }, []);
 
+  const prevTriggerCountRef = useRef(triggerCount);
+
   // Watch for external trigger (hero buttons, etc.)
   useEffect(() => {
-    if (triggerCount > 0 && !isModalOpen) {
+    // Only trigger when the count has actually increased.
+    if (triggerCount > prevTriggerCountRef.current && !isModalOpen) {
       handleStartMission();
     }
+    prevTriggerCountRef.current = triggerCount;
   }, [triggerCount, isModalOpen, handleStartMission]);
 
   // Track first field interaction
