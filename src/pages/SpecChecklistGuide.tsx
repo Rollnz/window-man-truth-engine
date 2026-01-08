@@ -149,10 +149,7 @@ const SpecChecklistGuide = () => {
                 <div className="relative bg-card rounded-xl shadow-2xl p-2 border border-border">
                   <img src="/images/spec-checklist-book.webp" alt="Impact Window Audit Packet - Homeowner's Spec Check" className="w-64 sm:w-80 h-auto rounded-lg" />
                   
-                  <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-lg">
-                    <ClipboardList className="w-3.5 h-3.5" />
-                    Complete Spec Sheet
-                  </div>
+                  
                 </div>
 
                 <div className="absolute -bottom-4 -left-4 bg-card border border-border rounded-lg px-4 py-3 shadow-lg">
