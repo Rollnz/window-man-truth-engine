@@ -208,67 +208,6 @@ async function triggerEmailNotification(payload: {
   }
 }
 
-// Determine whether the client actually sent any attribution values
-function hasClientAttribution(attribution: z.infer<typeof attributionSchema> | null | undefined): boolean {
-  if (!attribution) return false;
-
-  return Object.values(attribution).some((value) => {
-    if (value === null || value === undefined) return false;
-    if (typeof value === 'string') {
-      return value.trim().length > 0;
-    }
-    return true;
-  });
-}
-
-// Safely parse attribution from the referer header for server-side fallback
-function buildFallbackAttribution(
-  referer: string | null,
-  shouldParseFromReferer: boolean,
-) {
-  const fallbackAttribution = {
-    fallback_referer: referer || null,
-    fallback_utm_source: null as string | null,
-    fallback_utm_medium: null as string | null,
-    fallback_utm_campaign: null as string | null,
-    fallback_utm_term: null as string | null,
-    fallback_utm_content: null as string | null,
-    fallback_gclid: null as string | null,
-    fallback_msclkid: null as string | null,
-    fallback_fbc: null as string | null,
-    fallback_fbp: null as string | null,
-  };
-
-  if (!referer || !shouldParseFromReferer) {
-    return fallbackAttribution;
-  }
-
-  try {
-    const parsedUrl = new URL(referer);
-    const params = parsedUrl.searchParams;
-
-    const getParam = (key: string) => {
-      const value = params.get(key);
-      return value && value.trim().length > 0 ? value : null;
-    };
-
-    return {
-      ...fallbackAttribution,
-      fallback_utm_source: getParam('utm_source'),
-      fallback_utm_medium: getParam('utm_medium'),
-      fallback_utm_campaign: getParam('utm_campaign'),
-      fallback_utm_term: getParam('utm_term'),
-      fallback_utm_content: getParam('utm_content'),
-      fallback_gclid: getParam('gclid'),
-      fallback_msclkid: getParam('msclkid'),
-      fallback_fbc: getParam('fbclid'),
-      fallback_fbp: getParam('fbp'),
-    };
-  } catch (error) {
-    console.warn('Failed to parse referer for fallback attribution:', error);
-    return fallbackAttribution;
-  }
-}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -379,11 +318,6 @@ serve(async (req) => {
       );
     }
 
-    // Capture server-side attribution when client-side data is missing (e.g., JS blocked)
-    const refererHeader = req.headers.get('referer');
-    const clientAttributionPresent = hasClientAttribution(attribution);
-    const fallbackAttribution = buildFallbackAttribution(refererHeader, !clientAttributionPresent);
-
     let leadId: string;
 
     // Build the lead record with all fields
@@ -404,8 +338,6 @@ serve(async (req) => {
       fbp: attribution?.fbp || null,
       gclid: attribution?.gclid || null,
       msclkid: attribution?.msclkid || null,
-      // Spread fallback attribution so we capture referer + any parsed params in one place
-      ...fallbackAttribution,
       // AI Context fields
       source_form: aiContext?.source_form || null,
       specific_detail: aiContext?.specific_detail || null,
@@ -440,7 +372,6 @@ serve(async (req) => {
           session_data: sessionData || {},
           chat_history: chatHistory || [],
           updated_at: new Date().toISOString(),
-          fallback_referer: fallbackAttribution.fallback_referer,
           // AI Context always updates (last-touch for context)
           source_form: aiContext?.source_form || undefined,
           specific_detail: aiContext?.specific_detail || undefined,
@@ -449,14 +380,6 @@ serve(async (req) => {
           insurance_carrier: aiContext?.insurance_carrier || undefined,
           window_count: aiContext?.window_count || undefined,
         };
-
-        // Only update fallback attribution when we have parsed values (avoid wiping prior data)
-        for (const [key, value] of Object.entries(fallbackAttribution)) {
-          if (key === 'fallback_referer') continue; // already set unconditionally above
-          if (value) {
-            updateRecord[key] = value;
-          }
-        }
         
         // Only set attribution if not already present (first-touch)
         if (!existingLead?.utm_source && attribution?.utm_source) {
