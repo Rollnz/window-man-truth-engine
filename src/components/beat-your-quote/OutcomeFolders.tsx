@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Shield, ArrowRight, ClipboardCheck, Loader2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -58,19 +58,19 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
     });
   };
 
-  const handleStartMission = () => {
+  const handleStartMission = useCallback(() => {
     trackEvent('byq_cta_clicked', { location: 'outcome_folders' });
     trackModalOpen('beat_your_quote_lead_capture');
     setIsModalOpen(true);
     setModalOpenTime(Date.now());
-  };
+  }, []);
 
   // Watch for external trigger (hero buttons, etc.)
   useEffect(() => {
     if (triggerCount > 0 && !isModalOpen) {
       handleStartMission();
     }
-  }, [triggerCount]);
+  }, [triggerCount, isModalOpen, handleStartMission]);
 
   // Track first field interaction
   const handleFieldFocus = (fieldName: string) => {
