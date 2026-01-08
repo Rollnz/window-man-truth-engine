@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTracking } from '@/hooks/usePageTracking';
-import { Scale, ScanSearch, Calculator, ArrowRight } from 'lucide-react';
+import { Scale, ScanSearch, Calculator, ArrowRight, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/gtm';
 
@@ -27,6 +27,7 @@ const SpecChecklistGuide = () => {
   const [hasConverted, setHasConverted] = useState(() => {
     return localStorage.getItem(CONVERSION_STORAGE_KEY) === 'true';
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mainCtaRef = useRef<HTMLDivElement>(null);
 
   // Track page view on mount
@@ -63,6 +64,7 @@ const SpecChecklistGuide = () => {
               <span className="font-semibold text-foreground">Windowman Vault</span>
             </button>
 
+            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
               <button 
                 onClick={() => navigate('/comparison')}
@@ -77,8 +79,52 @@ const SpecChecklistGuide = () => {
                 Intel Library
               </button>
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border bg-card">
+            <div className="px-4 py-3 space-y-1">
+              <button
+                onClick={() => {
+                  navigate('/comparison');
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm"
+              >
+                Compare Windows
+              </button>
+              <button
+                onClick={() => {
+                  navigate('/intel');
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm"
+              >
+                Intel Library
+              </button>
+              <button
+                onClick={() => {
+                  navigate('/tools');
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm"
+              >
+                All Tools
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Page Sections */}
