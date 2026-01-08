@@ -121,7 +121,7 @@ const SpecChecklistGuide = () => {
                 </Button>
                 
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-primary-foreground">
                     <Clock className="w-4 h-4" /> 3 min read
                   </span>
                   <span className="flex items-center gap-1 text-primary-foreground">
