@@ -3,58 +3,33 @@ import { Button } from '@/components/ui/button';
 import { IntelResource } from '@/data/intelData';
 import { ResourcePreview } from './ResourcePreview';
 import { FloatingBookImage } from './FloatingBookImage';
-import { GenerateCoverButton } from './GenerateCoverButton';
-import { CoverSkeleton } from './CoverSkeleton';
 
 interface ResourceCardProps {
   resource: IntelResource;
   isRecommended?: boolean;
-  coverUrl?: string;
-  isGenerating?: boolean;
   onAccess: () => void;
-  onGenerateCover?: (regenerate: boolean) => void;
 }
 
 export function ResourceCard({ 
   resource, 
   isRecommended,
-  coverUrl,
-  isGenerating = false,
   onAccess,
-  onGenerateCover,
 }: ResourceCardProps) {
   const Icon = resource.icon;
-
-  // Use provided coverUrl or fallback to static bookImageUrl
-  const displayCoverUrl = coverUrl || resource.bookImageUrl;
-  const hasFloatingImage = !!displayCoverUrl || isGenerating;
+  const displayCoverUrl = resource.bookImageUrl;
+  const hasFloatingImage = !!displayCoverUrl;
 
   // Button text: "Access System" for claim-survival, "Access Guide" for all others
   const buttonText = resource.id === 'claim-survival' ? 'Access System' : 'Access Guide';
 
   return (
     <div className={`group relative flex flex-col p-6 rounded-xl bg-white transition-all duration-300 border-2 sm:border-[6px] sm:shadow-[inset_0_0_0_2px_rgba(0,0,0,0.08)] border-gray-200 sm:border-gray-400 hover:border-primary/50 ${hasFloatingImage ? 'overflow-visible' : ''}`}>
-      {/* Loading skeleton while generating */}
-      {isGenerating && !displayCoverUrl && (
-        <CoverSkeleton position={resource.imagePosition} />
-      )}
-
       {/* Floating book image */}
-      {displayCoverUrl && !isGenerating && (
+      {displayCoverUrl && (
         <FloatingBookImage
           imageUrl={displayCoverUrl}
           position={resource.imagePosition}
           alt={resource.title}
-        />
-      )}
-
-      {/* Generate/Regenerate cover button */}
-      {onGenerateCover && (
-        <GenerateCoverButton
-          resource={resource}
-          hasExistingCover={!!coverUrl && !resource.bookImageUrl}
-          isGenerating={isGenerating}
-          onGenerate={onGenerateCover}
         />
       )}
 

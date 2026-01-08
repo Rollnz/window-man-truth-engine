@@ -1,6 +1,5 @@
 import { IntelResource } from '@/data/intelData';
 import { ResourceCard } from './ResourceCard';
-import { useBookCoverGenerator } from '@/hooks/useBookCoverGenerator';
 
 interface ResourceGridProps {
   resources: IntelResource[];
@@ -13,12 +12,6 @@ export function ResourceGrid({
   highlightedResourceId,
   onAccess,
 }: ResourceGridProps) {
-  const { generateCover, getCoverUrl, isGenerating } = useBookCoverGenerator();
-
-  const handleGenerateCover = async (resource: IntelResource, regenerate: boolean) => {
-    await generateCover(resource, regenerate);
-  };
-
   return (
     <section className="py-12 md:py-16">
       <div className="container px-4">
@@ -29,10 +22,7 @@ export function ResourceGrid({
               key={resource.id}
               resource={resource}
               isRecommended={resource.id === highlightedResourceId || resource.recommended}
-              coverUrl={getCoverUrl(resource)}
-              isGenerating={isGenerating(resource.id)}
               onAccess={() => onAccess(resource)}
-              onGenerateCover={(regenerate) => handleGenerateCover(resource, regenerate)}
             />
           ))}
         </div>
