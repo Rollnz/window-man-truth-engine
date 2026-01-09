@@ -34,6 +34,9 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
     setIsLoading(true);
     setError(null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     try {
       const { data, error: invokeError } = await supabase.functions.invoke('roleplay-chat', {
         body: {
@@ -46,6 +49,8 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
           difficulty
         }
       });
+
+      clearTimeout(timeoutId);
 
       if (invokeError) {
         throw new Error(invokeError.message);
@@ -63,8 +68,17 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
       return { text: cleanedText, tacticLog };
 
     } catch (e) {
+      clearTimeout(timeoutId);
       setIsLoading(false);
-      const errorMessage = e instanceof Error ? e.message : 'Failed to get AI response';
+      
+      let errorMessage = 'Failed to get AI response';
+      if (e instanceof Error) {
+        if (e.name === 'AbortError' || e.message.includes('abort')) {
+          errorMessage = 'Request timed out. Please try again.';
+        } else {
+          errorMessage = e.message;
+        }
+      }
       setError(errorMessage);
       
       // Fallback response
@@ -91,6 +105,9 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
     setIsLoading(true);
     setError(null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     try {
       const { data, error: invokeError } = await supabase.functions.invoke('roleplay-chat', {
         body: {
@@ -102,6 +119,8 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
           won
         }
       });
+
+      clearTimeout(timeoutId);
 
       if (invokeError) {
         throw new Error(invokeError.message);
@@ -115,8 +134,17 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
       return data?.analysis || null;
 
     } catch (e) {
+      clearTimeout(timeoutId);
       setIsLoading(false);
-      const errorMessage = e instanceof Error ? e.message : 'Analysis failed';
+      
+      let errorMessage = 'Analysis failed';
+      if (e instanceof Error) {
+        if (e.name === 'AbortError' || e.message.includes('abort')) {
+          errorMessage = 'Request timed out. Please try again.';
+        } else {
+          errorMessage = e.message;
+        }
+      }
       setError(errorMessage);
       return null;
     }

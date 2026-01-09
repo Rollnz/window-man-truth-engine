@@ -46,6 +46,9 @@ export function useEvidenceAnalysis({
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     try {
       // Build document status for AI
       const documentStatuses = documents.map(doc => ({
@@ -60,6 +63,8 @@ export function useEvidenceAnalysis({
       const { data, error } = await supabase.functions.invoke('analyze-evidence', {
         body: { documents: documentStatuses },
       });
+
+      clearTimeout(timeoutId);
 
       if (error) {
         // Handle rate limiting
@@ -82,10 +87,19 @@ export function useEvidenceAnalysis({
       setAnalysisResult(resultWithTimestamp);
       updateField('claimAnalysisResult', resultWithTimestamp);
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error('Analysis error:', error);
+      
+      let message = 'Could not complete the analysis. Please try again.';
+      if (error instanceof Error) {
+        if (error.name === 'AbortError' || error.message.includes('abort')) {
+          message = 'Request timed out. Please try again.';
+        }
+      }
+      
       toast({
-        title: 'Analysis Failed',
-        description: 'Could not complete the analysis. Please try again.',
+        title: message.includes('timed out') ? 'Request Timed Out' : 'Analysis Failed',
+        description: message,
         variant: 'destructive',
       });
     } finally {

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+import { ErrorBoundary, AIErrorFallback, getAIErrorType } from "@/components/error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,6 +22,14 @@ import { RelatedToolsSection } from "@/components/quote-builder/RelatedToolsSect
 import { supabase } from "@/integrations/supabase/client";
 import { getAttributionData } from "@/lib/attribution";
 
+// Timeout error for AbortController
+class TimeoutError extends Error {
+  constructor(message: string = 'Request timed out') {
+    super(message);
+    this.name = 'TimeoutError';
+  }
+}
+
 // Rate limit error with upsell message
 class RateLimitError extends Error {
   isAnonymous: boolean;
@@ -31,15 +40,20 @@ class RateLimitError extends Error {
   }
 }
 
-// Secure AI call via Edge Function
+// Secure AI call via Edge Function with 30s timeout
 const callGemini = async (prompt: string): Promise<string> => {
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   for (let i = 0; i < 3; i++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     try {
       const { data, error } = await supabase.functions.invoke('generate-quote', {
         body: { prompt }
       });
+
+      clearTimeout(timeoutId);
 
       // Check for rate limit error (429)
       if (error?.message?.includes('429') || data?.error?.includes('Rate limit')) {
@@ -61,10 +75,17 @@ const callGemini = async (prompt: string): Promise<string> => {
 
       return data?.text || "I couldn't generate a response at this time.";
     } catch (error) {
-      // Don't retry rate limit errors
+      clearTimeout(timeoutId);
+      
+      // Don't retry rate limit or timeout errors
       if (error instanceof RateLimitError) {
         throw error;
       }
+      
+      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('abort'))) {
+        throw new TimeoutError('Request timed out. Please try again.');
+      }
+      
       console.error(`Attempt ${i + 1} failed:`, error);
       if (i === 2) throw error;
       await delay(1000 * Math.pow(2, i));
@@ -1148,8 +1169,14 @@ export default function CalculateEstimate() {
         </Link>
       </div>
 
-      {/* Main Quote Builder */}
-      <QuoteBuilderV2 />
+      {/* Main Quote Builder - wrapped in ErrorBoundary for AI resilience */}
+      <ErrorBoundary
+        title="Quote Builder Error"
+        description="The quote builder encountered an issue. Your data is safe."
+        onReset={() => window.location.reload()}
+      >
+        <QuoteBuilderV2 />
+      </ErrorBoundary>
 
       {/* CRO Supporting Sections */}
       <WhyAccurateEstimates />

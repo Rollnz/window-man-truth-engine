@@ -138,13 +138,16 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
     setPhoneScript(null);
     setQaAnswer(null);
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
     try {
       // Compress/prepare image
       const { base64, mimeType: mt } = await compressImage(file);
       setImageBase64(base64);
       setMimeType(mt);
       
-      // Call edge function
+      // Call edge function with abort signal
       const { data, error: fnError } = await supabase.functions.invoke('quote-scanner', {
         body: {
           mode: 'analyze',
@@ -154,6 +157,8 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
           areaName: areaName || 'Florida',
         },
       });
+      
+      clearTimeout(timeoutId);
       
       if (fnError) throw fnError;
       
@@ -171,11 +176,21 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
       updateField('quoteAnalysisResult', resultWithTimestamp);
       
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error('Quote analysis error:', err);
-      const message = err instanceof Error ? err.message : 'Analysis failed. Please try again.';
+      
+      let message = 'Analysis failed. Please try again.';
+      if (err instanceof Error) {
+        if (err.name === 'AbortError' || err.message.includes('abort')) {
+          message = 'Request timed out. Please try again.';
+        } else {
+          message = err.message;
+        }
+      }
+      
       setError(message);
       toast({
-        title: 'Analysis Failed',
+        title: message.includes('timed out') ? 'Request Timed Out' : 'Analysis Failed',
         description: message,
         variant: 'destructive',
       });
@@ -190,6 +205,9 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
     setIsDraftingEmail(true);
     setError(null);
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
     try {
       const { data, error: fnError } = await supabase.functions.invoke('quote-scanner', {
         body: {
@@ -197,6 +215,8 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
           analysisContext: analysisResult,
         },
       });
+      
+      clearTimeout(timeoutId);
       
       if (fnError) throw fnError;
       
@@ -208,11 +228,21 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
       updateField('quoteDraftEmail', data.content);
       
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error('Email draft error:', err);
-      const message = err instanceof Error ? err.message : 'Failed to generate email. Please try again.';
+      
+      let message = 'Failed to generate email. Please try again.';
+      if (err instanceof Error) {
+        if (err.name === 'AbortError' || err.message.includes('abort')) {
+          message = 'Request timed out. Please try again.';
+        } else {
+          message = err.message;
+        }
+      }
+      
       setError(message);
       toast({
-        title: 'Email Draft Failed',
+        title: message.includes('timed out') ? 'Request Timed Out' : 'Email Draft Failed',
         description: message,
         variant: 'destructive',
       });
@@ -227,6 +257,9 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
     setIsDraftingPhoneScript(true);
     setError(null);
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
     try {
       const { data, error: fnError } = await supabase.functions.invoke('quote-scanner', {
         body: {
@@ -234,6 +267,8 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
           analysisContext: analysisResult,
         },
       });
+      
+      clearTimeout(timeoutId);
       
       if (fnError) throw fnError;
       
@@ -245,11 +280,21 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
       updateField('quotePhoneScript', data.content);
       
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error('Phone script error:', err);
-      const message = err instanceof Error ? err.message : 'Failed to generate script. Please try again.';
+      
+      let message = 'Failed to generate script. Please try again.';
+      if (err instanceof Error) {
+        if (err.name === 'AbortError' || err.message.includes('abort')) {
+          message = 'Request timed out. Please try again.';
+        } else {
+          message = err.message;
+        }
+      }
+      
       setError(message);
       toast({
-        title: 'Phone Script Failed',
+        title: message.includes('timed out') ? 'Request Timed Out' : 'Phone Script Failed',
         description: message,
         variant: 'destructive',
       });
@@ -264,6 +309,9 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
     setIsAskingQuestion(true);
     setError(null);
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
     try {
       const { data, error: fnError } = await supabase.functions.invoke('quote-scanner', {
         body: {
@@ -275,6 +323,8 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
         },
       });
       
+      clearTimeout(timeoutId);
+      
       if (fnError) throw fnError;
       
       if (data.error) {
@@ -284,11 +334,21 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
       setQaAnswer(data.content);
       
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error('Q&A error:', err);
-      const message = err instanceof Error ? err.message : 'Failed to answer question. Please try again.';
+      
+      let message = 'Failed to answer question. Please try again.';
+      if (err instanceof Error) {
+        if (err.name === 'AbortError' || err.message.includes('abort')) {
+          message = 'Request timed out. Please try again.';
+        } else {
+          message = err.message;
+        }
+      }
+      
       setError(message);
       toast({
-        title: 'Question Failed',
+        title: message.includes('timed out') ? 'Request Timed Out' : 'Question Failed',
         description: message,
         variant: 'destructive',
       });
