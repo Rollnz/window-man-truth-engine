@@ -11,6 +11,7 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { trackEvent } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import { trackModalOpen, trackLeadCapture } from '@/lib/gtm';
+import type { SourceTool } from '@/types/sourceTool';
 
 type CalculatorInputs = {
   projectCost: number;
@@ -371,7 +372,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
         });
 
         trackEvent('lead_captured', {
-          source_tool: 'true-cost-calculator',
+          source_tool: 'true-cost-calculator' satisfies SourceTool,
           project_cost: inputs.projectCost,
           net_cost: netCost,
         });
