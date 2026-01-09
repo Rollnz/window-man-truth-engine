@@ -190,7 +190,7 @@ export default function FairPriceQuiz() {
         body: {
           email: userEmail,
           phone,
-          source_tool: 'fair-price-quiz',
+          source_tool: 'fair-price-quiz' satisfies SourceTool,
           source_form: 'phone-capture',
         },
       });

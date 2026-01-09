@@ -14,6 +14,7 @@ import { ContextBanner } from '@/components/expert/ContextBanner';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { ErrorBoundary } from '@/components/error';
+import type { SourceTool } from '@/types/sourceTool';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { fastAIRequest, AI_TIMEOUTS } from '@/lib/aiRequest';
 import { TimeoutError, getErrorMessage } from '@/lib/errors';
@@ -289,7 +290,7 @@ export default function Expert() {
         isOpen={showLeadModal}
         onClose={() => setShowLeadModal(false)}
         onSuccess={handleLeadCaptureSuccess}
-        sourceTool="expert-system"
+        sourceTool={'expert-system' satisfies SourceTool}
         sessionData={sessionData}
         chatHistory={messages}
       />

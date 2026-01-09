@@ -10,6 +10,7 @@ import { ProtectionReport } from '@/components/risk-diagnostic/ProtectionReport'
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+import type { SourceTool } from '@/types/sourceTool';
 
 type Phase = 'hero' | 'questions' | 'results';
 type Direction = 'forward' | 'backward';
@@ -125,7 +126,7 @@ export default function RiskDiagnostic() {
         isOpen={showLeadModal}
         onClose={() => setShowLeadModal(false)}
         onSuccess={() => setShowLeadModal(false)}
-        sourceTool="risk-diagnostic"
+        sourceTool={'risk-diagnostic' satisfies SourceTool}
         sessionData={sessionData}
       />
 
