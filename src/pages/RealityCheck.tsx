@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { ROUTES } from "@/config/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Home } from "lucide-react";
 import { SessionData, useSessionData } from "@/hooks/useSessionData";
@@ -232,7 +233,7 @@ const RealityCheck = () => {
       <div className="min-h-screen bg-background">
         <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+            <Link to={ROUTES.HOME} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
               <Home className="w-5 h-5" />
               <span>Back to Tools</span>
             </Link>
@@ -271,7 +272,7 @@ const RealityCheck = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+          <Link to={ROUTES.HOME} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
             <Home className="w-5 h-5" />
             <span>Back to Tools</span>
           </Link>

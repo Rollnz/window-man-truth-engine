@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { ROUTES } from '@/config/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
@@ -133,7 +134,7 @@ export default function FastWin() {
       {(phase === 'hero' || phase === 'result') && (
         <header className="absolute top-0 left-0 right-0 z-20 p-4">
           <Link
-            to="/"
+            to={ROUTES.HOME}
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />

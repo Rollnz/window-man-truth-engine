@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { ROUTES } from '@/config/navigation';
 import {
   Wallet,
   Download,
@@ -474,7 +475,7 @@ const InsuranceSavingsGuide = () => {
                 variant="outline" 
                 size="sm" 
                 className="w-full gap-2"
-                onClick={() => navigate('/comparison')}
+                onClick={() => navigate(ROUTES.COMPARISON)}
               >
                 Compare Options <ArrowRight className="w-4 h-4" />
               </Button>

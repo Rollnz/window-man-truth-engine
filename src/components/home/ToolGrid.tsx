@@ -32,7 +32,7 @@ const tools: Tool[] = [
     description: 'Confront the hidden costs your current windows are costing you.',
     cta: 'See What Cheap Windows Really Cost',
     icon: <AlertTriangle className="w-6 h-6" />,
-    path: '/reality-check',
+    path: ROUTES.REALITY_CHECK,
     gated: false,
   },
   {
@@ -41,7 +41,7 @@ const tools: Tool[] = [
     description: 'Quantify exactly how much waiting is costing you every day.',
     cta: 'Calculate Your Hidden Costs',
     icon: <Calculator className="w-6 h-6" />,
-    path: '/cost-calculator',
+    path: ROUTES.COST_CALCULATOR,
     gated: false,
   },
   {
@@ -50,7 +50,7 @@ const tools: Tool[] = [
     description: '90% of Florida homeowners fail this test and overpay by $5,000+.',
     cta: 'Test Your Vulnerability',
     icon: <Brain className="w-6 h-6" />,
-    path: '/vulnerability-test',
+    path: ROUTES.VULNERABILITY_TEST,
     gated: false,
   },
   {
@@ -59,7 +59,7 @@ const tools: Tool[] = [
     description: 'Chat with our AI specialist for neutral, expert advice.',
     cta: 'Chat With the Window Specialist',
     icon: <MessageSquare className="w-6 h-6" />,
-    path: '/expert',
+    path: ROUTES.EXPERT,
     gated: false,
   },
   {
@@ -68,7 +68,7 @@ const tools: Tool[] = [
     description: 'Compare cheap vs. quality window specs side-by-side.',
     cta: 'Compare Real Window Specs',
     icon: <GitCompare className="w-6 h-6" />,
-    path: '/comparison',
+    path: ROUTES.COMPARISON,
     gated: true,
   },
   {
@@ -77,7 +77,7 @@ const tools: Tool[] = [
     description: 'Identify vulnerabilities and unlock potential insurance savings up to 20%.',
     cta: 'Analyze Your Protection Gaps',
     icon: <Shield className="w-6 h-6" />,
-    path: '/risk-diagnostic',
+    path: ROUTES.RISK_DIAGNOSTIC,
     gated: true,
   },
   {
@@ -86,7 +86,7 @@ const tools: Tool[] = [
     description: 'The 7-point documentation system insurers expect. Prevent claim denials before they happen.',
     cta: 'Protect Your Claim',
     icon: <ShieldCheck className="w-6 h-6" />,
-    path: '/claim-survival',
+    path: ROUTES.CLAIM_SURVIVAL,
     gated: true,
   },
   {
@@ -95,7 +95,7 @@ const tools: Tool[] = [
     description: 'Find your highest-ROI upgrade in 45 seconds. No lecture, just results.',
     cta: 'Find My #1 Upgrade',
     icon: <Zap className="w-6 h-6" />,
-    path: '/fast-win',
+    path: ROUTES.FAST_WIN,
     gated: true,
   },
   {
@@ -104,7 +104,7 @@ const tools: Tool[] = [
     description: 'Review verified case files from 47 completed missions.',
     cta: 'Review the Evidence',
     icon: <FolderSearch className="w-6 h-6" />,
-    path: '/evidence',
+    path: ROUTES.EVIDENCE,
     gated: true,
   },
   {
@@ -113,7 +113,7 @@ const tools: Tool[] = [
     description: 'Download declassified guides: negotiation tactics, claim survival kits, and more.',
     cta: 'Access the Vault',
     icon: <FileStack className="w-6 h-6" />,
-    path: '/intel',
+    path: ROUTES.INTEL,
     gated: true,
   },
   {

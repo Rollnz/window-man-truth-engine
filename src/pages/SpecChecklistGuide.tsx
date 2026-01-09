@@ -68,13 +68,13 @@ const SpecChecklistGuide = () => {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
               <button 
-                onClick={() => navigate('/comparison')}
+                onClick={() => navigate(ROUTES.COMPARISON)}
                 className="text-muted-foreground hover:text-foreground transition-colors text-sm"
               >
                 Compare Windows
               </button>
               <button 
-                onClick={() => navigate('/intel')}
+                onClick={() => navigate(ROUTES.INTEL)}
                 className="text-muted-foreground hover:text-foreground transition-colors text-sm"
               >
                 Intel Library
@@ -98,7 +98,7 @@ const SpecChecklistGuide = () => {
             <div className="px-4 py-3 space-y-1">
               <button
                 onClick={() => {
-                  navigate('/comparison');
+                  navigate(ROUTES.COMPARISON);
                   setMobileMenuOpen(false);
                 }}
                 className="block w-full text-left px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm"
@@ -164,7 +164,7 @@ const SpecChecklistGuide = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Input your specs and see 10-year true costs side-by-side.
               </p>
-              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate('/comparison')}>
+              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate(ROUTES.COMPARISON)}>
                 Compare Options <ArrowRight className="w-4 h-4" />
               </Button>
             </div>

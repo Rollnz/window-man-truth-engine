@@ -79,7 +79,7 @@ const SalesTacticsGuide = () => {
       });
       
       setTimeout(() => {
-        navigate('/comparison');
+        navigate(ROUTES.COMPARISON);
       }, 1500);
       
     } catch (error) {

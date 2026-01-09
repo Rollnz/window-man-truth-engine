@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { ROUTES } from "@/config/navigation";
 import { toast } from "sonner";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
@@ -512,7 +513,7 @@ const QuoteBuilderV2 = () => {
               duration: 6000,
               action: {
                 label: "Sign Up",
-                onClick: () => window.location.href = "/auth"
+                onClick: () => window.location.href = ROUTES.AUTH
               }
             });
           } else {
@@ -1136,7 +1137,7 @@ export default function CalculateEstimate() {
       {/* Back navigation */}
       <div className="container px-4 py-4">
         <Link 
-          to="/" 
+          to={ROUTES.HOME} 
           className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { ROUTES } from '@/config/navigation';
 
 export default function Disclaimer() {
   usePageTracking('legal-disclaimer');
@@ -10,7 +11,7 @@ export default function Disclaimer() {
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-12">
         <Button variant="ghost" asChild className="mb-8">
-          <Link to="/">
+          <Link to={ROUTES.HOME}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
           </Link>
