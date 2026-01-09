@@ -5,6 +5,7 @@
  */
 
 import { SessionData } from '@/hooks/useSessionData';
+import { SourceTool } from '@/types/sourceTool';
 
 const ATTRIBUTION_STORAGE_KEY = 'wm_attribution_data';
 
@@ -180,7 +181,7 @@ export const initializeAttribution = (): void => {
  */
 export const buildAIContextFromSession = (
   sessionData: Partial<SessionData>,
-  sourceToolOverride?: string
+  sourceToolOverride?: SourceTool
 ): AIContextData => {
   return {
     // Prefer the explicit source tool passed in; fall back to session data

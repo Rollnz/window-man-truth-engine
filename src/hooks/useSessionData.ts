@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { SourceTool } from '@/types/sourceTool';
 
 export interface SessionData {
   // ═══════════════════════════════════════════════════════════════════════════
@@ -27,7 +28,7 @@ export interface SessionData {
   // AI CONTEXT FIELDS - For lead enrichment and personalization
   // These fields are passed to the save-lead function for CRM/sales context
   // ═══════════════════════════════════════════════════════════════════════════
-  sourceTool?: string;
+  sourceTool?: SourceTool;
   insuranceCarrier?: string;
   urgencyLevel?: string;
   emotionalState?: string;
