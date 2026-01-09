@@ -365,8 +365,7 @@ export function OutcomeFolders({
 
       {/* Win-Win Message */}
       <div className="max-w-lg mx-auto p-6 rounded-lg border border-border/30 bg-background/5 text-center">
-        <p className="text-lg">
-          Either way, <span className="text-tools-truth-engine font-bold">you win.</span>
+        <p className="text-xl">Either Way, You Win.<span className="text-tools-truth-engine font-bold">You Win.</span>
         </p>
         <p className="text-tools-truth-engine/60 italic mt-2 text-base">
           "The only failed mission is the one you never start."
