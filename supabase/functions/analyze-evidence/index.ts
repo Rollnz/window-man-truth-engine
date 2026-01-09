@@ -112,7 +112,7 @@ Use "weak" status for documents that are checked but have no file uploaded.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
+        model: Deno.env.get('AI_MODEL_VERSION') || 'google/gemini-3-flash-preview',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }

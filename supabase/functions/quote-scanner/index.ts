@@ -893,7 +893,7 @@ Format the output with clear section headers and make it easy to read during a p
       messages: ChatMessage[];
       response_format?: JsonSchemaResponseFormat;
     } = {
-      model: "google/gemini-3-flash-preview",
+      model: Deno.env.get('AI_MODEL_VERSION') || "google/gemini-3-flash-preview",
       messages,
     };
 
