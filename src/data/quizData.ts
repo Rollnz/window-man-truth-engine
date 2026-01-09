@@ -116,7 +116,7 @@ export const quizResults: QuizResult[] = [
     subtitle: 'High-Risk Buyer Profile Detected',
     prescription: 'You are a prime target for predatory contractors. Without intervention, you could overpay by $5,000-$15,000 on your next window purchase.',
     ctaText: 'Get the Kitchen Table Defense Kit',
-    ctaPath: '/intel?resource=defense-kit',
+    ctaPath: `${ROUTES.INTEL}?resource=defense-kit`,
     badgeColor: 'bg-destructive',
   },
   {

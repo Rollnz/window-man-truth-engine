@@ -25,6 +25,7 @@ export const ROUTES = {
   // Content Tools
   EVIDENCE: '/evidence',
   INTEL: '/intel',
+  PROOF: '/proof',
 
   // Expert & Support
   EXPERT: '/expert',
