@@ -4,7 +4,7 @@ import { ROUTES } from '@/config/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
-import { logEvent } from '@/lib/windowTruthClient';
+import { trackToolCompletion } from '@/lib/gtm';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { fastWinQuestions } from '@/data/fastWinData';
 import { calculateFastWin, type FastWinAnswers, type FastWinResult } from '@/lib/fastWinLogic';
@@ -99,15 +99,7 @@ export default function FastWin() {
     markToolCompleted('fast-win');
 
     // Track tool completion
-    logEvent({
-      event_name: 'tool_completed',
-      tool_name: 'fast-win',
-      params: {
-        winning_product: finalResult.product.id,
-        pain_point: answers.painPoint,
-        budget_priority: answers.budgetPriority,
-      },
-    });
+    trackToolCompletion({ toolName: 'fast-win' });
 
     setPhase('result');
   }, [answers, updateFields, markToolCompleted]);

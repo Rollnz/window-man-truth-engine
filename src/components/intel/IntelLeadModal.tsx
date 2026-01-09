@@ -14,7 +14,7 @@ import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { SessionData } from '@/hooks/useSessionData';
 import { IntelResource } from '@/data/intelData';
 import { Mail, Check, Loader2, Unlock } from 'lucide-react';
-import { logEvent } from '@/lib/windowTruthClient';
+import { trackEvent, trackModalOpen } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 
 interface IntelLeadModalProps {
@@ -48,14 +48,9 @@ export function IntelLeadModal({
       const now = Date.now();
       setModalOpenTime(now);
 
-      logEvent({
-        event_name: 'modal_open',
-        tool_name: 'intel-library',
-        params: {
-          modal_type: 'intel_lead',
-          resource_id: resource.id,
-          resource_title: resource.title,
-        },
+      trackModalOpen('intel_lead', {
+        resource_id: resource.id,
+        resource_title: resource.title,
       });
     }
   }, [isOpen, resource?.id]); // resource.id is stable, safe dependency
@@ -107,23 +102,15 @@ export function IntelLeadModal({
         setIsSuccess(true);
 
         // Track lead capture and intel unlock
-        logEvent({
-          event_name: 'lead_captured',
-          tool_name: 'intel-library',
-          params: {
-            modal_type: 'intel_lead',
-            lead_id: data.leadId,
-          },
+        trackEvent('lead_captured', {
+          modal_type: 'intel_lead',
+          lead_id: data.leadId,
         });
 
-        logEvent({
-          event_name: 'intel_unlocked',
-          tool_name: 'intel-library',
-          params: {
-            resource_id: resource?.id,
-            resource_title: resource?.title,
-            lead_id: data.leadId,
-          },
+        trackEvent('intel_unlocked', {
+          resource_id: resource?.id,
+          resource_title: resource?.title,
+          lead_id: data.leadId,
         });
 
         toast({
@@ -155,15 +142,11 @@ export function IntelLeadModal({
       // Track modal abandonment if not successful
       if (!isSuccess && modalOpenTime > 0 && resource) {
         const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000); // seconds
-        logEvent({
-          event_name: 'modal_abandon',
-          tool_name: 'intel-library',
-          params: {
-            modal_type: 'intel_lead',
-            resource_id: resource.id,
-            resource_title: resource.title,
-            time_spent_seconds: timeSpent,
-          },
+        trackEvent('modal_abandon', {
+          modal_type: 'intel_lead',
+          resource_id: resource.id,
+          resource_title: resource.title,
+          time_spent_seconds: timeSpent,
         });
       }
 

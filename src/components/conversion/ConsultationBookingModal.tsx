@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { SessionData } from '@/hooks/useSessionData';
 import { Calendar, Check, Loader2 } from 'lucide-react';
-import { logEvent } from '@/lib/windowTruthClient';
+import { trackEvent, trackModalOpen } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 
 interface ConsultationBookingModalProps {
@@ -76,13 +76,7 @@ export function ConsultationBookingModal({
       const now = Date.now();
       setModalOpenTime(now);
 
-      logEvent({
-        event_name: 'modal_open',
-        tool_name: 'expert-system',
-        params: {
-          modal_type: 'consultation_booking',
-        },
-      });
+      trackModalOpen('consultation_booking');
     }
   }, [isOpen]); // Only isOpen dependency
 
@@ -139,13 +133,9 @@ export function ConsultationBookingModal({
         setIsSuccess(true);
 
         // Track successful consultation booking
-        logEvent({
-          event_name: 'consultation_booked',
-          tool_name: 'expert-system',
-          params: {
-            preferred_time: values.preferredTime,
-            lead_id: data.leadId,
-          },
+        trackEvent('consultation_booked', {
+          preferred_time: values.preferredTime,
+          lead_id: data.leadId,
         });
 
         toast({
@@ -176,13 +166,9 @@ export function ConsultationBookingModal({
       // Track modal abandonment if not successful
       if (!isSuccess && modalOpenTime > 0) {
         const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000); // seconds
-        logEvent({
-          event_name: 'modal_abandon',
-          tool_name: 'expert-system',
-          params: {
-            modal_type: 'consultation_booking',
-            time_spent_seconds: timeSpent,
-          },
+        trackEvent('modal_abandon', {
+          modal_type: 'consultation_booking',
+          time_spent_seconds: timeSpent,
         });
       }
 

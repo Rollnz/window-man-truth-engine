@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Home } from "lucide-react";
 import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { usePageTracking } from "@/hooks/usePageTracking";
-import { logEvent } from "@/lib/windowTruthClient";
+
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import ProgressBar from "@/components/reality-check/ProgressBar";
 import QuestionStep from "@/components/reality-check/QuestionStep";
@@ -166,22 +166,8 @@ const RealityCheck = () => {
       });
       markToolCompleted('reality-check');
 
-      // Track tool completion in existing system
-      logEvent({
-        event_name: 'tool_completed',
-        tool_name: 'reality-check',
-        params: {
-          score: finalScore,
-          window_age: answers.windowAge,
-          energy_bill: answers.currentEnergyBill,
-        },
-      });
-      
-      // Track completion in GTM
-      trackToolCompletion({
-        toolName: 'reality-check',
-        score: finalScore,
-      });
+      // Track tool completion
+      trackToolCompletion({ toolName: 'reality-check', score: finalScore });
       
       setShowResults(true);
     } else {
