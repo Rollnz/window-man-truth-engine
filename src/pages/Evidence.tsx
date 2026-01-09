@@ -13,6 +13,7 @@ import { StickyCTA } from '@/components/evidence/StickyCTA';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { ArrowLeft } from 'lucide-react';
+import type { SourceTool } from '@/types/sourceTool';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/config/navigation';
 
@@ -152,7 +153,7 @@ export default function Evidence() {
         isOpen={showLeadCapture}
         onClose={() => setShowLeadCapture(false)}
         onSuccess={handleLeadSuccess}
-        sourceTool="evidence-locker"
+        sourceTool={'evidence-locker' satisfies SourceTool}
         sessionData={{
           ...sessionData,
           lastCaseViewed: activeCase?.id,

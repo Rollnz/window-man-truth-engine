@@ -360,7 +360,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
 
       if (data.success && data.leadId) {
         trackLeadCapture({
-          sourceTool: 'true-cost-calculator',
+          sourceTool: 'true-cost-calculator' satisfies SourceTool,
           email: values.email,
           hasPhone: true,
         });

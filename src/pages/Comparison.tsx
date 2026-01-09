@@ -14,6 +14,7 @@ import { GenerateComparisonReportButton } from '@/components/comparison/Generate
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+import type { SourceTool } from '@/types/sourceTool';
 
 export default function Comparison() {
   usePageTracking('comparison-tool');
@@ -90,7 +91,7 @@ export default function Comparison() {
         isOpen={showLeadModal}
         onClose={() => setShowLeadModal(false)}
         onSuccess={() => setShowLeadModal(false)}
-        sourceTool="comparison-tool"
+        sourceTool={'comparison-tool' satisfies SourceTool}
         sessionData={sessionData}
       />
 
