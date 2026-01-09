@@ -66,7 +66,7 @@ export function GameSetup({ onStart }: GameSetupProps) {
       </div>
       
       <div className="mt-12 text-[10px] text-slate-600 font-mono">
-        SYSTEM_ID: GEMINI-2.5-FLASH // LATENCY: 24ms // SECURE_CONNECTION
+        SYSTEM_ID: GEMINI-3-FLASH // LATENCY: 24ms // SECURE_CONNECTION
       </div>
     </div>
   );
