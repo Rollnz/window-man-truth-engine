@@ -3,12 +3,13 @@ import { FileSearch, Calculator, Shield, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/gtm';
 import { StampBadge } from './StampBadge';
+import { ROUTES } from '@/config/navigation';
 const TOOLS = [{
   id: 'quote-scanner',
   title: 'Quote Scanner',
   description: 'Upload your quote. Get a forensic analysis of hidden markups, inflated pricing, and negotiation leverage points.',
   icon: FileSearch,
-  path: '/quote-scanner',
+  path: ROUTES.QUOTE_SCANNER,
   image: '/images/beat-your-quote/quote-scanner.webp',
   accentColor: '#00D4FF'
 }, {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ClipboardCheck, Download, Clock, Smartphone, Shield, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { heroData } from '@/data/specChecklistData';
+import { ROUTES } from '@/config/navigation';
 
 interface SpecChecklistHeroProps {
   onCtaClick: () => void;
@@ -62,7 +63,7 @@ const SpecChecklistHero: React.FC<SpecChecklistHeroProps> = ({ onCtaClick }) => 
               <Button 
                 variant="outline" 
                 className="gap-2"
-                onClick={() => navigate('/quote-scanner')}
+                onClick={() => navigate(ROUTES.QUOTE_SCANNER)}
               >
                 Use our Quote Scanner <ArrowRight className="w-4 h-4" />
               </Button>

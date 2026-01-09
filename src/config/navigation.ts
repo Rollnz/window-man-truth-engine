@@ -83,6 +83,7 @@ export const FOOTER_NAV = {
  */
 export const ROUTE_ALIASES = {
   '/11tactics': ROUTES.SALES_TACTICS_GUIDE,
+  '/quote-scanner': ROUTES.QUOTE_SCANNER, // Legacy redirect
 } as const;
 
 /**

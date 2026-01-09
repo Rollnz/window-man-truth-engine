@@ -23,6 +23,7 @@ import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { getAttributionData } from '@/lib/attribution';
+import { ROUTES } from '@/config/navigation';
 
 const KitchenTableGuide = () => {
   usePageTracking('kitchen-table-guide');
@@ -74,7 +75,7 @@ const KitchenTableGuide = () => {
       });
       
       setTimeout(() => {
-        navigate('/quote-scanner');
+        navigate(ROUTES.QUOTE_SCANNER);
       }, 1500);
       
     } catch (error) {
@@ -107,7 +108,7 @@ const KitchenTableGuide = () => {
 
             <div className="hidden md:flex items-center space-x-6">
               <button 
-                onClick={() => navigate('/quote-scanner')}
+                onClick={() => navigate(ROUTES.QUOTE_SCANNER)}
                 className="text-muted-foreground hover:text-foreground transition-colors text-sm"
               >
                 Quote Scanner
@@ -166,7 +167,7 @@ const KitchenTableGuide = () => {
                 <Button 
                   variant="outline" 
                   className="gap-2"
-                  onClick={() => navigate('/quote-scanner')}
+                  onClick={() => navigate(ROUTES.QUOTE_SCANNER)}
                 >
                   Scan it for pressure tactics <ArrowRight className="w-4 h-4" />
                 </Button>
@@ -442,7 +443,7 @@ const KitchenTableGuide = () => {
                 variant="outline" 
                 size="sm" 
                 className="w-full gap-2"
-                onClick={() => navigate('/quote-scanner')}
+                onClick={() => navigate(ROUTES.QUOTE_SCANNER)}
               >
                 Scan My Quote <ArrowRight className="w-4 h-4" />
               </Button>

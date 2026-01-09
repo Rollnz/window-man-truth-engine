@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import { useSessionData } from '@/hooks/useSessionData';
+import { ROUTES } from '@/config/navigation';
 interface OutcomeFoldersProps {
   isVisible: boolean;
   triggerCount?: number;
@@ -182,7 +183,7 @@ export function OutcomeFolders({
           description: 'Redirecting to Quote Scanner...'
         });
         setTimeout(() => {
-          navigate('/quote-scanner');
+          navigate(ROUTES.QUOTE_SCANNER);
         }, 1500);
       } else {
         throw new Error(data.error || 'Failed to save');
