@@ -101,7 +101,7 @@ const SalesTacticsGuide = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <button 
-              onClick={() => navigate('/')}
+              onClick={() => navigate(ROUTES.HOME)}
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
             >
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-sm">
@@ -118,7 +118,7 @@ const SalesTacticsGuide = () => {
                 Quote Scanner
               </button>
               <button 
-                onClick={() => navigate('/intel')}
+                onClick={() => navigate(ROUTES.INTEL)}
                 className="text-muted-foreground hover:text-foreground transition-colors text-sm"
               >
                 Intel Library
@@ -466,7 +466,7 @@ const SalesTacticsGuide = () => {
                 variant="outline" 
                 size="sm" 
                 className="w-full gap-2"
-                onClick={() => navigate('/kitchen-table-guide')}
+                onClick={() => navigate(ROUTES.KITCHEN_TABLE_GUIDE)}
               >
                 Get the Guide <ArrowRight className="w-4 h-4" />
               </Button>
@@ -484,7 +484,7 @@ const SalesTacticsGuide = () => {
                 variant="outline" 
                 size="sm" 
                 className="w-full gap-2"
-                onClick={() => navigate('/cost-calculator')}
+                onClick={() => navigate(ROUTES.COST_CALCULATOR)}
               >
                 Calculate Costs <ArrowRight className="w-4 h-4" />
               </Button>
@@ -504,13 +504,13 @@ const SalesTacticsGuide = () => {
               <span className="text-sm text-muted-foreground">© 2025 Windowman Vault</span>
             </div>
             <div className="flex gap-6 text-sm text-muted-foreground">
-              <button onClick={() => navigate('/privacy')} className="hover:text-foreground transition-colors">
+              <button onClick={() => navigate(ROUTES.PRIVACY)} className="hover:text-foreground transition-colors">
                 Privacy
               </button>
-              <button onClick={() => navigate('/terms')} className="hover:text-foreground transition-colors">
+              <button onClick={() => navigate(ROUTES.TERMS)} className="hover:text-foreground transition-colors">
                 Terms
               </button>
-              <button onClick={() => navigate('/intel')} className="hover:text-foreground transition-colors">
+              <button onClick={() => navigate(ROUTES.INTEL)} className="hover:text-foreground transition-colors">
                 Intel Library
               </button>
             </div>

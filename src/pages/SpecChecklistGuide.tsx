@@ -56,7 +56,7 @@ const SpecChecklistGuide = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <button 
-              onClick={() => navigate('/')}
+              onClick={() => navigate(ROUTES.HOME)}
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
             >
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-sm">
@@ -107,7 +107,7 @@ const SpecChecklistGuide = () => {
               </button>
               <button
                 onClick={() => {
-                  navigate('/intel');
+                  navigate(ROUTES.INTEL);
                   setMobileMenuOpen(false);
                 }}
                 className="block w-full text-left px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm"
@@ -116,7 +116,7 @@ const SpecChecklistGuide = () => {
               </button>
               <button
                 onClick={() => {
-                  navigate('/tools');
+                  navigate(ROUTES.TOOLS);
                   setMobileMenuOpen(false);
                 }}
                 className="block w-full text-left px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm"
@@ -190,7 +190,7 @@ const SpecChecklistGuide = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 See the true 10-year cost of waiting vs. acting now.
               </p>
-              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate('/cost-calculator')}>
+              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate(ROUTES.COST_CALCULATOR)}>
                 Calculate Now <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
@@ -206,10 +206,10 @@ const SpecChecklistGuide = () => {
               © {new Date().getFullYear()} Its Window Man. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm text-muted-foreground">
-              <button onClick={() => navigate('/privacy')} className="hover:text-foreground transition-colors">
+              <button onClick={() => navigate(ROUTES.PRIVACY)} className="hover:text-foreground transition-colors">
                 Privacy Policy
               </button>
-              <button onClick={() => navigate('/terms')} className="hover:text-foreground transition-colors">
+              <button onClick={() => navigate(ROUTES.TERMS)} className="hover:text-foreground transition-colors">
                 Terms of Service
               </button>
             </div>

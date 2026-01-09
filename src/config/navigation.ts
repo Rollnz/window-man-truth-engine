@@ -20,6 +20,7 @@ export const ROUTES = {
   RISK_DIAGNOSTIC: '/risk-diagnostic',
   FAST_WIN: '/fast-win',
   VULNERABILITY_TEST: '/vulnerability-test',
+  FAIR_PRICE_QUIZ: '/fair-price-quiz',
 
   // Content Tools
   EVIDENCE: '/evidence',
@@ -78,12 +79,12 @@ export const FOOTER_NAV = {
 } as const;
 
 /**
- * Route Aliases
- * Alternative paths that map to the same components
+ * Route Redirects (Legacy URLs)
+ * These paths redirect to their canonical destinations.
+ * The browser URL will change to the destination.
  */
-export const ROUTE_ALIASES = {
-  '/11tactics': ROUTES.SALES_TACTICS_GUIDE,
-  '/quote-scanner': ROUTES.QUOTE_SCANNER, // Legacy redirect
+export const ROUTE_REDIRECTS = {
+  '/quote-scanner': ROUTES.QUOTE_SCANNER,
 } as const;
 
 /**

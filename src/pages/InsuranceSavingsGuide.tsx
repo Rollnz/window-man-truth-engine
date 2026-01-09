@@ -99,7 +99,7 @@ const InsuranceSavingsGuide = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <button 
-              onClick={() => navigate('/')}
+              onClick={() => navigate(ROUTES.HOME)}
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
             >
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-sm">
@@ -110,13 +110,13 @@ const InsuranceSavingsGuide = () => {
 
             <div className="hidden md:flex items-center space-x-6">
               <button 
-                onClick={() => navigate('/cost-calculator')}
+                onClick={() => navigate(ROUTES.COST_CALCULATOR)}
                 className="text-muted-foreground hover:text-foreground transition-colors text-sm"
               >
                 Cost Calculator
               </button>
               <button 
-                onClick={() => navigate('/intel')}
+                onClick={() => navigate(ROUTES.INTEL)}
                 className="text-muted-foreground hover:text-foreground transition-colors text-sm"
               >
                 Intel Library
@@ -169,7 +169,7 @@ const InsuranceSavingsGuide = () => {
                 <Button 
                   variant="outline" 
                   className="gap-2"
-                  onClick={() => navigate('/cost-calculator')}
+                  onClick={() => navigate(ROUTES.COST_CALCULATOR)}
                 >
                   Use the Cost Calculator <ArrowRight className="w-4 h-4" />
                 </Button>
@@ -439,7 +439,7 @@ const InsuranceSavingsGuide = () => {
                 variant="outline" 
                 size="sm" 
                 className="w-full gap-2"
-                onClick={() => navigate('/cost-calculator')}
+                onClick={() => navigate(ROUTES.COST_CALCULATOR)}
               >
                 Calculate Savings <ArrowRight className="w-4 h-4" />
               </Button>
@@ -457,7 +457,7 @@ const InsuranceSavingsGuide = () => {
                 variant="outline" 
                 size="sm" 
                 className="w-full gap-2"
-                onClick={() => navigate('/risk-diagnostic')}
+                onClick={() => navigate(ROUTES.RISK_DIAGNOSTIC)}
               >
                 Check My Risk <ArrowRight className="w-4 h-4" />
               </Button>
@@ -495,13 +495,13 @@ const InsuranceSavingsGuide = () => {
               <span className="text-sm text-muted-foreground">© 2025 Windowman Vault</span>
             </div>
             <div className="flex gap-6 text-sm text-muted-foreground">
-              <button onClick={() => navigate('/privacy')} className="hover:text-foreground transition-colors">
+              <button onClick={() => navigate(ROUTES.PRIVACY)} className="hover:text-foreground transition-colors">
                 Privacy
               </button>
-              <button onClick={() => navigate('/terms')} className="hover:text-foreground transition-colors">
+              <button onClick={() => navigate(ROUTES.TERMS)} className="hover:text-foreground transition-colors">
                 Terms
               </button>
-              <button onClick={() => navigate('/intel')} className="hover:text-foreground transition-colors">
+              <button onClick={() => navigate(ROUTES.INTEL)} className="hover:text-foreground transition-colors">
                 Intel Library
               </button>
             </div>
