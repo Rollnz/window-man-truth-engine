@@ -28,6 +28,7 @@ import { toast } from '@/hooks/use-toast';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
 import { getAttributionData } from '@/lib/attribution';
 import { ROUTES } from '@/config/navigation';
+import type { SourceTool } from '@/types/sourceTool';
 
 const SalesTacticsGuide = () => {
   usePageTracking('sales-tactics-guide');
@@ -60,7 +61,7 @@ const SalesTacticsGuide = () => {
         body: {
           email: values.email,
           name: values.name,
-          sourceTool: 'sales-tactics-guide',
+          sourceTool: 'sales-tactics-guide' satisfies SourceTool,
           attribution: getAttributionData(),
           aiContext: { source_form: 'sales-tactics-guide' },
         },

@@ -11,6 +11,7 @@ import { usePageTracking } from '@/hooks/usePageTracking';
 import { trackEvent, trackLeadCapture, trackToolCompletion } from '@/lib/gtm';
 import { supabase } from '@/integrations/supabase/client';
 import { getAttributionData } from '@/lib/attribution';
+import type { SourceTool } from '@/types/sourceTool';
 
 type Phase = 'hero' | 'quiz' | 'analysis' | 'blur-gate' | 'results';
 
@@ -114,7 +115,7 @@ export default function FairPriceQuiz() {
         body: {
           email,
           name,
-          source_tool: 'fair-price-quiz',
+          source_tool: 'fair-price-quiz' satisfies SourceTool,
           source_form: 'blur-gate',
           session_data: {
             quizAnswers,
@@ -128,7 +129,7 @@ export default function FairPriceQuiz() {
 
       // Track lead capture via GTM
       trackLeadCapture({
-        sourceTool: 'fair-price-quiz',
+        sourceTool: 'fair-price-quiz' satisfies SourceTool,
         email,
         leadScore,
         hasPhone: false,
