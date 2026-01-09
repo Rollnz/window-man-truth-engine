@@ -315,8 +315,20 @@
      GLASS FRAME THEME - Light Mode Utilities
      ============================================ */
 
+  /* Shimmer animation - light reflecting off window frame */
+  @keyframes frame-shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
   /* Glass Frame Card Effect - Architectural window frame look */
   .light .frame-card {
+    position: relative;
+    overflow: hidden;
     background: linear-gradient(
       145deg,
       hsl(210 40% 99%) 0%,
@@ -329,6 +341,32 @@
       0 16px 48px hsl(209 40% 50% / 0.08),
       inset 0 2px 4px hsl(0 0% 100% / 0.8),
       inset 0 -2px 6px hsl(209 40% 70% / 0.15);
+  }
+
+  /* Shimmer pseudo-element for frame effect */
+  .light .frame-card::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 40%,
+      hsl(0 0% 100% / 0.6) 50%,
+      transparent 60%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .light .frame-card:hover::before {
+    opacity: 1;
+    animation: frame-shimmer 1.5s ease-in-out;
   }
 
   .light .frame-card:hover {
@@ -499,12 +537,40 @@
     transform: translateY(-2px);
   }
 
-  /* Light mode - Glass Frame lift effect */
+  /* Light mode - Glass Frame lift effect with shimmer */
   .light .card-hover {
+    position: relative;
+    overflow: hidden;
     border: 3px solid hsl(209 40% 82%);
     box-shadow: 
       0 4px 12px hsl(209 40% 50% / 0.08),
       inset 0 1px 0 hsl(0 0% 100% / 0.8);
+  }
+
+  /* Shimmer pseudo-element */
+  .light .card-hover::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 40%,
+      hsl(0 0% 100% / 0.5) 50%,
+      transparent 60%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .light .card-hover:hover::after {
+    opacity: 1;
+    animation: frame-shimmer 1.2s ease-in-out;
   }
 
   .light .card-hover:hover {
