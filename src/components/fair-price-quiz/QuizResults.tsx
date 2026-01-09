@@ -72,10 +72,11 @@ export function QuizResults({
 
     setIsSubmitting(true);
     
-    // Track phone lead capture
+    // Track phone lead capture with quote value for FB optimization
     trackPhoneLead({
       grade: analysis.grade,
       leadScore: 75, // Base score with phone
+      quoteAmount: analysis.quoteAmount,
       toolName: 'fair-price-quiz',
     });
     
