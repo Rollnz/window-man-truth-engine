@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { fastAIRequest } from '@/lib/aiRequest';
+import { TimeoutError, getErrorMessage } from '@/lib/errors';
 import type { Message, TacticLog, Difficulty, AnalysisResult } from '@/types/roleplay';
 
 interface UseRoleplayAIOptions {
@@ -34,12 +35,10 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
     setIsLoading(true);
     setError(null);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke('roleplay-chat', {
-        body: {
+      const { data, error: requestError } = await fastAIRequest.sendRequest<{ response?: string; error?: string }>(
+        'roleplay-chat',
+        {
           mode: 'chat',
           userMessage,
           conversationHistory: conversationHistory.map(m => ({
@@ -48,12 +47,10 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
           })),
           difficulty
         }
-      });
+      );
 
-      clearTimeout(timeoutId);
-
-      if (invokeError) {
-        throw new Error(invokeError.message);
+      if (requestError) {
+        throw requestError;
       }
 
       if (data?.error) {
@@ -68,17 +65,9 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
       return { text: cleanedText, tacticLog };
 
     } catch (e) {
-      clearTimeout(timeoutId);
       setIsLoading(false);
       
-      let errorMessage = 'Failed to get AI response';
-      if (e instanceof Error) {
-        if (e.name === 'AbortError' || e.message.includes('abort')) {
-          errorMessage = 'Request timed out. Please try again.';
-        } else {
-          errorMessage = e.message;
-        }
-      }
+      const errorMessage = getErrorMessage(e);
       setError(errorMessage);
       
       // Fallback response
@@ -105,12 +94,10 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
     setIsLoading(true);
     setError(null);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke('roleplay-chat', {
-        body: {
+      const { data, error: requestError } = await fastAIRequest.sendRequest<{ analysis?: AnalysisResult; error?: string }>(
+        'roleplay-chat',
+        {
           mode: 'analyze',
           transcript: transcript.map(m => ({
             role: m.role,
@@ -118,12 +105,10 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
           })),
           won
         }
-      });
+      );
 
-      clearTimeout(timeoutId);
-
-      if (invokeError) {
-        throw new Error(invokeError.message);
+      if (requestError) {
+        throw requestError;
       }
 
       if (data?.error) {
@@ -134,17 +119,9 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
       return data?.analysis || null;
 
     } catch (e) {
-      clearTimeout(timeoutId);
       setIsLoading(false);
       
-      let errorMessage = 'Analysis failed';
-      if (e instanceof Error) {
-        if (e.name === 'AbortError' || e.message.includes('abort')) {
-          errorMessage = 'Request timed out. Please try again.';
-        } else {
-          errorMessage = e.message;
-        }
-      }
+      const errorMessage = getErrorMessage(e);
       setError(errorMessage);
       return null;
     }

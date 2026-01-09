@@ -7,6 +7,8 @@ import { usePageTracking } from "@/hooks/usePageTracking";
 import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { ErrorBoundary, AIErrorFallback, getAIErrorType } from "@/components/error";
+import { heavyAIRequest } from "@/lib/aiRequest";
+import { TimeoutError, RateLimitError } from "@/lib/errors";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,68 +24,38 @@ import { RelatedToolsSection } from "@/components/quote-builder/RelatedToolsSect
 import { supabase } from "@/integrations/supabase/client";
 import { getAttributionData } from "@/lib/attribution";
 
-// Timeout error for AbortController
-class TimeoutError extends Error {
-  constructor(message: string = 'Request timed out') {
-    super(message);
-    this.name = 'TimeoutError';
-  }
-}
-
-// Rate limit error with upsell message
-class RateLimitError extends Error {
-  isAnonymous: boolean;
-  constructor(message: string, isAnonymous: boolean) {
-    super(message);
-    this.name = 'RateLimitError';
-    this.isAnonymous = isAnonymous;
-  }
-}
-
-// Secure AI call via Edge Function with 30s timeout
+// Secure AI call via Edge Function with 25s timeout and retries
 const callGemini = async (prompt: string): Promise<string> => {
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   for (let i = 0; i < 3; i++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
     try {
-      const { data, error } = await supabase.functions.invoke('generate-quote', {
-        body: { prompt }
-      });
+      const { data, error } = await heavyAIRequest.sendRequest<{ text?: string; error?: string; isAnonymous?: boolean }>(
+        'generate-quote',
+        { prompt }
+      );
 
-      clearTimeout(timeoutId);
-
-      // Check for rate limit error (429)
-      if (error?.message?.includes('429') || data?.error?.includes('Rate limit')) {
-        const isAnonymous = data?.isAnonymous ?? true;
-        throw new RateLimitError(
-          data?.error || 'Rate limit exceeded. Please try again later.',
-          isAnonymous
-        );
+      // Check for rate limit error
+      if (error instanceof RateLimitError) {
+        throw error;
       }
 
       if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to generate response');
+        throw error;
       }
 
       if (data?.error) {
+        if (data.error.includes('Rate limit') || data.error.includes('429')) {
+          throw new RateLimitError(data.error, data.isAnonymous ?? true);
+        }
         throw new Error(data.error);
       }
 
       return data?.text || "I couldn't generate a response at this time.";
     } catch (error) {
-      clearTimeout(timeoutId);
-      
       // Don't retry rate limit or timeout errors
-      if (error instanceof RateLimitError) {
+      if (error instanceof RateLimitError || error instanceof TimeoutError) {
         throw error;
-      }
-      
-      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('abort'))) {
-        throw new TimeoutError('Request timed out. Please try again.');
       }
       
       console.error(`Attempt ${i + 1} failed:`, error);

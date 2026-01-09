@@ -15,6 +15,8 @@ import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { ErrorBoundary } from '@/components/error';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
+import { fastAIRequest, AI_TIMEOUTS } from '@/lib/aiRequest';
+import { TimeoutError, getErrorMessage } from '@/lib/errors';
 import { ArrowLeft, Bot, Save, Calendar, Check } from 'lucide-react';
 
 interface Message {
@@ -52,34 +54,23 @@ export default function Expert() {
     let assistantContent = '';
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/expert-chat`,
+      // Use streaming request with 15s timeout
+      const response = await fastAIRequest.sendStreamingRequest(
+        'expert-chat',
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          messages: [...messages, userMsg],
+          context: {
+            costOfInactionTotal: sessionData.costOfInactionTotal,
+            realityCheckScore: sessionData.realityCheckScore,
+            windowAge: sessionData.windowAge,
+            currentEnergyBill: sessionData.currentEnergyBill,
+            homeSize: sessionData.homeSize,
+            windowCount: sessionData.windowCount,
+            draftinessLevel: sessionData.draftinessLevel,
+            noiseLevel: sessionData.noiseLevel,
           },
-          body: JSON.stringify({
-            messages: [...messages, userMsg],
-            context: {
-              costOfInactionTotal: sessionData.costOfInactionTotal,
-              realityCheckScore: sessionData.realityCheckScore,
-              windowAge: sessionData.windowAge,
-              currentEnergyBill: sessionData.currentEnergyBill,
-              homeSize: sessionData.homeSize,
-              windowCount: sessionData.windowCount,
-              draftinessLevel: sessionData.draftinessLevel,
-              noiseLevel: sessionData.noiseLevel,
-            },
-          }),
         }
       );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to get response');
-      }
 
       if (!response.body) {
         throw new Error('No response body');
@@ -137,10 +128,10 @@ export default function Expert() {
 
     } catch (error) {
       console.error('Chat error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+      const errorMessage = getErrorMessage(error);
       setChatError(errorMessage);
       toast({
-        title: 'Error',
+        title: error instanceof TimeoutError ? 'Request Timed Out' : 'Error',
         description: errorMessage,
         variant: 'destructive',
       });
