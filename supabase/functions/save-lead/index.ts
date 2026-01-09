@@ -17,6 +17,7 @@ const allowedSourceTools = [
   'expert-system',
   'comparison-tool',
   'cost-calculator',
+  'true-cost-calculator',
   'claim-survival-kit',
   'fast-win',
   'intel-library',
