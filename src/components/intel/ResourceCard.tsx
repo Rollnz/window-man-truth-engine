@@ -23,7 +23,7 @@ export function ResourceCard({
   const buttonText = resource.id === 'claim-survival' ? 'Access System' : 'Access Guide';
 
   return (
-    <div className={`group relative flex flex-col p-6 rounded-xl bg-white transition-all duration-300 border-2 sm:border-[6px] sm:shadow-[inset_0_0_0_2px_rgba(0,0,0,0.08)] border-gray-200 sm:border-gray-400 hover:border-primary/50 ${hasFloatingImage ? 'overflow-visible' : ''}`}>
+    <div className={`group relative flex flex-col p-6 rounded-xl bg-card transition-all duration-300 frame-card ${hasFloatingImage ? '!overflow-visible' : ''}`}>
       {/* Floating book image */}
       {displayCoverUrl && (
         <FloatingBookImage
