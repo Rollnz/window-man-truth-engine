@@ -15,6 +15,7 @@ import { SessionData } from '@/hooks/useSessionData';
 import { Mail, Check, Loader2 } from 'lucide-react';
 import { trackEvent, trackModalOpen } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
+import { SourceTool } from '@/types/sourceTool';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -25,7 +26,7 @@ interface LeadCaptureModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (leadId: string) => void;
-  sourceTool: string;
+  sourceTool: SourceTool;
   sessionData: SessionData;
   chatHistory?: Message[];
 }

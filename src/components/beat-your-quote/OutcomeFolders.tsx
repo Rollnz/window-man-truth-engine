@@ -11,6 +11,7 @@ import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/use
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
+import type { SourceTool } from '@/types/sourceTool';
 interface OutcomeFoldersProps {
   isVisible: boolean;
   triggerCount?: number;
@@ -136,7 +137,7 @@ export function OutcomeFolders({
           email: values.email.trim(),
           name: name.trim(),
           phone: phone.trim(),
-          sourceTool: 'beat-your-quote',
+          sourceTool: 'beat-your-quote' satisfies SourceTool,
           sessionData: {
             ...sessionData,
             projectCost: projectCost.replace(/[^0-9]/g, ''),
@@ -173,7 +174,7 @@ export function OutcomeFolders({
           time_to_complete_seconds: timeToComplete
         });
         trackLeadCapture({
-          sourceTool: 'beat-your-quote',
+          sourceTool: 'beat-your-quote' satisfies SourceTool,
           email: values.email.trim(),
           hasPhone: true,
           leadScore: completedFieldsCount + (projectCost ? 1 : 0) + (windowCount ? 1 : 0)

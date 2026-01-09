@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-import { SOURCE_TOOLS } from "../_shared/sourceTools.ts";
 
 // ============= Rate Limiting Configuration =============
 const RATE_LIMITS = {
@@ -14,8 +13,24 @@ const RATE_LIMITS = {
 
 const phoneRegex = /^[+]?[0-9\s\-()]{10,20}$/;
 
-// Use shared source tools list
-const allowedSourceTools = SOURCE_TOOLS;
+const allowedSourceTools = [
+  'expert-system',
+  'comparison-tool',
+  'cost-calculator',
+  'claim-survival-kit',
+  'fast-win',
+  'intel-library',
+  'risk-diagnostic',
+  'reality-check',
+  'evidence-locker',
+  'kitchen-table-guide',
+  'sales-tactics-guide',
+  'spec-checklist-guide',
+  'insurance-savings-guide',
+  'quote-builder',
+  'beat-your-quote',
+  'fair-price-quiz'
+] as const;
 
 // Session data schema with size limit
 const sessionDataSchema = z.record(z.unknown()).refine(

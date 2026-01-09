@@ -3,7 +3,7 @@
  * 
  * IMPORTANT: Keep this list in sync with:
  * - supabase/functions/_shared/sourceTools.ts
- * - supabase/functions/save-lead/index.ts (allowedSourceTools array)
+ * - supabase/functions/save-lead/index.ts (uses the shared module)
  */
 export const SOURCE_TOOLS = [
   'expert-system',

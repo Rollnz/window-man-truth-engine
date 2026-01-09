@@ -14,6 +14,7 @@ import { ShuffleAnimation } from '@/components/fast-win/ShuffleAnimation';
 import { WinnerCard } from '@/components/fast-win/WinnerCard';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
+import type { SourceTool } from '@/types/sourceTool';
 
 type Phase = 'hero' | 'questions' | 'calculating' | 'result';
 
@@ -169,7 +170,7 @@ export default function FastWin() {
         isOpen={showLeadModal}
         onClose={() => setShowLeadModal(false)}
         onSuccess={handleLeadSuccess}
-        sourceTool="fast-win"
+        sourceTool={'fast-win' satisfies SourceTool}
         sessionData={sessionData}
       />
 

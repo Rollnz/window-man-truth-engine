@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { getAttributionData } from '@/lib/attribution';
 import { ROUTES } from '@/config/navigation';
+import type { SourceTool } from '@/types/sourceTool';
 
 const KitchenTableGuide = () => {
   usePageTracking('kitchen-table-guide');
@@ -56,7 +57,7 @@ const KitchenTableGuide = () => {
         body: {
           email: values.email,
           name: values.name,
-          sourceTool: 'kitchen-table-guide',
+          sourceTool: 'kitchen-table-guide' satisfies SourceTool,
           attribution: getAttributionData(),
           aiContext: { source_form: 'kitchen-table-guide' },
         },

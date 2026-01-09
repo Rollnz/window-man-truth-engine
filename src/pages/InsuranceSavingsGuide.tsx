@@ -26,6 +26,7 @@ import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { getAttributionData } from '@/lib/attribution';
+import type { SourceTool } from '@/types/sourceTool';
 
 const InsuranceSavingsGuide = () => {
   usePageTracking('insurance-savings-guide');
@@ -58,7 +59,7 @@ const InsuranceSavingsGuide = () => {
         body: {
           email: values.email,
           name: values.name,
-          sourceTool: 'insurance-savings-guide',
+          sourceTool: 'insurance-savings-guide' satisfies SourceTool,
           attribution: getAttributionData(),
           aiContext: { source_form: 'insurance-savings-guide' },
         },

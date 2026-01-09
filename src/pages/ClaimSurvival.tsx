@@ -24,6 +24,7 @@ import { EvidenceAnalysisModal } from '@/components/claim-survival/EvidenceAnaly
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { claimDocuments } from '@/data/claimSurvivalData';
+import type { SourceTool } from '@/types/sourceTool';
 
 export default function ClaimSurvival() {
   usePageTracking('claim-survival-kit');
@@ -404,7 +405,7 @@ export default function ClaimSurvival() {
           setPendingUploadDocId(null);
         }}
         onSuccess={handleLeadSuccess}
-        sourceTool="claim-survival-kit"
+        sourceTool={'claim-survival-kit' satisfies SourceTool}
         sessionData={sessionData}
       />
 

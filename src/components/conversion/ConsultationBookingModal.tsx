@@ -23,6 +23,7 @@ import { SessionData } from '@/hooks/useSessionData';
 import { Calendar, Check, Loader2 } from 'lucide-react';
 import { trackEvent, trackModalOpen } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
+import type { SourceTool } from '@/types/sourceTool';
 
 interface ConsultationBookingModalProps {
   isOpen: boolean;
@@ -107,7 +108,7 @@ export function ConsultationBookingModal({
             email: values.email.trim(),
             name: values.name.trim(),
             phone: values.phone.trim(),
-            sourceTool: 'expert-system',
+            sourceTool: 'expert-system' satisfies SourceTool,
             sessionData,
             consultation: {
               name: values.name.trim(),

@@ -13,6 +13,7 @@ import RealityReport from "@/components/reality-check/RealityReport";
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { trackLeadCapture, trackConsultation, trackToolCompletion } from "@/lib/gtm";
+import type { SourceTool } from "@/types/sourceTool";
 
 const QUESTIONS = [
   {
@@ -195,7 +196,7 @@ const RealityCheck = () => {
     
     // Track lead capture in GTM
     trackLeadCapture({
-      sourceTool: 'reality-check',
+      sourceTool: 'reality-check' satisfies SourceTool,
       email: sessionData.email || '',
       leadScore: score,
     });

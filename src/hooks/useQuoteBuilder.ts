@@ -16,6 +16,7 @@ import type {
   CartItem, QuoteBuilderState, LeadFormData, QuickBuildItem,
   UseQuoteBuilderReturn 
 } from "@/types/quote-builder";
+import type { SourceTool } from "@/types/sourceTool";
 
 export function useQuoteBuilder(): UseQuoteBuilderReturn {
   const [state, setState] = useState<QuoteBuilderState>({
@@ -231,7 +232,7 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
             email: data.email.trim(),
             name: data.name.trim() || null,
             phone: data.phone.trim() || null,
-            sourceTool: 'quote-builder',
+            sourceTool: 'quote-builder' satisfies SourceTool,
             sessionData: { cartItems: cart.length, estimateTotal: grandTotal, zipCode: state.zipCode },
             chatHistory: [],
             attribution: getAttributionData(),

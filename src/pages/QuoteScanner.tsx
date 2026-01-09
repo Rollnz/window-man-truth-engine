@@ -10,6 +10,7 @@ import { GenerateProposalButton } from '@/components/quote-scanner/GeneratePropo
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
 import { useQuoteScanner } from '@/hooks/useQuoteScanner';
+import type { SourceTool } from '@/types/sourceTool';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { ErrorBoundary } from '@/components/error';
@@ -156,7 +157,7 @@ export default function QuoteScanner() {
         isOpen={showLeadCapture}
         onClose={() => setShowLeadCapture(false)}
         onSuccess={handleLeadCaptureSuccess}
-        sourceTool="quote-scanner"
+        sourceTool={'quote-scanner' satisfies SourceTool}
         sessionData={sessionData}
       />
     </div>

@@ -23,11 +23,13 @@ export const trackPageView = (url: string) => {
   trackEvent('page_view', { page_path: url });
 };
 
+import type { SourceTool } from '@/types/sourceTool';
+
 /**
  * Track lead capture (email submitted)
  */
 export const trackLeadCapture = (params: {
-  sourceTool: string;
+  sourceTool: SourceTool;
   email: string;
   leadScore?: number;
   hasPhone?: boolean;

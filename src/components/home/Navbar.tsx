@@ -3,39 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { useVaultNotifications } from '@/hooks/useVaultNotifications';
-import { Vault, LogIn, Menu, X, Target, Sun, Moon } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Vault, LogIn, Menu, X, Target } from 'lucide-react';
+import { useState } from 'react';
 import { ROUTES } from '@/config/navigation';
-
-function useTheme() {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('impact_truth_theme');
-      if (saved === 'light' || saved === 'dark') return saved;
-      return document.documentElement.classList.contains('light') ? 'light' : 'dark';
-    }
-    return 'dark';
-  });
-
-  useEffect(() => {
-    if (theme === 'light') {
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
-    }
-    localStorage.setItem('impact_truth_theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-
-  return { theme, toggleTheme };
-}
 
 export function Navbar() {
   const { isAuthenticated, loading } = useAuth();
   const { hasNotifications, incompleteToolsCount, hasMissingDocuments } = useVaultNotifications();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { theme, toggleTheme } = useTheme();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -73,17 +48,6 @@ export function Navbar() {
             Beat Your Quote
           </Link>
           
-          {/* Theme Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="h-9 w-9"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
-
           {/* Auth Button */}
           {!loading && (
             isAuthenticated ? (
@@ -117,24 +81,14 @@ export function Navbar() {
         </div>
 
         {/* Mobile Menu Button */}
-        <div className="flex items-center gap-2 md:hidden">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="h-9 w-9"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
-        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="md:hidden"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </Button>
       </div>
 
       {/* Mobile Menu */}

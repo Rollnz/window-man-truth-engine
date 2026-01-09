@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { getAttributionData } from '@/lib/attribution';
 import { trackEvent, trackLeadCapture } from '@/lib/gtm';
 import { exitIntentData } from '@/data/specChecklistData';
+import type { SourceTool } from '@/types/sourceTool';
 
 interface ExitIntentModalProps {
   hasConverted: boolean;
@@ -140,7 +141,7 @@ const ExitIntentModal: React.FC<ExitIntentModalProps> = ({ hasConverted, onSucce
         body: {
           email: values.email,
           name: 'Friend', // Default name for exit intent
-          sourceTool: 'spec-checklist-guide',
+          sourceTool: 'spec-checklist-guide' satisfies SourceTool,
           attribution: getAttributionData(),
           aiContext: { 
             source_form: 'spec-checklist-guide-exit-intent',
@@ -155,7 +156,7 @@ const ExitIntentModal: React.FC<ExitIntentModalProps> = ({ hasConverted, onSucce
       });
       
       trackLeadCapture({
-        sourceTool: 'spec-checklist-guide',
+        sourceTool: 'spec-checklist-guide' satisfies SourceTool,
         email: values.email,
         leadScore: 30, // Lower value than main CTA
         hasPhone: false,
