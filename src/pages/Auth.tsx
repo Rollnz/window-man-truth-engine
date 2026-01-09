@@ -12,6 +12,8 @@ import { z } from 'zod';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { ROUTES } from '@/config/navigation';
 
+const STORAGE_KEY = 'impact-windows-session';
+
 const emailSchema = z.string().email('Please enter a valid email address');
 
 export default function Auth() {
@@ -29,10 +31,26 @@ export default function Auth() {
   // Redirect if already authenticated
   useEffect(() => {
     if (!loading && isAuthenticated) {
+      // Check for pending Vault sync from Fair Price Quiz
+      try {
+        const storedData = localStorage.getItem(STORAGE_KEY);
+        if (storedData) {
+          const sessionData = JSON.parse(storedData);
+          if (sessionData.vaultSyncPending) {
+            toast({
+              title: "Welcome back!",
+              description: "Your Fair Price Analysis is ready in your Vault.",
+            });
+          }
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+      
       const redirectTo = searchParams.get('redirect') || ROUTES.VAULT;
       navigate(redirectTo);
     }
-  }, [isAuthenticated, loading, navigate, searchParams]);
+  }, [isAuthenticated, loading, navigate, searchParams, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

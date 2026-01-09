@@ -1,17 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Phone, AlertTriangle, TrendingDown, Info, Bot, CheckCircle } from 'lucide-react';
-import { PriceAnalysis, formatCurrency, getRedFlagDescriptions } from '@/lib/fairPriceCalculations';
+import { Phone, AlertTriangle, TrendingDown, Info, Bot, CheckCircle, Vault } from 'lucide-react';
+import { PriceAnalysis, formatCurrency, getRedFlagDescriptions, QuizAnswers } from '@/lib/fairPriceCalculations';
 import { gradeConfig } from '@/data/fairPriceQuizData';
-import { QuizAnswers } from '@/lib/fairPriceCalculations';
+import { VaultSyncButton } from './VaultSyncButton';
+import { WhyVaultFAQ } from './WhyVaultFAQ';
+import { DownsellStickyFooter } from './DownsellStickyFooter';
+import { trackPriceAnalysisViewed, trackPhoneLead } from '@/lib/gtm';
 
 interface QuizResultsProps {
   analysis: PriceAnalysis;
   answers: QuizAnswers;
   userName: string;
+  userEmail: string;
   onPhoneSubmit: (phone: string) => void;
 }
 
@@ -19,15 +23,29 @@ export function QuizResults({
   analysis,
   answers,
   userName,
+  userEmail,
   onPhoneSubmit,
 }: QuizResultsProps) {
   const [phone, setPhone] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [phoneSubmitted, setPhoneSubmitted] = useState(false);
+  
+  const phoneCTARef = useRef<HTMLDivElement>(null);
 
   const gradeInfo = gradeConfig[analysis.grade];
   const redFlagDescriptions = getRedFlagDescriptions(analysis.redFlags);
+
+  // Track analysis viewed on mount
+  useEffect(() => {
+    trackPriceAnalysisViewed({
+      grade: analysis.grade,
+      quoteAmount: analysis.quoteAmount,
+      fmvLow: analysis.fairMarketValue.low,
+      fmvHigh: analysis.fairMarketValue.high,
+      overagePct: analysis.overagePercentage,
+    });
+  }, [analysis]);
 
   // Phone formatting
   const formatPhoneInput = (value: string) => {
@@ -53,6 +71,14 @@ export function QuizResults({
     }
 
     setIsSubmitting(true);
+    
+    // Track phone lead capture
+    trackPhoneLead({
+      grade: analysis.grade,
+      leadScore: 75, // Base score with phone
+      toolName: 'fair-price-quiz',
+    });
+    
     await onPhoneSubmit(digits);
     setPhoneSubmitted(true);
     setIsSubmitting(false);
@@ -150,82 +176,127 @@ export function QuizResults({
           </div>
         </Card>
 
-        {/* Phone CTA - WindowMan AI */}
-        {!phoneSubmitted ? (
-          <Card className="p-6 mb-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
-            <div className="flex items-center gap-3 mb-4">
-              <Bot className="w-8 h-8 text-primary" />
-              <div>
-                <h3 className="text-lg font-bold text-foreground">
-                  Get a Precise Quote Analysis from WindowMan
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Voice AI trained on 1,000+ Florida installations
-                </p>
+        {/* Phone CTA Section */}
+        <div ref={phoneCTARef}>
+          {!phoneSubmitted ? (
+            <Card className="p-6 mb-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
+              <div className="flex items-center gap-3 mb-4">
+                <Bot className="w-8 h-8 text-primary" />
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">
+                    Get a Precise Quote Analysis from WindowMan
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Voice AI trained on 1,000+ Florida installations
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-primary">🎯</span>
-                <span className="text-muted-foreground">Instant Expert Consultation</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-primary">🎯</span>
+                  <span className="text-muted-foreground">Instant Expert Consultation</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-primary">💬</span>
+                  <span className="text-muted-foreground">Zero Sales Pressure</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-primary">⚡</span>
+                  <span className="text-muted-foreground">5-Minute Call</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-primary">💬</span>
-                <span className="text-muted-foreground">Zero Sales Pressure</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-primary">⚡</span>
-                <span className="text-muted-foreground">5-Minute Call</span>
-              </div>
-            </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="phone">Enter your phone number</Label>
-              <div className="relative">
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={handlePhoneChange}
-                  placeholder="(555) 123-4567"
-                  className={`w-full pr-10 ${phoneError ? 'border-destructive' : phone.replace(/\D/g, '').length === 10 ? 'border-success' : ''}`}
-                />
-                {phone.replace(/\D/g, '').length === 10 && !phoneError && (
-                  <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-success" />
+              <div className="space-y-3">
+                <Label htmlFor="phone">Enter your phone number</Label>
+                <div className="relative">
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    placeholder="(555) 123-4567"
+                    className={`w-full pr-10 ${phoneError ? 'border-destructive' : phone.replace(/\D/g, '').length === 10 ? 'border-success' : ''}`}
+                  />
+                  {phone.replace(/\D/g, '').length === 10 && !phoneError && (
+                    <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-success" />
+                  )}
+                </div>
+                <Button
+                  onClick={handlePhoneSubmit}
+                  disabled={isSubmitting}
+                  className="w-full glow"
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  {isSubmitting ? 'Scheduling...' : 'Call Me in 5 Minutes'}
+                </Button>
+                {phoneError && (
+                  <p className="text-sm text-destructive">{phoneError}</p>
                 )}
-              </div>
-              <Button
-                onClick={handlePhoneSubmit}
-                disabled={isSubmitting}
-                className="w-full glow"
-              >
-                <Phone className="w-4 h-4 mr-2" />
-                {isSubmitting ? 'Scheduling...' : 'Call Me in 5 Minutes'}
-              </Button>
-              {phoneError && (
-                <p className="text-sm text-destructive">{phoneError}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                ✓ No spam. One call to analyze your quote.
-              </p>
-            </div>
-          </Card>
-        ) : (
-          <Card className="p-6 mb-6 bg-success/10 border-success/30">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
-                <Phone className="w-5 h-5 text-success" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">Call Scheduled!</h3>
-                <p className="text-sm text-muted-foreground">
-                  WindowMan will call you within 5 minutes to discuss your quote.
+                <p className="text-xs text-muted-foreground">
+                  ✓ No spam. One call to analyze your quote.
                 </p>
               </div>
+            </Card>
+          ) : (
+            /* Post-Phone Success - Expert Call Requested with Vault Pitch */
+            <Card className="p-6 mb-6 bg-success/10 border-success/30">
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
+                    <Phone className="w-5 h-5 text-success" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Expert Call Requested!</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Our specialist is preparing your data.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-4">
+                  <p className="text-muted-foreground mb-4">
+                    Click below to sync these results to your Free Vault so your consultant can walk through your exact numbers during the call.
+                  </p>
+                  <VaultSyncButton
+                    userEmail={userEmail}
+                    userName={userName}
+                    analysis={analysis}
+                    variant="primary"
+                  />
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
+
+        {/* Standalone Vault Section (for users who don't want to call) */}
+        {!phoneSubmitted && (
+          <Card className="p-6 mb-6 bg-card border-border">
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center gap-2">
+                <Vault className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">
+                  Not ready for a call?
+                </h3>
+              </div>
+              <p className="text-muted-foreground">
+                Save your analysis to your Free Vault and access it anytime, on any device.
+              </p>
+              <VaultSyncButton
+                userEmail={userEmail}
+                userName={userName}
+                analysis={analysis}
+                variant="primary"
+              />
             </div>
           </Card>
         )}
+
+        {/* Why the Vault FAQ */}
+        <div className="mb-8">
+          <WhyVaultFAQ />
+        </div>
 
         {/* Footer disclaimer */}
         <p className="text-xs text-center text-muted-foreground mt-8">
@@ -233,6 +304,15 @@ export function QuizResults({
           Speaking with a professional will provide a more accurate assessment.
         </p>
       </div>
+
+      {/* Downsell Sticky Footer */}
+      <DownsellStickyFooter
+        phoneCTARef={phoneCTARef}
+        userEmail={userEmail}
+        userName={userName}
+        analysis={analysis}
+        phoneSubmitted={phoneSubmitted}
+      />
     </div>
   );
 }

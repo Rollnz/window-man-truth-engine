@@ -93,3 +93,65 @@ export const trackFormSubmit = (formName: string, additionalParams?: Record<stri
     ...additionalParams,
   });
 };
+
+/**
+ * Track phone lead capture (triggers FB Lead event via GTM)
+ */
+export const trackPhoneLead = (params: {
+  grade: string;
+  leadScore: number;
+  toolName?: string;
+}) => {
+  trackEvent('PhoneLeadCaptured', {
+    grade: params.grade,
+    lead_score: params.leadScore,
+    tool_name: params.toolName || 'fair-price-quiz',
+    fb_event: 'Lead',
+  });
+};
+
+/**
+ * Track Vault activation (triggers FB CompleteRegistration via GTM)
+ */
+export const trackVaultActivation = (params: {
+  source: string;
+  emailDomain?: string;
+}) => {
+  trackEvent('VaultActivated', {
+    source: params.source,
+    email_domain: params.emailDomain,
+    fb_event: 'CompleteRegistration',
+  });
+};
+
+/**
+ * Track price analysis viewed
+ */
+export const trackPriceAnalysisViewed = (params: {
+  grade: string;
+  quoteAmount: number;
+  fmvLow: number;
+  fmvHigh: number;
+  overagePct: number;
+}) => {
+  trackEvent('PriceAnalysisViewed', {
+    grade: params.grade,
+    quote_amount: params.quoteAmount,
+    fmv_low: params.fmvLow,
+    fmv_high: params.fmvHigh,
+    overage_pct: params.overagePct,
+  });
+};
+
+/**
+ * Track Vault sync button click
+ */
+export const trackVaultSyncClicked = (params: {
+  source: 'primary' | 'downsell' | 'standalone';
+  grade?: string;
+}) => {
+  trackEvent('VaultSyncClicked', {
+    source: params.source,
+    grade: params.grade,
+  });
+};
