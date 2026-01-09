@@ -3,14 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { useVaultNotifications } from '@/hooks/useVaultNotifications';
-import { Vault, LogIn, Menu, X, Target } from 'lucide-react';
+import { Vault, LogIn, Menu, X, Target, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
+import { useTheme } from 'next-themes';
 import { ROUTES } from '@/config/navigation';
 
 export function Navbar() {
   const { isAuthenticated, loading } = useAuth();
   const { hasNotifications, incompleteToolsCount, hasMissingDocuments } = useVaultNotifications();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -47,6 +49,16 @@ export function Navbar() {
             <Target className="w-4 h-4" />
             Beat Your Quote
           </Link>
+          
+          {/* Theme Toggle */}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="h-9 w-9"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
           
           {/* Auth Button */}
           {!loading && (
@@ -125,6 +137,26 @@ export function Navbar() {
               Beat Your Quote
             </span>
           </Link>
+          
+          {/* Theme Toggle - Mobile */}
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-full justify-start"
+          >
+            {theme === 'dark' ? (
+              <>
+                <Sun className="h-4 w-4 mr-2" />
+                Light Mode
+              </>
+            ) : (
+              <>
+                <Moon className="h-4 w-4 mr-2" />
+                Dark Mode
+              </>
+            )}
+          </Button>
           
           {!loading && (
             isAuthenticated ? (
