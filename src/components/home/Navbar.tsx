@@ -12,7 +12,7 @@ export function Navbar() {
   const { isAuthenticated, loading } = useAuth();
   const { hasNotifications, incompleteToolsCount, hasMissingDocuments } = useVaultNotifications();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -54,10 +54,10 @@ export function Navbar() {
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
             className="h-9 w-9"
           >
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
           
           {/* Auth Button */}
@@ -142,10 +142,10 @@ export function Navbar() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
             className="w-full justify-start"
           >
-            {theme === 'dark' ? (
+            {resolvedTheme === 'dark' ? (
               <>
                 <Sun className="h-4 w-4 mr-2" />
                 Light Mode

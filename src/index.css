@@ -60,27 +60,48 @@
     --sidebar-ring: 189 100% 50%;
   }
 
-  /* Light mode override (optional, but keeping for compatibility) */
+  /* Light mode - Glass Frame Theme */
   .light {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Glass Frame Theme - Soft Blue/White with Dimensional Depth */
+    --background: 210 35% 97%;           /* Soft blue-white #f5f8fa */
+    --foreground: 209 80% 12%;           /* Dark navy #0a2540 */
+    
+    --card: 210 40% 99%;                 /* Near-white with blue tint */
+    --card-foreground: 209 80% 12%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 189 100% 45%;
+    --popover-foreground: 209 80% 12%;
+    
+    /* Primary #3993DD = hsl(209, 68%, 55%) */
+    --primary: 209 68% 55%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 189 100% 45%;
+    
+    --secondary: 209 35% 93%;
+    --secondary-foreground: 209 60% 25%;
+    
+    --muted: 209 30% 92%;
+    --muted-foreground: 209 25% 42%;     /* WCAG AA: 5.2:1 */
+    
+    /* Accent uses deeper blue */
+    --accent: 209 72% 42%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 189 100% 45%;
+    
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Frame borders - prominent blue-gray */
+    --border: 209 40% 78%;
+    --input: 209 35% 88%;
+    --ring: 209 68% 55%;
+    
+    /* Glow for light mode */
+    --glow: 209 68% 55%;
+    --glow-muted: 209 50% 65%;
+    
+    /* Custom tokens for glass frame */
+    --frame: 209 50% 60%;                /* Thick frame borders */
+    --glass: 209 30% 96%;                /* Glass pane background */
+    --inset: 209 40% 88%;                /* Inset shadow color */
   }
 }
 
@@ -289,6 +310,180 @@
     font-family: 'Courier New', Courier, monospace;
     letter-spacing: 0.05em;
   }
+
+  /* ============================================
+     GLASS FRAME THEME - Light Mode Utilities
+     ============================================ */
+
+  /* Glass Frame Card Effect - Architectural window frame look */
+  .light .frame-card {
+    background: linear-gradient(
+      145deg,
+      hsl(210 40% 99%) 0%,
+      hsl(209 30% 96%) 100%
+    );
+    border: 4px solid hsl(209 40% 78%);
+    border-radius: 0.75rem;
+    box-shadow: 
+      0 8px 24px hsl(209 40% 50% / 0.12),
+      0 16px 48px hsl(209 40% 50% / 0.08),
+      inset 0 2px 4px hsl(0 0% 100% / 0.8),
+      inset 0 -2px 6px hsl(209 40% 70% / 0.15);
+  }
+
+  .light .frame-card:hover {
+    border-color: hsl(209 68% 55%);
+    transform: translateY(-4px);
+    box-shadow: 
+      0 12px 32px hsl(209 68% 55% / 0.18),
+      0 24px 56px hsl(209 40% 50% / 0.1),
+      inset 0 2px 4px hsl(0 0% 100% / 0.9),
+      inset 0 -2px 6px hsl(209 68% 55% / 0.1);
+  }
+
+  /* Thick Frame Border - Window sill effect */
+  .light .frame-border {
+    border: 4px solid hsl(209 40% 78%);
+    box-shadow: 
+      inset 0 0 0 1px hsl(209 50% 88%),
+      0 4px 12px hsl(209 40% 50% / 0.1);
+  }
+
+  .light .frame-border-strong {
+    border: 5px solid hsl(209 50% 60%);
+    box-shadow: 
+      inset 0 0 0 2px hsl(209 40% 92%),
+      0 6px 16px hsl(209 50% 40% / 0.15);
+  }
+
+  /* Glass Pane Effect - Subtle gradient + inset */
+  .light .glass-pane {
+    background: linear-gradient(
+      180deg,
+      hsl(0 0% 100%) 0%,
+      hsl(209 30% 97%) 100%
+    );
+    box-shadow: 
+      inset 0 1px 0 hsl(0 0% 100%),
+      inset 0 -1px 3px hsl(209 40% 80% / 0.3);
+  }
+
+  /* Inset Shadow - Pressed/recessed effect */
+  .light .inset-shadow {
+    box-shadow: 
+      inset 0 2px 6px hsl(209 40% 70% / 0.2),
+      inset 0 0 0 1px hsl(209 35% 85%);
+  }
+
+  .light .inset-shadow-strong {
+    box-shadow: 
+      inset 0 3px 8px hsl(209 40% 60% / 0.25),
+      inset 0 0 0 2px hsl(209 40% 80%);
+  }
+
+  /* Dimensional Button - 3D pressed effect */
+  .light .btn-dimensional {
+    background: linear-gradient(
+      180deg,
+      hsl(209 68% 58%) 0%,
+      hsl(209 68% 48%) 100%
+    );
+    border: 2px solid hsl(209 72% 40%);
+    box-shadow: 
+      0 4px 8px hsl(209 70% 35% / 0.25),
+      inset 0 1px 0 hsl(0 0% 100% / 0.25),
+      inset 0 -1px 0 hsl(209 70% 35% / 0.2);
+  }
+
+  .light .btn-dimensional:hover {
+    background: linear-gradient(
+      180deg,
+      hsl(209 68% 62%) 0%,
+      hsl(209 68% 52%) 100%
+    );
+  }
+
+  .light .btn-dimensional:active {
+    transform: translateY(2px);
+    box-shadow: 
+      0 2px 4px hsl(209 70% 35% / 0.2),
+      inset 0 2px 4px hsl(209 70% 35% / 0.15);
+  }
+
+  /* Secondary Button - Outlined frame style */
+  .light .btn-frame {
+    background: hsl(0 0% 100%);
+    border: 3px solid hsl(209 40% 78%);
+    color: hsl(209 68% 45%);
+    box-shadow: 
+      0 2px 6px hsl(209 40% 60% / 0.1),
+      inset 0 1px 0 hsl(0 0% 100%);
+  }
+
+  .light .btn-frame:hover {
+    border-color: hsl(209 68% 55%);
+    background: hsl(209 30% 97%);
+    box-shadow: 
+      0 4px 12px hsl(209 68% 55% / 0.15),
+      inset 0 1px 0 hsl(0 0% 100%);
+  }
+
+  /* Elevation Shadows - Architectural depth */
+  .light .shadow-glass {
+    box-shadow: 
+      0 4px 16px hsl(209 40% 50% / 0.1),
+      0 8px 32px hsl(209 40% 50% / 0.05);
+  }
+
+  .light .shadow-glass-lg {
+    box-shadow: 
+      0 8px 24px hsl(209 40% 50% / 0.12),
+      0 16px 48px hsl(209 40% 50% / 0.08);
+  }
+
+  /* Light mode gradient overrides */
+  .light .gradient-dark {
+    background: linear-gradient(
+      180deg,
+      hsl(210 35% 97%) 0%,
+      hsl(209 35% 94%) 100%
+    );
+  }
+
+  .light .gradient-radial {
+    background: radial-gradient(
+      ellipse at center,
+      hsl(209 68% 55% / 0.06) 0%,
+      transparent 70%
+    );
+  }
+
+  /* Subtle glow for light mode */
+  .light .glow {
+    box-shadow: 0 0 20px hsl(209 68% 55% / 0.2);
+  }
+
+  .light .glow-sm {
+    box-shadow: 0 0 12px hsl(209 68% 55% / 0.15);
+  }
+
+  .light .text-glow {
+    text-shadow: none;
+  }
+
+  /* Input field styling */
+  .light .input-frame {
+    background: hsl(0 0% 100%);
+    border: 2px solid hsl(209 35% 85%);
+    box-shadow: inset 0 1px 3px hsl(209 30% 80% / 0.2);
+  }
+
+  .light .input-frame:focus {
+    border-color: hsl(209 68% 55%);
+    box-shadow: 
+      inset 0 1px 3px hsl(209 30% 80% / 0.2),
+      0 0 0 3px hsl(209 68% 55% / 0.15);
+  }
 }
 
 @layer components {
@@ -297,14 +492,37 @@
     @apply transition-all duration-300 ease-out;
   }
 
+  /* Dark mode card hover - neon glow */
   .card-hover:hover {
     @apply border-primary/50;
     box-shadow: 0 0 20px hsl(var(--glow) / 0.2), 0 4px 20px hsl(0 0% 0% / 0.3);
     transform: translateY(-2px);
   }
 
+  /* Light mode - Glass Frame lift effect */
+  .light .card-hover {
+    border: 3px solid hsl(209 40% 82%);
+    box-shadow: 
+      0 4px 12px hsl(209 40% 50% / 0.08),
+      inset 0 1px 0 hsl(0 0% 100% / 0.8);
+  }
+
+  .light .card-hover:hover {
+    border-color: hsl(209 68% 55%);
+    box-shadow: 
+      0 12px 32px hsl(209 68% 55% / 0.15),
+      0 24px 48px hsl(209 40% 50% / 0.08),
+      inset 0 1px 0 hsl(0 0% 100% / 0.9);
+    transform: translateY(-5px);
+  }
+
   /* Animated stat counter */
   .stat-value {
     @apply text-primary font-bold text-glow;
+  }
+  
+  .light .stat-value {
+    @apply text-primary font-bold;
+    text-shadow: none;
   }
 }
