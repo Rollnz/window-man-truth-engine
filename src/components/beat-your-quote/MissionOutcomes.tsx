@@ -76,7 +76,8 @@ export function MissionOutcomes() {
 
           {/* Headline */}
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Three Homeowners. Three Quotes.{' '}
+            Three Homeowners. Three Quotes.
+            <br />
             <span className="text-primary">Three Outcomes.</span>
           </h2>
 
