@@ -1,5 +1,6 @@
 import React from 'react';
 import { Flame, Shield, Target, Skull, ChevronRight } from 'lucide-react';
+import { AI_MODEL_CONFIG } from '@/config/aiModel';
 import type { Difficulty } from '@/types/roleplay';
 
 const cn = (...classes: (string | undefined | null | false)[]) => {
@@ -66,7 +67,7 @@ export function GameSetup({ onStart }: GameSetupProps) {
       </div>
       
       <div className="mt-12 text-[10px] text-slate-600 font-mono">
-        SYSTEM_ID: GEMINI-3-FLASH // LATENCY: 24ms // SECURE_CONNECTION
+        SYSTEM_ID: {AI_MODEL_CONFIG.displayName} // LATENCY: 24ms // SECURE_CONNECTION
       </div>
     </div>
   );
