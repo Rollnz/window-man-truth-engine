@@ -378,7 +378,7 @@ export function OutcomeFolders({
           Let Me Beat Your Quote
           <ArrowRight className="ml-2 w-5 h-5" />
         </Button>
-        <p className="text-sm text-muted-foreground mt-3">
+        <p className="text-sm mt-3 text-primary-foreground">
           Upload your quote. Get results in 24 hours.
         </p>
       </div>
