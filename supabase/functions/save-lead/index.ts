@@ -29,8 +29,10 @@ const allowedSourceTools = [
   'spec-checklist-guide',
   'insurance-savings-guide',
   'quote-builder',
+  'quote-scanner',
   'beat-your-quote',
-  'fair-price-quiz'
+  'fair-price-quiz',
+  'vulnerability-test'
 ] as const;
 
 // Session data schema with size limit
