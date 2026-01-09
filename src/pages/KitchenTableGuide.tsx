@@ -461,7 +461,7 @@ const KitchenTableGuide = () => {
                 variant="outline" 
                 size="sm" 
                 className="w-full gap-2"
-                onClick={() => navigate('/comparison')}
+                onClick={() => navigate(ROUTES.COMPARISON)}
               >
                 Compare Quotes <ArrowRight className="w-4 h-4" />
               </Button>

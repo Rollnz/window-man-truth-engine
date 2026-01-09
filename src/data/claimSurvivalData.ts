@@ -1,5 +1,6 @@
 import { FileText, Camera, Receipt, Shield, Clock, AlertTriangle, Home, HardHat } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
+import { ROUTES } from '@/config/navigation';
 
 export interface ClaimDocument {
   id: string;
@@ -267,24 +268,24 @@ export const relatedTools = [
     id: 'comparison',
     name: 'Quote Comparison Scanner',
     description: 'Compare contractor quotes apples-to-apples',
-    path: '/comparison',
+    path: ROUTES.COMPARISON,
   },
   {
     id: 'risk-diagnostic',
     name: 'Protection Gap Finder',
     description: 'Identify insurance coverage blind spots',
-    path: '/risk-diagnostic',
+    path: ROUTES.RISK_DIAGNOSTIC,
   },
   {
     id: 'evidence',
     name: 'Real Homeowner Case Studies',
     description: 'Learn from others\' claim experiences',
-    path: '/evidence',
+    path: ROUTES.EVIDENCE,
   },
   {
     id: 'expert',
     name: 'Windowman AI Advisor',
     description: 'Get instant answers to claim questions',
-    path: '/expert',
+    path: ROUTES.EXPERT,
   },
 ];

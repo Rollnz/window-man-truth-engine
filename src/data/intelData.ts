@@ -1,5 +1,6 @@
 import { Shield, Target, FileText, ClipboardList, Wallet } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
+import { ROUTES } from '@/config/navigation';
 
 export interface IntelResource {
   id: string;
@@ -74,7 +75,7 @@ export const intelResources: IntelResource[] = [
     pdfUrl: '#',
     bookImageUrl: '/images/claim-kit-book.webp',
     imagePosition: 'bottom-right',
-    landingPageUrl: '/claim-survival',
+    landingPageUrl: ROUTES.CLAIM_SURVIVAL,
   },
   {
     id: 'spec-checklist',

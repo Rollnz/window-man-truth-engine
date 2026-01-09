@@ -1,3 +1,5 @@
+import { ROUTES } from '@/config/navigation';
+
 export interface QuizOption {
   id: string;
   label: string;
@@ -125,7 +127,7 @@ export const quizResults: QuizResult[] = [
     subtitle: 'Partial Knowledge Detected',
     prescription: 'You know the basics, but the details will cost you. The industry is designed to exploit partial knowledge. You need precise specifications to negotiate effectively.',
     ctaText: 'Use the Comparison Engine',
-    ctaPath: '/comparison',
+    ctaPath: ROUTES.COMPARISON,
     badgeColor: 'bg-yellow-500',
   },
   {
@@ -136,7 +138,7 @@ export const quizResults: QuizResult[] = [
     subtitle: 'Agent Status Achieved',
     prescription: 'Impressive. You are ready to negotiate from a position of strength. Use this knowledge to get competitive quotes and don\'t accept the first offer.',
     ctaText: 'Beat Your Quote',
-    ctaPath: '/comparison',
+    ctaPath: ROUTES.COMPARISON,
     badgeColor: 'bg-primary',
   },
 ];

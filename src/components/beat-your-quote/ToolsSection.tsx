@@ -17,7 +17,7 @@ const TOOLS = [{
   title: 'True Cost Calculator',
   description: 'Calculate what windows actually cost in your area. See the real numbers contractors don\'t want you to know.',
   icon: Calculator,
-  path: '/cost-calculator',
+  path: ROUTES.COST_CALCULATOR,
   image: '/images/beat-your-quote/manipulation-tactics.webp',
   accentColor: '#22C55E'
 }, {
@@ -25,7 +25,7 @@ const TOOLS = [{
   title: 'Claim Survival Kit',
   description: 'Preparing an insurance claim? Get organized with our step-by-step guide to maximize your coverage.',
   icon: Shield,
-  path: '/claim-survival',
+  path: ROUTES.CLAIM_SURVIVAL,
   image: '/images/beat-your-quote/claimsurvivalkit.webp',
   accentColor: '#F59E0B'
 }];

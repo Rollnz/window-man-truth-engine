@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/config/navigation";
 
 type ConversionBarProps = {
   headline?: string;
@@ -19,7 +20,7 @@ export const ConversionBar = ({
   headline = "Ready for a no-obligation impact window estimate?",
   subheadline = "Upload your quote or tell us about your home—we'll price-check it in minutes.",
   primaryCtaLabel = "Start your free estimate",
-  primaryCtaHref = "/free-estimate",
+  primaryCtaHref = ROUTES.FREE_ESTIMATE,
   helperText = "No spam. We only use your info to prep your tailored inspection plan.",
 }: ConversionBarProps) => {
   return (

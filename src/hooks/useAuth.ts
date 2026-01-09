@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { ROUTES } from '@/config/navigation';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -28,7 +29,7 @@ export function useAuth() {
   }, []);
 
   const signInWithMagicLink = useCallback(async (email: string) => {
-    const redirectUrl = `${window.location.origin}/vault`;
+    const redirectUrl = `${window.location.origin}${ROUTES.VAULT}`;
     
     const { error } = await supabase.auth.signInWithOtp({
       email,

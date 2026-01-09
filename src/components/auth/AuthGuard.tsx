@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { ROUTES } from '@/config/navigation';
 import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {
@@ -15,7 +16,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       // Redirect to auth with current path as redirect param
-      navigate(`/auth?redirect=${encodeURIComponent(location.pathname)}`, { replace: true });
+      navigate(`${ROUTES.AUTH}?redirect=${encodeURIComponent(location.pathname)}`, { replace: true });
     }
   }, [isAuthenticated, loading, navigate, location.pathname]);
 

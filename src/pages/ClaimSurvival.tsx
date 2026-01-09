@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/config/navigation';
 import { ArrowLeft, Calendar, FileSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSessionData } from '@/hooks/useSessionData';
@@ -248,7 +249,7 @@ export default function ClaimSurvival() {
       {/* Header */}
       <header className="border-b border-border">
         <div className="container px-4 py-4 flex items-center justify-between">
-          <Link to="/">
+          <Link to={ROUTES.HOME}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Tools
