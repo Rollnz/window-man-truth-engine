@@ -893,7 +893,7 @@ Format the output with clear section headers and make it easy to read during a p
       messages: ChatMessage[];
       response_format?: JsonSchemaResponseFormat;
     } = {
-      model: "google/gemini-2.5-flash",
+      model: "google/gemini-3-flash-preview",
       messages,
     };
 
