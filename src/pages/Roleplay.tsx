@@ -9,6 +9,8 @@ import { useRoleplayAI } from '@/hooks/useRoleplayAI';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { trackEvent, trackPageView } from '@/lib/gtm';
 import { HINT_PROMPTS } from '@/data/roleplayData';
+import { ErrorBoundary } from '@/components/error';
+import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import type { Difficulty, GameResult, AnalysisResult } from '@/types/roleplay';
 
 const cn = (...classes: (string | undefined | null | false)[]) => {
@@ -17,7 +19,7 @@ const cn = (...classes: (string | undefined | null | false)[]) => {
 
 export default function Roleplay() {
   const { gameState, config, startGame, addMessage, updateResistance, useHint, endGame, checkWinCondition, checkLossCondition, resetGame } = useRoleplayGame();
-  const { sendMessage, analyzeGame, isLoading } = useRoleplayAI({ difficulty: gameState.difficulty });
+  const { sendMessage, analyzeGame, isLoading, error: aiError } = useRoleplayAI({ difficulty: gameState.difficulty });
   
   const [currentHint, setCurrentHint] = useState<string | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
@@ -157,29 +159,48 @@ export default function Roleplay() {
       </div>
       
       <div className="pt-14">
-        {gameState.status === 'setup' && <GameSetup onStart={handleStart} />}
-        
-        {isPlaying && (
-          <GamePlayArea
-            gameState={gameState}
-            maxResistance={config.maxResistance}
-            isLoading={isLoading}
-            onSendMessage={handleSend}
-            onHintRequest={handleHint}
-            onGiveUp={handleGiveUp}
-            onTacticSpotted={handleTacticSpotted}
-            currentHint={currentHint}
-          />
-        )}
-        
-        {gameResult && (
-          <ResultsScreen
-            result={gameResult}
-            analysis={analysis}
-            isAnalyzing={isAnalyzing}
-            onPlayAgain={handlePlayAgain}
-          />
-        )}
+        <ErrorBoundary
+          title="Roleplay Game Error"
+          description="Something went wrong with the sales roleplay simulation. Please restart the game."
+          onReset={handlePlayAgain}
+        >
+          {gameState.status === 'setup' && <GameSetup onStart={handleStart} />}
+          
+          {isPlaying && (
+            <>
+              {/* Show AI error inline if it occurs during gameplay */}
+              {aiError && (
+                <div className="container px-4 py-4">
+                  <AIErrorFallback
+                    errorType={getAIErrorType(aiError)}
+                    message={aiError}
+                    onRetry={() => window.location.reload()}
+                    compact
+                  />
+                </div>
+              )}
+              <GamePlayArea
+                gameState={gameState}
+                maxResistance={config.maxResistance}
+                isLoading={isLoading}
+                onSendMessage={handleSend}
+                onHintRequest={handleHint}
+                onGiveUp={handleGiveUp}
+                onTacticSpotted={handleTacticSpotted}
+                currentHint={currentHint}
+              />
+            </>
+          )}
+          
+          {gameResult && (
+            <ResultsScreen
+              result={gameResult}
+              analysis={analysis}
+              isAnalyzing={isAnalyzing}
+              onPlayAgain={handlePlayAgain}
+            />
+          )}
+        </ErrorBoundary>
       </div>
       
       <Footer />

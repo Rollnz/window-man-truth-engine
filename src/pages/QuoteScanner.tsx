@@ -12,6 +12,8 @@ import { ConversionBar } from '@/components/conversion/ConversionBar';
 import { useQuoteScanner } from '@/hooks/useQuoteScanner';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { ErrorBoundary } from '@/components/error';
+import { AIErrorFallback, getAIErrorType } from '@/components/error';
 
 export default function QuoteScanner() {
   usePageTracking('quote-scanner');
@@ -52,6 +54,9 @@ export default function QuoteScanner() {
   const isUnlocked = hasUnlockedResults || !!sessionData.email;
   const hasImage = !!imageBase64;
 
+  // Get hook error for inline display
+  const hookError = useQuoteScanner().error;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -69,62 +74,78 @@ export default function QuoteScanner() {
         
         <section className="py-12 md:py-20">
           <div className="container px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-              {/* Left column - Upload */}
-              <div className="space-y-6">
-                <QuoteUploadZone
-                  onFileSelect={handleFileSelect}
-                  isAnalyzing={isAnalyzing}
-                  hasResult={!!analysisResult}
-                  imagePreview={imageBase64}
-                />
+            <ErrorBoundary
+              title="Quote Analysis Error"
+              description="We encountered an issue with the quote scanner. Please try uploading your quote again."
+              onReset={() => window.location.reload()}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                {/* Left column - Upload */}
+                <div className="space-y-6">
+                  <QuoteUploadZone
+                    onFileSelect={handleFileSelect}
+                    isAnalyzing={isAnalyzing}
+                    hasResult={!!analysisResult}
+                    imagePreview={imageBase64}
+                  />
+                </div>
+
+                {/* Right column - Results */}
+                <div className="space-y-6">
+                  {/* Show error fallback if there's an error */}
+                  {hookError && !isAnalyzing && (
+                    <AIErrorFallback
+                      errorType={getAIErrorType(hookError)}
+                      message={hookError}
+                      onRetry={() => window.location.reload()}
+                      compact
+                    />
+                  )}
+
+                  <QuoteAnalysisResults 
+                    result={analysisResult} 
+                    isLocked={!isUnlocked}
+                    hasImage={hasImage}
+                  />
+
+                  {isUnlocked && analysisResult && (
+                    <>
+                      <GenerateProposalButton 
+                        analysisResult={analysisResult}
+                        homeownerName={sessionData.name}
+                      />
+
+                      <NegotiationTools
+                        emailDraft={emailDraft}
+                        phoneScript={phoneScript}
+                        isDraftingEmail={isDraftingEmail}
+                        isDraftingPhoneScript={isDraftingPhoneScript}
+                        onGenerateEmail={generateEmailDraft}
+                        onGeneratePhoneScript={generatePhoneScript}
+                        disabled={!analysisResult}
+                      />
+
+                      <QuoteQA
+                        answer={qaAnswer}
+                        isAsking={isAskingQuestion}
+                        onAsk={askQuestion}
+                        disabled={!analysisResult}
+                      />
+                    </>
+                  )}
+
+                  {/* Unlock button when locked with results */}
+                  {!isUnlocked && hasImage && analysisResult && (
+                    <button
+                      onClick={() => setShowLeadCapture(true)}
+                      className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                    >
+                      Unlock Full Report
+                    </button>
+                  )}
+                </div>
               </div>
-
-              {/* Right column - Results */}
-              <div className="space-y-6">
-                <QuoteAnalysisResults 
-                  result={analysisResult} 
-                  isLocked={!isUnlocked}
-                  hasImage={hasImage}
-                />
-
-                {isUnlocked && analysisResult && (
-                  <>
-                    <GenerateProposalButton 
-                      analysisResult={analysisResult}
-                      homeownerName={sessionData.name}
-                    />
-
-                    <NegotiationTools
-                      emailDraft={emailDraft}
-                      phoneScript={phoneScript}
-                      isDraftingEmail={isDraftingEmail}
-                      isDraftingPhoneScript={isDraftingPhoneScript}
-                      onGenerateEmail={generateEmailDraft}
-                      onGeneratePhoneScript={generatePhoneScript}
-                      disabled={!analysisResult}
-                    />
-
-                    <QuoteQA
-                      answer={qaAnswer}
-                      isAsking={isAskingQuestion}
-                      onAsk={askQuestion}
-                      disabled={!analysisResult}
-                    />
-                  </>
-                )}
-
-                {/* Unlock button when locked with results */}
-                {!isUnlocked && hasImage && analysisResult && (
-                  <button
-                    onClick={() => setShowLeadCapture(true)}
-                    className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-                  >
-                    Unlock Full Report
-                  </button>
-                )}
-              </div>
-            </div>
+            </ErrorBoundary>
           </div>
         </section>
       </main>
