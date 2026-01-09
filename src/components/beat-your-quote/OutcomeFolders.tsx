@@ -270,7 +270,7 @@ export function OutcomeFolders({
               <h4 className="font-bold text-green-400 uppercase tracking-wide font-mono">
                 WE BEAT IT
               </h4>
-              <p className="text-sm text-muted-foreground">We beat your quote</p>
+              <p className="text-sm text-primary-foreground">We beat your quote</p>
             </div>
             {activeOutcome === 'alpha' && <span className="text-xs font-mono text-green-400/60 tracking-wider">OUTCOME ALPHA</span>}
           </div>
