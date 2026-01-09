@@ -66,7 +66,7 @@ export const ROUTES = {
  */
 export const FOOTER_NAV = {
   // Primary CTAs
-  GET_QUOTE: ROUTES.COST_CALCULATOR,
+  BUILD_QUOTE: ROUTES.FREE_ESTIMATE,
   SCAN_QUOTE: ROUTES.BEAT_YOUR_QUOTE,
 
   // Navigation

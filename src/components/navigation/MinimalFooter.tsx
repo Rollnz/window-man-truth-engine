@@ -20,12 +20,12 @@ export function MinimalFooter({ onGetQuoteClick }: MinimalFooterProps) {
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
           {/* Primary Actions */}
           <Link
-            to={FOOTER_NAV.GET_QUOTE}
+            to={FOOTER_NAV.BUILD_QUOTE}
             onClick={handleGetQuoteClick}
             className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 font-medium transition-colors"
           >
             <Calculator className="w-4 h-4" />
-            <span>Get Quote</span>
+            <span>Build Quote</span>
           </Link>
 
           <Link
