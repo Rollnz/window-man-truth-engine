@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
-import { logEvent } from '@/lib/windowTruthClient';
+import { trackToolCompletion } from '@/lib/gtm';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { CalculatorInputs, ValidatedInputs } from '@/components/cost-calculator/CalculatorInputs';
 import { CostBreakdown } from '@/components/cost-calculator/CostBreakdown';
@@ -66,16 +66,7 @@ export default function CostCalculator() {
       markToolCompleted('cost-calculator');
 
       // Track tool completion
-      logEvent({
-        event_name: 'tool_completed',
-        tool_name: 'cost-calculator',
-        params: {
-          year1_cost: result.annual,
-          year5_cost: result.year5,
-          window_age: inputs.windowAge,
-          window_count: inputs.windowCount,
-        },
-      });
+      trackToolCompletion({ toolName: 'cost-calculator' });
     }, 800);
   };
 

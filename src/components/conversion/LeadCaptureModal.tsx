@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { SessionData } from '@/hooks/useSessionData';
 import { Mail, Check, Loader2 } from 'lucide-react';
-import { logEvent } from '@/lib/windowTruthClient';
+import { trackEvent, trackModalOpen } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 
 interface Message {
@@ -58,14 +58,7 @@ export function LeadCaptureModal({
       const now = Date.now();
       setModalOpenTime(now);
 
-      logEvent({
-        event_name: 'modal_open',
-        tool_name: sourceTool,
-        params: {
-          modal_type: 'lead_capture',
-          source_tool: sourceTool,
-        },
-      });
+      trackModalOpen('lead_capture', { source_tool: sourceTool });
     }
   }, [isOpen, sourceTool]); // ONLY these dependencies - NO form values!
 
@@ -133,13 +126,10 @@ export function LeadCaptureModal({
         setIsSuccess(true);
 
         // Track successful lead capture
-        logEvent({
-          event_name: 'lead_captured',
-          tool_name: sourceTool,
-          params: {
-            modal_type: 'lead_capture',
-            lead_id: data.leadId,
-          },
+        trackEvent('lead_captured', {
+          modal_type: 'lead_capture',
+          source_tool: sourceTool,
+          lead_id: data.leadId,
         });
 
         toast({
@@ -170,13 +160,10 @@ export function LeadCaptureModal({
       // Track modal abandonment if not successful
       if (!isSuccess && modalOpenTime > 0) {
         const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000); // seconds
-        logEvent({
-          event_name: 'modal_abandon',
-          tool_name: sourceTool,
-          params: {
-            modal_type: 'lead_capture',
-            time_spent_seconds: timeSpent,
-          },
+        trackEvent('modal_abandon', {
+          modal_type: 'lead_capture',
+          source_tool: sourceTool,
+          time_spent_seconds: timeSpent,
         });
       }
 

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { useSessionData } from '@/hooks/useSessionData';
-import { logEvent } from '@/lib/windowTruthClient';
+import { trackEvent } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import { trackModalOpen, trackLeadCapture } from '@/lib/gtm';
 
@@ -255,11 +255,6 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
         estimated_payment: monthlyPayment,
         net_cost: netCost,
       });
-      logEvent({
-        event_name: 'modal_open',
-        tool_name: 'true-cost-calculator',
-        params: { modal_type: 'quote_request' },
-      });
     }
   }, [isModalOpen, inputs.projectCost, monthlyPayment, netCost]);
 
@@ -375,13 +370,10 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
           phone: values.phone,
         });
 
-        logEvent({
-          event_name: 'lead_captured',
-          tool_name: 'true-cost-calculator',
-          params: {
-            project_cost: inputs.projectCost,
-            net_cost: netCost,
-          },
+        trackEvent('lead_captured', {
+          source_tool: 'true-cost-calculator',
+          project_cost: inputs.projectCost,
+          net_cost: netCost,
         });
 
         setIsFormSubmitted(true);
