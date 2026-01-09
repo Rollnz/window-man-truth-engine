@@ -16,6 +16,7 @@ import { IntelResource } from '@/data/intelData';
 import { Mail, Check, Loader2, Unlock } from 'lucide-react';
 import { trackEvent, trackModalOpen } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
+import type { SourceTool } from '@/types/sourceTool';
 
 interface IntelLeadModalProps {
   isOpen: boolean;
@@ -82,7 +83,7 @@ export function IntelLeadModal({
             email: values.email.trim(),
             name: sessionData.name || null,
             phone: sessionData.phone || null,
-            sourceTool: 'intel-library',
+            sourceTool: 'intel-library' satisfies SourceTool,
             sessionData,
             chatHistory: [],
             attribution: getAttributionData(),

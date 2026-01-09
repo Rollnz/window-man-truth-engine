@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { getAttributionData } from '@/lib/attribution';
 import { trackEvent, trackFormSubmit, trackLeadCapture } from '@/lib/gtm';
 import { trustSignals } from '@/data/specChecklistData';
+import type { SourceTool } from '@/types/sourceTool';
 
 interface SecondaryCTASectionProps {
   id?: string;
@@ -56,7 +57,7 @@ const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess
         body: {
           email: values.email,
           name: values.firstName,
-          sourceTool: 'spec-checklist-guide',
+          sourceTool: 'spec-checklist-guide' satisfies SourceTool,
           attribution: getAttributionData(),
           aiContext: { 
             source_form: 'spec-checklist-guide-secondary-cta',
@@ -71,7 +72,7 @@ const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess
       });
       
       trackLeadCapture({
-        sourceTool: 'spec-checklist-guide',
+        sourceTool: 'spec-checklist-guide' satisfies SourceTool,
         email: values.email,
         leadScore: 50,
         hasPhone: false,
