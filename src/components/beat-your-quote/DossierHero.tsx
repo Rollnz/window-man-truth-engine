@@ -13,11 +13,16 @@ export function DossierHero({ onOpenModal }: DossierHeroProps) {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0A0F14]">
-      {/* Background Image - z-0 */}
+      {/* Background Image - z-0, LCP candidate for this page */}
       <img 
         src="/images/beat-your-quote/hero-dossier.webp"
         alt=""
         className="absolute inset-0 w-full h-full object-cover opacity-40 z-0"
+        fetchPriority="high"
+        loading="eager"
+        decoding="async"
+        width={1920}
+        height={1080}
       />
       
       {/* Dark Overlay - z-[1] */}

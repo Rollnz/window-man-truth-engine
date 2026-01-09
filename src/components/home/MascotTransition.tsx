@@ -59,11 +59,15 @@ export const MascotTransition = () => {
             </div>
           </div>
 
-          {/* Mascot image */}
+          {/* Mascot image - below fold, lazy loaded */}
           <img 
             src={mascotImage} 
             alt="Sam Glass - Its Window Man mascot" 
             className="w-48 md:w-64 lg:w-72 h-auto drop-shadow-2xl"
+            loading="lazy"
+            decoding="async"
+            width={288}
+            height={288}
           />
         </div>
       </div>
