@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingDown, Clock, DollarSign } from 'lucide-react';
+import { ROUTES } from '@/config/navigation';
 
 interface AnimatedStatProps {
   value: number;
@@ -116,7 +117,7 @@ export function UncomfortableTruth() {
         {/* CTA link */}
         <div className="text-center">
           <Link 
-            to="/reality-check" 
+            to={ROUTES.REALITY_CHECK} 
             className="inline-flex items-center text-primary hover:text-primary/80 transition-colors group"
           >
             <span className="border-b border-primary/50 group-hover:border-primary">

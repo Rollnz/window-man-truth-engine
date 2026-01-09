@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, Wrench, Calendar } from 'lucide-react';
+import { ROUTES } from '@/config/navigation';
 
 interface ProofStatProps {
   value: number;
@@ -115,7 +116,7 @@ export function SocialProof() {
         {/* CTA */}
         <div className="text-center">
           <Link 
-            to="/proof" 
+            to={ROUTES.PROOF} 
             className="inline-flex items-center px-6 py-3 rounded-lg bg-card border border-border hover:border-primary/50 transition-colors group"
           >
             <span className="text-foreground group-hover:text-primary transition-colors">

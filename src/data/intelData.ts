@@ -39,7 +39,7 @@ export const intelResources: IntelResource[] = [
     forVulnerabilityLevel: 'CRITICAL',
     bookImageUrl: '/images/defense-kit-book.webp',
     imagePosition: 'bottom-right',
-    landingPageUrl: '/kitchen-table-guide',
+    landingPageUrl: ROUTES.KITCHEN_TABLE_GUIDE,
   },
   {
     id: 'sales-tactics',
@@ -56,7 +56,7 @@ export const intelResources: IntelResource[] = [
       'The Fake Competitor Quote Game',
     ],
     pdfUrl: '#',
-    landingPageUrl: '/sales-tactics-guide',
+    landingPageUrl: ROUTES.SALES_TACTICS_GUIDE,
   },
   {
     id: 'claim-survival',
@@ -94,7 +94,7 @@ export const intelResources: IntelResource[] = [
     pdfUrl: '#',
     bookImageUrl: '/images/spec-checklist-book.webp',
     imagePosition: 'bottom-right',
-    landingPageUrl: '/spec-checklist-guide',
+    landingPageUrl: ROUTES.SPEC_CHECKLIST_GUIDE,
   },
   {
     id: 'insurance-savings',
@@ -113,7 +113,7 @@ export const intelResources: IntelResource[] = [
     pdfUrl: '#',
     bookImageUrl: '/images/insurance-savings-book.webp',
     imagePosition: 'bottom-right',
-    landingPageUrl: '/insurance-savings-guide',
+    landingPageUrl: ROUTES.INSURANCE_SAVINGS_GUIDE,
   },
 ];
 
