@@ -315,7 +315,21 @@
      GLASS FRAME THEME - Light Mode Utilities
      ============================================ */
 
-  /* Shimmer animation - light reflecting off window frame */
+  /* Glass Frame Physics Variables */
+  :root {
+    --glass-reflection: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 50%);
+    --metallic-frame: linear-gradient(to right, hsl(209 68% 55%), hsl(209 60% 75%), hsl(209 68% 55%));
+    --frame-thickness: 4px;
+    --caustic-glow: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), hsl(209 68% 55% / 0.15) 0%, transparent 60%);
+  }
+
+  /* Shimmer Animation: High-velocity light sweep */
+  @keyframes shimmer-sweep {
+    0% { transform: translateX(-150%) skewX(-20deg); }
+    20%, 100% { transform: translateX(150%) skewX(-20deg); }
+  }
+
+  /* Original frame-shimmer for background-position based animations */
   @keyframes frame-shimmer {
     0% {
       background-position: -200% 0;
@@ -325,58 +339,63 @@
     }
   }
 
-  /* Glass Frame Card Effect - Architectural window frame look */
+  /* Glass Frame Card Effect - Architectural window with metallic frame */
   .light .frame-card {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(
-      145deg,
-      hsl(210 40% 99%) 0%,
-      hsl(209 30% 96%) 100%
-    );
-    border: 4px solid hsl(209 40% 78%);
+    background: hsl(var(--card));
+    border: var(--frame-thickness) solid transparent;
+    background-clip: padding-box;
     border-radius: 0.75rem;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Spring motion */
     box-shadow: 
-      0 8px 24px hsl(209 40% 50% / 0.12),
-      0 16px 48px hsl(209 40% 50% / 0.08),
-      inset 0 2px 4px hsl(0 0% 100% / 0.8),
-      inset 0 -2px 6px hsl(209 40% 70% / 0.15);
+      0 8px 24px hsl(209 68% 55% / 0.12),
+      inset 0 2px 4px hsl(0 0% 100% / 0.8);
   }
 
-  /* Shimmer pseudo-element for frame effect */
+  /* The Metallic Border Highlight */
   .light .frame-card::before {
     content: '';
     position: absolute;
-    inset: -4px;
+    inset: calc(var(--frame-thickness) * -1);
+    z-index: -1;
+    background: var(--metallic-frame);
     border-radius: inherit;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      transparent 40%,
-      hsl(0 0% 100% / 0.6) 50%,
-      transparent 60%,
-      transparent 100%
-    );
-    background-size: 200% 100%;
-    opacity: 0;
+    opacity: 0.7;
     transition: opacity 0.3s ease;
-    pointer-events: none;
-    z-index: 1;
   }
 
-  .light .frame-card:hover::before {
-    opacity: 1;
-    animation: frame-shimmer 1.5s ease-in-out;
+  /* Shimmer sweep effect on hover */
+  .light .frame-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(to right, transparent, hsl(0 0% 100% / 0.6), transparent);
+    transform: translateX(-150%) skewX(-20deg);
+    pointer-events: none;
+    z-index: 2;
   }
 
   .light .frame-card:hover {
+    transform: translateY(-5px);
     border-color: hsl(209 68% 55%);
-    transform: translateY(-4px);
+    background-image: var(--caustic-glow); /* Dynamic light reflection */
     box-shadow: 
       0 12px 32px hsl(209 68% 55% / 0.18),
       0 24px 56px hsl(209 40% 50% / 0.1),
       inset 0 2px 4px hsl(0 0% 100% / 0.9),
       inset 0 -2px 6px hsl(209 68% 55% / 0.1);
+  }
+
+  .light .frame-card:hover::before {
+    opacity: 1;
+  }
+
+  .light .frame-card:hover::after {
+    animation: shimmer-sweep 5s infinite;
   }
 
   /* Thick Frame Border - Window sill effect */
