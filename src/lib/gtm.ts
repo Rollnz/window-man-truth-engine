@@ -100,11 +100,13 @@ export const trackFormSubmit = (formName: string, additionalParams?: Record<stri
 export const trackPhoneLead = (params: {
   grade: string;
   leadScore: number;
+  quoteAmount?: number;
   toolName?: string;
 }) => {
   trackEvent('PhoneLeadCaptured', {
     grade: params.grade,
     lead_score: params.leadScore,
+    quote_amount: params.quoteAmount,
     tool_name: params.toolName || 'fair-price-quiz',
     fb_event: 'Lead',
   });
