@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { fastAIRequest } from '@/lib/aiRequest';
+import { getErrorMessage, isRateLimitError } from '@/lib/errors';
 import { ClaimDocument } from '@/data/claimSurvivalData';
 import { useToast } from '@/hooks/use-toast';
 import { useSessionData } from '@/hooks/useSessionData';
@@ -46,9 +47,6 @@ export function useEvidenceAnalysis({
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
     try {
       // Build document status for AI
       const documentStatuses = documents.map(doc => ({
@@ -60,15 +58,14 @@ export function useEvidenceAnalysis({
         whyClaimsFail: doc.whyClaimsFail,
       }));
 
-      const { data, error } = await supabase.functions.invoke('analyze-evidence', {
-        body: { documents: documentStatuses },
-      });
-
-      clearTimeout(timeoutId);
+      const { data, error } = await fastAIRequest.sendRequest<AnalysisResult>(
+        'analyze-evidence',
+        { documents: documentStatuses }
+      );
 
       if (error) {
         // Handle rate limiting
-        if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
+        if (isRateLimitError(error)) {
           toast({
             title: 'Too Many Requests',
             description: 'Please wait a moment before analyzing again.',
@@ -84,18 +81,13 @@ export function useEvidenceAnalysis({
         ...data,
         analyzedAt: new Date().toISOString(),
       };
-      setAnalysisResult(resultWithTimestamp);
+      setAnalysisResult(resultWithTimestamp as AnalysisResult);
       updateField('claimAnalysisResult', resultWithTimestamp);
+      
     } catch (error) {
-      clearTimeout(timeoutId);
       console.error('Analysis error:', error);
       
-      let message = 'Could not complete the analysis. Please try again.';
-      if (error instanceof Error) {
-        if (error.name === 'AbortError' || error.message.includes('abort')) {
-          message = 'Request timed out. Please try again.';
-        }
-      }
+      const message = getErrorMessage(error);
       
       toast({
         title: message.includes('timed out') ? 'Request Timed Out' : 'Analysis Failed',
