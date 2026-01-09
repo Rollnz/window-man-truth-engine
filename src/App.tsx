@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ROUTE_REDIRECTS } from "@/config/navigation";
 import ScrollToTop from "./components/ScrollToTop";
 import Index from "./pages/Index";
 import RealityCheck from "./pages/RealityCheck";
@@ -59,7 +60,6 @@ const App = () => (
           <Route path="/claim-survival" element={<ClaimSurvival />} />
           <Route path="/kitchen-table-guide" element={<KitchenTableGuide />} />
           <Route path="/sales-tactics-guide" element={<SalesTacticsGuide />} />
-          <Route path="/11tactics" element={<SalesTacticsGuide />} />
           <Route path="/spec-checklist-guide" element={<SpecChecklistGuide />} />
           <Route path="/insurance-savings-guide" element={<InsuranceSavingsGuide />} />
           <Route path="/ai-scanner" element={<QuoteScanner />} />
@@ -77,8 +77,10 @@ const App = () => (
           <Route path="/roleplay" element={<Roleplay />} />
           <Route path="/beat-your-quote" element={<BeatYourQuote />} />
           <Route path="/fair-price-quiz" element={<FairPriceQuiz />} />
-          {/* Legacy redirects */}
-          <Route path="/quote-scanner" element={<Navigate to="/ai-scanner" replace />} />
+          {/* Legacy redirects - programmatically generated */}
+          {Object.entries(ROUTE_REDIRECTS).map(([from, to]) => (
+            <Route key={from} path={from} element={<Navigate to={to} replace />} />
+          ))}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
