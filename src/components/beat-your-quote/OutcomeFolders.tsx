@@ -4,28 +4,28 @@ import { CheckCircle, Shield, ArrowRight, ClipboardCheck, Loader2, Mail } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { trackEvent, trackModalOpen, trackFormSubmit, trackLeadCapture } from '@/lib/gtm';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import { useSessionData } from '@/hooks/useSessionData';
-
 interface OutcomeFoldersProps {
   isVisible: boolean;
   triggerCount?: number;
 }
-
-export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersProps) {
+export function OutcomeFolders({
+  isVisible,
+  triggerCount = 0
+}: OutcomeFoldersProps) {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { sessionData, updateFields } = useSessionData();
+  const {
+    toast
+  } = useToast();
+  const {
+    sessionData,
+    updateFields
+  } = useSessionData();
   const [activeOutcome, setActiveOutcome] = useState<'alpha' | 'bravo' | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,10 +36,19 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
   const [windowCount, setWindowCount] = useState(sessionData.windowCount?.toString() || '');
   const [hasInteracted, setHasInteracted] = useState(false);
   const [modalOpenTime, setModalOpenTime] = useState<number | null>(null);
-
-  const { values, hasError, getError, getFieldProps, validateAll } = useFormValidation({
-    initialValues: { email: sessionData.email || '' },
-    schemas: { email: commonSchemas.email },
+  const {
+    values,
+    hasError,
+    getError,
+    getFieldProps,
+    validateAll
+  } = useFormValidation({
+    initialValues: {
+      email: sessionData.email || ''
+    },
+    schemas: {
+      email: commonSchemas.email
+    }
   });
 
   // Field validation states
@@ -49,22 +58,21 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
 
   // Count completed fields for funnel tracking
   const completedFieldsCount = [isNameValid, isEmailValid, isPhoneValid].filter(Boolean).length;
-
   const handleOutcomeClick = (outcome: 'alpha' | 'bravo') => {
     setActiveOutcome(activeOutcome === outcome ? null : outcome);
-    trackEvent('byq_outcome_folder_clicked', { 
+    trackEvent('byq_outcome_folder_clicked', {
       outcome,
       action: activeOutcome === outcome ? 'collapse' : 'expand'
     });
   };
-
   const handleStartMission = useCallback(() => {
-    trackEvent('byq_cta_clicked', { location: 'outcome_folders' });
+    trackEvent('byq_cta_clicked', {
+      location: 'outcome_folders'
+    });
     trackModalOpen('beat_your_quote_lead_capture');
     setIsModalOpen(true);
     setModalOpenTime(Date.now());
   }, []);
-
   const prevTriggerCountRef = useRef(triggerCount);
 
   // Watch for external trigger (hero buttons, etc.)
@@ -80,14 +88,14 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
   const handleFieldFocus = (fieldName: string) => {
     if (!hasInteracted) {
       setHasInteracted(true);
-      trackEvent('byq_form_started', { first_field: fieldName });
+      trackEvent('byq_form_started', {
+        first_field: fieldName
+      });
     }
   };
-
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhone(formatPhoneNumber(e.target.value));
   };
-
   const handleProjectCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Format as currency
     const value = e.target.value.replace(/[^0-9]/g, '');
@@ -97,62 +105,51 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
       setProjectCost('');
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateAll()) {
       toast({
         title: 'Invalid Email',
         description: getError('email') || 'Please check your email',
-        variant: 'destructive',
+        variant: 'destructive'
       });
       return;
     }
-
     if (!name.trim() || !phone.trim()) {
       toast({
         title: 'Missing Information',
         description: 'Please enter your name and phone number.',
-        variant: 'destructive',
+        variant: 'destructive'
       });
       return;
     }
-
     setIsLoading(true);
-
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+        },
+        body: JSON.stringify({
+          email: values.email.trim(),
+          name: name.trim(),
+          phone: phone.trim(),
+          sourceTool: 'beat-your-quote',
+          sessionData: {
+            ...sessionData,
+            projectCost: projectCost.replace(/[^0-9]/g, ''),
+            windowCount: windowCount ? parseInt(windowCount) : undefined
           },
-          body: JSON.stringify({
-            email: values.email.trim(),
-            name: name.trim(),
-            phone: phone.trim(),
-            sourceTool: 'beat-your-quote',
-            sessionData: {
-              ...sessionData,
-              projectCost: projectCost.replace(/[^0-9]/g, ''),
-              windowCount: windowCount ? parseInt(windowCount) : undefined,
-            },
-            attribution: getAttributionData(),
-            aiContext: buildAIContextFromSession(sessionData, 'beat-your-quote'),
-          }),
-        }
-      );
-
+          attribution: getAttributionData(),
+          aiContext: buildAIContextFromSession(sessionData, 'beat-your-quote')
+        })
+      });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to save');
       }
-
       const data = await response.json();
-
       if (data.success) {
         setIsSuccess(true);
 
@@ -161,7 +158,7 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
           email: values.email.trim(),
           name: name.trim(),
           phone: phone.trim(),
-          windowCount: windowCount ? parseInt(windowCount) : undefined,
+          windowCount: windowCount ? parseInt(windowCount) : undefined
         });
 
         // Calculate time to complete form
@@ -172,21 +169,18 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
           fields_completed: completedFieldsCount,
           has_project_cost: !!projectCost,
           has_window_count: !!windowCount,
-          time_to_complete_seconds: timeToComplete,
+          time_to_complete_seconds: timeToComplete
         });
-
         trackLeadCapture({
           sourceTool: 'beat-your-quote',
           email: values.email.trim(),
           hasPhone: true,
-          leadScore: completedFieldsCount + (projectCost ? 1 : 0) + (windowCount ? 1 : 0),
+          leadScore: completedFieldsCount + (projectCost ? 1 : 0) + (windowCount ? 1 : 0)
         });
-
         toast({
           title: 'Mission Started!',
-          description: 'Redirecting to Quote Scanner...',
+          description: 'Redirecting to Quote Scanner...'
         });
-
         setTimeout(() => {
           navigate('/quote-scanner');
         }, 1500);
@@ -198,13 +192,12 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
       toast({
         title: 'Unable to start mission',
         description: error instanceof Error ? error.message : 'Please try again',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsLoading(false);
     }
   };
-
   const handleModalClose = () => {
     if (!isLoading) {
       // Track abandonment if user interacted but didn't complete
@@ -215,7 +208,7 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
           time_spent_seconds: timeSpent,
           had_name: isNameValid,
           had_email: isEmailValid,
-          had_phone: isPhoneValid,
+          had_phone: isPhoneValid
         });
       }
       setIsModalOpen(false);
@@ -224,14 +217,11 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
       setModalOpenTime(null);
     }
   };
-
   const emailProps = getFieldProps('email');
   const emailHasError = hasError('email');
   const emailError = getError('email');
   const isFormValid = values.email.trim() && name.trim() && phone.trim();
-
-  return (
-    <div className={`
+  return <div className={`
       space-y-8 transition-all duration-700
       ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
     `}>
@@ -258,23 +248,17 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
         <span className="text-tools-truth-engine">OUTCOMES</span>
       </h3>
       
-      <p className="text-center text-muted-foreground">
+      <p className="text-center text-primary-foreground">
         Tap each folder to reveal what happens next.
       </p>
 
       {/* Outcome Folders */}
       <div className="space-y-4 max-w-2xl mx-auto">
         {/* Outcome Alpha - We Beat It */}
-        <div 
-          className={`
+        <div className={`
             cursor-pointer rounded-lg border transition-all duration-300
-            ${activeOutcome === 'alpha' 
-              ? 'border-green-500/60 bg-green-950/20' 
-              : 'border-border/40 bg-background/5 hover:border-green-500/40'
-            }
-          `}
-          onClick={() => handleOutcomeClick('alpha')}
-        >
+            ${activeOutcome === 'alpha' ? 'border-green-500/60 bg-green-950/20' : 'border-border/40 bg-background/5 hover:border-green-500/40'}
+          `} onClick={() => handleOutcomeClick('alpha')}>
           <div className="p-4 flex items-center gap-4">
             <div className={`
               w-10 h-10 rounded-full flex items-center justify-center
@@ -288,14 +272,11 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
               </h4>
               <p className="text-sm text-muted-foreground">We beat your quote</p>
             </div>
-            {activeOutcome === 'alpha' && (
-              <span className="text-xs font-mono text-green-400/60 tracking-wider">OUTCOME ALPHA</span>
-            )}
+            {activeOutcome === 'alpha' && <span className="text-xs font-mono text-green-400/60 tracking-wider">OUTCOME ALPHA</span>}
           </div>
           
           {/* Expanded Content */}
-          {activeOutcome === 'alpha' && (
-            <div className="px-4 pb-6 animate-fade-in">
+          {activeOutcome === 'alpha' && <div className="px-4 pb-6 animate-fade-in">
               <div className="flex items-center gap-2 text-green-400 mb-4">
                 <ClipboardCheck className="w-5 h-5" />
                 <span className="font-bold uppercase tracking-wide font-mono">Mission Successful</span>
@@ -324,21 +305,14 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
               <p className="text-center text-sm text-green-400/60 italic mt-4">
                 "You just saved enough for a family vacation."
               </p>
-            </div>
-          )}
+            </div>}
         </div>
 
         {/* Outcome Bravo - Quote Validated */}
-        <div
-          className={`
+        <div className={`
             cursor-pointer rounded-lg border transition-all duration-300
-            ${activeOutcome === 'bravo'
-              ? 'border-tools-truth-engine/60 bg-tools-truth-engine/5'
-              : 'border-border/40 bg-background/5 hover:border-tools-truth-engine/40'
-            }
-          `}
-          onClick={() => handleOutcomeClick('bravo')}
-        >
+            ${activeOutcome === 'bravo' ? 'border-tools-truth-engine/60 bg-tools-truth-engine/5' : 'border-border/40 bg-background/5 hover:border-tools-truth-engine/40'}
+          `} onClick={() => handleOutcomeClick('bravo')}>
           <div className="p-4 flex items-center gap-4">
             <div className={`
               w-10 h-10 rounded-full flex items-center justify-center
@@ -352,14 +326,11 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
               </h4>
               <p className="text-sm text-muted-foreground">We can't beat it</p>
             </div>
-            {activeOutcome === 'bravo' && (
-              <span className="text-xs font-mono text-tools-truth-engine/60 tracking-wider">OUTCOME BRAVO</span>
-            )}
+            {activeOutcome === 'bravo' && <span className="text-xs font-mono text-tools-truth-engine/60 tracking-wider">OUTCOME BRAVO</span>}
           </div>
 
           {/* Expanded Content */}
-          {activeOutcome === 'bravo' && (
-            <div className="px-4 pb-6 animate-fade-in">
+          {activeOutcome === 'bravo' && <div className="px-4 pb-6 animate-fade-in">
               <div className="flex items-center gap-2 text-tools-truth-engine mb-4">
                 <Shield className="w-5 h-5" />
                 <span className="font-bold uppercase tracking-wide font-mono">Intel Confirmed</span>
@@ -388,8 +359,7 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
               <p className="text-center text-sm text-tools-truth-engine/60 italic mt-4">
                 "We'll even tell you to take it."
               </p>
-            </div>
-          )}
+            </div>}
         </div>
       </div>
 
@@ -405,10 +375,7 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
 
       {/* CTA */}
       <div className="text-center pt-4">
-        <Button
-          onClick={handleStartMission}
-          className="bg-tools-truth-engine hover:bg-tools-truth-engine/90 text-black font-bold px-8 py-6 text-lg uppercase tracking-wider"
-        >
+        <Button onClick={handleStartMission} className="bg-tools-truth-engine hover:bg-tools-truth-engine/90 text-black font-bold px-8 py-6 text-lg uppercase tracking-wider">
           Let Me Beat Your Quote
           <ArrowRight className="ml-2 w-5 h-5" />
         </Button>
@@ -420,8 +387,7 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
       {/* Lead Capture Modal */}
       <Dialog open={isModalOpen} onOpenChange={handleModalClose}>
         <DialogContent className="sm:max-w-md bg-dossier-modal border border-white/10 shadow-2xl shadow-tools-truth-engine/5">
-          {isSuccess ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
+          {isSuccess ? <div className="flex flex-col items-center justify-center py-8 text-center">
               <div className="w-16 h-16 rounded-full bg-tools-truth-engine/20 flex items-center justify-center mb-4">
                 <CheckCircle className="w-8 h-8 text-tools-truth-engine" />
               </div>
@@ -429,9 +395,7 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
               <DialogDescription>
                 Redirecting you to the Quote Scanner...
               </DialogDescription>
-            </div>
-          ) : (
-            <>
+            </div> : <>
               <DialogHeader>
                 <div className="flex justify-center mb-2">
                   <div className="w-12 h-12 rounded-full bg-tools-truth-engine/10 flex items-center justify-center">
@@ -450,16 +414,7 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
                     <Label htmlFor="mission-name">Name</Label>
                     {isNameValid && <CheckCircle className="w-4 h-4 text-green-500" />}
                   </div>
-                  <Input
-                    id="mission-name"
-                    type="text"
-                    placeholder="Your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    onFocus={() => handleFieldFocus('name')}
-                    disabled={isLoading}
-                    autoFocus
-                  />
+                  <Input id="mission-name" type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} onFocus={() => handleFieldFocus('name')} disabled={isLoading} autoFocus />
                 </div>
 
                 <div className="space-y-2">
@@ -469,20 +424,8 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
                     </Label>
                     {isEmailValid && <CheckCircle className="w-4 h-4 text-green-500" />}
                   </div>
-                  <Input
-                    id="mission-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    {...emailProps}
-                    onFocus={() => handleFieldFocus('email')}
-                    disabled={isLoading}
-                    className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''}
-                    aria-invalid={emailHasError}
-                    aria-describedby={emailHasError ? 'mission-email-error' : undefined}
-                  />
-                  {emailHasError && (
-                    <p id="mission-email-error" className="text-sm text-destructive">{emailError}</p>
-                  )}
+                  <Input id="mission-email" type="email" placeholder="you@example.com" {...emailProps} onFocus={() => handleFieldFocus('email')} disabled={isLoading} className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''} aria-invalid={emailHasError} aria-describedby={emailHasError ? 'mission-email-error' : undefined} />
+                  {emailHasError && <p id="mission-email-error" className="text-sm text-destructive">{emailError}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -490,15 +433,7 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
                     <Label htmlFor="mission-phone">Phone Number</Label>
                     {isPhoneValid && <CheckCircle className="w-4 h-4 text-green-500" />}
                   </div>
-                  <Input
-                    id="mission-phone"
-                    type="tel"
-                    placeholder="(555) 123-4567"
-                    value={phone}
-                    onChange={handlePhoneChange}
-                    onFocus={() => handleFieldFocus('phone')}
-                    disabled={isLoading}
-                  />
+                  <Input id="mission-phone" type="tel" placeholder="(555) 123-4567" value={phone} onChange={handlePhoneChange} onFocus={() => handleFieldFocus('phone')} disabled={isLoading} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -507,63 +442,38 @@ export function OutcomeFolders({ isVisible, triggerCount = 0 }: OutcomeFoldersPr
                       <Label htmlFor="mission-cost">Project Cost</Label>
                       {projectCost && <CheckCircle className="w-4 h-4 text-green-500" />}
                     </div>
-                    <Input
-                      id="mission-cost"
-                      type="text"
-                      placeholder="$15,000"
-                      value={projectCost}
-                      onChange={handleProjectCostChange}
-                      disabled={isLoading}
-                    />
+                    <Input id="mission-cost" type="text" placeholder="$15,000" value={projectCost} onChange={handleProjectCostChange} disabled={isLoading} />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="mission-windows">Window Count</Label>
                       {windowCount && <CheckCircle className="w-4 h-4 text-green-500" />}
                     </div>
-                    <Input
-                      id="mission-windows"
-                      type="number"
-                      placeholder="10"
-                      min="1"
-                      max="100"
-                      value={windowCount}
-                      onChange={(e) => setWindowCount(e.target.value)}
-                      disabled={isLoading}
-                    />
+                    <Input id="mission-windows" type="number" placeholder="10" min="1" max="100" value={windowCount} onChange={e => setWindowCount(e.target.value)} disabled={isLoading} />
                   </div>
                 </div>
 
-                <Button
-                  type="submit"
-                  className="w-full bg-tools-truth-engine hover:bg-tools-truth-engine/90 text-black font-bold"
-                  disabled={isLoading || !isFormValid}
-                >
-                  {isLoading ? (
-                    <>
+                <Button type="submit" className="w-full bg-tools-truth-engine hover:bg-tools-truth-engine/90 text-black font-bold" disabled={isLoading || !isFormValid}>
+                  {isLoading ? <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Initiating Mission...
-                    </>
-                  ) : (
-                    <>
+                    </> : <>
                       <ArrowRight className="mr-2 h-4 w-4" />
                       Continue to Quote Scanner
-                    </>
-                  )}
+                    </>}
                 </Button>
               </form>
-            </>
-          )}
+            </>}
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 }
-
-function Zap({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+function Zap({
+  className
+}: {
+  className?: string;
+}) {
+  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  );
+    </svg>;
 }
