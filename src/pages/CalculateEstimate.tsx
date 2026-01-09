@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import DOMPurify from 'dompurify';
 import { ROUTES } from "@/config/navigation";
 import { toast } from "sonner";
 import { usePageTracking } from "@/hooks/usePageTracking";
@@ -370,7 +371,9 @@ const AiResultModal = ({ isOpen, onClose, title, content, isLoading }: AiResultM
             </div>
           ) : (
             <div className="prose prose-slate max-w-none text-slate-600">
-               <div dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }} />
+               <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.replace(/\n/g, '<br />'), {
+                 ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'li', 'ol', 'span'],
+               }) }} />
             </div>
           )}
         </div>
