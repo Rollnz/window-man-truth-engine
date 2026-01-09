@@ -37,7 +37,6 @@ export const ROUTES = {
   INSURANCE_SAVINGS_GUIDE: '/insurance-savings-guide',
 
   // Estimate Calculators
-  CALCULATE_ESTIMATE: '/calculate-your-estimate',
   FREE_ESTIMATE: '/free-estimate',
   IMPACT_WINDOW_CALCULATOR: '/impact-window-calculator',
 
@@ -86,6 +85,7 @@ export const FOOTER_NAV = {
  */
 export const ROUTE_REDIRECTS = {
   '/quote-scanner': ROUTES.QUOTE_SCANNER,
+  '/calculate-your-estimate': ROUTES.FREE_ESTIMATE,
 } as const;
 
 /**

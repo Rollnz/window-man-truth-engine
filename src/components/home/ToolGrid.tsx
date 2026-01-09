@@ -131,7 +131,7 @@ const tools: Tool[] = [
     description: 'Get an AI-powered estimate for your window or door project in seconds.',
     cta: 'Build Your Estimate',
     icon: <Calculator className="w-6 h-6" />,
-    path: '/calculate-your-estimate',
+    path: ROUTES.FREE_ESTIMATE,
     gated: true,
     badge: 'Beta',
   },

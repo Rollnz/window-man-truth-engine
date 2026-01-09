@@ -63,7 +63,6 @@ const App = () => (
           <Route path="/spec-checklist-guide" element={<SpecChecklistGuide />} />
           <Route path="/insurance-savings-guide" element={<InsuranceSavingsGuide />} />
           <Route path="/ai-scanner" element={<QuoteScanner />} />
-          <Route path="/calculate-your-estimate" element={<CalculateEstimate />} />
           <Route path="/free-estimate" element={<CalculateEstimate />} />
           <Route path="/impact-window-calculator" element={<CostCalculator />} />
           <Route path="/tools" element={<Tools />} />
