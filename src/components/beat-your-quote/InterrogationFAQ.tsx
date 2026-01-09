@@ -73,7 +73,7 @@ function TranscriptEntry({
           <span className="text-xs font-mono text-red-400 uppercase tracking-wider shrink-0 pt-1">
             AGENT:
           </span>
-          <p className="font-mono text-base md:text-lg text-foreground/90 leading-relaxed">
+          <p className="font-mono text-base leading-relaxed text-primary-foreground md:text-xl">
             {item.agentQuestion}
           </p>
         </div>
