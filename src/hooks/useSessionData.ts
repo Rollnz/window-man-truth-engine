@@ -111,6 +111,26 @@ export interface SessionData {
   quoteDraftEmail?: string | null;
   quotePhoneScript?: string | null;
 
+  // Fair Price Quiz Results (for Vault display)
+  fairPriceQuizResults?: {
+    quoteAmount: number;
+    fairMarketValue: { low: number; high: number };
+    overagePercentage: number;
+    grade: string;
+    verdict: string;
+    redFlagCount: number;
+    redFlags: string[];
+    potentialOverpay: number | null;
+    analyzedAt: string;
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // VAULT SYNC STATE
+  // ═══════════════════════════════════════════════════════════════════════════
+  vaultSyncPending?: boolean;
+  vaultSyncEmail?: string;
+  vaultSyncSource?: 'fair-price-quiz' | 'quote-scanner' | 'other';
+
   // ═══════════════════════════════════════════════════════════════════════════
   // LEAD CAPTURE & TRACKING
   // ═══════════════════════════════════════════════════════════════════════════

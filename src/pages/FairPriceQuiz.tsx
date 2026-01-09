@@ -8,7 +8,7 @@ import { quizQuestions } from '@/data/fairPriceQuizData';
 import { calculatePriceAnalysis, QuizAnswers, PriceAnalysis, calculateLeadScore } from '@/lib/fairPriceCalculations';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
-import { logEvent } from '@/lib/windowTruthClient';
+import { trackEvent, trackLeadCapture, trackToolCompletion } from '@/lib/gtm';
 import { supabase } from '@/integrations/supabase/client';
 import { getAttributionData } from '@/lib/attribution';
 
@@ -16,7 +16,7 @@ type Phase = 'hero' | 'quiz' | 'analysis' | 'blur-gate' | 'results';
 
 export default function FairPriceQuiz() {
   usePageTracking('fair-price-quiz');
-  const { sessionData, updateFields, markToolCompleted } = useSessionData();
+  const { updateFields, markToolCompleted } = useSessionData();
 
   const [phase, setPhase] = useState<Phase>('hero');
   const [currentStep, setCurrentStep] = useState(0);
@@ -30,10 +30,8 @@ export default function FairPriceQuiz() {
 
   const handleStart = () => {
     setPhase('quiz');
-    logEvent({
-      event_name: 'quiz_started',
+    trackEvent('quiz_started', {
       tool_name: 'fair-price-quiz',
-      params: {},
     });
   };
 
@@ -42,13 +40,10 @@ export default function FairPriceQuiz() {
     setAnswers(newAnswers);
 
     // Track question completion
-    logEvent({
-      event_name: 'quiz_question_completed',
+    trackEvent('quiz_question_completed', {
       tool_name: 'fair-price-quiz',
-      params: {
-        question_number: currentStep + 1,
-        question_type: currentQuestion.type,
-      },
+      question_number: currentStep + 1,
+      question_type: currentQuestion.type,
     });
 
     if (currentStep < totalQuestions - 1) {
@@ -106,6 +101,13 @@ export default function FairPriceQuiz() {
     const leadScore = calculateLeadScore(quizAnswers, false);
     const attribution = getAttributionData();
 
+    // Persist to session for Vault sync
+    updateFields({
+      email,
+      name,
+      windowCount: quizAnswers.windowCount,
+    });
+
     // Save lead to database
     try {
       await supabase.functions.invoke('save-lead', {
@@ -124,14 +126,12 @@ export default function FairPriceQuiz() {
         },
       });
 
-      // Track lead capture
-      logEvent({
-        event_name: 'lead_captured',
-        tool_name: 'fair-price-quiz',
-        params: {
-          grade: analysis?.grade,
-          lead_score: leadScore,
-        },
+      // Track lead capture via GTM
+      trackLeadCapture({
+        sourceTool: 'fair-price-quiz',
+        email,
+        leadScore,
+        hasPhone: false,
       });
     } catch (error) {
       console.error('Failed to save lead:', error);
@@ -155,17 +155,15 @@ export default function FairPriceQuiz() {
 
     const leadScore = calculateLeadScore(quizAnswers, true);
 
-    // Trigger PhoneCall.bot webhook with all quiz answers
+    // Trigger PhoneCall.bot via secure edge function
     try {
-      await fetch('https://app.phonecall.bot/api/webhook/[YOUR_ID]', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await supabase.functions.invoke('trigger-phone-call', {
+        body: {
           phone,
           name: userName,
           email: userEmail,
-          info: {
-            // All quiz answers included per user request
+          quizContext: {
+            // All quiz answers included
             propertyType: quizAnswers.propertyType,
             sqft: quizAnswers.sqft,
             windowCount: quizAnswers.windowCount,
@@ -183,7 +181,7 @@ export default function FairPriceQuiz() {
             redFlags: analysis?.redFlags,
             leadScore,
           },
-        }),
+        },
       });
 
       // Update lead with phone in DB
@@ -196,26 +194,13 @@ export default function FairPriceQuiz() {
         },
       });
 
-      // Track phone capture
-      logEvent({
-        event_name: 'phone_captured',
-        tool_name: 'fair-price-quiz',
-        params: {
-          grade: analysis?.grade,
-          lead_score: leadScore,
-        },
-      });
-
-      logEvent({
-        event_name: 'tool_completed',
-        tool_name: 'fair-price-quiz',
-        params: {
-          grade: analysis?.grade,
-          phone_provided: true,
-        },
+      // Track tool completion
+      trackToolCompletion({
+        toolName: 'fair-price-quiz',
+        score: leadScore,
       });
     } catch (error) {
-      console.error('Failed to trigger webhook:', error);
+      console.error('Failed to trigger phone call:', error);
     }
   };
 
@@ -259,6 +244,7 @@ export default function FairPriceQuiz() {
           analysis={analysis}
           answers={getQuizAnswers()}
           userName={userName}
+          userEmail={userEmail}
           onPhoneSubmit={handlePhoneSubmit}
         />
       )}

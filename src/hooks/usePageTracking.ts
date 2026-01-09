@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { logEvent } from '@/lib/windowTruthClient';
+import { trackPageView, trackEvent } from '@/lib/gtm';
 
 /**
  * Hook to automatically track page views
@@ -7,17 +7,16 @@ import { logEvent } from '@/lib/windowTruthClient';
  */
 export function usePageTracking(toolName: string) {
   useEffect(() => {
-    const referrer = document.referrer || 'direct';
     const path = window.location.pathname;
-
-    logEvent({
-      event_name: 'page_view',
+    
+    // Track page view in GTM
+    trackPageView(path);
+    
+    // Also track as a tool-specific event for internal analytics
+    trackEvent('tool_page_view', {
       tool_name: toolName,
       page_path: path,
-      params: {
-        referrer,
-        search: window.location.search,
-      },
+      referrer: document.referrer || 'direct',
     });
   }, []); // Fire once on mount
 }

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageTracking } from '@/hooks/usePageTracking';
@@ -6,6 +7,7 @@ import { MyResultsSection } from '@/components/vault/MyResultsSection';
 import { MyDocumentsSection } from '@/components/vault/MyDocumentsSection';
 import { MyChecklistsSection } from '@/components/vault/MyChecklistsSection';
 import { EmailResultsButton } from '@/components/vault/EmailResultsButton';
+import { VaultWelcomeCard } from '@/components/vault/VaultWelcomeCard';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -41,9 +43,20 @@ const tools = [
 
 export default function Vault() {
   usePageTracking('vault');
-  const { sessionData, isToolCompleted } = useSessionData();
+  const { sessionData, isToolCompleted, updateFields } = useSessionData();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  // Check for pending Vault sync (from Fair Price Quiz)
+  useEffect(() => {
+    if (sessionData.vaultSyncPending && sessionData.fairPriceQuizResults) {
+      setShowWelcome(true);
+      // Clear the pending flag after showing welcome
+      updateFields({ vaultSyncPending: false });
+    }
+  }, [sessionData.vaultSyncPending, sessionData.fairPriceQuizResults, updateFields]);
 
   const toolsWithCompletion = tools.map(tool => ({
     ...tool,
@@ -59,6 +72,10 @@ export default function Vault() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleDismissWelcome = () => {
+    setShowWelcome(false);
   };
 
   return (
@@ -90,15 +107,24 @@ export default function Vault() {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-        {/* Hero */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            Your Protection Dashboard
-          </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Track your progress, view your assessment results, and manage your claim-ready documents all in one place.
-          </p>
-        </div>
+        {/* Welcome Card (for Fair Price Quiz users) */}
+        {showWelcome && sessionData.fairPriceQuizResults ? (
+          <VaultWelcomeCard
+            results={sessionData.fairPriceQuizResults}
+            userName={sessionData.name || ''}
+            onDismiss={handleDismissWelcome}
+          />
+        ) : (
+          /* Standard Hero */
+          <div className="text-center mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+              Your Protection Dashboard
+            </h1>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Track your progress, view your assessment results, and manage your claim-ready documents all in one place.
+            </p>
+          </div>
+        )}
 
         {/* Progress Tracker */}
         <ToolProgressTracker tools={toolsWithCompletion} />
