@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
 import { getAttributionData } from '@/lib/attribution';
+import { ROUTES } from '@/config/navigation';
 
 const SalesTacticsGuide = () => {
   usePageTracking('sales-tactics-guide');
@@ -111,7 +112,7 @@ const SalesTacticsGuide = () => {
 
             <div className="hidden md:flex items-center space-x-6">
               <button 
-                onClick={() => navigate('/quote-scanner')}
+                onClick={() => navigate(ROUTES.QUOTE_SCANNER)}
                 className="text-muted-foreground hover:text-foreground transition-colors text-sm"
               >
                 Quote Scanner
@@ -170,7 +171,7 @@ const SalesTacticsGuide = () => {
                 <Button 
                   variant="outline" 
                   className="gap-2"
-                  onClick={() => navigate('/quote-scanner')}
+                  onClick={() => navigate(ROUTES.QUOTE_SCANNER)}
                 >
                   Check if these tactics were used <ArrowRight className="w-4 h-4" />
                 </Button>
@@ -447,7 +448,7 @@ const SalesTacticsGuide = () => {
                 variant="outline" 
                 size="sm" 
                 className="w-full gap-2"
-                onClick={() => navigate('/quote-scanner')}
+                onClick={() => navigate(ROUTES.QUOTE_SCANNER)}
               >
                 Scan My Quote <ArrowRight className="w-4 h-4" />
               </Button>

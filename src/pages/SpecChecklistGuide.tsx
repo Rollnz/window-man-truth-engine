@@ -4,6 +4,7 @@ import { usePageTracking } from '@/hooks/usePageTracking';
 import { Scale, ScanSearch, Calculator, ArrowRight, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/gtm';
+import { ROUTES } from '@/config/navigation';
 
 // Section Components
 import SpecChecklistHero from '@/components/spec-checklist/SpecChecklistHero';
@@ -176,7 +177,7 @@ const SpecChecklistGuide = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Upload your quote and get instant AI analysis of red flags.
               </p>
-              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate('/quote-scanner')}>
+              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate(ROUTES.QUOTE_SCANNER)}>
                 Scan My Quote <ArrowRight className="w-4 h-4" />
               </Button>
             </div>

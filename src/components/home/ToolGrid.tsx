@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ROUTES } from '@/config/navigation';
 import { 
   AlertTriangle, 
   Calculator, 
@@ -121,7 +122,7 @@ const tools: Tool[] = [
     description: 'Upload your quote and let AI flag hidden risks, missing scope, and overpricing in 30 seconds.',
     cta: 'Scan Your Quote',
     icon: <ScanSearch className="w-6 h-6" />,
-    path: '/quote-scanner',
+    path: ROUTES.QUOTE_SCANNER,
     gated: true,
   },
   {

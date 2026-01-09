@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import Index from "./pages/Index";
 import RealityCheck from "./pages/RealityCheck";
@@ -77,6 +77,8 @@ const App = () => (
           <Route path="/roleplay" element={<Roleplay />} />
           <Route path="/beat-your-quote" element={<BeatYourQuote />} />
           <Route path="/fair-price-quiz" element={<FairPriceQuiz />} />
+          {/* Legacy redirects */}
+          <Route path="/quote-scanner" element={<Navigate to="/ai-scanner" replace />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
