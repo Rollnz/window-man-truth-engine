@@ -46,14 +46,14 @@ const Defense = () => {
               <h2 className="font-semibold">Next step: lock in your evidence trail</h2>
             </div>
             <p className="text-sm text-muted-foreground">
-              Capture your project details so we can pair you with the right specialist and prep your claim kit.
+              Capture your project details so we can pair you with the right specialist and prep your spec checklist.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild>
                 <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
               </Button>
               <Button asChild variant="outline">
-                <Link to={ROUTES.CLAIM_SURVIVAL}>Download the Claim Kit</Link>
+                <Link to={ROUTES.SPEC_CHECKLIST_GUIDE}>Download Spec Checklist</Link>
               </Button>
             </div>
           </div>

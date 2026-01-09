@@ -16,8 +16,8 @@ const faqs = [
     answer: "Upload it to the scanner. We'll identify red flags, compare specs, and build a negotiation script for you.",
   },
   {
-    question: "Can I just download the claim kit?",
-    answer: "Absolutely. Grab the Claim Survival Kit and if you need a contractor later, we'll match you with one who fits your home and budget.",
+    question: "Can I just download the spec checklist?",
+    answer: "Absolutely. Grab the Window Buyer's Specification Checklist and if you need a contractor later, we'll match you with one who fits your home and budget.",
   },
 ];
 
@@ -47,7 +47,7 @@ const FAQ = () => {
                       <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
                     </Button>
                     <Button asChild size="sm" variant="outline">
-                      <Link to={ROUTES.CLAIM_SURVIVAL}>Download the Claim Kit</Link>
+                      <Link to={ROUTES.SPEC_CHECKLIST_GUIDE}>Download Spec Checklist</Link>
                     </Button>
                   </div>
                 </AccordionContent>

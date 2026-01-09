@@ -74,14 +74,14 @@ export default function Privacy() {
           <section className="rounded-lg border border-border p-4 bg-card/40 space-y-3">
             <h3 className="text-lg font-semibold">Next step</h3>
             <p className="text-sm text-muted-foreground">
-              Want us to review your project under these privacy commitments? Book an inspection or grab the Claim Kit to start your evidence trail.
+              Want us to review your project under these privacy commitments? Book an inspection or grab the Spec Checklist to start your evidence trail.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild>
                 <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
               </Button>
               <Button asChild variant="outline">
-                <Link to={ROUTES.CLAIM_SURVIVAL}>Download the Claim Kit</Link>
+                <Link to={ROUTES.SPEC_CHECKLIST_GUIDE}>Download Spec Checklist</Link>
               </Button>
             </div>
           </section>
