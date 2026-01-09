@@ -55,7 +55,9 @@ serve(async (req) => {
   }
 
   try {
-    const { projectDescription } = await req.json();
+    const body = await req.json();
+    // Accept both 'projectDescription' and 'prompt' for backward compatibility
+    const projectDescription = body.projectDescription || body.prompt;
 
     if (!projectDescription || projectDescription.trim().length < 10) {
       return new Response(
