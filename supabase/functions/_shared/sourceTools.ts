@@ -1,9 +1,9 @@
 /**
  * Allowed source tools for lead capture.
  * 
- * IMPORTANT: Keep this list in sync with:
- * - supabase/functions/_shared/sourceTools.ts (backend single source of truth)
+ * SINGLE SOURCE OF TRUTH for backend edge functions.
  * 
+ * IMPORTANT: Keep in sync with src/types/sourceTool.ts (frontend)
  * Run `npm run verify:source-tools` to check synchronization.
  */
 export const SOURCE_TOOLS = [

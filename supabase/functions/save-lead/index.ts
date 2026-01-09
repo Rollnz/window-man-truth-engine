@@ -11,26 +11,9 @@ const RATE_LIMITS = {
 
 // ============= Input Validation Schemas =============
 
-const phoneRegex = /^[+]?[0-9\s\-()]{10,20}$/;
+import { SOURCE_TOOLS } from '../_shared/sourceTools.ts';
 
-const allowedSourceTools = [
-  'expert-system',
-  'comparison-tool',
-  'cost-calculator',
-  'claim-survival-kit',
-  'fast-win',
-  'intel-library',
-  'risk-diagnostic',
-  'reality-check',
-  'evidence-locker',
-  'kitchen-table-guide',
-  'sales-tactics-guide',
-  'spec-checklist-guide',
-  'insurance-savings-guide',
-  'quote-builder',
-  'beat-your-quote',
-  'fair-price-quiz'
-] as const;
+const phoneRegex = /^[+]?[0-9\s\-()]{10,20}$/;
 
 // Session data schema with size limit
 const sessionDataSchema = z.record(z.unknown()).refine(
@@ -83,7 +66,7 @@ const leadSchema = z.object({
   email: z.string().trim().email('Invalid email format').max(255, 'Email too long'),
   name: z.string().trim().max(100, 'Name too long').optional().nullable(),
   phone: z.string().regex(phoneRegex, 'Invalid phone format').max(20, 'Phone too long').optional().nullable().or(z.literal('')),
-  sourceTool: z.enum(allowedSourceTools).default('expert-system'),
+  sourceTool: z.enum(SOURCE_TOOLS).default('expert-system'),
   sessionData: sessionDataSchema,
   chatHistory: chatHistorySchema,
   consultation: consultationSchema,
