@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
-
 interface CaseFileData {
   caseNumber: string;
   headline: string;
@@ -20,38 +19,32 @@ interface CaseFileData {
   testimonial: string;
   status: 'DEFEATED' | 'UPGRADED' | 'VALIDATED';
 }
-
 interface CaseFileCardProps {
   data: CaseFileData;
   index: number;
 }
-
-export function CaseFileCard({ data, index }: CaseFileCardProps) {
+export function CaseFileCard({
+  data,
+  index
+}: CaseFileCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-
   const statusColors = {
     DEFEATED: 'bg-red-500/20 text-red-400 border-red-500/40',
     UPGRADED: 'bg-primary/20 text-primary border-primary/40',
-    VALIDATED: 'bg-green-500/20 text-green-400 border-green-500/40',
+    VALIDATED: 'bg-green-500/20 text-green-400 border-green-500/40'
   };
-
   const handleToggle = () => {
     const newState = !isExpanded;
     setIsExpanded(newState);
     if (newState) {
-      trackEvent('case_file_expanded', { case_number: data.caseNumber });
+      trackEvent('case_file_expanded', {
+        case_number: data.caseNumber
+      });
     }
   };
-
-  return (
-    <div
-      className={`bg-dossier-folder border border-white/5 rounded-lg overflow-hidden shadow-xl transition-all duration-300 hover:border-white/10 ${
-        index % 2 === 0 ? 'rotate-1' : '-rotate-1'
-      }`}
-      style={{
-        animationDelay: `${index * 150}ms`,
-      }}
-    >
+  return <div className={`bg-dossier-folder border border-white/5 rounded-lg overflow-hidden shadow-xl transition-all duration-300 hover:border-white/10 ${index % 2 === 0 ? 'rotate-1' : '-rotate-1'}`} style={{
+    animationDelay: `${index * 150}ms`
+  }}>
       {/* Header */}
       <div className="p-5 pb-4">
         {/* Case Number */}
@@ -60,14 +53,11 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
         </div>
 
         {/* Headline - Typewriter effect */}
-        <h3
-          className="text-lg font-bold text-zinc-100 mb-3 font-typewriter"
-          style={{
-            textDecoration: 'underline',
-            textDecorationColor: 'hsl(var(--primary) / 0.4)',
-            textUnderlineOffset: '4px',
-          }}
-        >
+        <h3 className="text-lg font-bold text-zinc-100 mb-3 font-typewriter" style={{
+        textDecoration: 'underline',
+        textDecorationColor: 'hsl(var(--primary) / 0.4)',
+        textUnderlineOffset: '4px'
+      }}>
           {data.headline}
         </h3>
 
@@ -79,7 +69,7 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
         </div>
 
         {/* Scenario Quote */}
-        <p className="text-sm text-muted-foreground italic mb-4">
+        <p className="text-sm italic mb-4 text-primary-foreground">
           "{data.scenario}"
         </p>
 
@@ -99,8 +89,7 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
             </div>
 
             {/* Type 1: Defeated Quote */}
-            {data.originalQuote && (
-              <>
+            {data.originalQuote && <>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Original Quote:</span>
                   <span className="text-primary">${data.originalQuote.toLocaleString()}</span>
@@ -113,12 +102,10 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
                   <span className="text-muted-foreground">Window Man Price:</span>
                   <span className="text-primary font-bold">${data.finalPrice?.toLocaleString()}</span>
                 </div>
-              </>
-            )}
+              </>}
 
             {/* Type 2: Upgraded Specs */}
-            {data.competitorSpec && (
-              <>
+            {data.competitorSpec && <>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Competitor Spec:</span>
                   <span className="text-red-400 line-through">{data.competitorSpec}</span>
@@ -131,12 +118,10 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
                   <span className="text-muted-foreground">Savings:</span>
                   <span className="text-primary font-bold">${data.savings?.toLocaleString()}</span>
                 </div>
-              </>
-            )}
+              </>}
 
             {/* Type 3: Validated Quote */}
-            {data.riskAnalysis && (
-              <>
+            {data.riskAnalysis && <>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Risk Analysis:</span>
                   <span className="text-green-400">{data.riskAnalysis}</span>
@@ -149,29 +134,19 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
                   <span className="text-muted-foreground">Outcome:</span>
                   <span className="text-green-400 font-bold">{data.outcome}</span>
                 </div>
-              </>
-            )}
+              </>}
           </div>
         </div>
 
         {/* Expand Toggle */}
-        <button
-          onClick={handleToggle}
-          className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-        >
+        <button onClick={handleToggle} className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors">
           <span>{isExpanded ? 'Hide' : 'Read'} full debrief →</span>
-          <ChevronDown 
-            className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} 
-          />
+          <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
         </button>
       </div>
 
       {/* Expandable Testimonial */}
-      <div 
-        className={`overflow-hidden transition-all duration-300 ${
-          isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
+      <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="px-5 pb-5 border-t border-border/30 pt-4">
           <p className="text-sm text-muted-foreground leading-relaxed italic">
             "{data.testimonial}"
@@ -184,12 +159,9 @@ export function CaseFileCard({ data, index }: CaseFileCardProps) {
 
       {/* Status Badge */}
       <div className="px-5 pb-5">
-        <div
-          className={`inline-block px-4 py-2 rounded border-2 font-mono text-xs tracking-declassified uppercase font-bold transform -rotate-2 ${statusColors[data.status]}`}
-        >
+        <div className={`inline-block px-4 py-2 rounded border-2 font-mono text-xs tracking-declassified uppercase font-bold transform -rotate-2 ${statusColors[data.status]}`}>
           STATUS: {data.status}
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
