@@ -368,7 +368,7 @@ export function OutcomeFolders({
         <p className="text-lg">
           Either way, <span className="text-tools-truth-engine font-bold">you win.</span>
         </p>
-        <p className="text-sm text-tools-truth-engine/60 italic mt-2">
+        <p className="text-tools-truth-engine/60 italic mt-2 text-base">
           "The only failed mission is the one you never start."
         </p>
       </div>
