@@ -10,11 +10,13 @@ import { AnatomySection } from '@/components/beat-your-quote/AnatomySection';
 import { ToolsSection } from '@/components/beat-your-quote/ToolsSection';
 import { MissionOutcomes } from '@/components/beat-your-quote/MissionOutcomes';
 import { InterrogationFAQ } from '@/components/beat-your-quote/InterrogationFAQ';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
+import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 
 
 export default function BeatYourQuote() {
   usePageTracking('beat-your-quote');
-  useSessionData();
+  const { sessionData } = useSessionData();
 
   // State to trigger modal from hero buttons
   const [modalTriggerCount, setModalTriggerCount] = useState(0);
@@ -38,6 +40,13 @@ export default function BeatYourQuote() {
         <InterrogationFAQ />
         {/* Your Arsenal */}
         <ToolsSection />
+
+        {/* Related Tools */}
+        <RelatedToolsGrid
+          title={getFrameControl('beat-your-quote').title}
+          description={getFrameControl('beat-your-quote').description}
+          tools={getSmartRelatedTools('beat-your-quote', sessionData.toolsCompleted)}
+        />
       </main>
       <MinimalFooter onGetQuoteClick={scrollToTop} />
     </div>

@@ -11,6 +11,8 @@ import { ProtectionReport } from '@/components/risk-diagnostic/ProtectionReport'
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
+import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import type { SourceTool } from '@/types/sourceTool';
 
 type Phase = 'hero' | 'questions' | 'results';
@@ -140,6 +142,13 @@ export default function RiskDiagnostic() {
         onClose={() => setShowBookingModal(false)}
         onSuccess={() => setShowBookingModal(false)}
         sessionData={sessionData}
+      />
+
+      {/* Related Tools */}
+      <RelatedToolsGrid
+        title={getFrameControl('risk-diagnostic').title}
+        description={getFrameControl('risk-diagnostic').description}
+        tools={getSmartRelatedTools('risk-diagnostic', sessionData.toolsCompleted)}
       />
 
       {/* Minimal Footer */}

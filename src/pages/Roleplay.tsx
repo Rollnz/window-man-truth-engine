@@ -11,6 +11,8 @@ import { trackEvent, trackPageView } from '@/lib/gtm';
 import { HINT_PROMPTS } from '@/data/roleplayData';
 import { ErrorBoundary } from '@/components/error';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
+import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import type { Difficulty, GameResult, AnalysisResult } from '@/types/roleplay';
 
 const cn = (...classes: (string | undefined | null | false)[]) => {
@@ -202,6 +204,13 @@ export default function Roleplay() {
           )}
         </ErrorBoundary>
       </div>
+
+      {/* Related Tools */}
+      <RelatedToolsGrid
+        title={getFrameControl('roleplay').title}
+        description={getFrameControl('roleplay').description}
+        tools={getSmartRelatedTools('roleplay')}
+      />
       
       <Footer />
     </div>

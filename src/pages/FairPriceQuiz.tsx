@@ -12,6 +12,9 @@ import { usePageTracking } from '@/hooks/usePageTracking';
 import { trackEvent, trackLeadCapture, trackToolCompletion } from '@/lib/gtm';
 import { supabase } from '@/integrations/supabase/client';
 import { getAttributionData } from '@/lib/attribution';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
+import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
+import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import type { SourceTool } from '@/types/sourceTool';
 
 type Phase = 'hero' | 'quiz' | 'analysis' | 'blur-gate' | 'results';
@@ -254,6 +257,15 @@ export default function FairPriceQuiz() {
           />
         )}
       </div>
+
+      {/* Related Tools */}
+      <RelatedToolsGrid
+        title={getFrameControl('fair-price-quiz').title}
+        description={getFrameControl('fair-price-quiz').description}
+        tools={getSmartRelatedTools('fair-price-quiz')}
+      />
+      
+      <MinimalFooter />
     </div>
   );
 }

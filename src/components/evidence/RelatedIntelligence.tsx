@@ -1,12 +1,15 @@
-import { EVIDENCE_RELATED } from '@/config/toolRegistry';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 
 export function RelatedIntelligence() {
+  const frameControl = getFrameControl('evidence');
+  const smartTools = getSmartRelatedTools('evidence');
+  
   return (
     <RelatedToolsGrid
-      title="Related Intelligence"
-      description="Not sure where to start? Use the tools our agents use."
-      tools={EVIDENCE_RELATED}
+      title={frameControl.title}
+      description={frameControl.description}
+      tools={smartTools}
       columns={3}
     />
   );

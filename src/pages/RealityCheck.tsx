@@ -12,8 +12,9 @@ import RealityReport from "@/components/reality-check/RealityReport";
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { trackLeadCapture, trackConsultation, trackToolCompletion } from "@/lib/gtm";
+import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
+import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
 import type { SourceTool } from "@/types/sourceTool";
-
 const QUESTIONS = [
   {
     id: 'windowAge',
@@ -289,6 +290,13 @@ const RealityCheck = () => {
           </Button>
         </div>
       </main>
+
+      {/* Related Tools */}
+      <RelatedToolsGrid
+        title={getFrameControl('reality-check').title}
+        description={getFrameControl('reality-check').description}
+        tools={getSmartRelatedTools('reality-check', sessionData.toolsCompleted)}
+      />
 
       {/* Minimal Footer */}
       <MinimalFooter />

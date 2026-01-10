@@ -12,6 +12,8 @@ import { ConsultationBookingModal } from '@/components/conversion/ConsultationBo
 import { intelResources, IntelResource } from '@/data/intelData';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { ROUTES } from '@/config/navigation';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
+import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 
 export default function Intel() {
   usePageTracking('intel-library');
@@ -100,6 +102,13 @@ export default function Intel() {
           });
         }}
         sessionData={sessionData}
+      />
+
+      {/* Related Tools */}
+      <RelatedToolsGrid
+        title={getFrameControl('intel').title}
+        description={getFrameControl('intel').description}
+        tools={getSmartRelatedTools('intel', sessionData.toolsCompleted)}
       />
 
       {/* Minimal Footer */}
