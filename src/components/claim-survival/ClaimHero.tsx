@@ -64,7 +64,7 @@ export function ClaimHero({
             
             <Button 
               size="lg" 
-              variant={isEmergencyMode ? 'destructive' : 'outline'}
+              variant="destructive"
               onClick={onEmergencyToggle}
               className="w-full sm:w-auto"
             >
