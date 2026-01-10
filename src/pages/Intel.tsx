@@ -63,9 +63,10 @@ export default function Intel() {
             </Button>
           </Link>
           <Button 
-            variant="outline" 
+            variant="default" 
             size="sm"
             onClick={() => setShowConsultation(true)}
+            className="hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200"
           >
             <Calendar className="mr-2 h-4 w-4" />
             Book Consultation
