@@ -47,11 +47,11 @@ export const RelatedToolsSection = () => {
               <div className={`w-12 h-12 bg-${tool.color}-100 rounded-lg flex items-center justify-center mb-4`}>
                 <tool.icon className={`w-6 h-6 text-${tool.color}-600`} />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors flex items-center gap-2">
+              <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
                 {tool.title}
                 <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
               </h3>
-              <p className="text-slate-600 text-sm">{tool.description}</p>
+              <p className="text-muted-foreground text-sm">{tool.description}</p>
             </Link>
           ))}
         </div>
