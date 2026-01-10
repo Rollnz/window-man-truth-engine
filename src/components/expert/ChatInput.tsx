@@ -14,6 +14,12 @@ export function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
 
   const handleSend = () => {
     if (!input.trim() || isLoading || disabled) return;
+    
+    // Haptic feedback on mobile devices
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10);
+    }
+    
     onSend(input.trim());
     setInput('');
   };
