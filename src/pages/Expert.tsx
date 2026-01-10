@@ -175,7 +175,7 @@ export default function Expert() {
           description="We encountered an issue with the AI expert. Please refresh to try again."
           onReset={() => window.location.reload()}
         >
-          <div className="flex-1 flex flex-col container mx-auto max-w-3xl px-4 mt-[120px]">
+          <div className="flex-1 flex flex-col container mx-auto max-w-3xl px-4 mt-[90px]">
             {/* Title Section */}
             <div className="p-4 sm:p-6 text-center border-b border-border/50">
               <h1 className="text-2xl sm:text-3xl font-bold mb-2">
