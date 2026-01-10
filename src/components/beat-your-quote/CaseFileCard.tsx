@@ -82,7 +82,7 @@ export function CaseFileCard({
           <div className="space-y-2 text-sm font-mono">
             {/* Contractor - Redacted */}
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Contractor:</span>
+              <span className="text-black">Contractor:</span>
               <span className="bg-muted-foreground/80 text-transparent select-none px-8 rounded">
                 REDACTED
               </span>
