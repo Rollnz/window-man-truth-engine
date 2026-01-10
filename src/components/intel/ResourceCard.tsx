@@ -23,7 +23,10 @@ export function ResourceCard({
   const buttonText = resource.id === 'claim-survival' ? 'Access System' : 'Access Guide';
 
   return (
-    <div className={`group relative flex flex-col p-6 rounded-xl bg-card transition-all duration-300 frame-card ${hasFloatingImage ? '!overflow-visible' : ''}`}>
+    <div className={`group relative flex flex-col p-6 rounded-xl bg-card transition-all duration-300 
+      border-2 border-primary/70 
+      shadow-md hover:shadow-xl hover:-translate-y-1
+      frame-card ${hasFloatingImage ? '!overflow-visible' : ''}`}>
       {/* Floating book image */}
       {displayCoverUrl && (
         <FloatingBookImage
@@ -41,21 +44,21 @@ export function ResourceCard({
         </div>
       )}
 
-      {/* Icon */}
-      <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-primary/20 text-primary">
+      {/* Icon - mutes on hover */}
+      <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-primary/20 text-primary group-hover:bg-primary/10 group-hover:text-primary/60 transition-colors duration-300">
         <Icon className="w-6 h-6" />
       </div>
 
-      {/* Tagline */}
-      <span className="text-xs text-primary font-medium uppercase tracking-wider mb-1">
+      {/* Tagline - mutes on hover */}
+      <span className="text-xs text-primary font-medium uppercase tracking-wider mb-1 group-hover:text-primary/60 transition-colors duration-300">
         {resource.tagline}
       </span>
 
       {/* Title */}
-      <h3 className="text-lg font-semibold mb-2 text-gray-900">{resource.title}</h3>
+      <h3 className="text-lg font-semibold mb-2 text-foreground">{resource.title}</h3>
 
       {/* Description */}
-      <p className="text-sm text-gray-700 mb-4">
+      <p className="text-sm text-muted-foreground mb-4">
         {resource.description}
       </p>
 
@@ -79,12 +82,16 @@ export function ResourceCard({
       )}
 
       {/* Page count */}
-      <p className="text-xs text-gray-500 mb-4">
+      <p className="text-xs text-muted-foreground mb-4">
         {resource.pageCount} pages • PDF format
       </p>
 
-      {/* Action button - direct navigation */}
-      <Button onClick={onAccess} variant="default" className="w-full">
+      {/* Action button - mutes on card hover */}
+      <Button 
+        onClick={onAccess} 
+        variant="default" 
+        className="w-full group-hover:bg-primary/70 group-hover:text-primary-foreground/90 transition-colors duration-300"
+      >
         {buttonText}
         <ArrowRight className="ml-2 h-4 w-4" />
       </Button>
