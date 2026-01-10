@@ -3,7 +3,7 @@ import { ArrowRight, LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
 import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { ToolDefinition } from '@/config/toolRegistry';
 
@@ -72,8 +72,7 @@ export function RelatedToolsGrid({
   const showHeader = title.length > 0;
 
   return (
-    <TooltipProvider>
-      <section className={cn('py-12', variantClasses[variant], className)}>
+    <section className={cn('py-12', variantClasses[variant], className)}>
       <div className="container px-4 mx-auto">
         {/* Header */}
         {showHeader && (
@@ -177,7 +176,6 @@ export function RelatedToolsGrid({
           })}
         </div>
       </div>
-      </section>
-    </TooltipProvider>
+    </section>
   );
 }
