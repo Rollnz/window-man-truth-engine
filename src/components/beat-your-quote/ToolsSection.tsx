@@ -5,6 +5,7 @@ import { trackEvent } from '@/lib/gtm';
 import { StampBadge } from './StampBadge';
 import { ROUTES } from '@/config/navigation';
 import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
+import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 
 const TOOLS = [
   {
@@ -71,34 +72,36 @@ export function ToolsSection() {
 
         {/* Tool Cards Grid */}
         <div className="grid md:grid-cols-3 gap-6">
-          {TOOLS.map((tool) => {
+          {TOOLS.map((tool, index) => {
             const Icon = tool.icon;
             return (
-              <ImpactWindowCard key={tool.id}>
-                <div className="p-6 flex flex-col h-full">
-                  {/* Icon Badge */}
-                  <div className={`w-12 h-12 rounded-lg ${tool.bgColor} border ${tool.borderColor} flex items-center justify-center mb-4`}>
-                    <Icon className={`w-6 h-6 ${tool.iconColor}`} />
-                  </div>
+              <AnimateOnScroll key={tool.id} delay={index * 100}>
+                <ImpactWindowCard className="h-full">
+                  <div className="p-6 flex flex-col h-full">
+                    {/* Icon Badge */}
+                    <div className={`w-12 h-12 rounded-lg ${tool.bgColor} border ${tool.borderColor} flex items-center justify-center mb-4`}>
+                      <Icon className={`w-6 h-6 ${tool.iconColor}`} />
+                    </div>
 
-                  {/* Content */}
-                  <h3 className="text-xl font-bold text-white mb-2 font-mono uppercase tracking-wide drop-shadow-md">
-                    {tool.title}
-                  </h3>
-                  <p className="text-sm text-white/80 mb-4 flex-grow">
-                    {tool.description}
-                  </p>
-                  
-                  <Button 
-                    onClick={() => handleToolClick(tool)} 
-                    variant="cta" 
-                    className="w-full justify-between"
-                  >
-                    <span>Launch Tool</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </ImpactWindowCard>
+                    {/* Content */}
+                    <h3 className="text-xl font-bold text-white mb-2 font-mono uppercase tracking-wide drop-shadow-md">
+                      {tool.title}
+                    </h3>
+                    <p className="text-sm text-white/80 mb-4 flex-grow">
+                      {tool.description}
+                    </p>
+                    
+                    <Button 
+                      onClick={() => handleToolClick(tool)} 
+                      variant="cta" 
+                      className="w-full justify-between"
+                    >
+                      <span>Launch Tool</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </ImpactWindowCard>
+              </AnimateOnScroll>
             );
           })}
         </div>
