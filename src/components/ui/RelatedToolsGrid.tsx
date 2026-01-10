@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button';
 import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
 import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 import { cn } from '@/lib/utils';
+import type { ToolDefinition } from '@/config/toolRegistry';
 
+/**
+ * ToolConfig - accepts either a full ToolDefinition or a minimal config
+ */
 export interface ToolConfig {
   id: string;
   title: string;
@@ -23,7 +27,7 @@ interface RelatedToolsGridProps {
   /** Section subheading */
   description?: string;
   /** Array of tool configurations */
-  tools: ToolConfig[];
+  tools: (ToolConfig | ToolDefinition)[];
   /** Grid columns: 2, 3, or 4 */
   columns?: 2 | 3 | 4;
   /** Stagger delay between card animations (ms) */
@@ -63,26 +67,31 @@ export function RelatedToolsGrid({
   className,
   variant = 'default',
 }: RelatedToolsGridProps) {
+  // Don't render header section if title is empty
+  const showHeader = title.length > 0;
+
   return (
     <section className={cn('py-12', variantClasses[variant], className)}>
       <div className="container px-4 mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h2 className={cn(
-            'text-xl md:text-2xl font-bold mb-2',
-            variant === 'dossier' ? 'text-white' : 'text-foreground'
-          )}>
-            {title}
-          </h2>
-          {description && (
-            <p className={cn(
-              'max-w-2xl mx-auto',
-              variant === 'dossier' ? 'text-white/70' : 'text-muted-foreground'
+        {showHeader && (
+          <div className="text-center mb-8">
+            <h2 className={cn(
+              'text-xl md:text-2xl font-bold mb-2',
+              variant === 'dossier' ? 'text-white' : 'text-foreground'
             )}>
-              {description}
-            </p>
-          )}
-        </div>
+              {title}
+            </h2>
+            {description && (
+              <p className={cn(
+                'max-w-2xl mx-auto',
+                variant === 'dossier' ? 'text-white/70' : 'text-muted-foreground'
+              )}>
+                {description}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Tool Cards Grid */}
         <div className={cn(
