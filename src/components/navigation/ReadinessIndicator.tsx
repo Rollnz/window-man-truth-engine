@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import { useEngagementScore } from '@/hooks/useEngagementScore';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -6,6 +8,9 @@ import { ROUTES } from '@/config/navigation';
 import { cn } from '@/lib/utils';
 import { Circle, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+const READY_TO_WIN_THRESHOLD = 81;
+const CONFETTI_FIRED_KEY = 'wte-confetti-fired';
 
 /**
  * Circular progress ring component
@@ -78,9 +83,55 @@ function getNextSteps() {
 }
 
 export function ReadinessIndicator() {
-  const { score, hasIncreased, status, maxScore } = useEngagementScore();
+  const { score, previousScore, hasIncreased, status, maxScore } = useEngagementScore();
   const progress = Math.min((score / maxScore) * 100, 100);
   const nextSteps = getNextSteps();
+  const confettiFiredRef = useRef(false);
+  
+  // Celebratory confetti when hitting "Ready to Win" threshold
+  useEffect(() => {
+    // Check if already fired this session
+    const alreadyFired = sessionStorage.getItem(CONFETTI_FIRED_KEY) === 'true';
+    if (alreadyFired) {
+      confettiFiredRef.current = true;
+      return;
+    }
+    
+    // Detect threshold crossing: was below, now at or above
+    const crossedThreshold = previousScore < READY_TO_WIN_THRESHOLD && score >= READY_TO_WIN_THRESHOLD;
+    
+    if (crossedThreshold && !confettiFiredRef.current) {
+      confettiFiredRef.current = true;
+      sessionStorage.setItem(CONFETTI_FIRED_KEY, 'true');
+      
+      // Fire brand-colored confetti burst
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.3, x: 0.85 }, // Burst from near the indicator
+        colors: ['#FFD700', '#1E3A8A', '#FFFFFF'], // Gold, Deep Blue, White
+        ticks: 200,
+        gravity: 1.2,
+        scalar: 1.1,
+        shapes: ['circle', 'square'],
+        disableForReducedMotion: true,
+      });
+      
+      // Secondary burst for premium feel
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          spread: 100,
+          origin: { y: 0.35, x: 0.8 },
+          colors: ['#FFD700', '#1E3A8A', '#FFFFFF'],
+          ticks: 150,
+          gravity: 1,
+          scalar: 0.9,
+          disableForReducedMotion: true,
+        });
+      }, 150);
+    }
+  }, [score, previousScore]);
   
   // Don't show if score is 0 (user hasn't engaged yet)
   if (score === 0) return null;
