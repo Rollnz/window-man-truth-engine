@@ -12,10 +12,11 @@ interface ProofStatProps {
   iconBg: string;
   iconBorder: string;
   valueColor: string;
+  glowStyle: React.CSSProperties;
   delay?: number;
 }
 
-function ProofStat({ value, prefix = '', suffix, label, icon, iconBg, iconBorder, valueColor, delay = 0 }: ProofStatProps) {
+function ProofStat({ value, prefix = '', suffix, label, icon, iconBg, iconBorder, valueColor, glowStyle, delay = 0 }: ProofStatProps) {
   const [displayValue, setDisplayValue] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -67,7 +68,7 @@ function ProofStat({ value, prefix = '', suffix, label, icon, iconBg, iconBorder
       <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${iconBg} ${iconBorder}`}>
         {icon}
       </div>
-      <div className={`text-3xl md:text-4xl font-bold mb-2 ${valueColor}`}>
+      <div className={`text-3xl md:text-4xl font-bold mb-2 ${valueColor}`} style={glowStyle}>
         {prefix}{displayValue.toLocaleString()}{suffix}
       </div>
       <p className="text-muted-foreground">{label}</p>
@@ -101,6 +102,7 @@ export function SocialProof() {
             iconBg="bg-emerald-500/10"
             iconBorder="border border-emerald-500/20"
             valueColor="text-emerald-500"
+            glowStyle={{ textShadow: '0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2)' }}
             delay={0}
           />
           <ProofStat
@@ -111,6 +113,7 @@ export function SocialProof() {
             iconBg="bg-sky-500/10"
             iconBorder="border border-sky-500/20"
             valueColor="text-sky-500"
+            glowStyle={{ textShadow: '0 0 20px rgba(14, 165, 233, 0.4), 0 0 40px rgba(14, 165, 233, 0.2)' }}
             delay={200}
           />
           <ProofStat
@@ -121,6 +124,7 @@ export function SocialProof() {
             iconBg="bg-amber-500/10"
             iconBorder="border border-amber-500/20"
             valueColor="text-amber-500"
+            glowStyle={{ textShadow: '0 0 20px rgba(245, 158, 11, 0.4), 0 0 40px rgba(245, 158, 11, 0.2)' }}
             delay={400}
           />
         </div>
