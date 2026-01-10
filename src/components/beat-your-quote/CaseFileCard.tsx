@@ -95,11 +95,11 @@ export function CaseFileCard({
                   <span className="text-primary">${data.originalQuote.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Bloat Detected:</span>
+                  <span className="text-black">Bloat Detected:</span>
                   <span className="text-red-400">-${data.bloatDetected?.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between border-t border-border/30 pt-2 mt-2">
-                  <span className="text-muted-foreground">Window Man Price:</span>
+                  <span className="text-black">Window Man Price:</span>
                   <span className="text-primary font-bold">${data.finalPrice?.toLocaleString()}</span>
                 </div>
               </>}
@@ -111,11 +111,11 @@ export function CaseFileCard({
                   <span className="text-red-400 line-through">{data.competitorSpec}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Window Man Spec:</span>
+                  <span className="text-black">Window Man Spec:</span>
                   <span className="text-primary">{data.windowManSpec}</span>
                 </div>
                 <div className="flex justify-between border-t border-border/30 pt-2 mt-2">
-                  <span className="text-muted-foreground">Savings:</span>
+                  <span className="text-black">Savings:</span>
                   <span className="text-primary font-bold">${data.savings?.toLocaleString()}</span>
                 </div>
               </>}
@@ -123,15 +123,15 @@ export function CaseFileCard({
             {/* Type 3: Validated Quote */}
             {data.riskAnalysis && <>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Risk Analysis:</span>
+                  <span className="text-black">Risk Analysis:</span>
                   <span className="text-green-400">{data.riskAnalysis}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Price Check:</span>
+                  <span className="text-black">Price Check:</span>
                   <span className="text-green-400">{data.priceCheck}</span>
                 </div>
                 <div className="flex justify-between border-t border-border/30 pt-2 mt-2">
-                  <span className="text-muted-foreground">Outcome:</span>
+                  <span className="text-black">Outcome:</span>
                   <span className="text-green-400 font-bold">{data.outcome}</span>
                 </div>
               </>}
