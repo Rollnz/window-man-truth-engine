@@ -18,8 +18,13 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <Link to={ROUTES.HOME} className="flex items-center gap-2 font-bold text-lg text-foreground">
-          Its Window Man
+        <Link to={ROUTES.HOME} className="flex items-center gap-2 font-bold text-lg">
+          <img 
+            src="/icon-512.webp" 
+            alt="Its Window Man Logo" 
+            className="w-9 h-9 object-contain"
+          />
+          <span style={{ color: '#2278BF' }}>Its Window Man</span>
         </Link>
 
         {/* Desktop Navigation */}
