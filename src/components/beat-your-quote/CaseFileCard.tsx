@@ -91,7 +91,7 @@ export function CaseFileCard({
             {/* Type 1: Defeated Quote */}
             {data.originalQuote && <>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Original Quote:</span>
+                  <span className="text-black">Original Quote:</span>
                   <span className="text-primary">${data.originalQuote.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
