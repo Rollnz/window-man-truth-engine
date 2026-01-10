@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import { toast } from 'sonner';
 import { useEngagementScore } from '@/hooks/useEngagementScore';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -83,12 +85,13 @@ function getNextSteps() {
 }
 
 export function ReadinessIndicator() {
+  const navigate = useNavigate();
   const { score, previousScore, hasIncreased, status, maxScore } = useEngagementScore();
   const progress = Math.min((score / maxScore) * 100, 100);
   const nextSteps = getNextSteps();
   const confettiFiredRef = useRef(false);
   
-  // Celebratory confetti when hitting "Ready to Win" threshold
+  // Celebratory confetti + toast when hitting "Ready to Win" threshold
   useEffect(() => {
     // Check if already fired this session
     const alreadyFired = sessionStorage.getItem(CONFETTI_FIRED_KEY) === 'true';
@@ -108,8 +111,8 @@ export function ReadinessIndicator() {
       confetti({
         particleCount: 100,
         spread: 70,
-        origin: { y: 0.3, x: 0.85 }, // Burst from near the indicator
-        colors: ['#FFD700', '#1E3A8A', '#FFFFFF'], // Gold, Deep Blue, White
+        origin: { y: 0.3, x: 0.85 },
+        colors: ['#FFD700', '#1E3A8A', '#FFFFFF'],
         ticks: 200,
         gravity: 1.2,
         scalar: 1.1,
@@ -130,8 +133,18 @@ export function ReadinessIndicator() {
           disableForReducedMotion: true,
         });
       }, 150);
+      
+      // Fire celebratory toast notification
+      toast.success("You're Ready to Win! 🏆", {
+        description: 'You have unlocked the highest readiness tier. Lock in your protection now.',
+        duration: 5000,
+        action: {
+          label: 'Talk to Expert',
+          onClick: () => navigate(ROUTES.EXPERT),
+        },
+      });
     }
-  }, [score, previousScore]);
+  }, [score, previousScore, navigate]);
   
   // Don't show if score is 0 (user hasn't engaged yet)
   if (score === 0) return null;
