@@ -1,0 +1,120 @@
+import { useEffect, useRef } from 'react';
+import { X, Sparkles } from 'lucide-react';
+import { useWelcomeToast } from '@/hooks/useWelcomeToast';
+import { trackEngagement } from '@/services/analytics';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+/**
+ * Welcome Toast - Glassmorphism onboarding prompt
+ * Only appears on Homepage for first-time visitors with 0 engagement score
+ */
+export function WelcomeToast() {
+  const { showToast, dismissToast } = useWelcomeToast();
+  const hasTrackedImpression = useRef(false);
+  
+  // Track impression when toast becomes visible
+  useEffect(() => {
+    if (showToast && !hasTrackedImpression.current) {
+      hasTrackedImpression.current = true;
+      trackEngagement('toast_impression', 0, 'welcome');
+    }
+  }, [showToast]);
+  
+  const handleStartScoring = () => {
+    trackEngagement('toast_click', 0, 'welcome');
+    
+    // Scroll to tool grid with fallback
+    const toolGrid = document.getElementById('tool-grid');
+    if (toolGrid) {
+      toolGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Add brief highlight effect
+      toolGrid.classList.add('ring-2', 'ring-primary/50', 'ring-offset-2');
+      setTimeout(() => {
+        toolGrid.classList.remove('ring-2', 'ring-primary/50', 'ring-offset-2');
+      }, 1500);
+    } else {
+      // Fallback: scroll to approximate fold
+      window.scrollTo({ top: 600, behavior: 'smooth' });
+    }
+    
+    dismissToast();
+  };
+  
+  const handleDismiss = () => {
+    trackEngagement('toast_dismiss', 0, 'welcome');
+    dismissToast();
+  };
+  
+  if (!showToast) return null;
+  
+  return (
+    <div
+      className={cn(
+        // Base positioning
+        "fixed z-50 max-w-sm w-[calc(100%-2rem)]",
+        // Desktop: bottom-center
+        "bottom-4 left-1/2 -translate-x-1/2",
+        // Mobile: top-center with navbar clearance
+        "sm:bottom-6 sm:left-1/2 sm:-translate-x-1/2",
+        // Animation
+        "animate-in slide-in-from-bottom-4 fade-in duration-500"
+      )}
+    >
+      <div
+        className={cn(
+          // Glassmorphism effect
+          "relative overflow-hidden rounded-xl",
+          "bg-background/80 backdrop-blur-xl",
+          "border border-white/20 dark:border-white/10",
+          "shadow-2xl shadow-primary/10",
+          // Padding
+          "p-4 sm:p-5"
+        )}
+      >
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
+        
+        {/* Close button */}
+        <button
+          onClick={handleDismiss}
+          className={cn(
+            "absolute top-3 right-3 p-1 rounded-full",
+            "text-muted-foreground hover:text-foreground",
+            "hover:bg-muted/50 transition-colors"
+          )}
+          aria-label="Dismiss"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        
+        {/* Content */}
+        <div className="relative space-y-3">
+          {/* Headline */}
+          <div className="flex items-center gap-2 pr-6">
+            <Sparkles className="h-5 w-5 text-primary shrink-0" />
+            <h3 className="font-semibold text-foreground">
+              Welcome to the Window Truth Engine 🛡️
+            </h3>
+          </div>
+          
+          {/* Body */}
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            See your <span className="text-foreground font-medium">Readiness Score</span> in the header? 
+            Use tools to earn points and unlock elite protection guides.
+          </p>
+          
+          {/* CTA Button */}
+          <Button
+            onClick={handleStartScoring}
+            variant="cta"
+            size="sm"
+            className="w-full sm:w-auto mt-1"
+          >
+            Start Scoring Points
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
