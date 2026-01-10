@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/config/navigation';
 import { AlertTriangle, Calculator, Brain, MessageSquare, GitCompare, Shield, ShieldCheck, Zap, FolderSearch, FileStack, ScanSearch } from 'lucide-react';
+import { getToolIconColors } from '@/lib/toolIconColors';
+
 interface Tool {
   id: string;
   title: string;
@@ -11,6 +13,7 @@ interface Tool {
   gated: boolean;
   badge?: string;
 }
+
 const tools: Tool[] = [{
   id: 'reality-check',
   title: 'Reality Check Tool',
@@ -109,6 +112,7 @@ const tools: Tool[] = [{
   gated: true,
   badge: 'Beta'
 }];
+
 function ToolCard({
   tool,
   index
@@ -116,6 +120,8 @@ function ToolCard({
   tool: Tool;
   index: number;
 }) {
+  const colors = getToolIconColors(tool.id);
+  
   return <Link to={tool.path} style={{
     animationDelay: `${index * 0.1}s`
   }} className="group relative flex flex-col p-6 rounded-xl bg-card border border-border card-hover shadow-2xl">
@@ -129,8 +135,8 @@ function ToolCard({
           </div>}
       </div>
 
-      {/* Icon */}
-      <div className="w-12 h-12 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 text-primary group-hover:bg-primary/20 transition-colors">
+      {/* Icon with themed background */}
+      <div className={`w-12 h-12 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center mb-4 group-hover:scale-105 transition-transform`}>
         {tool.icon}
       </div>
 
