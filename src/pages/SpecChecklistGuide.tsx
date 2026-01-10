@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTracking } from '@/hooks/usePageTracking';
-import { Scale, ScanSearch, Calculator, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/gtm';
 import { Navbar } from '@/components/home/Navbar';
+import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
+import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
 
 // Section Components
@@ -31,6 +32,9 @@ const SpecChecklistGuide = () => {
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mainCtaRef = useRef<HTMLDivElement>(null);
+  const { sessionData } = useSessionData();
+  const frameControl = getFrameControl('spec-checklist-guide');
+  const smartTools = getSmartRelatedTools('spec-checklist-guide', sessionData.toolsCompleted);
 
   // Track page view on mount
   React.useEffect(() => {
@@ -76,60 +80,12 @@ const SpecChecklistGuide = () => {
       <SecondaryCTASection id="secondary-cta" onSuccess={handleConversionSuccess} hasConverted={hasConverted} />
 
       {/* Related Tools Section */}
-      <section className="py-16 sm:py-24 bg-background">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground text-center mb-12">
-            Related Tools
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                  <Scale className="w-5 h-5 text-cyan-500" />
-                </div>
-                <h3 className="font-semibold text-foreground">Comparison Tool</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Input your specs and see 10-year true costs side-by-side.
-              </p>
-              <Button variant="cta" size="sm" className="w-full gap-2" onClick={() => navigate(ROUTES.COMPARISON)}>
-                Compare Options <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/30 flex items-center justify-center">
-                  <ScanSearch className="w-5 h-5 text-sky-500" />
-                </div>
-                <h3 className="font-semibold text-foreground">Quote Scanner</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Upload your quote and get instant AI analysis of red flags.
-              </p>
-              <Button variant="cta" size="sm" className="w-full gap-2" onClick={() => navigate(ROUTES.QUOTE_SCANNER)}>
-                Scan My Quote <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                  <Calculator className="w-5 h-5 text-emerald-500" />
-                </div>
-                <h3 className="font-semibold text-foreground">Cost Calculator</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                See the true 10-year cost of waiting vs. acting now.
-              </p>
-              <Button variant="cta" size="sm" className="w-full gap-2" onClick={() => navigate(ROUTES.COST_CALCULATOR)}>
-                Calculate Now <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <RelatedToolsGrid
+        title={frameControl.title}
+        description={frameControl.description}
+        tools={smartTools}
+        className="bg-background"
+      />
 
       {/* Footer */}
       <footer className="bg-card border-t border-border py-8">
