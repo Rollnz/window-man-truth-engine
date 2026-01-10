@@ -1,8 +1,8 @@
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Scale, ShieldAlert, FileSearch, MessageSquareText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { relatedTools } from '@/data/claimSurvivalData';
+import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
 
 const iconMap: Record<string, { 
   icon: React.ElementType; 
@@ -12,27 +12,27 @@ const iconMap: Record<string, {
 }> = {
   comparison: {
     icon: Scale,
-    iconColor: 'text-cyan-500',
-    bgColor: 'bg-cyan-500/10 dark:bg-cyan-500/20',
-    borderColor: 'border-cyan-500/30'
+    iconColor: 'text-cyan-400',
+    bgColor: 'bg-cyan-500/20',
+    borderColor: 'border-cyan-500/40'
   },
   'risk-diagnostic': {
     icon: ShieldAlert,
-    iconColor: 'text-orange-500',
-    bgColor: 'bg-orange-500/10 dark:bg-orange-500/20',
-    borderColor: 'border-orange-500/30'
+    iconColor: 'text-orange-400',
+    bgColor: 'bg-orange-500/20',
+    borderColor: 'border-orange-500/40'
   },
   evidence: {
     icon: FileSearch,
-    iconColor: 'text-violet-500',
-    bgColor: 'bg-violet-500/10 dark:bg-violet-500/20',
-    borderColor: 'border-violet-500/30'
+    iconColor: 'text-violet-400',
+    bgColor: 'bg-violet-500/20',
+    borderColor: 'border-violet-500/40'
   },
   expert: {
     icon: MessageSquareText,
-    iconColor: 'text-sky-500',
-    bgColor: 'bg-sky-500/10 dark:bg-sky-500/20',
-    borderColor: 'border-sky-500/30'
+    iconColor: 'text-sky-400',
+    bgColor: 'bg-sky-500/20',
+    borderColor: 'border-sky-500/40'
   },
 };
 
@@ -51,26 +51,28 @@ export function ToolEcosystem() {
           const toolConfig = iconMap[tool.id] || {
             icon: FileSearch,
             iconColor: 'text-primary',
-            bgColor: 'bg-primary/10',
-            borderColor: 'border-primary/30'
+            bgColor: 'bg-primary/20',
+            borderColor: 'border-primary/40'
           };
           const Icon = toolConfig.icon;
           return (
-            <Card key={tool.id} className="p-5 hover:border-primary/50 transition-colors">
-              <div className="mb-4">
-                <div className={`w-10 h-10 rounded-lg ${toolConfig.bgColor} border ${toolConfig.borderColor} flex items-center justify-center`}>
-                  <Icon className={`w-5 h-5 ${toolConfig.iconColor}`} />
+            <ImpactWindowCard key={tool.id}>
+              <div className="p-5 flex flex-col h-full">
+                <div className="mb-4">
+                  <div className={`w-10 h-10 rounded-lg ${toolConfig.bgColor} border ${toolConfig.borderColor} flex items-center justify-center`}>
+                    <Icon className={`w-5 h-5 ${toolConfig.iconColor}`} />
+                  </div>
                 </div>
+                <h3 className="font-semibold text-sm mb-1 text-white drop-shadow-md">{tool.name}</h3>
+                <p className="text-xs text-white/80 mb-4 flex-grow">{tool.description}</p>
+                <Link to={tool.path}>
+                  <Button variant="cta" size="sm" className="w-full justify-between">
+                    Use Tool
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
-              <h3 className="font-semibold text-sm mb-1">{tool.name}</h3>
-              <p className="text-xs text-muted-foreground mb-4">{tool.description}</p>
-              <Link to={tool.path}>
-                <Button variant="cta" size="sm" className="w-full justify-between">
-                  Use Tool
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </Card>
+            </ImpactWindowCard>
           );
         })}
       </div>

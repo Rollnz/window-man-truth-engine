@@ -1,13 +1,17 @@
 import { Link } from 'react-router-dom';
 import { GitCompare, Zap, Shield, ArrowRight } from 'lucide-react';
-import { getToolIconColors } from '@/lib/toolIconColors';
+import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
+import { Button } from '@/components/ui/button';
 
 const relatedTools = [
   {
     id: 'comparison',
     title: 'Comparison Engine',
     description: 'Validate a price with side-by-side spec comparison',
-    icon: <GitCompare className="w-6 h-6 text-cyan-500" />,
+    icon: GitCompare,
+    iconColor: 'text-cyan-400',
+    bgColor: 'bg-cyan-500/20',
+    borderColor: 'border-cyan-500/40',
     path: '/comparison',
     cta: 'Compare Specs',
   },
@@ -15,7 +19,10 @@ const relatedTools = [
     id: 'fast-win',
     title: 'Fast Win Detector',
     description: 'Find your highest-ROI upgrade in 45 seconds',
-    icon: <Zap className="w-6 h-6 text-amber-500" />,
+    icon: Zap,
+    iconColor: 'text-amber-400',
+    bgColor: 'bg-amber-500/20',
+    borderColor: 'border-amber-500/40',
     path: '/fast-win',
     cta: 'Find My #1 Upgrade',
   },
@@ -23,7 +30,10 @@ const relatedTools = [
     id: 'risk-diagnostic',
     title: 'Risk Diagnostic',
     description: 'Assess your protection gaps and insurance savings',
-    icon: <Shield className="w-6 h-6 text-orange-500" />,
+    icon: Shield,
+    iconColor: 'text-orange-400',
+    bgColor: 'bg-orange-500/20',
+    borderColor: 'border-orange-500/40',
     path: '/risk-diagnostic',
     cta: 'Check My Gaps',
   },
@@ -42,30 +52,30 @@ export function RelatedIntelligence() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
           {relatedTools.map((tool) => {
-            const colors = getToolIconColors(tool.id);
+            const Icon = tool.icon;
             return (
-              <Link
-                key={tool.id}
-                to={tool.path}
-                className="group flex flex-col p-5 rounded-xl bg-card border border-border card-hover"
-              >
-                <div className={`w-12 h-12 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center mb-4 group-hover:scale-105 transition-transform`}>
-                  {tool.icon}
+              <ImpactWindowCard key={tool.id}>
+                <div className="p-5 flex flex-col h-full">
+                  <div className={`w-12 h-12 rounded-lg ${tool.bgColor} border ${tool.borderColor} flex items-center justify-center mb-4`}>
+                    <Icon className={`w-6 h-6 ${tool.iconColor}`} />
+                  </div>
+                  
+                  <h3 className="font-semibold mb-1 text-white drop-shadow-md">
+                    {tool.title}
+                  </h3>
+                  
+                  <p className="text-sm text-white/80 mb-4 flex-grow">
+                    {tool.description}
+                  </p>
+                  
+                  <Link to={tool.path}>
+                    <Button variant="cta" size="sm" className="w-full justify-between">
+                      <span>{tool.cta}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
                 </div>
-                
-                <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
-                  {tool.title}
-                </h3>
-                
-                <p className="text-sm text-muted-foreground mb-4 flex-grow">
-                  {tool.description}
-                </p>
-                
-                <div className="flex items-center text-sm text-primary font-medium">
-                  <span>{tool.cta}</span>
-                  <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
-                </div>
-              </Link>
+              </ImpactWindowCard>
             );
           })}
         </div>
