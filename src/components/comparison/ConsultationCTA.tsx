@@ -41,7 +41,7 @@ export function ConsultationCTA({ onBookConsultation }: ConsultationCTAProps) {
           {/* CTA Button */}
           <Button 
             size="lg" 
-            variant="high-contrast"
+            variant="cta"
             className="text-lg px-8 py-6"
             onClick={onBookConsultation}
           >

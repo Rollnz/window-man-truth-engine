@@ -16,6 +16,8 @@ const buttonVariants = cva(
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         "high-contrast": "bg-white text-black hover:bg-white/90 dark:bg-white dark:text-black dark:hover:bg-white/90",
+        // CTA button - solid primary that stands out on any background
+        "cta": "bg-primary text-primary-foreground shadow-md hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 dark:glow-sm",
         // Glass Frame dimensional button - 3D gradient with pressed effect
         "dimensional": "bg-gradient-to-b from-primary/90 to-primary text-primary-foreground border-2 border-primary/80 shadow-lg hover:from-primary hover:to-primary/90 active:translate-y-0.5 active:shadow-md",
         // Frame outline button - thick bordered style
