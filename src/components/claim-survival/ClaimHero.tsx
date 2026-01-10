@@ -66,7 +66,7 @@ export function ClaimHero({
               size="lg" 
               variant="destructive"
               onClick={onEmergencyToggle}
-              className="w-full sm:w-auto"
+              className={`w-full sm:w-auto ${!isEmergencyMode ? 'animate-pulse' : ''}`}
             >
               <AlertTriangle className="mr-2 h-5 w-5" />
               {isEmergencyMode ? 'Viewing Crisis Protocol' : 'I Have Damage NOW'}
