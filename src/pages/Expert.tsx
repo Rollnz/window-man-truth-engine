@@ -18,8 +18,6 @@ import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { fastAIRequest, AI_TIMEOUTS } from '@/lib/aiRequest';
 import { TimeoutError, getErrorMessage } from '@/lib/errors';
 import { Bot, Save, Calendar, Check } from 'lucide-react';
-import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
-import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -241,13 +239,6 @@ export default function Expert() {
         onSuccess={handleConsultationSuccess}
         leadId={sessionData.leadId}
         sessionData={sessionData}
-      />
-
-      {/* Related Tools */}
-      <RelatedToolsGrid
-        title={getFrameControl('expert').title}
-        description={getFrameControl('expert').description}
-        tools={getSmartRelatedTools('expert', sessionData.toolsCompleted)}
       />
 
       {/* Minimal Footer */}
