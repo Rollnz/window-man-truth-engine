@@ -23,6 +23,7 @@ import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { getAttributionData } from '@/lib/attribution';
+import { Navbar } from '@/components/home/Navbar';
 import { ROUTES } from '@/config/navigation';
 import type { SourceTool } from '@/types/sourceTool';
 
@@ -93,39 +94,10 @@ const KitchenTableGuide = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Navigation */}
-      <nav className="bg-card/80 backdrop-blur-md sticky top-0 z-50 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <button 
-              onClick={() => navigate(ROUTES.HOME)}
-              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-            >
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-sm">
-                W
-              </div>
-              <span className="font-semibold text-foreground">Windowman Vault</span>
-            </button>
-
-            <div className="hidden md:flex items-center space-x-6">
-              <button 
-                onClick={() => navigate(ROUTES.QUOTE_SCANNER)}
-                className="text-muted-foreground hover:text-foreground transition-colors text-sm"
-              >
-                Quote Scanner
-              </button>
-              <button 
-                onClick={() => navigate(ROUTES.COST_CALCULATOR)}
-                className="text-muted-foreground hover:text-foreground transition-colors text-sm"
-              >
-                Cost Calculator
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* SECTION 1 — HERO */}
+      <div className="pt-14">
       <section className="relative bg-gradient-to-br from-primary/5 via-background to-secondary/10 py-16 sm:py-24 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">

@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/config/navigation';
-import { ArrowLeft, Calendar, FileSearch } from 'lucide-react';
+import { FileSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useToast } from '@/hooks/use-toast';
 import { useEvidenceAnalysis } from '@/hooks/useEvidenceAnalysis';
+import { Navbar } from '@/components/home/Navbar';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { ClaimHero } from '@/components/claim-survival/ClaimHero';
 import { ReadinessScore } from '@/components/claim-survival/ReadinessScore';
@@ -247,28 +248,11 @@ export default function ClaimSurvival() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="container px-4 py-4 flex items-center justify-between">
-          <Link to={ROUTES.HOME}>
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Tools
-            </Button>
-          </Link>
-          <Button 
-            variant="cta" 
-            size="sm"
-            onClick={() => setShowConsultation(true)}
-          >
-            <Calendar className="mr-2 h-4 w-4" />
-            Book Consultation
-          </Button>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Sticky Progress Bar */}
-      <StickyProgress 
+      <div className="pt-14">
+        <StickyProgress
         visible={showStickyProgress}
         completed={completedCount}
         total={claimDocuments.length}

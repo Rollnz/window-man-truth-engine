@@ -4,6 +4,7 @@ import { usePageTracking } from '@/hooks/usePageTracking';
 import { trackToolCompletion } from '@/lib/gtm';
 import { getQuestionByIndex, getTotalQuestions } from '@/data/riskDiagnosticData';
 import { calculateRiskScores, RiskAnswers } from '@/lib/riskCalculations';
+import { Navbar } from '@/components/home/Navbar';
 import { RiskHero } from '@/components/risk-diagnostic/RiskHero';
 import { RiskQuestion } from '@/components/risk-diagnostic/RiskQuestion';
 import { ProtectionReport } from '@/components/risk-diagnostic/ProtectionReport';
@@ -87,15 +88,18 @@ export default function RiskDiagnostic() {
 
   return (
     <div className="min-h-screen bg-background">
-      {phase === 'hero' && (
-        <RiskHero
+      <Navbar />
+
+      <div className="pt-14">
+        {phase === 'hero' && (
+          <RiskHero
           sessionData={sessionData}
           onStart={handleStart}
-          hasStarted={false}
-        />
-      )}
+            hasStarted={false}
+          />
+        )}
 
-      {phase === 'questions' && questionData && (
+        {phase === 'questions' && questionData && (
         <RiskQuestion
           key={currentQuestionIndex}
           category={questionData.category}
@@ -107,20 +111,21 @@ export default function RiskDiagnostic() {
           onBack={handleBack}
           canGoBack={currentQuestionIndex > 0}
           isAnimating={isAnimating}
-          direction={direction}
-        />
-      )}
+            direction={direction}
+          />
+        )}
 
-      {phase === 'results' && (
-        <ProtectionReport
+        {phase === 'results' && (
+          <ProtectionReport
           breakdown={breakdown}
           answers={answers}
           sessionData={sessionData}
           onEmailReport={() => setShowLeadModal(true)}
           onScheduleConsultation={() => setShowBookingModal(true)}
-          onUpdateHomeSize={handleUpdateHomeSize}
-        />
-      )}
+            onUpdateHomeSize={handleUpdateHomeSize}
+          />
+        )}
+      </div>
 
       <LeadCaptureModal
         isOpen={showLeadModal}

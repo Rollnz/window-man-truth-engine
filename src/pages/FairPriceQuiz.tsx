@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navbar } from '@/components/home/Navbar';
 import { QuizHero } from '@/components/fair-price-quiz/QuizHero';
 import { QuizQuestion } from '@/components/fair-price-quiz/QuizQuestion';
 import { AnalysisTheater } from '@/components/fair-price-quiz/AnalysisTheater';
@@ -218,9 +219,12 @@ export default function FairPriceQuiz() {
 
   return (
     <div className="min-h-screen bg-background">
-      {phase === 'hero' && <QuizHero onStart={handleStart} />}
+      <Navbar />
 
-      {phase === 'quiz' && currentQuestion && (
+      <div className="pt-14">
+        {phase === 'hero' && <QuizHero onStart={handleStart} />}
+
+        {phase === 'quiz' && currentQuestion && (
         <QuizQuestion
           question={currentQuestion}
           currentStep={currentStep}
@@ -240,15 +244,16 @@ export default function FairPriceQuiz() {
         <BlurGate analysis={analysis} onSubmit={handleBlurGateSubmit} />
       )}
 
-      {phase === 'results' && analysis && (
-        <QuizResults
-          analysis={analysis}
-          answers={getQuizAnswers()}
-          userName={userName}
-          userEmail={userEmail}
-          onPhoneSubmit={handlePhoneSubmit}
-        />
-      )}
+        {phase === 'results' && analysis && (
+          <QuizResults
+            analysis={analysis}
+            answers={getQuizAnswers()}
+            userName={userName}
+            userEmail={userEmail}
+            onPhoneSubmit={handlePhoneSubmit}
+          />
+        )}
+      </div>
     </div>
   );
 }

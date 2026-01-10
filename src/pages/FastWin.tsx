@@ -1,10 +1,9 @@
 import { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { ROUTES } from '@/config/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { trackToolCompletion } from '@/lib/gtm';
+import { Navbar } from '@/components/home/Navbar';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { fastWinQuestions } from '@/data/fastWinData';
 import { calculateFastWin, type FastWinAnswers, type FastWinResult } from '@/lib/fastWinLogic';
@@ -123,25 +122,15 @@ export default function FastWin() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Header - only show on hero and result */}
-      {(phase === 'hero' || phase === 'result') && (
-        <header className="absolute top-0 left-0 right-0 z-20 p-4">
-          <Link
-            to={ROUTES.HOME}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Tools
-          </Link>
-        </header>
-      )}
+      <Navbar />
 
       {/* Phases */}
-      {phase === 'hero' && (
-        <FastWinHero onStart={handleStart} hasSessionData={hasExistingData} />
-      )}
+      <div className="pt-14">
+        {phase === 'hero' && (
+          <FastWinHero onStart={handleStart} hasSessionData={hasExistingData} />
+        )}
 
-      {phase === 'questions' && (
+        {phase === 'questions' && (
         <SpeedCard
           question={fastWinQuestions[currentStep]}
           currentStep={currentStep}
@@ -149,21 +138,22 @@ export default function FastWin() {
           onSelect={handleSelectAnswer}
           onBack={handleBack}
           isAnimating={isAnimating}
-          direction={direction}
-        />
-      )}
+            direction={direction}
+          />
+        )}
 
-      {phase === 'calculating' && (
-        <ShuffleAnimation onComplete={handleCalculationComplete} />
-      )}
+        {phase === 'calculating' && (
+          <ShuffleAnimation onComplete={handleCalculationComplete} />
+        )}
 
-      {phase === 'result' && result && (
-        <WinnerCard
-          result={result}
-          onSave={handleSave}
-          onGetPrice={handleGetPrice}
-        />
-      )}
+        {phase === 'result' && result && (
+          <WinnerCard
+            result={result}
+            onSave={handleSave}
+            onGetPrice={handleGetPrice}
+          />
+        )}
+      </div>
 
       {/* Modals */}
       <LeadCaptureModal
