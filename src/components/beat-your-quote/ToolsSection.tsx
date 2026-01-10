@@ -1,48 +1,17 @@
 import { useNavigate } from 'react-router-dom';
-import { FileSearch, Calculator, Shield } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 import { StampBadge } from './StampBadge';
-import { ROUTES } from '@/config/navigation';
+import { BEAT_YOUR_QUOTE_ARSENAL } from '@/config/toolRegistry';
 import { RelatedToolsGrid, ToolConfig } from '@/components/ui/RelatedToolsGrid';
-
-const tools: ToolConfig[] = [
-  {
-    id: 'quote-scanner',
-    title: 'Quote Scanner',
-    description: 'Upload your quote. Get a forensic analysis of hidden markups, inflated pricing, and negotiation leverage points.',
-    icon: FileSearch,
-    path: ROUTES.QUOTE_SCANNER,
-    iconColor: 'text-sky-400',
-    bgColor: 'bg-sky-500/20',
-    borderColor: 'border-sky-500/40',
-    cta: 'Launch Tool',
-  },
-  {
-    id: 'cost-calculator',
-    title: 'True Cost Calculator',
-    description: "Calculate what windows actually cost in your area. See the real numbers contractors don't want you to know.",
-    icon: Calculator,
-    path: ROUTES.COST_CALCULATOR,
-    iconColor: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/20',
-    borderColor: 'border-emerald-500/40',
-    cta: 'Launch Tool',
-  },
-  {
-    id: 'claim-survival',
-    title: 'Claim Survival Kit',
-    description: 'Preparing an insurance claim? Get organized with our step-by-step guide to maximize your coverage.',
-    icon: Shield,
-    path: ROUTES.CLAIM_SURVIVAL,
-    iconColor: 'text-amber-400',
-    bgColor: 'bg-amber-500/20',
-    borderColor: 'border-amber-500/40',
-    cta: 'Launch Tool',
-  },
-];
 
 export function ToolsSection() {
   const navigate = useNavigate();
+
+  // Map registry tools to include custom CTAs for this section
+  const tools: ToolConfig[] = BEAT_YOUR_QUOTE_ARSENAL.map(tool => ({
+    ...tool,
+    cta: 'Launch Tool',
+  }));
 
   const handleToolClick = (tool: ToolConfig) => {
     trackEvent('tool_card_clicked', {
