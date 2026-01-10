@@ -58,8 +58,25 @@ export function QuoteUploadZone({
         <span>{hasResult ? 'The Raw Quote' : 'Before: A Confusing Estimate'}</span>
       </div>
 
-      {/* Upload Zone */}
-      <div
+      {/* Upload Zone with AI Scanner Backdrop */}
+      <div className="relative">
+        {/* Blurred AI Scanner Backdrop - Hidden on mobile for performance */}
+        <div 
+          className="absolute inset-0 rounded-xl overflow-hidden hidden md:block pointer-events-none"
+          aria-hidden="true"
+        >
+          <img
+            src="/images/quote-scanner/ai-scanner-backdrop.webp"
+            alt=""
+            loading="lazy"
+            className="w-full h-full object-cover opacity-[0.12] blur-[20px] scale-110"
+          />
+          {/* Gradient overlay to fade into background */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/60" />
+        </div>
+
+        {/* Main Upload Zone */}
+        <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -177,6 +194,7 @@ export function QuoteUploadZone({
             {imagePreview ? <RefreshCw className="w-4 h-4" /> : <FileImage className="w-4 h-4" />}
             {imagePreview ? 'Select Different File' : 'Select File'}
           </Button>
+        </div>
         </div>
       </div>
 
