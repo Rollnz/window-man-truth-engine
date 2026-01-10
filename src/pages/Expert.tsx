@@ -170,33 +170,32 @@ export default function Expert() {
         description="We encountered an issue with the AI expert. Please refresh to try again."
         onReset={() => window.location.reload()}
       >
-        <div className="flex-1 flex flex-col overflow-hidden container mx-auto max-w-3xl">
-          {/* Title Section */}
-          <div className="p-4 sm:p-6 text-center border-b border-border/50">
-            <div className="flex justify-center mb-3">
-              <div className="p-3 rounded-full bg-primary/10">
-                <Bot className="h-8 w-8 text-primary" />
+        <div className="flex-1 flex flex-col overflow-hidden container mx-auto max-w-3xl px-4">
+          {/* Compact Title Section */}
+          <div className="py-3 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <div className="p-2 rounded-full bg-primary/10">
+                <Bot className="h-5 w-5 text-primary" />
               </div>
+              <h1 className="text-xl sm:text-2xl font-bold">
+                Window <span className="text-primary">Expert</span>
+              </h1>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-              Window <span className="text-primary">Expert</span> System
-            </h1>
-            <p className="text-muted-foreground text-sm max-w-lg mx-auto">
-              Get personalized advice about impact windows based on your specific situation. 
+            <p className="text-muted-foreground text-xs">
               Ask anything about costs, savings, installation, or contractors.
             </p>
           </div>
 
-          {/* Context Banner */}
+          {/* Compact Context Banner */}
           {hasContext && (
-            <div className="px-4 pt-4">
+            <div className="pb-2">
               <ContextBanner sessionData={sessionData} />
             </div>
           )}
 
           {/* Error State */}
           {chatError && !isLoading && (
-            <div className="px-4 pt-4">
+            <div className="pb-2">
               <AIErrorFallback
                 errorType={getAIErrorType(chatError)}
                 message={chatError}
@@ -206,37 +205,35 @@ export default function Expert() {
             </div>
           )}
 
-          {/* Chat Area */}
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-            <div className="space-y-4">
+          {/* Chat Area - Takes remaining space */}
+          <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
+            <div className="space-y-4 py-2">
               {messages.length === 0 ? (
-                <div className="py-8">
-                  <SuggestedQuestions
-                    sessionData={sessionData}
-                    onSelect={sendMessage}
-                    disabled={isLoading}
-                  />
-                </div>
+                <SuggestedQuestions
+                  sessionData={sessionData}
+                  onSelect={sendMessage}
+                  disabled={isLoading}
+                />
               ) : (
-                <>
-                  {messages.map((message, index) => (
-                    <ChatMessage
-                      key={index}
-                      role={message.role}
-                      content={message.content}
-                      isStreaming={isLoading && index === messages.length - 1 && message.role === 'assistant'}
-                    />
-                  ))}
-                </>
+                messages.map((message, index) => (
+                  <ChatMessage
+                    key={index}
+                    role={message.role}
+                    content={message.content}
+                    isStreaming={isLoading && index === messages.length - 1 && message.role === 'assistant'}
+                  />
+                ))
               )}
             </div>
           </ScrollArea>
 
           {/* Input Area */}
-          <ChatInput
-            onSend={sendMessage}
-            isLoading={isLoading}
-          />
+          <div className="py-2">
+            <ChatInput
+              onSend={sendMessage}
+              isLoading={isLoading}
+            />
+          </div>
         </div>
       </ErrorBoundary>
 
