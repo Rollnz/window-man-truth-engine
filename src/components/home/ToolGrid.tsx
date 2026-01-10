@@ -122,57 +122,51 @@ function ToolCard({
   index: number;
 }) {
   const colors = getToolIconColors(tool.id);
-  const isPrototype = index === 0; // Only first card gets impact window effect
   
-  const cardContent = (
-    <Link 
-      to={tool.path} 
-      style={{ animationDelay: `${index * 0.1}s` }} 
-      className={`group relative flex flex-col h-full ${isPrototype ? 'p-6' : 'p-6 rounded-xl bg-card border border-border card-hover shadow-2xl'}`}
-    >
-      {/* Badges */}
-      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-        {tool.badge && (
-          <div className={`text-xs px-2 py-1 rounded font-medium ${isPrototype ? 'text-primary bg-white/90 border border-primary/30' : 'text-primary bg-primary/10 border border-primary/20'}`}>
-            {tool.badge}
-          </div>
-        )}
-        {tool.gated && (
-          <div className={`text-xs px-2 py-1 rounded ${isPrototype ? 'text-white/70 bg-black/30' : 'text-muted-foreground bg-muted'}`}>
-            Email to save
-          </div>
-        )}
-      </div>
+  return (
+    <ImpactWindowCard>
+      <Link 
+        to={tool.path} 
+        style={{ animationDelay: `${index * 0.1}s` }} 
+        className="group relative flex flex-col h-full p-6"
+      >
+        {/* Badges */}
+        <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+          {tool.badge && (
+            <div className="text-xs px-2 py-1 rounded font-medium text-primary bg-white/90 border border-primary/30">
+              {tool.badge}
+            </div>
+          )}
+          {tool.gated && (
+            <div className="text-xs px-2 py-1 rounded text-white/70 bg-black/30">
+              Email to save
+            </div>
+          )}
+        </div>
 
-      {/* Icon with themed background */}
-      <div className={`w-12 h-12 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center mb-4 group-hover:scale-105 transition-transform`}>
-        {tool.icon}
-      </div>
+        {/* Icon with themed background */}
+        <div className={`w-12 h-12 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center mb-4 group-hover:scale-105 transition-transform`}>
+          {tool.icon}
+        </div>
 
-      {/* Title */}
-      <h3 className={`text-lg font-semibold mb-2 group-hover:text-primary transition-colors ${isPrototype ? 'text-white [text-shadow:0_2px_4px_rgba(0,0,0,0.6)]' : 'text-foreground'}`}>
-        {tool.title}
-      </h3>
+        {/* Title */}
+        <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors text-white [text-shadow:0_2px_4px_rgba(0,0,0,0.6)]">
+          {tool.title}
+        </h3>
 
-      {/* Description */}
-      <p className={`text-sm mb-4 flex-grow ${isPrototype ? 'text-white/80' : 'text-muted-foreground'}`}>
-        {tool.description}
-      </p>
+        {/* Description */}
+        <p className="text-sm mb-4 flex-grow text-white/80">
+          {tool.description}
+        </p>
 
-      {/* CTA */}
-      <div className="flex items-center text-sm text-primary font-medium">
-        <span>{tool.cta}</span>
-        <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
-      </div>
-    </Link>
+        {/* CTA */}
+        <div className="flex items-center text-sm text-primary font-medium">
+          <span>{tool.cta}</span>
+          <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
+        </div>
+      </Link>
+    </ImpactWindowCard>
   );
-
-  // Wrap first card in impact window effect
-  if (isPrototype) {
-    return <ImpactWindowCard>{cardContent}</ImpactWindowCard>;
-  }
-  
-  return cardContent;
 }
 export function ToolGrid() {
   return <section className="py-20 md:py-32 relative bg-secondary/30">
