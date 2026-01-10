@@ -85,39 +85,45 @@ const SpecChecklistGuide = () => {
           <div className="grid md:grid-cols-3 gap-6">
             <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <div className="flex items-center gap-3 mb-4">
-                <Scale className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                  <Scale className="w-5 h-5 text-cyan-500" />
+                </div>
                 <h3 className="font-semibold text-foreground">Comparison Tool</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 Input your specs and see 10-year true costs side-by-side.
               </p>
-              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate(ROUTES.COMPARISON)}>
+              <Button variant="cta" size="sm" className="w-full gap-2" onClick={() => navigate(ROUTES.COMPARISON)}>
                 Compare Options <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
 
             <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <div className="flex items-center gap-3 mb-4">
-                <ScanSearch className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/30 flex items-center justify-center">
+                  <ScanSearch className="w-5 h-5 text-sky-500" />
+                </div>
                 <h3 className="font-semibold text-foreground">Quote Scanner</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 Upload your quote and get instant AI analysis of red flags.
               </p>
-              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate(ROUTES.QUOTE_SCANNER)}>
+              <Button variant="cta" size="sm" className="w-full gap-2" onClick={() => navigate(ROUTES.QUOTE_SCANNER)}>
                 Scan My Quote <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
 
             <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <div className="flex items-center gap-3 mb-4">
-                <Calculator className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+                  <Calculator className="w-5 h-5 text-emerald-500" />
+                </div>
                 <h3 className="font-semibold text-foreground">Cost Calculator</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 See the true 10-year cost of waiting vs. acting now.
               </p>
-              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate(ROUTES.COST_CALCULATOR)}>
+              <Button variant="cta" size="sm" className="w-full gap-2" onClick={() => navigate(ROUTES.COST_CALCULATOR)}>
                 Calculate Now <ArrowRight className="w-4 h-4" />
               </Button>
             </div>

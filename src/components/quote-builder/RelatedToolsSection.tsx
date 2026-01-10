@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { FileSearch, Shield, Calculator, ArrowRight } from "lucide-react";
 import { ROUTES } from "@/config/navigation";
+import { Button } from "@/components/ui/button";
 
 export const RelatedToolsSection = () => {
   const tools = [
@@ -9,50 +10,59 @@ export const RelatedToolsSection = () => {
       title: "Quote Scanner",
       description: "Upload a contractor quote and let AI analyze it for red flags and hidden fees.",
       href: ROUTES.QUOTE_SCANNER,
-      color: "blue"
+      iconColor: "text-sky-500",
+      bgColor: "bg-sky-500/10 dark:bg-sky-500/20",
+      borderColor: "border-sky-500/30"
     },
     {
       icon: Shield,
       title: "Risk Diagnostic",
       description: "Assess your home's vulnerability and discover protection gaps.",
       href: ROUTES.RISK_DIAGNOSTIC,
-      color: "emerald"
+      iconColor: "text-orange-500",
+      bgColor: "bg-orange-500/10 dark:bg-orange-500/20",
+      borderColor: "border-orange-500/30"
     },
     {
       icon: Calculator,
       title: "Cost Calculator",
       description: "Calculate long-term costs and savings for hurricane protection.",
       href: ROUTES.COST_CALCULATOR,
-      color: "orange"
+      iconColor: "text-emerald-500",
+      bgColor: "bg-emerald-500/10 dark:bg-emerald-500/20",
+      borderColor: "border-emerald-500/30"
     }
   ];
 
   return (
-    <section className="py-16 bg-white border-t border-slate-100">
+    <section className="py-16 bg-muted/30 border-t border-border">
       <div className="container px-4 mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">Related Tools</h2>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold text-foreground mb-4">Related Tools</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Explore more resources to help you make informed decisions about your impact window project.
           </p>
         </div>
         
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {tools.map((tool, index) => (
-            <Link 
+            <div 
               key={index}
-              to={tool.href}
-              className="group bg-slate-50 hover:bg-slate-100 rounded-xl p-6 transition-all border border-slate-200 hover:border-slate-300"
+              className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors"
             >
-              <div className={`w-12 h-12 bg-${tool.color}-100 rounded-lg flex items-center justify-center mb-4`}>
-                <tool.icon className={`w-6 h-6 text-${tool.color}-600`} />
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-10 h-10 rounded-lg ${tool.bgColor} border ${tool.borderColor} flex items-center justify-center`}>
+                  <tool.icon className={`w-5 h-5 ${tool.iconColor}`} />
+                </div>
+                <h3 className="font-semibold text-foreground">{tool.title}</h3>
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
-                {tool.title}
-                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </h3>
-              <p className="text-muted-foreground text-sm">{tool.description}</p>
-            </Link>
+              <p className="text-sm text-muted-foreground mb-4">{tool.description}</p>
+              <Link to={tool.href}>
+                <Button variant="cta" size="sm" className="w-full gap-2">
+                  Use Tool <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
           ))}
         </div>
       </div>

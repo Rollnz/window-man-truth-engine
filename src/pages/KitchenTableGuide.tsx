@@ -364,8 +364,8 @@ const KitchenTableGuide = () => {
 
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full">
-                <PauseCircle className="w-8 h-8 text-muted-foreground" />
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-500/10 dark:bg-amber-500/20 rounded-full border border-amber-500/30">
+                <PauseCircle className="w-8 h-8 text-amber-500" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">1. Do Nothing Yet</h3>
               <p className="text-sm text-muted-foreground">
@@ -374,8 +374,8 @@ const KitchenTableGuide = () => {
             </div>
 
             <div className="text-center space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full">
-                <ScanSearch className="w-8 h-8 text-muted-foreground" />
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-sky-500/10 dark:bg-sky-500/20 rounded-full border border-sky-500/30">
+                <ScanSearch className="w-8 h-8 text-sky-500" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">2. Sanity-Check It</h3>
               <p className="text-sm text-muted-foreground">
@@ -384,8 +384,8 @@ const KitchenTableGuide = () => {
             </div>
 
             <div className="text-center space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full">
-                <Calculator className="w-8 h-8 text-muted-foreground" />
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full border border-emerald-500/30">
+                <Calculator className="w-8 h-8 text-emerald-500" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">3. Get Clarity on Price</h3>
               <p className="text-sm text-muted-foreground">
@@ -406,14 +406,16 @@ const KitchenTableGuide = () => {
           <div className="grid md:grid-cols-3 gap-6">
             <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <div className="flex items-center gap-3 mb-4">
-                <ScanSearch className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/30 flex items-center justify-center">
+                  <ScanSearch className="w-5 h-5 text-sky-500" />
+                </div>
                 <h3 className="font-semibold text-foreground">Quote Scanner</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 Scan your quote for pressure tactics and confidence gaps.
               </p>
               <Button 
-                variant="outline" 
+                variant="cta" 
                 size="sm" 
                 className="w-full gap-2"
                 onClick={() => navigate(ROUTES.QUOTE_SCANNER)}
@@ -424,14 +426,16 @@ const KitchenTableGuide = () => {
 
             <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <div className="flex items-center gap-3 mb-4">
-                <Scale className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                  <Scale className="w-5 h-5 text-cyan-500" />
+                </div>
                 <h3 className="font-semibold text-foreground">Comparison Tool</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 Compare multiple quotes side-by-side with real cost analysis.
               </p>
               <Button 
-                variant="outline" 
+                variant="cta" 
                 size="sm" 
                 className="w-full gap-2"
                 onClick={() => navigate(ROUTES.COMPARISON)}
@@ -442,14 +446,16 @@ const KitchenTableGuide = () => {
 
             <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <div className="flex items-center gap-3 mb-4">
-                <Calculator className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+                  <Calculator className="w-5 h-5 text-emerald-500" />
+                </div>
                 <h3 className="font-semibold text-foreground">Cost Calculator</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 Understand what windows should actually cost before you buy.
               </p>
               <Button 
-                variant="outline" 
+                variant="cta" 
                 size="sm" 
                 className="w-full gap-2"
                 onClick={() => navigate(ROUTES.COST_CALCULATOR)}
