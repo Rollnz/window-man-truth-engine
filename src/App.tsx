@@ -40,6 +40,7 @@ const Privacy = lazy(() => import("./pages/legal/Privacy"));
 const Terms = lazy(() => import("./pages/legal/Terms"));
 const BeatYourQuote = lazy(() => import("./pages/BeatYourQuote"));
 const FairPriceQuiz = lazy(() => import("./pages/FairPriceQuiz"));
+const ButtonAudit = lazy(() => import("./pages/ButtonAudit"));
 
 // Lazy load AuthGuard
 const AuthGuard = lazy(() => import("./components/auth/AuthGuard").then(m => ({ default: m.AuthGuard })));
@@ -91,6 +92,7 @@ const App = () => (
             <Route path="/roleplay" element={<Roleplay />} />
             <Route path="/beat-your-quote" element={<BeatYourQuote />} />
             <Route path="/fair-price-quiz" element={<FairPriceQuiz />} />
+            <Route path="/button-audit" element={<ButtonAudit />} />
             {/* Legacy redirects - programmatically generated */}
             {Object.entries(ROUTE_REDIRECTS).map(([from, to]) => (
               <Route key={from} path={from} element={<Navigate to={to} replace />} />
