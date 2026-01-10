@@ -39,7 +39,7 @@ export function DossierHero({
         </h1>
 
         {/* Subtitle */}
-        <p className="text-xl md:text-2xl text-muted-foreground mb-4 animate-fade-in">
+        <p className="text-xl md:text-2xl text-primary-foreground mb-4 animate-fade-in">
           Florida's Impact Window Homeowner Advocate
         </p>
 
