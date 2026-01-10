@@ -19,6 +19,7 @@ interface ProofStatProps {
 function ProofStat({ value, prefix = '', suffix, label, icon, iconBg, iconBorder, valueColor, glowStyle, delay = 0 }: ProofStatProps) {
   const [displayValue, setDisplayValue] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,6 +52,7 @@ function ProofStat({ value, prefix = '', suffix, label, icon, iconBg, iconBorder
         current += increment;
         if (current >= value) {
           setDisplayValue(value);
+          setIsComplete(true);
           clearInterval(interval);
         } else {
           setDisplayValue(Math.floor(current));
@@ -68,7 +70,10 @@ function ProofStat({ value, prefix = '', suffix, label, icon, iconBg, iconBorder
       <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${iconBg} ${iconBorder}`}>
         {icon}
       </div>
-      <div className={`text-3xl md:text-4xl font-bold mb-2 ${valueColor}`} style={glowStyle}>
+      <div 
+        className={`text-3xl md:text-4xl font-bold mb-2 ${valueColor} transition-transform ${isComplete ? 'animate-[pulse-pop_0.4s_ease-out]' : ''}`} 
+        style={glowStyle}
+      >
         {prefix}{displayValue.toLocaleString()}{suffix}
       </div>
       <p className="text-muted-foreground">{label}</p>
