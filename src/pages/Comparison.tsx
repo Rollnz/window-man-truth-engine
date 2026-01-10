@@ -3,6 +3,7 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { windowTiers } from '@/data/windowData';
 import { calculateTierTrueCost, TrueCostBreakdown } from '@/lib/comparisonCalculations';
+import { Navbar } from '@/components/home/Navbar';
 import { ComparisonHero } from '@/components/comparison/ComparisonHero';
 import { ViewModeToggle, ViewMode } from '@/components/comparison/ViewModeToggle';
 import { ComparisonTable } from '@/components/comparison/ComparisonTable';
@@ -42,8 +43,12 @@ export default function Comparison() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Navbar />
+
       {/* Hero Section */}
-      <ComparisonHero sessionData={sessionData} />
+      <div className="pt-14">
+        <ComparisonHero sessionData={sessionData} />
+      </div>
 
       {/* Main Comparison Section */}
       <section className="py-12 md:py-16">

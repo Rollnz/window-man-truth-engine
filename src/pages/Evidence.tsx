@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { caseStudies, MissionType } from '@/data/evidenceData';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { Navbar } from '@/components/home/Navbar';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { EvidenceHero } from '@/components/evidence/EvidenceHero';
 import { FilterBar } from '@/components/evidence/FilterBar';
@@ -12,9 +13,7 @@ import { RelatedIntelligence } from '@/components/evidence/RelatedIntelligence';
 import { StickyCTA } from '@/components/evidence/StickyCTA';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
-import { ArrowLeft } from 'lucide-react';
 import type { SourceTool } from '@/types/sourceTool';
-import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/config/navigation';
 
 export default function Evidence() {
@@ -102,20 +101,12 @@ export default function Evidence() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
-        <div className="container px-4 py-4 flex items-center justify-between">
-          <Link to={ROUTES.HOME}>
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Tools
-            </Button>
-          </Link>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Hero */}
-      <EvidenceHero />
+      <div className="pt-14">
+        <EvidenceHero />
+      </div>
 
       {/* Main Content */}
       <section className="py-8">

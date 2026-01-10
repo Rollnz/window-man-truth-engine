@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTracking } from '@/hooks/usePageTracking';
-import { Scale, ScanSearch, Calculator, ArrowRight, Menu, X } from 'lucide-react';
+import { Scale, ScanSearch, Calculator, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/gtm';
+import { Navbar } from '@/components/home/Navbar';
 import { ROUTES } from '@/config/navigation';
 
 // Section Components
@@ -51,84 +52,10 @@ const SpecChecklistGuide = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Navigation */}
-      <nav className="bg-card/80 backdrop-blur-md sticky top-0 z-50 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <button 
-              onClick={() => navigate(ROUTES.HOME)}
-              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-            >
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-sm">
-                W
-              </div>
-              <span className="font-semibold text-foreground">Windowman Vault</span>
-            </button>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-6">
-              <button 
-                onClick={() => navigate(ROUTES.COMPARISON)}
-                className="text-muted-foreground hover:text-foreground transition-colors text-sm"
-              >
-                Compare Windows
-              </button>
-              <button 
-                onClick={() => navigate(ROUTES.INTEL)}
-                className="text-muted-foreground hover:text-foreground transition-colors text-sm"
-              >
-                Intel Library
-              </button>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu Dropdown */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border bg-card">
-            <div className="px-4 py-3 space-y-1">
-              <button
-                onClick={() => {
-                  navigate(ROUTES.COMPARISON);
-                  setMobileMenuOpen(false);
-                }}
-                className="block w-full text-left px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm"
-              >
-                Compare Windows
-              </button>
-              <button
-                onClick={() => {
-                  navigate(ROUTES.INTEL);
-                  setMobileMenuOpen(false);
-                }}
-                className="block w-full text-left px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm"
-              >
-                Intel Library
-              </button>
-              <button
-                onClick={() => {
-                  navigate(ROUTES.TOOLS);
-                  setMobileMenuOpen(false);
-                }}
-                className="block w-full text-left px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm"
-              >
-                All Tools
-              </button>
-            </div>
-          </div>
-        )}
-      </nav>
+      <Navbar />
 
       {/* Page Sections */}
+      <div className="pt-14">
       <SpecChecklistHero onCtaClick={scrollToMainCta} />
       <ProblemAgitation />
       <PacketCardsGrid />

@@ -2,12 +2,12 @@
 // Quote Builder - Main Page (Controller)
 // ============================================
 
-import { Link } from "react-router-dom";
-import { ArrowLeft, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 import { ROUTES } from "@/config/navigation";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { useQuoteBuilder } from "@/hooks/useQuoteBuilder";
 import { ErrorBoundary } from "@/components/error";
+import { Navbar } from "@/components/home/Navbar";
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { formatCurrency } from "@/utils/quoteCalculatorConstants";
@@ -120,16 +120,13 @@ export default function CalculateEstimate() {
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
-      <div className="container px-4 py-4">
-        <Link to={ROUTES.HOME} className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-medium">Back to Tools</span>
-        </Link>
-      </div>
+      <Navbar />
 
-      <ErrorBoundary title="Quote Builder Error" description="The quote builder encountered an issue. Your data is safe." onReset={() => window.location.reload()}>
-        <QuoteBuilderV2 />
-      </ErrorBoundary>
+      <div className="pt-14">
+        <ErrorBoundary title="Quote Builder Error" description="The quote builder encountered an issue. Your data is safe." onReset={() => window.location.reload()}>
+          <QuoteBuilderV2 />
+        </ErrorBoundary>
+      </div>
 
       <WhyAccurateEstimates />
       <HowItWorks />

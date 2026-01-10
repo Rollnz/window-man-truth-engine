@@ -90,7 +90,7 @@ export function Navbar() {
               <Button variant="default" size="sm" asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
                 <Link to={ROUTES.AUTH}>
                   <LogIn className="w-4 h-4 mr-2" />
-                  Login
+                  Vault Login
                 </Link>
               </Button>
             )
@@ -187,7 +187,7 @@ export function Navbar() {
               <Button variant="default" size="sm" asChild className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                 <Link to={ROUTES.AUTH} onClick={() => setMobileMenuOpen(false)}>
                   <LogIn className="w-4 h-4 mr-2" />
-                  Login
+                  Vault Login
                 </Link>
               </Button>
             )

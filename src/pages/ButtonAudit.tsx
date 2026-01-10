@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Save, Calendar } from "lucide-react";
+import { Save, Calendar } from "lucide-react";
+import { Navbar } from "@/components/home/Navbar";
 
 const variants = [
   { name: "default", label: "Default (Primary Blue)" },
@@ -111,16 +111,11 @@ function ThemePanel({ theme }: ThemePanelProps) {
 
 export default function ButtonAudit() {
   return (
-    <div className="min-h-screen bg-slate-100 p-4 md:p-8">
+    <div className="min-h-screen bg-slate-100">
+      <Navbar />
+
       {/* Header */}
-      <div className="max-w-[1800px] mx-auto mb-8">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Link>
+      <div className="max-w-[1800px] mx-auto p-4 md:p-8 pt-20">
         <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
           Button Variant Audit
         </h1>
@@ -129,33 +124,36 @@ export default function ButtonAudit() {
         </p>
       </div>
 
+      <div className="max-w-[1800px] mx-auto p-4 md:p-8 pt-0">
+
       {/* Split screen comparison */}
       <div className="max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ThemePanel theme="light" />
         <ThemePanel theme="dark" />
       </div>
 
-      {/* Size variants */}
-      <div className="max-w-[1800px] mx-auto mt-8 bg-white p-6 rounded-xl">
-        <h2 className="text-2xl font-bold text-slate-900 mb-6">Size Variants</h2>
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="space-y-2">
-            <p className="text-xs text-slate-500">Small (sm)</p>
-            <Button size="sm">Small Button</Button>
-          </div>
-          <div className="space-y-2">
-            <p className="text-xs text-slate-500">Default</p>
-            <Button size="default">Default Button</Button>
-          </div>
-          <div className="space-y-2">
-            <p className="text-xs text-slate-500">Large (lg)</p>
-            <Button size="lg">Large Button</Button>
-          </div>
-          <div className="space-y-2">
-            <p className="text-xs text-slate-500">Icon</p>
-            <Button size="icon">
-              <Save className="w-4 h-4" />
-            </Button>
+        {/* Size variants */}
+        <div className="mt-8 bg-white p-6 rounded-xl">
+          <h2 className="text-2xl font-bold text-slate-900 mb-6">Size Variants</h2>
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-2">
+              <p className="text-xs text-slate-500">Small (sm)</p>
+              <Button size="sm">Small Button</Button>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-slate-500">Default</p>
+              <Button size="default">Default Button</Button>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-slate-500">Large (lg)</p>
+              <Button size="lg">Large Button</Button>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-slate-500">Icon</p>
+              <Button size="icon">
+                <Save className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

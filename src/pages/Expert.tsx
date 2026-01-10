@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { ROUTES } from '@/config/navigation';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { Navbar } from '@/components/home/Navbar';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { ChatMessage } from '@/components/expert/ChatMessage';
 import { ChatInput } from '@/components/expert/ChatInput';
@@ -18,7 +18,7 @@ import type { SourceTool } from '@/types/sourceTool';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { fastAIRequest, AI_TIMEOUTS } from '@/lib/aiRequest';
 import { TimeoutError, getErrorMessage } from '@/lib/errors';
-import { ArrowLeft, Bot, Save, Calendar, Check } from 'lucide-react';
+import { Bot, Save, Calendar, Check } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -160,54 +160,7 @@ export default function Expert() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <Link 
-              to={ROUTES.HOME} 
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Tools
-            </Link>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              {messages.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowLeadModal(true)}
-                  disabled={isSaved}
-                  className="hidden sm:flex"
-                >
-                  {isSaved ? (
-                    <>
-                      <Check className="h-4 w-4 mr-1" />
-                      Saved
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-1" />
-                      Save Conversation
-                    </>
-                  )}
-                </Button>
-              )}
-              <Button
-                variant="cta"
-                size="sm"
-                onClick={() => setShowConsultationModal(true)}
-              >
-                <Calendar className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Schedule Consultation</span>
-                <span className="sm:hidden">Book</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Main Content */}
       <ErrorBoundary

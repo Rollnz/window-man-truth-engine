@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { Navbar } from '@/components/home/Navbar';
 import { IntelHero } from '@/components/intel/IntelHero';
 import { ResourceGrid } from '@/components/intel/ResourceGrid';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
@@ -53,28 +53,12 @@ export default function Intel() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="container px-4 py-4 flex items-center justify-between">
-          <Link to={ROUTES.HOME}>
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Tools
-            </Button>
-          </Link>
-          <Button 
-            variant="cta" 
-            size="sm"
-            onClick={() => setShowConsultation(true)}
-          >
-            <Calendar className="mr-2 h-4 w-4" />
-            Book Consultation
-          </Button>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Hero */}
-      <IntelHero />
+      <div className="pt-14">
+        <IntelHero />
+      </div>
 
       {/* Resource Grid */}
       <ResourceGrid

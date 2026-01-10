@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { trackToolCompletion } from '@/lib/gtm';
+import { Navbar } from '@/components/home/Navbar';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { CalculatorInputs, ValidatedInputs } from '@/components/cost-calculator/CalculatorInputs';
 import { CostBreakdown } from '@/components/cost-calculator/CostBreakdown';
@@ -17,7 +18,7 @@ import {
   convertAgeRangeToMultiplier,
   CostProjection
 } from '@/lib/calculations';
-import { ArrowLeft, ArrowRight, MessageCircle, Sparkles } from 'lucide-react';
+import { ArrowRight, MessageCircle, Sparkles } from 'lucide-react';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
 import { TrueCostCalculator } from '@/components/cost-calculator/TrueCostCalculator';
 import { ROUTES } from '@/config/navigation';
@@ -72,28 +73,17 @@ export default function CostCalculator() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link 
-              to={ROUTES.HOME} 
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Tools
-            </Link>
-            
-            {hasRealityCheckScore && (
-              <Badge variant="outline" className="border-primary/50 text-primary">
-                Reality Score: {sessionData.realityCheckScore}
-              </Badge>
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-8 max-w-4xl pt-20">
+        {/* Reality Check Score Badge */}
+        {hasRealityCheckScore && (
+          <div className="flex justify-end mb-4">
+            <Badge variant="outline" className="border-primary/50 text-primary">
+              Reality Score: {sessionData.realityCheckScore}
+            </Badge>
+          </div>
+        )}
         {/* Page Title */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold mb-3">
