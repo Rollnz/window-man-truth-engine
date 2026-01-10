@@ -33,7 +33,7 @@ export function ConceptSection() {
 
             {/* Tactical Points */}
             <div className="space-y-4">
-              <div className="flex items-start gap-4 p-4 bg-card/50 border border-border rounded-lg">
+              <div className="flex items-start gap-4 p-4 bg-background border border-border rounded-lg">
                 <div className="p-2 bg-primary/20 rounded">
                   <Eye className="w-6 h-6 text-primary" />
                 </div>
@@ -45,7 +45,7 @@ export function ConceptSection() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 p-4 bg-card/50 border border-border rounded-lg">
+              <div className="flex items-start gap-4 p-4 bg-background border border-border rounded-lg">
                 <div className="p-2 bg-primary/20 rounded">
                   <Target className="w-6 h-6 text-primary" />
                 </div>
@@ -57,7 +57,7 @@ export function ConceptSection() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 p-4 bg-card/50 border border-border rounded-lg">
+              <div className="flex items-start gap-4 p-4 bg-background border border-border rounded-lg">
                 <div className="p-2 bg-primary/20 rounded">
                   <Shield className="w-6 h-6 text-primary" />
                 </div>
