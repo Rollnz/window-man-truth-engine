@@ -3,6 +3,7 @@ import { ArrowRight, LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
 import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { ToolDefinition } from '@/config/toolRegistry';
 
@@ -71,7 +72,8 @@ export function RelatedToolsGrid({
   const showHeader = title.length > 0;
 
   return (
-    <section className={cn('py-12', variantClasses[variant], className)}>
+    <TooltipProvider>
+      <section className={cn('py-12', variantClasses[variant], className)}>
       <div className="container px-4 mx-auto">
         {/* Header */}
         {showHeader && (
@@ -104,6 +106,8 @@ export function RelatedToolsGrid({
             const bgColor = tool.bgColor || 'bg-primary/20';
             const borderColor = tool.borderColor || 'border-primary/40';
             const ctaText = tool.cta || 'Use Tool';
+            // Get tooltip from ToolDefinition if available
+            const tooltipText = 'tooltip' in tool ? tool.tooltip : undefined;
 
             const cardContent = (
               <ImpactWindowCard className="h-full">
@@ -153,12 +157,27 @@ export function RelatedToolsGrid({
 
             return (
               <AnimateOnScroll key={tool.id} delay={index * staggerDelay}>
-                {cardContent}
+                {tooltipText ? (
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      {cardContent}
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="top" 
+                      className="max-w-xs bg-slate-900 text-white border-slate-700 px-4 py-3 text-sm leading-relaxed shadow-xl"
+                    >
+                      {tooltipText}
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  cardContent
+                )}
               </AnimateOnScroll>
             );
           })}
         </div>
       </div>
-    </section>
+      </section>
+    </TooltipProvider>
   );
 }
