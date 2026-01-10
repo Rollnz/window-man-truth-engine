@@ -141,12 +141,12 @@ function ToolCard({
       </div>
 
       {/* Title */}
-      <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
+      <h3 className="text-lg font-semibold mb-2 text-foreground group-hover:text-primary transition-colors">
         {tool.title}
       </h3>
 
       {/* Description */}
-      <p className="text-sm mb-4 flex-grow text-warning-foreground">
+      <p className="text-sm mb-4 flex-grow text-muted-foreground">
         {tool.description}
       </p>
 
