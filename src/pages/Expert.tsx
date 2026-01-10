@@ -170,20 +170,20 @@ export default function Expert() {
         description="We encountered an issue with the AI expert. Please refresh to try again."
         onReset={() => window.location.reload()}
       >
-        <div className="flex-1 flex flex-col overflow-hidden container mx-auto max-w-3xl px-4 pt-6">
-          {/* Hero Introduction */}
-          <div className="text-center mb-4">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-1">
-              Window <span className="text-primary">Expert</span>
+        <div className="flex-1 flex flex-col overflow-hidden container mx-auto max-w-3xl px-4 pt-12 sm:pt-16">
+          {/* Hero Section - Bold CRO Messaging */}
+          <div className="text-center mb-8 sm:mb-10">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+              Stop Guessing. <span className="text-primary">Start Saving.</span>
             </h1>
-            <p className="text-muted-foreground text-sm">
-              Ask anything about costs, savings, installation, or contractors.
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Windows are a high-stakes investment. Don't rely on a salesperson. Use this Expert System to uncover hidden costs, validate quotes, and get the unbiased truth before you sign.
             </p>
           </div>
 
           {/* Compact Context Banner */}
           {hasContext && (
-            <div className="mb-3">
+            <div className="mb-6">
               <ContextBanner sessionData={sessionData} />
             </div>
           )}
