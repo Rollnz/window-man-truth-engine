@@ -1,7 +1,6 @@
-import { Card, CardContent } from '@/components/ui/card';
 import { SessionData } from '@/hooks/useSessionData';
 import { formatCurrency } from '@/lib/calculations';
-import { TrendingDown, Gauge, Home, AlertTriangle } from 'lucide-react';
+import { TrendingDown, Gauge, Home, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ContextBannerProps {
@@ -20,68 +19,45 @@ export function ContextBanner({ sessionData }: ContextBannerProps) {
     ? sessionData.realityCheckScore >= 76 ? 'high' : sessionData.realityCheckScore >= 51 ? 'medium' : 'low'
     : 'medium';
 
+  // Compact horizontal banner style
   return (
-    <Card className={cn(
-      'border-2',
-      severity === 'high' ? 'border-destructive/50 bg-destructive/5' :
-      severity === 'medium' ? 'border-orange-500/50 bg-orange-500/5' :
-      'border-primary/50 bg-primary/5'
+    <div className={cn(
+      'flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 rounded-lg border text-sm',
+      severity === 'high' ? 'border-destructive/40 bg-destructive/5' :
+      severity === 'medium' ? 'border-warning/40 bg-warning/5' :
+      'border-primary/40 bg-primary/5'
     )}>
-      <CardContent className="py-4">
-        <div className="flex items-center gap-2 mb-3">
-          <AlertTriangle className={cn(
-            'h-4 w-4',
-            severity === 'high' ? 'text-destructive' :
-            severity === 'medium' ? 'text-orange-500' :
-            'text-primary'
-          )} />
-          <span className="text-sm font-medium">Your Situation Summary</span>
+      {hasCostData && (
+        <div className="flex items-center gap-1.5">
+          <TrendingDown className="h-3.5 w-3.5 text-destructive shrink-0" />
+          <span className="text-muted-foreground">5-Yr Loss:</span>
+          <span className="font-semibold text-destructive">
+            {formatCurrency(sessionData.costOfInactionTotal!)}
+          </span>
         </div>
-        
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {hasCostData && (
-            <div className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-destructive" />
-              <div>
-                <p className="text-xs text-muted-foreground">5-Year Loss</p>
-                <p className="font-semibold text-destructive">
-                  {formatCurrency(sessionData.costOfInactionTotal!)}
-                </p>
-              </div>
-            </div>
-          )}
-          
-          {hasRealityScore && (
-            <div className="flex items-center gap-2">
-              <Gauge className="h-4 w-4 text-primary" />
-              <div>
-                <p className="text-xs text-muted-foreground">Reality Score</p>
-                <p className="font-semibold">{sessionData.realityCheckScore}/100</p>
-              </div>
-            </div>
-          )}
-          
-          {sessionData.windowCount && (
-            <div className="flex items-center gap-2">
-              <Home className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Windows</p>
-                <p className="font-semibold">{sessionData.windowCount}</p>
-              </div>
-            </div>
-          )}
-          
-          {sessionData.windowAge && (
-            <div className="flex items-center gap-2">
-              <div className="h-4 w-4" />
-              <div>
-                <p className="text-xs text-muted-foreground">Window Age</p>
-                <p className="font-semibold">{sessionData.windowAge}</p>
-              </div>
-            </div>
-          )}
+      )}
+      
+      {hasRealityScore && (
+        <div className="flex items-center gap-1.5">
+          <Gauge className="h-3.5 w-3.5 text-primary shrink-0" />
+          <span className="text-muted-foreground">Score:</span>
+          <span className="font-semibold">{sessionData.realityCheckScore}/100</span>
         </div>
-      </CardContent>
-    </Card>
+      )}
+      
+      {sessionData.windowCount && (
+        <div className="flex items-center gap-1.5">
+          <Home className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="font-medium">{sessionData.windowCount} windows</span>
+        </div>
+      )}
+      
+      {sessionData.windowAge && (
+        <div className="flex items-center gap-1.5">
+          <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="font-medium">{sessionData.windowAge} yrs old</span>
+        </div>
+      )}
+    </div>
   );
 }
