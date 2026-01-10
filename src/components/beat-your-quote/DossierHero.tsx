@@ -29,8 +29,15 @@ export function DossierHero({
           <StampBadge variant="red">Classified</StampBadge>
         </div>
 
-        {/* Shield Icon */}
-        <Shield className="w-16 h-16 mx-auto mb-6 animate-fade-in text-primary-foreground" />
+        {/* Shield Icon with Logo */}
+        <div className="relative w-20 h-20 mx-auto mb-6 animate-fade-in">
+          <Shield className="w-20 h-20 text-primary" strokeWidth={1.5} />
+          <img 
+            src="/favicon.png" 
+            alt="Window Man Logo" 
+            className="absolute inset-0 w-10 h-10 m-auto object-contain"
+          />
+        </div>
 
         {/* Main Title */}
         <h1 className="font-typewriter text-4xl md:text-6xl lg:text-7xl font-bold mb-4 animate-fade-in">
