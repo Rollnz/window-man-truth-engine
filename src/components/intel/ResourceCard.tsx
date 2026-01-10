@@ -44,21 +44,21 @@ export function ResourceCard({
         </div>
       )}
 
-      {/* Icon - blue mutes on hover */}
-      <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-primary/20 text-primary group-hover:bg-primary/10 group-hover:text-primary/50 transition-colors duration-300">
+      {/* Icon - intensifies on hover */}
+      <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-primary/20 text-primary group-hover:bg-primary/30 group-hover:text-primary group-hover:scale-110 transition-all duration-300">
         <Icon className="w-6 h-6" />
       </div>
 
-      {/* Tagline - blue mutes on hover, text stays crisp */}
-      <span className="text-xs text-primary font-semibold uppercase tracking-wider mb-1 group-hover:text-primary/50 transition-colors duration-300">
+      {/* Tagline - intensifies on hover */}
+      <span className="text-xs text-primary font-semibold uppercase tracking-wider mb-1 group-hover:text-primary transition-colors duration-300">
         {resource.tagline}
       </span>
 
       {/* Title - pops above shimmer on hover */}
-      <h3 className="text-lg font-bold mb-2 text-foreground relative z-20 group-hover:drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]">{resource.title}</h3>
+      <h3 className="text-lg font-bold mb-2 text-foreground relative z-20 group-hover:text-primary transition-colors duration-300">{resource.title}</h3>
 
       {/* Description - stays crisp above shimmer */}
-      <p className="text-sm text-muted-foreground mb-4 relative z-20 group-hover:text-foreground/90 transition-colors duration-200">
+      <p className="text-sm text-muted-foreground mb-4 relative z-20 group-hover:text-foreground transition-colors duration-200">
         {resource.description}
       </p>
 
@@ -81,19 +81,19 @@ export function ResourceCard({
         </div>
       )}
 
-      {/* Page count - stays crisp */}
-      <p className="text-xs text-muted-foreground mb-4 relative z-20 group-hover:text-foreground/80 transition-colors duration-200">
+      {/* Page count - intensifies on hover */}
+      <p className="text-xs text-muted-foreground mb-4 relative z-20 group-hover:text-foreground transition-colors duration-200">
         {resource.pageCount} pages • PDF format
       </p>
 
-      {/* Action button - blue mutes on hover, text stays visible */}
+      {/* Action button - intensifies on hover */}
       <Button 
         onClick={onAccess} 
         variant="default" 
-        className="w-full relative z-10 group-hover:bg-primary/60 transition-colors duration-300"
+        className="w-full relative z-10 group-hover:bg-primary group-hover:shadow-lg transition-all duration-300"
       >
         {buttonText}
-        <ArrowRight className="ml-2 h-4 w-4" />
+        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
       </Button>
     </div>
   );
