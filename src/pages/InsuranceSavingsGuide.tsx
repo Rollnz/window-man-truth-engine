@@ -10,12 +10,8 @@ import {
   FileText,
   CheckCircle2,
   ArrowRight,
-  ScanSearch,
-  Scale,
-  Calculator,
   Lock,
   DollarSign,
-  Shield,
   Percent,
   BadgeCheck
 } from 'lucide-react';
@@ -27,12 +23,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { getAttributionData } from '@/lib/attribution';
 import { Navbar } from '@/components/home/Navbar';
+import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
+import { useSessionData } from '@/hooks/useSessionData';
 import type { SourceTool } from '@/types/sourceTool';
 
 const InsuranceSavingsGuide = () => {
   usePageTracking('insurance-savings-guide');
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { sessionData } = useSessionData();
+  const frameControl = getFrameControl('insurance-savings-guide');
+  const smartTools = getSmartRelatedTools('insurance-savings-guide', sessionData.toolsCompleted);
 
   const {
     values,
@@ -393,75 +395,12 @@ const InsuranceSavingsGuide = () => {
       </section>
 
       {/* SECTION 6 — CROSS-TOOL BRIDGES */}
-      <section className="py-16 sm:py-24 bg-muted/30">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground text-center mb-12">
-            Related Tools
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                  <Calculator className="w-5 h-5 text-emerald-500" />
-                </div>
-                <h3 className="font-semibold text-foreground">Cost Calculator</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Factor insurance savings into your total cost analysis.
-              </p>
-              <Button 
-                variant="cta" 
-                size="sm" 
-                className="w-full gap-2"
-                onClick={() => navigate(ROUTES.COST_CALCULATOR)}
-              >
-                Calculate Savings <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-orange-500" />
-                </div>
-                <h3 className="font-semibold text-foreground">Risk Diagnostic</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                See your full protection gap including insurance coverage.
-              </p>
-              <Button 
-                variant="cta" 
-                size="sm" 
-                className="w-full gap-2"
-                onClick={() => navigate(ROUTES.RISK_DIAGNOSTIC)}
-              >
-                Check My Risk <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                  <Scale className="w-5 h-5 text-cyan-500" />
-                </div>
-                <h3 className="font-semibold text-foreground">Comparison Tool</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Compare quotes with insurance savings factored in.
-              </p>
-              <Button 
-                variant="cta" 
-                size="sm" 
-                className="w-full gap-2"
-                onClick={() => navigate(ROUTES.COMPARISON)}
-              >
-                Compare Options <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <RelatedToolsGrid
+        title={frameControl.title}
+        description={frameControl.description}
+        tools={smartTools}
+        className="bg-muted/30"
+      />
 
       {/* Footer */}
       <footer className="py-12 bg-card border-t border-border">

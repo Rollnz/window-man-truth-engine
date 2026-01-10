@@ -12,10 +12,7 @@ import {
   CheckCircle2,
   ArrowRight,
   ScanSearch,
-  Scale,
-  Calculator,
   Lock,
-  Users,
   ThumbsDown,
   Timer
 } from 'lucide-react';
@@ -28,6 +25,9 @@ import { toast } from '@/hooks/use-toast';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
 import { getAttributionData } from '@/lib/attribution';
 import { Navbar } from '@/components/home/Navbar';
+import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
+import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
 import type { SourceTool } from '@/types/sourceTool';
 
@@ -35,6 +35,9 @@ const SalesTacticsGuide = () => {
   usePageTracking('sales-tactics-guide');
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { sessionData } = useSessionData();
+  const frameControl = getFrameControl('sales-tactics-guide');
+  const smartTools = getSmartRelatedTools('sales-tactics-guide', sessionData.toolsCompleted);
 
   const {
     values,
@@ -402,75 +405,12 @@ const SalesTacticsGuide = () => {
       </section>
 
       {/* SECTION 6 — CROSS-TOOL BRIDGES */}
-      <section className="py-16 sm:py-24 bg-muted/30">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground text-center mb-12">
-            Related Tools
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/30 flex items-center justify-center">
-                  <ScanSearch className="w-5 h-5 text-sky-500" />
-                </div>
-                <h3 className="font-semibold text-foreground">Quote Scanner</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Upload your quote and see which tactics may have been used.
-              </p>
-              <Button 
-                variant="cta" 
-                size="sm" 
-                className="w-full gap-2"
-                onClick={() => navigate(ROUTES.QUOTE_SCANNER)}
-              >
-                Scan My Quote <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
-                  <Scale className="w-5 h-5 text-amber-500" />
-                </div>
-                <h3 className="font-semibold text-foreground">Kitchen Table Guide</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Scripts to pause high-pressure conversations politely.
-              </p>
-              <Button 
-                variant="cta" 
-                size="sm" 
-                className="w-full gap-2"
-                onClick={() => navigate(ROUTES.KITCHEN_TABLE_GUIDE)}
-              >
-                Get the Guide <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                  <Calculator className="w-5 h-5 text-emerald-500" />
-                </div>
-                <h3 className="font-semibold text-foreground">Cost Calculator</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                See what windows should actually cost in your area.
-              </p>
-              <Button 
-                variant="cta" 
-                size="sm" 
-                className="w-full gap-2"
-                onClick={() => navigate(ROUTES.COST_CALCULATOR)}
-              >
-                Calculate Costs <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <RelatedToolsGrid
+        title={frameControl.title}
+        description={frameControl.description}
+        tools={smartTools}
+        className="bg-muted/30"
+      />
 
       {/* Footer */}
       <footer className="py-12 bg-card border-t border-border">
