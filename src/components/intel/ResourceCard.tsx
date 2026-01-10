@@ -54,16 +54,16 @@ export function ResourceCard({
         {resource.tagline}
       </span>
 
-      {/* Title - always sharp and focused */}
-      <h3 className="text-lg font-bold mb-2 text-foreground relative z-10">{resource.title}</h3>
+      {/* Title - pops above shimmer on hover */}
+      <h3 className="text-lg font-bold mb-2 text-foreground relative z-20 group-hover:drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]">{resource.title}</h3>
 
-      {/* Description - always sharp and focused */}
-      <p className="text-sm text-muted-foreground mb-4 relative z-10">
+      {/* Description - stays crisp above shimmer */}
+      <p className="text-sm text-muted-foreground mb-4 relative z-20 group-hover:text-foreground/90 transition-colors duration-200">
         {resource.description}
       </p>
 
       {/* Preview points - hidden on mobile, text stays focused */}
-      <div className="mb-6 flex-grow hidden sm:block relative z-10">
+      <div className="mb-6 flex-grow hidden sm:block relative z-20">
         <ResourcePreview 
           previewPoints={resource.previewPoints} 
           isLocked={false} 
@@ -81,8 +81,8 @@ export function ResourceCard({
         </div>
       )}
 
-      {/* Page count - stays focused */}
-      <p className="text-xs text-muted-foreground mb-4 relative z-10">
+      {/* Page count - stays crisp */}
+      <p className="text-xs text-muted-foreground mb-4 relative z-20 group-hover:text-foreground/80 transition-colors duration-200">
         {resource.pageCount} pages • PDF format
       </p>
 
