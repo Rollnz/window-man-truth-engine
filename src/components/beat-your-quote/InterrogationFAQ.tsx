@@ -147,10 +147,10 @@ function TranscriptEntry({
             {/* DECLASSIFIED Stamp - appears after typing completes */}
             <div
               className={`absolute -right-2 md:right-0 -bottom-2 md:-bottom-4 pointer-events-none select-none transition-all duration-500 ${
-                isComplete ? 'opacity-20 scale-100 rotate-[-12deg]' : 'opacity-0 scale-150 rotate-0'
+                isComplete ? 'opacity-40 scale-100 rotate-[-12deg]' : 'opacity-0 scale-150 rotate-0'
               }`}
             >
-              <div className="border-2 border-primary/50 px-2 py-1 text-[10px] md:text-xs font-mono text-primary/60 uppercase tracking-widest">
+              <div className="border-2 border-red-600 px-2 py-1 text-[10px] md:text-xs font-mono text-red-600 font-bold uppercase tracking-widest">
                 DECLASSIFIED
               </div>
             </div>
@@ -239,9 +239,9 @@ export function InterrogationFAQ() {
             <div className="absolute bottom-2 left-2 w-5 h-5 border-l-2 border-b-2 border-slate-400 rounded-bl-sm" />
             <div className="absolute bottom-2 right-2 w-5 h-5 border-r-2 border-b-2 border-slate-400 rounded-br-sm" />
 
-            {/* Faint DECLASSIFIED watermark */}
+            {/* DECLASSIFIED watermark - red, more visible */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
-              <span className="text-6xl md:text-8xl font-bold text-slate-400/[0.06] uppercase tracking-[0.3em] rotate-[-15deg] whitespace-nowrap">
+              <span className="text-6xl md:text-8xl font-bold text-red-600/[0.12] uppercase tracking-[0.3em] rotate-[-15deg] whitespace-nowrap">
                 DECLASSIFIED
               </span>
             </div>
