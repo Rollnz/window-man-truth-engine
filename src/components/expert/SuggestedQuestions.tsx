@@ -38,7 +38,7 @@ export function SuggestedQuestions({ sessionData, onSelect, disabled }: Suggeste
   const displayQuestions = questions.slice(0, 4);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <p className="text-sm text-muted-foreground flex items-center gap-2">
         <MessageCircle className="h-4 w-4" />
         Suggested questions based on your situation:
@@ -48,7 +48,7 @@ export function SuggestedQuestions({ sessionData, onSelect, disabled }: Suggeste
           <Button
             key={index}
             variant="outline"
-            className="h-auto py-3 px-4 text-left text-sm whitespace-normal justify-start"
+            className="h-auto py-4 px-5 text-left text-sm whitespace-normal justify-start min-h-[60px]"
             onClick={() => onSelect(question)}
             disabled={disabled}
           >
