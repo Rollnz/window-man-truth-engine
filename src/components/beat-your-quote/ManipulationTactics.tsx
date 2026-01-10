@@ -8,6 +8,48 @@ import {
 import { StampBadge } from './StampBadge';
 import { trackEvent } from '@/lib/gtm';
 
+function FloatingEbookImage() {
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const tiltX = ((e.clientY - centerY) / (rect.height / 2)) * -15;
+    const tiltY = ((e.clientX - centerX) / (rect.width / 2)) * 15;
+    
+    setTilt({ x: tiltX, y: tiltY });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+  };
+
+  return (
+    <div 
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="absolute -bottom-4 -right-4 z-20 hidden sm:block w-24 md:w-28 lg:w-32 animate-fade-in [animation-delay:300ms] opacity-0"
+      style={{ perspective: '500px' }}
+    >
+      <img 
+        src="/images/beat-your-quote/tactics-ebook.webp" 
+        alt="11 Closer Tactics Exposed Ebook"
+        className="w-full h-auto animate-glow-pulse"
+        style={{
+          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(${tilt.x || tilt.y ? 1.1 : 1})`,
+          transition: 'transform 0.15s ease-out',
+        }}
+      />
+    </div>
+  );
+}
+
 const TACTICS = [
   {
     id: 'binder-trap',
@@ -136,13 +178,16 @@ export function ManipulationTactics() {
         <div className="grid lg:grid-cols-2 gap-8 items-start">
           {/* Image - Sticky on Desktop */}
           <div className="lg:sticky lg:top-24 order-2 lg:order-1">
-            <div className="relative rounded-xl overflow-hidden border border-red-500/30">
+            <div className="relative rounded-xl overflow-visible border border-red-500/30">
               <img 
                 src="/images/beat-your-quote/manipulation-tactics.webp"
                 alt="Contractor manipulation tactics exposed"
-                className="w-full h-auto"
+                className="w-full h-auto rounded-xl"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0F14] via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0F14] via-transparent to-transparent rounded-xl" />
+              
+              {/* Floating Ebook Image */}
+              <FloatingEbookImage />
               
               {/* Overlay Badge */}
               <div className="absolute bottom-4 left-4 right-4">
