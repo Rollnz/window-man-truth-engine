@@ -1,6 +1,7 @@
 import { CheckCircle, Circle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { getToolIconColors } from '@/lib/toolIconColors';
 
 interface ToolProgress {
   id: string;
@@ -37,28 +38,31 @@ export function ToolProgressTracker({ tools }: ToolProgressTrackerProps) {
 
       {/* Tool grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {tools.map((tool) => (
-          <Link
-            key={tool.id}
-            to={tool.path}
-            className={cn(
-              "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
-              tool.completed
-                ? "bg-primary/10 border-primary/30 text-primary"
-                : "bg-muted/30 border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
-            )}
-          >
-            <div className="relative">
-              {tool.icon}
-              {tool.completed && (
-                <CheckCircle className="absolute -top-1 -right-1 w-4 h-4 text-primary fill-background" />
+        {tools.map((tool) => {
+          const colors = getToolIconColors(tool.id);
+          return (
+            <Link
+              key={tool.id}
+              to={tool.path}
+              className={cn(
+                "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
+                tool.completed
+                  ? `${colors.bg} ${colors.border}`
+                  : "bg-muted/30 border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
               )}
-            </div>
-            <span className="text-xs text-center font-medium leading-tight">
-              {tool.name}
-            </span>
-          </Link>
-        ))}
+            >
+              <div className="relative">
+                {tool.icon}
+                {tool.completed && (
+                  <CheckCircle className="absolute -top-1 -right-1 w-4 h-4 text-primary fill-background" />
+                )}
+              </div>
+              <span className="text-xs text-center font-medium leading-tight">
+                {tool.name}
+              </span>
+            </Link>
+          );
+        })}
       </div>
 
       {completedCount < tools.length && (

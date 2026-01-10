@@ -29,16 +29,16 @@ import {
 } from 'lucide-react';
 
 const tools = [
-  { id: 'reality-check', name: 'Reality Check', path: ROUTES.REALITY_CHECK, icon: <AlertTriangle className="w-5 h-5" /> },
-  { id: 'cost-calculator', name: 'Cost Calculator', path: ROUTES.COST_CALCULATOR, icon: <TrendingDown className="w-5 h-5" /> },
-  { id: 'vulnerability-test', name: 'Window IQ', path: ROUTES.VULNERABILITY_TEST, icon: <Brain className="w-5 h-5" /> },
-  { id: 'expert', name: 'AI Expert', path: ROUTES.EXPERT, icon: <MessageSquare className="w-5 h-5" /> },
-  { id: 'comparison', name: 'Compare Quotes', path: ROUTES.COMPARISON, icon: <GitCompare className="w-5 h-5" /> },
-  { id: 'risk-diagnostic', name: 'Risk Diagnostic', path: ROUTES.RISK_DIAGNOSTIC, icon: <Shield className="w-5 h-5" /> },
-  { id: 'fast-win', name: 'Fast Win', path: ROUTES.FAST_WIN, icon: <Zap className="w-5 h-5" /> },
-  { id: 'evidence', name: 'Evidence Locker', path: ROUTES.EVIDENCE, icon: <FileSearch className="w-5 h-5" /> },
-  { id: 'intel', name: 'Intel Library', path: ROUTES.INTEL, icon: <BookOpen className="w-5 h-5" /> },
-  { id: 'claim-survival', name: 'Claim Vault', path: ROUTES.CLAIM_SURVIVAL, icon: <ShieldCheck className="w-5 h-5" /> }
+  { id: 'reality-check', name: 'Reality Check', path: ROUTES.REALITY_CHECK, icon: <AlertTriangle className="w-5 h-5 text-yellow-500" /> },
+  { id: 'cost-calculator', name: 'Cost Calculator', path: ROUTES.COST_CALCULATOR, icon: <TrendingDown className="w-5 h-5 text-emerald-500" /> },
+  { id: 'vulnerability-test', name: 'Window IQ', path: ROUTES.VULNERABILITY_TEST, icon: <Brain className="w-5 h-5 text-purple-500" /> },
+  { id: 'expert', name: 'AI Expert', path: ROUTES.EXPERT, icon: <MessageSquare className="w-5 h-5 text-sky-500" /> },
+  { id: 'comparison', name: 'Compare Quotes', path: ROUTES.COMPARISON, icon: <GitCompare className="w-5 h-5 text-cyan-500" /> },
+  { id: 'risk-diagnostic', name: 'Risk Diagnostic', path: ROUTES.RISK_DIAGNOSTIC, icon: <Shield className="w-5 h-5 text-orange-500" /> },
+  { id: 'fast-win', name: 'Fast Win', path: ROUTES.FAST_WIN, icon: <Zap className="w-5 h-5 text-amber-500" /> },
+  { id: 'evidence', name: 'Evidence Locker', path: ROUTES.EVIDENCE, icon: <FileSearch className="w-5 h-5 text-amber-700" /> },
+  { id: 'intel', name: 'Intel Library', path: ROUTES.INTEL, icon: <BookOpen className="w-5 h-5 text-indigo-500" /> },
+  { id: 'claim-survival', name: 'Claim Vault', path: ROUTES.CLAIM_SURVIVAL, icon: <ShieldCheck className="w-5 h-5 text-green-500" /> }
 ];
 
 export default function Vault() {
