@@ -402,14 +402,16 @@ const InsuranceSavingsGuide = () => {
           <div className="grid md:grid-cols-3 gap-6">
             <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <div className="flex items-center gap-3 mb-4">
-                <Calculator className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+                  <Calculator className="w-5 h-5 text-emerald-500" />
+                </div>
                 <h3 className="font-semibold text-foreground">Cost Calculator</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 Factor insurance savings into your total cost analysis.
               </p>
               <Button 
-                variant="outline" 
+                variant="cta" 
                 size="sm" 
                 className="w-full gap-2"
                 onClick={() => navigate(ROUTES.COST_CALCULATOR)}
@@ -420,14 +422,16 @@ const InsuranceSavingsGuide = () => {
 
             <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <div className="flex items-center gap-3 mb-4">
-                <Shield className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-orange-500" />
+                </div>
                 <h3 className="font-semibold text-foreground">Risk Diagnostic</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 See your full protection gap including insurance coverage.
               </p>
               <Button 
-                variant="outline" 
+                variant="cta" 
                 size="sm" 
                 className="w-full gap-2"
                 onClick={() => navigate(ROUTES.RISK_DIAGNOSTIC)}
@@ -438,14 +442,16 @@ const InsuranceSavingsGuide = () => {
 
             <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <div className="flex items-center gap-3 mb-4">
-                <Scale className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                  <Scale className="w-5 h-5 text-cyan-500" />
+                </div>
                 <h3 className="font-semibold text-foreground">Comparison Tool</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 Compare quotes with insurance savings factored in.
               </p>
               <Button 
-                variant="outline" 
+                variant="cta" 
                 size="sm" 
                 className="w-full gap-2"
                 onClick={() => navigate(ROUTES.COMPARISON)}
