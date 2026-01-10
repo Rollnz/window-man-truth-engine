@@ -61,7 +61,7 @@ const SpecChecklistHero: React.FC<SpecChecklistHeroProps> = ({ onCtaClick }) => 
             <div className="pt-4 border-t border-border">
               <p className="text-sm text-muted-foreground mb-2">Already have a quote to analyze?</p>
               <Button 
-                variant="outline" 
+                variant="cta" 
                 className="gap-2"
                 onClick={() => navigate(ROUTES.QUOTE_SCANNER)}
               >
