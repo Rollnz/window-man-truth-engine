@@ -10,7 +10,6 @@ import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { ChatMessage } from '@/components/expert/ChatMessage';
 import { ChatInput } from '@/components/expert/ChatInput';
 import { SuggestedQuestions } from '@/components/expert/SuggestedQuestions';
-import { ContextBanner } from '@/components/expert/ContextBanner';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { ErrorBoundary } from '@/components/error';
@@ -147,7 +146,7 @@ export default function Expert() {
     }
   };
 
-  const hasContext = sessionData.costOfInactionTotal || sessionData.realityCheckScore;
+  
 
   const handleLeadCaptureSuccess = (leadId: string) => {
     updateFields({ leadId, email: sessionData.email });
@@ -170,27 +169,22 @@ export default function Expert() {
         description="We encountered an issue with the AI expert. Please refresh to try again."
         onReset={() => window.location.reload()}
       >
-        <div className="flex-1 flex flex-col overflow-hidden container mx-auto max-w-3xl px-4 pt-20 sm:pt-24 md:pt-32">
-          {/* Hero Section - Bold CRO Messaging */}
-          <div className="text-center mb-4 sm:mb-6">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-              Stop Guessing. <span className="text-primary">Start Saving.</span>
+        <div className="flex-1 flex flex-col overflow-hidden container mx-auto max-w-3xl">
+          {/* Title Section */}
+          <div className="p-4 sm:p-6 text-center border-b border-border/50">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+              Window Questions <span className="text-primary">Expert</span>
             </h1>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Windows are a high-stakes investment. Don't rely on a salesperson. Use this Expert System to uncover hidden costs, validate quotes, and get the unbiased truth before you sign.
+            <p className="text-muted-foreground text-sm max-w-lg mx-auto">
+              Windows are a high-stakes investment. Don't rely on a salesperson. 
+              Use this Expert System to uncover hidden costs, validate quotes, 
+              and get the unbiased truth before you sign.
             </p>
           </div>
 
-          {/* Compact Context Banner */}
-          {hasContext && (
-            <div className="mb-3">
-              <ContextBanner sessionData={sessionData} />
-            </div>
-          )}
-
           {/* Error State */}
           {chatError && !isLoading && (
-            <div className="pb-2">
+            <div className="px-4 pt-4">
               <AIErrorFallback
                 errorType={getAIErrorType(chatError)}
                 message={chatError}
@@ -200,15 +194,16 @@ export default function Expert() {
             </div>
           )}
 
-          {/* Chat Area - Takes remaining space */}
-          <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
-            <div className="space-y-4 py-2">
+          {/* Chat Area */}
+          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+            <div className="space-y-4">
               {messages.length === 0 ? (
-                <SuggestedQuestions
-                  sessionData={sessionData}
-                  onSelect={sendMessage}
-                  disabled={isLoading}
-                />
+                <div className="py-8">
+                  <SuggestedQuestions
+                    onSelect={sendMessage}
+                    disabled={isLoading}
+                  />
+                </div>
               ) : (
                 messages.map((message, index) => (
                   <ChatMessage
@@ -223,12 +218,10 @@ export default function Expert() {
           </ScrollArea>
 
           {/* Input Area */}
-          <div className="py-2">
-            <ChatInput
-              onSend={sendMessage}
-              isLoading={isLoading}
-            />
-          </div>
+          <ChatInput
+            onSend={sendMessage}
+            isLoading={isLoading}
+          />
         </div>
       </ErrorBoundary>
 
