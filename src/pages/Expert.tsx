@@ -200,10 +200,10 @@ export default function Expert() {
               </div>
             )}
 
-            {/* Chat Area - Scrollable container */}
+            {/* Chat Area - Scrollable container with bottom padding for fixed input on mobile */}
             <div className="flex-1 min-h-[300px] max-h-[60vh] overflow-hidden rounded-md border border-border/30">
               <ScrollArea className="h-full">
-                <div className="p-4 space-y-4" ref={scrollRef}>
+                <div className="p-4 space-y-4 pb-[100px] md:pb-4" ref={scrollRef}>
                   {messages.length === 0 ? (
                     <div className="py-4">
                       <SuggestedQuestions
@@ -225,14 +225,24 @@ export default function Expert() {
               </ScrollArea>
             </div>
 
-            {/* Input Area */}
-            <ChatInput
-              onSend={sendMessage}
-              isLoading={isLoading}
-            />
+            {/* Input Area - Fixed on mobile, normal flow on desktop */}
+            <div className="hidden md:block">
+              <ChatInput
+                onSend={sendMessage}
+                isLoading={isLoading}
+              />
+            </div>
           </div>
         </ErrorBoundary>
       </section>
+
+      {/* Fixed Mobile Input */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background border-t border-border pb-[env(safe-area-inset-bottom)]">
+        <ChatInput
+          onSend={sendMessage}
+          isLoading={isLoading}
+        />
+      </div>
 
       {/* Section A: Why Use This Tool */}
       <WhyUseSection />
