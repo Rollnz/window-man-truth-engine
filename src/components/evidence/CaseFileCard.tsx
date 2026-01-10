@@ -12,7 +12,7 @@ export function CaseFileCard({ caseStudy, onOpenCase }: CaseFileCardProps) {
 
   return (
     <div 
-      className="group relative flex flex-col rounded-xl bg-card border border-border card-hover cursor-pointer overflow-hidden"
+      className="group relative flex flex-col rounded-xl bg-card border border-border card-hover frame-card cursor-pointer"
       onClick={() => onOpenCase(caseStudy.id)}
     >
       {/* Folder tab effect */}
