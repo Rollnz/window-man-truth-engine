@@ -98,7 +98,7 @@ export function ManipulationTactics() {
             <span className="text-white"> TACTICS</span>
           </h2>
           
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-primary-foreground/80 max-w-2xl mx-auto">
             Contractors train for months to use these psychological weapons against you. 
             Now you can see them coming.
           </p>
