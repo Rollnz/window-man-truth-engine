@@ -315,12 +315,12 @@
      GLASS FRAME THEME - Light Mode Utilities
      ============================================ */
 
-  /* Glass Frame Physics Variables */
+  /* Glass Frame Physics Variables - Soft subtle shimmer */
   :root {
     --glass-reflection: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 50%);
-    --metallic-frame: linear-gradient(to right, hsl(209 68% 55%), hsl(209 60% 75%), hsl(209 68% 55%));
+    --metallic-frame: linear-gradient(to right, hsl(206 50% 88%), hsl(206 45% 92%), hsl(206 50% 88%));
     --frame-thickness: 4px;
-    --caustic-glow: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), hsl(209 68% 55% / 0.15) 0%, transparent 60%);
+    --caustic-glow: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), hsl(206 72% 88% / 0.25) 0%, transparent 60%);
   }
 
   /* Shimmer Animation: High-velocity light sweep */
