@@ -24,8 +24,8 @@ export function ResourceCard({
 
   return (
     <div className={`group relative flex flex-col p-6 rounded-xl bg-card transition-all duration-300 
-      border-2 hover:border-[3px] border-slate-400/80 hover:border-slate-500
-      shadow-md hover:shadow-xl hover:-translate-y-1
+      border-2 hover:border-[3px] border-slate-400/80 hover:border-primary/70
+      shadow-md hover:shadow-[0_0_25px_-5px_hsl(var(--primary)/0.5)] hover:-translate-y-1
       ${hasFloatingImage ? 'overflow-visible' : 'overflow-hidden'}`}>
       {/* Floating book image */}
       {displayCoverUrl && (
