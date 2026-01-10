@@ -101,6 +101,10 @@ export function MissionOutcomes() {
               {index > 0 && (
                 <div className="lg:hidden absolute -top-4 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
               )}
+              {/* Vertical divider between cards on desktop */}
+              {index > 0 && (
+                <div className="hidden lg:block absolute -left-5 top-1/2 -translate-y-1/2 w-px h-3/4 bg-gradient-to-b from-transparent via-border to-transparent" />
+              )}
               <div 
                 className={`transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95'}`} 
                 style={{ transitionDelay: `${300 + index * 200}ms` }}
