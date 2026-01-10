@@ -20,9 +20,10 @@ export function ConceptSection() {
               <span className="inline-block px-3 py-1 bg-primary/20 text-primary text-sm font-mono uppercase tracking-wider rounded mb-4">
                 Mission Briefing
               </span>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
-                Exposing the <span className="text-primary">Manipulation Machine</span>
-              </h2>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
+              <span className="text-primary-foreground">Exposing the </span>
+              <span className="text-primary">Manipulation Machine</span>
+            </h2>
               <p className="text-lg leading-relaxed text-primary-foreground">
                 For years, high-pressure window salesmen have used psychological tactics to pressure 
                 Florida homeowners into signing overpriced contracts. Sam Glass has made it his mission 
