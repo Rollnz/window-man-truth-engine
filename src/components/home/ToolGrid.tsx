@@ -1,7 +1,18 @@
 import { Link } from 'react-router-dom';
+import { Clock } from 'lucide-react';
 import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
 import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
-import { HOMEPAGE_TOOLS, type ToolDefinition } from '@/config/toolRegistry';
+import { HOMEPAGE_TOOLS, getDifficultyConfig, type ToolDefinition } from '@/config/toolRegistry';
+
+function DifficultyBadge({ difficulty }: { difficulty?: 'easy' | 'medium' | 'advanced' }) {
+  if (!difficulty) return null;
+  const config = getDifficultyConfig(difficulty);
+  return (
+    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${config.color}`}>
+      {config.label}
+    </span>
+  );
+}
 
 function ToolCard({
   tool,
@@ -19,7 +30,7 @@ function ToolCard({
           to={tool.path} 
           className="group relative flex flex-col h-full p-6"
         >
-          {/* Badges */}
+          {/* Top badges row */}
           <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
             {tool.badge && (
               <div className="text-xs px-2 py-1 rounded font-medium text-primary bg-white/90 border border-primary/30">
@@ -42,6 +53,19 @@ function ToolCard({
           <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors text-white [text-shadow:0_2px_4px_rgba(0,0,0,0.6)]">
             {tool.title}
           </h3>
+
+          {/* Metadata row: time + difficulty */}
+          {(tool.estimatedTime || tool.difficulty) && (
+            <div className="flex items-center gap-3 mb-3">
+              {tool.estimatedTime && (
+                <span className="flex items-center gap-1 text-[11px] text-white/70">
+                  <Clock className="w-3 h-3" />
+                  {tool.estimatedTime}
+                </span>
+              )}
+              <DifficultyBadge difficulty={tool.difficulty} />
+            </div>
+          )}
 
           {/* Description */}
           <p className="text-sm mb-4 flex-grow text-white/80">
