@@ -71,6 +71,8 @@ export interface ToolDefinition {
   keywords?: string[];
   /** Related tool IDs for cross-linking */
   relatedTools?: string[];
+  /** CRO-optimized tooltip copy (Gap Theory: problem this solves in 2 min) */
+  tooltip?: string;
 }
 
 /**
@@ -99,6 +101,7 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Discover the true cost of delaying your window upgrade',
     keywords: ['cost', 'savings', 'analysis', 'hidden costs'],
     relatedTools: ['cost-calculator', 'vulnerability-test'],
+    tooltip: '⚠️ Warning: 8 out of 10 bargain windows fail within 7 years. See the math contractors hide from you.',
   },
 
   'cost-calculator': {
@@ -120,6 +123,7 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'See exactly how much money you lose each month with old windows',
     keywords: ['calculator', 'energy', 'savings', 'ROI', 'cost'],
     relatedTools: ['reality-check', 'comparison'],
+    tooltip: '💸 Money Pit Alert: See exactly how much cash you are burning every single day by keeping your current windows.',
   },
 
   'vulnerability-test': {
@@ -140,6 +144,7 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Learn where you\'re most vulnerable to sales tactics',
     keywords: ['quiz', 'test', 'sales tactics', 'vulnerability'],
     relatedTools: ['roleplay', 'sales-tactics-guide'],
+    tooltip: '🧠 Beat the Dealer: Salesmen love uneducated buyers. Take this 5-minute drill so you can\'t be tricked.',
   },
 
   'expert': {
@@ -160,6 +165,7 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Get unbiased answers to your window questions instantly',
     keywords: ['chat', 'AI', 'questions', 'advice', 'expert'],
     relatedTools: ['comparison', 'quote-scanner'],
+    tooltip: '🤖 0% Sales Pitch: Get instant, unbiased answers to your toughest questions. No commission, just facts.',
   },
 
   'comparison': {
@@ -181,6 +187,7 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Understand exactly what separates quality from cheap windows',
     keywords: ['compare', 'specs', 'quality', 'cheap', 'analysis'],
     relatedTools: ['quote-scanner', 'cost-calculator'],
+    tooltip: '🔍 X-Ray Vision: Strip away the marketing fluff. Compare the raw engineering data of cheap vs. quality brands side-by-side.',
   },
 
   'risk-diagnostic': {
@@ -202,6 +209,7 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Find insurance savings and protection gaps in your home',
     keywords: ['insurance', 'risk', 'protection', 'savings', 'hurricane'],
     relatedTools: ['claim-survival', 'insurance-savings-guide'],
+    tooltip: '💰 Found Money: You might be missing up to 20% in wind mitigation discounts. Find your hidden savings now.',
   },
 
   'claim-survival': {
@@ -223,6 +231,7 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Build a bulletproof insurance claim that gets approved',
     keywords: ['insurance', 'claim', 'documentation', 'hurricane', 'damage'],
     relatedTools: ['risk-diagnostic', 'evidence'],
+    tooltip: '🛡️ Denial Proof: Insurers deny 40% of claims due to lack of evidence. Download the checklist that forces them to pay.',
   },
 
   'fast-win': {
@@ -243,6 +252,7 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Instantly discover your best window upgrade opportunity',
     keywords: ['quick', 'fast', 'ROI', 'upgrade', 'recommendation'],
     relatedTools: ['cost-calculator', 'comparison'],
+    tooltip: '⚡ Speed Run: Do not have time for research? Find the single highest-ROI upgrade for your specific home type in 45 seconds.',
   },
 
   'evidence': {
@@ -264,6 +274,7 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Learn from real homeowner success stories and savings',
     keywords: ['case studies', 'evidence', 'proof', 'success stories'],
     relatedTools: ['comparison', 'claim-survival'],
+    tooltip: '📂 Case Closed: Skeptical? Good. Review 47 verified Case Files proving exactly how we saved homeowners thousands.',
   },
 
   'intel': {
@@ -284,6 +295,7 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Get insider guides and resources to negotiate like a pro',
     keywords: ['guides', 'resources', 'downloads', 'negotiation', 'tactics'],
     relatedTools: ['sales-tactics-guide', 'kitchen-table-guide'],
+    tooltip: '🔐 Declassified: Unlock the negotiation scripts and claim survival templates that insurance companies pray you never find.',
   },
 
   'quote-scanner': {
@@ -305,6 +317,7 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Instantly expose hidden fees and get negotiation leverage',
     keywords: ['quote', 'scan', 'AI', 'analysis', 'pricing', 'red flags'],
     relatedTools: ['beat-your-quote', 'comparison'],
+    tooltip: '🛡️ Scam Shield: Upload a photo of your quote. Our AI exposes hidden fees and missing specs that could cost you $3,000+.',
   },
 
   'quote-builder': {
@@ -326,6 +339,7 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Get a fair price estimate before talking to contractors',
     keywords: ['estimate', 'quote', 'builder', 'pricing', 'project'],
     relatedTools: ['quote-scanner', 'comparison'],
+    tooltip: '🏗️ No-Sales Zone: Build a highly accurate project estimate in 3 minutes without a single phone call.',
   },
 
   // ============================================

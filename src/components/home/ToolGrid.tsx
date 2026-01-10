@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Clock } from 'lucide-react';
 import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
 import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HOMEPAGE_TOOLS, getDifficultyConfig, type ToolDefinition } from '@/config/toolRegistry';
 
 function DifficultyBadge({ difficulty }: { difficulty?: 'easy' | 'medium' | 'advanced' }) {
@@ -23,13 +24,12 @@ function ToolCard({
 }) {
   const Icon = tool.icon;
   
-  return (
-    <AnimateOnScroll delay={index * 80}>
-      <ImpactWindowCard className="h-full">
-        <Link 
-          to={tool.path} 
-          className="group relative flex flex-col h-full p-6"
-        >
+  const cardContent = (
+    <ImpactWindowCard className="h-full">
+      <Link 
+        to={tool.path} 
+        className="group relative flex flex-col h-full p-6"
+      >
           {/* Top badges row */}
           <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
             {tool.badge && (
@@ -79,14 +79,34 @@ function ToolCard({
           </div>
         </Link>
       </ImpactWindowCard>
+  );
+
+  return (
+    <AnimateOnScroll delay={index * 80}>
+      {tool.tooltip ? (
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            {cardContent}
+          </TooltipTrigger>
+          <TooltipContent 
+            side="top" 
+            className="max-w-xs bg-slate-900 text-white border-slate-700 px-4 py-3 text-sm leading-relaxed shadow-xl"
+          >
+            {tool.tooltip}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        cardContent
+      )}
     </AnimateOnScroll>
   );
 }
 
 export function ToolGrid() {
   return (
-    <section className="py-20 md:py-32 relative bg-secondary/30">
-      <div className="container px-4">
+    <TooltipProvider>
+      <section className="py-20 md:py-32 relative bg-secondary/30">
+        <div className="container px-4">
         {/* Section header */}
         <div className="max-w-3xl mx-auto text-center mb-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -106,13 +126,14 @@ export function ToolGrid() {
           </span>
         </div>
 
-        {/* Tools grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {HOMEPAGE_TOOLS.map((tool, index) => (
-            <ToolCard key={tool.id} tool={tool} index={index} />
-          ))}
+          {/* Tools grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {HOMEPAGE_TOOLS.map((tool, index) => (
+              <ToolCard key={tool.id} tool={tool} index={index} />
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </TooltipProvider>
   );
 }
