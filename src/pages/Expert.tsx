@@ -17,7 +17,7 @@ import type { SourceTool } from '@/types/sourceTool';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { fastAIRequest, AI_TIMEOUTS } from '@/lib/aiRequest';
 import { TimeoutError, getErrorMessage } from '@/lib/errors';
-import { Save, Calendar, Check } from 'lucide-react';
+
 import { WhyUseSection } from '@/components/expert/WhyUseSection';
 import { TimelineSection } from '@/components/expert/TimelineSection';
 import { TrustSection } from '@/components/expert/TrustSection';
@@ -230,37 +230,6 @@ export default function Expert() {
               onSend={sendMessage}
               isLoading={isLoading}
             />
-
-            {/* CTA Action Buttons */}
-            <div className="flex items-center justify-center gap-3 py-4 border-t border-border/50">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowLeadModal(true)}
-                disabled={isSaved || messages.length === 0}
-                className="bg-card hover:bg-accent"
-              >
-                {isSaved ? (
-                  <>
-                    <Check className="h-4 w-4 mr-1.5" />
-                    Saved
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-1.5" />
-                    Save Conversation
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="cta"
-                size="sm"
-                onClick={() => setShowConsultationModal(true)}
-              >
-                <Calendar className="h-4 w-4 mr-1.5" />
-                Book Consultation
-              </Button>
-            </div>
           </div>
         </ErrorBoundary>
       </section>
