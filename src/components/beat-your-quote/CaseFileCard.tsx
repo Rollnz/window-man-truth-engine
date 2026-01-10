@@ -75,7 +75,7 @@ export function CaseFileCard({
 
         {/* Intel Section */}
         <div className="bg-background/50 border border-border/30 rounded p-4 mb-4">
-          <div className="text-xs font-mono text-muted-foreground/60 tracking-widest mb-3">
+          <div className="text-xs font-mono tracking-widest mb-3 text-black">
             THE INTEL
           </div>
 
