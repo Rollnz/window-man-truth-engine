@@ -490,6 +490,7 @@ const SalesTacticsGuide = () => {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 };

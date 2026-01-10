@@ -500,6 +500,7 @@ const KitchenTableGuide = () => {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 };

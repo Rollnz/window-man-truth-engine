@@ -481,6 +481,7 @@ const InsuranceSavingsGuide = () => {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 };
