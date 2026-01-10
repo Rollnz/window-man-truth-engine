@@ -50,7 +50,7 @@ export function GenerateComparisonReportButton({
     <Button
       onClick={handleGenerate}
       disabled={isGenerating}
-      className="gap-2"
+      className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
       variant="outline"
     >
       {isGenerating ? (
