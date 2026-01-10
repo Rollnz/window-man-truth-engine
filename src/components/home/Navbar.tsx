@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { useVaultNotifications } from '@/hooks/useVaultNotifications';
+import { ReadinessIndicator } from '@/components/navigation/ReadinessIndicator';
 import { Vault, LogIn, Menu, X, Target, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from 'next-themes';
@@ -54,6 +55,9 @@ export function Navbar() {
             <Target className="w-4 h-4" />
             Beat Your Quote
           </Link>
+          
+          {/* Readiness Score Indicator */}
+          <ReadinessIndicator />
           
           {/* Theme Toggle */}
           <Button 
@@ -142,6 +146,11 @@ export function Navbar() {
               Beat Your Quote
             </span>
           </Link>
+          
+          {/* Readiness Score - Mobile */}
+          <div className="py-2">
+            <ReadinessIndicator />
+          </div>
           
           {/* Theme Toggle - Mobile */}
           <Button 
