@@ -46,7 +46,7 @@ export default function Expert() {
   // Auto-scroll chat area to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   }, [messages]);
 
@@ -200,10 +200,10 @@ export default function Expert() {
               </div>
             )}
 
-            {/* Chat Area - Fixed height with internal scroll */}
-            <div className="flex-1 min-h-[300px] max-h-[400px] overflow-hidden">
-              <ScrollArea className="h-full p-4" ref={scrollRef}>
-                <div className="space-y-4">
+            {/* Chat Area - Scrollable container */}
+            <div className="flex-1 min-h-[300px] max-h-[60vh] overflow-hidden rounded-md border border-border/30">
+              <ScrollArea className="h-full">
+                <div className="p-4 space-y-4" ref={scrollRef}>
                   {messages.length === 0 ? (
                     <div className="py-4">
                       <SuggestedQuestions
