@@ -170,25 +170,20 @@ export default function Expert() {
         description="We encountered an issue with the AI expert. Please refresh to try again."
         onReset={() => window.location.reload()}
       >
-        <div className="flex-1 flex flex-col overflow-hidden container mx-auto max-w-3xl px-4">
-          {/* Compact Title Section */}
-          <div className="py-3 text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <div className="p-2 rounded-full bg-primary/10">
-                <Bot className="h-5 w-5 text-primary" />
-              </div>
-              <h1 className="text-xl sm:text-2xl font-bold">
-                Window <span className="text-primary">Expert</span>
-              </h1>
-            </div>
-            <p className="text-muted-foreground text-xs">
+        <div className="flex-1 flex flex-col overflow-hidden container mx-auto max-w-3xl px-4 pt-6">
+          {/* Hero Introduction */}
+          <div className="text-center mb-4">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1">
+              Window <span className="text-primary">Expert</span>
+            </h1>
+            <p className="text-muted-foreground text-sm">
               Ask anything about costs, savings, installation, or contractors.
             </p>
           </div>
 
           {/* Compact Context Banner */}
           {hasContext && (
-            <div className="pb-2">
+            <div className="mb-3">
               <ContextBanner sessionData={sessionData} />
             </div>
           )}
