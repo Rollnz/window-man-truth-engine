@@ -20,6 +20,27 @@ import {
 } from 'lucide-react';
 import { ROUTES } from '@/config/navigation';
 
+// ============================================
+// CRO TYPES
+// ============================================
+
+/**
+ * Funnel phases for CRO-optimized tool suggestions
+ * Used to enforce "No U-Turn" rule - never suggest backward steps
+ */
+export type FunnelPhase = 'awareness' | 'evaluation' | 'validation' | 'protection' | 'action';
+
+/**
+ * Phase order for comparison - higher = further in funnel
+ */
+const PHASE_ORDER: Record<FunnelPhase, number> = {
+  awareness: 1,
+  evaluation: 2,
+  validation: 3,
+  protection: 4,
+  action: 5,
+};
+
 /**
  * Difficulty levels for tools
  */
@@ -69,10 +90,20 @@ export interface ToolDefinition {
   valueProposition?: string;
   /** Keywords for search/filtering */
   keywords?: string[];
-  /** Related tool IDs for cross-linking */
+  /** Related tool IDs for cross-linking (legacy - use nextLogicTools) */
   relatedTools?: string[];
   /** CRO-optimized tooltip copy (Gap Theory: problem this solves in 2 min) */
   tooltip?: string;
+  
+  // ============================================
+  // CRO ARCHITECTURE
+  // ============================================
+  /** Funnel phase for smart tool suggestions */
+  funnelPhase: FunnelPhase;
+  /** Engagement score awarded on click (10-50, higher = more intent) */
+  engagementScore: number;
+  /** Forward-only related tools (respects "No U-Turn" rule) */
+  nextLogicTools?: string[];
 }
 
 /**
@@ -81,7 +112,7 @@ export interface ToolDefinition {
  */
 export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
   // ============================================
-  // PRIMARY TOOLS
+  // AWARENESS PHASE - "Wake Up" Tools
   // ============================================
   'reality-check': {
     id: 'reality-check',
@@ -102,6 +133,10 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     keywords: ['cost', 'savings', 'analysis', 'hidden costs'],
     relatedTools: ['cost-calculator', 'vulnerability-test'],
     tooltip: '⚠️ Warning: 8 out of 10 bargain windows fail within 7 years. See the math contractors hide from you.',
+    // CRO
+    funnelPhase: 'awareness',
+    engagementScore: 15,
+    nextLogicTools: ['fast-win', 'cost-calculator', 'expert'],
   },
 
   'cost-calculator': {
@@ -124,6 +159,10 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     keywords: ['calculator', 'energy', 'savings', 'ROI', 'cost'],
     relatedTools: ['reality-check', 'comparison'],
     tooltip: '💸 Money Pit Alert: See exactly how much cash you are burning every single day by keeping your current windows.',
+    // CRO
+    funnelPhase: 'awareness',
+    engagementScore: 15,
+    nextLogicTools: ['fast-win', 'quote-builder', 'comparison'],
   },
 
   'vulnerability-test': {
@@ -145,93 +184,10 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     keywords: ['quiz', 'test', 'sales tactics', 'vulnerability'],
     relatedTools: ['roleplay', 'sales-tactics-guide'],
     tooltip: '🧠 Beat the Dealer: Salesmen love uneducated buyers. Take this 5-minute drill so you can\'t be tricked.',
-  },
-
-  'expert': {
-    id: 'expert',
-    title: 'Expert System',
-    description: 'Chat with our AI specialist for neutral, expert advice.',
-    path: ROUTES.EXPERT,
-    icon: MessageSquare,
-    iconColor: 'text-sky-500',
-    bgColor: 'bg-sky-500/20',
-    borderColor: 'border-sky-500/40',
-    cta: 'Chat With the Window Specialist',
-    category: 'support',
-    featured: true,
-    gated: false,
-    estimatedTime: '5-15 min',
-    difficulty: 'easy',
-    valueProposition: 'Get unbiased answers to your window questions instantly',
-    keywords: ['chat', 'AI', 'questions', 'advice', 'expert'],
-    relatedTools: ['comparison', 'quote-scanner'],
-    tooltip: '🤖 0% Sales Pitch: Get instant, unbiased answers to your toughest questions. No commission, just facts.',
-  },
-
-  'comparison': {
-    id: 'comparison',
-    title: 'Comparison Tool',
-    description: 'Compare cheap vs. quality window specs side-by-side.',
-    longDescription: 'Validate a price with side-by-side spec comparison.',
-    path: ROUTES.COMPARISON,
-    icon: GitCompare,
-    iconColor: 'text-cyan-500',
-    bgColor: 'bg-cyan-500/20',
-    borderColor: 'border-cyan-500/40',
-    cta: 'Compare Real Window Specs',
-    category: 'analysis',
-    featured: true,
-    gated: true,
-    estimatedTime: '3 min',
-    difficulty: 'medium',
-    valueProposition: 'Understand exactly what separates quality from cheap windows',
-    keywords: ['compare', 'specs', 'quality', 'cheap', 'analysis'],
-    relatedTools: ['quote-scanner', 'cost-calculator'],
-    tooltip: '🔍 X-Ray Vision: Strip away the marketing fluff. Compare the raw engineering data of cheap vs. quality brands side-by-side.',
-  },
-
-  'risk-diagnostic': {
-    id: 'risk-diagnostic',
-    title: 'Protection Gap Analysis',
-    description: 'Identify vulnerabilities and unlock potential insurance savings up to 20%.',
-    longDescription: 'Assess your protection gaps and insurance savings potential.',
-    path: ROUTES.RISK_DIAGNOSTIC,
-    icon: Shield,
-    iconColor: 'text-orange-500',
-    bgColor: 'bg-orange-500/20',
-    borderColor: 'border-orange-500/40',
-    cta: 'Analyze Your Protection Gaps',
-    category: 'analysis',
-    featured: true,
-    gated: true,
-    estimatedTime: '5-7 min',
-    difficulty: 'medium',
-    valueProposition: 'Find insurance savings and protection gaps in your home',
-    keywords: ['insurance', 'risk', 'protection', 'savings', 'hurricane'],
-    relatedTools: ['claim-survival', 'insurance-savings-guide'],
-    tooltip: '💰 Found Money: You might be missing up to 20% in wind mitigation discounts. Find your hidden savings now.',
-  },
-
-  'claim-survival': {
-    id: 'claim-survival',
-    title: 'Claim Survival Vault',
-    description: 'The 7-point documentation system insurers expect. Prevent claim denials before they happen.',
-    longDescription: 'Preparing an insurance claim? Get organized with our step-by-step guide to maximize your coverage.',
-    path: ROUTES.CLAIM_SURVIVAL,
-    icon: ShieldCheck,
-    iconColor: 'text-green-500',
-    bgColor: 'bg-green-500/20',
-    borderColor: 'border-green-500/40',
-    cta: 'Protect Your Claim',
-    category: 'primary',
-    featured: true,
-    gated: true,
-    estimatedTime: '10-15 min',
-    difficulty: 'advanced',
-    valueProposition: 'Build a bulletproof insurance claim that gets approved',
-    keywords: ['insurance', 'claim', 'documentation', 'hurricane', 'damage'],
-    relatedTools: ['risk-diagnostic', 'evidence'],
-    tooltip: '🛡️ Denial Proof: Insurers deny 40% of claims due to lack of evidence. Download the checklist that forces them to pay.',
+    // CRO
+    funnelPhase: 'awareness',
+    engagementScore: 20,
+    nextLogicTools: ['roleplay', 'sales-tactics-guide', 'expert'],
   },
 
   'fast-win': {
@@ -253,71 +209,39 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     keywords: ['quick', 'fast', 'ROI', 'upgrade', 'recommendation'],
     relatedTools: ['cost-calculator', 'comparison'],
     tooltip: '⚡ Speed Run: Do not have time for research? Find the single highest-ROI upgrade for your specific home type in 45 seconds.',
+    // CRO
+    funnelPhase: 'awareness',
+    engagementScore: 25,
+    nextLogicTools: ['quote-builder', 'comparison', 'quote-scanner'],
   },
 
-  'evidence': {
-    id: 'evidence',
-    title: 'Evidence Locker',
-    description: 'Review verified case files from 47 completed missions.',
-    longDescription: 'Real homeowner case studies with documented outcomes.',
-    path: ROUTES.EVIDENCE,
-    icon: FolderSearch,
-    iconColor: 'text-amber-700',
-    bgColor: 'bg-amber-700/20',
-    borderColor: 'border-amber-700/40',
-    cta: 'Review the Evidence',
-    category: 'content',
+  // ============================================
+  // EVALUATION PHASE - "Shopping" Tools
+  // ============================================
+  'comparison': {
+    id: 'comparison',
+    title: 'Comparison Tool',
+    description: 'Compare cheap vs. quality window specs side-by-side.',
+    longDescription: 'Validate a price with side-by-side spec comparison.',
+    path: ROUTES.COMPARISON,
+    icon: GitCompare,
+    iconColor: 'text-cyan-500',
+    bgColor: 'bg-cyan-500/20',
+    borderColor: 'border-cyan-500/40',
+    cta: 'Compare Real Window Specs',
+    category: 'analysis',
     featured: true,
     gated: true,
-    estimatedTime: '5-10 min',
-    difficulty: 'easy',
-    valueProposition: 'Learn from real homeowner success stories and savings',
-    keywords: ['case studies', 'evidence', 'proof', 'success stories'],
-    relatedTools: ['comparison', 'claim-survival'],
-    tooltip: '📂 Case Closed: Skeptical? Good. Review 47 verified Case Files proving exactly how we saved homeowners thousands.',
-  },
-
-  'intel': {
-    id: 'intel',
-    title: 'Intel Library',
-    description: 'Download declassified guides: negotiation tactics, claim survival kits, and more.',
-    path: ROUTES.INTEL,
-    icon: FileStack,
-    iconColor: 'text-indigo-500',
-    bgColor: 'bg-indigo-500/20',
-    borderColor: 'border-indigo-500/40',
-    cta: 'Access the Vault',
-    category: 'content',
-    featured: true,
-    gated: true,
-    estimatedTime: 'Varies',
+    estimatedTime: '3 min',
     difficulty: 'medium',
-    valueProposition: 'Get insider guides and resources to negotiate like a pro',
-    keywords: ['guides', 'resources', 'downloads', 'negotiation', 'tactics'],
-    relatedTools: ['sales-tactics-guide', 'kitchen-table-guide'],
-    tooltip: '🔐 Declassified: Unlock the negotiation scripts and claim survival templates that insurance companies pray you never find.',
-  },
-
-  'quote-scanner': {
-    id: 'quote-scanner',
-    title: 'AI Quote Scanner',
-    description: 'Upload your quote and let AI flag hidden risks, missing scope, and overpricing in 30 seconds.',
-    longDescription: 'Upload your quote. Get a forensic analysis of hidden markups, inflated pricing, and negotiation leverage points.',
-    path: ROUTES.QUOTE_SCANNER,
-    icon: ScanSearch,
-    iconColor: 'text-rose-500',
-    bgColor: 'bg-rose-500/20',
-    borderColor: 'border-rose-500/40',
-    cta: 'Scan Your Quote',
-    category: 'primary',
-    featured: true,
-    gated: true,
-    estimatedTime: '30 sec',
-    difficulty: 'easy',
-    valueProposition: 'Instantly expose hidden fees and get negotiation leverage',
-    keywords: ['quote', 'scan', 'AI', 'analysis', 'pricing', 'red flags'],
-    relatedTools: ['beat-your-quote', 'comparison'],
-    tooltip: '🛡️ Scam Shield: Upload a photo of your quote. Our AI exposes hidden fees and missing specs that could cost you $3,000+.',
+    valueProposition: 'Understand exactly what separates quality from cheap windows',
+    keywords: ['compare', 'specs', 'quality', 'cheap', 'analysis'],
+    relatedTools: ['quote-scanner', 'cost-calculator'],
+    tooltip: '🔍 X-Ray Vision: Strip away the marketing fluff. Compare the raw engineering data of cheap vs. quality brands side-by-side.',
+    // CRO
+    funnelPhase: 'evaluation',
+    engagementScore: 25,
+    nextLogicTools: ['quote-scanner', 'fair-price-quiz', 'beat-your-quote'],
   },
 
   'quote-builder': {
@@ -340,45 +264,10 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     keywords: ['estimate', 'quote', 'builder', 'pricing', 'project'],
     relatedTools: ['quote-scanner', 'comparison'],
     tooltip: '🏗️ No-Sales Zone: Build a highly accurate project estimate in 3 minutes without a single phone call.',
-  },
-
-  // ============================================
-  // ADDITIONAL TOOLS (for related sections)
-  // ============================================
-  'beat-your-quote': {
-    id: 'beat-your-quote',
-    title: 'Beat Your Quote',
-    description: 'Expose hidden markups and get leverage to negotiate a better deal.',
-    path: ROUTES.BEAT_YOUR_QUOTE,
-    icon: Target,
-    iconColor: 'text-rose-400',
-    bgColor: 'bg-rose-500/20',
-    borderColor: 'border-rose-500/40',
-    cta: 'Beat My Quote',
-    category: 'primary',
-    estimatedTime: '10-15 min',
-    difficulty: 'advanced',
-    valueProposition: 'Master the art of negotiating a better window price',
-    keywords: ['negotiation', 'beat', 'quote', 'leverage', 'markup'],
-    relatedTools: ['quote-scanner', 'sales-tactics-guide'],
-  },
-
-  'fair-price-quiz': {
-    id: 'fair-price-quiz',
-    title: 'Fair Price Quiz',
-    description: 'Answer a few questions to see if your quote is fair.',
-    path: ROUTES.FAIR_PRICE_QUIZ,
-    icon: Brain,
-    iconColor: 'text-purple-400',
-    bgColor: 'bg-purple-500/20',
-    borderColor: 'border-purple-500/40',
-    cta: 'Take the Quiz',
-    category: 'analysis',
-    estimatedTime: '2 min',
-    difficulty: 'easy',
-    valueProposition: 'Quickly validate if your quote is in the fair range',
-    keywords: ['quiz', 'fair price', 'validation', 'quick'],
-    relatedTools: ['quote-scanner', 'comparison'],
+    // CRO
+    funnelPhase: 'evaluation',
+    engagementScore: 30,
+    nextLogicTools: ['quote-scanner', 'comparison', 'expert'],
   },
 
   'roleplay': {
@@ -397,10 +286,221 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Build confidence to say no to pushy salespeople',
     keywords: ['roleplay', 'sales', 'practice', 'training', 'pressure'],
     relatedTools: ['vulnerability-test', 'sales-tactics-guide'],
+    // CRO
+    funnelPhase: 'evaluation',
+    engagementScore: 20,
+    nextLogicTools: ['kitchen-table-guide', 'expert', 'quote-scanner'],
   },
 
   // ============================================
-  // GUIDES
+  // VALIDATION PHASE - "Verification" Tools
+  // ============================================
+  'fair-price-quiz': {
+    id: 'fair-price-quiz',
+    title: 'Fair Price Quiz',
+    description: 'Answer a few questions to see if your quote is fair.',
+    path: ROUTES.FAIR_PRICE_QUIZ,
+    icon: Brain,
+    iconColor: 'text-purple-400',
+    bgColor: 'bg-purple-500/20',
+    borderColor: 'border-purple-500/40',
+    cta: 'Take the Quiz',
+    category: 'analysis',
+    estimatedTime: '2 min',
+    difficulty: 'easy',
+    valueProposition: 'Quickly validate if your quote is in the fair range',
+    keywords: ['quiz', 'fair price', 'validation', 'quick'],
+    relatedTools: ['quote-scanner', 'comparison'],
+    // CRO
+    funnelPhase: 'validation',
+    engagementScore: 35,
+    nextLogicTools: ['quote-scanner', 'beat-your-quote', 'expert'],
+  },
+
+  'quote-scanner': {
+    id: 'quote-scanner',
+    title: 'AI Quote Scanner',
+    description: 'Upload your quote and let AI flag hidden risks, missing scope, and overpricing in 30 seconds.',
+    longDescription: 'Upload your quote. Get a forensic analysis of hidden markups, inflated pricing, and negotiation leverage points.',
+    path: ROUTES.QUOTE_SCANNER,
+    icon: ScanSearch,
+    iconColor: 'text-rose-500',
+    bgColor: 'bg-rose-500/20',
+    borderColor: 'border-rose-500/40',
+    cta: 'Scan Your Quote',
+    category: 'primary',
+    featured: true,
+    gated: true,
+    estimatedTime: '30 sec',
+    difficulty: 'easy',
+    valueProposition: 'Instantly expose hidden fees and get negotiation leverage',
+    keywords: ['quote', 'scan', 'AI', 'analysis', 'pricing', 'red flags'],
+    relatedTools: ['beat-your-quote', 'comparison'],
+    tooltip: '🛡️ Scam Shield: Upload a photo of your quote. Our AI exposes hidden fees and missing specs that could cost you $3,000+.',
+    // CRO - HIGHEST INTENT
+    funnelPhase: 'validation',
+    engagementScore: 50,
+    nextLogicTools: ['beat-your-quote', 'expert', 'intel'],
+  },
+
+  'beat-your-quote': {
+    id: 'beat-your-quote',
+    title: 'Beat Your Quote',
+    description: 'Expose hidden markups and get leverage to negotiate a better deal.',
+    path: ROUTES.BEAT_YOUR_QUOTE,
+    icon: Target,
+    iconColor: 'text-rose-400',
+    bgColor: 'bg-rose-500/20',
+    borderColor: 'border-rose-500/40',
+    cta: 'Beat My Quote',
+    category: 'primary',
+    estimatedTime: '10-15 min',
+    difficulty: 'advanced',
+    valueProposition: 'Master the art of negotiating a better window price',
+    keywords: ['negotiation', 'beat', 'quote', 'leverage', 'markup'],
+    relatedTools: ['quote-scanner', 'sales-tactics-guide'],
+    // CRO
+    funnelPhase: 'validation',
+    engagementScore: 45,
+    nextLogicTools: ['expert', 'quote-builder'],
+  },
+
+  // ============================================
+  // PROTECTION PHASE - "Defense" Tools
+  // ============================================
+  'risk-diagnostic': {
+    id: 'risk-diagnostic',
+    title: 'Protection Gap Analysis',
+    description: 'Identify vulnerabilities and unlock potential insurance savings up to 20%.',
+    longDescription: 'Assess your protection gaps and insurance savings potential.',
+    path: ROUTES.RISK_DIAGNOSTIC,
+    icon: Shield,
+    iconColor: 'text-orange-500',
+    bgColor: 'bg-orange-500/20',
+    borderColor: 'border-orange-500/40',
+    cta: 'Analyze Your Protection Gaps',
+    category: 'analysis',
+    featured: true,
+    gated: true,
+    estimatedTime: '5-7 min',
+    difficulty: 'medium',
+    valueProposition: 'Find insurance savings and protection gaps in your home',
+    keywords: ['insurance', 'risk', 'protection', 'savings', 'hurricane'],
+    relatedTools: ['claim-survival', 'insurance-savings-guide'],
+    tooltip: '💰 Found Money: You might be missing up to 20% in wind mitigation discounts. Find your hidden savings now.',
+    // CRO
+    funnelPhase: 'protection',
+    engagementScore: 30,
+    nextLogicTools: ['claim-survival', 'insurance-savings-guide', 'expert'],
+  },
+
+  'claim-survival': {
+    id: 'claim-survival',
+    title: 'Claim Survival Vault',
+    description: 'The 7-point documentation system insurers expect. Prevent claim denials before they happen.',
+    longDescription: 'Preparing an insurance claim? Get organized with our step-by-step guide to maximize your coverage.',
+    path: ROUTES.CLAIM_SURVIVAL,
+    icon: ShieldCheck,
+    iconColor: 'text-green-500',
+    bgColor: 'bg-green-500/20',
+    borderColor: 'border-green-500/40',
+    cta: 'Protect Your Claim',
+    category: 'primary',
+    featured: true,
+    gated: true,
+    estimatedTime: '10-15 min',
+    difficulty: 'advanced',
+    valueProposition: 'Build a bulletproof insurance claim that gets approved',
+    keywords: ['insurance', 'claim', 'documentation', 'hurricane', 'damage'],
+    relatedTools: ['risk-diagnostic', 'evidence'],
+    tooltip: '🛡️ Denial Proof: Insurers deny 40% of claims due to lack of evidence. Download the checklist that forces them to pay.',
+    // CRO
+    funnelPhase: 'protection',
+    engagementScore: 35,
+    nextLogicTools: ['evidence', 'intel', 'expert'],
+  },
+
+  'evidence': {
+    id: 'evidence',
+    title: 'Evidence Locker',
+    description: 'Review verified case files from 47 completed missions.',
+    longDescription: 'Real homeowner case studies with documented outcomes.',
+    path: ROUTES.EVIDENCE,
+    icon: FolderSearch,
+    iconColor: 'text-amber-700',
+    bgColor: 'bg-amber-700/20',
+    borderColor: 'border-amber-700/40',
+    cta: 'Review the Evidence',
+    category: 'content',
+    featured: true,
+    gated: true,
+    estimatedTime: '5-10 min',
+    difficulty: 'easy',
+    valueProposition: 'Learn from real homeowner success stories and savings',
+    keywords: ['case studies', 'evidence', 'proof', 'success stories'],
+    relatedTools: ['comparison', 'claim-survival'],
+    tooltip: '📂 Case Closed: Skeptical? Good. Review 47 verified Case Files proving exactly how we saved homeowners thousands.',
+    // CRO
+    funnelPhase: 'protection',
+    engagementScore: 20,
+    nextLogicTools: ['quote-scanner', 'expert', 'claim-survival'],
+  },
+
+  'intel': {
+    id: 'intel',
+    title: 'Intel Library',
+    description: 'Download declassified guides: negotiation tactics, claim survival kits, and more.',
+    path: ROUTES.INTEL,
+    icon: FileStack,
+    iconColor: 'text-indigo-500',
+    bgColor: 'bg-indigo-500/20',
+    borderColor: 'border-indigo-500/40',
+    cta: 'Access the Vault',
+    category: 'content',
+    featured: true,
+    gated: true,
+    estimatedTime: 'Varies',
+    difficulty: 'medium',
+    valueProposition: 'Get insider guides and resources to negotiate like a pro',
+    keywords: ['guides', 'resources', 'downloads', 'negotiation', 'tactics'],
+    relatedTools: ['sales-tactics-guide', 'kitchen-table-guide'],
+    tooltip: '🔐 Declassified: Unlock the negotiation scripts and claim survival templates that insurance companies pray you never find.',
+    // CRO
+    funnelPhase: 'protection',
+    engagementScore: 25,
+    nextLogicTools: ['quote-scanner', 'roleplay', 'expert'],
+  },
+
+  // ============================================
+  // ACTION PHASE - "Conversion" Tools
+  // ============================================
+  'expert': {
+    id: 'expert',
+    title: 'Expert System',
+    description: 'Chat with our AI specialist for neutral, expert advice.',
+    path: ROUTES.EXPERT,
+    icon: MessageSquare,
+    iconColor: 'text-sky-500',
+    bgColor: 'bg-sky-500/20',
+    borderColor: 'border-sky-500/40',
+    cta: 'Chat With the Window Specialist',
+    category: 'support',
+    featured: true,
+    gated: false,
+    estimatedTime: '5-15 min',
+    difficulty: 'easy',
+    valueProposition: 'Get unbiased answers to your window questions instantly',
+    keywords: ['chat', 'AI', 'questions', 'advice', 'expert'],
+    relatedTools: ['comparison', 'quote-scanner'],
+    tooltip: '🤖 0% Sales Pitch: Get instant, unbiased answers to your toughest questions. No commission, just facts.',
+    // CRO - TERMINAL ACTION
+    funnelPhase: 'action',
+    engagementScore: 50,
+    nextLogicTools: ['quote-builder', 'quote-scanner'],
+  },
+
+  // ============================================
+  // GUIDES (Various phases based on content)
   // ============================================
   'kitchen-table-guide': {
     id: 'kitchen-table-guide',
@@ -418,6 +518,10 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Walk into your sales appointment fully prepared',
     keywords: ['guide', 'preparation', 'sales appointment', 'defense'],
     relatedTools: ['roleplay', 'vulnerability-test'],
+    // CRO
+    funnelPhase: 'evaluation',
+    engagementScore: 15,
+    nextLogicTools: ['roleplay', 'expert', 'quote-scanner'],
   },
 
   'sales-tactics-guide': {
@@ -436,6 +540,10 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Recognize manipulation tactics before they work on you',
     keywords: ['tactics', 'sales', 'manipulation', 'tricks', 'exposed'],
     relatedTools: ['roleplay', 'vulnerability-test'],
+    // CRO
+    funnelPhase: 'evaluation',
+    engagementScore: 15,
+    nextLogicTools: ['roleplay', 'quote-scanner', 'expert'],
   },
 
   'spec-checklist-guide': {
@@ -454,6 +562,10 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Ensure every spec is covered before signing a contract',
     keywords: ['checklist', 'specs', 'audit', 'contract', 'verification'],
     relatedTools: ['comparison', 'quote-scanner'],
+    // CRO
+    funnelPhase: 'validation',
+    engagementScore: 15,
+    nextLogicTools: ['quote-scanner', 'comparison', 'expert'],
   },
 
   'insurance-savings-guide': {
@@ -472,8 +584,96 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     valueProposition: 'Learn how to cut your insurance premiums with impact windows',
     keywords: ['insurance', 'savings', 'discounts', 'impact windows', 'premiums'],
     relatedTools: ['risk-diagnostic', 'claim-survival'],
+    // CRO
+    funnelPhase: 'protection',
+    engagementScore: 15,
+    nextLogicTools: ['risk-diagnostic', 'claim-survival', 'expert'],
   },
 };
+
+// ============================================
+// CRO FUNCTIONS
+// ============================================
+
+/**
+ * Frame control configuration for dynamic section headers
+ */
+interface FrameControl {
+  title: string;
+  description: string;
+}
+
+const FRAME_CONTROL_MAP: Record<FunnelPhase, FrameControl> = {
+  awareness: {
+    title: "⚡ Fix This Problem Now",
+    description: "Stop the bleeding with these tools"
+  },
+  evaluation: {
+    title: "🔍 Verify Before You Sign",
+    description: "Don't get tricked by fine print"
+  },
+  validation: {
+    title: "🛡️ Enforce Your Rights",
+    description: "Turn the tables on the contractor"
+  },
+  protection: {
+    title: "📋 Complete Your Defense",
+    description: "Lock down every angle"
+  },
+  action: {
+    title: "🎯 Take Control Now",
+    description: "You're ready. Make your move."
+  },
+};
+
+/**
+ * Get dynamic frame control header for related tools section
+ * Based on the current tool's funnel phase
+ */
+export function getFrameControl(toolId: string): FrameControl {
+  const tool = TOOL_REGISTRY[toolId];
+  if (!tool) {
+    return { title: "Related Tools", description: "" };
+  }
+  return FRAME_CONTROL_MAP[tool.funnelPhase];
+}
+
+/**
+ * Get smart related tools with "No U-Turn" logic
+ * Only suggests tools at same phase or HIGHER (never backward)
+ * 
+ * @param currentToolId - The current tool's ID
+ * @param completedTools - Optional array of tool IDs the user has already completed
+ * @returns Array of ToolDefinition objects, max 3, sorted by engagement score
+ */
+export function getSmartRelatedTools(
+  currentToolId: string,
+  completedTools?: string[]
+): ToolDefinition[] {
+  const currentTool = TOOL_REGISTRY[currentToolId];
+  if (!currentTool) return [];
+  
+  const currentPhaseOrder = PHASE_ORDER[currentTool.funnelPhase];
+  const nextLogicIds = currentTool.nextLogicTools || currentTool.relatedTools || [];
+  
+  return nextLogicIds
+    .map(id => TOOL_REGISTRY[id])
+    .filter((tool): tool is ToolDefinition => {
+      if (!tool) return false;
+      
+      // 🚫 NO U-TURN RULE: Only same phase or HIGHER
+      const toolPhaseOrder = PHASE_ORDER[tool.funnelPhase];
+      if (toolPhaseOrder < currentPhaseOrder) return false;
+      
+      // Skip tools user already completed
+      if (completedTools?.includes(tool.id)) return false;
+      
+      return true;
+    })
+    // Sort by engagement score (highest first = highest intent)
+    .sort((a, b) => (b.engagementScore || 0) - (a.engagementScore || 0))
+    .slice(0, 3);
+}
 
 // ============================================
 // HELPER FUNCTIONS FOR ENHANCED METADATA
@@ -505,7 +705,7 @@ export function searchTools(query: string): ToolDefinition[] {
 }
 
 /**
- * Get related tools for a given tool
+ * Get related tools for a given tool (legacy - prefer getSmartRelatedTools)
  */
 export function getRelatedTools(toolId: string): ToolDefinition[] {
   const tool = TOOL_REGISTRY[toolId];

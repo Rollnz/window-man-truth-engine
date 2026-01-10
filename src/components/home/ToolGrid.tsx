@@ -4,6 +4,7 @@ import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
 import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { HOMEPAGE_TOOLS, getDifficultyConfig, type ToolDefinition } from '@/config/toolRegistry';
+import { trackEngagement } from '@/services/analytics';
 
 function DifficultyBadge({ difficulty }: { difficulty?: 'easy' | 'medium' | 'advanced' }) {
   if (!difficulty) return null;
@@ -24,11 +25,17 @@ function ToolCard({
 }) {
   const Icon = tool.icon;
   
+  const handleClick = () => {
+    // Track engagement with tool's score
+    trackEngagement('tool_click', tool.engagementScore, tool.id);
+  };
+  
   const cardContent = (
     <ImpactWindowCard className="h-full">
       <Link 
         to={tool.path} 
         className="group relative flex flex-col h-full p-6"
+        onClick={handleClick}
       >
           {/* Top badges row */}
           <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
