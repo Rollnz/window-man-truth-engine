@@ -6,6 +6,7 @@ import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { ToolDefinition } from '@/config/toolRegistry';
+import { trackEngagement } from '@/services/analytics';
 
 /**
  * ToolConfig - accepts either a full ToolDefinition or a minimal config
@@ -57,6 +58,7 @@ const variantClasses = {
  * RelatedToolsGrid
  * A reusable grid of tool cards using the ImpactWindowCard design pattern.
  * Each card has a scroll-triggered entrance animation with staggered delays.
+ * Includes engagement tracking for CRO analytics.
  */
 export function RelatedToolsGrid({
   title,
@@ -70,6 +72,17 @@ export function RelatedToolsGrid({
 }: RelatedToolsGridProps) {
   // Don't render header section if title is empty
   const showHeader = title.length > 0;
+
+  const handleToolClick = (tool: ToolConfig | ToolDefinition) => {
+    // Get engagement score from ToolDefinition, or use default
+    const score = 'engagementScore' in tool ? tool.engagementScore : 15;
+    trackEngagement('related_tool_click', score, tool.id);
+    
+    // Call custom handler if provided
+    if (onToolClick) {
+      onToolClick(tool);
+    }
+  };
 
   return (
     <section className={cn('py-12', variantClasses[variant], className)}>
@@ -137,13 +150,13 @@ export function RelatedToolsGrid({
                       variant="cta"
                       size="sm"
                       className="w-full justify-between"
-                      onClick={() => onToolClick(tool)}
+                      onClick={() => handleToolClick(tool)}
                     >
                       <span>{ctaText}</span>
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   ) : (
-                    <Link to={tool.path}>
+                    <Link to={tool.path} onClick={() => handleToolClick(tool)}>
                       <Button variant="cta" size="sm" className="w-full justify-between">
                         <span>{ctaText}</span>
                         <ArrowRight className="w-4 h-4" />
