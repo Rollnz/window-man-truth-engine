@@ -42,7 +42,7 @@ export function CaseFileCard({
       });
     }
   };
-  return <div className={`bg-dossier-folder border border-white/5 rounded-lg overflow-hidden shadow-xl transition-all duration-300 hover:border-white/10 ${index % 2 === 0 ? 'rotate-1' : '-rotate-1'}`} style={{
+  return <div className={`bg-dossier-folder border border-white/5 rounded-lg overflow-hidden shadow-xl transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_30px_-5px_hsl(var(--primary)/0.3)] ${index % 2 === 0 ? 'rotate-1' : '-rotate-1'}`} style={{
     animationDelay: `${index * 150}ms`
   }}>
       {/* Header */}
