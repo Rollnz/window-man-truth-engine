@@ -201,7 +201,7 @@ export default function Expert() {
             )}
 
             {/* Chat Area - Scrollable container with bottom padding for fixed input on mobile */}
-            <div className="flex-1 min-h-[300px] max-h-[60vh] overflow-hidden rounded-md border border-border/30">
+            <div className="relative flex-1 min-h-[300px] max-h-[60vh] overflow-hidden rounded-md border border-border/30">
               <ScrollArea className="h-full">
                 <div className="p-4 space-y-4 pb-[100px] md:pb-4" ref={scrollRef}>
                   {messages.length === 0 ? (
@@ -223,6 +223,8 @@ export default function Expert() {
                   )}
                 </div>
               </ScrollArea>
+              {/* Fade gradient scroll indicator */}
+              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent" />
             </div>
 
             {/* Input Area - Fixed on mobile, normal flow on desktop */}
