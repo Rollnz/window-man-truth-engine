@@ -95,11 +95,20 @@ export function MissionOutcomes() {
 
         {/* Case Files Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10 px-2">
-          {caseFiles.map((caseFile, index) => <div key={caseFile.caseNumber} className={`transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95'}`} style={{
-          transitionDelay: `${300 + index * 200}ms`
-        }}>
-              <CaseFileCard data={caseFile} index={index} />
-            </div>)}
+          {caseFiles.map((caseFile, index) => (
+            <div key={caseFile.caseNumber} className="relative">
+              {/* Subtle divider between cards on mobile */}
+              {index > 0 && (
+                <div className="lg:hidden absolute -top-4 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+              )}
+              <div 
+                className={`transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95'}`} 
+                style={{ transitionDelay: `${300 + index * 200}ms` }}
+              >
+                <CaseFileCard data={caseFile} index={index} />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>;
