@@ -19,30 +19,47 @@ interface BreakdownCardProps {
 }
 
 function BreakdownCard({ label, value, icon, delay, severity, isVisible }: BreakdownCardProps) {
-  const severityStyles = {
-    low: 'border-yellow-500/50',
-    medium: 'border-orange-500/50',
-    high: 'border-destructive/50 shadow-[0_0_20px_hsl(var(--destructive)/0.2)]',
+  const severityConfig = {
+    low: {
+      border: 'border-yellow-500/50',
+      text: 'text-yellow-500',
+      iconBg: 'bg-yellow-500/10',
+      iconColor: 'text-yellow-500',
+      glow: { textShadow: '0 0 16px rgba(234, 179, 8, 0.4)' },
+    },
+    medium: {
+      border: 'border-orange-500/50',
+      text: 'text-orange-500',
+      iconBg: 'bg-orange-500/10',
+      iconColor: 'text-orange-500',
+      glow: { textShadow: '0 0 16px rgba(249, 115, 22, 0.4)' },
+    },
+    high: {
+      border: 'border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.2)]',
+      text: 'text-red-500',
+      iconBg: 'bg-red-500/10',
+      iconColor: 'text-red-500',
+      glow: { textShadow: '0 0 20px rgba(239, 68, 68, 0.5)' },
+    },
   };
+
+  const config = severityConfig[severity];
 
   return (
     <Card 
       className={cn(
         'bg-card/50 backdrop-blur border-2 transition-all duration-500',
-        severityStyles[severity],
+        config.border,
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       )}
       style={{ transitionDelay: `${delay}ms` }}
     >
       <CardContent className="pt-6 text-center">
-        <div className="flex justify-center mb-2 text-muted-foreground">
+        <div className={cn('flex justify-center mb-2', config.iconColor)}>
           {icon}
         </div>
         <p className="text-sm text-muted-foreground mb-1">{label}</p>
-        <p className={cn(
-          'text-2xl sm:text-3xl font-bold',
-          severity === 'high' ? 'text-destructive' : severity === 'medium' ? 'text-orange-500' : 'text-yellow-500'
-        )}>
+        <p className={cn('text-2xl sm:text-3xl font-bold', config.text)} style={config.glow}>
           {isVisible ? (
             <AnimatedNumber value={value} prefix="$" duration={1500} />
           ) : (

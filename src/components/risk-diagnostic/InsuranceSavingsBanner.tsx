@@ -42,11 +42,11 @@ export function InsuranceSavingsBanner({
       <Card className="border-green-500/30 bg-green-500/5">
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-              <TrendingUp className="w-5 h-5 text-green-400" />
+            <div className="w-10 h-10 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center flex-shrink-0">
+              <TrendingUp className="w-5 h-5 text-green-500" />
             </div>
             <div>
-              <h3 className="font-semibold text-green-400 mb-1">You're Already Saving!</h3>
+              <h3 className="font-semibold text-green-500 mb-1">You're Already Saving!</h3>
               <p className="text-sm text-muted-foreground">
                 Great news — you're already receiving an impact window insurance discount. 
                 Make sure to keep your wind mitigation inspection current to maintain your savings.
@@ -59,11 +59,11 @@ export function InsuranceSavingsBanner({
   }
 
   return (
-    <Card className="border-primary/30 bg-primary/5">
+    <Card className="border-emerald-500/30 bg-emerald-500/5">
       <CardContent className="p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-            <DollarSign className="w-5 h-5 text-primary" />
+          <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+            <DollarSign className="w-5 h-5 text-emerald-500" />
           </div>
           <h3 className="font-semibold text-lg">Potential Insurance Savings</h3>
         </div>
@@ -96,22 +96,28 @@ export function InsuranceSavingsBanner({
         )}
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="p-3 rounded-lg bg-card">
+          <div className="p-3 rounded-lg bg-card border border-border">
             <p className="text-xs text-muted-foreground mb-1">Est. Annual Premium</p>
-            <p className="text-xl font-bold">${savings.estimatedAnnualPremium.toLocaleString()}</p>
+            <p className="text-xl font-bold text-foreground">${savings.estimatedAnnualPremium.toLocaleString()}</p>
           </div>
-          <div className="p-3 rounded-lg bg-card">
+          <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
             <p className="text-xs text-muted-foreground mb-1">Potential Savings</p>
-            <p className="text-xl font-bold text-primary">
+            <p 
+              className="text-xl font-bold text-emerald-500"
+              style={{ textShadow: '0 0 12px rgba(16, 185, 129, 0.3)' }}
+            >
               -${savings.potentialAnnualSavings.toLocaleString()}/yr
             </p>
           </div>
         </div>
 
-        <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
+        <div className="mt-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">10-Year Savings</span>
-            <span className="text-2xl font-bold text-primary">
+            <span 
+              className="text-2xl font-bold text-emerald-500"
+              style={{ textShadow: '0 0 16px rgba(16, 185, 129, 0.4)' }}
+            >
               ${savings.savingsOver10Years.toLocaleString()}
             </span>
           </div>
