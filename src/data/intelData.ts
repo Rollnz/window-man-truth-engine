@@ -56,6 +56,8 @@ export const intelResources: IntelResource[] = [
       'The Fake Competitor Quote Game',
     ],
     pdfUrl: '#',
+    bookImageUrl: '/images/beat-your-quote/tactics-ebook.webp',
+    imagePosition: 'bottom-right',
     landingPageUrl: ROUTES.SALES_TACTICS_GUIDE,
   },
   {
