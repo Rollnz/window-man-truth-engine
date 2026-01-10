@@ -22,7 +22,7 @@ export function MinimalFooter({ onGetQuoteClick }: MinimalFooterProps) {
           <Link
             to={FOOTER_NAV.BUILD_QUOTE}
             onClick={handleGetQuoteClick}
-            className="inline-flex items-center gap-1.5 text-primary font-semibold hover:text-primary-foreground hover:bg-primary/20 px-2 py-1 rounded transition-colors"
+            className="inline-flex items-center gap-1.5 text-primary font-semibold bg-primary/15 hover:bg-primary/30 px-3 py-1.5 rounded-md transition-colors"
           >
             <Calculator className="w-4 h-4" />
             <span>Build Quote</span>
@@ -30,7 +30,7 @@ export function MinimalFooter({ onGetQuoteClick }: MinimalFooterProps) {
 
           <Link
             to={FOOTER_NAV.SCAN_QUOTE}
-            className="inline-flex items-center gap-1.5 text-primary font-semibold hover:text-primary-foreground hover:bg-primary/20 px-2 py-1 rounded transition-colors"
+            className="inline-flex items-center gap-1.5 text-primary font-semibold bg-primary/15 hover:bg-primary/30 px-3 py-1.5 rounded-md transition-colors"
           >
             <ScanSearch className="w-4 h-4" />
             <span>Scan Quote</span>
