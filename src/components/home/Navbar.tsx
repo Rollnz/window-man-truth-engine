@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useAuth } from '@/hooks/useAuth';
 import { useVaultNotifications } from '@/hooks/useVaultNotifications';
 import { ReadinessIndicator } from '@/components/navigation/ReadinessIndicator';
-import { Vault, LogIn, Menu, X, Target, Sun, Moon } from 'lucide-react';
+import { Vault, LogIn, Menu, X, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from 'next-themes';
 import { ROUTES } from '@/config/navigation';
@@ -50,9 +50,13 @@ export function Navbar() {
           </Link>
           <Link 
             to={ROUTES.BEAT_YOUR_QUOTE} 
-            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5"
           >
-            <Target className="w-4 h-4" />
+            <img 
+              src="/icon-512.webp" 
+              alt="" 
+              className="w-4 h-4 rounded-full object-contain"
+            />
             Beat Your Quote
           </Link>
           
@@ -142,7 +146,11 @@ export function Navbar() {
             onClick={() => setMobileMenuOpen(false)}
           >
             <span className="flex items-center gap-2">
-              <Target className="w-4 h-4" />
+              <img 
+                src="/icon-512.webp" 
+                alt="" 
+                className="w-4 h-4 rounded-full object-contain"
+              />
               Beat Your Quote
             </span>
           </Link>
