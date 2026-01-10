@@ -30,16 +30,16 @@ export function DossierHero({
         </div>
 
         {/* Shield Icon */}
-        <Shield className="w-16 h-16 mx-auto mb-6 text-primary animate-fade-in" />
+        <Shield className="w-16 h-16 mx-auto mb-6 animate-fade-in text-primary-foreground" />
 
         {/* Main Title */}
         <h1 className="font-typewriter text-4xl md:text-6xl lg:text-7xl font-bold mb-4 animate-fade-in">
           <span className="text-primary-foreground">THE </span>
-          <span className="text-primary glow-cyan">WINDOW MAN</span>
+          <span className="glow-cyan text-primary-foreground">WINDOW MAN</span>
         </h1>
 
         {/* Subtitle */}
-        <p className="text-xl md:text-2xl text-primary-foreground mb-4 animate-fade-in">
+        <p className="text-xl md:text-2xl text-muted-foreground mb-4 animate-fade-in">
           Florida's Impact Window Homeowner Advocate
         </p>
 
