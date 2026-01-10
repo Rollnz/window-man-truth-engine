@@ -4,13 +4,18 @@ import {
   Shield,
   Scale,
   ShieldAlert,
+  ShieldCheck,
   Zap,
-  MessageSquareText,
+  MessageSquare,
   FolderSearch,
   BookOpen,
+  FileStack,
   Target,
   Brain,
   Swords,
+  AlertTriangle,
+  ScanSearch,
+  GitCompare,
   type LucideIcon,
 } from 'lucide-react';
 import { ROUTES } from '@/config/navigation';
@@ -43,6 +48,10 @@ export interface ToolDefinition {
   category: 'primary' | 'analysis' | 'content' | 'support' | 'guide';
   /** Whether tool is featured on homepage */
   featured?: boolean;
+  /** Whether tool requires email to save progress */
+  gated?: boolean;
+  /** Optional badge (e.g., 'Beta', 'New') */
+  badge?: string;
 }
 
 /**
@@ -53,51 +62,196 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
   // ============================================
   // PRIMARY TOOLS
   // ============================================
-  'quote-scanner': {
-    id: 'quote-scanner',
-    title: 'Quote Scanner',
-    description: 'Upload a contractor quote and let AI analyze it for red flags and hidden fees.',
-    longDescription: 'Upload your quote. Get a forensic analysis of hidden markups, inflated pricing, and negotiation leverage points.',
-    path: ROUTES.QUOTE_SCANNER,
-    icon: FileSearch,
-    iconColor: 'text-sky-400',
-    bgColor: 'bg-sky-500/20',
-    borderColor: 'border-sky-500/40',
-    cta: 'Scan My Quote',
-    category: 'primary',
+  'reality-check': {
+    id: 'reality-check',
+    title: 'Reality Check Tool',
+    description: 'Confront the hidden costs your current windows are costing you.',
+    path: ROUTES.REALITY_CHECK,
+    icon: AlertTriangle,
+    iconColor: 'text-yellow-500',
+    bgColor: 'bg-yellow-500/20',
+    borderColor: 'border-yellow-500/40',
+    cta: 'See What Cheap Windows Really Cost',
+    category: 'analysis',
     featured: true,
+    gated: false,
   },
 
   'cost-calculator': {
     id: 'cost-calculator',
-    title: 'Cost Calculator',
-    description: 'Calculate long-term costs and savings for hurricane protection.',
+    title: 'Cost of Inaction Calculator',
+    description: 'Quantify exactly how much waiting is costing you every day.',
     longDescription: "Calculate what windows actually cost in your area. See the real numbers contractors don't want you to know.",
     path: ROUTES.COST_CALCULATOR,
     icon: Calculator,
-    iconColor: 'text-emerald-400',
+    iconColor: 'text-emerald-500',
     bgColor: 'bg-emerald-500/20',
     borderColor: 'border-emerald-500/40',
-    cta: 'Calculate Costs',
+    cta: 'Calculate Your Hidden Costs',
     category: 'primary',
     featured: true,
+    gated: false,
+  },
+
+  'vulnerability-test': {
+    id: 'vulnerability-test',
+    title: 'Window IQ Challenge',
+    description: '90% of Florida homeowners fail this test and overpay by $5,000+.',
+    path: ROUTES.VULNERABILITY_TEST,
+    icon: Brain,
+    iconColor: 'text-purple-500',
+    bgColor: 'bg-purple-500/20',
+    borderColor: 'border-purple-500/40',
+    cta: 'Test Your Vulnerability',
+    category: 'analysis',
+    featured: true,
+    gated: false,
+  },
+
+  'expert': {
+    id: 'expert',
+    title: 'Expert System',
+    description: 'Chat with our AI specialist for neutral, expert advice.',
+    path: ROUTES.EXPERT,
+    icon: MessageSquare,
+    iconColor: 'text-sky-500',
+    bgColor: 'bg-sky-500/20',
+    borderColor: 'border-sky-500/40',
+    cta: 'Chat With the Window Specialist',
+    category: 'support',
+    featured: true,
+    gated: false,
+  },
+
+  'comparison': {
+    id: 'comparison',
+    title: 'Comparison Tool',
+    description: 'Compare cheap vs. quality window specs side-by-side.',
+    longDescription: 'Validate a price with side-by-side spec comparison.',
+    path: ROUTES.COMPARISON,
+    icon: GitCompare,
+    iconColor: 'text-cyan-500',
+    bgColor: 'bg-cyan-500/20',
+    borderColor: 'border-cyan-500/40',
+    cta: 'Compare Real Window Specs',
+    category: 'analysis',
+    featured: true,
+    gated: true,
+  },
+
+  'risk-diagnostic': {
+    id: 'risk-diagnostic',
+    title: 'Protection Gap Analysis',
+    description: 'Identify vulnerabilities and unlock potential insurance savings up to 20%.',
+    longDescription: 'Assess your protection gaps and insurance savings potential.',
+    path: ROUTES.RISK_DIAGNOSTIC,
+    icon: Shield,
+    iconColor: 'text-orange-500',
+    bgColor: 'bg-orange-500/20',
+    borderColor: 'border-orange-500/40',
+    cta: 'Analyze Your Protection Gaps',
+    category: 'analysis',
+    featured: true,
+    gated: true,
   },
 
   'claim-survival': {
     id: 'claim-survival',
-    title: 'Claim Survival Kit',
-    description: 'Get organized with our step-by-step guide to maximize your insurance coverage.',
+    title: 'Claim Survival Vault',
+    description: 'The 7-point documentation system insurers expect. Prevent claim denials before they happen.',
     longDescription: 'Preparing an insurance claim? Get organized with our step-by-step guide to maximize your coverage.',
     path: ROUTES.CLAIM_SURVIVAL,
-    icon: Shield,
-    iconColor: 'text-amber-400',
-    bgColor: 'bg-amber-500/20',
-    borderColor: 'border-amber-500/40',
-    cta: 'Start Checklist',
+    icon: ShieldCheck,
+    iconColor: 'text-green-500',
+    bgColor: 'bg-green-500/20',
+    borderColor: 'border-green-500/40',
+    cta: 'Protect Your Claim',
     category: 'primary',
     featured: true,
+    gated: true,
   },
 
+  'fast-win': {
+    id: 'fast-win',
+    title: 'Fast Win Detector',
+    description: 'Find your highest-ROI upgrade in 45 seconds. No lecture, just results.',
+    path: ROUTES.FAST_WIN,
+    icon: Zap,
+    iconColor: 'text-amber-500',
+    bgColor: 'bg-amber-500/20',
+    borderColor: 'border-amber-500/40',
+    cta: 'Find My #1 Upgrade',
+    category: 'analysis',
+    featured: true,
+    gated: true,
+  },
+
+  'evidence': {
+    id: 'evidence',
+    title: 'Evidence Locker',
+    description: 'Review verified case files from 47 completed missions.',
+    longDescription: 'Real homeowner case studies with documented outcomes.',
+    path: ROUTES.EVIDENCE,
+    icon: FolderSearch,
+    iconColor: 'text-amber-700',
+    bgColor: 'bg-amber-700/20',
+    borderColor: 'border-amber-700/40',
+    cta: 'Review the Evidence',
+    category: 'content',
+    featured: true,
+    gated: true,
+  },
+
+  'intel': {
+    id: 'intel',
+    title: 'Intel Library',
+    description: 'Download declassified guides: negotiation tactics, claim survival kits, and more.',
+    path: ROUTES.INTEL,
+    icon: FileStack,
+    iconColor: 'text-indigo-500',
+    bgColor: 'bg-indigo-500/20',
+    borderColor: 'border-indigo-500/40',
+    cta: 'Access the Vault',
+    category: 'content',
+    featured: true,
+    gated: true,
+  },
+
+  'quote-scanner': {
+    id: 'quote-scanner',
+    title: 'AI Quote Scanner',
+    description: 'Upload your quote and let AI flag hidden risks, missing scope, and overpricing in 30 seconds.',
+    longDescription: 'Upload your quote. Get a forensic analysis of hidden markups, inflated pricing, and negotiation leverage points.',
+    path: ROUTES.QUOTE_SCANNER,
+    icon: ScanSearch,
+    iconColor: 'text-rose-500',
+    bgColor: 'bg-rose-500/20',
+    borderColor: 'border-rose-500/40',
+    cta: 'Scan Your Quote',
+    category: 'primary',
+    featured: true,
+    gated: true,
+  },
+
+  'quote-builder': {
+    id: 'quote-builder',
+    title: 'Project Quote Builder',
+    description: 'Get an AI-powered estimate for your window or door project in seconds.',
+    path: ROUTES.FREE_ESTIMATE,
+    icon: Calculator,
+    iconColor: 'text-teal-500',
+    bgColor: 'bg-teal-500/20',
+    borderColor: 'border-teal-500/40',
+    cta: 'Build Your Estimate',
+    category: 'primary',
+    featured: true,
+    gated: true,
+    badge: 'Beta',
+  },
+
+  // ============================================
+  // ADDITIONAL TOOLS (for related sections)
+  // ============================================
   'beat-your-quote': {
     id: 'beat-your-quote',
     title: 'Beat Your Quote',
@@ -109,54 +263,6 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     borderColor: 'border-rose-500/40',
     cta: 'Beat My Quote',
     category: 'primary',
-    featured: true,
-  },
-
-  // ============================================
-  // ANALYSIS TOOLS
-  // ============================================
-  'comparison': {
-    id: 'comparison',
-    title: 'Comparison Engine',
-    description: 'Compare contractor quotes side-by-side with spec validation.',
-    longDescription: 'Validate a price with side-by-side spec comparison.',
-    path: ROUTES.COMPARISON,
-    icon: Scale,
-    iconColor: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/20',
-    borderColor: 'border-cyan-500/40',
-    cta: 'Compare Specs',
-    category: 'analysis',
-    featured: true,
-  },
-
-  'risk-diagnostic': {
-    id: 'risk-diagnostic',
-    title: 'Risk Diagnostic',
-    description: "Assess your home's vulnerability and discover protection gaps.",
-    longDescription: 'Assess your protection gaps and insurance savings potential.',
-    path: ROUTES.RISK_DIAGNOSTIC,
-    icon: ShieldAlert,
-    iconColor: 'text-orange-400',
-    bgColor: 'bg-orange-500/20',
-    borderColor: 'border-orange-500/40',
-    cta: 'Check My Gaps',
-    category: 'analysis',
-    featured: true,
-  },
-
-  'fast-win': {
-    id: 'fast-win',
-    title: 'Fast Win Detector',
-    description: 'Find your highest-ROI upgrade in 45 seconds.',
-    path: ROUTES.FAST_WIN,
-    icon: Zap,
-    iconColor: 'text-amber-400',
-    bgColor: 'bg-amber-500/20',
-    borderColor: 'border-amber-500/40',
-    cta: 'Find My #1 Upgrade',
-    category: 'analysis',
-    featured: true,
   },
 
   'fair-price-quiz': {
@@ -170,82 +276,6 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     borderColor: 'border-purple-500/40',
     cta: 'Take the Quiz',
     category: 'analysis',
-    featured: true,
-  },
-
-  'vulnerability-test': {
-    id: 'vulnerability-test',
-    title: 'Vulnerability Test',
-    description: 'Discover how exposed your home is to storm damage.',
-    path: ROUTES.VULNERABILITY_TEST,
-    icon: ShieldAlert,
-    iconColor: 'text-purple-400',
-    bgColor: 'bg-purple-500/20',
-    borderColor: 'border-purple-500/40',
-    cta: 'Test My Home',
-    category: 'analysis',
-  },
-
-  'reality-check': {
-    id: 'reality-check',
-    title: 'Reality Check',
-    description: 'Get a reality check on your window replacement expectations.',
-    path: ROUTES.REALITY_CHECK,
-    icon: Target,
-    iconColor: 'text-yellow-400',
-    bgColor: 'bg-yellow-500/20',
-    borderColor: 'border-yellow-500/40',
-    cta: 'Get Reality Check',
-    category: 'analysis',
-  },
-
-  // ============================================
-  // CONTENT TOOLS
-  // ============================================
-  'evidence': {
-    id: 'evidence',
-    title: 'Case Studies',
-    description: "Learn from real homeowners' claim experiences.",
-    longDescription: 'Real homeowner case studies with documented outcomes.',
-    path: ROUTES.EVIDENCE,
-    icon: FolderSearch,
-    iconColor: 'text-violet-400',
-    bgColor: 'bg-violet-500/20',
-    borderColor: 'border-violet-500/40',
-    cta: 'View Cases',
-    category: 'content',
-    featured: true,
-  },
-
-  'intel': {
-    id: 'intel',
-    title: 'Intel Library',
-    description: 'Access guides, checklists, and insider knowledge.',
-    path: ROUTES.INTEL,
-    icon: BookOpen,
-    iconColor: 'text-indigo-400',
-    bgColor: 'bg-indigo-500/20',
-    borderColor: 'border-indigo-500/40',
-    cta: 'Browse Intel',
-    category: 'content',
-    featured: true,
-  },
-
-  // ============================================
-  // SUPPORT TOOLS
-  // ============================================
-  'expert': {
-    id: 'expert',
-    title: 'WindowMan AI Advisor',
-    description: 'Get instant answers to your window and claim questions.',
-    path: ROUTES.EXPERT,
-    icon: MessageSquareText,
-    iconColor: 'text-sky-400',
-    bgColor: 'bg-sky-500/20',
-    borderColor: 'border-sky-500/40',
-    cta: 'Ask WindowMan',
-    category: 'support',
-    featured: true,
   },
 
   'roleplay': {
@@ -259,7 +289,6 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     borderColor: 'border-red-500/40',
     cta: 'Start Training',
     category: 'support',
-    featured: true,
   },
 
   // ============================================
@@ -344,7 +373,7 @@ export function getToolsByCategory(category: ToolDefinition['category']): ToolDe
 }
 
 /**
- * Get all featured tools
+ * Get all featured tools (for homepage)
  */
 export function getFeaturedTools(): ToolDefinition[] {
   return Object.values(TOOL_REGISTRY).filter(tool => tool.featured);
@@ -368,6 +397,22 @@ export function getToolIconColors(toolId: string): { text: string; bg: string; b
 // ============================================
 // PRESET TOOL GROUPS
 // ============================================
+
+/** The 12 tools shown on the homepage */
+export const HOMEPAGE_TOOLS = getTools([
+  'reality-check',
+  'cost-calculator',
+  'vulnerability-test',
+  'expert',
+  'comparison',
+  'risk-diagnostic',
+  'claim-survival',
+  'fast-win',
+  'evidence',
+  'intel',
+  'quote-scanner',
+  'quote-builder',
+]);
 
 /** Tools shown in Claim Survival related section */
 export const CLAIM_SURVIVAL_RELATED = getTools([
