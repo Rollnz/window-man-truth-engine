@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Clock } from 'lucide-react';
 import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
 import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { HOMEPAGE_TOOLS, getDifficultyConfig, type ToolDefinition } from '@/config/toolRegistry';
 
 function DifficultyBadge({ difficulty }: { difficulty?: 'easy' | 'medium' | 'advanced' }) {
@@ -104,9 +104,8 @@ function ToolCard({
 
 export function ToolGrid() {
   return (
-    <TooltipProvider>
-      <section className="py-20 md:py-32 relative bg-secondary/30">
-        <div className="container px-4">
+    <section className="py-20 md:py-32 relative bg-secondary/30">
+      <div className="container px-4">
         {/* Section header */}
         <div className="max-w-3xl mx-auto text-center mb-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -126,14 +125,13 @@ export function ToolGrid() {
           </span>
         </div>
 
-          {/* Tools grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {HOMEPAGE_TOOLS.map((tool, index) => (
-              <ToolCard key={tool.id} tool={tool} index={index} />
-            ))}
-          </div>
+        {/* Tools grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {HOMEPAGE_TOOLS.map((tool, index) => (
+            <ToolCard key={tool.id} tool={tool} index={index} />
+          ))}
         </div>
-      </section>
-    </TooltipProvider>
+      </div>
+    </section>
   );
 }
