@@ -1,18 +1,12 @@
 import { Shield, Target, Eye } from 'lucide-react';
-
 export function ConceptSection() {
-  return (
-    <section id="concept" className="relative py-20 md:py-32 dossier-bg">
+  return <section id="concept" className="relative py-20 md:py-32 dossier-bg">
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Image Side */}
           <div className="relative order-2 lg:order-1">
             <div className="relative rounded-lg overflow-hidden border-2 border-primary/30 shadow-2xl">
-              <img
-                src="/images/beat-your-quote/windowmaninwindow.webp"
-                alt="The Window Man - Sam Glass"
-                className="w-full h-auto"
-              />
+              <img src="/images/beat-your-quote/windowmaninwindow.webp" alt="The Window Man - Sam Glass" className="w-full h-auto" />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
             </div>
             {/* Decorative elements */}
@@ -29,7 +23,7 @@ export function ConceptSection() {
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
                 Exposing the <span className="text-primary">Manipulation Machine</span>
               </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg leading-relaxed text-primary-foreground">
                 For years, high-pressure window salesmen have used psychological tactics to pressure 
                 Florida homeowners into signing overpriced contracts. Sam Glass has made it his mission 
                 to expose their playbook—and arm you with the tools to fight back.
@@ -77,6 +71,5 @@ export function ConceptSection() {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 }
