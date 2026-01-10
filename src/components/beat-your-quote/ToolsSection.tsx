@@ -4,41 +4,54 @@ import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/gtm';
 import { StampBadge } from './StampBadge';
 import { ROUTES } from '@/config/navigation';
-const TOOLS = [{
-  id: 'quote-scanner',
-  title: 'Quote Scanner',
-  description: 'Upload your quote. Get a forensic analysis of hidden markups, inflated pricing, and negotiation leverage points.',
-  icon: FileSearch,
-  path: ROUTES.QUOTE_SCANNER,
-  image: '/images/beat-your-quote/quote-scanner.webp',
-  accentColor: '#00D4FF'
-}, {
-  id: 'cost-calculator',
-  title: 'True Cost Calculator',
-  description: 'Calculate what windows actually cost in your area. See the real numbers contractors don\'t want you to know.',
-  icon: Calculator,
-  path: ROUTES.COST_CALCULATOR,
-  image: '/images/beat-your-quote/manipulation-tactics.webp',
-  accentColor: '#22C55E'
-}, {
-  id: 'claim-survival',
-  title: 'Claim Survival Kit',
-  description: 'Preparing an insurance claim? Get organized with our step-by-step guide to maximize your coverage.',
-  icon: Shield,
-  path: ROUTES.CLAIM_SURVIVAL,
-  image: '/images/beat-your-quote/claimsurvivalkit.webp',
-  accentColor: '#F59E0B'
-}];
+import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
+
+const TOOLS = [
+  {
+    id: 'quote-scanner',
+    title: 'Quote Scanner',
+    description: 'Upload your quote. Get a forensic analysis of hidden markups, inflated pricing, and negotiation leverage points.',
+    icon: FileSearch,
+    path: ROUTES.QUOTE_SCANNER,
+    iconColor: 'text-sky-400',
+    bgColor: 'bg-sky-500/20',
+    borderColor: 'border-sky-500/40',
+  },
+  {
+    id: 'cost-calculator',
+    title: 'True Cost Calculator',
+    description: "Calculate what windows actually cost in your area. See the real numbers contractors don't want you to know.",
+    icon: Calculator,
+    path: ROUTES.COST_CALCULATOR,
+    iconColor: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/20',
+    borderColor: 'border-emerald-500/40',
+  },
+  {
+    id: 'claim-survival',
+    title: 'Claim Survival Kit',
+    description: 'Preparing an insurance claim? Get organized with our step-by-step guide to maximize your coverage.',
+    icon: Shield,
+    path: ROUTES.CLAIM_SURVIVAL,
+    iconColor: 'text-amber-400',
+    bgColor: 'bg-amber-500/20',
+    borderColor: 'border-amber-500/40',
+  },
+];
+
 export function ToolsSection() {
   const navigate = useNavigate();
+
   const handleToolClick = (tool: typeof TOOLS[0]) => {
     trackEvent('tool_card_clicked', {
       tool_id: tool.id,
-      source: 'beat-your-quote'
+      source: 'beat-your-quote',
     });
     navigate(tool.path);
   };
-  return <section className="py-20 px-4 bg-dossier-page">
+
+  return (
+    <section className="py-20 px-4 bg-dossier-page">
       <div className="container max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -58,40 +71,38 @@ export function ToolsSection() {
 
         {/* Tool Cards Grid */}
         <div className="grid md:grid-cols-3 gap-6">
-          {TOOLS.map(tool => <div key={tool.id} className="group relative rounded-xl border border-border/40 bg-background/5
-                         overflow-hidden transition-all duration-300
-                         hover:border-tools-truth-engine/40 hover:shadow-lg hover:shadow-tools-truth-engine/10">
-              {/* Image */}
-              <div className="relative h-48 overflow-hidden">
-                <img src={tool.image} alt={tool.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-dossier-page via-dossier-page/50 to-transparent" />
-                
-                {/* Icon Badge */}
-                <div className="absolute bottom-4 left-4 w-12 h-12 rounded-lg flex items-center justify-center" style={{
-              backgroundColor: `${tool.accentColor}20`
-            }}>
-                  <tool.icon className="w-6 h-6" style={{
-                color: tool.accentColor
-              }} />
-                </div>
-              </div>
+          {TOOLS.map((tool) => {
+            const Icon = tool.icon;
+            return (
+              <ImpactWindowCard key={tool.id}>
+                <div className="p-6 flex flex-col h-full">
+                  {/* Icon Badge */}
+                  <div className={`w-12 h-12 rounded-lg ${tool.bgColor} border ${tool.borderColor} flex items-center justify-center mb-4`}>
+                    <Icon className={`w-6 h-6 ${tool.iconColor}`} />
+                  </div>
 
-              {/* Content */}
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-white mb-2 font-mono uppercase tracking-wide">
-                  {tool.title}
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                  {tool.description}
-                </p>
-                
-                <Button onClick={() => handleToolClick(tool)} variant="ghost" className="w-full justify-between text-tools-truth-engine hover:text-tools-truth-engine hover:bg-tools-truth-engine/10">
-                  <span>Launch Tool</span>
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Button>
-              </div>
-            </div>)}
+                  {/* Content */}
+                  <h3 className="text-xl font-bold text-white mb-2 font-mono uppercase tracking-wide drop-shadow-md">
+                    {tool.title}
+                  </h3>
+                  <p className="text-sm text-white/80 mb-4 flex-grow">
+                    {tool.description}
+                  </p>
+                  
+                  <Button 
+                    onClick={() => handleToolClick(tool)} 
+                    variant="cta" 
+                    className="w-full justify-between"
+                  >
+                    <span>Launch Tool</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </ImpactWindowCard>
+            );
+          })}
         </div>
       </div>
-    </section>;
+    </section>
+  );
 }
