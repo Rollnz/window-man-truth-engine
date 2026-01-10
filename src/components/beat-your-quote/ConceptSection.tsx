@@ -10,8 +10,8 @@ export function ConceptSection() {
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
             </div>
             {/* Decorative elements */}
-            <div className="absolute -top-4 -left-4 w-24 h-24 border-l-2 border-t-2 border-primary/50" />
-            <div className="absolute -bottom-4 -right-4 w-24 h-24 border-r-2 border-b-2 border-primary/50" />
+            <div className="absolute -top-4 -left-4 w-24 h-24 border-l-2 border-t-2 border-primary" />
+            <div className="absolute -bottom-4 -right-4 w-24 h-24 border-r-2 border-b-2 border-primary" />
           </div>
 
           {/* Content Side */}
