@@ -1,4 +1,4 @@
-import { CaseStudy } from '@/data/evidenceData';
+import { CaseStudy, MissionType } from '@/data/evidenceData';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 import { ClassifiedPlaceholder } from './ClassifiedPlaceholder';
 
@@ -7,8 +7,43 @@ interface CaseFileCardProps {
   onOpenCase: (caseId: string) => void;
 }
 
+// Semantic colors based on mission type
+const missionColors: Record<MissionType, { bg: string; border: string; text: string; glow: React.CSSProperties }> = {
+  heat: { 
+    bg: 'bg-orange-500/10', 
+    border: 'border-orange-500/20', 
+    text: 'text-orange-500',
+    glow: { textShadow: '0 0 16px rgba(249, 115, 22, 0.4)' }
+  },
+  hurricane: { 
+    bg: 'bg-sky-500/10', 
+    border: 'border-sky-500/20', 
+    text: 'text-sky-500',
+    glow: { textShadow: '0 0 16px rgba(14, 165, 233, 0.4)' }
+  },
+  noise: { 
+    bg: 'bg-purple-500/10', 
+    border: 'border-purple-500/20', 
+    text: 'text-purple-500',
+    glow: { textShadow: '0 0 16px rgba(168, 85, 247, 0.4)' }
+  },
+  security: { 
+    bg: 'bg-amber-500/10', 
+    border: 'border-amber-500/20', 
+    text: 'text-amber-500',
+    glow: { textShadow: '0 0 16px rgba(245, 158, 11, 0.4)' }
+  },
+  cost: { 
+    bg: 'bg-emerald-500/10', 
+    border: 'border-emerald-500/20', 
+    text: 'text-emerald-500',
+    glow: { textShadow: '0 0 16px rgba(16, 185, 129, 0.4)' }
+  },
+};
+
 export function CaseFileCard({ caseStudy, onOpenCase }: CaseFileCardProps) {
   const primaryStat = caseStudy.verifiedStats[0];
+  const colors = missionColors[caseStudy.missionType] || missionColors.cost;
 
   return (
     <div 
@@ -45,12 +80,12 @@ export function CaseFileCard({ caseStudy, onOpenCase }: CaseFileCardProps) {
         </div>
 
         {/* Primary Stat Highlight */}
-        <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+        <div className={`p-3 rounded-lg ${colors.bg} border ${colors.border}`}>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-lg">{primaryStat.icon}</span>
             <span className="text-sm text-muted-foreground">{primaryStat.label}</span>
           </div>
-          <div className="text-2xl font-bold text-primary text-glow">
+          <div className={`text-2xl font-bold ${colors.text}`} style={colors.glow}>
             {primaryStat.change}
           </div>
           <div className="text-xs text-muted-foreground">
