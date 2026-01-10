@@ -17,7 +17,11 @@ import type { SourceTool } from '@/types/sourceTool';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { fastAIRequest, AI_TIMEOUTS } from '@/lib/aiRequest';
 import { TimeoutError, getErrorMessage } from '@/lib/errors';
-import { Bot, Save, Calendar, Check } from 'lucide-react';
+import { Save, Calendar, Check } from 'lucide-react';
+import { WhyUseSection } from '@/components/expert/WhyUseSection';
+import { TimelineSection } from '@/components/expert/TimelineSection';
+import { TrustSection } from '@/components/expert/TrustSection';
+import { FinalCTASection } from '@/components/expert/FinalCTASection';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -32,18 +36,23 @@ export default function Expert() {
   const [isLoading, setIsLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const chatSectionRef = useRef<HTMLDivElement>(null);
   
   // Conversion state
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
   const [isSaved, setIsSaved] = useState(!!sessionData.leadId);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll chat area to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const scrollToChat = () => {
+    chatSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const sendMessage = async (userMessage: string) => {
     const userMsg: Message = { role: 'user', content: userMessage };
@@ -144,8 +153,6 @@ export default function Expert() {
     }
   };
 
-  
-
   const handleLeadCaptureSuccess = (leadId: string) => {
     updateFields({ leadId, email: sessionData.email });
     setIsSaved(true);
@@ -158,101 +165,117 @@ export default function Expert() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
 
-      {/* Main Content */}
-      <ErrorBoundary
-        title="Expert Chat Error"
-        description="We encountered an issue with the AI expert. Please refresh to try again."
-        onReset={() => window.location.reload()}
-      >
-        <div className="flex-1 flex flex-col overflow-hidden container mx-auto max-w-3xl">
-          {/* Title Section */}
-          <div className="p-4 sm:p-6 text-center border-b border-border/50">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-              Window Questions <span className="text-primary">Expert</span>
-            </h1>
-            <p className="text-muted-foreground text-sm max-w-lg mx-auto">
-              Windows are a high-stakes investment. Don't rely on a salesperson. 
-              Use this Expert System to uncover hidden costs, validate quotes, 
-              and get the unbiased truth before you sign.
-            </p>
-          </div>
-
-          {/* Error State */}
-          {chatError && !isLoading && (
-            <div className="px-4 pt-4">
-              <AIErrorFallback
-                errorType={getAIErrorType(chatError)}
-                message={chatError}
-                onRetry={() => setChatError(null)}
-                compact
-              />
+      {/* Section 1: Chat Interface (Hero) */}
+      <section ref={chatSectionRef} className="min-h-[80vh] flex flex-col">
+        <ErrorBoundary
+          title="Expert Chat Error"
+          description="We encountered an issue with the AI expert. Please refresh to try again."
+          onReset={() => window.location.reload()}
+        >
+          <div className="flex-1 flex flex-col container mx-auto max-w-3xl px-4">
+            {/* Title Section */}
+            <div className="p-4 sm:p-6 text-center border-b border-border/50">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+                Window Questions <span className="text-primary">Expert</span>
+              </h1>
+              <p className="text-muted-foreground text-sm max-w-lg mx-auto">
+                Windows are a high-stakes investment. Don't rely on a salesperson. 
+                Use this Expert System to uncover hidden costs, validate quotes, 
+                and get the unbiased truth before you sign.
+              </p>
             </div>
-          )}
 
-          {/* Chat Area */}
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-            <div className="space-y-4">
-              {messages.length === 0 ? (
-                <div className="py-8">
-                  <SuggestedQuestions
-                    onSelect={sendMessage}
-                    disabled={isLoading}
-                  />
+            {/* Error State */}
+            {chatError && !isLoading && (
+              <div className="px-4 pt-4">
+                <AIErrorFallback
+                  errorType={getAIErrorType(chatError)}
+                  message={chatError}
+                  onRetry={() => setChatError(null)}
+                  compact
+                />
+              </div>
+            )}
+
+            {/* Chat Area - Fixed height with internal scroll */}
+            <div className="flex-1 min-h-[300px] max-h-[400px] overflow-hidden">
+              <ScrollArea className="h-full p-4" ref={scrollRef}>
+                <div className="space-y-4">
+                  {messages.length === 0 ? (
+                    <div className="py-4">
+                      <SuggestedQuestions
+                        onSelect={sendMessage}
+                        disabled={isLoading}
+                      />
+                    </div>
+                  ) : (
+                    messages.map((message, index) => (
+                      <ChatMessage
+                        key={index}
+                        role={message.role}
+                        content={message.content}
+                        isStreaming={isLoading && index === messages.length - 1 && message.role === 'assistant'}
+                      />
+                    ))
+                  )}
                 </div>
-              ) : (
-                messages.map((message, index) => (
-                  <ChatMessage
-                    key={index}
-                    role={message.role}
-                    content={message.content}
-                    isStreaming={isLoading && index === messages.length - 1 && message.role === 'assistant'}
-                  />
-                ))
-              )}
+              </ScrollArea>
             </div>
-          </ScrollArea>
 
-          {/* Input Area */}
-          <ChatInput
-            onSend={sendMessage}
-            isLoading={isLoading}
-          />
+            {/* Input Area */}
+            <ChatInput
+              onSend={sendMessage}
+              isLoading={isLoading}
+            />
 
-          {/* CTA Action Buttons */}
-          <div className="flex items-center justify-center gap-3 py-4 border-t border-border/50">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowLeadModal(true)}
-              disabled={isSaved || messages.length === 0}
-              className="bg-card hover:bg-accent"
-            >
-              {isSaved ? (
-                <>
-                  <Check className="h-4 w-4 mr-1.5" />
-                  Saved
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-1.5" />
-                  Save Conversation
-                </>
-              )}
-            </Button>
-            <Button
-              variant="cta"
-              size="sm"
-              onClick={() => setShowConsultationModal(true)}
-            >
-              <Calendar className="h-4 w-4 mr-1.5" />
-              Book Consultation
-            </Button>
+            {/* CTA Action Buttons */}
+            <div className="flex items-center justify-center gap-3 py-4 border-t border-border/50">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowLeadModal(true)}
+                disabled={isSaved || messages.length === 0}
+                className="bg-card hover:bg-accent"
+              >
+                {isSaved ? (
+                  <>
+                    <Check className="h-4 w-4 mr-1.5" />
+                    Saved
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-1.5" />
+                    Save Conversation
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="cta"
+                size="sm"
+                onClick={() => setShowConsultationModal(true)}
+              >
+                <Calendar className="h-4 w-4 mr-1.5" />
+                Book Consultation
+              </Button>
+            </div>
           </div>
-        </div>
-      </ErrorBoundary>
+        </ErrorBoundary>
+      </section>
+
+      {/* Section A: Why Use This Tool */}
+      <WhyUseSection />
+
+      {/* Section B: Golden Window Timeline */}
+      <TimelineSection />
+
+      {/* Section C: Trust / What Powers This */}
+      <TrustSection />
+
+      {/* Section D: Final CTA */}
+      <FinalCTASection onScrollToTop={scrollToChat} />
 
       {/* Modals */}
       <LeadCaptureModal
