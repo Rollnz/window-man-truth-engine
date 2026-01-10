@@ -203,6 +203,11 @@ export default {
           "0%, 100%": { filter: "drop-shadow(0 8px 24px hsl(var(--primary) / 0.3))" },
           "50%": { filter: "drop-shadow(0 12px 32px hsl(var(--primary) / 0.5))" },
         },
+        "pulse-pop": {
+          "0%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.08)" },
+          "100%": { transform: "scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
