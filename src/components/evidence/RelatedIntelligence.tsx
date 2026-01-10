@@ -1,10 +1,7 @@
-import { Link } from 'react-router-dom';
-import { GitCompare, Zap, Shield, ArrowRight } from 'lucide-react';
-import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
-import { Button } from '@/components/ui/button';
-import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
+import { GitCompare, Zap, Shield } from 'lucide-react';
+import { RelatedToolsGrid, ToolConfig } from '@/components/ui/RelatedToolsGrid';
 
-const relatedTools = [
+const tools: ToolConfig[] = [
   {
     id: 'comparison',
     title: 'Comparison Engine',
@@ -42,47 +39,11 @@ const relatedTools = [
 
 export function RelatedIntelligence() {
   return (
-    <section className="py-12 border-t border-border">
-      <div className="container px-4">
-        <div className="text-center mb-8">
-          <h2 className="text-xl md:text-2xl font-bold mb-2">Related Intelligence</h2>
-          <p className="text-muted-foreground">
-            Not sure where to start? Use the tools our agents use.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-          {relatedTools.map((tool, index) => {
-            const Icon = tool.icon;
-            return (
-              <AnimateOnScroll key={tool.id} delay={index * 100}>
-                <ImpactWindowCard className="h-full">
-                  <div className="p-5 flex flex-col h-full">
-                    <div className={`w-12 h-12 rounded-lg ${tool.bgColor} border ${tool.borderColor} flex items-center justify-center mb-4`}>
-                      <Icon className={`w-6 h-6 ${tool.iconColor}`} />
-                    </div>
-                    
-                    <h3 className="font-semibold mb-1 text-white drop-shadow-md">
-                      {tool.title}
-                    </h3>
-                    
-                    <p className="text-sm text-white/80 mb-4 flex-grow">
-                      {tool.description}
-                    </p>
-                    
-                    <Link to={tool.path}>
-                      <Button variant="cta" size="sm" className="w-full justify-between">
-                        <span>{tool.cta}</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </ImpactWindowCard>
-              </AnimateOnScroll>
-            );
-          })}
-        </div>
-      </div>
-    </section>
+    <RelatedToolsGrid
+      title="Related Intelligence"
+      description="Not sure where to start? Use the tools our agents use."
+      tools={tools}
+      columns={3}
+    />
   );
 }
