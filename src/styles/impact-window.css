@@ -1,0 +1,138 @@
+/* ========================================
+ * IMPACT WINDOW GLASS EFFECT
+ * Realistic window frame + tinted glass aesthetic
+ * Fixed dark aesthetic (not theme-adaptive)
+ * ======================================== */
+
+/* Frame - vinyl-look outer edge */
+.impact-window-frame {
+  position: relative;
+  padding: 10px;
+  background: linear-gradient(145deg, #ffffff, #e8e8e8);
+  border-radius: 12px;
+  box-shadow: 
+    inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.1),
+    6px 6px 16px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.impact-window-frame:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.1),
+    8px 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Glass - tinted with realistic depth */
+.impact-window-glass {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    rgba(45, 85, 110, 0.75) 0%,
+    rgba(25, 55, 75, 0.85) 50%,
+    rgba(15, 40, 55, 0.9) 100%
+  );
+}
+
+/* Sky reflection overlay */
+.impact-window-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(
+    180deg,
+    rgba(135, 175, 200, 0.25) 0%,
+    rgba(90, 130, 160, 0.15) 30%,
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Animated shine sweep - GPU accelerated */
+.impact-window-glass::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 100%
+  );
+  transform: skewX(-15deg);
+  animation: impact-shine-sweep 5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+  will-change: left;
+}
+
+@keyframes impact-shine-sweep {
+  0%, 100% { left: -100%; }
+  50% { left: 150%; }
+}
+
+/* Content layer - above glass effects */
+.impact-window-content {
+  position: relative;
+  z-index: 3;
+}
+
+/* ========================================
+ * MOBILE OPTIMIZATION
+ * Simplified version for better performance
+ * ======================================== */
+@media (max-width: 768px) {
+  .impact-window-frame {
+    padding: 6px;
+    box-shadow: 
+      inset 1px 1px 2px rgba(255, 255, 255, 0.9),
+      inset -1px -1px 2px rgba(0, 0, 0, 0.1),
+      4px 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .impact-window-frame:hover {
+    transform: none;
+    box-shadow: 
+      inset 1px 1px 2px rgba(255, 255, 255, 0.9),
+      inset -1px -1px 2px rgba(0, 0, 0, 0.1),
+      4px 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Disable shine animation on mobile */
+  .impact-window-glass::after {
+    display: none;
+  }
+  
+  /* Softer reflection */
+  .impact-window-glass::before {
+    opacity: 0.5;
+  }
+}
+
+/* ========================================
+ * REDUCED MOTION PREFERENCE
+ * ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .impact-window-glass::after {
+    display: none;
+  }
+  
+  .impact-window-frame {
+    transition: none;
+  }
+  
+  .impact-window-frame:hover {
+    transform: none;
+  }
+}
