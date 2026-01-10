@@ -1,160 +1,90 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { StampBadge } from './StampBadge';
 import { trackEvent } from '@/lib/gtm';
-
-function FloatingEbookImage() {
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-    
-    const rect = containerRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    const tiltX = ((e.clientY - centerY) / (rect.height / 2)) * -15;
-    const tiltY = ((e.clientX - centerX) / (rect.width / 2)) * 15;
-    
-    setTilt({ x: tiltX, y: tiltY });
-  };
-
-  const handleMouseLeave = () => {
-    setTilt({ x: 0, y: 0 });
-  };
-
-  return (
-    <div 
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="absolute -bottom-4 -right-4 z-20 hidden sm:block w-24 md:w-28 lg:w-32 animate-fade-in [animation-delay:300ms] opacity-0"
-      style={{ perspective: '500px' }}
-    >
-      <img 
-        src="/images/beat-your-quote/tactics-ebook.webp" 
-        alt="11 Closer Tactics Exposed Ebook"
-        className="w-full h-auto animate-glow-pulse"
-        style={{
-          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(${tilt.x || tilt.y ? 1.1 : 1})`,
-          transition: 'transform 0.15s ease-out',
-        }}
-      />
-    </div>
-  );
-}
-
-const TACTICS = [
-  {
-    id: 'binder-trap',
-    number: '01',
-    title: 'The Binder Trap',
-    description: 'They show up with a professionally printed binder full of certifications, awards, and testimonials. It looks impressive—until you realize every contractor has the same binder from the same marketing company. The binder exists to make you feel like you\'re dealing with a premium company worth premium prices.'
-  },
-  {
-    id: 'three-hour-sit',
-    number: '02',
-    title: 'The Three-Hour Sit',
-    description: 'They won\'t leave. What was supposed to be a "quick estimate" turns into a marathon presentation. They\'re not being thorough—they\'re wearing you down. The longer they stay, the more likely you are to sign just to end the meeting. It\'s psychological warfare disguised as customer service.'
-  },
-  {
-    id: 'financing-fog',
-    number: '03',
-    title: 'Financing Fog',
-    description: 'Instead of telling you the total price, they talk about "just $189 per month." They\'re hiding a $35,000 price tag behind affordable-sounding payments. When you do the math on that 15-year loan, you\'re paying nearly double. The fog is intentional.'
-  },
-  {
-    id: 'manager-call',
-    number: '04',
-    title: 'The Manager Call',
-    description: 'When you hesitate, they dramatically call their "manager" to get you a "special discount." The manager was always going to approve it. The original price was inflated specifically so they could perform this theater. You\'re not getting a deal—you\'re getting manipulated.'
-  },
-  {
-    id: 'today-only',
-    number: '05',
-    title: 'Today-Only Pricing',
-    description: '"This price is only good if you sign tonight." False. The price will be the same tomorrow, next week, and next month. They create artificial urgency because they know if you sleep on it, you\'ll shop around and find out you\'re being overcharged by 40%.'
-  },
-  {
-    id: 'good-better-best',
-    number: '06',
-    title: 'The Good-Better-Best',
-    description: 'They present three options: a cheap one that sounds risky, an expensive "premium" option, and a "best value" middle option. The middle option is what they wanted to sell you all along—it just looks reasonable next to the inflated alternatives. Classic anchoring psychology.'
-  },
-  {
-    id: 'storm-fear',
-    number: '07',
-    title: 'Fear of the Storm',
-    description: '"Hurricane season is coming. Do you really want to wait?" They weaponize your fear of natural disasters to rush your decision. The truth? Quality window installation takes weeks to schedule anyway. Their urgency has nothing to do with protecting you and everything to do with closing you.'
-  },
-  {
-    id: 'neighbor-drop',
-    number: '08',
-    title: 'The Neighbor Drop',
-    description: '"We just did the Johnson\'s house down the street." Sometimes true, often fabricated. They name-drop neighbors to create social proof and make you feel like everyone is choosing them. Even when true, the Johnsons probably overpaid too.'
-  },
-  {
-    id: 'warranty-theater',
-    number: '09',
-    title: 'Warranty Theater',
-    description: '"Lifetime warranty!" Sounds amazing until you read the fine print. The warranty is often prorated, meaning it\'s worth almost nothing after 10 years. And it only covers the glass—not the frame, the seals, or the labor to replace it. The warranty that matters is the one they don\'t advertise.'
-  },
-  {
-    id: 'deposit-rush',
-    number: '10',
-    title: 'The Deposit Rush',
-    description: '"We just need a small deposit to lock in your spot." Then comes 50% upfront. Then the "materials fee." Before you know it, you\'ve paid 70% before they\'ve installed a single window. If something goes wrong, you have zero leverage.'
-  },
-  {
-    id: 'comparison-blocking',
-    number: '11',
-    title: 'Comparison Blocking',
-    description: 'They make their quote impossible to compare. Vague line items, proprietary product names, bundled pricing. You can\'t get an apples-to-apples comparison because they don\'t want you to. Transparency is the enemy of overpriced quotes.'
-  }
-];
-
+const TACTICS = [{
+  id: 'binder-trap',
+  number: '01',
+  title: 'The Binder Trap',
+  description: 'They show up with a professionally printed binder full of certifications, awards, and testimonials. It looks impressive—until you realize every contractor has the same binder from the same marketing company. The binder exists to make you feel like you\'re dealing with a premium company worth premium prices.'
+}, {
+  id: 'three-hour-sit',
+  number: '02',
+  title: 'The Three-Hour Sit',
+  description: 'They won\'t leave. What was supposed to be a "quick estimate" turns into a marathon presentation. They\'re not being thorough—they\'re wearing you down. The longer they stay, the more likely you are to sign just to end the meeting. It\'s psychological warfare disguised as customer service.'
+}, {
+  id: 'financing-fog',
+  number: '03',
+  title: 'Financing Fog',
+  description: 'Instead of telling you the total price, they talk about "just $189 per month." They\'re hiding a $35,000 price tag behind affordable-sounding payments. When you do the math on that 15-year loan, you\'re paying nearly double. The fog is intentional.'
+}, {
+  id: 'manager-call',
+  number: '04',
+  title: 'The Manager Call',
+  description: 'When you hesitate, they dramatically call their "manager" to get you a "special discount." The manager was always going to approve it. The original price was inflated specifically so they could perform this theater. You\'re not getting a deal—you\'re getting manipulated.'
+}, {
+  id: 'today-only',
+  number: '05',
+  title: 'Today-Only Pricing',
+  description: '"This price is only good if you sign tonight." False. The price will be the same tomorrow, next week, and next month. They create artificial urgency because they know if you sleep on it, you\'ll shop around and find out you\'re being overcharged by 40%.'
+}, {
+  id: 'good-better-best',
+  number: '06',
+  title: 'The Good-Better-Best',
+  description: 'They present three options: a cheap one that sounds risky, an expensive "premium" option, and a "best value" middle option. The middle option is what they wanted to sell you all along—it just looks reasonable next to the inflated alternatives. Classic anchoring psychology.'
+}, {
+  id: 'storm-fear',
+  number: '07',
+  title: 'Fear of the Storm',
+  description: '"Hurricane season is coming. Do you really want to wait?" They weaponize your fear of natural disasters to rush your decision. The truth? Quality window installation takes weeks to schedule anyway. Their urgency has nothing to do with protecting you and everything to do with closing you.'
+}, {
+  id: 'neighbor-drop',
+  number: '08',
+  title: 'The Neighbor Drop',
+  description: '"We just did the Johnson\'s house down the street." Sometimes true, often fabricated. They name-drop neighbors to create social proof and make you feel like everyone is choosing them. Even when true, the Johnsons probably overpaid too.'
+}, {
+  id: 'warranty-theater',
+  number: '09',
+  title: 'Warranty Theater',
+  description: '"Lifetime warranty!" Sounds amazing until you read the fine print. The warranty is often prorated, meaning it\'s worth almost nothing after 10 years. And it only covers the glass—not the frame, the seals, or the labor to replace it. The warranty that matters is the one they don\'t advertise.'
+}, {
+  id: 'deposit-rush',
+  number: '10',
+  title: 'The Deposit Rush',
+  description: '"We just need a small deposit to lock in your spot." Then comes 50% upfront. Then the "materials fee." Before you know it, you\'ve paid 70% before they\'ve installed a single window. If something goes wrong, you have zero leverage.'
+}, {
+  id: 'comparison-blocking',
+  number: '11',
+  title: 'Comparison Blocking',
+  description: 'They make their quote impossible to compare. Vague line items, proprietary product names, bundled pricing. You can\'t get an apples-to-apples comparison because they don\'t want you to. Transparency is the enemy of overpriced quotes.'
+}];
 export function ManipulationTactics() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [hasTrackedView, setHasTrackedView] = useState(false);
-
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !hasTrackedView) {
-            trackEvent('manipulation_section_viewed');
-            setHasTrackedView(true);
-          }
-        });
-      },
-      { threshold: 0.2 }
-    );
-
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !hasTrackedView) {
+          trackEvent('manipulation_section_viewed');
+          setHasTrackedView(true);
+        }
+      });
+    }, {
+      threshold: 0.2
+    });
     if (sectionRef.current) {
       observer.observe(sectionRef.current);
     }
-
     return () => observer.disconnect();
   }, [hasTrackedView]);
-
   const handleTacticOpen = (tacticId: string) => {
     if (tacticId) {
-      trackEvent('tactic_expanded', { tactic_id: tacticId });
+      trackEvent('tactic_expanded', {
+        tactic_id: tacticId
+      });
     }
   };
-
-  return (
-    <section 
-      ref={sectionRef}
-      id="tactics"
-      className="py-20 px-4 bg-[#0A0F14]"
-    >
+  return <section ref={sectionRef} id="tactics" className="py-20 px-4 bg-[#0A0F14]">
       <div className="container max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -178,16 +108,9 @@ export function ManipulationTactics() {
         <div className="grid lg:grid-cols-2 gap-8 items-start">
           {/* Image - Sticky on Desktop */}
           <div className="lg:sticky lg:top-24 order-2 lg:order-1">
-            <div className="relative rounded-xl overflow-visible border border-red-500/30">
-              <img 
-                src="/images/beat-your-quote/manipulation-tactics.webp"
-                alt="Contractor manipulation tactics exposed"
-                className="w-full h-auto rounded-xl"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0F14] via-transparent to-transparent rounded-xl" />
-              
-              {/* Floating Ebook Image */}
-              <FloatingEbookImage />
+            <div className="relative rounded-xl overflow-hidden border border-red-500/30">
+              <img src="/images/beat-your-quote/manipulation-tactics.webp" alt="Contractor manipulation tactics exposed" className="w-full h-auto" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0F14] via-transparent to-transparent" />
               
               {/* Overlay Badge */}
               <div className="absolute bottom-4 left-4 right-4">
@@ -197,32 +120,13 @@ export function ManipulationTactics() {
                 </div>
               </div>
             </div>
-            
-            {/* Mobile: Centered ebook image */}
-            <div className="mt-6 flex items-center justify-center sm:hidden">
-              <img 
-                src="/images/beat-your-quote/tactics-ebook.webp" 
-                alt="11 Closer Tactics Exposed Ebook"
-                className="w-32 h-auto drop-shadow-lg"
-              />
-            </div>
           </div>
 
           {/* Accordion */}
           <div className="order-1 lg:order-2">
-            <Accordion 
-              type="single" 
-              collapsible 
-              className="space-y-3"
-              onValueChange={handleTacticOpen}
-            >
-              {TACTICS.map((tactic) => (
-                <AccordionItem 
-                  key={tactic.id} 
-                  value={tactic.id}
-                  className="border border-red-500/30 rounded-lg bg-red-950/10 px-4 data-[state=open]:border-red-500/60 data-[state=open]:bg-red-950/20 transition-all"
-                >
-                  <AccordionTrigger className="hover:no-underline py-4">
+            <Accordion type="single" collapsible className="space-y-3" onValueChange={handleTacticOpen}>
+              {TACTICS.map(tactic => <AccordionItem key={tactic.id} value={tactic.id} className="border border-red-500/30 rounded-lg bg-red-950/10 px-4 data-[state=open]:border-red-500/60 data-[state=open]:bg-red-950/20 transition-all">
+                  <AccordionTrigger className="hover:no-underline py-4 text-primary-foreground">
                     <div className="flex items-center gap-4 text-left">
                       {/* Number Badge */}
                       <span className="flex-shrink-0 w-8 h-8 rounded-full bg-red-500/20 text-red-400 text-xs font-mono flex items-center justify-center">
@@ -241,12 +145,10 @@ export function ManipulationTactics() {
                       {tactic.description}
                     </p>
                   </AccordionContent>
-                </AccordionItem>
-              ))}
+                </AccordionItem>)}
             </Accordion>
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 }
