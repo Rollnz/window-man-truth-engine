@@ -3,6 +3,7 @@ import { ArrowRight, Scale, ShieldAlert, FileSearch, MessageSquareText } from 'l
 import { Link } from 'react-router-dom';
 import { relatedTools } from '@/data/claimSurvivalData';
 import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
+import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 
 const iconMap: Record<string, { 
   icon: React.ElementType; 
@@ -47,7 +48,7 @@ export function ToolEcosystem() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto">
-        {relatedTools.map((tool) => {
+        {relatedTools.map((tool, index) => {
           const toolConfig = iconMap[tool.id] || {
             icon: FileSearch,
             iconColor: 'text-primary',
@@ -56,23 +57,25 @@ export function ToolEcosystem() {
           };
           const Icon = toolConfig.icon;
           return (
-            <ImpactWindowCard key={tool.id}>
-              <div className="p-5 flex flex-col h-full">
-                <div className="mb-4">
-                  <div className={`w-10 h-10 rounded-lg ${toolConfig.bgColor} border ${toolConfig.borderColor} flex items-center justify-center`}>
-                    <Icon className={`w-5 h-5 ${toolConfig.iconColor}`} />
+            <AnimateOnScroll key={tool.id} delay={index * 100}>
+              <ImpactWindowCard className="h-full">
+                <div className="p-5 flex flex-col h-full">
+                  <div className="mb-4">
+                    <div className={`w-10 h-10 rounded-lg ${toolConfig.bgColor} border ${toolConfig.borderColor} flex items-center justify-center`}>
+                      <Icon className={`w-5 h-5 ${toolConfig.iconColor}`} />
+                    </div>
                   </div>
+                  <h3 className="font-semibold text-sm mb-1 text-white drop-shadow-md">{tool.name}</h3>
+                  <p className="text-xs text-white/80 mb-4 flex-grow">{tool.description}</p>
+                  <Link to={tool.path}>
+                    <Button variant="cta" size="sm" className="w-full justify-between">
+                      Use Tool
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
                 </div>
-                <h3 className="font-semibold text-sm mb-1 text-white drop-shadow-md">{tool.name}</h3>
-                <p className="text-xs text-white/80 mb-4 flex-grow">{tool.description}</p>
-                <Link to={tool.path}>
-                  <Button variant="cta" size="sm" className="w-full justify-between">
-                    Use Tool
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </ImpactWindowCard>
+              </ImpactWindowCard>
+            </AnimateOnScroll>
           );
         })}
       </div>

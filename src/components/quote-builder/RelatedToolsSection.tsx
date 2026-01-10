@@ -3,6 +3,7 @@ import { FileSearch, Shield, Calculator, ArrowRight } from "lucide-react";
 import { ROUTES } from "@/config/navigation";
 import { Button } from "@/components/ui/button";
 import { ImpactWindowCard } from "@/components/ui/ImpactWindowCard";
+import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
 
 export const RelatedToolsSection = () => {
   const tools = [
@@ -47,22 +48,24 @@ export const RelatedToolsSection = () => {
         
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {tools.map((tool, index) => (
-            <ImpactWindowCard key={index}>
-              <div className="p-6 flex flex-col h-full">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-10 h-10 rounded-lg ${tool.bgColor} border ${tool.borderColor} flex items-center justify-center`}>
-                    <tool.icon className={`w-5 h-5 ${tool.iconColor}`} />
+            <AnimateOnScroll key={index} delay={index * 100}>
+              <ImpactWindowCard className="h-full">
+                <div className="p-6 flex flex-col h-full">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`w-10 h-10 rounded-lg ${tool.bgColor} border ${tool.borderColor} flex items-center justify-center`}>
+                      <tool.icon className={`w-5 h-5 ${tool.iconColor}`} />
+                    </div>
+                    <h3 className="font-semibold text-white drop-shadow-md">{tool.title}</h3>
                   </div>
-                  <h3 className="font-semibold text-white drop-shadow-md">{tool.title}</h3>
+                  <p className="text-sm text-white/80 mb-4 flex-grow">{tool.description}</p>
+                  <Link to={tool.href}>
+                    <Button variant="cta" size="sm" className="w-full gap-2">
+                      Use Tool <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
                 </div>
-                <p className="text-sm text-white/80 mb-4 flex-grow">{tool.description}</p>
-                <Link to={tool.href}>
-                  <Button variant="cta" size="sm" className="w-full gap-2">
-                    Use Tool <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-              </div>
-            </ImpactWindowCard>
+              </ImpactWindowCard>
+            </AnimateOnScroll>
           ))}
         </div>
       </div>

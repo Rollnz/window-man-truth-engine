@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { GitCompare, Zap, Shield, ArrowRight } from 'lucide-react';
 import { ImpactWindowCard } from '@/components/ui/ImpactWindowCard';
 import { Button } from '@/components/ui/button';
+import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 
 const relatedTools = [
   {
@@ -51,31 +52,33 @@ export function RelatedIntelligence() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-          {relatedTools.map((tool) => {
+          {relatedTools.map((tool, index) => {
             const Icon = tool.icon;
             return (
-              <ImpactWindowCard key={tool.id}>
-                <div className="p-5 flex flex-col h-full">
-                  <div className={`w-12 h-12 rounded-lg ${tool.bgColor} border ${tool.borderColor} flex items-center justify-center mb-4`}>
-                    <Icon className={`w-6 h-6 ${tool.iconColor}`} />
+              <AnimateOnScroll key={tool.id} delay={index * 100}>
+                <ImpactWindowCard className="h-full">
+                  <div className="p-5 flex flex-col h-full">
+                    <div className={`w-12 h-12 rounded-lg ${tool.bgColor} border ${tool.borderColor} flex items-center justify-center mb-4`}>
+                      <Icon className={`w-6 h-6 ${tool.iconColor}`} />
+                    </div>
+                    
+                    <h3 className="font-semibold mb-1 text-white drop-shadow-md">
+                      {tool.title}
+                    </h3>
+                    
+                    <p className="text-sm text-white/80 mb-4 flex-grow">
+                      {tool.description}
+                    </p>
+                    
+                    <Link to={tool.path}>
+                      <Button variant="cta" size="sm" className="w-full justify-between">
+                        <span>{tool.cta}</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </Link>
                   </div>
-                  
-                  <h3 className="font-semibold mb-1 text-white drop-shadow-md">
-                    {tool.title}
-                  </h3>
-                  
-                  <p className="text-sm text-white/80 mb-4 flex-grow">
-                    {tool.description}
-                  </p>
-                  
-                  <Link to={tool.path}>
-                    <Button variant="cta" size="sm" className="w-full justify-between">
-                      <span>{tool.cta}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                </div>
-              </ImpactWindowCard>
+                </ImpactWindowCard>
+              </AnimateOnScroll>
             );
           })}
         </div>
