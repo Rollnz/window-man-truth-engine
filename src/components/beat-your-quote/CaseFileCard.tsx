@@ -107,7 +107,7 @@ export function CaseFileCard({
             {/* Type 2: Upgraded Specs */}
             {data.competitorSpec && <>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Competitor Spec:</span>
+                  <span className="text-black">Competitor Spec:</span>
                   <span className="text-red-400 line-through">{data.competitorSpec}</span>
                 </div>
                 <div className="flex justify-between">
