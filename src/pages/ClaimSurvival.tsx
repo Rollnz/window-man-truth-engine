@@ -25,6 +25,8 @@ import { EvidenceAnalysisModal } from '@/components/claim-survival/EvidenceAnaly
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { claimDocuments } from '@/data/claimSurvivalData';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
+import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import type { SourceTool } from '@/types/sourceTool';
 
 export default function ClaimSurvival() {
@@ -429,6 +431,13 @@ export default function ClaimSurvival() {
         isAnalyzing={isAnalyzing}
         analysisResult={analysisResult}
         onAnalyze={analyzeEvidence}
+      />
+
+      {/* Related Tools */}
+      <RelatedToolsGrid
+        title={getFrameControl('claim-survival').title}
+        description={getFrameControl('claim-survival').description}
+        tools={getSmartRelatedTools('claim-survival', sessionData.toolsCompleted)}
       />
 
       {/* Minimal Footer */}

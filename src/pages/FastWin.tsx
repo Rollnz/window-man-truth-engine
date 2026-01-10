@@ -13,6 +13,8 @@ import { ShuffleAnimation } from '@/components/fast-win/ShuffleAnimation';
 import { WinnerCard } from '@/components/fast-win/WinnerCard';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
+import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import type { SourceTool } from '@/types/sourceTool';
 
 type Phase = 'hero' | 'questions' | 'calculating' | 'result';
@@ -173,6 +175,13 @@ export default function FastWin() {
           // Pre-fill with the product interest
           notes: result ? `Interested in: ${result.product.name}` : undefined,
         }}
+      />
+
+      {/* Related Tools */}
+      <RelatedToolsGrid
+        title={getFrameControl('fast-win').title}
+        description={getFrameControl('fast-win').description}
+        tools={getSmartRelatedTools('fast-win', sessionData.toolsCompleted)}
       />
 
       {/* Minimal Footer */}

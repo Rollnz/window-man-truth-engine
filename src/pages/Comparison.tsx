@@ -15,6 +15,8 @@ import { GenerateComparisonReportButton } from '@/components/comparison/Generate
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
+import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import type { SourceTool } from '@/types/sourceTool';
 
 export default function Comparison() {
@@ -106,6 +108,13 @@ export default function Comparison() {
         onClose={() => setShowConsultationModal(false)}
         onSuccess={() => setShowConsultationModal(false)}
         sessionData={sessionData}
+      />
+
+      {/* Related Tools */}
+      <RelatedToolsGrid
+        title={getFrameControl('comparison').title}
+        description={getFrameControl('comparison').description}
+        tools={getSmartRelatedTools('comparison', sessionData.toolsCompleted)}
       />
 
       {/* Minimal Footer */}

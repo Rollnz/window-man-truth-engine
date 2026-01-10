@@ -22,6 +22,8 @@ import { ArrowRight, MessageCircle, Sparkles } from 'lucide-react';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
 import { TrueCostCalculator } from '@/components/cost-calculator/TrueCostCalculator';
 import { ROUTES } from '@/config/navigation';
+import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
+import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 
 export default function CostCalculator() {
   usePageTracking('cost-calculator');
@@ -185,6 +187,13 @@ export default function CostCalculator() {
           <TrueCostCalculator />
         </div>
       </div>
+
+      {/* Related Tools */}
+      <RelatedToolsGrid
+        title={getFrameControl('cost-calculator').title}
+        description={getFrameControl('cost-calculator').description}
+        tools={getSmartRelatedTools('cost-calculator', sessionData.toolsCompleted)}
+      />
 
       {/* Minimal Footer */}
       <MinimalFooter />
