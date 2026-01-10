@@ -143,6 +143,7 @@ const SpecChecklistGuide = () => {
           </div>
         </div>
       </footer>
+      </div>
 
       {/* Exit Intent Modal */}
       <ExitIntentModal hasConverted={hasConverted} onSuccess={handleConversionSuccess} />

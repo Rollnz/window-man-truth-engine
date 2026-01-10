@@ -433,6 +433,7 @@ export default function ClaimSurvival() {
 
       {/* Minimal Footer */}
       <MinimalFooter />
+      </div>
     </div>
   );
 }
