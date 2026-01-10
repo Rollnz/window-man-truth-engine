@@ -21,6 +21,11 @@ import {
 import { ROUTES } from '@/config/navigation';
 
 /**
+ * Difficulty levels for tools
+ */
+export type ToolDifficulty = 'easy' | 'medium' | 'advanced';
+
+/**
  * Tool configuration interface
  * Defines all properties for a tool in the platform
  */
@@ -52,6 +57,20 @@ export interface ToolDefinition {
   gated?: boolean;
   /** Optional badge (e.g., 'Beta', 'New') */
   badge?: string;
+  
+  // ============================================
+  // ENHANCED METADATA
+  // ============================================
+  /** Estimated time to complete (e.g., '2 min', '5-10 min') */
+  estimatedTime?: string;
+  /** Difficulty level */
+  difficulty?: ToolDifficulty;
+  /** Value proposition - what user gets from this tool */
+  valueProposition?: string;
+  /** Keywords for search/filtering */
+  keywords?: string[];
+  /** Related tool IDs for cross-linking */
+  relatedTools?: string[];
 }
 
 /**
@@ -75,6 +94,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     category: 'analysis',
     featured: true,
     gated: false,
+    estimatedTime: '3 min',
+    difficulty: 'easy',
+    valueProposition: 'Discover the true cost of delaying your window upgrade',
+    keywords: ['cost', 'savings', 'analysis', 'hidden costs'],
+    relatedTools: ['cost-calculator', 'vulnerability-test'],
   },
 
   'cost-calculator': {
@@ -91,6 +115,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     category: 'primary',
     featured: true,
     gated: false,
+    estimatedTime: '2 min',
+    difficulty: 'easy',
+    valueProposition: 'See exactly how much money you lose each month with old windows',
+    keywords: ['calculator', 'energy', 'savings', 'ROI', 'cost'],
+    relatedTools: ['reality-check', 'comparison'],
   },
 
   'vulnerability-test': {
@@ -106,6 +135,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     category: 'analysis',
     featured: true,
     gated: false,
+    estimatedTime: '5 min',
+    difficulty: 'easy',
+    valueProposition: 'Learn where you\'re most vulnerable to sales tactics',
+    keywords: ['quiz', 'test', 'sales tactics', 'vulnerability'],
+    relatedTools: ['roleplay', 'sales-tactics-guide'],
   },
 
   'expert': {
@@ -121,6 +155,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     category: 'support',
     featured: true,
     gated: false,
+    estimatedTime: '5-15 min',
+    difficulty: 'easy',
+    valueProposition: 'Get unbiased answers to your window questions instantly',
+    keywords: ['chat', 'AI', 'questions', 'advice', 'expert'],
+    relatedTools: ['comparison', 'quote-scanner'],
   },
 
   'comparison': {
@@ -137,6 +176,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     category: 'analysis',
     featured: true,
     gated: true,
+    estimatedTime: '3 min',
+    difficulty: 'medium',
+    valueProposition: 'Understand exactly what separates quality from cheap windows',
+    keywords: ['compare', 'specs', 'quality', 'cheap', 'analysis'],
+    relatedTools: ['quote-scanner', 'cost-calculator'],
   },
 
   'risk-diagnostic': {
@@ -153,6 +197,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     category: 'analysis',
     featured: true,
     gated: true,
+    estimatedTime: '5-7 min',
+    difficulty: 'medium',
+    valueProposition: 'Find insurance savings and protection gaps in your home',
+    keywords: ['insurance', 'risk', 'protection', 'savings', 'hurricane'],
+    relatedTools: ['claim-survival', 'insurance-savings-guide'],
   },
 
   'claim-survival': {
@@ -169,6 +218,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     category: 'primary',
     featured: true,
     gated: true,
+    estimatedTime: '10-15 min',
+    difficulty: 'advanced',
+    valueProposition: 'Build a bulletproof insurance claim that gets approved',
+    keywords: ['insurance', 'claim', 'documentation', 'hurricane', 'damage'],
+    relatedTools: ['risk-diagnostic', 'evidence'],
   },
 
   'fast-win': {
@@ -184,6 +238,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     category: 'analysis',
     featured: true,
     gated: true,
+    estimatedTime: '45 sec',
+    difficulty: 'easy',
+    valueProposition: 'Instantly discover your best window upgrade opportunity',
+    keywords: ['quick', 'fast', 'ROI', 'upgrade', 'recommendation'],
+    relatedTools: ['cost-calculator', 'comparison'],
   },
 
   'evidence': {
@@ -200,6 +259,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     category: 'content',
     featured: true,
     gated: true,
+    estimatedTime: '5-10 min',
+    difficulty: 'easy',
+    valueProposition: 'Learn from real homeowner success stories and savings',
+    keywords: ['case studies', 'evidence', 'proof', 'success stories'],
+    relatedTools: ['comparison', 'claim-survival'],
   },
 
   'intel': {
@@ -215,6 +279,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     category: 'content',
     featured: true,
     gated: true,
+    estimatedTime: 'Varies',
+    difficulty: 'medium',
+    valueProposition: 'Get insider guides and resources to negotiate like a pro',
+    keywords: ['guides', 'resources', 'downloads', 'negotiation', 'tactics'],
+    relatedTools: ['sales-tactics-guide', 'kitchen-table-guide'],
   },
 
   'quote-scanner': {
@@ -231,6 +300,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     category: 'primary',
     featured: true,
     gated: true,
+    estimatedTime: '30 sec',
+    difficulty: 'easy',
+    valueProposition: 'Instantly expose hidden fees and get negotiation leverage',
+    keywords: ['quote', 'scan', 'AI', 'analysis', 'pricing', 'red flags'],
+    relatedTools: ['beat-your-quote', 'comparison'],
   },
 
   'quote-builder': {
@@ -247,6 +321,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     featured: true,
     gated: true,
     badge: 'Beta',
+    estimatedTime: '3-5 min',
+    difficulty: 'medium',
+    valueProposition: 'Get a fair price estimate before talking to contractors',
+    keywords: ['estimate', 'quote', 'builder', 'pricing', 'project'],
+    relatedTools: ['quote-scanner', 'comparison'],
   },
 
   // ============================================
@@ -263,6 +342,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     borderColor: 'border-rose-500/40',
     cta: 'Beat My Quote',
     category: 'primary',
+    estimatedTime: '10-15 min',
+    difficulty: 'advanced',
+    valueProposition: 'Master the art of negotiating a better window price',
+    keywords: ['negotiation', 'beat', 'quote', 'leverage', 'markup'],
+    relatedTools: ['quote-scanner', 'sales-tactics-guide'],
   },
 
   'fair-price-quiz': {
@@ -276,6 +360,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     borderColor: 'border-purple-500/40',
     cta: 'Take the Quiz',
     category: 'analysis',
+    estimatedTime: '2 min',
+    difficulty: 'easy',
+    valueProposition: 'Quickly validate if your quote is in the fair range',
+    keywords: ['quiz', 'fair price', 'validation', 'quick'],
+    relatedTools: ['quote-scanner', 'comparison'],
   },
 
   'roleplay': {
@@ -289,6 +378,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     borderColor: 'border-red-500/40',
     cta: 'Start Training',
     category: 'support',
+    estimatedTime: '5-10 min',
+    difficulty: 'medium',
+    valueProposition: 'Build confidence to say no to pushy salespeople',
+    keywords: ['roleplay', 'sales', 'practice', 'training', 'pressure'],
+    relatedTools: ['vulnerability-test', 'sales-tactics-guide'],
   },
 
   // ============================================
@@ -305,6 +399,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     borderColor: 'border-amber-500/40',
     cta: 'Get the Kit',
     category: 'guide',
+    estimatedTime: '15 min read',
+    difficulty: 'medium',
+    valueProposition: 'Walk into your sales appointment fully prepared',
+    keywords: ['guide', 'preparation', 'sales appointment', 'defense'],
+    relatedTools: ['roleplay', 'vulnerability-test'],
   },
 
   'sales-tactics-guide': {
@@ -318,6 +417,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     borderColor: 'border-rose-500/40',
     cta: 'Expose Tactics',
     category: 'guide',
+    estimatedTime: '10 min read',
+    difficulty: 'easy',
+    valueProposition: 'Recognize manipulation tactics before they work on you',
+    keywords: ['tactics', 'sales', 'manipulation', 'tricks', 'exposed'],
+    relatedTools: ['roleplay', 'vulnerability-test'],
   },
 
   'spec-checklist-guide': {
@@ -331,6 +435,11 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     borderColor: 'border-teal-500/40',
     cta: 'Get Checklist',
     category: 'guide',
+    estimatedTime: '20 min read',
+    difficulty: 'advanced',
+    valueProposition: 'Ensure every spec is covered before signing a contract',
+    keywords: ['checklist', 'specs', 'audit', 'contract', 'verification'],
+    relatedTools: ['comparison', 'quote-scanner'],
   },
 
   'insurance-savings-guide': {
@@ -344,8 +453,51 @@ export const TOOL_REGISTRY: Record<string, ToolDefinition> = {
     borderColor: 'border-emerald-500/40',
     cta: 'Save on Insurance',
     category: 'guide',
+    estimatedTime: '10 min read',
+    difficulty: 'medium',
+    valueProposition: 'Learn how to cut your insurance premiums with impact windows',
+    keywords: ['insurance', 'savings', 'discounts', 'impact windows', 'premiums'],
+    relatedTools: ['risk-diagnostic', 'claim-survival'],
   },
 };
+
+// ============================================
+// HELPER FUNCTIONS FOR ENHANCED METADATA
+// ============================================
+
+/**
+ * Get difficulty label with color
+ */
+export function getDifficultyConfig(difficulty: ToolDifficulty): { label: string; color: string } {
+  const configs: Record<ToolDifficulty, { label: string; color: string }> = {
+    easy: { label: 'Easy', color: 'text-green-500' },
+    medium: { label: 'Medium', color: 'text-yellow-500' },
+    advanced: { label: 'Advanced', color: 'text-orange-500' },
+  };
+  return configs[difficulty];
+}
+
+/**
+ * Search tools by keyword
+ */
+export function searchTools(query: string): ToolDefinition[] {
+  const lowerQuery = query.toLowerCase();
+  return Object.values(TOOL_REGISTRY).filter(tool => {
+    const matchesTitle = tool.title.toLowerCase().includes(lowerQuery);
+    const matchesDescription = tool.description.toLowerCase().includes(lowerQuery);
+    const matchesKeywords = tool.keywords?.some(k => k.toLowerCase().includes(lowerQuery));
+    return matchesTitle || matchesDescription || matchesKeywords;
+  });
+}
+
+/**
+ * Get related tools for a given tool
+ */
+export function getRelatedTools(toolId: string): ToolDefinition[] {
+  const tool = TOOL_REGISTRY[toolId];
+  if (!tool?.relatedTools) return [];
+  return getTools(tool.relatedTools);
+}
 
 // ============================================
 // HELPER FUNCTIONS
