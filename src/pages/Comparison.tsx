@@ -41,7 +41,7 @@ export default function Comparison() {
   const windowCount = sessionData.windowCount || 10;
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <ComparisonHero sessionData={sessionData} />
 
