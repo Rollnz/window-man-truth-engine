@@ -239,36 +239,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ===== AUTHENTICATION CHECK =====
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Authentication required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
+    // ===== RATE LIMIT IDENTIFIER =====
+    // Use IP address for rate limiting (allows anonymous access)
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    const clientIp = forwardedFor?.split(",")[0]?.trim() || "unknown";
+    const rateLimitId = `ip:${clientIp}`;
+    console.log(`Request from: ${rateLimitId}`);
+    
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    
-    if (claimsError || !claimsData?.claims) {
-      console.error("Auth error:", claimsError);
-      return new Response(
-        JSON.stringify({ error: "Invalid authentication" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const userId = claimsData.claims.sub;
-    console.log(`Authenticated user: ${userId}`);
-    // ===== END AUTHENTICATION CHECK =====
+    // ===== END RATE LIMIT IDENTIFIER =====
 
     // Parse request body
     const body = await req.json();
@@ -293,8 +272,8 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Rate limiting: 5 generations per hour per user
-    const allowed = await checkRateLimit(supabase, userId, 5, 60 * 60 * 1000);
+    // Rate limiting: 5 generations per hour per IP
+    const allowed = await checkRateLimit(supabase, rateLimitId, 5, 60 * 60 * 1000);
     
     if (!allowed) {
       return new Response(
@@ -324,7 +303,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Generating ${reportType} presentation for user ${userId}...`);
+    console.log(`Generating ${reportType} presentation for ${rateLimitId}...`);
 
     // Call Gamma API to start generation
     const gammaResponse = await fetch("https://api.gamma.app/v1/generations", {
