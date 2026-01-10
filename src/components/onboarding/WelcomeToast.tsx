@@ -61,12 +61,15 @@ export function WelcomeToast() {
         "animate-in slide-in-from-bottom-4 fade-in duration-500"
       )}
     >
-      {/* Gradient Border Wrapper - the "Journey" pill */}
+      {/* Gradient Border Wrapper - the "Journey" pill with shimmer */}
       <div
         className={cn(
           // Pill shape with gradient background (acts as border)
           "rounded-full p-[2px]",
-          "bg-gradient-to-r from-[#fef8d5] to-[#094cee]",
+          // Shimmer gradient: cream → blue → cream for animation sweep
+          "bg-gradient-to-r from-[#fef8d5] via-[#094cee] to-[#fef8d5]",
+          "bg-[length:200%_100%]",
+          "animate-border-shimmer",
           "shadow-2xl shadow-primary/20"
         )}
       >
