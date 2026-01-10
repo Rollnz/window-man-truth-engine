@@ -166,11 +166,12 @@ export function ToolGrid() {
         </div>
 
         {/* Control message */}
-        <p className="text-center text-sm text-muted-foreground mb-12">
-          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-background/50">
-            ✓ You're in control — explore any tool in any order
+        <div className="text-center text-sm mb-12">
+          <span className="inline-flex flex-col items-center gap-1 px-5 py-3 rounded-2xl border-2 border-border bg-background/50 shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.3)]">
+            <span className="text-foreground font-bold">✓ You're in control</span>
+            <span className="text-foreground font-semibold">Explore any tool in any order</span>
           </span>
-        </p>
+        </div>
 
         {/* Tools grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
