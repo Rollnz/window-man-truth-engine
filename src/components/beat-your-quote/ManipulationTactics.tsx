@@ -197,6 +197,15 @@ export function ManipulationTactics() {
                 </div>
               </div>
             </div>
+            
+            {/* Mobile: Centered ebook image */}
+            <div className="mt-6 flex items-center justify-center sm:hidden">
+              <img 
+                src="/images/beat-your-quote/tactics-ebook.webp" 
+                alt="11 Closer Tactics Exposed Ebook"
+                className="w-32 h-auto drop-shadow-lg"
+              />
+            </div>
           </div>
 
           {/* Accordion */}
