@@ -150,7 +150,7 @@ const RealityReport = ({ score, sessionData, onEmailReport, onScheduleConsult }:
           
           <Button
             size="lg"
-            variant="outline"
+            variant="cta"
             onClick={onScheduleConsult}
             className="w-full"
           >

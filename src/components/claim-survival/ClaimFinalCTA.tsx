@@ -29,7 +29,7 @@ export function ClaimFinalCTA({ onCreateVaultClick, isUnlocked }: ClaimFinalCTAP
         
         <Button 
           size="lg" 
-          variant="outline"
+          variant="cta"
           onClick={onCreateVaultClick}
           className="w-full sm:w-auto"
         >

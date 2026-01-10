@@ -52,7 +52,7 @@ export function GenerateProposalButton({
       onClick={handleGenerate}
       disabled={isGenerating}
       className="w-full gap-2"
-      variant="outline"
+      variant="cta"
     >
       {isGenerating ? (
         <>

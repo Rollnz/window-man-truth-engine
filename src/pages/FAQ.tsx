@@ -46,7 +46,7 @@ const FAQ = () => {
                     <Button asChild size="sm">
                       <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
                     </Button>
-                    <Button asChild size="sm" variant="outline">
+                    <Button asChild size="sm" variant="secondary-action">
                       <Link to={ROUTES.SPEC_CHECKLIST_GUIDE}>Download Spec Checklist</Link>
                     </Button>
                   </div>

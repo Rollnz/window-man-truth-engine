@@ -66,7 +66,7 @@ export function MyDocumentsSection({ sessionData }: MyDocumentsSectionProps) {
 
       {docEntries.length > 0 && (
         <div className="mt-4 pt-4 border-t border-border">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="cta" size="sm" asChild>
             <Link to={ROUTES.CLAIM_SURVIVAL}>
               Upload More Documents
             </Link>
