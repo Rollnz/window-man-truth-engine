@@ -12,14 +12,14 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:text-destructive-foreground",
         outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground dark:border-muted-foreground/40 dark:hover:border-muted-foreground/60",
-        secondary: "bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 hover:border-primary/30 dark:bg-muted/50 dark:text-foreground dark:border-muted-foreground/30 dark:hover:bg-muted/70",
+        secondary: "bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 hover:border-primary/30 dark:bg-background dark:text-muted-foreground dark:border-muted-foreground/20 dark:hover:bg-muted/30 dark:hover:text-foreground",
         // Softer secondary that pairs with primary CTA
-        "secondary-action": "bg-muted text-foreground border border-border hover:bg-accent hover:border-primary/50 hover:text-primary transition-colors dark:bg-muted/40 dark:border-muted-foreground/30 dark:hover:bg-muted/60 dark:hover:text-primary",
+        "secondary-action": "bg-muted text-foreground border border-border hover:bg-accent hover:border-primary/50 hover:text-primary transition-colors dark:bg-background dark:text-muted-foreground dark:border-muted-foreground/20 dark:hover:bg-muted/30 dark:hover:text-primary",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         "high-contrast": "bg-white text-black hover:bg-white/90 dark:bg-white dark:text-black dark:hover:bg-white/90",
         // CTA button - solid primary that stands out on any background
-        "cta": "bg-primary text-primary-foreground shadow-md hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg hover:text-primary-foreground transition-all duration-200 dark:glow-sm",
+        "cta": "bg-primary text-primary-foreground shadow-md hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg hover:text-primary-foreground transition-all duration-200 dark:shadow-[0_0_20px_hsl(var(--primary)/0.4)] dark:hover:shadow-[0_0_30px_hsl(var(--primary)/0.6)]",
         // Glass Frame dimensional button - 3D gradient with pressed effect
         "dimensional": "bg-gradient-to-b from-primary/90 to-primary text-primary-foreground border-2 border-primary/80 shadow-lg hover:from-primary hover:to-primary/90 hover:text-primary-foreground active:translate-y-0.5 active:shadow-md",
         // Frame outline button - thick bordered style
