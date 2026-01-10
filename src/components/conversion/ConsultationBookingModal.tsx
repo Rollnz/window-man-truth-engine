@@ -192,7 +192,7 @@ export function ConsultationBookingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md p-5">
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center py-6 text-center">
             <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mb-3">
