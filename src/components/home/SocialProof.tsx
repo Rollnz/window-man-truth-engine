@@ -9,10 +9,13 @@ interface ProofStatProps {
   suffix: string;
   label: string;
   icon: React.ReactNode;
+  iconBg: string;
+  iconBorder: string;
+  valueColor: string;
   delay?: number;
 }
 
-function ProofStat({ value, prefix = '', suffix, label, icon, delay = 0 }: ProofStatProps) {
+function ProofStat({ value, prefix = '', suffix, label, icon, iconBg, iconBorder, valueColor, delay = 0 }: ProofStatProps) {
   const [displayValue, setDisplayValue] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -61,10 +64,10 @@ function ProofStat({ value, prefix = '', suffix, label, icon, delay = 0 }: Proof
 
   return (
     <div ref={ref} className="text-center">
-      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 border border-primary/20 mb-4">
+      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${iconBg} ${iconBorder}`}>
         {icon}
       </div>
-      <div className="text-3xl md:text-4xl font-bold text-primary text-glow mb-2">
+      <div className={`text-3xl md:text-4xl font-bold mb-2 ${valueColor}`}>
         {prefix}{displayValue.toLocaleString()}{suffix}
       </div>
       <p className="text-muted-foreground">{label}</p>
@@ -94,21 +97,30 @@ export function SocialProof() {
             value={1847}
             suffix="/yr"
             label="Average energy savings"
-            icon={<TrendingUp className="w-8 h-8 text-primary" />}
+            icon={<TrendingUp className="w-8 h-8 text-emerald-500" />}
+            iconBg="bg-emerald-500/10"
+            iconBorder="border border-emerald-500/20"
+            valueColor="text-emerald-500"
             delay={0}
           />
           <ProofStat
             value={92}
             suffix="%"
             label="Reduction in repair calls"
-            icon={<Wrench className="w-8 h-8 text-primary" />}
+            icon={<Wrench className="w-8 h-8 text-sky-500" />}
+            iconBg="bg-sky-500/10"
+            iconBorder="border border-sky-500/20"
+            valueColor="text-sky-500"
             delay={200}
           />
           <ProofStat
             value={25}
             suffix="+ yrs"
             label="Average window lifespan"
-            icon={<Calendar className="w-8 h-8 text-primary" />}
+            icon={<Calendar className="w-8 h-8 text-amber-500" />}
+            iconBg="bg-amber-500/10"
+            iconBorder="border border-amber-500/20"
+            valueColor="text-amber-500"
             delay={400}
           />
         </div>
