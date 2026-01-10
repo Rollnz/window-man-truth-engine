@@ -14,7 +14,7 @@ export function ComparisonHero({ sessionData }: ComparisonHeroProps) {
   const windowCount = sessionData.windowCount || 10;
 
   return (
-    <section className="relative py-12 md:py-16 border-b border-border">
+    <section className="relative py-12 md:py-16 border-b border-border overflow-hidden">
       <div className="container px-4">
         {/* Back button */}
         <Link 

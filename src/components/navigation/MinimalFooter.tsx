@@ -15,9 +15,9 @@ export function MinimalFooter({ onGetQuoteClick }: MinimalFooterProps) {
   };
 
   return (
-    <footer className="sticky bottom-0 bg-primary/5 backdrop-blur border-t border-primary/10 py-4 z-40">
+    <footer className="sticky bottom-0 bg-primary/5 backdrop-blur border-t border-primary/10 py-3 z-40 overflow-hidden">
       <div className="container px-4">
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
           {/* Primary Actions */}
           <Link
             to={FOOTER_NAV.BUILD_QUOTE}

@@ -45,7 +45,7 @@ export function ConsultationCTA({ onBookConsultation }: ConsultationCTAProps) {
             className="text-lg px-8 py-6"
             onClick={onBookConsultation}
           >
-            Get a Quote for High-Performance Windows
+            Get A WindowMan Estimate
           </Button>
 
           <p className="text-xs text-muted-foreground mt-4">
