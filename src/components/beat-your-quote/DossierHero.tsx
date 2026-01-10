@@ -1,29 +1,20 @@
 import { Shield, ChevronDown, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StampBadge } from './StampBadge';
-
 interface DossierHeroProps {
   onOpenModal?: () => void;
 }
-
-export function DossierHero({ onOpenModal }: DossierHeroProps) {
+export function DossierHero({
+  onOpenModal
+}: DossierHeroProps) {
   const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById(id)?.scrollIntoView({
+      behavior: 'smooth'
+    });
   };
-
-  return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0A0F14]">
+  return <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0A0F14]">
       {/* Background Image - z-0, LCP candidate for this page */}
-      <img 
-        src="/images/beat-your-quote/hero-dossier.webp"
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover opacity-40 z-0"
-        fetchPriority="high"
-        loading="eager"
-        decoding="async"
-        width={1920}
-        height={1080}
-      />
+      <img src="/images/beat-your-quote/hero-dossier.webp" alt="" className="absolute inset-0 w-full h-full object-cover opacity-40 z-0" fetchPriority="high" loading="eager" decoding="async" width={1920} height={1080} />
       
       {/* Dark Overlay - z-[1] */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#0A0F14]/70 via-[#0A0F14]/50 to-[#0A0F14] z-[1]" />
@@ -43,7 +34,7 @@ export function DossierHero({ onOpenModal }: DossierHeroProps) {
 
         {/* Main Title */}
         <h1 className="font-typewriter text-4xl md:text-6xl lg:text-7xl font-bold mb-4 animate-fade-in">
-          <span className="text-foreground">THE </span>
+          <span className="text-primary-foreground">THE </span>
           <span className="text-primary glow-cyan">WINDOW MAN</span>
         </h1>
 
@@ -59,20 +50,11 @@ export function DossierHero({ onOpenModal }: DossierHeroProps) {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={onOpenModal}
-            className="border-border text-muted-foreground hover:bg-secondary"
-          >
+          <Button variant="outline" size="lg" onClick={onOpenModal} className="border-border text-muted-foreground hover:bg-secondary">
             <Shield className="mr-2 w-5 h-5" />
             Access Dossier
           </Button>
-          <Button
-            size="lg"
-            onClick={onOpenModal}
-            className="glow group"
-          >
+          <Button size="lg" onClick={onOpenModal} className="glow group">
             Beat Your Quote
             <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
           </Button>
@@ -83,6 +65,5 @@ export function DossierHero({ onOpenModal }: DossierHeroProps) {
           <ChevronDown className="w-8 h-8 text-primary opacity-60" />
         </div>
       </div>
-    </section>
-  );
+    </section>;
 }
