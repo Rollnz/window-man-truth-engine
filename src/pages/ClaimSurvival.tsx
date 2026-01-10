@@ -257,7 +257,7 @@ export default function ClaimSurvival() {
             </Button>
           </Link>
           <Button 
-            variant="outline" 
+            variant="cta" 
             size="sm"
             onClick={() => setShowConsultation(true)}
           >

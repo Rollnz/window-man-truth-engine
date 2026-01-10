@@ -196,9 +196,9 @@ export default function Expert() {
                 </Button>
               )}
               <Button
+                variant="cta"
                 size="sm"
                 onClick={() => setShowConsultationModal(true)}
-                className="bg-primary hover:bg-primary/90"
               >
                 <Calendar className="h-4 w-4 mr-1" />
                 <span className="hidden sm:inline">Schedule Consultation</span>
