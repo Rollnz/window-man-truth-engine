@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Navbar } from '@/components/home/Navbar';
 import { Footer } from '@/components/home/Footer';
 import { QuoteScannerHero } from '@/components/quote-scanner/QuoteScannerHero';
@@ -17,6 +17,12 @@ import { ErrorBoundary } from '@/components/error';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
+// New supporting sections
+import { ScannerSocialProof } from '@/components/quote-scanner/ScannerSocialProof';
+import { ScannerFAQSection } from '@/components/quote-scanner/ScannerFAQSection';
+import { NoQuotePathway } from '@/components/quote-scanner/NoQuotePathway';
+import { WindowCalculatorTeaser } from '@/components/quote-scanner/WindowCalculatorTeaser';
+import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChecklist';
 
 export default function QuoteScanner() {
   usePageTracking('quote-scanner');
@@ -39,6 +45,9 @@ export default function QuoteScanner() {
   const { sessionData, updateField } = useSessionData();
   const [showLeadCapture, setShowLeadCapture] = useState(false);
   const [hasUnlockedResults, setHasUnlockedResults] = useState(!!sessionData.email);
+  
+  // Ref for scroll-to-upload functionality
+  const uploadRef = useRef<HTMLDivElement>(null);
 
   const handleFileSelect = async (file: File) => {
     await analyzeQuote(file);
@@ -86,6 +95,7 @@ export default function QuoteScanner() {
                 {/* Left column - Upload */}
                 <div className="space-y-6">
                   <QuoteUploadZone
+                    ref={uploadRef}
                     onFileSelect={handleFileSelect}
                     isAnalyzing={isAnalyzing}
                     hasResult={!!analysisResult}
@@ -152,7 +162,14 @@ export default function QuoteScanner() {
           </div>
         </section>
 
-        {/* Related Tools */}
+        {/* Supporting Content Sections */}
+        <ScannerSocialProof />
+        <QuoteSafetyChecklist uploadRef={uploadRef} />
+        <WindowCalculatorTeaser />
+        <NoQuotePathway />
+        <ScannerFAQSection uploadRef={uploadRef} />
+
+        {/* Related Tools - "Enforce Your Rights" section */}
         <RelatedToolsGrid
           title={getFrameControl('quote-scanner').title}
           description={getFrameControl('quote-scanner').description}
