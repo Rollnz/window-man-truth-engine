@@ -1,58 +1,58 @@
-import { useState, useCallback } from 'react';
-import { ROUTES } from '@/config/navigation';
-import { useSessionData } from '@/hooks/useSessionData';
-import { usePageTracking } from '@/hooks/usePageTracking';
-import { trackToolCompletion } from '@/lib/gtm';
-import { Navbar } from '@/components/home/Navbar';
-import { MinimalFooter } from '@/components/navigation/MinimalFooter';
-import { fastWinQuestions } from '@/data/fastWinData';
-import { calculateFastWin, type FastWinAnswers, type FastWinResult } from '@/lib/fastWinLogic';
-import { FastWinHero } from '@/components/fast-win/FastWinHero';
-import { SpeedCard } from '@/components/fast-win/SpeedCard';
-import { ShuffleAnimation } from '@/components/fast-win/ShuffleAnimation';
-import { WinnerCard } from '@/components/fast-win/WinnerCard';
-import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
-import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
-import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
-import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
-import type { SourceTool } from '@/types/sourceTool';
+import { useState, useCallback } from "react";
+import { ROUTES } from "@/config/navigation";
+import { useSessionData } from "@/hooks/useSessionData";
+import { usePageTracking } from "@/hooks/usePageTracking";
+import { trackToolCompletion } from "@/lib/gtm";
+import { Navbar } from "@/components/home/Navbar";
+import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+import { fastWinQuestions } from "@/data/fastWinData";
+import { calculateFastWin, type FastWinAnswers, type FastWinResult } from "@/lib/fastWinLogic";
+import { FastWinHero } from "@/components/fast-win/FastWinHero";
+import { SpeedCard } from "@/components/fast-win/SpeedCard";
+import { ShuffleAnimation } from "@/components/fast-win/ShuffleAnimation";
+import { WinnerCard } from "@/components/fast-win/WinnerCard";
+import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
+import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
+import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
+import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
+import type { SourceTool } from "@/types/sourceTool";
 
-type Phase = 'hero' | 'questions' | 'calculating' | 'result';
+type Phase = "hero" | "questions" | "calculating" | "result";
 
 export default function FastWin() {
-  usePageTracking('fast-win');
+  usePageTracking("fast-win");
   const { sessionData, updateFields, markToolCompleted, hasExistingData } = useSessionData();
-  
-  const [phase, setPhase] = useState<Phase>('hero');
+
+  const [phase, setPhase] = useState<Phase>("hero");
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Partial<FastWinAnswers>>({});
   const [result, setResult] = useState<FastWinResult | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [direction, setDirection] = useState<'forward' | 'back'>('forward');
-  
+  const [direction, setDirection] = useState<"forward" | "back">("forward");
+
   // Modal states
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
 
   const handleStart = () => {
-    setPhase('questions');
+    setPhase("questions");
   };
 
   const handleSelectAnswer = (value: string) => {
     setIsAnimating(true);
-    setDirection('forward');
+    setDirection("forward");
 
     const questionId = fastWinQuestions[currentStep].id;
-    const answerKey = questionId.replace('-', '') as keyof FastWinAnswers;
-    
+    const answerKey = questionId.replace("-", "") as keyof FastWinAnswers;
+
     // Map question IDs to answer keys
     const keyMap: Record<string, keyof FastWinAnswers> = {
-      'pain-point': 'painPoint',
-      'orientation': 'orientation',
-      'current-status': 'currentStatus',
-      'budget-priority': 'budgetPriority',
+      "pain-point": "painPoint",
+      orientation: "orientation",
+      "current-status": "currentStatus",
+      "budget-priority": "budgetPriority",
     };
-    
+
     const newAnswers = {
       ...answers,
       [keyMap[questionId]]: value,
@@ -65,7 +65,7 @@ export default function FastWin() {
         setIsAnimating(false);
       } else {
         // All questions answered, move to calculating
-        setPhase('calculating');
+        setPhase("calculating");
         setIsAnimating(false);
       }
     }, 250);
@@ -74,13 +74,13 @@ export default function FastWin() {
   const handleBack = () => {
     if (currentStep > 0) {
       setIsAnimating(true);
-      setDirection('back');
+      setDirection("back");
       setTimeout(() => {
         setCurrentStep(currentStep - 1);
         setIsAnimating(false);
       }, 250);
     } else {
-      setPhase('hero');
+      setPhase("hero");
     }
   };
 
@@ -98,12 +98,12 @@ export default function FastWin() {
       fastWinBudgetPriority: answers.budgetPriority,
     });
 
-    markToolCompleted('fast-win');
+    markToolCompleted("fast-win");
 
     // Track tool completion
-    trackToolCompletion({ toolName: 'fast-win' });
+    trackToolCompletion({ toolName: "fast-win" });
 
-    setPhase('result');
+    setPhase("result");
   }, [answers, updateFields, markToolCompleted]);
 
   const handleSave = () => {
@@ -128,33 +128,23 @@ export default function FastWin() {
 
       {/* Phases */}
       <div className="pt-14">
-        {phase === 'hero' && (
-          <FastWinHero onStart={handleStart} hasSessionData={hasExistingData} />
-        )}
+        {phase === "hero" && <FastWinHero onStart={handleStart} hasSessionData={hasExistingData} />}
 
-        {phase === 'questions' && (
-        <SpeedCard
-          question={fastWinQuestions[currentStep]}
-          currentStep={currentStep}
-          totalSteps={fastWinQuestions.length}
-          onSelect={handleSelectAnswer}
-          onBack={handleBack}
-          isAnimating={isAnimating}
+        {phase === "questions" && (
+          <SpeedCard
+            question={fastWinQuestions[currentStep]}
+            currentStep={currentStep}
+            totalSteps={fastWinQuestions.length}
+            onSelect={handleSelectAnswer}
+            onBack={handleBack}
+            isAnimating={isAnimating}
             direction={direction}
           />
         )}
 
-        {phase === 'calculating' && (
-          <ShuffleAnimation onComplete={handleCalculationComplete} />
-        )}
+        {phase === "calculating" && <ShuffleAnimation onComplete={handleCalculationComplete} />}
 
-        {phase === 'result' && result && (
-          <WinnerCard
-            result={result}
-            onSave={handleSave}
-            onGetPrice={handleGetPrice}
-          />
-        )}
+        {phase === "result" && result && <WinnerCard result={result} onSave={handleSave} onGetPrice={handleGetPrice} />}
       </div>
 
       {/* Modals */}
@@ -162,7 +152,7 @@ export default function FastWin() {
         isOpen={showLeadModal}
         onClose={() => setShowLeadModal(false)}
         onSuccess={handleLeadSuccess}
-        sourceTool={'fast-win' satisfies SourceTool}
+        sourceTool={"fast-win" satisfies SourceTool}
         sessionData={sessionData}
       />
 
@@ -175,13 +165,14 @@ export default function FastWin() {
           // Pre-fill with the product interest
           notes: result ? `Interested in: ${result.product.name}` : undefined,
         }}
+        sourceTool="fast-win"
       />
 
       {/* Related Tools */}
       <RelatedToolsGrid
-        title={getFrameControl('fast-win').title}
-        description={getFrameControl('fast-win').description}
-        tools={getSmartRelatedTools('fast-win', sessionData.toolsCompleted)}
+        title={getFrameControl("fast-win").title}
+        description={getFrameControl("fast-win").description}
+        tools={getSmartRelatedTools("fast-win", sessionData.toolsCompleted)}
       />
 
       {/* Minimal Footer */}

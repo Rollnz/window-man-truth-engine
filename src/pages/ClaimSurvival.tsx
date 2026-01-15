@@ -188,8 +188,10 @@ export default function ClaimSurvival() {
 
   // Handle successful lead capture
   const handleLeadSuccess = (leadId: string) => {
-    // Add claim-survival to unlocked resources
     const newUnlocked = [...(sessionData.unlockedResources || []), "claim-survival"];
+
+    // Ensure we update the sessionData with the NEW leadId immediately
+    // This is the "Golden Thread" link for consistent tracking
     updateFields({
       unlockedResources: newUnlocked,
       leadId,
@@ -382,6 +384,7 @@ export default function ClaimSurvival() {
           onSuccess={handleLeadSuccess}
           sourceTool={"claim-survival-kit" satisfies SourceTool}
           sessionData={sessionData}
+          leadId={sessionData.leadId}
         />
 
         {/* Upload Modal */}
@@ -394,6 +397,8 @@ export default function ClaimSurvival() {
           onSuccess={handleUploadSuccess}
           documentId={selectedDocForUpload}
           sessionId={vaultSessionId}
+          leadId={sessionData.leadId}
+          sourceTool="claim-survival-kit"
         />
 
         {/* Consultation Modal */}
@@ -409,6 +414,7 @@ export default function ClaimSurvival() {
           }}
           sessionData={sessionData}
           sourceTool="claim-survival-kit"
+          leadId={sessionData.leadId}
         />
 
         {/* Evidence Analysis Modal */}

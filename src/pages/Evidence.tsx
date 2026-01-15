@@ -142,6 +142,7 @@ export default function Evidence() {
           ...sessionData,
           lastCaseViewed: activeCase?.id,
         }}
+        leadId={sessionData.leadId}
       />
 
       {/* Consultation Modal */}
