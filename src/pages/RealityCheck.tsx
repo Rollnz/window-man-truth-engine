@@ -243,6 +243,8 @@ const RealityCheck = () => {
           onClose={() => setShowConsultModal(false)}
           onSuccess={handleConsultSuccess}
           sessionData={sessionData}
+          sourceTool="reality-check"
+          leadId={sessionData.leadId}
         />
       </div>
     );

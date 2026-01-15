@@ -20,6 +20,8 @@ interface DocumentUploadModalProps {
   onSuccess: (docId: string, fileUrl: string) => void;
   documentId: string | null;
   sessionId: string;
+  leadId?: string; // Existing lead ID for identity persistence (Golden Thread)
+  sourceTool?: string; // Source tool for attribution tracking
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -31,6 +33,8 @@ export function DocumentUploadModal({
   onSuccess,
   documentId,
   sessionId,
+  leadId,
+  sourceTool,
 }: DocumentUploadModalProps) {
   const { toast } = useToast();
   const { sessionData } = useSessionData();
@@ -118,6 +122,8 @@ export function DocumentUploadModal({
       formData.append('file', selectedFile);
       formData.append('sessionId', sessionId);
       formData.append('documentType', documentId);
+      if (leadId) formData.append('leadId', leadId);
+      if (sourceTool) formData.append('sourceTool', sourceTool);
 
       setUploadProgress(30);
 

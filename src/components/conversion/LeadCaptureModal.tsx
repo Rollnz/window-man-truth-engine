@@ -29,6 +29,7 @@ interface LeadCaptureModalProps {
   sourceTool: SourceTool;
   sessionData: SessionData;
   chatHistory?: Message[];
+  leadId?: string; // Existing lead ID for identity persistence (Golden Thread)
 }
 
 export function LeadCaptureModal({
@@ -38,6 +39,7 @@ export function LeadCaptureModal({
   sourceTool,
   sessionData,
   chatHistory,
+  leadId,
 }: LeadCaptureModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -112,6 +114,7 @@ export function LeadCaptureModal({
             chatHistory: chatHistory || [],
             attribution: getAttributionData(),
             aiContext: buildAIContextFromSession(sessionData, sourceTool),
+            leadId: leadId || undefined, // Pass existing leadId for updates
           }),
         }
       );
