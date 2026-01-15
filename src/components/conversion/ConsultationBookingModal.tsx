@@ -1,29 +1,17 @@
-import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
-import { SessionData } from '@/hooks/useSessionData';
-import { Calendar, Check, Loader2 } from 'lucide-react';
-import { trackEvent, trackModalOpen } from '@/lib/gtm';
-import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
-import type { SourceTool } from '@/types/sourceTool';
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
+import { SessionData } from "@/hooks/useSessionData";
+import { Calendar, Check, Loader2 } from "lucide-react";
+import { trackEvent, trackModalOpen } from "@/lib/gtm";
+import { getAttributionData, buildAIContextFromSession } from "@/lib/attribution";
+import type { SourceTool } from "@/types/sourceTool";
 
 interface ConsultationBookingModalProps {
   isOpen: boolean;
@@ -31,13 +19,14 @@ interface ConsultationBookingModalProps {
   onSuccess: () => void;
   leadId?: string;
   sessionData: SessionData;
+  sourceTool: SourceTool;
 }
 
 const timeOptions = [
-  { value: 'morning', label: 'Morning (9am - 12pm)' },
-  { value: 'afternoon', label: 'Afternoon (12pm - 5pm)' },
-  { value: 'evening', label: 'Evening (5pm - 8pm)' },
-  { value: 'asap', label: 'ASAP - Call me now!' },
+  { value: "morning", label: "Morning (9am - 12pm)" },
+  { value: "afternoon", label: "Afternoon (12pm - 5pm)" },
+  { value: "evening", label: "Evening (5pm - 8pm)" },
+  { value: "asap", label: "ASAP - Call me now!" },
 ];
 
 export function ConsultationBookingModal({
@@ -46,30 +35,32 @@ export function ConsultationBookingModal({
   onSuccess,
   leadId,
   sessionData,
+  sourceTool,
 }: ConsultationBookingModalProps) {
   const { toast } = useToast();
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [modalOpenTime, setModalOpenTime] = useState<number>(0);
 
-  const { values, errors, setValue, setValues, hasError, getError, getFieldProps, validateAll, clearErrors } = useFormValidation({
-    initialValues: {
-      name: sessionData.name || '',
-      email: sessionData.email || '',
-      phone: sessionData.phone || '',
-      preferredTime: '',
-    },
-    schemas: {
-      name: commonSchemas.name,
-      email: commonSchemas.email,
-      phone: commonSchemas.phone,
-      preferredTime: commonSchemas.required('Please select a preferred time'),
-    },
-    formatters: {
-      phone: formatPhoneNumber,
-    },
-  });
+  const { values, errors, setValue, setValues, hasError, getError, getFieldProps, validateAll, clearErrors } =
+    useFormValidation({
+      initialValues: {
+        name: sessionData.name || "",
+        email: sessionData.email || "",
+        phone: sessionData.phone || "",
+        preferredTime: "",
+      },
+      schemas: {
+        name: commonSchemas.name,
+        email: commonSchemas.email,
+        phone: commonSchemas.phone,
+        preferredTime: commonSchemas.required("Please select a preferred time"),
+      },
+      formatters: {
+        phone: formatPhoneNumber,
+      },
+    });
 
   // Track modal open - fires ONLY when modal opens
   useEffect(() => {
@@ -77,7 +68,7 @@ export function ConsultationBookingModal({
       const now = Date.now();
       setModalOpenTime(now);
 
-      trackModalOpen('consultation_booking');
+      trackModalOpen("consultation_booking");
     }
   }, [isOpen]); // Only isOpen dependency
 
@@ -86,9 +77,9 @@ export function ConsultationBookingModal({
 
     if (!validateAll()) {
       toast({
-        title: 'Please fix the errors',
-        description: 'Some fields need your attention.',
-        variant: 'destructive',
+        title: "Please fix the errors",
+        description: "Some fields need your attention.",
+        variant: "destructive",
       });
       return;
     }
@@ -96,36 +87,33 @@ export function ConsultationBookingModal({
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({
-            email: values.email.trim(),
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          email: values.email.trim(),
+          name: values.name.trim(),
+          phone: values.phone.trim(),
+          sourceTool, // ✅ Now uses the dynamic prop instead of hardcoded 'expert-system'
+          sessionData,
+          consultation: {
             name: values.name.trim(),
+            email: values.email.trim(),
             phone: values.phone.trim(),
-            sourceTool: 'expert-system' satisfies SourceTool,
-            sessionData,
-            consultation: {
-              name: values.name.trim(),
-              email: values.email.trim(),
-              phone: values.phone.trim(),
-              preferredTime: values.preferredTime,
-              notes: notes.trim() || undefined,
-            },
-            attribution: getAttributionData(),
-            aiContext: buildAIContextFromSession(sessionData, 'expert-system'),
-          }),
-        }
-      );
+            preferredTime: values.preferredTime,
+            notes: notes.trim() || undefined,
+          },
+          attribution: getAttributionData(),
+          aiContext: buildAIContextFromSession(sessionData, sourceTool), // ✅ Updated here as well
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to schedule');
+        throw new Error(errorData.error || "Failed to schedule");
       }
 
       const data = await response.json();
@@ -134,13 +122,14 @@ export function ConsultationBookingModal({
         setIsSuccess(true);
 
         // Track successful consultation booking
-        trackEvent('consultation_booked', {
+        trackEvent("consultation_booked", {
           preferred_time: values.preferredTime,
           lead_id: data.leadId,
+          source_tool: sourceTool, // ✅ Added to the tracking event for better GTM reporting
         });
 
         toast({
-          title: 'Consultation Requested!',
+          title: "Consultation Requested!",
           description: "We'll contact you within 24 hours.",
         });
 
@@ -148,14 +137,14 @@ export function ConsultationBookingModal({
           onSuccess();
         }, 2000);
       } else {
-        throw new Error(data.error || 'Failed to schedule');
+        throw new Error(data.error || "Failed to schedule");
       }
     } catch (error) {
-      console.error('Consultation booking error:', error);
+      console.error("Consultation booking error:", error);
       toast({
-        title: 'Unable to schedule',
-        description: error instanceof Error ? error.message : 'Please try again',
-        variant: 'destructive',
+        title: "Unable to schedule",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -167,28 +156,28 @@ export function ConsultationBookingModal({
       // Track modal abandonment if not successful
       if (!isSuccess && modalOpenTime > 0) {
         const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000); // seconds
-        trackEvent('modal_abandon', {
-          modal_type: 'consultation_booking',
+        trackEvent("modal_abandon", {
+          modal_type: "consultation_booking",
           time_spent_seconds: timeSpent,
         });
       }
 
       setIsSuccess(false);
       setValues({
-        name: sessionData.name || '',
-        email: sessionData.email || '',
-        phone: sessionData.phone || '',
-        preferredTime: '',
+        name: sessionData.name || "",
+        email: sessionData.email || "",
+        phone: sessionData.phone || "",
+        preferredTime: "",
       });
-      setNotes('');
+      setNotes("");
       clearErrors();
       onClose();
     }
   };
 
-  const nameProps = getFieldProps('name');
-  const emailProps = getFieldProps('email');
-  const phoneProps = getFieldProps('phone');
+  const nameProps = getFieldProps("name");
+  const emailProps = getFieldProps("email");
+  const phoneProps = getFieldProps("phone");
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -199,9 +188,7 @@ export function ConsultationBookingModal({
               <Check className="w-7 h-7 text-primary" />
             </div>
             <DialogTitle className="text-xl mb-2">Consultation Requested!</DialogTitle>
-            <DialogDescription>
-              Thanks! A window expert will contact you within 24 hours.
-            </DialogDescription>
+            <DialogDescription>Thanks! A window expert will contact you within 24 hours.</DialogDescription>
           </div>
         ) : (
           <>
@@ -219,7 +206,7 @@ export function ConsultationBookingModal({
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="name" className={`text-sm ${hasError('name') ? 'text-destructive' : ''}`}>
+                <Label htmlFor="name" className={`text-sm ${hasError("name") ? "text-destructive" : ""}`}>
                   Your Name
                 </Label>
                 <Input
@@ -227,17 +214,19 @@ export function ConsultationBookingModal({
                   placeholder="John Smith"
                   {...nameProps}
                   disabled={isLoading}
-                  className={`h-9 ${hasError('name') ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                  aria-invalid={hasError('name')}
-                  aria-describedby={hasError('name') ? 'name-error' : undefined}
+                  className={`h-9 ${hasError("name") ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  aria-invalid={hasError("name")}
+                  aria-describedby={hasError("name") ? "name-error" : undefined}
                 />
-                {hasError('name') && (
-                  <p id="name-error" className="text-xs text-destructive">{getError('name')}</p>
+                {hasError("name") && (
+                  <p id="name-error" className="text-xs text-destructive">
+                    {getError("name")}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="consult-email" className={`text-sm ${hasError('email') ? 'text-destructive' : ''}`}>
+                <Label htmlFor="consult-email" className={`text-sm ${hasError("email") ? "text-destructive" : ""}`}>
                   Email Address
                 </Label>
                 <Input
@@ -246,17 +235,19 @@ export function ConsultationBookingModal({
                   placeholder="you@example.com"
                   {...emailProps}
                   disabled={isLoading}
-                  className={`h-9 ${hasError('email') ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                  aria-invalid={hasError('email')}
-                  aria-describedby={hasError('email') ? 'email-error' : undefined}
+                  className={`h-9 ${hasError("email") ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  aria-invalid={hasError("email")}
+                  aria-describedby={hasError("email") ? "email-error" : undefined}
                 />
-                {hasError('email') && (
-                  <p id="email-error" className="text-xs text-destructive">{getError('email')}</p>
+                {hasError("email") && (
+                  <p id="email-error" className="text-xs text-destructive">
+                    {getError("email")}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="phone" className={`text-sm ${hasError('phone') ? 'text-destructive' : ''}`}>
+                <Label htmlFor="phone" className={`text-sm ${hasError("phone") ? "text-destructive" : ""}`}>
                   Phone Number
                 </Label>
                 <Input
@@ -265,29 +256,34 @@ export function ConsultationBookingModal({
                   placeholder="(555) 123-4567"
                   {...phoneProps}
                   disabled={isLoading}
-                  className={`h-9 ${hasError('phone') ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                  aria-invalid={hasError('phone')}
-                  aria-describedby={hasError('phone') ? 'phone-error' : undefined}
+                  className={`h-9 ${hasError("phone") ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  aria-invalid={hasError("phone")}
+                  aria-describedby={hasError("phone") ? "phone-error" : undefined}
                 />
-                {hasError('phone') && (
-                  <p id="phone-error" className="text-xs text-destructive">{getError('phone')}</p>
+                {hasError("phone") && (
+                  <p id="phone-error" className="text-xs text-destructive">
+                    {getError("phone")}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="preferred-time" className={`text-sm ${hasError('preferredTime') ? 'text-destructive' : ''}`}>
+                <Label
+                  htmlFor="preferred-time"
+                  className={`text-sm ${hasError("preferredTime") ? "text-destructive" : ""}`}
+                >
                   Best Time to Call
                 </Label>
                 <Select
                   value={values.preferredTime}
-                  onValueChange={(value) => setValue('preferredTime', value)}
+                  onValueChange={(value) => setValue("preferredTime", value)}
                   disabled={isLoading}
                 >
-                  <SelectTrigger 
+                  <SelectTrigger
                     id="preferred-time"
-                    className={`h-9 ${hasError('preferredTime') ? 'border-destructive focus:ring-destructive' : ''}`}
-                    aria-invalid={hasError('preferredTime')}
-                    aria-describedby={hasError('preferredTime') ? 'time-error' : undefined}
+                    className={`h-9 ${hasError("preferredTime") ? "border-destructive focus:ring-destructive" : ""}`}
+                    aria-invalid={hasError("preferredTime")}
+                    aria-describedby={hasError("preferredTime") ? "time-error" : undefined}
                   >
                     <SelectValue placeholder="Select a time..." />
                   </SelectTrigger>
@@ -299,13 +295,17 @@ export function ConsultationBookingModal({
                     ))}
                   </SelectContent>
                 </Select>
-                {hasError('preferredTime') && (
-                  <p id="time-error" className="text-xs text-destructive">{getError('preferredTime')}</p>
+                {hasError("preferredTime") && (
+                  <p id="time-error" className="text-xs text-destructive">
+                    {getError("preferredTime")}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="notes" className="text-sm">Additional Notes (Optional)</Label>
+                <Label htmlFor="notes" className="text-sm">
+                  Additional Notes (Optional)
+                </Label>
                 <Textarea
                   id="notes"
                   placeholder="Any specific questions or concerns?"
