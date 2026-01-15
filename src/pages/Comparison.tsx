@@ -1,35 +1,35 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useSessionData } from '@/hooks/useSessionData';
-import { usePageTracking } from '@/hooks/usePageTracking';
-import { windowTiers } from '@/data/windowData';
-import { calculateTierTrueCost, TrueCostBreakdown } from '@/lib/comparisonCalculations';
-import { Navbar } from '@/components/home/Navbar';
-import { ComparisonHero } from '@/components/comparison/ComparisonHero';
-import { ViewModeToggle, ViewMode } from '@/components/comparison/ViewModeToggle';
-import { ComparisonTable } from '@/components/comparison/ComparisonTable';
-import { ComparisonCards } from '@/components/comparison/ComparisonCards';
-import { SavingsBanner } from '@/components/comparison/SavingsBanner';
-import { FloatingEmailButton } from '@/components/comparison/FloatingEmailButton';
-import { ConsultationCTA } from '@/components/comparison/ConsultationCTA';
-import { GenerateComparisonReportButton } from '@/components/comparison/GenerateComparisonReportButton';
-import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
-import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
-import { MinimalFooter } from '@/components/navigation/MinimalFooter';
-import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
-import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
-import type { SourceTool } from '@/types/sourceTool';
+import { useState, useEffect, useMemo } from "react";
+import { useSessionData } from "@/hooks/useSessionData";
+import { usePageTracking } from "@/hooks/usePageTracking";
+import { windowTiers } from "@/data/windowData";
+import { calculateTierTrueCost, TrueCostBreakdown } from "@/lib/comparisonCalculations";
+import { Navbar } from "@/components/home/Navbar";
+import { ComparisonHero } from "@/components/comparison/ComparisonHero";
+import { ViewModeToggle, ViewMode } from "@/components/comparison/ViewModeToggle";
+import { ComparisonTable } from "@/components/comparison/ComparisonTable";
+import { ComparisonCards } from "@/components/comparison/ComparisonCards";
+import { SavingsBanner } from "@/components/comparison/SavingsBanner";
+import { FloatingEmailButton } from "@/components/comparison/FloatingEmailButton";
+import { ConsultationCTA } from "@/components/comparison/ConsultationCTA";
+import { GenerateComparisonReportButton } from "@/components/comparison/GenerateComparisonReportButton";
+import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
+import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
+import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
+import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
+import type { SourceTool } from "@/types/sourceTool";
 
 export default function Comparison() {
-  usePageTracking('comparison-tool');
+  usePageTracking("comparison-tool");
   const { sessionData, markToolCompleted, updateField } = useSessionData();
-  const [viewMode, setViewMode] = useState<ViewMode>('longterm');
+  const [viewMode, setViewMode] = useState<ViewMode>("longterm");
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
 
   // Track tool visit
   useEffect(() => {
-    markToolCompleted('comparison');
-    updateField('comparisonViewed', true);
+    markToolCompleted("comparison");
+    updateField("comparisonViewed", true);
   }, [markToolCompleted, updateField]);
 
   // Calculate true costs for all tiers
@@ -58,7 +58,7 @@ export default function Comparison() {
           {/* View Mode Toggle + Report Button */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
-            <GenerateComparisonReportButton 
+            <GenerateComparisonReportButton
               windowCount={windowCount}
               trueCosts={trueCosts}
               viewMode={viewMode}
@@ -67,23 +67,15 @@ export default function Comparison() {
           </div>
 
           {/* Savings Banner (only show in long-term view) */}
-          {viewMode === 'longterm' && trueCosts.tier1 && trueCosts.tier3 && (
+          {viewMode === "longterm" && trueCosts.tier1 && trueCosts.tier3 && (
             <SavingsBanner tier1Cost={trueCosts.tier1} tier3Cost={trueCosts.tier3} />
           )}
 
           {/* Desktop: Table View */}
-          <ComparisonTable 
-            viewMode={viewMode} 
-            windowCount={windowCount}
-            trueCosts={trueCosts}
-          />
+          <ComparisonTable viewMode={viewMode} windowCount={windowCount} trueCosts={trueCosts} />
 
           {/* Mobile: Stacked Cards View */}
-          <ComparisonCards 
-            viewMode={viewMode} 
-            windowCount={windowCount}
-            trueCosts={trueCosts}
-          />
+          <ComparisonCards viewMode={viewMode} windowCount={windowCount} trueCosts={trueCosts} />
         </div>
       </section>
 
@@ -98,7 +90,7 @@ export default function Comparison() {
         isOpen={showLeadModal}
         onClose={() => setShowLeadModal(false)}
         onSuccess={() => setShowLeadModal(false)}
-        sourceTool={'comparison-tool' satisfies SourceTool}
+        sourceTool={"comparison-tool" satisfies SourceTool}
         sessionData={sessionData}
       />
 
@@ -108,13 +100,14 @@ export default function Comparison() {
         onClose={() => setShowConsultationModal(false)}
         onSuccess={() => setShowConsultationModal(false)}
         sessionData={sessionData}
+        sourceTool="comparison-tool"
       />
 
       {/* Related Tools */}
       <RelatedToolsGrid
-        title={getFrameControl('comparison').title}
-        description={getFrameControl('comparison').description}
-        tools={getSmartRelatedTools('comparison', sessionData.toolsCompleted)}
+        title={getFrameControl("comparison").title}
+        description={getFrameControl("comparison").description}
+        tools={getSmartRelatedTools("comparison", sessionData.toolsCompleted)}
       />
 
       {/* Minimal Footer */}
