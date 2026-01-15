@@ -1,99 +1,99 @@
-import { useState, useMemo } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { caseStudies, MissionType } from '@/data/evidenceData';
-import { useSessionData } from '@/hooks/useSessionData';
-import { usePageTracking } from '@/hooks/usePageTracking';
-import { Navbar } from '@/components/home/Navbar';
-import { MinimalFooter } from '@/components/navigation/MinimalFooter';
-import { EvidenceHero } from '@/components/evidence/EvidenceHero';
-import { FilterBar } from '@/components/evidence/FilterBar';
-import { CaseFileGrid } from '@/components/evidence/CaseFileGrid';
-import { CaseDebriefModal } from '@/components/evidence/CaseDebriefModal';
-import { RelatedIntelligence } from '@/components/evidence/RelatedIntelligence';
-import { StickyCTA } from '@/components/evidence/StickyCTA';
-import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
-import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
-import type { SourceTool } from '@/types/sourceTool';
-import { ROUTES } from '@/config/navigation';
+import { useState, useMemo } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { caseStudies, MissionType } from "@/data/evidenceData";
+import { useSessionData } from "@/hooks/useSessionData";
+import { usePageTracking } from "@/hooks/usePageTracking";
+import { Navbar } from "@/components/home/Navbar";
+import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+import { EvidenceHero } from "@/components/evidence/EvidenceHero";
+import { FilterBar } from "@/components/evidence/FilterBar";
+import { CaseFileGrid } from "@/components/evidence/CaseFileGrid";
+import { CaseDebriefModal } from "@/components/evidence/CaseDebriefModal";
+import { RelatedIntelligence } from "@/components/evidence/RelatedIntelligence";
+import { StickyCTA } from "@/components/evidence/StickyCTA";
+import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
+import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
+import type { SourceTool } from "@/types/sourceTool";
+import { ROUTES } from "@/config/navigation";
 
 export default function Evidence() {
-  usePageTracking('evidence-locker');
+  usePageTracking("evidence-locker");
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { sessionData, updateFields, markToolCompleted } = useSessionData();
-  
+
   // Modals state
   const [showLeadCapture, setShowLeadCapture] = useState(false);
   const [showConsultation, setShowConsultation] = useState(false);
-  
+
   // URL-synced case selection
-  const activeCaseId = searchParams.get('case');
-  const activeCase = useMemo(() => 
-    activeCaseId ? caseStudies.find(c => c.id === activeCaseId) : null,
-    [activeCaseId]
+  const activeCaseId = searchParams.get("case");
+  const activeCase = useMemo(
+    () => (activeCaseId ? caseStudies.find((c) => c.id === activeCaseId) : null),
+    [activeCaseId],
   );
-  
+
   // URL-synced filter
-  const urlFilter = (searchParams.get('filter') as MissionType | 'all') || 'all';
-  
+  const urlFilter = (searchParams.get("filter") as MissionType | "all") || "all";
+
   // Track page view
   useState(() => {
     if (!sessionData.evidenceLockerViewed) {
       updateFields({ evidenceLockerViewed: true });
-      markToolCompleted('evidence-locker');
+      markToolCompleted("evidence-locker");
     }
   });
-  
+
   const handleOpenCase = (caseId: string) => {
     const params = new URLSearchParams(searchParams);
-    params.set('case', caseId);
+    params.set("case", caseId);
     setSearchParams(params);
-    
+
     // Track case view
     const viewedCases = sessionData.caseStudiesViewed || [];
     if (!viewedCases.includes(caseId)) {
-      updateFields({ 
+      updateFields({
         caseStudiesViewed: [...viewedCases, caseId],
         lastCaseViewed: caseId,
       });
     }
   };
-  
+
   const handleCloseCase = () => {
     const params = new URLSearchParams(searchParams);
-    params.delete('case');
+    params.delete("case");
     setSearchParams(params);
   };
-  
-  const handleFilterChange = (filter: MissionType | 'all') => {
+
+  const handleFilterChange = (filter: MissionType | "all") => {
     const params = new URLSearchParams(searchParams);
-    if (filter === 'all') {
-      params.delete('filter');
+    if (filter === "all") {
+      params.delete("filter");
     } else {
-      params.set('filter', filter);
+      params.set("filter", filter);
     }
-    params.delete('case'); // Close modal when filtering
+    params.delete("case"); // Close modal when filtering
     setSearchParams(params);
   };
-  
+
   // Navigate directly to preserve modal state in history
   const handleToolNavigation = (toolPath: string) => {
     navigate(toolPath);
   };
-  
+
   const handleDownload = () => {
     setShowLeadCapture(true);
   };
-  
+
   const handleConsultation = () => {
     setShowConsultation(true);
   };
-  
+
   const handleLeadSuccess = (leadId: string) => {
     updateFields({ leadId });
     setShowLeadCapture(false);
   };
-  
+
   const handleConsultationSuccess = () => {
     updateFields({ consultationRequested: true });
     setShowConsultation(false);
@@ -112,17 +112,10 @@ export default function Evidence() {
       <section className="py-8">
         <div className="container px-4 space-y-8">
           {/* Filter Bar */}
-          <FilterBar 
-            activeFilter={urlFilter} 
-            onFilterChange={handleFilterChange}
-          />
+          <FilterBar activeFilter={urlFilter} onFilterChange={handleFilterChange} />
 
           {/* Case Grid */}
-          <CaseFileGrid 
-            caseStudies={caseStudies}
-            activeFilter={urlFilter}
-            onOpenCase={handleOpenCase}
-          />
+          <CaseFileGrid caseStudies={caseStudies} activeFilter={urlFilter} onOpenCase={handleOpenCase} />
         </div>
       </section>
 
@@ -144,7 +137,7 @@ export default function Evidence() {
         isOpen={showLeadCapture}
         onClose={() => setShowLeadCapture(false)}
         onSuccess={handleLeadSuccess}
-        sourceTool={'evidence-locker' satisfies SourceTool}
+        sourceTool={"evidence-locker" satisfies SourceTool}
         sessionData={{
           ...sessionData,
           lastCaseViewed: activeCase?.id,
@@ -158,10 +151,11 @@ export default function Evidence() {
         onSuccess={handleConsultationSuccess}
         sessionData={sessionData}
         leadId={sessionData.leadId}
+        sourceTool="evidence-locker"
       />
 
       {/* Sticky CTA (Mobile) */}
-      <StickyCTA 
+      <StickyCTA
         onConsultation={handleConsultation}
         isModalOpen={!!activeCase || showLeadCapture || showConsultation}
       />
