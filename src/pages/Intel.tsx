@@ -102,6 +102,8 @@ export default function Intel() {
           });
         }}
         sessionData={sessionData}
+        sourceTool="intel-library"
+        leadId={sessionData.leadId}
       />
 
       {/* Related Tools */}
