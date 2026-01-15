@@ -1,91 +1,94 @@
-import { useState, useCallback } from 'react';
-import { useSessionData } from '@/hooks/useSessionData';
-import { usePageTracking } from '@/hooks/usePageTracking';
-import { trackToolCompletion } from '@/lib/gtm';
-import { getQuestionByIndex, getTotalQuestions } from '@/data/riskDiagnosticData';
-import { calculateRiskScores, RiskAnswers } from '@/lib/riskCalculations';
-import { Navbar } from '@/components/home/Navbar';
-import { RiskHero } from '@/components/risk-diagnostic/RiskHero';
-import { RiskQuestion } from '@/components/risk-diagnostic/RiskQuestion';
-import { ProtectionReport } from '@/components/risk-diagnostic/ProtectionReport';
-import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
-import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
-import { MinimalFooter } from '@/components/navigation/MinimalFooter';
-import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
-import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
-import type { SourceTool } from '@/types/sourceTool';
+import { useState, useCallback } from "react";
+import { useSessionData } from "@/hooks/useSessionData";
+import { usePageTracking } from "@/hooks/usePageTracking";
+import { trackToolCompletion } from "@/lib/gtm";
+import { getQuestionByIndex, getTotalQuestions } from "@/data/riskDiagnosticData";
+import { calculateRiskScores, RiskAnswers } from "@/lib/riskCalculations";
+import { Navbar } from "@/components/home/Navbar";
+import { RiskHero } from "@/components/risk-diagnostic/RiskHero";
+import { RiskQuestion } from "@/components/risk-diagnostic/RiskQuestion";
+import { ProtectionReport } from "@/components/risk-diagnostic/ProtectionReport";
+import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
+import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
+import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
+import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
+import type { SourceTool } from "@/types/sourceTool";
 
-type Phase = 'hero' | 'questions' | 'results';
-type Direction = 'forward' | 'backward';
+type Phase = "hero" | "questions" | "results";
+type Direction = "forward" | "backward";
 
 export default function RiskDiagnostic() {
-  usePageTracking('risk-diagnostic');
+  usePageTracking("risk-diagnostic");
   const { sessionData, updateField, updateFields, markToolCompleted } = useSessionData();
-  const [phase, setPhase] = useState<Phase>('hero');
+  const [phase, setPhase] = useState<Phase>("hero");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<RiskAnswers>({});
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [direction, setDirection] = useState<Direction>('forward');
+  const [direction, setDirection] = useState<Direction>("forward");
 
   const totalQuestions = getTotalQuestions();
   const questionData = getQuestionByIndex(currentQuestionIndex);
   const breakdown = calculateRiskScores(answers);
 
   const handleStart = () => {
-    setPhase('questions');
+    setPhase("questions");
   };
 
-  const handleSelectAnswer = useCallback((value: string) => {
-    if (!questionData || isAnimating) return;
+  const handleSelectAnswer = useCallback(
+    (value: string) => {
+      if (!questionData || isAnimating) return;
 
-    const newAnswers = { ...answers, [questionData.question.id]: value };
-    setAnswers(newAnswers);
+      const newAnswers = { ...answers, [questionData.question.id]: value };
+      setAnswers(newAnswers);
 
-    // Start exit animation
-    setIsAnimating(true);
-    setDirection('forward');
+      // Start exit animation
+      setIsAnimating(true);
+      setDirection("forward");
 
-    // After animation, advance to next question or complete
-    setTimeout(() => {
-      if (currentQuestionIndex < totalQuestions - 1) {
-        setCurrentQuestionIndex(prev => prev + 1);
-      } else {
-        // Complete - calculate and save results
-        const finalBreakdown = calculateRiskScores(newAnswers);
-        updateFields({
-          riskDiagnosticCompleted: true,
-          stormRiskScore: Math.round(finalBreakdown.storm.protectionPercentage),
-          securityRiskScore: Math.round(finalBreakdown.security.protectionPercentage),
-          insuranceRiskScore: Math.round(finalBreakdown.insurance.protectionPercentage),
-          warrantyRiskScore: Math.round(finalBreakdown.warranty.protectionPercentage),
-          overallProtectionScore: finalBreakdown.protectionScore,
-        });
-        markToolCompleted('risk-diagnostic');
+      // After animation, advance to next question or complete
+      setTimeout(() => {
+        if (currentQuestionIndex < totalQuestions - 1) {
+          setCurrentQuestionIndex((prev) => prev + 1);
+        } else {
+          // Complete - calculate and save results
+          const finalBreakdown = calculateRiskScores(newAnswers);
+          updateFields({
+            riskDiagnosticCompleted: true,
+            stormRiskScore: Math.round(finalBreakdown.storm.protectionPercentage),
+            securityRiskScore: Math.round(finalBreakdown.security.protectionPercentage),
+            insuranceRiskScore: Math.round(finalBreakdown.insurance.protectionPercentage),
+            warrantyRiskScore: Math.round(finalBreakdown.warranty.protectionPercentage),
+            overallProtectionScore: finalBreakdown.protectionScore,
+          });
+          markToolCompleted("risk-diagnostic");
 
-        // Track tool completion
-        trackToolCompletion({ toolName: 'risk-diagnostic', score: finalBreakdown.protectionScore });
+          // Track tool completion
+          trackToolCompletion({ toolName: "risk-diagnostic", score: finalBreakdown.protectionScore });
 
-        setPhase('results');
-      }
-      setIsAnimating(false);
-    }, 250);
-  }, [answers, currentQuestionIndex, totalQuestions, questionData, updateFields, markToolCompleted, isAnimating]);
+          setPhase("results");
+        }
+        setIsAnimating(false);
+      }, 250);
+    },
+    [answers, currentQuestionIndex, totalQuestions, questionData, updateFields, markToolCompleted, isAnimating],
+  );
 
   const handleBack = () => {
     if (currentQuestionIndex > 0 && !isAnimating) {
       setIsAnimating(true);
-      setDirection('backward');
+      setDirection("backward");
       setTimeout(() => {
-        setCurrentQuestionIndex(prev => prev - 1);
+        setCurrentQuestionIndex((prev) => prev - 1);
         setIsAnimating(false);
       }, 250);
     }
   };
 
   const handleUpdateHomeSize = (size: number) => {
-    updateField('homeSize', size);
+    updateField("homeSize", size);
   };
 
   return (
@@ -93,37 +96,31 @@ export default function RiskDiagnostic() {
       <Navbar />
 
       <div className="pt-14">
-        {phase === 'hero' && (
-          <RiskHero
-          sessionData={sessionData}
-          onStart={handleStart}
-            hasStarted={false}
-          />
-        )}
+        {phase === "hero" && <RiskHero sessionData={sessionData} onStart={handleStart} hasStarted={false} />}
 
-        {phase === 'questions' && questionData && (
-        <RiskQuestion
-          key={currentQuestionIndex}
-          category={questionData.category}
-          question={questionData.question}
-          currentQuestionIndex={currentQuestionIndex}
-          totalQuestions={totalQuestions}
-          selectedValue={answers[questionData.question.id]}
-          onSelect={handleSelectAnswer}
-          onBack={handleBack}
-          canGoBack={currentQuestionIndex > 0}
-          isAnimating={isAnimating}
+        {phase === "questions" && questionData && (
+          <RiskQuestion
+            key={currentQuestionIndex}
+            category={questionData.category}
+            question={questionData.question}
+            currentQuestionIndex={currentQuestionIndex}
+            totalQuestions={totalQuestions}
+            selectedValue={answers[questionData.question.id]}
+            onSelect={handleSelectAnswer}
+            onBack={handleBack}
+            canGoBack={currentQuestionIndex > 0}
+            isAnimating={isAnimating}
             direction={direction}
           />
         )}
 
-        {phase === 'results' && (
+        {phase === "results" && (
           <ProtectionReport
-          breakdown={breakdown}
-          answers={answers}
-          sessionData={sessionData}
-          onEmailReport={() => setShowLeadModal(true)}
-          onScheduleConsultation={() => setShowBookingModal(true)}
+            breakdown={breakdown}
+            answers={answers}
+            sessionData={sessionData}
+            onEmailReport={() => setShowLeadModal(true)}
+            onScheduleConsultation={() => setShowBookingModal(true)}
             onUpdateHomeSize={handleUpdateHomeSize}
           />
         )}
@@ -133,7 +130,7 @@ export default function RiskDiagnostic() {
         isOpen={showLeadModal}
         onClose={() => setShowLeadModal(false)}
         onSuccess={() => setShowLeadModal(false)}
-        sourceTool={'risk-diagnostic' satisfies SourceTool}
+        sourceTool={"risk-diagnostic" satisfies SourceTool}
         sessionData={sessionData}
       />
 
@@ -142,13 +139,14 @@ export default function RiskDiagnostic() {
         onClose={() => setShowBookingModal(false)}
         onSuccess={() => setShowBookingModal(false)}
         sessionData={sessionData}
+        sourceTool="risk-diagnostic"
       />
 
       {/* Related Tools */}
       <RelatedToolsGrid
-        title={getFrameControl('risk-diagnostic').title}
-        description={getFrameControl('risk-diagnostic').description}
-        tools={getSmartRelatedTools('risk-diagnostic', sessionData.toolsCompleted)}
+        title={getFrameControl("risk-diagnostic").title}
+        description={getFrameControl("risk-diagnostic").description}
+        tools={getSmartRelatedTools("risk-diagnostic", sessionData.toolsCompleted)}
       />
 
       {/* Minimal Footer */}
