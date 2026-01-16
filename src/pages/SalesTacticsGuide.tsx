@@ -28,7 +28,7 @@ import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
 import { useNavigate } from 'react-router-dom';
-import { getGuidePageSchemas } from '@/lib/seoSchemas';
+import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 
 const SalesTacticsGuide = () => {
   usePageTracking('sales-tactics-guide');
@@ -72,7 +72,7 @@ const SalesTacticsGuide = () => {
         title="11 Sales Tactics Window Contractors Use"
         description="Learn to recognize the psychological manipulation tactics used in window sales presentations. This guide exposes the scripts contractors use so you can protect yourself."
         canonicalUrl="https://itswindowman.com/sales-tactics-guide"
-        jsonLd={getGuidePageSchemas('sales-tactics-guide')}
+        jsonLd={[...getGuidePageSchemas('sales-tactics-guide'), getBreadcrumbSchema('sales-tactics-guide')]}
       />
       <Navbar />
 

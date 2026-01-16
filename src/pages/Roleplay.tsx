@@ -14,7 +14,7 @@ import { ErrorBoundary } from '@/components/error';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
-import { getToolPageSchemas } from '@/lib/seoSchemas';
+import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 import type { Difficulty, GameResult, AnalysisResult } from '@/types/roleplay';
 
 const cn = (...classes: (string | undefined | null | false)[]) => {
@@ -159,7 +159,7 @@ export default function Roleplay() {
         title="Sales Pressure Roleplay Simulator"
         description="Practice handling high-pressure window sales tactics in a safe AI simulation. Build confidence to resist manipulation before the real appointment."
         canonicalUrl="https://itswindowman.com/roleplay"
-        jsonLd={getToolPageSchemas('roleplay-simulator')}
+        jsonLd={[...getToolPageSchemas('roleplay-simulator'), getBreadcrumbSchema('roleplay-simulator')]}
       />
       <div className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-transform duration-500",

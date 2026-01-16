@@ -15,7 +15,7 @@ import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { ROUTES } from '@/config/navigation';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
-import { getToolPageSchemas } from '@/lib/seoSchemas';
+import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 
 export default function Intel() {
   usePageTracking('intel-library');
@@ -61,7 +61,7 @@ export default function Intel() {
         title="Intel Library - Free Window Guides & Resources"
         description="Access our complete library of free guides, checklists, and resources to make smarter window replacement decisions. No sales pitch, just facts."
         canonicalUrl="https://itswindowman.com/intel"
-        jsonLd={getToolPageSchemas('intel-library')}
+        jsonLd={[...getToolPageSchemas('intel-library'), getBreadcrumbSchema('intel-library')]}
       />
       <Navbar />
 

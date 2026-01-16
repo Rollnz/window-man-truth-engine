@@ -3,7 +3,7 @@ import { ROUTES } from "@/config/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { SEO } from "@/components/SEO";
-import { getToolPageSchemas } from "@/lib/seoSchemas";
+import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { Navbar } from "@/components/home/Navbar";
@@ -224,7 +224,7 @@ const RealityCheck = () => {
           title="Reality Check Quiz"
           description="Answer 5 quick questions about your current windows to get your Reality Score and see if replacement is urgent, recommended, or optional."
           canonicalUrl="https://itswindowman.com/reality-check"
-          jsonLd={getToolPageSchemas('reality-check')}
+          jsonLd={[...getToolPageSchemas('reality-check'), getBreadcrumbSchema('reality-check')]}
         />
         <Navbar />
         
@@ -264,7 +264,7 @@ const RealityCheck = () => {
         title="Reality Check Quiz"
         description="Answer 5 quick questions about your current windows to get your Reality Score and see if replacement is urgent, recommended, or optional."
         canonicalUrl="https://itswindowman.com/reality-check"
-        jsonLd={getToolPageSchemas('reality-check')}
+        jsonLd={[...getToolPageSchemas('reality-check'), getBreadcrumbSchema('reality-check')]}
       />
       <Navbar />
 

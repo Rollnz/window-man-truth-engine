@@ -14,7 +14,7 @@ import { RelatedIntelligence } from "@/components/evidence/RelatedIntelligence";
 import { StickyCTA } from "@/components/evidence/StickyCTA";
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
-import { getToolPageSchemas } from "@/lib/seoSchemas";
+import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 import type { SourceTool } from "@/types/sourceTool";
 import { ROUTES } from "@/config/navigation";
 
@@ -107,7 +107,7 @@ export default function Evidence() {
         title="Evidence Locker - Real Homeowner Case Studies"
         description="Browse real case studies showing how homeowners saved thousands on window replacements. See actual savings, strategies used, and tools that worked."
         canonicalUrl="https://itswindowman.com/evidence"
-        jsonLd={getToolPageSchemas('evidence-locker')}
+        jsonLd={[...getToolPageSchemas('evidence-locker'), getBreadcrumbSchema('evidence-locker')]}
       />
       <Navbar />
 

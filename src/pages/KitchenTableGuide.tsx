@@ -26,7 +26,7 @@ import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
-import { getToolPageSchemas } from '@/lib/seoSchemas';
+import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 
 const KitchenTableGuide = () => {
   usePageTracking('kitchen-table-guide');
@@ -70,7 +70,7 @@ const KitchenTableGuide = () => {
         title="Kitchen Table Defense Guide"
         description="A 12-page guide teaching you how to handle in-home window sales presentations. Learn the scripts and strategies to slow down high-pressure tactics."
         canonicalUrl="https://itswindowman.com/kitchen-table-guide"
-        jsonLd={getToolPageSchemas('kitchen-table-guide')}
+        jsonLd={[...getToolPageSchemas('kitchen-table-guide'), getBreadcrumbSchema('kitchen-table-guide')]}
       />
       <Navbar />
 

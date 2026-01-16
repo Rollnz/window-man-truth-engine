@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { ROUTES } from "@/config/navigation";
-import { getGuidePageSchemas } from "@/lib/seoSchemas";
+import { getGuidePageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 
 const faqs = [
   {
@@ -30,7 +30,7 @@ const FAQ = () => {
         title="Frequently Asked Questions"
         description="Get quick answers about our free window replacement tools, quote analysis, and how to work with contractors. Each answer includes actionable next steps."
         canonicalUrl="https://itswindowman.com/faq"
-        jsonLd={getGuidePageSchemas('faq')}
+        jsonLd={[...getGuidePageSchemas('faq'), getBreadcrumbSchema('faq')]}
       />
       <Navbar />
 

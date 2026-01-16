@@ -8,7 +8,7 @@ import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
-import { getGuidePageSchemas } from '@/lib/seoSchemas';
+import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 
 // Section Components
 import SpecChecklistHero from '@/components/spec-checklist/SpecChecklistHero';
@@ -62,7 +62,7 @@ const SpecChecklistGuide = () => {
         title="Pre-Installation Window Audit Checklist"
         description="The complete specification checklist to verify your window installation meets all requirements. Includes NOA verification, installation specs, and warranty documentation."
         canonicalUrl="https://itswindowman.com/spec-checklist-guide"
-        jsonLd={getGuidePageSchemas('spec-checklist-guide')}
+        jsonLd={[...getGuidePageSchemas('spec-checklist-guide'), getBreadcrumbSchema('spec-checklist-guide')]}
       />
       <Navbar />
 

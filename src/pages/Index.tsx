@@ -7,6 +7,7 @@ import { SocialProof } from '@/components/home/SocialProof';
 import { Footer } from '@/components/home/Footer';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
+import { getBreadcrumbSchema } from '@/lib/seoSchemas';
 
 const Index = () => {
   usePageTracking('homepage');
@@ -78,7 +79,7 @@ const Index = () => {
         title="Free Window Replacement Cost Calculator & Quote Analyzer"
         description="Stop overpaying for windows. Use our free tools to calculate fair prices, analyze quotes, and negotiate with confidence. Trusted by 10,000+ homeowners."
         canonicalUrl="https://itswindowman.com/"
-        jsonLd={homepageSchema}
+        jsonLd={[...homepageSchema, getBreadcrumbSchema('home')]}
       />
       <Navbar />
       <div className="pt-14"> {/* Padding for fixed navbar */}
