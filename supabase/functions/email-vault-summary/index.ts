@@ -26,6 +26,8 @@ interface SessionData {
 interface EmailRequest {
   email: string;
   sessionData: SessionData;
+  // Golden Thread: Optional leadId for attribution tracking
+  leadId?: string;
 }
 
 function generateVaultSummaryEmail(data: SessionData): { subject: string; html: string } {
@@ -206,7 +208,12 @@ serve(async (req) => {
     console.log(`Authenticated user: ${userId}`);
     // ===== END AUTHENTICATION CHECK =====
 
-    const { email, sessionData }: EmailRequest = await req.json();
+    const { email, sessionData, leadId }: EmailRequest = await req.json();
+
+    // ===== GOLDEN THREAD ATTRIBUTION LOGGING =====
+    console.log('Attribution - Vault Email - Lead ID:', leadId || 'anonymous');
+    console.log('Attribution - Vault Email - User ID:', userId);
+    // ===== END ATTRIBUTION LOGGING =====
 
     // Use authenticated user's email if not provided, or validate email matches
     const targetEmail = email || userEmail;
@@ -232,13 +239,15 @@ serve(async (req) => {
       console.log('================================================');
       console.log(`To: ${targetEmail}`);
       console.log(`Subject: ${subject}`);
+      console.log(`Lead ID: ${leadId || 'anonymous'}`);
       console.log('================================================');
 
       return new Response(
         JSON.stringify({ 
           success: true, 
           simulated: true,
-          message: 'Email simulated (no API key configured)'
+          message: 'Email simulated (no API key configured)',
+          leadId: leadId || null,
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -265,10 +274,10 @@ serve(async (req) => {
     }
 
     const resendData = await resendResponse.json();
-    console.log('Vault summary email sent:', resendData);
+    console.log('Vault summary email sent:', { ...resendData, leadId: leadId || 'anonymous' });
 
     return new Response(
-      JSON.stringify({ success: true, emailId: resendData.id }),
+      JSON.stringify({ success: true, emailId: resendData.id, leadId: leadId || null }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
