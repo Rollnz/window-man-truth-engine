@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, ArrowLeft, ShieldAlert, FileText } from "lucide-react";
 import { AttributionSummaryCards } from "@/components/admin/AttributionSummaryCards";
-import { AttributionEventsTable } from "@/components/admin/AttributionEventsTable";
+import { AttributionEventsTable, EnrichedAttributionEvent } from "@/components/admin/AttributionEventsTable";
 import { AttributionEventFilter } from "@/components/admin/AttributionEventFilter";
 import { LeadJourneyPanel } from "@/components/admin/LeadJourneyPanel";
 import { SessionAnalysisPanel } from "@/components/admin/SessionAnalysisPanel";
@@ -14,16 +14,6 @@ import { ConversionFunnel } from "@/components/admin/ConversionFunnel";
 import { PaginationControls } from "@/components/admin/PaginationControls";
 import { DateRange } from "@/components/admin/DateRangePicker";
 import { generateAttributionPDF } from "@/lib/pdfExport";
-
-interface AttributionEvent {
-  id: string;
-  event_name: string;
-  event_category: string | null;
-  event_data: Record<string, unknown> | null;
-  page_path: string | null;
-  created_at: string;
-  session_id: string;
-}
 
 interface FunnelData {
   traffic: number;
@@ -34,7 +24,7 @@ interface FunnelData {
 
 interface AttributionData {
   summary: { totalLeads: number; totalEmails: number; totalAiInteractions: number };
-  events: AttributionEvent[];
+  events: EnrichedAttributionEvent[];
   eventTypes: string[];
   totalCount: number;
   hasMore: boolean;
@@ -52,11 +42,14 @@ export default function AttributionDashboard() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [data, setData] = useState<AttributionData | null>(null);
-  const [events, setEvents] = useState<AttributionEvent[]>([]);
+  const [events, setEvents] = useState<EnrichedAttributionEvent[]>([]);
   const [offset, setOffset] = useState(0);
   
   const [eventFilter, setEventFilter] = useState("all");
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange);
+  
+  // Session Story Filter - interactive filter by session
+  const [sessionStoryFilter, setSessionStoryFilter] = useState<string | null>(null);
   
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [isJourneyOpen, setIsJourneyOpen] = useState(false);
@@ -81,9 +74,15 @@ export default function AttributionDashboard() {
       if (!session) return;
       const currentOffset = loadMore ? offset : 0;
       const params = new URLSearchParams({ page_size: '50', offset: String(currentOffset) });
+      
       if (eventFilter !== 'all') params.set('event_name', eventFilter);
       if (dateRange.startDate) params.set('start_date', format(startOfDay(dateRange.startDate), "yyyy-MM-dd'T'HH:mm:ss"));
       if (dateRange.endDate) params.set('end_date', format(endOfDay(dateRange.endDate), "yyyy-MM-dd'T'HH:mm:ss"));
+      
+      // Add session story filter if active
+      if (sessionStoryFilter) {
+        params.set('session_id', sessionStoryFilter);
+      }
       
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-attribution?${params}`, {
         headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
@@ -98,13 +97,47 @@ export default function AttributionDashboard() {
     } finally {
       loadMore ? setIsLoadingMore(false) : setIsLoading(false);
     }
-  }, [eventFilter, dateRange, toast, offset, events]);
+  }, [eventFilter, dateRange, sessionStoryFilter, toast, offset, events]);
 
-  useEffect(() => { if (isAuthorized) { setOffset(0); fetchData(); } }, [isAuthorized, eventFilter, dateRange]);
+  // Refetch when filters change
+  useEffect(() => { 
+    if (isAuthorized) { 
+      setOffset(0); 
+      fetchData(); 
+    } 
+  }, [isAuthorized, eventFilter, dateRange, sessionStoryFilter]);
 
-  const handleClearFilters = useCallback(() => { setEventFilter('all'); setDateRange(getDefaultDateRange()); }, []);
-  const handleLeadClick = useCallback((leadId: string) => { setSelectedLeadId(leadId); setIsJourneyOpen(true); }, []);
-  const handleSessionClick = useCallback((sessionId: string) => { setSelectedSessionId(sessionId); setIsSessionOpen(true); }, []);
+  const handleClearFilters = useCallback(() => { 
+    setEventFilter('all'); 
+    setDateRange(getDefaultDateRange()); 
+    setSessionStoryFilter(null);
+  }, []);
+  
+  const handleLeadClick = useCallback((leadId: string) => { 
+    setSelectedLeadId(leadId); 
+    setIsJourneyOpen(true); 
+  }, []);
+  
+  // Session click now activates the session story filter
+  const handleSessionClick = useCallback((sessionId: string) => { 
+    // If clicking the same session, open the panel instead
+    if (sessionStoryFilter === sessionId) {
+      setSelectedSessionId(sessionId);
+      setIsSessionOpen(true);
+    } else {
+      // Apply session filter to show all events for this session
+      setSessionStoryFilter(sessionId);
+      toast({ 
+        title: 'Session Story Filter Applied', 
+        description: `Showing all events for session ${sessionId.slice(0, 8)}...` 
+      });
+    }
+  }, [sessionStoryFilter, toast]);
+  
+  const handleClearSessionFilter = useCallback(() => {
+    setSessionStoryFilter(null);
+  }, []);
+  
   const handleExportPDF = useCallback(() => {
     if (!data) return;
     generateAttributionPDF({ summary: data.summary, funnel: data.funnel, events, dateRange });
@@ -135,29 +168,73 @@ export default function AttributionDashboard() {
       <div className="w-full py-8 px-4 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Attribution Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Golden Thread analytics • {dateRangeLabel}</p>
+            <h1 className="text-3xl font-bold">Attribution Command Center</h1>
+            <p className="text-muted-foreground mt-1">
+              Golden Thread analytics • {dateRangeLabel}
+              {sessionStoryFilter && <span className="text-primary ml-2">• Session filter active</span>}
+            </p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={() => navigate('/admin/analytics')}><ArrowLeft className="h-4 w-4 mr-2" />Analytics</Button>
+            <Button variant="outline" onClick={() => navigate('/admin/crm')}><ArrowLeft className="h-4 w-4 mr-2" />CRM</Button>
             <Button variant="outline" onClick={handleExportPDF} disabled={isLoading || !data}><FileText className="h-4 w-4 mr-2" />Export PDF</Button>
             <Button onClick={() => fetchData()} disabled={isLoading}><RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />Refresh</Button>
           </div>
         </div>
 
-        <div className="mb-8"><AttributionSummaryCards totalLeads={data?.summary.totalLeads || 0} totalEmails={data?.summary.totalEmails || 0} totalAiInteractions={data?.summary.totalAiInteractions || 0} isLoading={isLoading} /></div>
+        <div className="mb-8">
+          <AttributionSummaryCards 
+            totalLeads={data?.summary.totalLeads || 0} 
+            totalEmails={data?.summary.totalEmails || 0} 
+            totalAiInteractions={data?.summary.totalAiInteractions || 0} 
+            isLoading={isLoading} 
+          />
+        </div>
         
-        <ConversionFunnel data={data?.funnel || { traffic: 0, engagement: 0, leadGen: 0, conversion: 0 }} isLoading={isLoading} />
+        <ConversionFunnel 
+          data={data?.funnel || { traffic: 0, engagement: 0, leadGen: 0, conversion: 0 }} 
+          isLoading={isLoading} 
+        />
 
-        <div className="mb-6"><AttributionEventFilter eventFilter={eventFilter} onEventFilterChange={setEventFilter} dateRange={dateRange} onDateRangeChange={setDateRange} onClearFilters={handleClearFilters} options={data?.eventTypes || []} disabled={isLoading} /></div>
+        <div className="mb-6">
+          <AttributionEventFilter 
+            eventFilter={eventFilter} 
+            onEventFilterChange={setEventFilter} 
+            dateRange={dateRange} 
+            onDateRangeChange={setDateRange} 
+            onClearFilters={handleClearFilters} 
+            options={data?.eventTypes || []} 
+            disabled={isLoading} 
+          />
+        </div>
 
-        <AttributionEventsTable events={events} isLoading={isLoading} onLeadClick={handleLeadClick} onSessionClick={handleSessionClick} />
+        <AttributionEventsTable 
+          events={events} 
+          isLoading={isLoading} 
+          onLeadClick={handleLeadClick} 
+          onSessionClick={handleSessionClick}
+          sessionFilter={sessionStoryFilter}
+          onClearSessionFilter={handleClearSessionFilter}
+        />
         
-        <PaginationControls currentCount={events.length} totalCount={data?.totalCount || 0} hasMore={data?.hasMore || false} isLoading={isLoadingMore} onLoadMore={() => fetchData(true)} />
+        <PaginationControls 
+          currentCount={events.length} 
+          totalCount={data?.totalCount || 0} 
+          hasMore={data?.hasMore || false} 
+          isLoading={isLoadingMore} 
+          onLoadMore={() => fetchData(true)} 
+        />
       </div>
 
-      <LeadJourneyPanel leadId={selectedLeadId} isOpen={isJourneyOpen} onClose={() => { setIsJourneyOpen(false); setSelectedLeadId(null); }} />
-      <SessionAnalysisPanel sessionId={selectedSessionId} isOpen={isSessionOpen} onClose={() => { setIsSessionOpen(false); setSelectedSessionId(null); }} />
+      <LeadJourneyPanel 
+        leadId={selectedLeadId} 
+        isOpen={isJourneyOpen} 
+        onClose={() => { setIsJourneyOpen(false); setSelectedLeadId(null); }} 
+      />
+      <SessionAnalysisPanel 
+        sessionId={selectedSessionId} 
+        isOpen={isSessionOpen} 
+        onClose={() => { setIsSessionOpen(false); setSelectedSessionId(null); }} 
+      />
     </div>
   );
 }
