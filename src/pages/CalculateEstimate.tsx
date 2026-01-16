@@ -13,6 +13,8 @@ import { Navbar } from "@/components/home/Navbar";
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { formatCurrency } from "@/utils/quoteCalculatorConstants";
+import { ToolFAQSection, PillarBreadcrumb } from "@/components/seo";
+import { getToolFAQs } from "@/data/toolFAQs";
 
 // Components
 import { QuoteBuilderHero } from "@/components/quote-builder/QuoteBuilderHero";
@@ -184,6 +186,15 @@ export default function CalculateEstimate() {
       <WhyAccurateEstimates />
       <HowItWorks />
       <WhoIsThisFor />
+
+      {/* FAQ Section */}
+      <ToolFAQSection
+        toolPath="/free-estimate"
+        faqs={getToolFAQs('free-estimate')}
+        title="Estimate Calculator FAQs"
+        description="Understanding your window replacement costs"
+      />
+
       <RelatedToolsSection />
       <MinimalFooter />
     </div>

@@ -19,6 +19,8 @@ import { ConsultationBookingModal } from "@/components/conversion/ConsultationBo
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
+import { ToolFAQSection } from "@/components/seo";
+import { getToolFAQs } from "@/data/toolFAQs";
 import type { SourceTool } from "@/types/sourceTool";
 
 export default function Comparison() {
@@ -109,6 +111,14 @@ export default function Comparison() {
         onSuccess={() => setShowConsultationModal(false)}
         sessionData={sessionData}
         sourceTool="comparison-tool"
+      />
+
+      {/* FAQ Section */}
+      <ToolFAQSection
+        toolPath="/comparison"
+        faqs={getToolFAQs('comparison')}
+        title="Window Comparison FAQs"
+        description="Understanding tier pricing and true cost calculations"
       />
 
       {/* Related Tools */}

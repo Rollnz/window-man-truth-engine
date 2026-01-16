@@ -16,6 +16,8 @@ import { ConsultationBookingModal } from "@/components/conversion/ConsultationBo
 import { trackLeadCapture, trackConsultation, trackToolCompletion } from "@/lib/gtm";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
+import { ToolFAQSection, PillarBreadcrumb } from "@/components/seo";
+import { getToolFAQs } from "@/data/toolFAQs";
 import type { SourceTool } from "@/types/sourceTool";
 const QUESTIONS = [
   {
@@ -306,6 +308,14 @@ const RealityCheck = () => {
           </Button>
         </div>
       </main>
+
+      {/* FAQ Section */}
+      <ToolFAQSection
+        toolPath="/reality-check"
+        faqs={getToolFAQs('reality-check')}
+        title="Reality Check FAQs"
+        description="Common questions about your window assessment"
+      />
 
       {/* Related Tools */}
       <RelatedToolsGrid

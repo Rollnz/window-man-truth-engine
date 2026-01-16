@@ -21,10 +21,10 @@ export function QuoteScannerHero() {
             </div>
           </div>
           
-          {/* Headline */}
+          {/* Headline - 2025 SEO Optimized */}
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            Unmask the Truth{' '}
-            <span className="text-primary">Hiding in Your Quote</span>
+            Is Your Window Quote Fair?{' '}
+            <span className="text-primary">AI Analysis in 60 Seconds</span>
           </h1>
           
           {/* Subtext */}

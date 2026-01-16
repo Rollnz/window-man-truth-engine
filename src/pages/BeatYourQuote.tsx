@@ -18,6 +18,8 @@ import { QuoteCheckerSection } from '@/components/beat-your-quote/QuoteCheckerSe
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
+import { ToolFAQSection, PillarBreadcrumb } from '@/components/seo';
+import { getToolFAQs } from '@/data/toolFAQs';
 import { useToast } from '@/hooks/use-toast';
 
 export default function BeatYourQuote() {
@@ -130,6 +132,11 @@ export default function BeatYourQuote() {
       />
       <Navbar />
       <main>
+        {/* Pillar Breadcrumb */}
+        <div className="container px-4 pt-20 mb-2">
+          <PillarBreadcrumb toolPath="/beat-your-quote" variant="badge" />
+        </div>
+
         <DossierHero onUploadSuccess={handleUploadSuccess} />
         <ConceptSection />
         <ManipulationTactics />
@@ -143,7 +150,16 @@ export default function BeatYourQuote() {
         
         {/* Mission Outcomes - Testimonials */}
         <MissionOutcomes />
-        {/* Interrogation FAQ */}
+
+        {/* PRD-Compliant FAQ Section */}
+        <ToolFAQSection
+          toolPath="/beat-your-quote"
+          faqs={getToolFAQs('beat-your-quote')}
+          title="Beat Your Quote FAQs"
+          description="How we help you negotiate better pricing"
+        />
+
+        {/* Legacy Interrogation FAQ */}
         <InterrogationFAQ />
         {/* Your Arsenal */}
         <ToolsSection />
