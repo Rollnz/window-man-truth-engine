@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// ADMIN ATTRIBUTION DATA EDGE FUNCTION
-// Secure endpoint for fetching wm_events data (requires admin role)
+// ADMIN ATTRIBUTION DATA EDGE FUNCTION (Command Center v2)
+// Secure endpoint for fetching wm_events data with lead enrichment
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -108,14 +108,103 @@ serve(async (req) => {
     if (startDate) eventsQuery = eventsQuery.gte('created_at', startDate);
     if (endDate) eventsQuery = eventsQuery.lte('created_at', endDate);
 
-    const { data: events, count: totalCount } = await eventsQuery;
+    const { data: events, count: totalCount, error: eventsError } = await eventsQuery;
+
+    if (eventsError) {
+      console.error('Events query error:', eventsError);
+      throw new Error('Failed to fetch events');
+    }
+
+    // Get unique session IDs to fetch related wm_leads data
+    const sessionIds = [...new Set((events || []).map(e => e.session_id))];
+    
+    // Fetch wm_leads data for these sessions (LEFT JOIN equivalent)
+    let leadsMap: Record<string, {
+      first_name: string | null;
+      last_name: string | null;
+      email: string;
+      phone: string | null;
+      engagement_score: number | null;
+      lead_quality: string | null;
+    }> = {};
+
+    if (sessionIds.length > 0) {
+      const { data: leadsData } = await supabaseAdmin
+        .from('wm_leads')
+        .select('original_session_id, first_name, last_name, email, phone, engagement_score, lead_quality')
+        .in('original_session_id', sessionIds);
+      
+      if (leadsData) {
+        for (const lead of leadsData) {
+          if (lead.original_session_id) {
+            leadsMap[lead.original_session_id] = {
+              first_name: lead.first_name,
+              last_name: lead.last_name,
+              email: lead.email,
+              phone: lead.phone,
+              engagement_score: lead.engagement_score,
+              lead_quality: lead.lead_quality,
+            };
+          }
+        }
+      }
+    }
+
+    // Fetch wm_sessions for UTM data
+    let sessionsMap: Record<string, {
+      utm_source: string | null;
+      utm_medium: string | null;
+      utm_campaign: string | null;
+    }> = {};
+
+    if (sessionIds.length > 0) {
+      const { data: sessionsData } = await supabaseAdmin
+        .from('wm_sessions')
+        .select('id, utm_source, utm_medium, utm_campaign')
+        .in('id', sessionIds);
+      
+      if (sessionsData) {
+        for (const session of sessionsData) {
+          sessionsMap[session.id] = {
+            utm_source: session.utm_source,
+            utm_medium: session.utm_medium,
+            utm_campaign: session.utm_campaign,
+          };
+        }
+      }
+    }
+
+    // Enrich events with lead and session data
+    const enrichedEvents = (events || []).map(event => {
+      const leadInfo = leadsMap[event.session_id] || null;
+      const sessionInfo = sessionsMap[event.session_id] || null;
+      
+      return {
+        ...event,
+        // Lead info (from wm_leads)
+        lead_first_name: leadInfo?.first_name || null,
+        lead_last_name: leadInfo?.last_name || null,
+        lead_email: leadInfo?.email || null,
+        lead_phone: leadInfo?.phone || null,
+        engagement_score: leadInfo?.engagement_score || null,
+        lead_quality: leadInfo?.lead_quality || null,
+        // Session UTM info (from wm_sessions)
+        utm_source: sessionInfo?.utm_source || null,
+        utm_medium: sessionInfo?.utm_medium || null,
+        utm_campaign: sessionInfo?.utm_campaign || null,
+      };
+    });
 
     const { data: eventTypes } = await supabaseAdmin.from('wm_events').select('event_name').order('event_name');
     const uniqueEventTypes = [...new Set(eventTypes?.map(e => e.event_name) || [])];
 
     return new Response(JSON.stringify({
-      summary, events: events || [], eventTypes: uniqueEventTypes,
-      totalCount: totalCount || 0, hasMore: (offset + pageSize) < (totalCount || 0), funnel,
+      summary, 
+      events: enrichedEvents, 
+      eventTypes: uniqueEventTypes,
+      totalCount: totalCount || 0, 
+      hasMore: (offset + pageSize) < (totalCount || 0), 
+      funnel,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error) {
