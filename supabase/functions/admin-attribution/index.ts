@@ -11,7 +11,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Admin email whitelist - all lowercase for case-insensitive comparison
 const ADMIN_EMAILS = [
   'admin@windowman.com',
   'support@windowman.com',
@@ -20,19 +19,15 @@ const ADMIN_EMAILS = [
 ].map(e => e.toLowerCase());
 
 serve(async (req) => {
-  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // ===== AUTHENTICATION & AUTHORIZATION =====
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Authentication required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Authentication required' }), 
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -47,129 +42,85 @@ serve(async (req) => {
     const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
     
     if (claimsError || !claimsData?.claims) {
-      console.error('Auth error:', claimsError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), 
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const userEmail = claimsData.claims.email as string;
-    
-    // Check admin whitelist
     if (!ADMIN_EMAILS.includes(userEmail?.toLowerCase())) {
-      console.warn(`Unauthorized admin access attempt: ${userEmail}`);
-      return new Response(
-        JSON.stringify({ error: 'Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Admin access required' }), 
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    console.log(`Admin access granted: ${userEmail}`);
-    // ===== END AUTHORIZATION =====
-
-    // Use service role to bypass RLS
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Parse query params
     const url = new URL(req.url);
-    const eventFilter = url.searchParams.get('event_name') || null;
-    const leadIdFilter = url.searchParams.get('lead_id') || null;
-    const startDate = url.searchParams.get('start_date') || null;
-    const endDate = url.searchParams.get('end_date') || null;
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200);
+    const eventFilter = url.searchParams.get('event_name');
+    const leadIdFilter = url.searchParams.get('lead_id');
+    const sessionIdFilter = url.searchParams.get('session_id');
+    const startDate = url.searchParams.get('start_date');
+    const endDate = url.searchParams.get('end_date');
+    const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0'));
+    const pageSize = Math.min(Math.max(1, parseInt(url.searchParams.get('page_size') || '50')), 100);
 
-    // Fetch summary stats (only when not filtering by lead_id)
-    let summary = { totalLeads: 0, totalEmails: 0, totalAiInteractions: 0 };
-    
-    if (!leadIdFilter) {
-      const { data: summaryData, error: summaryError } = await supabaseAdmin
-        .rpc('get_attribution_summary');
-
-      // If RPC doesn't exist, calculate manually
-      if (summaryError) {
-        console.log('RPC not available, calculating summary manually');
-        
-        // Count leads
-        const { count: leadsCount } = await supabaseAdmin
-          .from('leads')
-          .select('*', { count: 'exact', head: true });
-        
-        // Count events by category
-        const { data: eventCounts } = await supabaseAdmin
-          .from('wm_events')
-          .select('event_name');
-        
-        const emailCount = eventCounts?.filter(e => e.event_name === 'vault_email_sent').length || 0;
-        const aiCount = eventCounts?.filter(e => 
-          ['expert_chat_session', 'roleplay_chat_turn', 'roleplay_game_completed', 
-           'quote_scanned', 'quote_generated', 'evidence_analyzed'].includes(e.event_name)
-        ).length || 0;
-        
-        summary = {
-          totalLeads: leadsCount || 0,
-          totalEmails: emailCount,
-          totalAiInteractions: aiCount,
-        };
-      } else {
-        summary = summaryData;
+    // Funnel calculation
+    let funnel = { traffic: 0, engagement: 0, leadGen: 0, conversion: 0 };
+    if (!leadIdFilter && !sessionIdFilter) {
+      let baseQuery = supabaseAdmin.from('wm_events').select('session_id, event_name, event_category');
+      if (startDate) baseQuery = baseQuery.gte('created_at', startDate);
+      if (endDate) baseQuery = baseQuery.lte('created_at', endDate);
+      const { data: allEvents } = await baseQuery;
+      
+      if (allEvents) {
+        const sessions = new Set(allEvents.map(e => e.session_id));
+        const engaged = new Set(allEvents.filter(e => e.event_category === 'tool' || e.event_category === 'vault').map(e => e.session_id));
+        const leads = new Set(allEvents.filter(e => e.event_name === 'lead_captured').map(e => e.session_id));
+        const conversions = new Set(allEvents.filter(e => e.event_name === 'consultation_booked').map(e => e.session_id));
+        funnel = { traffic: sessions.size, engagement: engaged.size, leadGen: leads.size, conversion: conversions.size };
       }
     }
 
-    // Fetch recent events with optional filters
-    let eventsQuery = supabaseAdmin
-      .from('wm_events')
-      .select('id, event_name, event_category, event_data, page_path, created_at, session_id')
+    // Summary stats
+    let summary = { totalLeads: 0, totalEmails: 0, totalAiInteractions: 0 };
+    if (!leadIdFilter && !sessionIdFilter) {
+      const { count: leadsCount } = await supabaseAdmin.from('leads').select('*', { count: 'exact', head: true });
+      let eventsQuery = supabaseAdmin.from('wm_events').select('event_name');
+      if (startDate) eventsQuery = eventsQuery.gte('created_at', startDate);
+      if (endDate) eventsQuery = eventsQuery.lte('created_at', endDate);
+      const { data: eventCounts } = await eventsQuery;
+      
+      summary = {
+        totalLeads: leadsCount || 0,
+        totalEmails: eventCounts?.filter(e => e.event_name === 'vault_email_sent').length || 0,
+        totalAiInteractions: eventCounts?.filter(e => ['expert_chat_session', 'roleplay_chat_turn', 'quote_scanned', 'quote_generated', 'evidence_analyzed'].includes(e.event_name)).length || 0,
+      };
+    }
+
+    // Paginated events query
+    let eventsQuery = supabaseAdmin.from('wm_events')
+      .select('id, event_name, event_category, event_data, page_path, created_at, session_id', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .range(offset, offset + pageSize - 1);
 
-    // Apply event name filter
-    if (eventFilter) {
-      eventsQuery = eventsQuery.eq('event_name', eventFilter);
-    }
+    if (eventFilter) eventsQuery = eventsQuery.eq('event_name', eventFilter);
+    if (leadIdFilter) eventsQuery = eventsQuery.eq('event_data->>lead_id', leadIdFilter);
+    if (sessionIdFilter) eventsQuery = eventsQuery.eq('session_id', sessionIdFilter);
+    if (startDate) eventsQuery = eventsQuery.gte('created_at', startDate);
+    if (endDate) eventsQuery = eventsQuery.lte('created_at', endDate);
 
-    // Apply lead_id filter (filter by event_data->lead_id)
-    if (leadIdFilter) {
-      eventsQuery = eventsQuery.eq('event_data->>lead_id', leadIdFilter);
-    }
+    const { data: events, count: totalCount } = await eventsQuery;
 
-    // Apply date range filters
-    if (startDate) {
-      eventsQuery = eventsQuery.gte('created_at', startDate);
-    }
-    if (endDate) {
-      eventsQuery = eventsQuery.lte('created_at', endDate);
-    }
-
-    const { data: events, error: eventsError } = await eventsQuery;
-
-    if (eventsError) {
-      console.error('Events fetch error:', eventsError);
-      throw new Error('Failed to fetch events');
-    }
-
-    // Get distinct event names for filter dropdown
-    const { data: eventTypes } = await supabaseAdmin
-      .from('wm_events')
-      .select('event_name')
-      .order('event_name');
-
+    const { data: eventTypes } = await supabaseAdmin.from('wm_events').select('event_name').order('event_name');
     const uniqueEventTypes = [...new Set(eventTypes?.map(e => e.event_name) || [])];
 
-    return new Response(
-      JSON.stringify({
-        summary,
-        events: events || [],
-        eventTypes: uniqueEventTypes,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({
+      summary, events: events || [], eventTypes: uniqueEventTypes,
+      totalCount: totalCount || 0, hasMore: (offset + pageSize) < (totalCount || 0), funnel,
+    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error) {
     console.error('admin-attribution error:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
