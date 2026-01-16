@@ -50,6 +50,12 @@ const BeatYourQuote = lazy(() => import("./pages/BeatYourQuote"));
 const FairPriceQuiz = lazy(() => import("./pages/FairPriceQuiz"));
 const ButtonAudit = lazy(() => import("./pages/ButtonAudit"));
 
+// Semantic Pillar Pages
+const WindowCostTruth = lazy(() => import("./pages/WindowCostTruth"));
+const WindowRiskAndCode = lazy(() => import("./pages/WindowRiskAndCode"));
+const WindowSalesTruth = lazy(() => import("./pages/WindowSalesTruth"));
+const WindowVerificationSystem = lazy(() => import("./pages/WindowVerificationSystem"));
+
 // Lazy load AuthGuard
 const AuthGuard = lazy(() => import("./components/auth/AuthGuard").then(m => ({ default: m.AuthGuard })));
 
@@ -101,6 +107,11 @@ function AppContent() {
         <Route path="/beat-your-quote" element={<BeatYourQuote />} />
         <Route path="/fair-price-quiz" element={<FairPriceQuiz />} />
         <Route path="/button-audit" element={<ButtonAudit />} />
+        {/* Semantic Pillar Pages */}
+        <Route path="/window-cost-truth" element={<WindowCostTruth />} />
+        <Route path="/window-risk-and-code" element={<WindowRiskAndCode />} />
+        <Route path="/window-sales-truth" element={<WindowSalesTruth />} />
+        <Route path="/window-verification-system" element={<WindowVerificationSystem />} />
         <Route path="/admin" element={<AdminHome />} />
         <Route path="/admin/analytics" element={<Analytics />} />
         <Route path="/admin/attribution" element={<AttributionDashboard />} />
