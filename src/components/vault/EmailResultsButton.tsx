@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Mail, Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { trackEvent } from '@/lib/gtm';
 import { SessionData } from '@/hooks/useSessionData';
 
 interface EmailResultsButtonProps {
@@ -14,6 +16,9 @@ export function EmailResultsButton({ sessionData, userEmail }: EmailResultsButto
   const [isSending, setIsSending] = useState(false);
   const [sent, setSent] = useState(false);
   const { toast } = useToast();
+
+  // Golden Thread: Get leadId for attribution
+  const { leadId } = useLeadIdentity();
 
   const handleEmailResults = async () => {
     if (!userEmail) {
@@ -32,12 +37,21 @@ export function EmailResultsButton({ sessionData, userEmail }: EmailResultsButto
         body: {
           email: userEmail,
           sessionData,
+          // Golden Thread: Include leadId for attribution tracking
+          leadId: leadId || undefined,
         },
       });
 
       if (error) throw error;
 
       setSent(true);
+
+      // Golden Thread: Track event with lead_id
+      trackEvent('vault_email_sent', {
+        lead_id: leadId,
+        has_session_data: !!sessionData,
+      });
+
       toast({
         title: "Results sent!",
         description: `Your vault summary has been sent to ${userEmail}`,
