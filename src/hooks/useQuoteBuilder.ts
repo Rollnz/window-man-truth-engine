@@ -6,8 +6,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ROUTES } from "@/config/navigation";
 import { getAttributionData } from "@/lib/attribution";
+import { trackLeadCapture } from "@/lib/gtm";
 import { RateLimitError } from "@/lib/errors";
 import { callGemini } from "@/utils/geminiHelper";
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
+import { useSessionData } from "@/hooks/useSessionData";
 import { 
   CONFIG, STYLE_OPTIONS, SIZE_OPTIONS, PRODUCT_TYPE_CONFIG, 
   formatCurrency, DEFAULT_PRICES 
@@ -19,6 +22,10 @@ import type {
 import type { SourceTool } from "@/types/sourceTool";
 
 export function useQuoteBuilder(): UseQuoteBuilderReturn {
+  // Golden Thread: Get and persist leadId
+  const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
+  const { updateField } = useSessionData();
+
   const [state, setState] = useState<QuoteBuilderState>({
     productType: "window",
     zipCode: "",
@@ -237,6 +244,8 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
             chatHistory: [],
             attribution: getAttributionData(),
             aiContext: { source_form: 'quote-builder', window_count: cart.length },
+            // Golden Thread: Pass existing leadId for identity persistence
+            leadId: hookLeadId || undefined,
           }),
         }
       );
@@ -246,6 +255,17 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
       }
       const result = await response.json();
       if (result.success && result.leadId) {
+        // Golden Thread: Persist leadId for future interactions
+        setLeadId(result.leadId);
+        updateField('leadId', result.leadId);
+
+        // Track successful lead capture with leadId
+        trackLeadCapture({
+          sourceTool: 'quote-builder',
+          email: data.email.trim(),
+          leadId: result.leadId,
+        });
+
         setShowModal(false);
         setState(prev => ({ ...prev, isUnlocked: true, isLeadSubmitted: true }));
         toast.success("Quote Unlocked! Check your email for a copy.");
