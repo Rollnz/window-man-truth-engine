@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { ROUTES } from "@/config/navigation";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SEO } from "@/components/SEO";
+import { getToolPageSchemas } from "@/lib/seoSchemas";
 import { useToast } from "@/hooks/use-toast";
 import { useSessionData } from "@/hooks/useSessionData";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
@@ -167,6 +169,12 @@ export default function Expert() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
+      <SEO
+        title="Window Questions Expert"
+        description="Ask any window replacement question and get instant, unbiased AI-powered answers. No sales pitch—just expert facts about pricing, materials, and more."
+        canonicalUrl="https://itswindowman.com/expert"
+        jsonLd={getToolPageSchemas('expert-system')}
+      />
       <Navbar />
 
       {/* Section 1: Chat Interface (Hero) */}
