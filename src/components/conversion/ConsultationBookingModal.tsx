@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
-import { SessionData } from "@/hooks/useSessionData";
+import { SessionData, useSessionData } from "@/hooks/useSessionData";
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { Calendar, Check, Loader2 } from "lucide-react";
 import { trackEvent, trackModalOpen } from "@/lib/gtm";
 import { getAttributionData, buildAIContextFromSession } from "@/lib/attribution";
@@ -42,6 +43,11 @@ export function ConsultationBookingModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [modalOpenTime, setModalOpenTime] = useState<number>(0);
+
+  // Golden Thread: Use hook as fallback if leadId prop not provided
+  const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
+  const { updateFields } = useSessionData();
+  const effectiveLeadId = leadId || hookLeadId;
 
   const { values, errors, setValue, setValues, hasError, getError, getFieldProps, validateAll, clearErrors } =
     useFormValidation({
@@ -97,7 +103,7 @@ export function ConsultationBookingModal({
           email: values.email.trim(),
           name: values.name.trim(),
           phone: values.phone.trim(),
-          sourceTool, // ✅ Now uses the dynamic prop instead of hardcoded 'expert-system'
+          sourceTool,
           sessionData,
           consultation: {
             name: values.name.trim(),
@@ -107,7 +113,9 @@ export function ConsultationBookingModal({
             notes: notes.trim() || undefined,
           },
           attribution: getAttributionData(),
-          aiContext: buildAIContextFromSession(sessionData, sourceTool), // ✅ Updated here as well
+          aiContext: buildAIContextFromSession(sessionData, sourceTool),
+          // Golden Thread: Pass existing leadId for identity persistence
+          leadId: effectiveLeadId || undefined,
         }),
       });
 
@@ -121,11 +129,20 @@ export function ConsultationBookingModal({
       if (data.success) {
         setIsSuccess(true);
 
+        // Golden Thread: Persist leadId for future interactions
+        if (data.leadId) {
+          setLeadId(data.leadId);
+          updateFields({ 
+            leadId: data.leadId,
+            consultationRequested: true 
+          });
+        }
+
         // Track successful consultation booking
         trackEvent("consultation_booked", {
           preferred_time: values.preferredTime,
           lead_id: data.leadId,
-          source_tool: sourceTool, // ✅ Added to the tracking event for better GTM reporting
+          source_tool: sourceTool,
         });
 
         toast({
