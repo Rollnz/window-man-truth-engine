@@ -15,11 +15,19 @@ const Index = () => {
     {
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": "Window Man Truth Engine",
+      "name": "Window Man Your Hurricane Hero",
       "url": "https://itswindowman.com/",
       "logo": "https://itswindowman.com/icon-512.webp",
       "description": "Free tools to help homeowners get fair window replacement quotes and avoid overpaying.",
-      "sameAs": []
+      "sameAs": [
+        "https://www.facebook.com/its.windowman",
+        "https://twitter.com/itswindowman"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+1-561-468-5571",
+        "contactType": "customer service"
+      }
     },
     {
       "@context": "https://schema.org",
