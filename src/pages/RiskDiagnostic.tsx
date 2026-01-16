@@ -4,6 +4,7 @@ import { usePageTracking } from "@/hooks/usePageTracking";
 import { trackToolCompletion } from "@/lib/gtm";
 import { getQuestionByIndex, getTotalQuestions } from "@/data/riskDiagnosticData";
 import { calculateRiskScores, RiskAnswers } from "@/lib/riskCalculations";
+import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 import { RiskHero } from "@/components/risk-diagnostic/RiskHero";
 import { RiskQuestion } from "@/components/risk-diagnostic/RiskQuestion";
@@ -14,6 +15,53 @@ import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
 import type { SourceTool } from "@/types/sourceTool";
+
+const riskDiagnosticSchema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Home Protection Risk Diagnostic",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "Free diagnostic tool to assess your home's protection level against storms, security threats, and insurance gaps. Get personalized recommendations.",
+    "url": "https://itswindowman.com/risk-diagnostic"
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What does the risk diagnostic measure?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The diagnostic evaluates four key areas: storm protection, home security, insurance coverage, and warranty status. You'll receive a protection score and personalized action plan."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How long does the diagnostic take?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The diagnostic takes about 2-3 minutes to complete. Answer simple questions about your home and receive instant results with actionable recommendations."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is my information kept private?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, your diagnostic results are private. We only collect the information you choose to share when requesting a consultation or saving your report."
+        }
+      }
+    ]
+  }
+];
 
 type Phase = "hero" | "questions" | "results";
 type Direction = "forward" | "backward";
@@ -93,6 +141,12 @@ export default function RiskDiagnostic() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="Home Protection Risk Diagnostic"
+        description="Free diagnostic tool to assess your home's protection against storms, security threats, and insurance gaps. Get your personalized protection score in minutes."
+        canonicalUrl="https://itswindowman.com/risk-diagnostic"
+        jsonLd={riskDiagnosticSchema}
+      />
       <Navbar />
 
       <div className="pt-14">
