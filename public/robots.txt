@@ -1,10 +1,23 @@
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
 User-agent: *
 Allow: /
 
-# Disallow sensitive or internal pages
+# Disallow admin and auth pages
 Disallow: /admin
 Disallow: /auth
 Disallow: /vault
+Disallow: /button-audit
 
 # Sitemap location
-Sitemap: https://itswindowman.com/sitemap.xml
+Sitemap: https://window-man-truth-engine.lovable.app/sitemap.xml
