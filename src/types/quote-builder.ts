@@ -4,7 +4,7 @@
 
 export interface CartItem {
   id: number;
-  productType: 'window' | 'slider' | 'french';
+  productType: "window" | "slider" | "french";
   name: string;
   desc: string;
   details: string;
@@ -20,7 +20,7 @@ export interface LeadFormData {
 }
 
 export interface QuoteBuilderState {
-  productType: 'window' | 'slider' | 'french';
+  productType: "window" | "slider" | "french";
   zipCode: string;
   wallType: number;
   basePrice: number;
@@ -83,7 +83,7 @@ export interface ProductTypeConfig {
   label: string;
 }
 
-export type ProductType = 'window' | 'slider' | 'french';
+export type ProductType = "window" | "slider" | "french";
 
 export interface QuickBuildItem {
   productType: ProductType;
@@ -124,7 +124,7 @@ export interface UseQuoteBuilderReturn {
   state: QuoteBuilderState;
   cart: CartItem[];
   permitPercent: number;
-  
+
   // Form values
   styleValue: number;
   sizeValue: number;
@@ -135,14 +135,14 @@ export interface UseQuoteBuilderReturn {
   contingencyFund: boolean;
   roomName: string;
   quantity: number;
-  
+
   // Modal states
   showTheater: boolean;
   theaterMessage: string;
   theaterSubtext: string;
   showModal: boolean;
   isSubmitting: boolean;
-  
+
   // AI state
   aiModalOpen: boolean;
   aiTitle: string;
@@ -150,7 +150,7 @@ export interface UseQuoteBuilderReturn {
   aiLoading: boolean;
   aiInputText: string;
   isAiBuilding: boolean;
-  
+
   // Derived values
   currentPrices: number[][];
   styleOptions: StyleOption[];
@@ -158,7 +158,7 @@ export interface UseQuoteBuilderReturn {
   subtotal: number;
   permitFee: number;
   grandTotal: number;
-  
+
   // Form setters
   setStyleValue: (v: number) => void;
   setSizeValue: (v: number) => void;
@@ -169,12 +169,12 @@ export interface UseQuoteBuilderReturn {
   setRoomName: (v: string) => void;
   setQuantity: (v: number) => void;
   setAiInputText: (v: string) => void;
-  
+
   // State setters
   setState: React.Dispatch<React.SetStateAction<QuoteBuilderState>>;
   setShowModal: (v: boolean) => void;
   setAiModalOpen: (v: boolean) => void;
-  
+
   // Actions
   handleQuickBuild: () => Promise<void>;
   handleAiAction: (action: string) => Promise<void>;
