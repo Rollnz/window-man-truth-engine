@@ -11,6 +11,7 @@ import { ToolsSection } from '@/components/beat-your-quote/ToolsSection';
 import { MissionOutcomes } from '@/components/beat-your-quote/MissionOutcomes';
 import { InterrogationFAQ } from '@/components/beat-your-quote/InterrogationFAQ';
 import { MissionInitiatedModal } from '@/components/beat-your-quote/MissionInitiatedModal';
+import { AnalysisSuccessScreen } from '@/components/beat-your-quote/AnalysisSuccessScreen';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 
@@ -25,24 +26,38 @@ export default function BeatYourQuote() {
   const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   
-  // Track if lead was captured (for success screen - Prompt 3)
-  const [capturedLeadId, setCapturedLeadId] = useState<string | null>(null);
+  // Track captured lead for success screen
+  const [capturedLeadName, setCapturedLeadName] = useState<string | null>(null);
+  const [showSuccessScreen, setShowSuccessScreen] = useState(false);
 
   const handleUploadSuccess = useCallback((fileId: string, _filePath: string) => {
     setUploadedFileId(fileId);
     setIsLeadModalOpen(true);
   }, []);
 
-  const handleLeadCaptured = useCallback((leadId: string) => {
-    setCapturedLeadId(leadId);
+  const handleLeadCaptured = useCallback((leadId: string, leadName?: string) => {
+    setCapturedLeadName(leadName || null);
     setIsLeadModalOpen(false);
-    // TODO: Prompt 3 - Show AnalysisSuccessScreen with confetti
+    setShowSuccessScreen(true);
   }, []);
 
   const handleCloseLeadModal = useCallback(() => {
     setIsLeadModalOpen(false);
-    // Reset file ID if user closes without submitting
-    // They can upload again
+  }, []);
+
+  const handleCloseSuccessScreen = useCallback(() => {
+    setShowSuccessScreen(false);
+    // Reset state for next upload
+    setUploadedFileId(null);
+    setCapturedLeadName(null);
+  }, []);
+
+  const handleUploadAnother = useCallback(() => {
+    setShowSuccessScreen(false);
+    setUploadedFileId(null);
+    setCapturedLeadName(null);
+    // Scroll to top where dropzone is
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const scrollToTop = () => {
@@ -80,6 +95,15 @@ export default function BeatYourQuote() {
           onClose={handleCloseLeadModal}
           quoteFileId={uploadedFileId}
           onLeadCaptured={handleLeadCaptured}
+        />
+      )}
+
+      {/* Success Screen with Confetti */}
+      {showSuccessScreen && (
+        <AnalysisSuccessScreen
+          leadName={capturedLeadName || undefined}
+          onClose={handleCloseSuccessScreen}
+          onUploadAnother={handleUploadAnother}
         />
       )}
     </div>

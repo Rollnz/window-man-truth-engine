@@ -9,7 +9,7 @@ const corsHeaders = {
 
 interface EmailPayload {
   email: string;
-  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report' | 'fast-win-report' | 'evidence-locker-report' | 'intel-resource-delivery' | 'claim-vault-upload-confirmation';
+  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report' | 'fast-win-report' | 'evidence-locker-report' | 'intel-resource-delivery' | 'claim-vault-upload-confirmation' | 'quote-alert';
   data: Record<string, unknown>;
   // Golden Thread: Attribution tracking
   sessionId?: string;
@@ -263,6 +263,67 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
           <p>Best regards,<br>Its Window Man Team</p>
         `,
       };
+
+    case 'quote-alert': {
+      // Internal sales team alert when a quote file is linked to a lead
+      const signedUrl = data.signedUrl as string | undefined;
+      return {
+        subject: `🚨 NEW QUOTE UPLOAD: ${data.leadName || 'Anonymous'} - Beat Your Quote`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #FF4444, #CC0000); padding: 20px; border-radius: 12px 12px 0 0;">
+              <h1 style="color: #fff; margin: 0; font-size: 24px;">🚨 HOT LEAD ALERT</h1>
+              <p style="color: #ffcccc; margin: 5px 0 0 0;">Beat Your Quote Submission</p>
+            </div>
+            
+            <div style="background: #1a1a2e; padding: 24px; color: #fff;">
+              <h2 style="color: #00D4FF; margin-top: 0;">Lead Details</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #888;">Name:</td>
+                  <td style="padding: 8px 0; color: #fff; font-weight: bold;">${data.leadName || 'Not provided'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #888;">Phone:</td>
+                  <td style="padding: 8px 0; color: #00D4FF; font-weight: bold; font-size: 18px;">${data.leadPhone || 'Not provided'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #888;">Email:</td>
+                  <td style="padding: 8px 0; color: #fff;">${data.leadEmail || 'Not provided'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #888;">Source:</td>
+                  <td style="padding: 8px 0; color: #fff;">Beat Your Quote Page</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #888;">Time:</td>
+                  <td style="padding: 8px 0; color: #fff;">${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })} ET</td>
+                </tr>
+              </table>
+              
+              <h2 style="color: #00D4FF; margin-top: 24px;">📎 Uploaded Quote</h2>
+              <p style="color: #ccc;">File: ${data.fileName || 'quote-document'}</p>
+              ${signedUrl ? `
+              <p style="margin: 16px 0;">
+                <a href="${signedUrl}" style="background: #00D4FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+                  📥 Download Quote (24hr link)
+                </a>
+              </p>
+              ` : '<p style="color: #ff6666;">⚠️ Could not generate download link</p>'}
+              
+              <div style="background: #0d0d1a; padding: 16px; border-radius: 8px; margin-top: 24px; border-left: 4px solid #FFD700;">
+                <p style="color: #FFD700; margin: 0 0 8px 0; font-weight: bold;">⚡ ACTION REQUIRED</p>
+                <p style="color: #ccc; margin: 0;">Call this lead within 5 minutes. They uploaded their quote and are expecting a response.</p>
+              </div>
+            </div>
+            
+            <div style="background: #0d0d1a; padding: 16px; border-radius: 0 0 12px 12px; text-align: center;">
+              <p style="color: #666; margin: 0; font-size: 12px;">Lead ID: ${data.leadId || 'Unknown'}</p>
+            </div>
+          </div>
+        `,
+      };
+    }
 
     default:
       return {

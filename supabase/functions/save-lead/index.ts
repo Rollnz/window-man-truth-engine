@@ -537,6 +537,48 @@ serve(async (req) => {
               anonymousIdFallback: `quote-${quoteFileId}`,
             });
           }
+
+          // ═══════════════════════════════════════════════════════════════════════
+          // QUOTE ALERT: Notify sales team about new quote upload
+          // ═══════════════════════════════════════════════════════════════════════
+          try {
+            // Get file details for the email
+            const { data: fileData } = await supabase
+              .from('quote_files')
+              .select('file_path, file_name')
+              .eq('id', quoteFileId)
+              .maybeSingle();
+
+            // Generate a 24-hour signed URL for the file
+            let signedUrl: string | undefined;
+            if (fileData?.file_path) {
+              const { data: urlData } = await supabase.storage
+                .from('quotes')
+                .createSignedUrl(fileData.file_path, 60 * 60 * 24); // 24 hours
+              signedUrl = urlData?.signedUrl;
+            }
+
+            // Send alert to admin emails
+            const adminEmails = ['vansiclenp@gmail.com', 'mongoloyd@protonmail.com'];
+            for (const adminEmail of adminEmails) {
+              triggerEmailNotification({
+                email: adminEmail,
+                type: 'quote-alert',
+                data: {
+                  leadId,
+                  leadName: name || 'Anonymous',
+                  leadEmail: normalizedEmail,
+                  leadPhone: phone || 'Not provided',
+                  fileName: fileData?.file_name || 'quote-document',
+                  signedUrl,
+                  quoteFileId,
+                },
+              });
+            }
+            console.log('Quote alert emails triggered for:', adminEmails);
+          } catch (alertErr) {
+            console.error('Quote alert failed (non-blocking):', alertErr);
+          }
         }
       } catch (linkErr) {
         console.error('Quote file linking failed (non-blocking):', linkErr);

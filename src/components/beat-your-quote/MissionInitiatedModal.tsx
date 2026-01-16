@@ -24,8 +24,8 @@ interface MissionInitiatedModalProps {
   onClose: () => void;
   /** The quote file ID to link to the captured lead */
   quoteFileId: string;
-  /** Called when lead is successfully captured */
-  onLeadCaptured?: (leadId: string) => void;
+  /** Called when lead is successfully captured - receives leadId and name */
+  onLeadCaptured?: (leadId: string, leadName?: string) => void;
 }
 
 export function MissionInitiatedModal({
@@ -129,9 +129,9 @@ export function MissionInitiatedModal({
         description: 'Our expert is reviewing your quote. Expect a text in 5 minutes.',
       });
 
-      // Notify parent
+      // Notify parent with leadId and name
       if (onLeadCaptured && effectiveLeadId) {
-        onLeadCaptured(effectiveLeadId);
+        onLeadCaptured(effectiveLeadId, values.name.trim());
       }
 
       onClose();
