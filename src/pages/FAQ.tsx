@@ -1,10 +1,12 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 import { Footer } from "@/components/home/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { ROUTES } from "@/config/navigation";
+import { getGuidePageSchemas } from "@/lib/seoSchemas";
 
 const faqs = [
   {
@@ -24,6 +26,12 @@ const faqs = [
 const FAQ = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEO 
+        title="Frequently Asked Questions"
+        description="Get quick answers about our free window replacement tools, quote analysis, and how to work with contractors. Each answer includes actionable next steps."
+        canonicalUrl="https://itswindowman.com/faq"
+        jsonLd={getGuidePageSchemas('faq')}
+      />
       <Navbar />
 
       <main className="pt-20">
