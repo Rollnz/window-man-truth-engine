@@ -1,0 +1,244 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { LeadStatus } from '@/types/crm';
+
+export interface LeadNote {
+  id: string;
+  lead_id: string;
+  content: string;
+  admin_email: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeadEvent {
+  id: string;
+  session_id: string;
+  event_name: string;
+  event_category: string | null;
+  event_data: Record<string, unknown> | null;
+  page_path: string | null;
+  page_title: string | null;
+  created_at: string;
+}
+
+export interface LeadFile {
+  id: string;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  created_at: string;
+  source_page: string | null;
+}
+
+export interface LeadSession {
+  id: string;
+  anonymous_id: string;
+  landing_page: string | null;
+  referrer: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_term: string | null;
+  utm_content: string | null;
+  created_at: string;
+}
+
+export interface LeadDetailData {
+  id: string;
+  lead_id: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  email: string;
+  phone: string | null;
+  status: LeadStatus;
+  lead_quality: string | null;
+  engagement_score: number | null;
+  original_source_tool: string | null;
+  original_session_id: string | null;
+  verified_social_url: string | null;
+  city: string | null;
+  facebook_page_name: string | null;
+  facebook_ad_id: string | null;
+  notes: string | null;
+  estimated_deal_value: number | null;
+  actual_deal_value: number | null;
+  assigned_to: string | null;
+  last_contacted_at: string | null;
+  closed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface UseLeadDetailReturn {
+  lead: LeadDetailData | null;
+  events: LeadEvent[];
+  files: LeadFile[];
+  notes: LeadNote[];
+  session: LeadSession | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+  updateStatus: (status: LeadStatus) => Promise<boolean>;
+  addNote: (content: string) => Promise<boolean>;
+  updateSocialUrl: (url: string) => Promise<boolean>;
+  updateLead: (updates: Partial<LeadDetailData>) => Promise<boolean>;
+}
+
+export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
+  const [lead, setLead] = useState<LeadDetailData | null>(null);
+  const [events, setEvents] = useState<LeadEvent[]>([]);
+  const [files, setFiles] = useState<LeadFile[]>([]);
+  const [notes, setNotes] = useState<LeadNote[]>([]);
+  const [session, setSession] = useState<LeadSession | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const fetchData = useCallback(async () => {
+    if (!leadId) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) {
+        setError('Not authenticated');
+        return;
+      }
+
+      const response = await supabase.functions.invoke('admin-lead-detail', {
+        body: null,
+        headers: {
+          Authorization: `Bearer ${authSession.access_token}`,
+        },
+      });
+
+      // The function uses query params, so we need to call it differently
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-lead-detail?id=${leadId}`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${authSession.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to fetch lead');
+      }
+
+      const data = await res.json();
+      setLead(data.lead);
+      setEvents(data.events || []);
+      setFiles(data.files || []);
+      setNotes(data.notes || []);
+      setSession(data.session);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load lead details';
+      setError(message);
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [leadId, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const callAction = async (action: string, data: Record<string, unknown>): Promise<boolean> => {
+    if (!leadId) return false;
+
+    try {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) {
+        toast({ title: 'Error', description: 'Not authenticated', variant: 'destructive' });
+        return false;
+      }
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-lead-detail?id=${leadId}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authSession.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, ...data }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Action failed');
+      }
+
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Action failed';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
+      return false;
+    }
+  };
+
+  const updateStatus = async (status: LeadStatus): Promise<boolean> => {
+    const success = await callAction('update_status', { status });
+    if (success) {
+      setLead(prev => prev ? { ...prev, status } : null);
+      toast({ title: 'Success', description: 'Status updated' });
+    }
+    return success;
+  };
+
+  const addNote = async (content: string): Promise<boolean> => {
+    const success = await callAction('add_note', { content });
+    if (success) {
+      // Refetch to get the new note with proper data
+      await fetchData();
+      toast({ title: 'Success', description: 'Note added' });
+    }
+    return success;
+  };
+
+  const updateSocialUrl = async (url: string): Promise<boolean> => {
+    const success = await callAction('update_social_url', { verified_social_url: url });
+    if (success) {
+      setLead(prev => prev ? { ...prev, verified_social_url: url } : null);
+      toast({ title: 'Success', description: 'Social profile saved' });
+    }
+    return success;
+  };
+
+  const updateLead = async (updates: Partial<LeadDetailData>): Promise<boolean> => {
+    const success = await callAction('update_lead', { updates });
+    if (success) {
+      setLead(prev => prev ? { ...prev, ...updates } : null);
+      toast({ title: 'Success', description: 'Lead updated' });
+    }
+    return success;
+  };
+
+  return {
+    lead,
+    events,
+    files,
+    notes,
+    session,
+    isLoading,
+    error,
+    refetch: fetchData,
+    updateStatus,
+    addNote,
+    updateSocialUrl,
+    updateLead,
+  };
+}
