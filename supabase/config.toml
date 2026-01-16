@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.admin-attribution]
 verify_jwt = false
+
+[functions.admin-quotes]
+verify_jwt = false
