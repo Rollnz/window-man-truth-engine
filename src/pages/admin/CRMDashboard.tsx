@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Loader2 } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Loader2, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,6 +9,8 @@ import { KanbanBoard } from '@/components/crm/KanbanBoard';
 import { CRMSummaryCards } from '@/components/crm/CRMSummaryCards';
 import { DateRangePicker, DateRange } from '@/components/admin/DateRangePicker';
 import { subDays, format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // Admin email whitelist - must be lowercase for comparison
 const ADMIN_EMAILS = [
@@ -27,6 +29,7 @@ export default function CRMDashboard() {
     startDate: subDays(new Date(), 30),
     endDate: new Date(),
   });
+  const [isRecalculating, setIsRecalculating] = useState(false);
 
   const { 
     leads, 
@@ -51,6 +54,46 @@ export default function CRMDashboard() {
         format(dateRange.startDate, 'yyyy-MM-dd'),
         format(dateRange.endDate, 'yyyy-MM-dd')
       );
+    }
+  };
+
+  const handleRecalculateScores = async () => {
+    setIsRecalculating(true);
+    try {
+      const { data, error } = await supabase.rpc('backfill_all_lead_scores');
+      
+      if (error) {
+        toast.error('Recalculation Failed', {
+          description: error.message,
+        });
+        return;
+      }
+
+      const result = data as {
+        status: string;
+        leads_processed: number;
+        leads_updated: number;
+        execution_time_ms: number;
+        error_message?: string;
+      };
+
+      if (result.status === 'success') {
+        toast.success('Scores Recalculated', {
+          description: `Processed ${result.leads_processed} leads, updated ${result.leads_updated} in ${result.execution_time_ms}ms`,
+        });
+        // Refresh the leads to show updated scores
+        handleRefresh();
+      } else {
+        toast.error('Recalculation Failed', {
+          description: result.error_message || 'Unknown error occurred',
+        });
+      }
+    } catch (err) {
+      toast.error('Recalculation Failed', {
+        description: err instanceof Error ? err.message : 'Network error',
+      });
+    } finally {
+      setIsRecalculating(false);
     }
   };
 
@@ -105,6 +148,20 @@ export default function CRMDashboard() {
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRecalculateScores}
+                disabled={isRecalculating}
+              >
+                {isRecalculating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Calculator className="h-4 w-4 mr-2" />
+                )}
+                Recalculate Scores
               </Button>
 
               <Link to="/admin/attribution">
