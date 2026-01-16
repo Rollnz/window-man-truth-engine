@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { QuoteUploadDropzone } from './QuoteUploadDropzone';
 import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 import { trackEvent } from '@/lib/gtm';
+import confetti from 'canvas-confetti';
 
 interface QuoteCheckerSectionProps {
   onUploadSuccess: (fileId: string, filePath: string) => void;
@@ -33,6 +34,19 @@ export const QuoteCheckerSection = ({
         description: "Text us the word CHECK along with a photo of your quote to start your review!",
       });
     }
+  };
+
+  const handleUploadSuccess = (fileId: string, filePath: string) => {
+    // Fire confetti celebration
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#4393DB', '#22c55e', '#FFFFFF']
+    });
+    
+    // Call the parent handler
+    onUploadSuccess(fileId, filePath);
   };
 
   const handleBookClick = () => {
@@ -172,7 +186,7 @@ export const QuoteCheckerSection = ({
               {/* Embedded Upload Dropzone - Compact Mode */}
               <div className="w-full flex-grow">
                 <QuoteUploadDropzone
-                  onSuccess={onUploadSuccess}
+                  onSuccess={handleUploadSuccess}
                   sourcePage="quote-checker-section"
                   compact
                 />
