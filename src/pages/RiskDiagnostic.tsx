@@ -15,6 +15,8 @@ import { ConsultationBookingModal } from "@/components/conversion/ConsultationBo
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
+import { ToolFAQSection } from "@/components/seo";
+import { getToolFAQs } from "@/data/toolFAQs";
 import type { SourceTool } from "@/types/sourceTool";
 
 const riskDiagnosticSchema = [
@@ -195,6 +197,14 @@ export default function RiskDiagnostic() {
         onSuccess={() => setShowBookingModal(false)}
         sessionData={sessionData}
         sourceTool="risk-diagnostic"
+      />
+
+      {/* FAQ Section */}
+      <ToolFAQSection
+        toolPath="/risk-diagnostic"
+        faqs={getToolFAQs('risk-diagnostic')}
+        title="Risk Diagnostic FAQs"
+        description="Understanding your protection gaps and insurance savings"
       />
 
       {/* Related Tools */}

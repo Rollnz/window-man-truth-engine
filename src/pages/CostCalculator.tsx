@@ -26,6 +26,8 @@ import { TrueCostCalculator } from '@/components/cost-calculator/TrueCostCalcula
 import { ROUTES } from '@/config/navigation';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
+import { ToolFAQSection, PillarBreadcrumb } from '@/components/seo';
+import { getToolFAQs } from '@/data/toolFAQs';
 
 export default function CostCalculator() {
   usePageTracking('cost-calculator');
@@ -94,10 +96,15 @@ export default function CostCalculator() {
             </Badge>
           </div>
         )}
-        {/* Page Title */}
+        {/* Pillar Breadcrumb */}
+        <div className="mb-4">
+          <PillarBreadcrumb toolPath="/cost-calculator" variant="badge" />
+        </div>
+
+        {/* Page Title - 2025 SEO Optimized */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold mb-3">
-            Cost of <span className="text-primary">Inaction</span> Calculator
+            How Much Are Old Windows <span className="text-primary">Costing You</span> Every Month in 2025?
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             See exactly how much money you're losing every day, month, and year by 
@@ -195,6 +202,14 @@ export default function CostCalculator() {
           <TrueCostCalculator />
         </div>
       </div>
+
+      {/* FAQ Section */}
+      <ToolFAQSection
+        toolPath="/cost-calculator"
+        faqs={getToolFAQs('cost-calculator')}
+        title="Cost Calculator FAQs"
+        description="Understanding your energy loss and break-even timeline"
+      />
 
       {/* Related Tools */}
       <RelatedToolsGrid

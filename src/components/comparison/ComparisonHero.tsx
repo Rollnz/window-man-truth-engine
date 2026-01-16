@@ -25,10 +25,10 @@ export function ComparisonHero({ sessionData }: ComparisonHeroProps) {
           <span>Back to Tools</span>
         </Link>
 
-        {/* Title */}
+        {/* Title - 2025 SEO Optimized */}
         <div className="max-w-3xl">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            Window <span className="text-primary text-glow">Comparison Engine</span>
+            Budget vs. Premium Windows: <span className="text-primary text-glow">What's the Real 10-Year Cost</span> in Florida?
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-6">
             See the real cost of "cheap" windows over 10 years. 

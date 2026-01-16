@@ -49,10 +49,10 @@ export function RiskHero({ sessionData, onStart, hasStarted }: RiskHeroProps) {
           Tool #6: Protection Gap Analysis
         </Badge>
 
-        {/* Title */}
+        {/* Title - 2025 SEO Optimized */}
         <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-          Discover Your{' '}
-          <span className="text-primary text-glow">Protection Gaps</span>
+          Is Your Florida Home{' '}
+          <span className="text-primary text-glow">Hurricane-Ready?</span> Free Risk Assessment
         </h1>
 
         {/* Description */}

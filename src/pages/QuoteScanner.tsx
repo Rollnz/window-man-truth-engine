@@ -19,6 +19,8 @@ import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { ToolFAQSection, PillarBreadcrumb } from '@/components/seo';
+import { getToolFAQs } from '@/data/toolFAQs';
 // New supporting sections
 import { ScannerSocialProof } from '@/components/quote-scanner/ScannerSocialProof';
 import { ScannerFAQSection } from '@/components/quote-scanner/ScannerFAQSection';
@@ -82,6 +84,11 @@ export default function QuoteScanner() {
       <Navbar />
       
       <main className="pt-20">
+        {/* Pillar Breadcrumb */}
+        <div className="container px-4 mb-2">
+          <PillarBreadcrumb toolPath="/ai-scanner" variant="badge" />
+        </div>
+
         <QuoteScannerHero />
 
         <div className="container px-4 mt-6">
@@ -175,6 +182,16 @@ export default function QuoteScanner() {
         <QuoteSafetyChecklist uploadRef={uploadRef} />
         <WindowCalculatorTeaser />
         <NoQuotePathway />
+
+        {/* PRD-Compliant FAQ Section */}
+        <ToolFAQSection
+          toolPath="/ai-scanner"
+          faqs={getToolFAQs('quote-scanner')}
+          title="AI Quote Scanner FAQs"
+          description="How our AI analyzes your window quotes"
+        />
+
+        {/* Legacy FAQ section - can be removed later */}
         <ScannerFAQSection uploadRef={uploadRef} />
 
         {/* Related Tools - "Enforce Your Rights" section */}
