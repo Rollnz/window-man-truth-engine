@@ -20,47 +20,47 @@
 
 ### Core Tool Pages (12)
 
-| Page | URL | Schema Types | Status |
-|------|-----|--------------|--------|
-| **Homepage** | `/` | Organization, WebSite, FAQPage | ✅ Complete |
-| **Free Estimate Calculator** | `/free-estimate` | SoftwareApplication, HowTo | ✅ Complete |
-| **Beat Your Quote** | `/beat-your-quote` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Risk Diagnostic** | `/risk-diagnostic` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Claim Survival Kit** | `/claim-survival` | SoftwareApplication, HowTo, FAQPage | ✅ Complete |
-| **Fair Price Quiz** | `/fair-price-quiz` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Quote Scanner** | `/quote-scanner` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Evidence Locker** | `/evidence` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Cost Calculator** | `/cost-calculator` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Expert Chat** | `/expert` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Reality Check Quiz** | `/reality-check` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Comparison Tool** | `/comparison` | SoftwareApplication, FAQPage | ✅ Complete |
+| Page | URL | Schema Types | BreadcrumbList | Status |
+|------|-----|--------------|----------------|--------|
+| **Homepage** | `/` | Organization, WebSite, FAQPage | Home | ✅ Complete |
+| **Free Estimate Calculator** | `/free-estimate` | SoftwareApplication, HowTo | Home → Tools → Free Estimate | ✅ Complete |
+| **Beat Your Quote** | `/beat-your-quote` | SoftwareApplication, FAQPage | Home → Tools → Beat Your Quote | ✅ Complete |
+| **Risk Diagnostic** | `/risk-diagnostic` | SoftwareApplication, FAQPage | Home → Tools → Risk Diagnostic | ✅ Complete |
+| **Claim Survival Kit** | `/claim-survival` | SoftwareApplication, HowTo, FAQPage | Home → Tools → Claim Survival Kit | ✅ Complete |
+| **Fair Price Quiz** | `/fair-price-quiz` | SoftwareApplication, FAQPage | Home → Tools → Fair Price Quiz | ✅ Complete |
+| **Quote Scanner** | `/quote-scanner` | SoftwareApplication, FAQPage | Home → Tools → AI Quote Scanner | ✅ Complete |
+| **Evidence Locker** | `/evidence` | SoftwareApplication, FAQPage | Home → Tools → Evidence Locker | ✅ Complete |
+| **Cost Calculator** | `/cost-calculator` | SoftwareApplication, FAQPage | Home → Tools → Cost Calculator | ✅ Complete |
+| **Expert Chat** | `/expert` | SoftwareApplication, FAQPage | Home → Tools → Expert System | ✅ Complete |
+| **Reality Check Quiz** | `/reality-check` | SoftwareApplication, FAQPage | Home → Tools → Reality Check | ✅ Complete |
+| **Comparison Tool** | `/comparison` | SoftwareApplication, FAQPage | Home → Tools → Comparison Tool | ✅ Complete |
 
 ### Secondary Tool Pages (6)
 
-| Page | URL | Schema Types | Status |
-|------|-----|--------------|--------|
-| **Fast Win Finder** | `/fast-win` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Roleplay Simulator** | `/roleplay` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Intel Library** | `/intel` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Vulnerability Test** | `/vulnerability-test` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Defense Mode** | `/defense` | SoftwareApplication, FAQPage | ✅ Complete |
-| **Tools Index** | `/tools` | ItemList | ✅ Complete |
+| Page | URL | Schema Types | BreadcrumbList | Status |
+|------|-----|--------------|----------------|--------|
+| **Fast Win Finder** | `/fast-win` | SoftwareApplication, FAQPage | Home → Tools → Fast Win Finder | ✅ Complete |
+| **Roleplay Simulator** | `/roleplay` | SoftwareApplication, FAQPage | Home → Tools → Roleplay Simulator | ✅ Complete |
+| **Intel Library** | `/intel` | SoftwareApplication, FAQPage | Home → Intel Library | ✅ Complete |
+| **Vulnerability Test** | `/vulnerability-test` | SoftwareApplication, FAQPage | Home → Tools → Vulnerability Test | ✅ Complete |
+| **Defense Mode** | `/defense` | SoftwareApplication, FAQPage | Home → Defense Mode | ✅ Complete |
+| **Tools Index** | `/tools` | ItemList | Home → Tools | ✅ Complete |
 
 ### Guide & Information Pages (4)
 
-| Page | URL | Schema Types | Status |
-|------|-----|--------------|--------|
-| **FAQ** | `/faq` | FAQPage | ✅ Complete |
-| **Sales Tactics Guide** | `/sales-tactics-guide` | Article, FAQPage | ✅ Complete |
-| **Spec Checklist Guide** | `/spec-checklist-guide` | Article, HowTo, FAQPage | ✅ Complete |
-| **Insurance Savings Guide** | `/insurance-savings-guide` | Article, HowTo, FAQPage | ✅ Complete |
-| **Kitchen Table Guide** | `/kitchen-table-guide` | SoftwareApplication, FAQPage | ✅ Complete |
+| Page | URL | Schema Types | BreadcrumbList | Status |
+|------|-----|--------------|----------------|--------|
+| **FAQ** | `/faq` | FAQPage | Home → FAQ | ✅ Complete |
+| **Sales Tactics Guide** | `/sales-tactics-guide` | Article, FAQPage | Home → Intel Library → Sales Tactics Guide | ✅ Complete |
+| **Spec Checklist Guide** | `/spec-checklist-guide` | Article, HowTo, FAQPage | Home → Intel Library → Spec Checklist Guide | ✅ Complete |
+| **Insurance Savings Guide** | `/insurance-savings-guide` | Article, HowTo, FAQPage | Home → Intel Library → Insurance Savings Guide | ✅ Complete |
+| **Kitchen Table Guide** | `/kitchen-table-guide` | SoftwareApplication, FAQPage | Home → Intel Library → Kitchen Table Guide | ✅ Complete |
 
 ### About Page
 
-| Page | URL | Schema Types | Status |
-|------|-----|--------------|--------|
-| **About** | `/about` | Organization, AboutPage | ✅ Complete |
+| Page | URL | Schema Types | BreadcrumbList | Status |
+|------|-----|--------------|----------------|--------|
+| **About** | `/about` | Organization, AboutPage | Home → About | ✅ Complete |
 
 ---
 
