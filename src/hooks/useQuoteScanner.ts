@@ -106,7 +106,7 @@ async function compressImage(file: File, maxBytes = 4_000_000): Promise<{ base64
 
 export function useQuoteScanner(): UseQuoteScannerReturn {
   const { toast } = useToast();
-  const { sessionData, updateField } = useSessionData();
+  const { sessionData, sessionId, updateField } = useSessionData();
   const { leadId } = useLeadIdentity();
   
   // Analysis state
@@ -146,9 +146,6 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
       const { base64, mimeType: mt } = await compressImage(file);
       setImageBase64(base64);
       setMimeType(mt);
-      
-      // Get or generate sessionId for Golden Thread
-      const sessionId = sessionData.claimVaultSessionId || crypto.randomUUID();
       
       const { data, error: requestError } = await heavyAIRequest.sendRequest<QuoteAnalysisResult & { error?: string }>(
         'quote-scanner',
@@ -193,7 +190,7 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [sessionData.windowCount, sessionData.claimVaultSessionId, leadId, updateField, toast]);
+  }, [sessionData.windowCount, sessionId, leadId, updateField, toast]);
 
   const generateEmailDraft = useCallback(async () => {
     if (!analysisResult) return;
