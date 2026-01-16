@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logAttributionEvent } from "../_shared/attributionLogger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -58,6 +59,8 @@ serve(async (req) => {
     const body = await req.json();
     // Accept both 'projectDescription' and 'prompt' for backward compatibility
     const projectDescription = body.projectDescription || body.prompt;
+    const sessionId = body.sessionId;
+    const leadId = body.leadId;
 
     if (!projectDescription || projectDescription.trim().length < 10) {
       return new Response(
@@ -179,6 +182,24 @@ Be realistic with Florida market prices. Include impact windows/doors where appr
     }
 
     console.log('Generated estimate successfully');
+
+    // Log attribution event
+    if (sessionId) {
+      logAttributionEvent({
+        sessionId,
+        eventName: 'quote_generated',
+        eventCategory: 'ai_tool',
+        pagePath: '/calculate-estimate',
+        pageTitle: 'Quote Builder',
+        eventData: {
+          estimate_total: estimate?.total,
+          line_items_count: estimate?.lineItems?.length,
+          is_authenticated: isAuthenticated,
+        },
+        leadId,
+        anonymousIdFallback: identifier,
+      }).catch((err) => console.error('[generate-quote] Attribution logging failed:', err));
+    }
 
     return new Response(
       JSON.stringify({ estimate }),

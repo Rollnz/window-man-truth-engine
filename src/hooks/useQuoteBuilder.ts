@@ -22,9 +22,9 @@ import type {
 import type { SourceTool } from "@/types/sourceTool";
 
 export function useQuoteBuilder(): UseQuoteBuilderReturn {
-  // Golden Thread: Get and persist leadId
+  // Golden Thread: Get and persist leadId and sessionId
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
-  const { updateField } = useSessionData();
+  const { updateField, sessionId } = useSessionData();
 
   const [state, setState] = useState<QuoteBuilderState>({
     productType: "window",
@@ -88,7 +88,7 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
     [{ "productType": "window"|"slider"|"french", "qty": number, "name": string, "desc": string }]`;
 
     try {
-      const result = await callGemini(prompt);
+      const result = await callGemini(prompt, { sessionId, leadId: hookLeadId });
       const jsonString = result.replace(/```json/g, '').replace(/```/g, '').trim();
       const items = JSON.parse(jsonString) as unknown;
       
@@ -164,7 +164,7 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
     }
 
     try {
-      const result = await callGemini(prompt);
+      const result = await callGemini(prompt, { sessionId, leadId: hookLeadId });
       setAiContent(result);
     } catch {
       setAiContent("Sorry, I couldn't reach the AI service at the moment. Please try again later.");

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logAttributionEvent } from "../_shared/attributionLogger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -187,7 +188,12 @@ serve(async (req) => {
   }
 
   try {
-    const { mode, userMessage, conversationHistory, difficulty, transcript, won } = await req.json();
+    const { mode, userMessage, conversationHistory, difficulty, transcript, won, sessionId, leadId } = await req.json();
+    
+    // Get IP for fallback anonymous ID
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+               req.headers.get('x-real-ip') || 
+               'unknown';
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -257,6 +263,23 @@ serve(async (req) => {
 
       console.log("[roleplay-chat] Got response, length:", aiResponse.length);
 
+      // Log attribution event for chat mode
+      if (sessionId) {
+        logAttributionEvent({
+          sessionId,
+          eventName: 'roleplay_chat_turn',
+          eventCategory: 'ai_tool',
+          pagePath: '/roleplay',
+          pageTitle: 'Sales Roleplay',
+          eventData: {
+            difficulty,
+            turn_count: conversationHistory?.length || 0,
+          },
+          leadId,
+          anonymousIdFallback: `roleplay-${ip}`,
+        }).catch((err) => console.error('[roleplay-chat] Attribution logging failed:', err));
+      }
+
       return new Response(
         JSON.stringify({ response: aiResponse }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -325,6 +348,24 @@ serve(async (req) => {
       }
 
       console.log("[roleplay-chat] Analysis complete");
+
+      // Log attribution event for analysis mode
+      if (sessionId) {
+        logAttributionEvent({
+          sessionId,
+          eventName: 'roleplay_game_completed',
+          eventCategory: 'ai_tool',
+          pagePath: '/roleplay',
+          pageTitle: 'Sales Roleplay - Game Complete',
+          eventData: {
+            won,
+            turn_count: transcript?.length || 0,
+            overall_grade: analysis?.scoreCard?.overallGrade,
+          },
+          leadId,
+          anonymousIdFallback: `roleplay-${ip}`,
+        }).catch((err) => console.error('[roleplay-chat] Attribution logging failed:', err));
+      }
 
       return new Response(
         JSON.stringify({ analysis }),
