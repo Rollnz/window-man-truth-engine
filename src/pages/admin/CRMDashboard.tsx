@@ -10,11 +10,13 @@ import { CRMSummaryCards } from '@/components/crm/CRMSummaryCards';
 import { DateRangePicker, DateRange } from '@/components/admin/DateRangePicker';
 import { subDays, format } from 'date-fns';
 
-// Admin email whitelist
+// Admin email whitelist - must be lowercase for comparison
 const ADMIN_EMAILS = [
   'admin@windowtruth.com',
   'tim@impactwindowexperts.com',
   'tim@itswindowman.com',
+  'vansiclenp@gmail.com',
+  'mongoloyd@protonmail.com',
 ];
 
 export default function CRMDashboard() {
