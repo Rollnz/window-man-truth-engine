@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Draggable } from '@hello-pangea/dnd';
 import { formatDistanceToNow } from 'date-fns';
-import { User, Phone, DollarSign, Clock, Zap } from 'lucide-react';
+import { User, Phone, DollarSign, Clock, Zap, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CRMLead, LEAD_QUALITY_CONFIG } from '@/types/crm';
 import { QualityBadge } from './StatusBadge';
@@ -14,6 +16,7 @@ interface LeadCardProps {
 }
 
 export function LeadCard({ lead, index, onClick }: LeadCardProps) {
+  const navigate = useNavigate();
   const displayName = useMemo(() => {
     if (lead.first_name || lead.last_name) {
       return `${lead.first_name || ''} ${lead.last_name || ''}`.trim();
@@ -108,6 +111,22 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
                 <span>{lead.phone}</span>
               </div>
             )}
+
+            {/* View Profile Button */}
+            <div className="pt-2 border-t border-border/50">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full h-7 text-xs gap-1 hover:bg-primary/10 hover:text-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/admin/leads/${lead.id}`);
+                }}
+              >
+                <ExternalLink className="h-3 w-3" />
+                View Full Profile
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}

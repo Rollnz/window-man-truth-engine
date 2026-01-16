@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -20,6 +21,7 @@ import {
   Flag,
   Clock,
   AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -63,6 +65,7 @@ export function LeadJourneyPanel({
   isOpen,
   onClose,
 }: LeadJourneyPanelProps) {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [events, setEvents] = useState<JourneyEvent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -156,6 +159,18 @@ export function LeadJourneyPanel({
           <SheetDescription className="font-mono text-xs break-all">
             {leadId}
           </SheetDescription>
+          {/* View Full Profile Button */}
+          <Button
+            variant="outline"
+            className="w-full gap-2 mt-2"
+            onClick={() => {
+              onClose();
+              navigate(`/admin/leads/${leadId}`);
+            }}
+          >
+            <ExternalLink className="h-4 w-4" />
+            View Full Profile
+          </Button>
         </SheetHeader>
 
         {/* Journey Summary */}

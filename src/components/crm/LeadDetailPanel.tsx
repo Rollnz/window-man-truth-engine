@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { X, Mail, Phone, Calendar, DollarSign, Zap, Copy, Check, ExternalLink } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -34,6 +35,7 @@ interface LeadDetailPanelProps {
 }
 
 export function LeadDetailPanel({ lead, isOpen, onClose, onUpdate }: LeadDetailPanelProps) {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -102,6 +104,18 @@ export function LeadDetailPanel({ lead, isOpen, onClose, onUpdate }: LeadDetailP
               </div>
             </div>
           </div>
+          {/* Open Command Center Button */}
+          <Button
+            variant="outline"
+            className="w-full gap-2"
+            onClick={() => {
+              onClose();
+              navigate(`/admin/leads/${lead.id}`);
+            }}
+          >
+            <ExternalLink className="h-4 w-4" />
+            Open Command Center
+          </Button>
         </SheetHeader>
 
         <div className="mt-6 space-y-6">

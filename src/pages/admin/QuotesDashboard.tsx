@@ -322,10 +322,14 @@ export default function QuotesDashboard() {
                     {/* Lead Info */}
                     {quote.lead_id && (
                       <div className="flex-shrink-0 text-right border-l border-border pl-4">
-                        <div className="flex items-center gap-2 text-sm text-foreground mb-1">
+                        <Link 
+                          to={`/admin/leads/${quote.lead_id}`}
+                          className="flex items-center gap-2 text-sm text-primary hover:underline mb-1"
+                        >
                           <User className="h-3 w-3" />
                           <span className="font-medium">{quote.lead_name || 'Unknown'}</span>
-                        </div>
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
                         {quote.lead_phone && (
                           <a 
                             href={`tel:${quote.lead_phone}`}

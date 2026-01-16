@@ -1,19 +1,34 @@
+import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLeadDetail } from '@/hooks/useLeadDetail';
+import { useLeadNavigation } from '@/hooks/useLeadNavigation';
+import { useGlobalSearch } from '@/hooks/useGlobalSearch';
 import { LeadIdentityCard } from '@/components/lead-detail/LeadIdentityCard';
 import { LeadTimeline } from '@/components/lead-detail/LeadTimeline';
 import { NotesWidget } from '@/components/lead-detail/NotesWidget';
 import { FilesWidget } from '@/components/lead-detail/FilesWidget';
 import { WebhookExportButton } from '@/components/lead-detail/WebhookExportButton';
+import { AdminBreadcrumb } from '@/components/admin/AdminBreadcrumb';
+import { LeadNavigation } from '@/components/admin/LeadNavigation';
+import { GlobalLeadSearch, SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 
 function LeadDetailContent() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { lead, events, files, notes, session, isLoading, error, updateStatus, addNote, updateSocialUrl } = useLeadDetail(id);
+  const { previousLeadId, nextLeadId, currentIndex, totalLeads, goToPrevious, goToNext } = useLeadNavigation(id);
+  const { setIsOpen, addToRecent } = useGlobalSearch();
+
+  // Add current lead to recent leads when viewed
+  useEffect(() => {
+    if (lead) {
+      addToRecent(lead as any);
+    }
+  }, [lead, addToRecent]);
 
   if (isLoading) {
     return (
@@ -59,17 +74,42 @@ function LeadDetailContent() {
                            session?.utm_source?.toLowerCase().includes('instagram') ||
                            !!lead.facebook_page_name;
 
+  const displayName = lead.first_name || lead.last_name 
+    ? `${lead.first_name || ''} ${lead.last_name || ''}`.trim()
+    : lead.email.split('@')[0];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/crm')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="font-semibold">Lead Command Center</h1>
-            <p className="text-xs text-muted-foreground">{lead.email}</p>
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/admin/crm')}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <AdminBreadcrumb 
+                  items={[
+                    { label: 'Command Center', href: '/admin' },
+                    { label: 'Lead Warehouse', href: '/admin/crm' },
+                  ]} 
+                  currentLabel={displayName}
+                />
+                <h1 className="font-semibold mt-1">Lead Command Center</h1>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <LeadNavigation
+                currentIndex={currentIndex}
+                totalLeads={totalLeads}
+                onPrevious={goToPrevious}
+                onNext={goToNext}
+                hasPrevious={!!previousLeadId}
+                hasNext={!!nextLeadId}
+              />
+              <SearchKeyboardHint onClick={() => setIsOpen(true)} />
+            </div>
           </div>
         </div>
       </header>
@@ -100,6 +140,8 @@ function LeadDetailContent() {
           </aside>
         </div>
       </main>
+
+      <GlobalLeadSearch />
     </div>
   );
 }
