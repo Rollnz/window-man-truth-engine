@@ -58,6 +58,41 @@ export type Database = {
           },
         ]
       }
+      lead_notes: {
+        Row: {
+          admin_email: string | null
+          content: string
+          created_at: string
+          id: string
+          lead_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_email?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_email?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_notes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "wm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           chat_history: Json | null
@@ -291,11 +326,14 @@ export type Database = {
         Row: {
           actual_deal_value: number | null
           assigned_to: string | null
+          city: string | null
           closed_at: string | null
           created_at: string
           email: string
           engagement_score: number | null
           estimated_deal_value: number | null
+          facebook_ad_id: string | null
+          facebook_page_name: string | null
           first_name: string | null
           id: string
           last_contacted_at: string | null
@@ -308,15 +346,19 @@ export type Database = {
           phone: string | null
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
+          verified_social_url: string | null
         }
         Insert: {
           actual_deal_value?: number | null
           assigned_to?: string | null
+          city?: string | null
           closed_at?: string | null
           created_at?: string
           email: string
           engagement_score?: number | null
           estimated_deal_value?: number | null
+          facebook_ad_id?: string | null
+          facebook_page_name?: string | null
           first_name?: string | null
           id?: string
           last_contacted_at?: string | null
@@ -329,15 +371,19 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
+          verified_social_url?: string | null
         }
         Update: {
           actual_deal_value?: number | null
           assigned_to?: string | null
+          city?: string | null
           closed_at?: string | null
           created_at?: string
           email?: string
           engagement_score?: number | null
           estimated_deal_value?: number | null
+          facebook_ad_id?: string | null
+          facebook_page_name?: string | null
           first_name?: string | null
           id?: string
           last_contacted_at?: string | null
@@ -350,6 +396,7 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
+          verified_social_url?: string | null
         }
         Relationships: [
           {
