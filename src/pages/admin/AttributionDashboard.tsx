@@ -142,7 +142,7 @@ export default function AttributionDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4 max-w-6xl">
+      <div className="w-full py-8 px-4 lg:px-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
