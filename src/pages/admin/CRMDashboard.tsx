@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Loader2, Calculator } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Loader2, Calculator, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
@@ -163,6 +163,13 @@ export default function CRMDashboard() {
                 )}
                 Recalculate Scores
               </Button>
+
+              <Link to="/admin/quotes">
+                <Button variant="outline" size="sm">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Quotes
+                </Button>
+              </Link>
 
               <Link to="/admin/attribution">
                 <Button variant="outline" size="sm">
