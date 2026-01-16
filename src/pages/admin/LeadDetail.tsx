@@ -55,15 +55,35 @@ function LeadDetailContent() {
   }
 
   if (error || !lead) {
+    const isAuthError = error?.toLowerCase().includes('authenticated') || error?.toLowerCase().includes('log in');
+    const isInvalidId = error?.toLowerCase().includes('invalid lead id');
+    
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Lead Not Found</h1>
-          <p className="text-muted-foreground mb-4">{error || 'The requested lead could not be found.'}</p>
-          <Button onClick={() => navigate('/admin/crm')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to CRM
-          </Button>
+        <div className="text-center max-w-md mx-auto px-4">
+          <h1 className="text-2xl font-bold mb-2">
+            {isAuthError ? 'Authentication Required' : isInvalidId ? 'Invalid Lead ID' : 'Lead Not Found'}
+          </h1>
+          <p className="text-muted-foreground mb-4">
+            {error || 'The requested lead could not be found.'}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            {isAuthError ? (
+              <Button onClick={() => navigate(`/auth?redirect=${encodeURIComponent(window.location.pathname)}`)}>
+                Log In
+              </Button>
+            ) : (
+              <Button onClick={() => navigate('/admin/crm')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to CRM
+              </Button>
+            )}
+          </div>
+          {id && !isInvalidId && (
+            <p className="text-xs text-muted-foreground mt-4">
+              Lead ID: <code className="bg-muted px-1 py-0.5 rounded">{id}</code>
+            </p>
+          )}
         </div>
       </div>
     );
