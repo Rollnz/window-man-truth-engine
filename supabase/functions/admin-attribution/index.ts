@@ -74,52 +74,71 @@ serve(async (req) => {
     // Parse query params
     const url = new URL(req.url);
     const eventFilter = url.searchParams.get('event_name') || null;
+    const leadIdFilter = url.searchParams.get('lead_id') || null;
+    const startDate = url.searchParams.get('start_date') || null;
+    const endDate = url.searchParams.get('end_date') || null;
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200);
 
-    // Fetch summary stats
-    const { data: summaryData, error: summaryError } = await supabaseAdmin
-      .rpc('get_attribution_summary');
-
-    // If RPC doesn't exist, calculate manually
+    // Fetch summary stats (only when not filtering by lead_id)
     let summary = { totalLeads: 0, totalEmails: 0, totalAiInteractions: 0 };
     
-    if (summaryError) {
-      console.log('RPC not available, calculating summary manually');
-      
-      // Count leads
-      const { count: leadsCount } = await supabaseAdmin
-        .from('leads')
-        .select('*', { count: 'exact', head: true });
-      
-      // Count events by category
-      const { data: eventCounts } = await supabaseAdmin
-        .from('wm_events')
-        .select('event_name');
-      
-      const emailCount = eventCounts?.filter(e => e.event_name === 'vault_email_sent').length || 0;
-      const aiCount = eventCounts?.filter(e => 
-        ['expert_chat_session', 'roleplay_chat_turn', 'roleplay_game_completed', 
-         'quote_scanned', 'quote_generated', 'evidence_analyzed'].includes(e.event_name)
-      ).length || 0;
-      
-      summary = {
-        totalLeads: leadsCount || 0,
-        totalEmails: emailCount,
-        totalAiInteractions: aiCount,
-      };
-    } else {
-      summary = summaryData;
+    if (!leadIdFilter) {
+      const { data: summaryData, error: summaryError } = await supabaseAdmin
+        .rpc('get_attribution_summary');
+
+      // If RPC doesn't exist, calculate manually
+      if (summaryError) {
+        console.log('RPC not available, calculating summary manually');
+        
+        // Count leads
+        const { count: leadsCount } = await supabaseAdmin
+          .from('leads')
+          .select('*', { count: 'exact', head: true });
+        
+        // Count events by category
+        const { data: eventCounts } = await supabaseAdmin
+          .from('wm_events')
+          .select('event_name');
+        
+        const emailCount = eventCounts?.filter(e => e.event_name === 'vault_email_sent').length || 0;
+        const aiCount = eventCounts?.filter(e => 
+          ['expert_chat_session', 'roleplay_chat_turn', 'roleplay_game_completed', 
+           'quote_scanned', 'quote_generated', 'evidence_analyzed'].includes(e.event_name)
+        ).length || 0;
+        
+        summary = {
+          totalLeads: leadsCount || 0,
+          totalEmails: emailCount,
+          totalAiInteractions: aiCount,
+        };
+      } else {
+        summary = summaryData;
+      }
     }
 
-    // Fetch recent events with optional filter
+    // Fetch recent events with optional filters
     let eventsQuery = supabaseAdmin
       .from('wm_events')
       .select('id, event_name, event_category, event_data, page_path, created_at, session_id')
       .order('created_at', { ascending: false })
       .limit(limit);
 
+    // Apply event name filter
     if (eventFilter) {
       eventsQuery = eventsQuery.eq('event_name', eventFilter);
+    }
+
+    // Apply lead_id filter (filter by event_data->lead_id)
+    if (leadIdFilter) {
+      eventsQuery = eventsQuery.eq('event_data->>lead_id', leadIdFilter);
+    }
+
+    // Apply date range filters
+    if (startDate) {
+      eventsQuery = eventsQuery.gte('created_at', startDate);
+    }
+    if (endDate) {
+      eventsQuery = eventsQuery.lte('created_at', endDate);
     }
 
     const { data: events, error: eventsError } = await eventsQuery;

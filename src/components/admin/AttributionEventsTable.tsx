@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, AlertCircle } from "lucide-react";
+import { Download, AlertCircle, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 
 interface AttributionEvent {
@@ -25,6 +25,7 @@ interface AttributionEvent {
 interface AttributionEventsTableProps {
   events: AttributionEvent[];
   isLoading?: boolean;
+  onLeadClick?: (leadId: string) => void;
 }
 
 // Helper to get badge variant based on event category
@@ -43,6 +44,7 @@ function displayId(id: string | undefined | null): string {
 export function AttributionEventsTable({
   events,
   isLoading = false,
+  onLeadClick,
 }: AttributionEventsTableProps) {
   // Generate CSV data
   const csvData = useMemo(() => {
@@ -123,27 +125,42 @@ export function AttributionEventsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {events.map((event) => (
-              <TableRow key={event.id}>
-                <TableCell className="font-mono text-sm whitespace-nowrap">
-                  {format(new Date(event.created_at), 'MMM d, HH:mm:ss')}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getEventBadgeVariant(event.event_name)}>
-                    {event.event_name.replace(/_/g, ' ')}
-                  </Badge>
-                </TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground break-all">
-                  {displayId(event.event_data?.lead_id as string)}
-                </TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground break-all">
-                  {displayId(event.session_id)}
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                  {event.page_path || '—'}
-                </TableCell>
-              </TableRow>
-            ))}
+            {events.map((event) => {
+              const leadId = event.event_data?.lead_id as string | undefined;
+              const hasLeadId = !!leadId;
+
+              return (
+                <TableRow key={event.id}>
+                  <TableCell className="font-mono text-sm whitespace-nowrap">
+                    {format(new Date(event.created_at), 'MMM d, HH:mm:ss')}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getEventBadgeVariant(event.event_name)}>
+                      {event.event_name.replace(/_/g, ' ')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-mono text-xs break-all">
+                    {hasLeadId ? (
+                      <button
+                        onClick={() => onLeadClick?.(leadId)}
+                        className="text-primary hover:underline flex items-center gap-1 group"
+                      >
+                        {displayId(leadId)}
+                        <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground break-all">
+                    {displayId(event.session_id)}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                    {event.page_path || '—'}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

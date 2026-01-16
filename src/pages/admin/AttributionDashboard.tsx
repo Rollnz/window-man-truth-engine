@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { subDays, format, startOfDay, endOfDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -7,6 +8,8 @@ import { RefreshCw, ArrowLeft, ShieldAlert } from "lucide-react";
 import { AttributionSummaryCards } from "@/components/admin/AttributionSummaryCards";
 import { AttributionEventsTable } from "@/components/admin/AttributionEventsTable";
 import { AttributionEventFilter } from "@/components/admin/AttributionEventFilter";
+import { LeadJourneyPanel } from "@/components/admin/LeadJourneyPanel";
+import { DateRange } from "@/components/admin/DateRangePicker";
 
 interface AttributionEvent {
   id: string;
@@ -36,6 +39,12 @@ const ADMIN_EMAILS = [
   'mongoloyd@protonmail.com',
 ].map(e => e.toLowerCase());
 
+// Default date range: last 30 days
+const getDefaultDateRange = (): DateRange => ({
+  startDate: subDays(new Date(), 30),
+  endDate: new Date(),
+});
+
 export default function AttributionDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -43,7 +52,14 @@ export default function AttributionDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [data, setData] = useState<AttributionData | null>(null);
+  
+  // Filters
   const [eventFilter, setEventFilter] = useState("all");
+  const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange);
+  
+  // Lead Journey Panel
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [isJourneyOpen, setIsJourneyOpen] = useState(false);
 
   // Check authorization
   useEffect(() => {
@@ -81,10 +97,24 @@ export default function AttributionDashboard() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const filterParam = eventFilter !== 'all' ? `&event_name=${eventFilter}` : '';
+      // Build query params
+      const params = new URLSearchParams();
+      params.set('limit', '100');
+      
+      if (eventFilter !== 'all') {
+        params.set('event_name', eventFilter);
+      }
+      
+      if (dateRange.startDate) {
+        params.set('start_date', format(startOfDay(dateRange.startDate), "yyyy-MM-dd'T'HH:mm:ss"));
+      }
+      
+      if (dateRange.endDate) {
+        params.set('end_date', format(endOfDay(dateRange.endDate), "yyyy-MM-dd'T'HH:mm:ss"));
+      }
       
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-attribution?limit=50${filterParam}`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-attribution?${params.toString()}`,
         {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
@@ -113,13 +143,40 @@ export default function AttributionDashboard() {
     } finally {
       setIsLoading(false);
     }
-  }, [eventFilter, toast]);
+  }, [eventFilter, dateRange, toast]);
 
   useEffect(() => {
     if (isAuthorized) {
       fetchData();
     }
   }, [isAuthorized, fetchData]);
+
+  // Clear all filters
+  const handleClearFilters = useCallback(() => {
+    setEventFilter('all');
+    setDateRange(getDefaultDateRange());
+  }, []);
+
+  // Handle lead click - open journey panel
+  const handleLeadClick = useCallback((leadId: string) => {
+    setSelectedLeadId(leadId);
+    setIsJourneyOpen(true);
+  }, []);
+
+  // Close journey panel
+  const handleJourneyClose = useCallback(() => {
+    setIsJourneyOpen(false);
+    setSelectedLeadId(null);
+  }, []);
+
+  // Format date range for display
+  const dateRangeLabel = useMemo(() => {
+    if (!dateRange.startDate && !dateRange.endDate) return 'All time';
+    if (dateRange.startDate && dateRange.endDate) {
+      return `${format(dateRange.startDate, 'MMM d')} - ${format(dateRange.endDate, 'MMM d, yyyy')}`;
+    }
+    return 'Custom range';
+  }, [dateRange]);
 
   // Unauthorized state
   if (!isLoading && !isAuthorized) {
@@ -144,11 +201,11 @@ export default function AttributionDashboard() {
     <div className="min-h-screen bg-background">
       <div className="w-full py-8 px-4 lg:px-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold">Attribution Dashboard</h1>
             <p className="text-muted-foreground mt-1">
-              Golden Thread analytics and event tracking
+              Golden Thread analytics • {dateRangeLabel}
             </p>
           </div>
           <div className="flex gap-2">
@@ -173,11 +230,14 @@ export default function AttributionDashboard() {
           />
         </div>
 
-        {/* Filter */}
-        <div className="mb-4">
+        {/* Filters */}
+        <div className="mb-6">
           <AttributionEventFilter
-            value={eventFilter}
-            onChange={setEventFilter}
+            eventFilter={eventFilter}
+            onEventFilterChange={setEventFilter}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            onClearFilters={handleClearFilters}
             options={data?.eventTypes || []}
             disabled={isLoading}
           />
@@ -187,8 +247,16 @@ export default function AttributionDashboard() {
         <AttributionEventsTable
           events={data?.events || []}
           isLoading={isLoading}
+          onLeadClick={handleLeadClick}
         />
       </div>
+
+      {/* Lead Journey Panel */}
+      <LeadJourneyPanel
+        leadId={selectedLeadId}
+        isOpen={isJourneyOpen}
+        onClose={handleJourneyClose}
+      />
     </div>
   );
 }
