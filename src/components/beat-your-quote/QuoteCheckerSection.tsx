@@ -162,19 +162,19 @@ export const QuoteCheckerSection = ({
                 boxShadow: '0 0 30px rgba(67, 147, 219, 0.15)'
               }}
             >
-              <div className="flex items-center justify-between w-full mb-4">
-                <h3 
-                  className="text-xl font-bold flex items-center gap-2"
-                  style={{ color: '#FFFFFF' }}
-                >
-                  <span className="text-xl">📤</span> Upload Quote Here
-                </h3>
+              <div className="flex flex-col gap-2 w-full mb-4">
                 <div 
-                  className="text-[10px] uppercase font-bold px-3 py-1 rounded-full tracking-wider"
+                  className="text-[10px] uppercase font-bold px-3 py-1 rounded-full tracking-wider whitespace-nowrap self-start"
                   style={{ backgroundColor: '#4393DB', color: '#FFFFFF' }}
                 >
                   Most Popular
                 </div>
+                <h3 
+                  className="text-xl font-bold flex items-center gap-2 whitespace-nowrap"
+                  style={{ color: '#FFFFFF' }}
+                >
+                  <span className="text-xl">📤</span> Upload Quote Here
+                </h3>
               </div>
               <p 
                 className="mb-6 leading-relaxed text-sm"
