@@ -288,6 +288,168 @@ export const TOOL_SCHEMAS = {
         answer: "Start with the Fair Price Quiz if you have a quote, or the Free Estimate Calculator if you're still shopping. The Evidence Locker shows which tools work best for different situations."
       }
     ])
+  },
+
+  'roleplay-simulator': {
+    tool: generateToolSchema({
+      name: "Sales Pressure Roleplay Simulator",
+      description: "Practice handling high-pressure window sales tactics in a safe AI-powered simulation. Build confidence to resist manipulation before the real sales visit.",
+      url: "https://itswindowman.com/roleplay"
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "How does the roleplay simulator work?",
+        answer: "You engage in a conversation with an AI salesperson who uses common high-pressure tactics. Your goal is to resist manipulation and maintain your position without agreeing to sign."
+      },
+      {
+        question: "What tactics does the simulator use?",
+        answer: "The AI uses real tactics from window sales training: urgency creation, price anchoring, fear triggering, and social proof manipulation. You'll learn to recognize and counter each one."
+      },
+      {
+        question: "Is the simulator free to use?",
+        answer: "Yes, the roleplay simulator is completely free. You can practice as many times as you want to build confidence before your real sales appointment."
+      }
+    ])
+  },
+
+  'fast-win': {
+    tool: generateToolSchema({
+      name: "Fast Win Product Finder",
+      description: "Answer 4 quick questions to find the best window product for your specific situation. Get personalized recommendations in under 60 seconds.",
+      url: "https://itswindowman.com/fast-win"
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "How accurate is the product recommendation?",
+        answer: "Our recommendations are based on your specific pain points, budget priority, and project status. The algorithm matches your needs to the most suitable window types."
+      },
+      {
+        question: "How long does the Fast Win quiz take?",
+        answer: "Under 60 seconds. You'll answer 4 simple questions and get an instant product recommendation tailored to your situation."
+      }
+    ])
+  },
+
+  'intel-library': {
+    tool: generateToolSchema({
+      name: "Window Man Intel Library - Free Guides & Resources",
+      description: "Access our complete library of free guides, checklists, and resources to make smarter window replacement decisions. No sales pitch, just facts.",
+      url: "https://itswindowman.com/intel"
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "What resources are in the Intel Library?",
+        answer: "The library includes sales tactics guides, specification checklists, insurance savings guides, kitchen table defense guides, and more - all free to access."
+      },
+      {
+        question: "Do I need to pay for any guides?",
+        answer: "No, all resources in the Intel Library are completely free. Some may require an email address so we can save your progress to your personal vault."
+      }
+    ])
+  },
+
+  'vulnerability-test': {
+    tool: generateToolSchema({
+      name: "Window Sales Vulnerability Quiz",
+      description: "Take this 6-question quiz to discover how vulnerable you are to high-pressure window sales tactics. Get your vulnerability score and learn your weak spots.",
+      url: "https://itswindowman.com/vulnerability-test"
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "What does the vulnerability score mean?",
+        answer: "Your vulnerability score shows how likely you are to fall for common sales manipulation tactics. Higher scores mean more vulnerable - but everyone can learn to protect themselves."
+      },
+      {
+        question: "How is the vulnerability calculated?",
+        answer: "The quiz tests your knowledge of sales tactics and your confidence in your answers. Both incorrect answers and overconfidence in wrong answers increase vulnerability."
+      },
+      {
+        question: "Can I improve my vulnerability score?",
+        answer: "Yes! After the quiz, we provide an answer key showing what to watch for. Most people significantly improve after learning the tactics."
+      }
+    ])
+  },
+
+  'kitchen-table-guide': {
+    tool: generateToolSchema({
+      name: "Kitchen Table Defense Guide",
+      description: "A 12-page guide teaching you how to handle in-home window sales presentations. Learn the scripts and strategies to slow down high-pressure tactics.",
+      url: "https://itswindowman.com/kitchen-table-guide"
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "What is the Kitchen Table Guide?",
+        answer: "A 12-page mobile-friendly field guide designed to be read in under 3 minutes. It includes red flag checklists, pause scripts, and a 'Do Not Sign If...' checklist."
+      },
+      {
+        question: "When should I read this guide?",
+        answer: "Read it before any in-home sales appointment. You can even reference it during the presentation - it's designed for quick mobile access."
+      },
+      {
+        question: "Why is this guide free?",
+        answer: "Because an informed homeowner makes better decisions. We provide free tools first - if you find them valuable, you can use our quote analysis tools later."
+      }
+    ])
+  },
+
+  'tools-index': {
+    itemList: {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "Window Man Free Tools",
+      "description": "Complete collection of free window replacement tools including calculators, analyzers, quizzes, and expert guidance.",
+      "url": "https://itswindowman.com/tools",
+      "numberOfItems": 12,
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Free Estimate Calculator", "url": "https://itswindowman.com/free-estimate" },
+        { "@type": "ListItem", "position": 2, "name": "Quote Scanner", "url": "https://itswindowman.com/quote-scanner" },
+        { "@type": "ListItem", "position": 3, "name": "Fair Price Quiz", "url": "https://itswindowman.com/fair-price-quiz" },
+        { "@type": "ListItem", "position": 4, "name": "Risk Diagnostic", "url": "https://itswindowman.com/risk-diagnostic" },
+        { "@type": "ListItem", "position": 5, "name": "Beat Your Quote", "url": "https://itswindowman.com/beat-your-quote" },
+        { "@type": "ListItem", "position": 6, "name": "Expert System", "url": "https://itswindowman.com/expert" },
+        { "@type": "ListItem", "position": 7, "name": "Cost Calculator", "url": "https://itswindowman.com/cost-calculator" },
+        { "@type": "ListItem", "position": 8, "name": "Comparison Tool", "url": "https://itswindowman.com/comparison" },
+        { "@type": "ListItem", "position": 9, "name": "Reality Check Quiz", "url": "https://itswindowman.com/reality-check" },
+        { "@type": "ListItem", "position": 10, "name": "Claim Survival Kit", "url": "https://itswindowman.com/claim-survival" },
+        { "@type": "ListItem", "position": 11, "name": "Evidence Locker", "url": "https://itswindowman.com/evidence" },
+        { "@type": "ListItem", "position": 12, "name": "Roleplay Simulator", "url": "https://itswindowman.com/roleplay" }
+      ]
+    }
+  },
+
+  'about': {
+    organization: generateOrganizationSchema({
+      name: "Window Man Your Hurricane Hero",
+      url: "https://itswindowman.com",
+      logo: "https://itswindowman.com/icon-512.webp",
+      description: "AI-powered tools and resources to protect Florida homeowners from storm risk and contractor games. Get transparent window pricing and expert guidance.",
+      contactPhone: "(305) 555-0123"
+    }),
+    aboutPage: {
+      "@context": "https://schema.org",
+      "@type": "AboutPage",
+      "name": "About Window Man",
+      "description": "Built to protect Florida homeowners from storm risk and contractor games. AI tools, vetted estimators, and a homeowner-first playbook.",
+      "url": "https://itswindowman.com/about"
+    }
+  },
+
+  'defense': {
+    tool: generateToolSchema({
+      name: "Window Quote Defense Mode",
+      description: "Quick checklist of red flags to watch for before signing any window replacement contract. Protect your home and insurance claims.",
+      url: "https://itswindowman.com/defense"
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "What are the biggest red flags in window quotes?",
+        answer: "Watch for: quotes without line-item pricing, 'today only' pressure discounts, missing wind-load or Miami-Dade approvals, and unverified rebates."
+      },
+      {
+        question: "How do I protect my insurance claim?",
+        answer: "Ensure your contractor provides NOA certificates, proper documentation, and specifications that meet your insurance requirements. Use our Claim Survival Kit for detailed guidance."
+      }
+    ])
   }
 } as const;
 
@@ -441,7 +603,20 @@ export const GUIDE_SCHEMAS = {
  */
 export function getToolPageSchemas(toolId: keyof typeof TOOL_SCHEMAS): Record<string, unknown>[] {
   const schemas = TOOL_SCHEMAS[toolId];
-  return [schemas.tool, schemas.faq];
+  
+  // Handle different schema structures
+  if ('tool' in schemas && 'faq' in schemas) {
+    return [schemas.tool, schemas.faq];
+  }
+  if ('itemList' in schemas) {
+    return [schemas.itemList as Record<string, unknown>];
+  }
+  if ('organization' in schemas && 'aboutPage' in schemas) {
+    return [schemas.organization, schemas.aboutPage as Record<string, unknown>];
+  }
+  
+  // Fallback - return all values
+  return Object.values(schemas) as Record<string, unknown>[];
 }
 
 /**

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useToast } from '@/hooks/use-toast';
+import { SEO } from '@/components/SEO';
 import { Navbar } from '@/components/home/Navbar';
 import { IntelHero } from '@/components/intel/IntelHero';
 import { ResourceGrid } from '@/components/intel/ResourceGrid';
@@ -14,6 +15,7 @@ import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { ROUTES } from '@/config/navigation';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
+import { getToolPageSchemas } from '@/lib/seoSchemas';
 
 export default function Intel() {
   usePageTracking('intel-library');
@@ -55,6 +57,12 @@ export default function Intel() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Intel Library - Free Window Guides & Resources"
+        description="Access our complete library of free guides, checklists, and resources to make smarter window replacement decisions. No sales pitch, just facts."
+        canonicalUrl="https://itswindowman.com/intel"
+        jsonLd={getToolPageSchemas('intel-library')}
+      />
       <Navbar />
 
       {/* Hero */}
