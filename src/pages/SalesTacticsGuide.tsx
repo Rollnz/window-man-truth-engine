@@ -29,6 +29,7 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
 import { useNavigate } from 'react-router-dom';
 import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { ProTipBox } from '@/components/seo';
 
 const SalesTacticsGuide = () => {
   usePageTracking('sales-tactics-guide');
@@ -268,6 +269,15 @@ const SalesTacticsGuide = () => {
                   Once you read this, you'll spot these tactics everywhere — not just in window sales.
                 </p>
               </div>
+
+              {/* Semantic ProTip linking to related tool */}
+              <ProTipBox
+                title="Ready to practice resisting these tactics?"
+                description="Our Roleplay Simulator lets you practice saying no to high-pressure sales in a safe environment."
+                linkTo="/roleplay"
+                linkText="Practice resisting these tactics"
+                variant="default"
+              />
             </div>
           </div>
         </div>

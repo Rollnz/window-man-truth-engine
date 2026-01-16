@@ -5,3 +5,4 @@
 
 export { ToolFAQSection } from './ToolFAQSection';
 export { PillarBreadcrumb } from './PillarBreadcrumb';
+export { default as ProTipBox } from './ProTipBox';

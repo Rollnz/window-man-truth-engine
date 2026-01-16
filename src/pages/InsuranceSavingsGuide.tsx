@@ -26,6 +26,7 @@ import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { ProTipBox } from '@/components/seo';
 
 const InsuranceSavingsGuide = () => {
   usePageTracking('insurance-savings-guide');
@@ -258,6 +259,15 @@ const InsuranceSavingsGuide = () => {
                   Most homeowners recover the cost of this guide's advice in 1-2 years of savings.
                 </p>
               </div>
+
+              {/* Semantic ProTip linking to related tool */}
+              <ProTipBox
+                title="Check if you qualify for all discounts"
+                description="The Risk Diagnostic evaluates your home against Florida's wind mitigation credit requirements."
+                linkTo="/risk-diagnostic"
+                linkText="Run the Risk Diagnostic now"
+                variant="success"
+              />
             </div>
           </div>
         </div>
