@@ -29,7 +29,10 @@ export function OutcomeFolders({
     sessionData,
     updateFields
   } = useSessionData();
-  const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
+  const {
+    leadId: hookLeadId,
+    setLeadId
+  } = useLeadIdentity();
   const [activeOutcome, setActiveOutcome] = useState<'alpha' | 'bravo' | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -139,7 +142,8 @@ export function OutcomeFolders({
           email: values.email.trim(),
           name: name.trim(),
           phone: phone.trim(),
-          leadId: hookLeadId, // Golden Thread: pass existing leadId for upsert
+          leadId: hookLeadId,
+          // Golden Thread: pass existing leadId for upsert
           sourceTool: 'beat-your-quote' satisfies SourceTool,
           sessionData: {
             ...sessionData,
@@ -169,7 +173,7 @@ export function OutcomeFolders({
           name: name.trim(),
           phone: phone.trim(),
           windowCount: windowCount ? parseInt(windowCount) : undefined,
-          leadId: data.leadId,
+          leadId: data.leadId
         });
 
         // Calculate time to complete form
@@ -181,7 +185,7 @@ export function OutcomeFolders({
           has_project_cost: !!projectCost,
           has_window_count: !!windowCount,
           time_to_complete_seconds: timeToComplete,
-          lead_id: data.leadId, // Golden Thread: include in analytics
+          lead_id: data.leadId // Golden Thread: include in analytics
         });
         trackLeadCapture({
           sourceTool: 'beat-your-quote' satisfies SourceTool,
@@ -279,7 +283,7 @@ export function OutcomeFolders({
               <CheckCircle className="w-5 h-5 text-green-400" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-green-400 uppercase tracking-wide font-mono">
+              <h4 className="font-bold text-green-400 uppercase tracking-wide font-mono text-4xl">
                 WE BEAT IT
               </h4>
               <p className="text-sm text-primary-foreground">We beat your quote</p>
@@ -333,8 +337,8 @@ export function OutcomeFolders({
               <Shield className="w-5 h-5 text-tools-truth-engine" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono">
-                QUOTE VALIDATED
+              <h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono text-2xl">
+                OR VALIDATE IT 
               </h4>
               <p className="text-sm text-muted-foreground">We can't beat it</p>
             </div>
