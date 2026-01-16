@@ -20,4 +20,4 @@ Disallow: /vault
 Disallow: /button-audit
 
 # Sitemap location
-Sitemap: https://window-man-truth-engine.lovable.app/sitemap.xml
+Sitemap: https://itswindowman.com/sitemap.xml
