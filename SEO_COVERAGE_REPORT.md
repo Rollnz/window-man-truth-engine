@@ -11,14 +11,14 @@
 |--------|-------|
 | **Total Public Pages** | 26 |
 | **Pages with Structured Data** | 22 |
-| **Pages Missing Structured Data** | 4 (legal/utility pages) |
-| **Coverage Rate** | 100% (of indexable pages) |
+| **Pages Excluded (Auth/Legal)** | 4 |
+| **Coverage Rate** | 100% ✅ |
 
 ---
 
-## ✅ Pages WITH Structured Data (12 Pages)
+## ✅ All Pages WITH Structured Data (22 Pages)
 
-### Core Tool Pages
+### Core Tool Pages (12)
 
 | Page | URL | Schema Types | Status |
 |------|-----|--------------|--------|
@@ -30,8 +30,23 @@
 | **Fair Price Quiz** | `/fair-price-quiz` | SoftwareApplication, FAQPage | ✅ Complete |
 | **Quote Scanner** | `/quote-scanner` | SoftwareApplication, FAQPage | ✅ Complete |
 | **Evidence Locker** | `/evidence` | SoftwareApplication, FAQPage | ✅ Complete |
+| **Cost Calculator** | `/cost-calculator` | SoftwareApplication, FAQPage | ✅ Complete |
+| **Expert Chat** | `/expert` | SoftwareApplication, FAQPage | ✅ Complete |
+| **Reality Check Quiz** | `/reality-check` | SoftwareApplication, FAQPage | ✅ Complete |
+| **Comparison Tool** | `/comparison` | SoftwareApplication, FAQPage | ✅ Complete |
 
-### Guide & Information Pages
+### Secondary Tool Pages (6)
+
+| Page | URL | Schema Types | Status |
+|------|-----|--------------|--------|
+| **Fast Win Finder** | `/fast-win` | SoftwareApplication, FAQPage | ✅ Complete |
+| **Roleplay Simulator** | `/roleplay` | SoftwareApplication, FAQPage | ✅ Complete |
+| **Intel Library** | `/intel` | SoftwareApplication, FAQPage | ✅ Complete |
+| **Vulnerability Test** | `/vulnerability-test` | SoftwareApplication, FAQPage | ✅ Complete |
+| **Defense Mode** | `/defense` | SoftwareApplication, FAQPage | ✅ Complete |
+| **Tools Index** | `/tools` | ItemList | ✅ Complete |
+
+### Guide & Information Pages (4)
 
 | Page | URL | Schema Types | Status |
 |------|-----|--------------|--------|
@@ -39,36 +54,34 @@
 | **Sales Tactics Guide** | `/sales-tactics-guide` | Article, FAQPage | ✅ Complete |
 | **Spec Checklist Guide** | `/spec-checklist-guide` | Article, HowTo, FAQPage | ✅ Complete |
 | **Insurance Savings Guide** | `/insurance-savings-guide` | Article, HowTo, FAQPage | ✅ Complete |
+| **Kitchen Table Guide** | `/kitchen-table-guide` | SoftwareApplication, FAQPage | ✅ Complete |
+
+### About Page
+
+| Page | URL | Schema Types | Status |
+|------|-----|--------------|--------|
+| **About** | `/about` | Organization, AboutPage | ✅ Complete |
 
 ---
 
-## ❌ Pages MISSING Structured Data (14 Pages)
+## ⚪ Pages Without Structured Data (Intentionally Excluded)
 
-### High Priority (Public Tool Pages)
+### Auth/Private Pages
 
-| Page | URL | Recommended Schemas | Priority |
-|------|-----|---------------------|----------|
-| **Cost Calculator** | `/cost-calculator` | SoftwareApplication, FAQPage | 🔴 High |
-| **Expert Chat** | `/expert` | SoftwareApplication, FAQPage | 🔴 High |
-| **Reality Check Quiz** | `/reality-check` | SoftwareApplication, FAQPage | 🔴 High |
-| **Comparison Tool** | `/comparison` | SoftwareApplication, FAQPage | 🔴 High |
-| **Fast Win** | `/fast-win` | SoftwareApplication | 🟡 Medium |
-| **Defense Guide** | `/defense` | Article, FAQPage | 🟡 Medium |
-| **Roleplay Simulator** | `/roleplay` | SoftwareApplication, FAQPage | 🟡 Medium |
-| **Intel Hub** | `/intel` | SoftwareApplication, FAQPage | 🟡 Medium |
-| **Vulnerability Test** | `/vulnerability-test` | SoftwareApplication, FAQPage | 🟡 Medium |
-| **Kitchen Table Guide** | `/kitchen-table-guide` | Article, HowTo | 🟡 Medium |
+| Page | URL | Reason |
+|------|-----|--------|
+| **Vault** | `/vault` | Auth-protected, private user data |
+| **Auth** | `/auth` | Login/signup utility page |
 
-### Low Priority (Utility Pages)
+### Legal Pages
 
-| Page | URL | Recommended Schemas | Priority |
-|------|-----|---------------------|----------|
-| **Tools Index** | `/tools` | ItemList (CollectionPage) | 🟢 Low |
-| **About** | `/about` | AboutPage, Organization | 🟢 Low |
-| **Vault (Auth Required)** | `/vault` | None needed (private) | ⚪ Skip |
-| **Auth** | `/auth` | None needed (utility) | ⚪ Skip |
+| Page | URL | Reason |
+|------|-----|--------|
+| **Privacy Policy** | `/privacy` | Standard legal, no rich result benefit |
+| **Terms of Service** | `/terms` | Standard legal, no rich result benefit |
+| **Disclaimer** | `/disclaimer` | Standard legal, no rich result benefit |
 
-### Admin/Internal Pages (No SEO Needed)
+### Admin/Internal Pages (No-Index)
 
 | Page | URL | Notes |
 |------|-----|-------|
@@ -80,44 +93,20 @@
 | Analytics | `/analytics` | Protected, no-index |
 | Button Audit | `/button-audit` | Internal utility |
 
-### Legal Pages
-
-| Page | URL | Recommended Schemas | Priority |
-|------|-----|---------------------|----------|
-| **Privacy Policy** | `/privacy` | None (standard legal) | ⚪ Optional |
-| **Terms of Service** | `/terms` | None (standard legal) | ⚪ Optional |
-| **Disclaimer** | `/disclaimer` | None (standard legal) | ⚪ Optional |
-
 ---
 
-## Schema Types Implemented
+## Schema Types Summary
 
-### SoftwareApplication (8 implementations)
-Used for free tool pages. Enables "Free" price display in search results.
-
-```json
-{
-  "@type": "SoftwareApplication",
-  "applicationCategory": "UtilityApplication",
-  "operatingSystem": "Web",
-  "offers": { "price": "0", "priceCurrency": "USD" }
-}
-```
-
-### FAQPage (11 implementations)
-Used for rich FAQ snippets. Each FAQ block contains 2-4 Q&A pairs.
-
-### Article (3 implementations)
-Used for guide/educational content pages with author and publisher info.
-
-### HowTo (4 implementations)
-Used for step-by-step instructional content with numbered steps.
-
-### Organization (1 implementation)
-Used on homepage for Knowledge Graph eligibility.
-
-### WebSite (1 implementation)
-Used on homepage with SearchAction for sitelinks search box.
+| Schema Type | Count | Usage |
+|-------------|-------|-------|
+| **SoftwareApplication** | 18 | Free tool pages - enables "Free" price in results |
+| **FAQPage** | 21 | Rich FAQ snippets - 2-4 Q&A pairs each |
+| **Article** | 3 | Guide/educational content with author info |
+| **HowTo** | 4 | Step-by-step instructional content |
+| **Organization** | 2 | Homepage + About - Knowledge Graph eligibility |
+| **WebSite** | 1 | Homepage - SearchAction for sitelinks |
+| **AboutPage** | 1 | About page context |
+| **ItemList** | 1 | Tools collection page |
 
 ---
 
@@ -136,44 +125,15 @@ Used on homepage with SearchAction for sitelinks search box.
    - ⚠️ Warnings (non-critical, optional fields)
    - ❌ Errors (must fix for eligibility)
 
-### Expected Results by Page
+### Expected Results by Page Type
 
-| Page | Expected Rich Results |
-|------|----------------------|
+| Page Type | Expected Rich Results |
+|-----------|----------------------|
 | Homepage | FAQ snippets, Organization Knowledge Panel |
-| Tool Pages | FAQ snippets, Software Application (free price) |
+| Tool Pages | FAQ snippets, Software Application (free price badge) |
 | Guide Pages | FAQ snippets, How-to carousels, Article snippets |
-
----
-
-## Recommendations
-
-### Immediate Actions (Week 1)
-
-1. **Add schemas to high-priority tool pages:**
-   - `/cost-calculator`
-   - `/expert`
-   - `/reality-check`
-   - `/comparison`
-
-2. **Run Rich Results Test** on all 12 implemented pages
-
-### Short-Term (Week 2-3)
-
-3. **Add schemas to medium-priority pages:**
-   - `/fast-win`
-   - `/defense`
-   - `/roleplay`
-   - `/intel`
-   - `/vulnerability-test`
-   - `/kitchen-table-guide`
-
-4. **Add ItemList schema** to `/tools` page for tool collection
-
-### Ongoing
-
-5. **Monitor Search Console** for structured data errors
-6. **Update schemas** when adding new tools or guides
+| Tools Index | ItemList with all tools listed |
+| About | Organization info, AboutPage context |
 
 ---
 
@@ -192,6 +152,13 @@ Located at: `src/lib/seoSchemas.ts`
 - `getToolPageSchemas()` - Pre-configured tool schemas
 - `getGuidePageSchemas()` - Pre-configured guide schemas
 
+**Configured Tool IDs:**
+- `cost-calculator`, `expert-system`, `reality-check`, `comparison`
+- `fair-price-quiz`, `quote-scanner`, `evidence-locker`
+- `roleplay-simulator`, `fast-win`, `intel-library`
+- `vulnerability-test`, `kitchen-table-guide`
+- `tools-index`, `about`, `defense`
+
 ### Adding to a New Page
 
 ```tsx
@@ -206,6 +173,24 @@ import { getToolPageSchemas } from "@/lib/seoSchemas";
   jsonLd={getToolPageSchemas('tool-id')}
 />
 ```
+
+---
+
+## Ongoing Maintenance
+
+### When Adding New Tools
+
+1. Add schema config to `TOOL_SCHEMAS` in `src/lib/seoSchemas.ts`
+2. Import `SEO` and `getToolPageSchemas` in the new page
+3. Add `<SEO>` component with appropriate props
+4. Update sitemap.xml with the new route
+5. Test with Google Rich Results Test
+
+### Monitoring
+
+- **Google Search Console**: Check for structured data errors weekly
+- **Rich Results Test**: Validate after any schema changes
+- **Schema Markup Validator**: Use https://validator.schema.org for detailed validation
 
 ---
 
