@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { logAttributionEvent } from "../_shared/attributionLogger.ts";
 
 // ============= Rate Limiting Configuration =============
 const RATE_LIMITS = {
@@ -75,6 +76,8 @@ const leadSchema = z.object({
   // Golden Thread: Optional lead ID for identity persistence
   // If provided, UPDATE existing record instead of creating new one
   leadId: z.string().uuid('Invalid lead ID format').optional().nullable(),
+  // Golden Thread: Session ID for attribution tracking
+  sessionId: z.string().uuid('Invalid session ID format').optional().nullable(),
 });
 
 // ============= Helper Functions =============
@@ -280,7 +283,7 @@ serve(async (req) => {
 
     const { 
       email, name, phone, sourceTool, sessionData, chatHistory, consultation,
-      attribution, aiContext, leadId: providedLeadId 
+      attribution, aiContext, leadId: providedLeadId, sessionId 
     } = parseResult.data;
 
     // Check email hourly limit (after validation so we have a valid email)
@@ -577,6 +580,33 @@ serve(async (req) => {
     recordRateLimitEntry(supabase, clientIp, 'save-lead');
     recordRateLimitEntry(supabase, clientIp, 'save-lead-daily');
     recordRateLimitEntry(supabase, normalizedEmail, 'save-lead-email');
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GOLDEN THREAD: Log attribution event to wm_events
+    // ═══════════════════════════════════════════════════════════════════════════
+    if (sessionId) {
+      logAttributionEvent({
+        sessionId,
+        eventName: 'lead_captured',
+        eventCategory: 'conversion',
+        pagePath: aiContext?.source_form || '/unknown',
+        pageTitle: `Lead Capture - ${sourceTool}`,
+        leadId,
+        eventData: {
+          source_tool: sourceTool,
+          email: normalizedEmail,
+          has_phone: !!phone,
+          has_name: !!name,
+          has_consultation: !!consultationId,
+          utm_source: attribution?.utm_source || null,
+          utm_medium: attribution?.utm_medium || null,
+        },
+        anonymousIdFallback: `lead-${leadId}`,
+      });
+    } else {
+      console.warn('Golden Thread: No sessionId provided - attribution event not persisted');
+    }
+    // ═══════════════════════════════════════════════════════════════════════════
 
     // Return success
     return new Response(

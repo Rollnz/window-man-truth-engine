@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { logAttributionEvent } from "../_shared/attributionLogger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +11,9 @@ interface EmailPayload {
   email: string;
   type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report' | 'fast-win-report' | 'evidence-locker-report' | 'intel-resource-delivery' | 'claim-vault-upload-confirmation';
   data: Record<string, unknown>;
+  // Golden Thread: Attribution tracking
+  sessionId?: string;
+  leadId?: string;
 }
 
 // Email templates based on type
@@ -307,7 +311,7 @@ serve(async (req) => {
     // ===== END AUTHENTICATION CHECK =====
 
     const payload: EmailPayload = await req.json();
-    const { email, type, data } = payload;
+    const { email, type, data, sessionId, leadId } = payload;
 
     // Validate required fields
     if (!email || !type) {
@@ -375,6 +379,27 @@ serve(async (req) => {
 
     const resendData = await resendResponse.json();
     console.log('Email sent successfully:', resendData);
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GOLDEN THREAD: Log attribution event to wm_events
+    // ═══════════════════════════════════════════════════════════════════════════
+    if (sessionId) {
+      logAttributionEvent({
+        sessionId,
+        eventName: 'notification_sent',
+        eventCategory: 'email',
+        pagePath: '/email-notification',
+        pageTitle: `Email - ${type}`,
+        leadId,
+        eventData: {
+          email_type: type,
+          recipient: email,
+          email_id: resendData.id,
+        },
+        anonymousIdFallback: leadId ? `lead-${leadId}` : `notif-${Date.now()}`,
+      });
+    }
+    // ═══════════════════════════════════════════════════════════════════════════
 
     return new Response(
       JSON.stringify({ 
