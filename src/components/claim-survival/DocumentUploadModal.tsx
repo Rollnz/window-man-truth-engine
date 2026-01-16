@@ -13,6 +13,9 @@ import { Upload, X, FileText, Image, Loader2, CheckCircle } from 'lucide-react';
 import { claimDocuments } from '@/data/claimSurvivalData';
 import { supabase } from '@/integrations/supabase/client';
 import { useSessionData } from '@/hooks/useSessionData';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { trackEvent } from '@/lib/gtm';
+import type { SourceTool } from '@/types/sourceTool';
 
 interface DocumentUploadModalProps {
   isOpen: boolean;
@@ -21,7 +24,7 @@ interface DocumentUploadModalProps {
   documentId: string | null;
   sessionId: string;
   leadId?: string; // Existing lead ID for identity persistence (Golden Thread)
-  sourceTool?: string; // Source tool for attribution tracking
+  sourceTool?: SourceTool; // Source tool for attribution tracking
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -33,12 +36,16 @@ export function DocumentUploadModal({
   onSuccess,
   documentId,
   sessionId,
-  leadId,
+  leadId: leadIdProp,
   sourceTool,
 }: DocumentUploadModalProps) {
   const { toast } = useToast();
   const { sessionData } = useSessionData();
+  const { leadId: hookLeadId } = useLeadIdentity();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Golden Thread: Use prop if provided, otherwise fallback to hook
+  const effectiveLeadId = leadIdProp || hookLeadId;
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -122,7 +129,7 @@ export function DocumentUploadModal({
       formData.append('file', selectedFile);
       formData.append('sessionId', sessionId);
       formData.append('documentType', documentId);
-      if (leadId) formData.append('leadId', leadId);
+      if (effectiveLeadId) formData.append('leadId', effectiveLeadId);
       if (sourceTool) formData.append('sourceTool', sourceTool);
 
       setUploadProgress(30);
@@ -150,6 +157,14 @@ export function DocumentUploadModal({
 
       if (data.success && data.signedUrl) {
         setIsComplete(true);
+        
+        // Track successful upload for GTM/analytics
+        trackEvent('document_uploaded', {
+          document_type: documentId,
+          file_type: selectedFile.type,
+          lead_id: effectiveLeadId,
+          source_tool: sourceTool || 'claim-survival',
+        });
         
         // Send upload confirmation email (fire and forget)
         const userEmail = sessionData?.email;
