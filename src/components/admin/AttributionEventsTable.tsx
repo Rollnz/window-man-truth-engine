@@ -34,10 +34,10 @@ function getEventBadgeVariant(eventName: string): "default" | "secondary" | "out
   return 'outline';
 }
 
-// Truncate UUID for display
-function truncateId(id: string | undefined | null): string {
+// Display full ID (no truncation)
+function displayId(id: string | undefined | null): string {
   if (!id) return '—';
-  return id.substring(0, 8) + '...';
+  return id;
 }
 
 export function AttributionEventsTable({
@@ -111,21 +111,21 @@ export function AttributionEventsTable({
         </Button>
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
+      <div className="border rounded-lg overflow-x-auto">
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[180px]">Timestamp</TableHead>
-              <TableHead>Event Name</TableHead>
-              <TableHead>Lead ID</TableHead>
-              <TableHead>Session ID</TableHead>
-              <TableHead>Page</TableHead>
+              <TableHead className="w-[160px] whitespace-nowrap">Timestamp</TableHead>
+              <TableHead className="w-[160px]">Event Name</TableHead>
+              <TableHead className="w-[280px]">Lead ID</TableHead>
+              <TableHead className="w-[320px]">Session ID</TableHead>
+              <TableHead className="min-w-[120px]">Page</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {events.map((event) => (
               <TableRow key={event.id}>
-                <TableCell className="font-mono text-sm">
+                <TableCell className="font-mono text-sm whitespace-nowrap">
                   {format(new Date(event.created_at), 'MMM d, HH:mm:ss')}
                 </TableCell>
                 <TableCell>
@@ -133,13 +133,13 @@ export function AttributionEventsTable({
                     {event.event_name.replace(/_/g, ' ')}
                   </Badge>
                 </TableCell>
-                <TableCell className="font-mono text-sm text-muted-foreground">
-                  {truncateId(event.event_data?.lead_id as string)}
+                <TableCell className="font-mono text-xs text-muted-foreground break-all">
+                  {displayId(event.event_data?.lead_id as string)}
                 </TableCell>
-                <TableCell className="font-mono text-sm text-muted-foreground">
-                  {truncateId(event.session_id)}
+                <TableCell className="font-mono text-xs text-muted-foreground break-all">
+                  {displayId(event.session_id)}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                   {event.page_path || '—'}
                 </TableCell>
               </TableRow>
