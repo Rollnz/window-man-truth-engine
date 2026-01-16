@@ -36,6 +36,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const AttributionDashboard = lazy(() => import("./pages/admin/AttributionDashboard"));
 const CRMDashboard = lazy(() => import("./pages/admin/CRMDashboard"));
+const QuotesDashboard = lazy(() => import("./pages/admin/QuotesDashboard"));
 const About = lazy(() => import("./pages/About"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Defense = lazy(() => import("./pages/Defense"));
@@ -100,6 +101,7 @@ function AppContent() {
         <Route path="/admin/analytics" element={<Analytics />} />
         <Route path="/admin/attribution" element={<AttributionDashboard />} />
         <Route path="/admin/crm" element={<CRMDashboard />} />
+        <Route path="/admin/quotes" element={<QuotesDashboard />} />
         {/* Legacy redirects - programmatically generated */}
         {Object.entries(ROUTE_REDIRECTS).map(([from, to]) => (
           <Route key={from} path={from} element={<Navigate to={to} replace />} />
