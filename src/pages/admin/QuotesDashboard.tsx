@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Download, FileText, User, Phone, Mail, Calendar, ExternalLink, Filter } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Download, FileText, User, Phone, Mail, Calendar, ExternalLink, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -69,6 +69,8 @@ export default function QuotesDashboard() {
   const [quotes, setQuotes] = useState<QuoteFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   // Check admin access
   useEffect(() => {
@@ -79,7 +81,7 @@ export default function QuotesDashboard() {
 
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
 
-  const fetchQuotes = useCallback(async () => {
+  const fetchQuotes = useCallback(async (page: number = 1) => {
     if (!isAdmin) return;
     
     setIsLoading(true);
@@ -90,6 +92,7 @@ export default function QuotesDashboard() {
         return;
       }
 
+      const offset = (page - 1) * ITEMS_PER_PAGE;
       const params = new URLSearchParams();
       if (dateRange.startDate) {
         params.set('startDate', format(dateRange.startDate, 'yyyy-MM-dd'));
@@ -100,6 +103,8 @@ export default function QuotesDashboard() {
       if (leadFilter !== 'all') {
         params.set('hasLead', leadFilter === 'linked' ? 'true' : 'false');
       }
+      params.set('limit', ITEMS_PER_PAGE.toString());
+      params.set('offset', offset.toString());
 
       const response = await supabase.functions.invoke('admin-quotes', {
         body: null,
@@ -129,13 +134,30 @@ export default function QuotesDashboard() {
     } finally {
       setIsLoading(false);
     }
-  }, [isAdmin, dateRange, leadFilter]);
+  }, [isAdmin, dateRange, leadFilter, ITEMS_PER_PAGE]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dateRange, leadFilter]);
 
   useEffect(() => {
     if (isAdmin) {
-      fetchQuotes();
+      fetchQuotes(currentPage);
     }
-  }, [isAdmin, fetchQuotes]);
+  }, [isAdmin, currentPage, fetchQuotes]);
+
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+
+  const handleRefresh = () => {
+    fetchQuotes(currentPage);
+  };
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   if (authLoading) {
     return (
@@ -202,7 +224,7 @@ export default function QuotesDashboard() {
                   <SelectItem value="unlinked">No Lead</SelectItem>
                 </SelectContent>
               </Select>
-              <Button onClick={fetchQuotes} variant="outline" size="icon">
+              <Button onClick={handleRefresh} variant="outline" size="icon">
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
@@ -345,6 +367,64 @@ export default function QuotesDashboard() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+            <p className="text-sm text-muted-foreground">
+              Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, total)} of {total} quotes
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1 || isLoading}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(pageNum)}
+                      disabled={isLoading}
+                      className="w-9"
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages || isLoading}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
           </div>
         )}
       </div>
