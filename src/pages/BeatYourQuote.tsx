@@ -12,12 +12,16 @@ import { MissionOutcomes } from '@/components/beat-your-quote/MissionOutcomes';
 import { InterrogationFAQ } from '@/components/beat-your-quote/InterrogationFAQ';
 import { MissionInitiatedModal } from '@/components/beat-your-quote/MissionInitiatedModal';
 import { AnalysisSuccessScreen } from '@/components/beat-your-quote/AnalysisSuccessScreen';
+import { QuoteCheckerSection } from '@/components/beat-your-quote/QuoteCheckerSection';
+import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
+import { useToast } from '@/hooks/use-toast';
 
 export default function BeatYourQuote() {
   usePageTracking('beat-your-quote');
   const { sessionData } = useSessionData();
+  const { toast } = useToast();
 
   // State to trigger modal from hero buttons (legacy, now used by AnatomySection)
   const [modalTriggerCount, setModalTriggerCount] = useState(0);
@@ -29,6 +33,9 @@ export default function BeatYourQuote() {
   // Track captured lead for success screen
   const [capturedLeadName, setCapturedLeadName] = useState<string | null>(null);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
+  
+  // Booking modal state
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   const handleUploadSuccess = useCallback((fileId: string, _filePath: string) => {
     setUploadedFileId(fileId);
@@ -72,6 +79,13 @@ export default function BeatYourQuote() {
         <ConceptSection />
         <ManipulationTactics />
         <AnatomySection modalTriggerCount={modalTriggerCount} />
+        
+        {/* Quote Submission Options - 3 Cards */}
+        <QuoteCheckerSection
+          onUploadSuccess={handleUploadSuccess}
+          onOpenBookingModal={() => setIsBookingModalOpen(true)}
+        />
+        
         {/* Mission Outcomes - Testimonials */}
         <MissionOutcomes />
         {/* Interrogation FAQ */}
@@ -106,6 +120,21 @@ export default function BeatYourQuote() {
           onUploadAnother={handleUploadAnother}
         />
       )}
+
+      {/* Consultation Booking Modal */}
+      <ConsultationBookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        onSuccess={() => {
+          setIsBookingModalOpen(false);
+          toast({
+            title: '📞 Consultation Requested!',
+            description: "We'll contact you shortly to schedule your quote review.",
+          });
+        }}
+        sessionData={sessionData}
+        sourceTool="beat-your-quote"
+      />
     </div>
   );
 }
