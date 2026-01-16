@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { SessionData } from '@/hooks/useSessionData';
 import { IntelResource } from '@/data/intelData';
 import { Mail, Check, Loader2, Unlock } from 'lucide-react';
@@ -34,6 +35,7 @@ export function IntelLeadModal({
   sessionData,
 }: IntelLeadModalProps) {
   const { toast } = useToast();
+  const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [modalOpenTime, setModalOpenTime] = useState<number>(0);
@@ -83,6 +85,7 @@ export function IntelLeadModal({
             email: values.email.trim(),
             name: sessionData.name || null,
             phone: sessionData.phone || null,
+            leadId: hookLeadId, // Golden Thread: pass existing leadId for upsert
             sourceTool: 'intel-library' satisfies SourceTool,
             sessionData,
             chatHistory: [],
@@ -102,16 +105,20 @@ export function IntelLeadModal({
       if (data.success && data.leadId) {
         setIsSuccess(true);
 
+        // Golden Thread: persist leadId for cross-tool tracking
+        setLeadId(data.leadId);
+
         // Track lead capture and intel unlock
         trackEvent('lead_captured', {
           modal_type: 'intel_lead',
-          lead_id: data.leadId,
+          lead_id: data.leadId, // Golden Thread: include in analytics
+          source_tool: 'intel-library',
         });
 
         trackEvent('intel_unlocked', {
           resource_id: resource?.id,
           resource_title: resource?.title,
-          lead_id: data.leadId,
+          lead_id: data.leadId, // Golden Thread: include in analytics
         });
 
         toast({
