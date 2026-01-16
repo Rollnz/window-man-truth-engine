@@ -78,6 +78,8 @@ const leadSchema = z.object({
   leadId: z.string().uuid('Invalid lead ID format').optional().nullable(),
   // Golden Thread: Session ID for attribution tracking
   sessionId: z.string().uuid('Invalid session ID format').optional().nullable(),
+  // Quote File linking: If provided, update the quote_files record to link to this lead
+  quoteFileId: z.string().uuid('Invalid quote file ID format').optional().nullable(),
 });
 
 // ============= Helper Functions =============
@@ -283,7 +285,7 @@ serve(async (req) => {
 
     const { 
       email, name, phone, sourceTool, sessionData, chatHistory, consultation,
-      attribution, aiContext, leadId: providedLeadId, sessionId 
+      attribution, aiContext, leadId: providedLeadId, sessionId, quoteFileId 
     } = parseResult.data;
 
     // Check email hourly limit (after validation so we have a valid email)
@@ -500,6 +502,47 @@ serve(async (req) => {
       );
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // QUOTE FILE LINKING: If quoteFileId provided, link it to this lead
+    // ═══════════════════════════════════════════════════════════════════════════
+    let quoteFileLinked = false;
+    if (quoteFileId) {
+      try {
+        const { error: linkError } = await supabase
+          .from('quote_files')
+          .update({ lead_id: leadId })
+          .eq('id', quoteFileId)
+          .is('lead_id', null); // Only update if not already linked
+
+        if (linkError) {
+          console.error('Error linking quote file to lead:', linkError);
+          // Non-blocking - don't fail the lead save
+        } else {
+          quoteFileLinked = true;
+          console.log('Linked quote file to lead:', { quoteFileId, leadId });
+
+          // Log quote_file_linked event for funnel tracking
+          if (sessionId) {
+            logAttributionEvent({
+              sessionId,
+              eventName: 'quote_file_linked',
+              eventCategory: 'conversion',
+              pagePath: '/beat-your-quote',
+              pageTitle: 'Quote File Linked - Beat Your Quote',
+              leadId,
+              eventData: {
+                quote_file_id: quoteFileId,
+                source_tool: sourceTool,
+              },
+              anonymousIdFallback: `quote-${quoteFileId}`,
+            });
+          }
+        }
+      } catch (linkErr) {
+        console.error('Quote file linking failed (non-blocking):', linkErr);
+      }
+    }
+
     // If consultation data provided, create consultation record
     let consultationId: string | null = null;
     if (consultation && consultation.preferredTime) {
@@ -632,6 +675,7 @@ serve(async (req) => {
         success: true,
         leadId,
         consultationId,
+        quoteFileLinked,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
