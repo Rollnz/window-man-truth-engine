@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
-import { SessionData } from '@/hooks/useSessionData';
+import { SessionData, useSessionData } from '@/hooks/useSessionData';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { Mail, Check, Loader2 } from 'lucide-react';
 import { trackEvent, trackModalOpen } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
@@ -47,6 +48,11 @@ export function LeadCaptureModal({
   const [name, setName] = useState(sessionData.name || '');
   const [phone, setPhone] = useState(sessionData.phone || '');
   const [modalOpenTime, setModalOpenTime] = useState<number>(0);
+
+  // Golden Thread: Use hook as fallback if leadId prop not provided
+  const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
+  const { updateFields } = useSessionData();
+  const effectiveLeadId = leadId || hookLeadId;
 
   const requiresFullContact = sourceTool === 'quote-scanner';
 
@@ -114,7 +120,8 @@ export function LeadCaptureModal({
             chatHistory: chatHistory || [],
             attribution: getAttributionData(),
             aiContext: buildAIContextFromSession(sessionData, sourceTool),
-            leadId: leadId || undefined, // Pass existing leadId for updates
+            // Golden Thread: Pass existing leadId for identity persistence
+            leadId: effectiveLeadId || undefined,
           }),
         }
       );
@@ -128,6 +135,10 @@ export function LeadCaptureModal({
 
       if (data.success && data.leadId) {
         setIsSuccess(true);
+
+        // Golden Thread: Persist leadId for future interactions
+        setLeadId(data.leadId);
+        updateFields({ leadId: data.leadId });
 
         // Track successful lead capture
         trackEvent('lead_captured', {

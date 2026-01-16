@@ -72,6 +72,9 @@ const leadSchema = z.object({
   consultation: consultationSchema,
   attribution: attributionSchema,
   aiContext: aiContextSchema,
+  // Golden Thread: Optional lead ID for identity persistence
+  // If provided, UPDATE existing record instead of creating new one
+  leadId: z.string().uuid('Invalid lead ID format').optional().nullable(),
 });
 
 // ============= Helper Functions =============
@@ -277,7 +280,7 @@ serve(async (req) => {
 
     const { 
       email, name, phone, sourceTool, sessionData, chatHistory, consultation,
-      attribution, aiContext 
+      attribution, aiContext, leadId: providedLeadId 
     } = parseResult.data;
 
     // Check email hourly limit (after validation so we have a valid email)
@@ -331,17 +334,48 @@ serve(async (req) => {
       window_count: aiContext?.window_count || null,
     };
 
-    // Try to find existing lead by email
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GOLDEN THREAD LOGIC: leadId takes precedence over email matching
+    // ═══════════════════════════════════════════════════════════════════════════
     try {
-      const { data: existingLead, error: selectError } = await supabase
-        .from('leads')
-        .select('id, utm_source, gclid, fbc, msclkid')
-        .eq('email', normalizedEmail)
-        .maybeSingle();
+      let existingLead: { id: string; utm_source: string | null; gclid: string | null; fbc: string | null; msclkid: string | null } | null = null;
 
-      if (selectError) {
-        console.error('Error checking existing lead:', selectError);
-        throw new Error('Database error while checking lead');
+      // PRIORITY 1: If leadId is provided, use it directly (Golden Thread)
+      if (providedLeadId) {
+        const { data: leadById, error: leadByIdError } = await supabase
+          .from('leads')
+          .select('id, utm_source, gclid, fbc, msclkid')
+          .eq('id', providedLeadId)
+          .maybeSingle();
+
+        if (leadByIdError) {
+          console.error('Error fetching lead by ID:', leadByIdError);
+          // Don't throw - fall through to email lookup
+        } else if (leadById) {
+          existingLead = leadById;
+          console.log('Golden Thread: Found lead by ID:', providedLeadId);
+        } else {
+          console.warn('Golden Thread: Provided leadId not found, falling back to email lookup:', providedLeadId);
+        }
+      }
+
+      // PRIORITY 2: Fallback to email lookup if no lead found by ID
+      if (!existingLead) {
+        const { data: leadByEmail, error: emailSelectError } = await supabase
+          .from('leads')
+          .select('id, utm_source, gclid, fbc, msclkid')
+          .eq('email', normalizedEmail)
+          .maybeSingle();
+
+        if (emailSelectError) {
+          console.error('Error checking existing lead by email:', emailSelectError);
+          throw new Error('Database error while checking lead');
+        }
+
+        existingLead = leadByEmail;
+        if (existingLead) {
+          console.log('Found lead by email:', existingLead.id);
+        }
       }
 
       if (existingLead) {
