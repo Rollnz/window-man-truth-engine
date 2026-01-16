@@ -376,7 +376,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      backfill_all_lead_scores: { Args: never; Returns: undefined }
       cleanup_rate_limits: { Args: never; Returns: undefined }
+      get_event_score: {
+        Args: { event_category: string; event_name: string }
+        Returns: number
+      }
+      get_lead_quality: { Args: { score: number }; Returns: string }
+      update_lead_score_from_session: {
+        Args: { p_session_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       lead_status:
