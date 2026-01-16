@@ -1,14 +1,22 @@
 import { Link } from "react-router-dom";
 import { ShieldCheck, Sparkles, Target } from "lucide-react";
+import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 import { Footer } from "@/components/home/Footer";
 import { Button } from "@/components/ui/button";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { ROUTES } from "@/config/navigation";
+import { getToolPageSchemas } from "@/lib/seoSchemas";
 
 const About = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEO
+        title="About Window Man"
+        description="Built to protect Florida homeowners from storm risk and contractor games. AI tools, vetted estimators, and a homeowner-first playbook."
+        canonicalUrl="https://itswindowman.com/about"
+        jsonLd={getToolPageSchemas('about')}
+      />
       <Navbar />
 
       <main className="pt-20">

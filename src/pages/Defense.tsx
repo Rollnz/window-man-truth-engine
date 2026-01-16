@@ -1,10 +1,12 @@
 import { CheckCircle2, ShieldAlert, Siren } from "lucide-react";
+import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 import { Footer } from "@/components/home/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { ROUTES } from "@/config/navigation";
+import { getToolPageSchemas } from "@/lib/seoSchemas";
 
 const redFlags = [
   "Quotes without line-item pricing for glass, frames, and installation.",
@@ -15,6 +17,12 @@ const redFlags = [
 const Defense = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEO
+        title="Window Quote Defense Mode"
+        description="Quick checklist of red flags to watch for before signing any window replacement contract. Protect your home and insurance claims."
+        canonicalUrl="https://itswindowman.com/defense"
+        jsonLd={getToolPageSchemas('defense')}
+      />
       <Navbar />
 
       <main className="pt-20">

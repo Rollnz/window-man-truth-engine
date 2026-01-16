@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SEO } from '@/components/SEO';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
 import { Navbar } from '@/components/home/Navbar';
@@ -25,6 +26,7 @@ import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
+import { getToolPageSchemas } from '@/lib/seoSchemas';
 
 const KitchenTableGuide = () => {
   usePageTracking('kitchen-table-guide');
@@ -64,6 +66,12 @@ const KitchenTableGuide = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEO
+        title="Kitchen Table Defense Guide"
+        description="A 12-page guide teaching you how to handle in-home window sales presentations. Learn the scripts and strategies to slow down high-pressure tactics."
+        canonicalUrl="https://itswindowman.com/kitchen-table-guide"
+        jsonLd={getToolPageSchemas('kitchen-table-guide')}
+      />
       <Navbar />
 
       {/* SECTION 1 — HERO */}

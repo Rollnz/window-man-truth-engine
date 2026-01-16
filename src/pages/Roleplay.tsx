@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SEO } from '@/components/SEO';
 import { Navbar } from '@/components/home/Navbar';
 import { Footer } from '@/components/home/Footer';
 import { GameSetup } from '@/components/roleplay/GameSetup';
@@ -13,6 +14,7 @@ import { ErrorBoundary } from '@/components/error';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
+import { getToolPageSchemas } from '@/lib/seoSchemas';
 import type { Difficulty, GameResult, AnalysisResult } from '@/types/roleplay';
 
 const cn = (...classes: (string | undefined | null | false)[]) => {
@@ -153,6 +155,12 @@ export default function Roleplay() {
 
   return (
     <div className="min-h-screen bg-slate-950">
+      <SEO
+        title="Sales Pressure Roleplay Simulator"
+        description="Practice handling high-pressure window sales tactics in a safe AI simulation. Build confidence to resist manipulation before the real appointment."
+        canonicalUrl="https://itswindowman.com/roleplay"
+        jsonLd={getToolPageSchemas('roleplay-simulator')}
+      />
       <div className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-transform duration-500",
         isPlaying && !isNavbarVisible ? "-translate-y-full" : "translate-y-0"

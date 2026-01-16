@@ -10,9 +10,9 @@
 | Metric | Count |
 |--------|-------|
 | **Total Public Pages** | 26 |
-| **Pages with Structured Data** | 12 |
-| **Pages Missing Structured Data** | 14 |
-| **Coverage Rate** | 46% |
+| **Pages with Structured Data** | 22 |
+| **Pages Missing Structured Data** | 4 (legal/utility pages) |
+| **Coverage Rate** | 100% (of indexable pages) |
 
 ---
 
