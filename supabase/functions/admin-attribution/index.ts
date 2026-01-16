@@ -15,7 +15,8 @@ const corsHeaders = {
 const ADMIN_EMAILS = [
   'admin@windowman.com',
   'support@windowman.com',
-  // Add additional admin emails as needed
+  'vansiclenp@gmail.com',
+  'mongoloyd@protonmail.com',
 ];
 
 serve(async (req) => {
