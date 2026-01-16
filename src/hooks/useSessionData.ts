@@ -142,6 +142,24 @@ export interface SessionData {
 }
 
 const STORAGE_KEY = 'impact-windows-session';
+const SESSION_ID_KEY = 'wm-session-id';
+
+// Get or create a persistent session ID for attribution tracking
+const getOrCreateSessionId = (): string => {
+  if (typeof window === 'undefined') return crypto.randomUUID();
+  
+  try {
+    let sessionId = localStorage.getItem(SESSION_ID_KEY);
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      localStorage.setItem(SESSION_ID_KEY, sessionId);
+    }
+    return sessionId;
+  } catch (error) {
+    console.error('Error accessing sessionId:', error);
+    return crypto.randomUUID();
+  }
+};
 
 const getStoredData = (): SessionData => {
   if (typeof window === 'undefined') return {};
@@ -236,8 +254,12 @@ export function useSessionData() {
     return sessionData[key];
   }, [sessionData]);
 
+  // Get the persistent session ID for Golden Thread attribution
+  const sessionId = getOrCreateSessionId();
+
   return {
     sessionData,
+    sessionId,
     updateField,
     updateFields,
     markToolCompleted,

@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { fastAIRequest } from '@/lib/aiRequest';
 import { TimeoutError, getErrorMessage } from '@/lib/errors';
+import { useSessionData } from '@/hooks/useSessionData';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import type { Message, TacticLog, Difficulty, AnalysisResult } from '@/types/roleplay';
 
 interface UseRoleplayAIOptions {
@@ -10,6 +12,8 @@ interface UseRoleplayAIOptions {
 export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { sessionId } = useSessionData();
+  const { leadId } = useLeadIdentity();
 
   const parseTacticLog = (response: string): TacticLog | undefined => {
     const match = response.match(/<tactic_log>([\s\S]*?)<\/tactic_log>/);
@@ -45,7 +49,10 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
             role: m.role,
             text: m.text
           })),
-          difficulty
+          difficulty,
+          // Golden Thread: Pass session tracking data
+          sessionId: sessionId || crypto.randomUUID(),
+          leadId: leadId || undefined,
         }
       );
 
@@ -103,7 +110,10 @@ export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
             role: m.role,
             text: m.text
           })),
-          won
+          won,
+          // Golden Thread: Pass session tracking data
+          sessionId: sessionId || crypto.randomUUID(),
+          leadId: leadId || undefined,
         }
       );
 

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useSessionData } from "@/hooks/useSessionData";
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { Navbar } from "@/components/home/Navbar";
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
@@ -30,7 +31,8 @@ interface Message {
 
 export default function Expert() {
   usePageTracking("expert-system");
-  const { sessionData, markToolCompleted, updateFields } = useSessionData();
+  const { sessionData, markToolCompleted, updateFields, sessionId } = useSessionData();
+  const { leadId } = useLeadIdentity();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -76,6 +78,9 @@ export default function Expert() {
           draftinessLevel: sessionData.draftinessLevel,
           noiseLevel: sessionData.noiseLevel,
         },
+        // Golden Thread: Pass session tracking data
+        sessionId: sessionId || crypto.randomUUID(),
+        leadId: leadId || undefined,
       });
 
       if (!response.body) {

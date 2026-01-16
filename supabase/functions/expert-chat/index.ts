@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logAttributionEvent } from "../_shared/attributionLogger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +24,8 @@ interface RequestBody {
     draftinessLevel?: string;
     noiseLevel?: string;
   };
+  sessionId?: string;
+  leadId?: string;
 }
 
 // Rate limiting configuration
@@ -134,7 +137,7 @@ serve(async (req) => {
       );
     }
 
-    const { messages, context }: RequestBody = await req.json();
+    const { messages, context, sessionId, leadId }: RequestBody = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -248,6 +251,25 @@ When the user seems ready, encourage them to schedule a consultation with a loca
     }
 
     console.log("Streaming response from AI gateway");
+
+    // Log attribution event (non-blocking)
+    if (sessionId) {
+      logAttributionEvent({
+        sessionId,
+        eventName: 'expert_chat_session',
+        eventCategory: 'ai_tool',
+        pagePath: '/expert',
+        pageTitle: 'Expert Chat',
+        eventData: {
+          message_count: messages.length,
+          has_context: Object.keys(context || {}).length > 0,
+          window_count: context?.windowCount,
+          home_size: context?.homeSize,
+        },
+        leadId,
+        anonymousIdFallback: `expert-chat-${ip}`,
+      }).catch((err) => console.error('[expert-chat] Attribution logging failed:', err));
+    }
 
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },

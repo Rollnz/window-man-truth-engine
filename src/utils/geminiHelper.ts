@@ -5,11 +5,19 @@
 import { heavyAIRequest } from "@/lib/aiRequest";
 import { TimeoutError, RateLimitError } from "@/lib/errors";
 
+interface GeminiOptions {
+  sessionId?: string;
+  leadId?: string;
+}
+
 /**
  * Secure AI call via Edge Function with 25s timeout and retries
  * Used by the Quote Builder for AI-powered features
  */
-export const callGemini = async (prompt: string): Promise<string> => {
+export const callGemini = async (
+  prompt: string,
+  options: GeminiOptions = {}
+): Promise<string> => {
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   for (let i = 0; i < 3; i++) {
@@ -20,7 +28,11 @@ export const callGemini = async (prompt: string): Promise<string> => {
         isAnonymous?: boolean 
       }>(
         'generate-quote',
-        { prompt }
+        { 
+          prompt,
+          sessionId: options.sessionId,
+          leadId: options.leadId,
+        }
       );
 
       // Check for rate limit error
