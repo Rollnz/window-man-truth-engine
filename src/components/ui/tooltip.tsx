@@ -9,21 +9,11 @@ interface TooltipProps extends React.ComponentPropsWithoutRef<typeof TooltipPrim
   delayDuration?: number;
 }
 
-const Tooltip = React.forwardRef<
-  React.ElementRef<typeof TooltipPrimitive.Root>,
-  TooltipProps
->(({ delayDuration = 0, ...props }, _ref) => (
+const Tooltip = ({ delayDuration = 0, ...props }: TooltipProps) => (
   <TooltipPrimitive.Root delayDuration={delayDuration} {...props} />
-));
-Tooltip.displayName = "Tooltip";
+);
 
-const TooltipTrigger = React.forwardRef<
-  React.ElementRef<typeof TooltipPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Trigger>
->(({ ...props }, ref) => (
-  <TooltipPrimitive.Trigger ref={ref} {...props} />
-));
-TooltipTrigger.displayName = TooltipPrimitive.Trigger.displayName;
+const TooltipTrigger = TooltipPrimitive.Trigger;
 
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
