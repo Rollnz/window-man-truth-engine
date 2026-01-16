@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
+import { SEO } from '@/components/SEO';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
 import { Navbar } from '@/components/home/Navbar';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
@@ -27,6 +28,7 @@ import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
 import { useNavigate } from 'react-router-dom';
+import { getGuidePageSchemas } from '@/lib/seoSchemas';
 
 const SalesTacticsGuide = () => {
   usePageTracking('sales-tactics-guide');
@@ -66,6 +68,12 @@ const SalesTacticsGuide = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEO 
+        title="11 Sales Tactics Window Contractors Use"
+        description="Learn to recognize the psychological manipulation tactics used in window sales presentations. This guide exposes the scripts contractors use so you can protect yourself."
+        canonicalUrl="https://itswindowman.com/sales-tactics-guide"
+        jsonLd={getGuidePageSchemas('sales-tactics-guide')}
+      />
       <Navbar />
 
       {/* SECTION 1 — HERO */}
