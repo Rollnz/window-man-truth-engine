@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { logAttributionEvent } from "../_shared/attributionLogger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,7 +54,11 @@ serve(async (req) => {
     console.log(`Authenticated user: ${userId}`);
     // ===== END AUTHENTICATION CHECK =====
 
-    const { documents } = await req.json() as { documents: DocumentStatus[] };
+    const { documents, sessionId, leadId } = await req.json() as { 
+      documents: DocumentStatus[];
+      sessionId?: string;
+      leadId?: string;
+    };
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     
     if (!LOVABLE_API_KEY) {
@@ -159,6 +164,26 @@ Use "weak" status for documents that are checked but have no file uploaded.`;
     }
 
     console.log('Analysis complete:', result.overallScore, '% readiness');
+
+    // Log attribution event (non-blocking)
+    if (sessionId) {
+      logAttributionEvent({
+        sessionId,
+        eventName: 'evidence_analyzed',
+        eventCategory: 'ai_tool',
+        pagePath: '/claim-survival',
+        pageTitle: 'Claim Survival Vault',
+        eventData: {
+          overall_score: result.overallScore,
+          status: result.status,
+          documents_analyzed: documents.length,
+          documents_complete: documents.filter(d => d.hasFile).length,
+          user_id: userId,
+        },
+        leadId,
+        anonymousIdFallback: `evidence-${userId}`,
+      }).catch((err) => console.error('[analyze-evidence] Attribution logging failed:', err));
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

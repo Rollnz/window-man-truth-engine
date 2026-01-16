@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.trigger-phone-call]
 verify_jwt = false
+
+[functions.admin-attribution]
+verify_jwt = false
