@@ -231,6 +231,87 @@ export type Database = {
           },
         ]
       }
+      wm_leads: {
+        Row: {
+          actual_deal_value: number | null
+          assigned_to: string | null
+          closed_at: string | null
+          created_at: string
+          email: string
+          engagement_score: number | null
+          estimated_deal_value: number | null
+          first_name: string | null
+          id: string
+          last_contacted_at: string | null
+          last_name: string | null
+          lead_id: string | null
+          lead_quality: string | null
+          notes: string | null
+          original_session_id: string | null
+          original_source_tool: string | null
+          phone: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+        }
+        Insert: {
+          actual_deal_value?: number | null
+          assigned_to?: string | null
+          closed_at?: string | null
+          created_at?: string
+          email: string
+          engagement_score?: number | null
+          estimated_deal_value?: number | null
+          first_name?: string | null
+          id?: string
+          last_contacted_at?: string | null
+          last_name?: string | null
+          lead_id?: string | null
+          lead_quality?: string | null
+          notes?: string | null
+          original_session_id?: string | null
+          original_source_tool?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Update: {
+          actual_deal_value?: number | null
+          assigned_to?: string | null
+          closed_at?: string | null
+          created_at?: string
+          email?: string
+          engagement_score?: number | null
+          estimated_deal_value?: number | null
+          first_name?: string | null
+          id?: string
+          last_contacted_at?: string | null
+          last_name?: string | null
+          lead_id?: string | null
+          lead_quality?: string | null
+          notes?: string | null
+          original_session_id?: string | null
+          original_source_tool?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wm_leads_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wm_leads_original_session_id_fkey"
+            columns: ["original_session_id"]
+            isOneToOne: false
+            referencedRelation: "wm_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wm_sessions: {
         Row: {
           anonymous_id: string
@@ -298,7 +379,15 @@ export type Database = {
       cleanup_rate_limits: { Args: never; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      lead_status:
+        | "new"
+        | "qualifying"
+        | "mql"
+        | "appointment_set"
+        | "sat"
+        | "closed_won"
+        | "closed_lost"
+        | "dead"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -425,6 +514,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      lead_status: [
+        "new",
+        "qualifying",
+        "mql",
+        "appointment_set",
+        "sat",
+        "closed_won",
+        "closed_lost",
+        "dead",
+      ],
+    },
   },
 } as const
