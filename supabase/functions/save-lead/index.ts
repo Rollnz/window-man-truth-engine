@@ -525,6 +525,24 @@ serve(async (req) => {
 
         consultationId = newConsultation.id;
         console.log('Created consultation:', consultationId);
+        
+        // Log consultation_booked event for funnel tracking
+        if (sessionId) {
+          logAttributionEvent({
+            sessionId,
+            eventName: 'consultation_booked',
+            eventCategory: 'conversion',
+            pagePath: aiContext?.source_form || '/consultation',
+            pageTitle: `Consultation Booked - ${sourceTool}`,
+            leadId,
+            eventData: {
+              consultation_id: consultationId,
+              preferred_time: consultation.preferredTime,
+              source_tool: sourceTool,
+            },
+            anonymousIdFallback: `consult-${consultationId}`,
+          });
+        }
       } catch (consultDbError) {
         console.error('Consultation creation failed:', consultDbError);
 
