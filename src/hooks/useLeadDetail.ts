@@ -97,8 +97,22 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // UUID validation helper
+  const isValidUUID = (id: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+  };
+
   const fetchData = useCallback(async () => {
     if (!leadId) {
+      setError('No lead ID provided');
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate UUID format before making API call
+    if (!isValidUUID(leadId)) {
+      setError('Invalid lead ID format. Please use a valid lead URL.');
       setIsLoading(false);
       return;
     }
@@ -109,7 +123,7 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
 
       const { data: { session: authSession } } = await supabase.auth.getSession();
       if (!authSession) {
-        setError('Not authenticated');
+        setError('Not authenticated. Please log in to access lead details.');
         return;
       }
 
