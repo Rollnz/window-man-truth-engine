@@ -8,6 +8,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLeadIdentity } from './useLeadIdentity';
+import { useSessionData } from './useSessionData';
 import { getAttributionData } from '@/lib/attribution';
 import { trackLeadCapture, trackFormSubmit, trackEvent } from '@/lib/gtm';
 import type { SourceTool } from '@/types/sourceTool';
@@ -92,6 +93,7 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { leadId: existingLeadId, setLeadId } = useLeadIdentity();
+  const { sessionData } = useSessionData();
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -108,6 +110,9 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       // Normalize field names (firstName → name)
       const normalizedName = data.name || data.firstName || undefined;
 
+      // Get or generate sessionId for Golden Thread
+      const sessionId = sessionData.claimVaultSessionId || crypto.randomUUID();
+
       // Build payload
       const payload: Record<string, unknown> = {
         email: data.email.trim(),
@@ -117,6 +122,8 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
           source_form: formLocation ? `${sourceTool}-${formLocation}` : sourceTool,
           ...aiContext,
         },
+        // Golden Thread: Pass sessionId for attribution tracking
+        sessionId,
       };
 
       // Add optional fields
@@ -216,6 +223,7 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
     successDescription,
     existingLeadId,
     setLeadId,
+    sessionData.claimVaultSessionId,
   ]);
 
   return {

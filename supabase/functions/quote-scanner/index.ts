@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { logAttributionEvent } from "../_shared/attributionLogger.ts";
 
 // ============================================
 // CORS HEADERS (inline, matching project pattern)
@@ -117,6 +118,9 @@ const QuoteScannerRequestSchema = z.object({
   notesFromCalculator: z.string().max(2000).optional(),
   question: z.string().max(2000).optional(),
   analysisContext: AnalysisContextSchema.optional(),
+  // Golden Thread: Attribution tracking
+  sessionId: z.string().uuid('Invalid session ID format').optional(),
+  leadId: z.string().uuid('Invalid lead ID format').optional(),
 }).superRefine((data, ctx) => {
   if (data.mode === "analyze") {
     if (!data.imageBase64) {
@@ -768,9 +772,9 @@ serve(async (req) => {
       );
     }
 
-    const { mode, imageBase64, mimeType, openingCount, areaName, notesFromCalculator, question, analysisContext } = parseResult.data;
+    const { mode, imageBase64, mimeType, openingCount, areaName, notesFromCalculator, question, analysisContext, sessionId, leadId } = parseResult.data;
 
-    console.log(`[QuoteScanner] Request: mode=${mode}, IP=${clientIP}`);
+    console.log(`[QuoteScanner] Request: mode=${mode}, IP=${clientIP}, sessionId=${sessionId || 'not provided'}`);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -962,6 +966,30 @@ Format the output with clear section headers and make it easy to read during a p
       const scored = scoreFromSignals(extracted, openingCount ?? null);
 
       console.log("[QuoteScanner] Analysis complete. Overall score:", scored.overallScore);
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // GOLDEN THREAD: Log attribution event to wm_events
+      // ═══════════════════════════════════════════════════════════════════════════
+      if (sessionId) {
+        logAttributionEvent({
+          sessionId,
+          eventName: 'quote_scanned',
+          eventCategory: 'tool_usage',
+          pagePath: '/quote-scanner',
+          pageTitle: 'Quote Scanner - Analysis',
+          leadId,
+          eventData: {
+            overall_score: scored.overallScore,
+            safety_score: scored.safetyScore,
+            scope_score: scored.scopeScore,
+            price_per_opening: scored.pricePerOpening,
+            warnings_count: scored.warnings.length,
+            missing_items_count: scored.missingItems.length,
+          },
+          anonymousIdFallback: leadId ? `lead-${leadId}` : `quote-scan-${Date.now()}`,
+        });
+      }
+      // ═══════════════════════════════════════════════════════════════════════════
 
       return new Response(JSON.stringify(scored), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

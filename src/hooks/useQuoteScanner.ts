@@ -3,6 +3,7 @@ import { heavyAIRequest } from '@/lib/aiRequest';
 import { getErrorMessage, isRateLimitError } from '@/lib/errors';
 import { useToast } from '@/hooks/use-toast';
 import { useSessionData } from '@/hooks/useSessionData';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 
 export interface QuoteAnalysisResult {
   overallScore: number;
@@ -106,6 +107,7 @@ async function compressImage(file: File, maxBytes = 4_000_000): Promise<{ base64
 export function useQuoteScanner(): UseQuoteScannerReturn {
   const { toast } = useToast();
   const { sessionData, updateField } = useSessionData();
+  const { leadId } = useLeadIdentity();
   
   // Analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -145,6 +147,9 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
       setImageBase64(base64);
       setMimeType(mt);
       
+      // Get or generate sessionId for Golden Thread
+      const sessionId = sessionData.claimVaultSessionId || crypto.randomUUID();
+      
       const { data, error: requestError } = await heavyAIRequest.sendRequest<QuoteAnalysisResult & { error?: string }>(
         'quote-scanner',
         {
@@ -153,6 +158,9 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
           mimeType: mt,
           openingCount: openingCount || sessionData.windowCount,
           areaName: areaName || 'Florida',
+          // Golden Thread: Pass sessionId and leadId for attribution tracking
+          sessionId,
+          leadId: leadId || undefined,
         }
       );
       
@@ -185,7 +193,7 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [sessionData.windowCount, updateField, toast]);
+  }, [sessionData.windowCount, sessionData.claimVaultSessionId, leadId, updateField, toast]);
 
   const generateEmailDraft = useCallback(async () => {
     if (!analysisResult) return;

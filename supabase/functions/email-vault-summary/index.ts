@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { logAttributionEvent } from "../_shared/attributionLogger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -170,79 +171,7 @@ function generateVaultSummaryEmail(data: SessionData): { subject: string; html: 
   };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ATTRIBUTION EVENT LOGGING
-// Persists vault_email_sent events to wm_events for analytics
-// ═══════════════════════════════════════════════════════════════════════════
-async function logAttributionEvent(
-  supabaseUrl: string,
-  supabaseServiceRoleKey: string,
-  sessionId: string,
-  leadId: string | undefined,
-  targetEmail: string,
-  userId: string
-): Promise<void> {
-  try {
-    // Create a fresh admin client to avoid type inference issues
-    const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-    // Step 1: Check if session exists in wm_sessions
-    const { data: existingSession } = await adminClient
-      .from('wm_sessions')
-      .select('id')
-      .eq('id', sessionId)
-      .maybeSingle();
-
-    // Step 2: If session doesn't exist, create a minimal record
-    if (!existingSession) {
-      console.log(`Creating minimal wm_sessions record for sessionId: ${sessionId}`);
-      
-      const { error: sessionError } = await adminClient
-        .from('wm_sessions')
-        .insert({
-          id: sessionId,
-          anonymous_id: `vault-email-${userId}`,
-          landing_page: '/vault',
-          lead_id: leadId || null,
-        } as Record<string, unknown>);
-
-      if (sessionError) {
-        console.error('Failed to create wm_sessions record:', sessionError);
-        // Continue anyway - we'll try to insert the event
-      }
-    }
-
-    // Step 3: Insert the attribution event
-    const { error: eventError } = await adminClient
-      .from('wm_events')
-      .insert({
-        session_id: sessionId,
-        event_name: 'vault_email_sent',
-        event_category: 'vault',
-        page_path: '/vault',
-        page_title: 'Vault Summary Email',
-        event_data: {
-          lead_id: leadId || null,
-          user_id: userId,
-          recipient_email: targetEmail,
-          timestamp: new Date().toISOString(),
-        },
-      } as Record<string, unknown>);
-
-    if (eventError) {
-      console.error('Failed to insert wm_events record:', eventError);
-    } else {
-      console.log('Attribution event logged successfully:', {
-        sessionId,
-        leadId: leadId || 'anonymous',
-        event: 'vault_email_sent',
-      });
-    }
-  } catch (error) {
-    // Fault tolerance: Log error but don't throw
-    console.error('Attribution logging failed (non-fatal):', error);
-  }
-}
+// Attribution logging now uses shared utility from _shared/attributionLogger.ts
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -325,7 +254,16 @@ serve(async (req) => {
 
       // Still log the attribution event even in simulation mode
       if (sessionId) {
-        await logAttributionEvent(supabaseUrl, supabaseServiceRoleKey, sessionId, leadId, targetEmail, userId);
+        await logAttributionEvent({
+          sessionId,
+          eventName: 'vault_email_sent',
+          eventCategory: 'vault',
+          pagePath: '/vault',
+          pageTitle: 'Vault Summary Email',
+          leadId,
+          eventData: { recipient_email: targetEmail, user_id: userId },
+          anonymousIdFallback: `vault-email-${userId}`,
+        });
       }
 
       return new Response(
@@ -369,7 +307,16 @@ serve(async (req) => {
 
     // ===== PERSIST ATTRIBUTION EVENT =====
     if (sessionId) {
-      await logAttributionEvent(supabaseUrl, supabaseServiceRoleKey, sessionId, leadId, targetEmail, userId);
+      await logAttributionEvent({
+        sessionId,
+        eventName: 'vault_email_sent',
+        eventCategory: 'vault',
+        pagePath: '/vault',
+        pageTitle: 'Vault Summary Email',
+        leadId,
+        eventData: { recipient_email: targetEmail, user_id: userId, email_id: resendData.id },
+        anonymousIdFallback: `vault-email-${userId}`,
+      });
     } else {
       console.warn('No sessionId provided - attribution event not persisted');
     }
