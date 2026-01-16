@@ -3,7 +3,7 @@ import { Navbar } from "@/components/home/Navbar";
 import { Footer } from "@/components/home/Footer";
 import { ToolGrid } from "@/components/home/ToolGrid";
 import { usePageTracking } from "@/hooks/usePageTracking";
-import { getToolPageSchemas } from "@/lib/seoSchemas";
+import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 
 const Tools = () => {
   usePageTracking('tools-page');
@@ -14,7 +14,7 @@ const Tools = () => {
         title="All Free Window Tools"
         description="Complete collection of free window replacement tools: calculators, quote analyzers, quizzes, and expert guidance. Make smarter window decisions."
         canonicalUrl="https://itswindowman.com/tools"
-        jsonLd={getToolPageSchemas('tools-index')}
+        jsonLd={[...getToolPageSchemas('tools-index'), getBreadcrumbSchema('tools-index')]}
       />
       <Navbar />
       <main className="pt-24 pb-16">

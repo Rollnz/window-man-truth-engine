@@ -6,7 +6,7 @@ import { Footer } from "@/components/home/Footer";
 import { Button } from "@/components/ui/button";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { ROUTES } from "@/config/navigation";
-import { getToolPageSchemas } from "@/lib/seoSchemas";
+import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 
 const About = () => {
   return (
@@ -15,7 +15,7 @@ const About = () => {
         title="About Window Man"
         description="Built to protect Florida homeowners from storm risk and contractor games. AI tools, vetted estimators, and a homeowner-first playbook."
         canonicalUrl="https://itswindowman.com/about"
-        jsonLd={getToolPageSchemas('about')}
+        jsonLd={[...getToolPageSchemas('about'), getBreadcrumbSchema('about')]}
       />
       <Navbar />
 

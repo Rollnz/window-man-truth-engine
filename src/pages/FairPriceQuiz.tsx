@@ -17,7 +17,7 @@ import { getAttributionData } from '@/lib/attribution';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
-import { getToolPageSchemas } from '@/lib/seoSchemas';
+import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 import type { SourceTool } from '@/types/sourceTool';
 
 type Phase = 'hero' | 'quiz' | 'analysis' | 'blur-gate' | 'results';
@@ -244,7 +244,7 @@ export default function FairPriceQuiz() {
         title="Fair Price Quiz - Is Your Quote Fair?"
         description="Answer 7 quick questions about your window quote to get an instant price analysis. Find out if you're overpaying and get negotiation tips."
         canonicalUrl="https://itswindowman.com/fair-price-quiz"
-        jsonLd={getToolPageSchemas('fair-price-quiz')}
+        jsonLd={[...getToolPageSchemas('fair-price-quiz'), getBreadcrumbSchema('fair-price-quiz')]}
       />
       <Navbar />
 

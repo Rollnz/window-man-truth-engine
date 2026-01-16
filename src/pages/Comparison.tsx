@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSessionData } from "@/hooks/useSessionData";
 import { SEO } from "@/components/SEO";
-import { getToolPageSchemas } from "@/lib/seoSchemas";
+import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { windowTiers } from "@/data/windowData";
 import { calculateTierTrueCost, TrueCostBreakdown } from "@/lib/comparisonCalculations";
@@ -51,7 +51,7 @@ export default function Comparison() {
         title="Window Tier Comparison Tool"
         description="Compare budget, mid-range, and premium window options side-by-side. See 10-year true costs including energy savings, maintenance, and replacement."
         canonicalUrl="https://itswindowman.com/comparison"
-        jsonLd={getToolPageSchemas('comparison')}
+        jsonLd={[...getToolPageSchemas('comparison'), getBreadcrumbSchema('comparison')]}
       />
       <Navbar />
 

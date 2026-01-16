@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SEO } from '@/components/SEO';
-import { getToolPageSchemas } from '@/lib/seoSchemas';
+import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { trackToolCompletion } from '@/lib/gtm';
@@ -81,7 +81,7 @@ export default function CostCalculator() {
         title="Cost of Inaction Calculator"
         description="Calculate how much money you're losing every day by delaying window replacement. See real energy loss projections and break-even timelines."
         canonicalUrl="https://itswindowman.com/cost-calculator"
-        jsonLd={getToolPageSchemas('cost-calculator')}
+        jsonLd={[...getToolPageSchemas('cost-calculator'), getBreadcrumbSchema('cost-calculator')]}
       />
       <Navbar />
 

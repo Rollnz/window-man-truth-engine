@@ -5,6 +5,7 @@
 import { Shield } from "lucide-react";
 import { ROUTES } from "@/config/navigation";
 import { SEO } from "@/components/SEO";
+import { getBreadcrumbSchema } from "@/lib/seoSchemas";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { useQuoteBuilder } from "@/hooks/useQuoteBuilder";
 import { ErrorBoundary } from "@/components/error";
@@ -170,7 +171,7 @@ export default function CalculateEstimate() {
         title="Free Window Replacement Cost Calculator"
         description="Build a custom window replacement estimate for free. Configure styles, sizes, and features to get accurate pricing for your project instantly."
         canonicalUrl="https://itswindowman.com/free-estimate"
-        jsonLd={freeEstimateSchema}
+        jsonLd={[...freeEstimateSchema, getBreadcrumbSchema('free-estimate')]}
       />
       <Navbar />
 

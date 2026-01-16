@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useSessionData } from '@/hooks/useSessionData';
 import { SEO } from '@/components/SEO';
+import { getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { Navbar } from '@/components/home/Navbar';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { DossierHero } from '@/components/beat-your-quote/DossierHero';
@@ -125,7 +126,7 @@ export default function BeatYourQuote() {
         title="Beat Your Quote - Free Quote Analysis"
         description="Upload your window replacement quote for a free expert analysis. Identify hidden markups and learn how to negotiate a better price with our AI-powered scanner."
         canonicalUrl="https://itswindowman.com/beat-your-quote"
-        jsonLd={beatYourQuoteSchema}
+        jsonLd={[...beatYourQuoteSchema, getBreadcrumbSchema('beat-your-quote')]}
       />
       <Navbar />
       <main>

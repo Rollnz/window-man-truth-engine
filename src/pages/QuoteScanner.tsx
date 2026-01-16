@@ -18,7 +18,7 @@ import { ErrorBoundary } from '@/components/error';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
-import { getToolPageSchemas } from '@/lib/seoSchemas';
+import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 // New supporting sections
 import { ScannerSocialProof } from '@/components/quote-scanner/ScannerSocialProof';
 import { ScannerFAQSection } from '@/components/quote-scanner/ScannerFAQSection';
@@ -77,7 +77,7 @@ export default function QuoteScanner() {
         title="AI Quote Scanner - Instant Quote Analysis"
         description="Upload your window replacement quote for instant AI-powered analysis. Identify red flags, compare fair pricing, and get negotiation scripts."
         canonicalUrl="https://itswindowman.com/quote-scanner"
-        jsonLd={getToolPageSchemas('quote-scanner')}
+        jsonLd={[...getToolPageSchemas('quote-scanner'), getBreadcrumbSchema('quote-scanner')]}
       />
       <Navbar />
       

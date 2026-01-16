@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { ROUTES } from "@/config/navigation";
-import { getToolPageSchemas } from "@/lib/seoSchemas";
+import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 
 const redFlags = [
   "Quotes without line-item pricing for glass, frames, and installation.",
@@ -21,7 +21,7 @@ const Defense = () => {
         title="Window Quote Defense Mode"
         description="Quick checklist of red flags to watch for before signing any window replacement contract. Protect your home and insurance claims."
         canonicalUrl="https://itswindowman.com/defense"
-        jsonLd={getToolPageSchemas('defense')}
+        jsonLd={[...getToolPageSchemas('defense'), getBreadcrumbSchema('defense')]}
       />
       <Navbar />
 

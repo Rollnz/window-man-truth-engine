@@ -3,7 +3,7 @@ import { ROUTES } from "@/config/navigation";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SEO } from "@/components/SEO";
-import { getToolPageSchemas } from "@/lib/seoSchemas";
+import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 import { useToast } from "@/hooks/use-toast";
 import { useSessionData } from "@/hooks/useSessionData";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
@@ -173,7 +173,7 @@ export default function Expert() {
         title="Window Questions Expert"
         description="Ask any window replacement question and get instant, unbiased AI-powered answers. No sales pitch—just expert facts about pricing, materials, and more."
         canonicalUrl="https://itswindowman.com/expert"
-        jsonLd={getToolPageSchemas('expert-system')}
+        jsonLd={[...getToolPageSchemas('expert-system'), getBreadcrumbSchema('expert-system')]}
       />
       <Navbar />
 

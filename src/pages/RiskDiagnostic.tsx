@@ -5,6 +5,7 @@ import { trackToolCompletion } from "@/lib/gtm";
 import { getQuestionByIndex, getTotalQuestions } from "@/data/riskDiagnosticData";
 import { calculateRiskScores, RiskAnswers } from "@/lib/riskCalculations";
 import { SEO } from "@/components/SEO";
+import { getBreadcrumbSchema } from "@/lib/seoSchemas";
 import { Navbar } from "@/components/home/Navbar";
 import { RiskHero } from "@/components/risk-diagnostic/RiskHero";
 import { RiskQuestion } from "@/components/risk-diagnostic/RiskQuestion";
@@ -145,7 +146,7 @@ export default function RiskDiagnostic() {
         title="Home Protection Risk Diagnostic"
         description="Free diagnostic tool to assess your home's protection against storms, security threats, and insurance gaps. Get your personalized protection score in minutes."
         canonicalUrl="https://itswindowman.com/risk-diagnostic"
-        jsonLd={riskDiagnosticSchema}
+        jsonLd={[...riskDiagnosticSchema, getBreadcrumbSchema('risk-diagnostic')]}
       />
       <Navbar />
 

@@ -25,7 +25,7 @@ import { Navbar } from '@/components/home/Navbar';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
-import { getGuidePageSchemas } from '@/lib/seoSchemas';
+import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 
 const InsuranceSavingsGuide = () => {
   usePageTracking('insurance-savings-guide');
@@ -69,7 +69,7 @@ const InsuranceSavingsGuide = () => {
         title="Florida Insurance Savings Blueprint"
         description="Learn how impact windows can cut your Florida insurance by 20%. Includes NOA documentation guide, wind mitigation inspection steps, and premium recalculation process."
         canonicalUrl="https://itswindowman.com/insurance-savings-guide"
-        jsonLd={getGuidePageSchemas('insurance-savings-guide')}
+        jsonLd={[...getGuidePageSchemas('insurance-savings-guide'), getBreadcrumbSchema('insurance-savings-guide')]}
       />
       <Navbar />
 

@@ -8,6 +8,7 @@ import { usePageTracking } from "@/hooks/usePageTracking";
 import { useToast } from "@/hooks/use-toast";
 import { useEvidenceAnalysis } from "@/hooks/useEvidenceAnalysis";
 import { SEO } from "@/components/SEO";
+import { getBreadcrumbSchema } from "@/lib/seoSchemas";
 import { Navbar } from "@/components/home/Navbar";
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { ClaimHero } from "@/components/claim-survival/ClaimHero";
@@ -326,7 +327,7 @@ export default function ClaimSurvival() {
         title="Insurance Claim Survival Kit"
         description="Free tool to organize your insurance claim documents, track readiness, and avoid mistakes that delay or deny claims. Includes 24-hour playbook and AI analysis."
         canonicalUrl="https://itswindowman.com/claim-survival"
-        jsonLd={claimSurvivalSchema}
+        jsonLd={[...claimSurvivalSchema, getBreadcrumbSchema('claim-survival')]}
       />
       <Navbar />
 

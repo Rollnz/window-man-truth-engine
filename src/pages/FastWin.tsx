@@ -16,7 +16,7 @@ import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
-import { getToolPageSchemas } from "@/lib/seoSchemas";
+import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 import type { SourceTool } from "@/types/sourceTool";
 
 type Phase = "hero" | "questions" | "calculating" | "result";
@@ -130,7 +130,7 @@ export default function FastWin() {
         title="Fast Win Product Finder"
         description="Answer 4 quick questions to find the best window product for your specific situation. Get personalized recommendations in under 60 seconds."
         canonicalUrl="https://itswindowman.com/fast-win"
-        jsonLd={getToolPageSchemas('fast-win')}
+        jsonLd={[...getToolPageSchemas('fast-win'), getBreadcrumbSchema('fast-win')]}
       />
       <Navbar />
 
