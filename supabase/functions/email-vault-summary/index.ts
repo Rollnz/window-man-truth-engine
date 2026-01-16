@@ -26,8 +26,9 @@ interface SessionData {
 interface EmailRequest {
   email: string;
   sessionData: SessionData;
-  // Golden Thread: Optional leadId for attribution tracking
+  // Golden Thread: Attribution tracking
   leadId?: string;
+  sessionId?: string;
 }
 
 function generateVaultSummaryEmail(data: SessionData): { subject: string; html: string } {
@@ -169,6 +170,80 @@ function generateVaultSummaryEmail(data: SessionData): { subject: string; html: 
   };
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ATTRIBUTION EVENT LOGGING
+// Persists vault_email_sent events to wm_events for analytics
+// ═══════════════════════════════════════════════════════════════════════════
+async function logAttributionEvent(
+  supabaseUrl: string,
+  supabaseServiceRoleKey: string,
+  sessionId: string,
+  leadId: string | undefined,
+  targetEmail: string,
+  userId: string
+): Promise<void> {
+  try {
+    // Create a fresh admin client to avoid type inference issues
+    const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+    // Step 1: Check if session exists in wm_sessions
+    const { data: existingSession } = await adminClient
+      .from('wm_sessions')
+      .select('id')
+      .eq('id', sessionId)
+      .maybeSingle();
+
+    // Step 2: If session doesn't exist, create a minimal record
+    if (!existingSession) {
+      console.log(`Creating minimal wm_sessions record for sessionId: ${sessionId}`);
+      
+      const { error: sessionError } = await adminClient
+        .from('wm_sessions')
+        .insert({
+          id: sessionId,
+          anonymous_id: `vault-email-${userId}`,
+          landing_page: '/vault',
+          lead_id: leadId || null,
+        } as Record<string, unknown>);
+
+      if (sessionError) {
+        console.error('Failed to create wm_sessions record:', sessionError);
+        // Continue anyway - we'll try to insert the event
+      }
+    }
+
+    // Step 3: Insert the attribution event
+    const { error: eventError } = await adminClient
+      .from('wm_events')
+      .insert({
+        session_id: sessionId,
+        event_name: 'vault_email_sent',
+        event_category: 'vault',
+        page_path: '/vault',
+        page_title: 'Vault Summary Email',
+        event_data: {
+          lead_id: leadId || null,
+          user_id: userId,
+          recipient_email: targetEmail,
+          timestamp: new Date().toISOString(),
+        },
+      } as Record<string, unknown>);
+
+    if (eventError) {
+      console.error('Failed to insert wm_events record:', eventError);
+    } else {
+      console.log('Attribution event logged successfully:', {
+        sessionId,
+        leadId: leadId || 'anonymous',
+        event: 'vault_email_sent',
+      });
+    }
+  } catch (error) {
+    // Fault tolerance: Log error but don't throw
+    console.error('Attribution logging failed (non-fatal):', error);
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -187,10 +262,14 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
+    // Auth client for user verification
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
+
+    // Note: Admin client created inside logAttributionEvent to avoid type inference issues
 
     const token = authHeader.replace('Bearer ', '');
     const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
@@ -208,10 +287,11 @@ serve(async (req) => {
     console.log(`Authenticated user: ${userId}`);
     // ===== END AUTHENTICATION CHECK =====
 
-    const { email, sessionData, leadId }: EmailRequest = await req.json();
+    const { email, sessionData, leadId, sessionId }: EmailRequest = await req.json();
 
     // ===== GOLDEN THREAD ATTRIBUTION LOGGING =====
     console.log('Attribution - Vault Email - Lead ID:', leadId || 'anonymous');
+    console.log('Attribution - Vault Email - Session ID:', sessionId || 'not provided');
     console.log('Attribution - Vault Email - User ID:', userId);
     // ===== END ATTRIBUTION LOGGING =====
 
@@ -240,7 +320,13 @@ serve(async (req) => {
       console.log(`To: ${targetEmail}`);
       console.log(`Subject: ${subject}`);
       console.log(`Lead ID: ${leadId || 'anonymous'}`);
+      console.log(`Session ID: ${sessionId || 'not provided'}`);
       console.log('================================================');
+
+      // Still log the attribution event even in simulation mode
+      if (sessionId) {
+        await logAttributionEvent(supabaseUrl, supabaseServiceRoleKey, sessionId, leadId, targetEmail, userId);
+      }
 
       return new Response(
         JSON.stringify({ 
@@ -248,6 +334,7 @@ serve(async (req) => {
           simulated: true,
           message: 'Email simulated (no API key configured)',
           leadId: leadId || null,
+          sessionId: sessionId || null,
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -274,10 +361,27 @@ serve(async (req) => {
     }
 
     const resendData = await resendResponse.json();
-    console.log('Vault summary email sent:', { ...resendData, leadId: leadId || 'anonymous' });
+    console.log('Vault summary email sent:', { 
+      ...resendData, 
+      leadId: leadId || 'anonymous',
+      sessionId: sessionId || 'not provided',
+    });
+
+    // ===== PERSIST ATTRIBUTION EVENT =====
+    if (sessionId) {
+      await logAttributionEvent(supabaseUrl, supabaseServiceRoleKey, sessionId, leadId, targetEmail, userId);
+    } else {
+      console.warn('No sessionId provided - attribution event not persisted');
+    }
+    // ===== END ATTRIBUTION EVENT =====
 
     return new Response(
-      JSON.stringify({ success: true, emailId: resendData.id, leadId: leadId || null }),
+      JSON.stringify({ 
+        success: true, 
+        emailId: resendData.id, 
+        leadId: leadId || null,
+        sessionId: sessionId || null,
+      }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
