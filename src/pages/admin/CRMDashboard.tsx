@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,7 +9,6 @@ import { KanbanBoard } from '@/components/crm/KanbanBoard';
 import { CRMSummaryCards } from '@/components/crm/CRMSummaryCards';
 import { DateRangePicker, DateRange } from '@/components/admin/DateRangePicker';
 import { subDays, format } from 'date-fns';
-import { Loader2 } from 'lucide-react';
 
 // Admin email whitelist
 const ADMIN_EMAILS = [
@@ -68,25 +67,6 @@ export default function CRMDashboard() {
       </div>
     );
   }
-  const [dateRange, setDateRange] = useState({
-    from: subDays(new Date(), 30),
-    to: new Date(),
-  });
-
-  const { 
-    leads, 
-    isLoading, 
-    error, 
-    fetchLeads, 
-    updateLeadStatus 
-  } = useCRMLeads();
-
-  const handleRefresh = () => {
-    fetchLeads(
-      format(dateRange.from, 'yyyy-MM-dd'),
-      format(dateRange.to, 'yyyy-MM-dd')
-    );
-  };
 
   return (
     <div className="min-h-screen bg-background">
