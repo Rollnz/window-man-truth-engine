@@ -376,7 +376,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      backfill_all_lead_scores: { Args: never; Returns: undefined }
+      backfill_all_lead_scores: {
+        Args: { p_lookback_days?: number }
+        Returns: Json
+      }
       cleanup_rate_limits: { Args: never; Returns: undefined }
       get_event_score: {
         Args: { event_category: string; event_name: string }
