@@ -20,6 +20,8 @@ interface QuoteUploadDropzoneProps {
   className?: string;
   /** Source page for attribution */
   sourcePage?: string;
+  /** Compact mode for embedding in cards */
+  compact?: boolean;
 }
 
 export function QuoteUploadDropzone({
@@ -27,6 +29,7 @@ export function QuoteUploadDropzone({
   onError,
   className,
   sourcePage = 'beat-your-quote',
+  compact = false,
 }: QuoteUploadDropzoneProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -124,7 +127,7 @@ export function QuoteUploadDropzone({
   };
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn(compact ? "space-y-2" : "space-y-4", className)}>
       {/* Drop Zone */}
       {!selectedFile && !isComplete && (
         <div
@@ -133,34 +136,47 @@ export function QuoteUploadDropzone({
           onDrop={handleDrop}
           onClick={handleClickZone}
           className={cn(
-            "relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200",
-            "min-h-[200px] flex flex-col items-center justify-center gap-4",
+            "relative border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-200",
+            "flex flex-col items-center justify-center",
+            compact 
+              ? "p-4 gap-2 min-h-[120px]" 
+              : "p-8 gap-4 min-h-[200px]",
             isDragging
               ? "border-primary bg-primary/5 scale-[1.01]"
               : "border-border hover:border-primary/50 bg-card/50 hover:bg-card/80"
           )}
         >
-          {/* Classified stamp watermark */}
-          <div className="absolute top-4 right-4 text-xs font-mono text-muted-foreground/30 uppercase tracking-widest rotate-12">
-            CLASSIFIED
-          </div>
+          {/* Classified stamp watermark - hide in compact mode */}
+          {!compact && (
+            <div className="absolute top-4 right-4 text-xs font-mono text-muted-foreground/30 uppercase tracking-widest rotate-12">
+              CLASSIFIED
+            </div>
+          )}
 
-          <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-            <Upload className="w-8 h-8 text-primary" />
+          <div className={cn(
+            "rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center",
+            compact ? "w-10 h-10" : "w-16 h-16"
+          )}>
+            <Upload className={cn(compact ? "w-5 h-5" : "w-8 h-8", "text-primary")} />
           </div>
 
           <div>
-            <p className="font-semibold text-lg mb-1">
-              Drop Your Contractor Quote Here
+            <p className={cn("font-semibold", compact ? "text-sm mb-0.5" : "text-lg mb-1")}>
+              {compact ? "Drop Quote or Click" : "Drop Your Contractor Quote Here"}
             </p>
-            <p className="text-sm text-muted-foreground">
-              or click to browse your files
-            </p>
+            {!compact && (
+              <p className="text-sm text-muted-foreground">
+                or click to browse your files
+              </p>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className={cn(
+            "flex items-center gap-2 text-muted-foreground",
+            compact ? "text-[10px]" : "text-xs"
+          )}>
             <Shield className="w-3 h-3" />
-            <span>PDF, JPG, PNG • Max {maxFileSizeMB}MB • Encrypted & Secure</span>
+            <span>{compact ? `PDF, JPG, PNG • ${maxFileSizeMB}MB` : `PDF, JPG, PNG • Max ${maxFileSizeMB}MB • Encrypted & Secure`}</span>
           </div>
 
           <input
@@ -270,15 +286,17 @@ export function QuoteUploadDropzone({
         </div>
       )}
 
-      {/* Trust indicators */}
-      <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <Shield className="w-3 h-3" />
-          256-bit encryption
-        </span>
-        <span>•</span>
-        <span>Never shared with contractors</span>
-      </div>
+      {/* Trust indicators - hide in compact mode */}
+      {!compact && (
+        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Shield className="w-3 h-3" />
+            256-bit encryption
+          </span>
+          <span>•</span>
+          <span>Never shared with contractors</span>
+        </div>
+      )}
     </div>
   );
 }
