@@ -15,7 +15,7 @@ interface RiskRadarChartProps {
   breakdown: RiskScoreBreakdown;
 }
 
-export function RiskRadarChart({ breakdown }: RiskRadarChartProps) {
+function RiskRadarChart({ breakdown }: RiskRadarChartProps) {
   const isMobile = useIsMobile();
 
   const data = useMemo(() => [
@@ -100,3 +100,5 @@ export function RiskRadarChart({ breakdown }: RiskRadarChartProps) {
     </div>
   );
 }
+
+export default RiskRadarChart;

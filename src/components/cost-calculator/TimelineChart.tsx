@@ -6,7 +6,7 @@ interface TimelineChartProps {
   projection: CostProjection;
 }
 
-export function TimelineChart({ projection }: TimelineChartProps) {
+function TimelineChart({ projection }: TimelineChartProps) {
   const data = projection.yearlyProjections.map((item) => ({
     name: item.label,
     'Energy Loss': Math.round(item.loss),
@@ -104,3 +104,5 @@ export function TimelineChart({ projection }: TimelineChartProps) {
     </Card>
   );
 }
+
+export default TimelineChart;
