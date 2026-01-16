@@ -11,13 +11,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Admin email whitelist - same pattern as existing admin dashboard
+// Admin email whitelist - all lowercase for case-insensitive comparison
 const ADMIN_EMAILS = [
   'admin@windowman.com',
   'support@windowman.com',
   'vansiclenp@gmail.com',
   'mongoloyd@protonmail.com',
-];
+].map(e => e.toLowerCase());
 
 serve(async (req) => {
   // Handle CORS
