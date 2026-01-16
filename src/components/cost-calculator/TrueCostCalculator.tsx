@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { useSessionData } from '@/hooks/useSessionData';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { trackEvent } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import { trackModalOpen, trackLeadCapture } from '@/lib/gtm';
@@ -204,6 +205,7 @@ function FadeInSection({
 export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalculatorProps) {
   const { toast } = useToast();
   const { sessionData, updateFields } = useSessionData();
+  const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
   
   const [inputs, setInputs] = useState<CalculatorInputs>(defaults);
   const [scenarioPrompt, setScenarioPrompt] = useState('');
@@ -343,6 +345,7 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
             email: values.email.trim(),
             name: fullName,
             phone: values.phone.trim(),
+            leadId: hookLeadId, // Golden Thread: pass existing leadId for upsert
             sourceTool: 'true-cost-calculator',
             sessionData: enrichedSessionData,
             attribution: getAttributionData(),
@@ -359,6 +362,9 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
       const data = await response.json();
 
       if (data.success && data.leadId) {
+        // Golden Thread: persist leadId for cross-tool tracking
+        setLeadId(data.leadId);
+        
         trackLeadCapture({
           sourceTool: 'true-cost-calculator' satisfies SourceTool,
           email: values.email,
@@ -369,10 +375,12 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
           email: values.email,
           name: fullName,
           phone: values.phone,
+          leadId: data.leadId,
         });
 
         trackEvent('lead_captured', {
           source_tool: 'true-cost-calculator' satisfies SourceTool,
+          lead_id: data.leadId, // Golden Thread: include in analytics
           project_cost: inputs.projectCost,
           net_cost: netCost,
         });

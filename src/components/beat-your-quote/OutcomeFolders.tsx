@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import { useSessionData } from '@/hooks/useSessionData';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { ROUTES } from '@/config/navigation';
 import type { SourceTool } from '@/types/sourceTool';
 interface OutcomeFoldersProps {
@@ -28,6 +29,7 @@ export function OutcomeFolders({
     sessionData,
     updateFields
   } = useSessionData();
+  const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
   const [activeOutcome, setActiveOutcome] = useState<'alpha' | 'bravo' | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -137,6 +139,7 @@ export function OutcomeFolders({
           email: values.email.trim(),
           name: name.trim(),
           phone: phone.trim(),
+          leadId: hookLeadId, // Golden Thread: pass existing leadId for upsert
           sourceTool: 'beat-your-quote' satisfies SourceTool,
           sessionData: {
             ...sessionData,
@@ -155,12 +158,18 @@ export function OutcomeFolders({
       if (data.success) {
         setIsSuccess(true);
 
+        // Golden Thread: persist leadId for cross-tool tracking
+        if (data.leadId) {
+          setLeadId(data.leadId);
+        }
+
         // Update session data
         updateFields({
           email: values.email.trim(),
           name: name.trim(),
           phone: phone.trim(),
-          windowCount: windowCount ? parseInt(windowCount) : undefined
+          windowCount: windowCount ? parseInt(windowCount) : undefined,
+          leadId: data.leadId,
         });
 
         // Calculate time to complete form
@@ -171,7 +180,8 @@ export function OutcomeFolders({
           fields_completed: completedFieldsCount,
           has_project_cost: !!projectCost,
           has_window_count: !!windowCount,
-          time_to_complete_seconds: timeToComplete
+          time_to_complete_seconds: timeToComplete,
+          lead_id: data.leadId, // Golden Thread: include in analytics
         });
         trackLeadCapture({
           sourceTool: 'beat-your-quote' satisfies SourceTool,

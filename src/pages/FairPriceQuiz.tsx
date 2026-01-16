@@ -8,6 +8,7 @@ import { QuizResults } from '@/components/fair-price-quiz/QuizResults';
 import { quizQuestions } from '@/data/fairPriceQuizData';
 import { calculatePriceAnalysis, QuizAnswers, PriceAnalysis, calculateLeadScore } from '@/lib/fairPriceCalculations';
 import { useSessionData } from '@/hooks/useSessionData';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { trackEvent, trackLeadCapture, trackToolCompletion } from '@/lib/gtm';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +23,7 @@ type Phase = 'hero' | 'quiz' | 'analysis' | 'blur-gate' | 'results';
 export default function FairPriceQuiz() {
   usePageTracking('fair-price-quiz');
   const { updateFields, markToolCompleted } = useSessionData();
+  const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
 
   const [phase, setPhase] = useState<Phase>('hero');
   const [currentStep, setCurrentStep] = useState(0);
@@ -115,10 +117,11 @@ export default function FairPriceQuiz() {
 
     // Save lead to database
     try {
-      await supabase.functions.invoke('save-lead', {
+      const { data, error } = await supabase.functions.invoke('save-lead', {
         body: {
           email,
           name,
+          leadId: hookLeadId, // Golden Thread: pass existing leadId for upsert
           source_tool: 'fair-price-quiz' satisfies SourceTool,
           source_form: 'blur-gate',
           session_data: {
@@ -131,12 +134,25 @@ export default function FairPriceQuiz() {
         },
       });
 
+      // Golden Thread: persist leadId for cross-tool tracking
+      if (data?.leadId) {
+        setLeadId(data.leadId);
+        updateFields({ leadId: data.leadId });
+      }
+
       // Track lead capture via GTM
       trackLeadCapture({
         sourceTool: 'fair-price-quiz' satisfies SourceTool,
         email,
         leadScore,
         hasPhone: false,
+      });
+
+      trackEvent('lead_captured', {
+        source_tool: 'fair-price-quiz',
+        lead_id: data?.leadId, // Golden Thread: include in analytics
+        grade: analysis?.grade,
+        lead_score: leadScore,
       });
     } catch (error) {
       console.error('Failed to save lead:', error);
