@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useSessionData } from '@/hooks/useSessionData';
 import { Navbar } from '@/components/home/Navbar';
@@ -13,14 +13,23 @@ import { InterrogationFAQ } from '@/components/beat-your-quote/InterrogationFAQ'
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 
-
 export default function BeatYourQuote() {
   usePageTracking('beat-your-quote');
   const { sessionData } = useSessionData();
 
-  // State to trigger modal from hero buttons
+  // State to trigger modal from hero buttons (legacy, now used by AnatomySection)
   const [modalTriggerCount, setModalTriggerCount] = useState(0);
-  const handleOpenModal = () => setModalTriggerCount(prev => prev + 1);
+
+  // Track uploaded file for lead capture modal (Prompt 2)
+  const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
+  const [uploadedFilePath, setUploadedFilePath] = useState<string | null>(null);
+
+  const handleUploadSuccess = useCallback((fileId: string, filePath: string) => {
+    setUploadedFileId(fileId);
+    setUploadedFilePath(filePath);
+    // TODO: Prompt 2 - Open MissionInitiatedModal here
+    console.log('[BeatYourQuote] Upload success:', { fileId, filePath });
+  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -30,7 +39,7 @@ export default function BeatYourQuote() {
     <div className="min-h-screen dossier-bg">
       <Navbar />
       <main>
-        <DossierHero onOpenModal={handleOpenModal} />
+        <DossierHero onUploadSuccess={handleUploadSuccess} />
         <ConceptSection />
         <ManipulationTactics />
         <AnatomySection modalTriggerCount={modalTriggerCount} />
