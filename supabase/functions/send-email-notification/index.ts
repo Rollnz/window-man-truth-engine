@@ -349,26 +349,35 @@ serve(async (req) => {
       );
     }
 
+    const token = authHeader.replace('Bearer ', '');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    // Allow service role key for internal function-to-function calls
+    const isServiceRoleCall = token === supabaseServiceKey;
+    
+    if (!isServiceRoleCall) {
+      // Validate user JWT for external calls
+      const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    
-    if (claimsError || !claimsData?.claims) {
-      console.error('Auth error:', claimsError);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid authentication' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+      
+      if (claimsError || !claimsData?.claims) {
+        console.error('Auth error:', claimsError);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid authentication' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const userId = claimsData.claims.sub;
+      console.log(`Authenticated user: ${userId}`);
+    } else {
+      console.log('Internal service role call - bypassing user auth');
     }
-
-    const userId = claimsData.claims.sub;
-    console.log(`Authenticated user: ${userId}`);
     // ===== END AUTHENTICATION CHECK =====
 
     const payload: EmailPayload = await req.json();
