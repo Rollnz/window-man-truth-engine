@@ -3,12 +3,9 @@ import { X, ArrowRight, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { getAttributionData } from '@/lib/attribution';
-import { trackEvent, trackLeadCapture } from '@/lib/gtm';
+import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
+import { trackEvent } from '@/lib/gtm';
 import { exitIntentData } from '@/data/specChecklistData';
-import type { SourceTool } from '@/types/sourceTool';
 
 interface ExitIntentModalProps {
   hasConverted: boolean;
@@ -22,7 +19,6 @@ const MOBILE_SCROLL_THRESHOLD = 0.6; // 60% scroll for mobile trigger
 
 const ExitIntentModal: React.FC<ExitIntentModalProps> = ({ hasConverted, onSuccess }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [pageLoadTime] = useState(Date.now());
   const [maxScrollDepth, setMaxScrollDepth] = useState(0);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -37,6 +33,19 @@ const ExitIntentModal: React.FC<ExitIntentModalProps> = ({ hasConverted, onSucce
     initialValues: { email: '' },
     schemas: {
       email: commonSchemas.email,
+    },
+  });
+
+  const { submit, isSubmitting } = useLeadFormSubmit({
+    sourceTool: 'spec-checklist-guide',
+    formLocation: 'exit_intent',
+    leadScore: 30,
+    successTitle: 'Checklist Unlocked!',
+    successDescription: 'Check your email! Your Pre-Installation Audit Checklist is on its way.',
+    onSuccess: () => {
+      trackEvent('exit_intent_converted', { page: 'spec_checklist_guide' });
+      setIsOpen(false);
+      onSuccess?.();
     },
   });
 
@@ -131,61 +140,8 @@ const ExitIntentModal: React.FC<ExitIntentModalProps> = ({ hasConverted, onSucce
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateAll()) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('save-lead', {
-        body: {
-          email: values.email,
-          name: 'Friend', // Default name for exit intent
-          sourceTool: 'spec-checklist-guide' satisfies SourceTool,
-          attribution: getAttributionData(),
-          aiContext: { 
-            source_form: 'spec-checklist-guide-exit-intent',
-          },
-        },
-      });
-      
-      if (error) throw error;
-      
-      trackEvent('exit_intent_converted', { 
-        page: 'spec_checklist_guide',
-      });
-      
-      trackLeadCapture({
-        sourceTool: 'spec-checklist-guide' satisfies SourceTool,
-        email: values.email,
-        leadScore: 30, // Lower value than main CTA
-        hasPhone: false,
-      });
-      
-      trackEvent('generate_lead', {
-        lead_source: 'spec_checklist_guide',
-        form_location: 'exit_intent',
-        value: 30,
-      });
-      
-      toast({
-        title: "Checklist Unlocked!",
-        description: "Check your email! Your Pre-Installation Audit Checklist is on its way.",
-      });
-      
-      setIsOpen(false);
-      onSuccess?.(); // Mark as converted to hide other CTAs
-      
-    } catch (error) {
-      console.error('Exit intent form error:', error);
-      toast({
-        title: "Something went wrong",
-        description: "Please try again or email support@windowguy.com",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    await submit({ email: values.email, name: 'Friend' });
   };
 
   if (!isOpen) return null;

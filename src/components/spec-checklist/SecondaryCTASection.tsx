@@ -5,12 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
-import { supabase } from '@/integrations/supabase/client';
+import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
 import { toast } from '@/hooks/use-toast';
-import { getAttributionData } from '@/lib/attribution';
-import { trackEvent, trackFormSubmit, trackLeadCapture } from '@/lib/gtm';
 import { trustSignals } from '@/data/specChecklistData';
-import type { SourceTool } from '@/types/sourceTool';
 
 interface SecondaryCTASectionProps {
   id?: string;
@@ -19,7 +16,6 @@ interface SecondaryCTASectionProps {
 }
 
 const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess, hasConverted }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
 
   const {
@@ -36,6 +32,15 @@ const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess
     },
   });
 
+  const { submit, isSubmitting } = useLeadFormSubmit({
+    sourceTool: 'spec-checklist-guide',
+    formLocation: 'secondary_cta',
+    leadScore: 50,
+    successTitle: 'Checklist Unlocked!',
+    successDescription: 'Check your email! Your Pre-Installation Audit Checklist is on its way.',
+    onSuccess: () => onSuccess?.(),
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -50,57 +55,11 @@ const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess
       return;
     }
     
-    setIsSubmitting(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('save-lead', {
-        body: {
-          email: values.email,
-          name: values.firstName,
-          sourceTool: 'spec-checklist-guide' satisfies SourceTool,
-          attribution: getAttributionData(),
-          aiContext: { 
-            source_form: 'spec-checklist-guide-secondary-cta',
-          },
-        },
-      });
-      
-      if (error) throw error;
-      
-      trackFormSubmit('spec_checklist_secondary_cta', {
-        form_location: 'secondary_cta',
-      });
-      
-      trackLeadCapture({
-        sourceTool: 'spec-checklist-guide' satisfies SourceTool,
-        email: values.email,
-        leadScore: 50,
-        hasPhone: false,
-      });
-      
-      trackEvent('generate_lead', {
-        lead_source: 'spec_checklist_guide',
-        form_location: 'secondary_cta',
-        value: 50,
-      });
-      
-      toast({
-        title: "Checklist Unlocked!",
-        description: "Check your email! Your Pre-Installation Audit Checklist is on its way.",
-      });
-      
-      onSuccess?.();
-      
-    } catch (error) {
-      console.error('Form submission error:', error);
-      toast({
-        title: "Something went wrong",
-        description: "Please try again or email support@windowguy.com",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    await submit({ 
+      email: values.email, 
+      firstName: values.firstName,
+      consent,
+    });
   };
 
   // Show success state if already converted

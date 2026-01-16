@@ -5,12 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
-import { supabase } from '@/integrations/supabase/client';
+import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
 import { toast } from '@/hooks/use-toast';
-import { getAttributionData } from '@/lib/attribution';
-import { trackEvent, trackFormSubmit, trackLeadCapture } from '@/lib/gtm';
+import { trackEvent } from '@/lib/gtm';
 import { trustSignals } from '@/data/specChecklistData';
-import type { SourceTool } from '@/types/sourceTool';
 
 interface MainCTASectionProps {
   id?: string;
@@ -19,7 +17,6 @@ interface MainCTASectionProps {
 }
 
 const MainCTASection: React.FC<MainCTASectionProps> = ({ id, onSuccess, hasConverted }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
   const [formStarted, setFormStarted] = useState(false);
   const formStartTimeRef = useRef<number | null>(null);
@@ -36,6 +33,15 @@ const MainCTASection: React.FC<MainCTASectionProps> = ({ id, onSuccess, hasConve
       firstName: commonSchemas.name,
       email: commonSchemas.email,
     },
+  });
+
+  const { submit, isSubmitting } = useLeadFormSubmit({
+    sourceTool: 'spec-checklist-guide',
+    formLocation: 'main_cta',
+    leadScore: 50,
+    successTitle: 'Checklist Unlocked!',
+    successDescription: 'Check your email! Your Pre-Installation Audit Checklist is on its way. (Also check spam folder)',
+    onSuccess: () => onSuccess?.(),
   });
 
   const handleFieldFocus = () => {
@@ -63,65 +69,11 @@ const MainCTASection: React.FC<MainCTASectionProps> = ({ id, onSuccess, hasConve
       return;
     }
     
-    setIsSubmitting(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('save-lead', {
-        body: {
-          email: values.email,
-          name: values.firstName,
-          sourceTool: 'spec-checklist-guide' satisfies SourceTool,
-          attribution: getAttributionData(),
-          aiContext: { 
-            source_form: 'spec-checklist-guide-main-cta',
-          },
-        },
-      });
-      
-      if (error) throw error;
-      
-      // Calculate time to complete
-      const timeToComplete = formStartTimeRef.current 
-        ? Math.round((Date.now() - formStartTimeRef.current) / 1000) 
-        : undefined;
-      
-      // Track success
-      trackFormSubmit('spec_checklist_main_cta', {
-        form_location: 'main_cta',
-        time_to_complete_seconds: timeToComplete,
-      });
-      
-      trackLeadCapture({
-        sourceTool: 'spec-checklist-guide' satisfies SourceTool,
-        email: values.email,
-        leadScore: 50,
-        hasPhone: false,
-      });
-      
-      // GTM generate_lead event for conversion tracking
-      trackEvent('generate_lead', {
-        lead_source: 'spec_checklist_guide',
-        form_location: 'main_cta',
-        value: 50,
-      });
-      
-      toast({
-        title: "Checklist Unlocked!",
-        description: "Check your email! Your Pre-Installation Audit Checklist is on its way. (Also check spam folder)",
-      });
-      
-      onSuccess?.();
-      
-    } catch (error) {
-      console.error('Form submission error:', error);
-      toast({
-        title: "Something went wrong",
-        description: "Please try again or email support@windowguy.com",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    await submit({ 
+      email: values.email, 
+      firstName: values.firstName,
+      consent,
+    });
   };
 
   // Show success state if already converted

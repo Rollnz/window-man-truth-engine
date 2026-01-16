@@ -33,6 +33,8 @@ export const trackLeadCapture = (params: {
   email: string;
   leadScore?: number;
   hasPhone?: boolean;
+  /** Golden Thread lead ID for attribution */
+  leadId?: string;
 }) => {
   trackEvent('lead_captured', {
     source_tool: params.sourceTool,
@@ -40,6 +42,7 @@ export const trackLeadCapture = (params: {
     lead_score: params.leadScore || 0,
     has_phone: params.hasPhone || false,
     conversion_type: 'lead',
+    lead_id: params.leadId,
   });
 };
 

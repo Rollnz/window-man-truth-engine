@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import {
   Target,
@@ -20,21 +19,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
-import { getAttributionData } from '@/lib/attribution';
 import { Navbar } from '@/components/home/Navbar';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
-import type { SourceTool } from '@/types/sourceTool';
+import { useNavigate } from 'react-router-dom';
 
 const SalesTacticsGuide = () => {
   usePageTracking('sales-tactics-guide');
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { sessionData } = useSessionData();
   const frameControl = getFrameControl('sales-tactics-guide');
   const smartTools = getSmartRelatedTools('sales-tactics-guide', sessionData.toolsCompleted);
@@ -53,50 +49,19 @@ const SalesTacticsGuide = () => {
     },
   });
 
+  const { submit, isSubmitting } = useLeadFormSubmit({
+    sourceTool: 'sales-tactics-guide',
+    formLocation: 'main',
+    leadScore: 40,
+    redirectTo: ROUTES.COMPARISON,
+    successTitle: 'Guide Unlocked!',
+    successDescription: 'Check your inbox - the guide is on its way.',
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateAll()) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('save-lead', {
-        body: {
-          email: values.email,
-          name: values.name,
-          sourceTool: 'sales-tactics-guide' satisfies SourceTool,
-          attribution: getAttributionData(),
-          aiContext: { source_form: 'sales-tactics-guide' },
-        },
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Guide Unlocked!",
-        description: "Check your inbox - the guide is on its way.",
-      });
-      
-      console.log('[Analytics] landing_page_lead_captured', {
-        source: 'sales-tactics-guide',
-        timestamp: new Date().toISOString(),
-      });
-      
-      setTimeout(() => {
-        navigate(ROUTES.COMPARISON);
-      }, 1500);
-      
-    } catch (error) {
-      console.error('Form submission error:', error);
-      toast({
-        title: "Something went wrong",
-        description: "Please try again or contact support.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    await submit({ email: values.email, name: values.name });
   };
 
   return (
