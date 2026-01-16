@@ -8,6 +8,12 @@ export const ROUTES = {
   HOME: '/',
   TOOLS: '/tools',
 
+  // Semantic Pillars (Authority Pages)
+  WINDOW_COST_TRUTH: '/window-cost-truth',
+  WINDOW_RISK_AND_CODE: '/window-risk-and-code',
+  WINDOW_SALES_TRUTH: '/window-sales-truth',
+  WINDOW_VERIFICATION_SYSTEM: '/window-verification-system',
+
   // Primary Tools
   COST_CALCULATOR: '/cost-calculator',
   BEAT_YOUR_QUOTE: '/beat-your-quote',

@@ -8,6 +8,32 @@
     <priority>1.0</priority>
   </url>
   
+  <!-- Semantic Pillar Pages (Authority Hubs) -->
+  <url>
+    <loc>https://itswindowman.com/window-cost-truth</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://itswindowman.com/window-risk-and-code</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://itswindowman.com/window-sales-truth</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://itswindowman.com/window-verification-system</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  
   <!-- Core Pages -->
   <url>
     <loc>https://itswindowman.com/tools</loc>
