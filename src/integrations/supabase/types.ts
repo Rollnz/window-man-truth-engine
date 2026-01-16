@@ -169,6 +169,62 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_files: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          lead_id: string | null
+          mime_type: string
+          session_id: string
+          source_page: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          lead_id?: string | null
+          mime_type: string
+          session_id: string
+          source_page?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          lead_id?: string | null
+          mime_type?: string
+          session_id?: string
+          source_page?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_files_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_limits: {
         Row: {
           created_at: string | null
