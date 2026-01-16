@@ -9,6 +9,7 @@ import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
 import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { ProTipBox } from '@/components/seo';
 
 // Section Components
 import SpecChecklistHero from '@/components/spec-checklist/SpecChecklistHero';
@@ -80,6 +81,18 @@ const SpecChecklistGuide = () => {
       
       <SocialProofSection />
       <ObjectionHandling />
+      
+      {/* Semantic ProTip linking to related tool */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <ProTipBox
+          title="Already have a quote to verify?"
+          description="The AI Quote Scanner checks your quote against spec requirements and flags missing documentation."
+          linkTo="/ai-scanner"
+          linkText="Scan your quote for spec issues"
+          variant="default"
+        />
+      </div>
+      
       <UrgencySection />
       <ValueStackSection />
       <FAQSection />

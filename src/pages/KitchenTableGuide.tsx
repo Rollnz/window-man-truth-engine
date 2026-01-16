@@ -27,6 +27,7 @@ import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { ProTipBox } from '@/components/seo';
 
 const KitchenTableGuide = () => {
   usePageTracking('kitchen-table-guide');
@@ -258,6 +259,15 @@ const KitchenTableGuide = () => {
                   This guide doesn't tell you what to buy. It teaches you how to listen.
                 </p>
               </div>
+
+              {/* Semantic ProTip linking to related tool */}
+              <ProTipBox
+                title="Want to see these tactics in action?"
+                description="The 11 Sales Tactics Guide names and explains the psychological scripts contractors use on every homeowner."
+                linkTo="/sales-tactics-guide"
+                linkText="See the 11 tactics salespeople use"
+                variant="warning"
+              />
             </div>
           </div>
         </div>
