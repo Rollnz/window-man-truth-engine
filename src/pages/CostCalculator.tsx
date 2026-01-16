@@ -9,7 +9,7 @@ import { Navbar } from '@/components/home/Navbar';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { CalculatorInputs, ValidatedInputs } from '@/components/cost-calculator/CalculatorInputs';
 import { CostBreakdown } from '@/components/cost-calculator/CostBreakdown';
-import { TimelineChart } from '@/components/cost-calculator/TimelineChart';
+import { TimelineChartLazy } from '@/components/cost-calculator/TimelineChartLazy';
 import { LiveWasteCounter } from '@/components/cost-calculator/LiveWasteCounter';
 import { BreakEvenIndicator } from '@/components/cost-calculator/BreakEvenIndicator';
 import {
@@ -139,7 +139,7 @@ export default function CostCalculator() {
             </div>
 
             {/* Timeline Chart */}
-            <TimelineChart projection={projection} />
+            <TimelineChartLazy projection={projection} />
 
             {/* Break-Even Indicator */}
             <BreakEvenIndicator

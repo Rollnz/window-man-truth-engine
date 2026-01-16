@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { RiskScoreBreakdown, generateActionItems } from '@/lib/riskCalculations';
 import { SessionData } from '@/hooks/useSessionData';
-import { RiskRadarChart } from './RiskRadarChart';
+import { RiskRadarChartLazy } from './RiskRadarChartLazy';
 import { ProtectionScoreGauge } from './ProtectionScoreGauge';
 import { CategoryBreakdown } from './CategoryBreakdown';
 import { InsuranceSavingsBanner } from './InsuranceSavingsBanner';
@@ -56,7 +56,7 @@ export function ProtectionReport({
         <h2 className="text-lg font-semibold mb-4 text-center">
           Protection by Category
         </h2>
-        <RiskRadarChart breakdown={breakdown} />
+        <RiskRadarChartLazy breakdown={breakdown} />
       </div>
 
       <Separator />
