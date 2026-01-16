@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { SEO } from '@/components/SEO';
 import { Navbar } from '@/components/home/Navbar';
 import { Footer } from '@/components/home/Footer';
 import { QuoteScannerHero } from '@/components/quote-scanner/QuoteScannerHero';
@@ -17,6 +18,7 @@ import { ErrorBoundary } from '@/components/error';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
+import { getToolPageSchemas } from '@/lib/seoSchemas';
 // New supporting sections
 import { ScannerSocialProof } from '@/components/quote-scanner/ScannerSocialProof';
 import { ScannerFAQSection } from '@/components/quote-scanner/ScannerFAQSection';
@@ -71,6 +73,12 @@ export default function QuoteScanner() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="AI Quote Scanner - Instant Quote Analysis"
+        description="Upload your window replacement quote for instant AI-powered analysis. Identify red flags, compare fair pricing, and get negotiation scripts."
+        canonicalUrl="https://itswindowman.com/quote-scanner"
+        jsonLd={getToolPageSchemas('quote-scanner')}
+      />
       <Navbar />
       
       <main className="pt-20">

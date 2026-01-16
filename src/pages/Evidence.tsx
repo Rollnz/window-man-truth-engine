@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { caseStudies, MissionType } from "@/data/evidenceData";
 import { useSessionData } from "@/hooks/useSessionData";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { EvidenceHero } from "@/components/evidence/EvidenceHero";
@@ -13,6 +14,7 @@ import { RelatedIntelligence } from "@/components/evidence/RelatedIntelligence";
 import { StickyCTA } from "@/components/evidence/StickyCTA";
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
+import { getToolPageSchemas } from "@/lib/seoSchemas";
 import type { SourceTool } from "@/types/sourceTool";
 import { ROUTES } from "@/config/navigation";
 
@@ -101,6 +103,12 @@ export default function Evidence() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="Evidence Locker - Real Homeowner Case Studies"
+        description="Browse real case studies showing how homeowners saved thousands on window replacements. See actual savings, strategies used, and tools that worked."
+        canonicalUrl="https://itswindowman.com/evidence"
+        jsonLd={getToolPageSchemas('evidence-locker')}
+      />
       <Navbar />
 
       {/* Hero */}
