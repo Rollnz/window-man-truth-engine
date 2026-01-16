@@ -4,6 +4,7 @@ import { getErrorMessage, isRateLimitError } from '@/lib/errors';
 import { ClaimDocument } from '@/data/claimSurvivalData';
 import { useToast } from '@/hooks/use-toast';
 import { useSessionData } from '@/hooks/useSessionData';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 
 export interface AnalysisResult {
   overallScore: number;
@@ -30,7 +31,8 @@ export function useEvidenceAnalysis({
   files,
 }: UseEvidenceAnalysisProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const { sessionData, updateField } = useSessionData();
+  const { sessionData, sessionId, updateField } = useSessionData();
+  const { leadId } = useLeadIdentity();
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     sessionData.claimAnalysisResult || null
   );
@@ -60,7 +62,12 @@ export function useEvidenceAnalysis({
 
       const { data, error } = await fastAIRequest.sendRequest<AnalysisResult>(
         'analyze-evidence',
-        { documents: documentStatuses }
+        { 
+          documents: documentStatuses,
+          // Golden Thread: Pass session tracking data
+          sessionId: sessionId || crypto.randomUUID(),
+          leadId: leadId || undefined,
+        }
       );
 
       if (error) {
@@ -97,7 +104,7 @@ export function useEvidenceAnalysis({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [documents, progress, files, toast, updateField]);
+  }, [documents, progress, files, toast, updateField, sessionId, leadId]);
 
   const resetAnalysis = useCallback(() => {
     setAnalysisResult(null);
