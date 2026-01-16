@@ -38,6 +38,7 @@ const AttributionDashboard = lazy(() => import("./pages/admin/AttributionDashboa
 const CRMDashboard = lazy(() => import("./pages/admin/CRMDashboard"));
 const QuotesDashboard = lazy(() => import("./pages/admin/QuotesDashboard"));
 const LeadDetail = lazy(() => import("./pages/admin/LeadDetail"));
+const AdminHome = lazy(() => import("./pages/admin/AdminHome"));
 const About = lazy(() => import("./pages/About"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Defense = lazy(() => import("./pages/Defense"));
@@ -99,6 +100,7 @@ function AppContent() {
         <Route path="/beat-your-quote" element={<BeatYourQuote />} />
         <Route path="/fair-price-quiz" element={<FairPriceQuiz />} />
         <Route path="/button-audit" element={<ButtonAudit />} />
+        <Route path="/admin" element={<AdminHome />} />
         <Route path="/admin/analytics" element={<Analytics />} />
         <Route path="/admin/attribution" element={<AttributionDashboard />} />
         <Route path="/admin/crm" element={<CRMDashboard />} />

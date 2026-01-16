@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -178,6 +179,8 @@ export function AttributionEventsTable({
           <TableBody>
             {events.map((event) => {
               const leadId = event.event_data?.lead_id as string | undefined;
+              const wmLeadId = event.event_data?.wm_lead_id as string | undefined;
+              const linkableLeadId = wmLeadId || leadId;
               const hasLead = !!(event.lead_first_name || event.lead_last_name || event.lead_email);
               const contactName = hasLead 
                 ? `${event.lead_first_name || ''} ${event.lead_last_name || ''}`.trim() || event.lead_email?.split('@')[0]
@@ -203,7 +206,17 @@ export function AttributionEventsTable({
                   <TableCell>
                     {hasLead ? (
                       <div className="space-y-0.5">
-                        <div className="font-medium text-sm">{contactName}</div>
+                        {linkableLeadId ? (
+                          <Link 
+                            to={`/admin/leads/${linkableLeadId}`}
+                            className="font-medium text-sm text-primary hover:underline flex items-center gap-1"
+                          >
+                            {contactName}
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
+                        ) : (
+                          <div className="font-medium text-sm">{contactName}</div>
+                        )}
                         <div className="text-xs text-muted-foreground space-y-0.5">
                           {event.lead_phone && <div>{event.lead_phone}</div>}
                           {event.lead_email && <div className="truncate max-w-[180px]">{event.lead_email}</div>}
