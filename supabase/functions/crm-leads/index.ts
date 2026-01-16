@@ -5,11 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Admin email whitelist - same as admin-attribution
+// Admin email whitelist - must be lowercase for comparison
 const ADMIN_EMAILS = [
   "admin@windowtruth.com",
   "tim@impactwindowexperts.com",
   "tim@itswindowman.com",
+  "vansiclenp@gmail.com",
+  "mongoloyd@protonmail.com",
 ];
 
 Deno.serve(async (req) => {
