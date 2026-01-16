@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useSessionData } from '@/hooks/useSessionData';
+import { SEO } from '@/components/SEO';
 import { Navbar } from '@/components/home/Navbar';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { DossierHero } from '@/components/beat-your-quote/DossierHero';
@@ -71,8 +72,61 @@ export default function BeatYourQuote() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const beatYourQuoteSchema = [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Beat Your Quote - Quote Scanner",
+      "applicationCategory": "UtilityApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "Upload your window replacement quote and get a free expert analysis to identify hidden markups and negotiate a better price.",
+      "url": "https://itswindowman.com/beat-your-quote"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does the quote scanner work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Simply upload a photo or PDF of your window replacement quote. Our AI-powered scanner analyzes the pricing, identifies potential markups, and provides you with a detailed breakdown of fair market prices."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is the quote analysis really free?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, the quote analysis is completely free. We believe homeowners deserve transparency in window pricing without paying for it upfront."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What information do I need to submit my quote?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Just upload a clear photo or PDF of your contractor's quote. Our system will extract the relevant pricing information automatically."
+          }
+        }
+      ]
+    }
+  ];
+
   return (
     <div className="min-h-screen dossier-bg">
+      <SEO 
+        title="Beat Your Quote - Free Quote Analysis"
+        description="Upload your window replacement quote for a free expert analysis. Identify hidden markups and learn how to negotiate a better price with our AI-powered scanner."
+        canonicalUrl="https://itswindowman.com/beat-your-quote"
+        jsonLd={beatYourQuoteSchema}
+      />
       <Navbar />
       <main>
         <DossierHero onUploadSuccess={handleUploadSuccess} />

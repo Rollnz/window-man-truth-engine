@@ -4,6 +4,7 @@
 
 import { Shield } from "lucide-react";
 import { ROUTES } from "@/config/navigation";
+import { SEO } from "@/components/SEO";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { useQuoteBuilder } from "@/hooks/useQuoteBuilder";
 import { ErrorBoundary } from "@/components/error";
@@ -115,11 +116,62 @@ const QuoteBuilderV2 = () => {
   );
 };
 
+const freeEstimateSchema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Free Window Replacement Cost Calculator",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "Build a custom window replacement estimate with our free calculator. Configure window styles, sizes, and features to get accurate pricing instantly.",
+    "url": "https://itswindowman.com/free-estimate"
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to Estimate Window Replacement Costs",
+    "description": "Step-by-step guide to calculating your window replacement costs using our free online tool.",
+    "step": [
+      {
+        "@type": "HowToStep",
+        "name": "Select Your Project Details",
+        "text": "Choose your home type, project scope, and timeline to get started."
+      },
+      {
+        "@type": "HowToStep",
+        "name": "Configure Your Windows",
+        "text": "Select window style, size, color, and grid pattern for each room."
+      },
+      {
+        "@type": "HowToStep",
+        "name": "Add Windows to Your Quote",
+        "text": "Add configured windows to your cart to build your complete project estimate."
+      },
+      {
+        "@type": "HowToStep",
+        "name": "Get Your Estimate",
+        "text": "Review your detailed quote breakdown with material and installation costs."
+      }
+    ]
+  }
+];
+
 export default function CalculateEstimate() {
   usePageTracking('free-estimate');
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
+      <SEO 
+        title="Free Window Replacement Cost Calculator"
+        description="Build a custom window replacement estimate for free. Configure styles, sizes, and features to get accurate pricing for your project instantly."
+        canonicalUrl="https://itswindowman.com/free-estimate"
+        jsonLd={freeEstimateSchema}
+      />
       <Navbar />
 
       <div className="pt-14">
