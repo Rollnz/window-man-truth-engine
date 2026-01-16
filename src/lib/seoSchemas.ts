@@ -136,6 +136,94 @@ export function generateWebSiteSchema(config: {
 // ============================================
 
 export const TOOL_SCHEMAS = {
+  'cost-calculator': {
+    tool: generateToolSchema({
+      name: "Cost of Inaction Calculator - Window Replacement Savings",
+      description: "Calculate how much money you're losing every day by delaying window replacement. See the true cost of energy loss and break-even timeline.",
+      url: "https://itswindowman.com/cost-calculator"
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "How does the Cost of Inaction Calculator work?",
+        answer: "Enter your current energy bill, window age, and home details. The calculator estimates monthly energy loss through inefficient windows and projects cumulative waste over 5 years."
+      },
+      {
+        question: "How accurate is the energy savings estimate?",
+        answer: "Our calculations are based on Department of Energy data showing that windows account for 25-30% of residential heating and cooling energy use. Individual results may vary."
+      },
+      {
+        question: "When do new windows pay for themselves?",
+        answer: "Most window replacements break even in 3-7 years through energy savings. Higher utility costs and older windows typically mean faster payback periods."
+      }
+    ])
+  },
+
+  'expert-system': {
+    tool: generateToolSchema({
+      name: "Window Questions Expert - AI-Powered Advisor",
+      description: "Ask any question about window replacement and get instant, unbiased expert answers. No sales pitch, just facts powered by AI.",
+      url: "https://itswindowman.com/expert"
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "Is the Expert System really unbiased?",
+        answer: "Yes. Unlike contractor consultations, our AI has no incentive to upsell you. It provides factual information based on industry standards and consumer research."
+      },
+      {
+        question: "What questions can I ask?",
+        answer: "Anything about window replacement: pricing, materials, installation, warranties, contractor red flags, insurance claims, permit requirements, and more."
+      },
+      {
+        question: "Can the Expert review my specific quote?",
+        answer: "The Expert can answer questions about pricing and specs, but for detailed quote analysis, use our Quote Scanner tool which is specifically designed for that."
+      }
+    ])
+  },
+
+  'reality-check': {
+    tool: generateToolSchema({
+      name: "Reality Check Quiz - Window Replacement Assessment",
+      description: "Answer 5 quick questions about your current windows to get your Reality Score and see if replacement is urgent, recommended, or optional.",
+      url: "https://itswindowman.com/reality-check"
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "What is the Reality Check score?",
+        answer: "Your Reality Score (0-100) indicates how urgently your windows need replacement. Scores above 75 suggest immediate action; 50-75 means replacement should be planned; below 50 means windows are still functional."
+      },
+      {
+        question: "How long does the Reality Check take?",
+        answer: "About 90 seconds. You'll answer 5 questions about window age, energy bills, drafts, and noise to receive your personalized assessment."
+      },
+      {
+        question: "What factors affect my Reality Score?",
+        answer: "The quiz considers window age, current energy bills, home size, draftiness levels, and noise infiltration to calculate your score."
+      }
+    ])
+  },
+
+  'comparison': {
+    tool: generateToolSchema({
+      name: "Window Tier Comparison Tool - True Cost Analysis",
+      description: "Compare budget, mid-range, and premium window options side-by-side. See 10-year true costs including energy savings, maintenance, and replacement.",
+      url: "https://itswindowman.com/comparison"
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "What window tiers are compared?",
+        answer: "We compare three tiers: Budget (basic vinyl windows), Mid-Range (enhanced vinyl or fiberglass), and Premium (impact or high-performance windows). Each shows upfront cost and 10-year true cost."
+      },
+      {
+        question: "How is the 10-year true cost calculated?",
+        answer: "True cost includes the initial purchase price plus projected energy costs, expected maintenance, and potential replacement needs over a 10-year period."
+      },
+      {
+        question: "Should I always choose premium windows?",
+        answer: "Not necessarily. The best choice depends on your budget, how long you'll stay in the home, local climate, and whether you need hurricane protection. Our tool helps you see the trade-offs."
+      }
+    ])
+  },
+
   'fair-price-quiz': {
     tool: generateToolSchema({
       name: "Fair Price Quiz - Window Quote Analyzer",

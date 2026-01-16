@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { ROUTES } from "@/config/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { SEO } from "@/components/SEO";
+import { getToolPageSchemas } from "@/lib/seoSchemas";
 import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { Navbar } from "@/components/home/Navbar";
@@ -218,6 +220,12 @@ const RealityCheck = () => {
   if (showResults) {
     return (
       <div className="min-h-screen bg-background">
+        <SEO
+          title="Reality Check Quiz"
+          description="Answer 5 quick questions about your current windows to get your Reality Score and see if replacement is urgent, recommended, or optional."
+          canonicalUrl="https://itswindowman.com/reality-check"
+          jsonLd={getToolPageSchemas('reality-check')}
+        />
         <Navbar />
         
         <main className="container mx-auto px-4 py-12 max-w-2xl pt-20">
@@ -252,6 +260,12 @@ const RealityCheck = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Reality Check Quiz"
+        description="Answer 5 quick questions about your current windows to get your Reality Score and see if replacement is urgent, recommended, or optional."
+        canonicalUrl="https://itswindowman.com/reality-check"
+        jsonLd={getToolPageSchemas('reality-check')}
+      />
       <Navbar />
 
       <main className="container mx-auto px-4 py-12 max-w-2xl pt-20">
