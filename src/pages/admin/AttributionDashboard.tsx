@@ -28,11 +28,13 @@ interface AttributionData {
   eventTypes: string[];
 }
 
-// Admin email whitelist (must match edge function)
+// Admin email whitelist (must match edge function) - all lowercase
 const ADMIN_EMAILS = [
   'admin@windowman.com',
   'support@windowman.com',
-];
+  'vansiclenp@gmail.com',
+  'mongoloyd@protonmail.com',
+].map(e => e.toLowerCase());
 
 export default function AttributionDashboard() {
   const navigate = useNavigate();
@@ -49,17 +51,22 @@ export default function AttributionDashboard() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        console.log('[Attribution] No session, redirecting to auth');
         navigate('/auth');
         return;
       }
 
       const userEmail = session.user.email?.toLowerCase();
+      console.log('[Attribution] Checking email:', userEmail, 'against whitelist:', ADMIN_EMAILS);
+      
       if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+        console.warn('[Attribution] Email not in whitelist:', userEmail);
         setIsAuthorized(false);
         setIsLoading(false);
         return;
       }
 
+      console.log('[Attribution] Access granted for:', userEmail);
       setIsAuthorized(true);
     };
 
