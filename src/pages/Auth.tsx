@@ -10,6 +10,7 @@ import { Mail, ArrowLeft, Vault, CheckCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+import { SEO } from '@/components/SEO';
 import { ROUTES } from '@/config/navigation';
 
 const STORAGE_KEY = 'impact-windows-session';
@@ -101,6 +102,11 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SEO
+        title="Access Your Vault"
+        description="Sign in to your Window Man Vault to access your saved results, checklists, and personalized window recommendations. Passwordless login with magic link."
+        canonicalUrl="https://itswindowman.com/auth"
+      />
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">

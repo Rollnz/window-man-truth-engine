@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { Navbar } from '@/components/home/Navbar';
+import { SEO } from '@/components/SEO';
+import { getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { ROUTES } from '@/config/navigation';
 
 export default function Privacy() {
@@ -9,11 +11,17 @@ export default function Privacy() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Privacy Policy"
+        description="Learn how Window Man Truth Engine collects, uses, and protects your personal data. We respect your privacy and are committed to transparency."
+        canonicalUrl="https://itswindowman.com/privacy"
+        jsonLd={[getBreadcrumbSchema('privacy')]}
+      />
       <Navbar />
 
       <div className="max-w-3xl mx-auto px-4 py-12 pt-20">
         <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
-        <p className="text-muted-foreground mb-8">Last Updated: [Insert Date]</p>
+        <p className="text-muted-foreground mb-8">Last Updated: January 17, 2025</p>
         
         <div className="prose prose-invert max-w-none space-y-6">
           <p className="text-muted-foreground">
@@ -62,7 +70,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-xl font-semibold mb-3">4. Your Rights</h2>
             <p className="text-muted-foreground">
-              You may access, update, or delete your "Vault" account at any time by contacting us at [Insert Support Email]. You may also opt-out of marketing emails via the "Unsubscribe" link.
+              You may access, update, or delete your "Vault" account at any time by contacting us at support@itswindowman.com. You may also opt-out of marketing emails via the "Unsubscribe" link.
             </p>
           </section>
 

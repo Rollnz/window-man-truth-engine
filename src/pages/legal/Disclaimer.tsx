@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { SEO } from '@/components/SEO';
+import { getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { ROUTES } from '@/config/navigation';
 
 export default function Disclaimer() {
@@ -9,6 +11,12 @@ export default function Disclaimer() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Disclaimer"
+        description="Important disclaimer about Window Man Truth Engine services. We are a media and referral company, not a licensed contractor. Estimates are for educational purposes."
+        canonicalUrl="https://itswindowman.com/disclaimer"
+        jsonLd={[getBreadcrumbSchema('disclaimer')]}
+      />
       <div className="max-w-3xl mx-auto px-4 py-12">
         <Button variant="ghost" asChild className="mb-8">
           <Link to={ROUTES.HOME}>
@@ -18,7 +26,7 @@ export default function Disclaimer() {
         </Button>
         
         <h1 className="text-3xl font-bold mb-2">Disclaimer</h1>
-        <p className="text-muted-foreground mb-8">Last Updated: [Insert Date]</p>
+        <p className="text-muted-foreground mb-8">Last Updated: January 17, 2025</p>
         
         <div className="prose prose-invert max-w-none space-y-6">
           <section>
