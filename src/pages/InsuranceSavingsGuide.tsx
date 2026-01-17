@@ -27,7 +27,7 @@ import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { ProTipBox } from '@/components/seo';
-import { ReviewedByBadge } from '@/components/authority';
+import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
 
 const InsuranceSavingsGuide = () => {
   usePageTracking('insurance-savings-guide');
@@ -418,6 +418,13 @@ const InsuranceSavingsGuide = () => {
         </div>
       </footer>
       </div>
+
+      {/* Exit Intent Modal for lead capture */}
+      <ExitIntentModal
+        sourceTool="insurance-savings-guide"
+        hasConverted={isSubmitting}
+        resultSummary="Insurance Savings Blueprint"
+      />
     </div>
   );
 };

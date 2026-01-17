@@ -28,7 +28,7 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { ProTipBox } from '@/components/seo';
-import { ReviewedByBadge } from '@/components/authority';
+import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
 
 const KitchenTableGuide = () => {
   usePageTracking('kitchen-table-guide');
@@ -440,6 +440,13 @@ const KitchenTableGuide = () => {
         </div>
       </footer>
       </div>
+
+      {/* Exit Intent Modal for lead capture */}
+      <ExitIntentModal
+        sourceTool="kitchen-table-guide"
+        hasConverted={isSubmitting}
+        resultSummary="Kitchen Table Defense Guide"
+      />
     </div>
   );
 };
