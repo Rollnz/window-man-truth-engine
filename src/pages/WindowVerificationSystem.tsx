@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
+import { ReviewedByBadge } from "@/components/authority";
+import { getReviewBoardSchema } from "@/config/expertIdentity";
 
 const pillar = PILLARS['window-verification-system'];
 
@@ -79,7 +81,7 @@ const WindowVerificationSystem = () => {
         title="Window Verification System: How to Verify Quotes & Installers Before Signing"
         description={pillar.description}
         canonicalUrl="https://itswindowman.com/window-verification-system"
-        jsonLd={[articleSchema, faqSchema, breadcrumbSchema]}
+        jsonLd={[articleSchema, faqSchema, breadcrumbSchema, getReviewBoardSchema()]}
       />
       <Navbar />
 
@@ -264,6 +266,13 @@ const WindowVerificationSystem = () => {
                 </AccordionItem>
               ))}
             </Accordion>
+          </div>
+        </section>
+
+        {/* Reviewed By Badge */}
+        <section className="container px-4 py-12 border-t border-border">
+          <div className="max-w-4xl">
+            <ReviewedByBadge />
           </div>
         </section>
 

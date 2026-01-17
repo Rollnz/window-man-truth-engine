@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
+import { ReviewedByBadge } from "@/components/authority";
+import { getReviewBoardSchema } from "@/config/expertIdentity";
 
 const pillar = PILLARS['window-cost-truth'];
 
@@ -79,7 +81,7 @@ const WindowCostTruth = () => {
         title="Window Cost Truth: What Impact Windows Really Cost Over 10 Years in Florida"
         description={pillar.description}
         canonicalUrl="https://itswindowman.com/window-cost-truth"
-        jsonLd={[articleSchema, faqSchema, breadcrumbSchema]}
+        jsonLd={[articleSchema, faqSchema, breadcrumbSchema, getReviewBoardSchema()]}
       />
       <Navbar />
 
@@ -228,6 +230,13 @@ const WindowCostTruth = () => {
                 </AccordionItem>
               ))}
             </Accordion>
+          </div>
+        </section>
+
+        {/* Reviewed By Badge */}
+        <section className="container px-4 py-12 border-t border-border">
+          <div className="max-w-4xl">
+            <ReviewedByBadge />
           </div>
         </section>
 
