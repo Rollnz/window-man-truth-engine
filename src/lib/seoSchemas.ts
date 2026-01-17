@@ -4,8 +4,130 @@
  */
 
 import { getAuthorReference, getReviewBoardSchema } from "@/config/expertIdentity";
+import { PILLARS, PillarKey, PAGE_TO_PILLAR } from "@/config/pillarMapping";
 
 const SITE_URL = "https://itswindowman.com";
+
+// ============================================
+// Pillar Schema Configuration
+// ============================================
+
+interface PillarSchemaConfig {
+  pillarKey: PillarKey;
+  headline: string;
+  description: string;
+  imageUrl?: string;
+  datePublished: string;
+  dateModified: string;
+}
+
+/**
+ * Configuration for each pillar's schema metadata
+ */
+export const PILLAR_SCHEMA_CONFIGS: Record<PillarKey, Omit<PillarSchemaConfig, 'pillarKey'>> = {
+  'window-cost-truth': {
+    headline: 'How Much Do Impact Windows Really Cost Over 10 Years in Florida?',
+    description: 'Discover the true long-term cost of impact windows in Florida. Learn why cheap windows cost more, hidden replacement costs, and how to calculate your real 10-year investment.',
+    imageUrl: `${SITE_URL}/images/pillars/cost-truth-hero.webp`,
+    datePublished: '2025-01-16',
+    dateModified: '2025-01-17',
+  },
+  'window-risk-and-code': {
+    headline: 'Is Your Florida Home Actually Hurricane-Ready? Code Requirements Explained',
+    description: 'Understand Florida hurricane window requirements, impact window code compliance, and wind mitigation essentials. Learn if your home meets current standards.',
+    imageUrl: `${SITE_URL}/images/pillars/risk-code-hero.webp`,
+    datePublished: '2025-01-16',
+    dateModified: '2025-01-17',
+  },
+  'window-sales-truth': {
+    headline: 'Are You Being Manipulated? How Window Sales Pressure Tactics Work',
+    description: 'Expose common window sales manipulation tactics. Learn to recognize pressure techniques, identify quote red flags, and negotiate confidently.',
+    imageUrl: `${SITE_URL}/images/pillars/sales-truth-hero.webp`,
+    datePublished: '2025-01-16',
+    dateModified: '2025-01-17',
+  },
+  'window-verification-system': {
+    headline: 'How to Verify Any Window Quote Before You Sign',
+    description: 'Learn how to verify window quotes, check installer credentials, and validate window specifications. The complete verification system for Florida homeowners.',
+    imageUrl: `${SITE_URL}/images/pillars/verification-hero.webp`,
+    datePublished: '2025-01-16',
+    dateModified: '2025-01-17',
+  },
+};
+
+/**
+ * Generate the complete @graph array for a pillar page
+ * Creates proper semantic hierarchy connecting to WebSite, Organization, and Expert
+ */
+export function generatePillarSchemaGraph(pillarKey: PillarKey): Record<string, unknown> {
+  const pillar = PILLARS[pillarKey];
+  const config = PILLAR_SCHEMA_CONFIGS[pillarKey];
+  const pillarUrl = `${SITE_URL}${pillar.url}`;
+  
+  // Get child pages (guides and tools) for hasPart
+  const childPages = [...new Set([...pillar.guides, ...pillar.tools])];
+  
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      // Article schema - the main content
+      {
+        "@type": "Article",
+        "@id": `${pillarUrl}#article`,
+        "isPartOf": { "@id": pillarUrl },
+        "author": { "@id": `${SITE_URL}/#expert` },
+        "headline": config.headline,
+        "description": config.description,
+        "image": config.imageUrl,
+        "publisher": { "@id": `${SITE_URL}/#organization` },
+        "mainEntityOfPage": { "@id": pillarUrl },
+        "datePublished": config.datePublished,
+        "dateModified": config.dateModified,
+        "hasPart": childPages.map(path => ({
+          "@type": "WebPage",
+          "@id": `${SITE_URL}${path}`
+        }))
+      },
+      // WebPage schema - page identification
+      {
+        "@type": "WebPage",
+        "@id": pillarUrl,
+        "url": pillarUrl,
+        "name": `${pillar.title} | Window Man Truth Engine`,
+        "isPartOf": { "@id": `${SITE_URL}/#website` },
+        "breadcrumb": { "@id": `${pillarUrl}#breadcrumb` }
+      },
+      // BreadcrumbList schema
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${pillarUrl}#breadcrumb`,
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": SITE_URL
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": pillar.title,
+            "item": pillarUrl
+          }
+        ]
+      }
+    ]
+  };
+}
+
+/**
+ * Get all pillar references for the homepage WebSite schema hasPart property
+ */
+export function getPillarHasPartReferences(): Array<{ "@id": string }> {
+  return Object.values(PILLARS).map(pillar => ({
+    "@id": `${SITE_URL}${pillar.url}`
+  }));
+}
 
 interface ToolSchemaConfig {
   name: string;

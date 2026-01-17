@@ -10,6 +10,7 @@ import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
 import { ReviewedByBadge } from "@/components/authority";
 import { getReviewBoardSchema } from "@/config/expertIdentity";
+import { generatePillarSchemaGraph, generateFAQSchema } from "@/lib/seoSchemas";
 
 const pillar = PILLARS['window-cost-truth'];
 
@@ -29,51 +30,9 @@ const WindowCostTruth = () => {
     },
   ];
 
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    "@id": "https://itswindowman.com/window-cost-truth",
-    "headline": pillar.h1,
-    "description": pillar.description,
-    "author": {
-      "@type": "Person",
-      "@id": "https://itswindowman.com/#expert",
-      "name": "WindowMan Review Board",
-      "jobTitle": "Florida Impact Window Specialists"
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Window Man Your Hurricane Hero",
-      "url": "https://itswindowman.com"
-    },
-    "mainEntityOfPage": "https://itswindowman.com/window-cost-truth",
-    "datePublished": "2025-01-16",
-    "dateModified": "2025-01-16",
-    "about": pillar.intent,
-    "keywords": pillar.ownsQueries.join(", ")
-  };
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": faqs.map(faq => ({
-      "@type": "Question",
-      "name": faq.question,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": faq.answer
-      }
-    }))
-  };
-
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://itswindowman.com" },
-      { "@type": "ListItem", "position": 2, "name": "Window Cost Truth", "item": "https://itswindowman.com/window-cost-truth" }
-    ]
-  };
+  // Use centralized pillar schema generator for topical cluster hierarchy
+  const pillarSchemaGraph = generatePillarSchemaGraph('window-cost-truth');
+  const faqSchema = generateFAQSchema(faqs);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -81,7 +40,7 @@ const WindowCostTruth = () => {
         title="Window Cost Truth: What Impact Windows Really Cost Over 10 Years in Florida"
         description={pillar.description}
         canonicalUrl="https://itswindowman.com/window-cost-truth"
-        jsonLd={[articleSchema, faqSchema, breadcrumbSchema, getReviewBoardSchema()]}
+        jsonLd={[pillarSchemaGraph, faqSchema, getReviewBoardSchema()]}
       />
       <Navbar />
 

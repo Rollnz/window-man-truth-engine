@@ -8,7 +8,7 @@ import { Footer } from '@/components/home/Footer';
 import { CommunityImpact } from '@/components/authority/CommunityImpact';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
-import { getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { getBreadcrumbSchema, getPillarHasPartReferences } from '@/lib/seoSchemas';
 import { getReviewBoardSchema } from '@/config/expertIdentity';
 
 const Index = () => {
@@ -49,6 +49,7 @@ const Index = () => {
       "publisher": {
         "@id": "https://itswindowman.com/#organization"
       },
+      "hasPart": getPillarHasPartReferences(),
       "potentialAction": {
         "@type": "SearchAction",
         "target": "https://itswindowman.com/tools?q={search_term_string}",
