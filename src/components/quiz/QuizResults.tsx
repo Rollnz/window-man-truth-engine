@@ -3,6 +3,7 @@ import { Shield, AlertTriangle, Award, Share2, Mail, ArrowRight } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { getQuizResult } from '@/data/quizData';
 import { NextStepCard } from '@/components/seo/NextStepCard';
+import { MethodologyBadge } from '@/components/authority/MethodologyBadge';
 
 interface QuizResultsProps {
   score: number;
@@ -103,6 +104,11 @@ export function QuizResults({ score, totalQuestions, onGetAnswerKey }: QuizResul
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Enter email to unlock detailed explanations for all 5 questions
         </p>
+
+        {/* Methodology Badge */}
+        <div className="flex justify-center mt-4">
+          <MethodologyBadge />
+        </div>
 
         {/* Next Step Card - Prevents traffic leaks */}
         <NextStepCard currentToolPath="/vulnerability-test" className="mt-8" />

@@ -6,6 +6,7 @@ import ScoreGauge from "./ScoreGauge";
 import { SessionData } from "@/hooks/useSessionData";
 import { ROUTES } from "@/config/navigation";
 import { NextStepCard } from "@/components/seo/NextStepCard";
+import { MethodologyBadge } from "@/components/authority/MethodologyBadge";
 
 interface RealityReportProps {
   score: number;
@@ -176,6 +177,11 @@ const RealityReport = ({ score, sessionData, onEmailReport, onScheduleConsult }:
             Explore Other Tools
           </Button>
         </Link>
+      </div>
+
+      {/* Methodology Badge */}
+      <div className="flex justify-center pt-4">
+        <MethodologyBadge />
       </div>
 
       {/* Next Step Card - Prevents traffic leaks */}

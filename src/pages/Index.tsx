@@ -5,6 +5,7 @@ import { UncomfortableTruth } from '@/components/home/UncomfortableTruth';
 import { ToolGrid } from '@/components/home/ToolGrid';
 import { SocialProof } from '@/components/home/SocialProof';
 import { Footer } from '@/components/home/Footer';
+import { CommunityImpact } from '@/components/authority/CommunityImpact';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
 import { getBreadcrumbSchema } from '@/lib/seoSchemas';
@@ -87,6 +88,7 @@ const Index = () => {
         <MascotTransition />
         <UncomfortableTruth />
         <ToolGrid />
+        <CommunityImpact />
         <SocialProof />
         <Footer />
       </div>

@@ -14,6 +14,7 @@ import { RelatedIntelligence } from "@/components/evidence/RelatedIntelligence";
 import { StickyCTA } from "@/components/evidence/StickyCTA";
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
+import { CommunityImpact } from "@/components/authority/CommunityImpact";
 import { getToolPageSchemas, getBreadcrumbSchema, generateEvidenceLibrarySchemas } from "@/lib/seoSchemas";
 import type { SourceTool } from "@/types/sourceTool";
 import { ROUTES } from "@/config/navigation";
@@ -146,6 +147,9 @@ export default function Evidence() {
           />
         </div>
       </section>
+
+      {/* Community Impact */}
+      <CommunityImpact variant="compact" className="container px-4 py-8" />
 
       {/* Related Intelligence */}
       <RelatedIntelligence />
