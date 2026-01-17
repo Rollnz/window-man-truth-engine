@@ -8,13 +8,16 @@ import { Footer } from '@/components/home/Footer';
 import { CommunityImpact } from '@/components/authority/CommunityImpact';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
-import { getBreadcrumbSchema, getPillarHasPartReferences } from '@/lib/seoSchemas';
+import { getBreadcrumbSchema, getPillarHasPartReferences, generateLocalBusinessSchema } from '@/lib/seoSchemas';
 import { getReviewBoardSchema } from '@/config/expertIdentity';
 
 const Index = () => {
   usePageTracking('homepage');
 
   const homepageSchema = [
+    // LocalBusiness schema with Florida address (fixes Rich Results error)
+    generateLocalBusinessSchema(),
+    // Organization schema for brand identity
     {
       "@context": "https://schema.org",
       "@type": "Organization",

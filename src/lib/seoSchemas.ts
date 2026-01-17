@@ -3,10 +3,69 @@
  * Standardizes structured data across all tool pages
  */
 
-import { getAuthorReference, getReviewBoardSchema } from "@/config/expertIdentity";
+import { getAuthorReference, getReviewBoardSchema, REVIEW_BOARD } from "@/config/expertIdentity";
 import { PILLARS, PillarKey, PAGE_TO_PILLAR } from "@/config/pillarMapping";
 
 const SITE_URL = "https://itswindowman.com";
+
+// ============================================
+// LocalBusiness Schema Configuration (Fixes Google Rich Results Error)
+// ============================================
+
+/**
+ * Generate LocalBusiness schema with proper address for Google validation
+ * Resolves "Missing Address" error in Rich Results Test
+ */
+export function generateLocalBusinessSchema(): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": `${SITE_URL}/#localbusiness`,
+    "name": "Window Man Your Hurricane Hero",
+    "description": "Free tools to help Florida homeowners get fair window replacement quotes and avoid overpaying.",
+    "url": SITE_URL,
+    "logo": `${SITE_URL}/icon-512.webp`,
+    "image": `${SITE_URL}/icon-512.webp`,
+    "telephone": "+1-561-468-5571",
+    "email": "support@itswindowman.com",
+    "address": {
+      "@type": "PostalAddress",
+      "postalCode": "33069",
+      "addressRegion": "Florida",
+      "addressCountry": "US"
+    },
+    "areaServed": [
+      {
+        "@type": "State",
+        "name": "Florida",
+        "sameAs": "https://en.wikipedia.org/wiki/Florida"
+      },
+      {
+        "@type": "AdministrativeArea",
+        "name": "Miami-Dade County"
+      },
+      {
+        "@type": "AdministrativeArea",
+        "name": "Broward County"
+      },
+      {
+        "@type": "AdministrativeArea",
+        "name": "Palm Beach County"
+      }
+    ],
+    "priceRange": "Free",
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      "opens": "00:00",
+      "closes": "23:59"
+    },
+    "sameAs": [
+      "https://www.facebook.com/its.windowman",
+      "https://twitter.com/itswindowman"
+    ]
+  };
+}
 
 // ============================================
 // Pillar Schema Configuration
@@ -59,17 +118,81 @@ export const PILLAR_SCHEMA_CONFIGS: Record<PillarKey, Omit<PillarSchemaConfig, '
  * Generate the complete @graph array for a pillar page
  * Creates proper semantic hierarchy connecting to WebSite, Organization, and Expert
  */
+/**
+ * Generate inline expert schema for pillar pages
+ * Resolves "Missing referenced schema" warnings in Rich Results Test
+ */
+function getInlineExpertSchema(): Record<string, unknown> {
+  return {
+    "@type": "Person",
+    "@id": `${SITE_URL}/#expert`,
+    "name": REVIEW_BOARD.name,
+    "jobTitle": REVIEW_BOARD.jobTitle,
+    "description": REVIEW_BOARD.description,
+    "knowsAbout": REVIEW_BOARD.knowsAbout,
+    "worksFor": { "@id": `${SITE_URL}/#organization` }
+  };
+}
+
+/**
+ * Generate inline organization schema for pillar pages
+ */
+function getInlineOrganizationSchema(): Record<string, unknown> {
+  return {
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#organization`,
+    "name": "Window Man Your Hurricane Hero",
+    "url": SITE_URL,
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${SITE_URL}/icon-512.webp`
+    },
+    "sameAs": [
+      "https://www.facebook.com/its.windowman",
+      "https://twitter.com/itswindowman"
+    ]
+  };
+}
+
+/**
+ * Get tool/guide name from path for richer hasPart references
+ */
+function getPageNameFromPath(path: string): string {
+  const pathNames: Record<string, string> = {
+    '/cost-calculator': 'Cost of Inaction Calculator',
+    '/fair-price-quiz': 'Fair Price Quiz',
+    '/free-estimate': 'Free Estimate Calculator',
+    '/risk-diagnostic': 'Risk Diagnostic Tool',
+    '/beat-your-quote': 'Beat Your Quote Tool',
+    '/quote-scanner': 'AI Quote Scanner',
+    '/roleplay': 'Sales Roleplay Simulator',
+    '/vulnerability-test': 'Vulnerability Test',
+    '/claim-survival': 'Claim Survival Kit',
+    '/evidence': 'Evidence Locker',
+    '/sales-tactics-guide': 'Sales Tactics Guide',
+    '/spec-checklist-guide': 'Spec Checklist Guide',
+    '/insurance-savings-guide': 'Insurance Savings Guide',
+    '/kitchen-table-guide': 'Kitchen Table Guide',
+    '/expert': 'Expert System',
+  };
+  return pathNames[path] || path.replace(/^\//, '').replace(/-/g, ' ');
+}
+
 export function generatePillarSchemaGraph(pillarKey: PillarKey): Record<string, unknown> {
   const pillar = PILLARS[pillarKey];
   const config = PILLAR_SCHEMA_CONFIGS[pillarKey];
   const pillarUrl = `${SITE_URL}${pillar.url}`;
   
-  // Get child pages (guides and tools) for hasPart
+  // Get child pages (guides and tools) for hasPart with enhanced metadata
   const childPages = [...new Set([...pillar.guides, ...pillar.tools])];
   
   return {
     "@context": "https://schema.org",
     "@graph": [
+      // Inline Expert schema - prevents "missing reference" warnings
+      getInlineExpertSchema(),
+      // Inline Organization schema
+      getInlineOrganizationSchema(),
       // Article schema - the main content
       {
         "@type": "Article",
@@ -78,14 +201,17 @@ export function generatePillarSchemaGraph(pillarKey: PillarKey): Record<string, 
         "author": { "@id": `${SITE_URL}/#expert` },
         "headline": config.headline,
         "description": config.description,
-        "image": config.imageUrl,
+        "image": config.imageUrl || `${SITE_URL}/icon-512.webp`,
         "publisher": { "@id": `${SITE_URL}/#organization` },
         "mainEntityOfPage": { "@id": pillarUrl },
         "datePublished": config.datePublished,
         "dateModified": config.dateModified,
+        // Enhanced hasPart with name and url for richer schema validation
         "hasPart": childPages.map(path => ({
           "@type": "WebPage",
-          "@id": `${SITE_URL}${path}`
+          "@id": `${SITE_URL}${path}`,
+          "name": getPageNameFromPath(path),
+          "url": `${SITE_URL}${path}`
         }))
       },
       // WebPage schema - page identification

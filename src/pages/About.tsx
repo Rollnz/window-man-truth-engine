@@ -105,20 +105,24 @@ const About = () => {
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="p-6 rounded-xl bg-card border border-border space-y-4">
                   <Building className="w-8 h-8 text-primary" />
-                  <h3 className="font-semibold text-lg">Florida-Specific Data</h3>
+                  <h3 className="font-semibold text-lg">Florida-Specific Data Sources</h3>
                   <p className="text-muted-foreground text-sm">
                     Our tools are calibrated exclusively for Florida's unique requirements. We incorporate 
                     Miami-Dade County building codes, Florida Building Code High-Velocity Hurricane Zone 
-                    (HVHZ) standards, and regional climate data that affects window performance and pricing.
+                    (HVHZ) standards, and Florida Power & Light energy rate data.
                   </p>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>Miami-Dade NOA product approvals database</span>
+                      <span>Miami-Dade County code requirements & NOA database</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>Florida-specific labor and material cost indices</span>
+                      <span>Florida Power & Light (FPL) residential energy rates</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span>Verified Florida contractor market averages</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
