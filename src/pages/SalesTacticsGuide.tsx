@@ -30,6 +30,7 @@ import { ROUTES } from '@/config/navigation';
 import { useNavigate } from 'react-router-dom';
 import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { ProTipBox } from '@/components/seo';
+import { ReviewedByBadge } from '@/components/authority';
 
 const SalesTacticsGuide = () => {
   usePageTracking('sales-tactics-guide');
@@ -394,6 +395,13 @@ const SalesTacticsGuide = () => {
         tools={smartTools}
         className="bg-muted/30"
       />
+
+      {/* Reviewed By Badge */}
+      <section className="py-12 bg-background border-t border-border">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ReviewedByBadge />
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="py-12 bg-card border-t border-border">

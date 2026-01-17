@@ -28,6 +28,7 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { ProTipBox } from '@/components/seo';
+import { ReviewedByBadge } from '@/components/authority';
 
 const KitchenTableGuide = () => {
   usePageTracking('kitchen-table-guide');
@@ -391,6 +392,13 @@ const KitchenTableGuide = () => {
         tools={smartTools}
         className="bg-muted/30"
       />
+
+      {/* Reviewed By Badge */}
+      <section className="py-12 bg-background border-t border-border">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ReviewedByBadge />
+        </div>
+      </section>
 
       {/* SECTION 7 — OPTIONAL MEASUREMENT */}
       <section className="py-16 sm:py-24 bg-background">

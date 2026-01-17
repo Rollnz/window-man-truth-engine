@@ -27,6 +27,7 @@ import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { ProTipBox } from '@/components/seo';
+import { ReviewedByBadge } from '@/components/authority';
 
 const InsuranceSavingsGuide = () => {
   usePageTracking('insurance-savings-guide');
@@ -384,6 +385,13 @@ const InsuranceSavingsGuide = () => {
         tools={smartTools}
         className="bg-muted/30"
       />
+
+      {/* Reviewed By Badge */}
+      <section className="py-12 bg-background border-t border-border">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ReviewedByBadge />
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="py-12 bg-card border-t border-border">

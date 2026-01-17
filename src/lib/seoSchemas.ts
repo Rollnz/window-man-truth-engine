@@ -3,6 +3,8 @@
  * Standardizes structured data across all tool pages
  */
 
+import { getAuthorReference, getReviewBoardSchema } from "@/config/expertIdentity";
+
 const SITE_URL = "https://itswindowman.com";
 
 interface ToolSchemaConfig {
@@ -11,6 +13,24 @@ interface ToolSchemaConfig {
   url: string;
   faqs?: Array<{ question: string; answer: string }>;
   howToSteps?: Array<{ name: string; text: string }>;
+}
+
+/**
+ * Get the standard author and publisher for all Article schemas
+ */
+function getStandardAuthorPublisher() {
+  return {
+    author: getAuthorReference(),
+    publisher: {
+      "@type": "Organization",
+      "name": "Window Man Your Hurricane Hero",
+      "url": SITE_URL,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${SITE_URL}/icon-512.webp`
+      }
+    }
+  };
 }
 
 interface BreadcrumbItem {
@@ -641,19 +661,10 @@ export const GUIDE_SCHEMAS = {
       "@type": "Article",
       "headline": "The 11 Sales Tactics Window Contractors Use on Every Homeowner",
       "description": "Learn to recognize the psychological manipulation tactics used in window sales presentations so you can protect yourself before signing.",
-      "author": {
-        "@type": "Organization",
-        "name": "Window Man Your Hurricane Hero"
-      },
-      "publisher": {
-        "@type": "Organization",
-        "name": "Window Man Your Hurricane Hero",
-        "logo": {
-          "@type": "ImageObject",
-          "url": "https://itswindowman.com/icon-512.webp"
-        }
-      },
-      "url": "https://itswindowman.com/sales-tactics-guide"
+      ...getStandardAuthorPublisher(),
+      "url": "https://itswindowman.com/sales-tactics-guide",
+      "datePublished": "2025-01-16",
+      "dateModified": "2025-01-17"
     },
     generateFAQSchema([
       {
@@ -677,19 +688,10 @@ export const GUIDE_SCHEMAS = {
       "@type": "Article",
       "headline": "Pre-Installation Window Audit Checklist",
       "description": "The complete specification checklist to verify your window installation meets all requirements before work begins.",
-      "author": {
-        "@type": "Organization",
-        "name": "Window Man Your Hurricane Hero"
-      },
-      "publisher": {
-        "@type": "Organization",
-        "name": "Window Man Your Hurricane Hero",
-        "logo": {
-          "@type": "ImageObject",
-          "url": "https://itswindowman.com/icon-512.webp"
-        }
-      },
-      "url": "https://itswindowman.com/spec-checklist-guide"
+      ...getStandardAuthorPublisher(),
+      "url": "https://itswindowman.com/spec-checklist-guide",
+      "datePublished": "2025-01-16",
+      "dateModified": "2025-01-17"
     },
     generateHowToSchema(
       "How to Verify Window Installation Specifications",
@@ -719,19 +721,10 @@ export const GUIDE_SCHEMAS = {
       "@type": "Article",
       "headline": "How Impact Windows Can Cut Your Florida Insurance by 20%",
       "description": "Learn how to claim insurance discounts for impact windows under Florida law, including documentation requirements and the recalculation process.",
-      "author": {
-        "@type": "Organization",
-        "name": "Window Man Your Hurricane Hero"
-      },
-      "publisher": {
-        "@type": "Organization",
-        "name": "Window Man Your Hurricane Hero",
-        "logo": {
-          "@type": "ImageObject",
-          "url": "https://itswindowman.com/icon-512.webp"
-        }
-      },
-      "url": "https://itswindowman.com/insurance-savings-guide"
+      ...getStandardAuthorPublisher(),
+      "url": "https://itswindowman.com/insurance-savings-guide",
+      "datePublished": "2025-01-16",
+      "dateModified": "2025-01-17"
     },
     generateHowToSchema(
       "How to Claim Insurance Discounts for Impact Windows",
@@ -755,6 +748,33 @@ export const GUIDE_SCHEMAS = {
       {
         question: "How much can I save on insurance with impact windows?",
         answer: "The average Florida homeowner with impact windows can save $400-800 per year on insurance premiums, though savings vary by carrier and coverage."
+      }
+    ])
+  ],
+
+  'kitchen-table-guide': [
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Kitchen Table Defense Guide: How to Handle In-Home Window Sales",
+      "description": "A 12-page guide teaching you how to handle in-home window sales presentations. Learn the scripts and strategies to slow down high-pressure tactics.",
+      ...getStandardAuthorPublisher(),
+      "url": "https://itswindowman.com/kitchen-table-guide",
+      "datePublished": "2025-01-16",
+      "dateModified": "2025-01-17"
+    },
+    generateFAQSchema([
+      {
+        question: "What is the Kitchen Table Guide?",
+        answer: "A 12-page mobile-friendly field guide designed to be read in under 3 minutes. It includes red flag checklists, pause scripts, and a 'Do Not Sign If...' checklist."
+      },
+      {
+        question: "When should I read this guide?",
+        answer: "Read it before any in-home sales appointment. You can even reference it during the presentation - it's designed for quick mobile access."
+      },
+      {
+        question: "Why is this guide free?",
+        answer: "Because an informed homeowner makes better decisions. We provide free tools first - if you find them valuable, you can use our quote analysis tools later."
       }
     ])
   ]
