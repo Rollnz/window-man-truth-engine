@@ -12,6 +12,7 @@ import { RiskQuestion } from "@/components/risk-diagnostic/RiskQuestion";
 import { ProtectionReport } from "@/components/risk-diagnostic/ProtectionReport";
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
+import { ExitIntentModal } from "@/components/authority";
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
@@ -197,6 +198,13 @@ export default function RiskDiagnostic() {
         onSuccess={() => setShowBookingModal(false)}
         sessionData={sessionData}
         sourceTool="risk-diagnostic"
+      />
+
+      {/* Exit Intent Modal - 3-step re-engagement */}
+      <ExitIntentModal 
+        sourceTool="risk-diagnostic"
+        hasConverted={!!sessionData.leadId}
+        resultSummary={`Protection Score of ${breakdown.protectionScore}`}
       />
 
       {/* FAQ Section */}

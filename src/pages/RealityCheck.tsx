@@ -13,6 +13,7 @@ import QuestionStep from "@/components/reality-check/QuestionStep";
 import RealityReport from "@/components/reality-check/RealityReport";
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
+import { ExitIntentModal } from "@/components/authority";
 import { trackLeadCapture, trackConsultation, trackToolCompletion } from "@/lib/gtm";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
@@ -255,6 +256,13 @@ const RealityCheck = () => {
           sessionData={sessionData}
           sourceTool="reality-check"
           leadId={sessionData.leadId}
+        />
+        
+        {/* Exit Intent Modal - 3-step re-engagement */}
+        <ExitIntentModal 
+          sourceTool="reality-check"
+          hasConverted={!!sessionData.leadId}
+          resultSummary={`Reality Score of ${score}`}
         />
       </div>
     );
