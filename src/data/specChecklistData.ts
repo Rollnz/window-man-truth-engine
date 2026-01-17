@@ -208,8 +208,4 @@ export const faqItems = [
   },
 ];
 
-export const exitIntentData = {
-  headline: "Wait — Don't Sign That Contract Without This",
-  copy: "Contractors bank on homeowners not knowing what to verify. This 4-packet system closes that knowledge gap. Get it free before your next meeting.",
-  buttonText: "Send Me the Checklist",
-};
+// exitIntentData removed - using authority/ExitIntentModal with 3-step workflow instead

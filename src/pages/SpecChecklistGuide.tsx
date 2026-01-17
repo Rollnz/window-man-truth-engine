@@ -24,7 +24,7 @@ import UrgencySection from '@/components/spec-checklist/UrgencySection';
 import ValueStackSection from '@/components/spec-checklist/ValueStackSection';
 import FAQSection from '@/components/spec-checklist/FAQSection';
 import SecondaryCTASection from '@/components/spec-checklist/SecondaryCTASection';
-import ExitIntentModal from '@/components/spec-checklist/ExitIntentModal';
+import { ExitIntentModal } from '@/components/authority';
 
 const CONVERSION_STORAGE_KEY = 'spec_checklist_converted';
 
@@ -136,8 +136,12 @@ const SpecChecklistGuide = () => {
       </footer>
       </div>
 
-      {/* Exit Intent Modal */}
-      <ExitIntentModal hasConverted={hasConverted} onSuccess={handleConversionSuccess} />
+      {/* Exit Intent Modal - Uses authority 3-step workflow */}
+      <ExitIntentModal 
+        sourceTool="spec-checklist-guide" 
+        hasConverted={hasConverted} 
+        onSuccess={handleConversionSuccess} 
+      />
     </div>
   );
 };
