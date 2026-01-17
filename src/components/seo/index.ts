@@ -6,3 +6,5 @@
 export { ToolFAQSection } from './ToolFAQSection';
 export { PillarBreadcrumb } from './PillarBreadcrumb';
 export { default as ProTipBox } from './ProTipBox';
+export { EvidenceCitation } from './EvidenceCitation';
+export { NextStepCard } from './NextStepCard';

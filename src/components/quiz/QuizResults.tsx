@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Shield, AlertTriangle, Award, Share2, Mail, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getQuizResult } from '@/data/quizData';
+import { NextStepCard } from '@/components/seo/NextStepCard';
 
 interface QuizResultsProps {
   score: number;
@@ -102,6 +103,9 @@ export function QuizResults({ score, totalQuestions, onGetAnswerKey }: QuizResul
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Enter email to unlock detailed explanations for all 5 questions
         </p>
+
+        {/* Next Step Card - Prevents traffic leaks */}
+        <NextStepCard currentToolPath="/vulnerability-test" className="mt-8" />
       </div>
     </div>
   );

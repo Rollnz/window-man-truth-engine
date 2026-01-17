@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trophy, XCircle, RotateCcw, Clock, Zap, BookOpen, ChevronDown, ChevronUp, Loader2, Cpu } from 'lucide-react';
 import type { GameResult, AnalysisResult } from '@/types/roleplay';
+import { NextStepCard } from '@/components/seo/NextStepCard';
 
 const cn = (...classes: (string | undefined | null | false)[]) => {
   return classes.filter(Boolean).join(' ');
@@ -139,7 +140,12 @@ export function ResultsScreen({ result, analysis, isAnalyzing, onPlayAgain }: Re
         </div>
       ) : null}
 
-      <div className="mt-auto pt-8 pb-4">
+      {/* Next Step Card - Prevents traffic leaks */}
+      <div className="px-4 mt-6">
+        <NextStepCard currentToolPath="/roleplay" showEvidence={false} />
+      </div>
+
+      <div className="mt-auto pt-8 pb-4 px-4">
         <Button onClick={onPlayAgain} variant="neon" size="lg" className="w-full font-bold tracking-widest text-lg h-14">
           <RotateCcw className="w-5 h-5 mr-3" /> INITIALIZE NEW SIMULATION
         </Button>

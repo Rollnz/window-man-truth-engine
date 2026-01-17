@@ -5,6 +5,7 @@ import { ArrowRight, AlertTriangle, Thermometer, Volume2, Clock, Home, Mail, Cal
 import ScoreGauge from "./ScoreGauge";
 import { SessionData } from "@/hooks/useSessionData";
 import { ROUTES } from "@/config/navigation";
+import { NextStepCard } from "@/components/seo/NextStepCard";
 
 interface RealityReportProps {
   score: number;
@@ -176,6 +177,9 @@ const RealityReport = ({ score, sessionData, onEmailReport, onScheduleConsult }:
           </Button>
         </Link>
       </div>
+
+      {/* Next Step Card - Prevents traffic leaks */}
+      <NextStepCard currentToolPath="/reality-check" className="mt-8" />
     </div>
   );
 };
