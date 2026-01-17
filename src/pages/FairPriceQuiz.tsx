@@ -17,6 +17,7 @@ import { getAttributionData } from '@/lib/attribution';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+import { ExitIntentModal } from '@/components/authority';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 import type { SourceTool } from '@/types/sourceTool';
 
@@ -288,6 +289,15 @@ export default function FairPriceQuiz() {
         description={getFrameControl('fair-price-quiz').description}
         tools={getSmartRelatedTools('fair-price-quiz')}
       />
+
+      {/* Exit Intent Modal - 3-step re-engagement */}
+      {phase === 'results' && analysis && (
+        <ExitIntentModal 
+          sourceTool="fair-price-quiz"
+          hasConverted={!!userEmail}
+          resultSummary={`${analysis.grade} grade quote analysis`}
+        />
+      )}
       
       <MinimalFooter />
     </div>

@@ -14,6 +14,7 @@ import { CostBreakdown } from '@/components/cost-calculator/CostBreakdown';
 import { TimelineChartLazy } from '@/components/cost-calculator/TimelineChartLazy';
 import { LiveWasteCounter } from '@/components/cost-calculator/LiveWasteCounter';
 import { BreakEvenIndicator } from '@/components/cost-calculator/BreakEvenIndicator';
+import { ExitIntentModal } from '@/components/authority';
 import {
   calculateCostOfInaction,
   convertBillRangeToNumber,
@@ -217,6 +218,15 @@ export default function CostCalculator() {
         description={getFrameControl('cost-calculator').description}
         tools={getSmartRelatedTools('cost-calculator', sessionData.toolsCompleted)}
       />
+
+      {/* Exit Intent Modal - 3-step re-engagement */}
+      {showResults && projection && (
+        <ExitIntentModal 
+          sourceTool="cost-calculator"
+          hasConverted={!!sessionData.leadId}
+          resultSummary={`$${projection.year5.toLocaleString()} in 5-year energy loss`}
+        />
+      )}
 
       {/* Minimal Footer */}
       <MinimalFooter />
