@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trophy, XCircle, RotateCcw, Clock, Zap, BookOpen, ChevronDown, ChevronUp, Loader2, Cpu } from 'lucide-react';
 import type { GameResult, AnalysisResult } from '@/types/roleplay';
 import { NextStepCard } from '@/components/seo/NextStepCard';
+import { MethodologyBadge } from '@/components/authority/MethodologyBadge';
 
 const cn = (...classes: (string | undefined | null | false)[]) => {
   return classes.filter(Boolean).join(' ');
@@ -139,6 +140,11 @@ export function ResultsScreen({ result, analysis, isAnalyzing, onPlayAgain }: Re
           )}
         </div>
       ) : null}
+
+      {/* Methodology Badge */}
+      <div className="flex justify-center px-4 mt-4">
+        <MethodologyBadge />
+      </div>
 
       {/* Next Step Card - Prevents traffic leaks */}
       <div className="px-4 mt-6">

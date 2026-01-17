@@ -10,6 +10,7 @@ import { InsuranceSavingsBanner } from './InsuranceSavingsBanner';
 import { RiskActionPlan } from './RiskActionPlan';
 import { RiskAnswers } from '@/lib/riskCalculations';
 import { NextStepCard } from '@/components/seo/NextStepCard';
+import { MethodologyBadge } from '@/components/authority/MethodologyBadge';
 
 interface ProtectionReportProps {
   breakdown: RiskScoreBreakdown;
@@ -95,6 +96,11 @@ export function ProtectionReport({
           <Mail className="mr-2 w-4 h-4" />
           Email My Protection Plan
         </Button>
+      </div>
+
+      {/* Methodology Badge */}
+      <div className="flex justify-center pt-2">
+        <MethodologyBadge />
       </div>
 
       {/* Next Step Card - Prevents traffic leaks */}

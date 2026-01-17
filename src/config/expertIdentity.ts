@@ -9,19 +9,21 @@ export const REVIEW_BOARD = {
   name: "WindowMan Review Board",
   jobTitle: "Florida Impact Window Specialists",
   description: "A team of licensed Florida contractors and industry veterans who verify all content for accuracy.",
-  url: "https://itswindowman.com/about",
+  url: "https://itswindowman.com/about#review-board",
   credentials: [
     "15+ Years Florida Impact Window Experience",
     "Miami-Dade Code Certified",
     "Licensed & Insured Contractors"
   ],
   knowsAbout: [
+    "Florida Building Code",
+    "Impact Window Cost Analysis",
+    "Hurricane Mitigation",
     "Impact Window Installation",
-    "Florida Building Codes",
-    "Hurricane Protection Requirements",
-    "Window Replacement Cost Analysis",
+    "Miami-Dade NOA Certification",
     "Insurance Claim Documentation",
-    "Miami-Dade NOA Certification"
+    "High-Velocity Hurricane Zone Requirements",
+    "Window Replacement Cost Analysis"
   ],
   affiliation: {
     "@type": "Organization",

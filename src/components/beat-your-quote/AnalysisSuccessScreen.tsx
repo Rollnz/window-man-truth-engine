@@ -3,6 +3,7 @@ import { CheckCircle, MessageSquare, Shield, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import confetti from 'canvas-confetti';
 import { NextStepCard } from '@/components/seo/NextStepCard';
+import { MethodologyBadge } from '@/components/authority/MethodologyBadge';
 
 interface AnalysisSuccessScreenProps {
   leadName?: string;
@@ -105,6 +106,11 @@ export function AnalysisSuccessScreen({
               Continue Browsing
             </Button>
           )}
+        </div>
+
+        {/* Methodology Badge */}
+        <div className="flex justify-center mt-4">
+          <MethodologyBadge />
         </div>
 
         {/* Next Step Card - Prevents traffic leaks */}

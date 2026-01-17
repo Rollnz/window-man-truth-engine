@@ -11,6 +11,7 @@ import { WhyVaultFAQ } from './WhyVaultFAQ';
 import { DownsellStickyFooter } from './DownsellStickyFooter';
 import { trackPriceAnalysisViewed, trackPhoneLead } from '@/lib/gtm';
 import { NextStepCard } from '@/components/seo/NextStepCard';
+import { MethodologyBadge } from '@/components/authority/MethodologyBadge';
 
 interface QuizResultsProps {
   analysis: PriceAnalysis;
@@ -302,6 +303,11 @@ export function QuizResults({
 
         {/* Next Step Card - Prevents traffic leaks */}
         <NextStepCard currentToolPath="/fair-price-quiz" className="mb-8" />
+
+        {/* Methodology Badge */}
+        <div className="flex justify-center mt-6">
+          <MethodologyBadge />
+        </div>
 
         {/* Footer disclaimer */}
         <p className="text-xs text-center text-muted-foreground mt-8">
