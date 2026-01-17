@@ -9,6 +9,7 @@ import { CategoryBreakdown } from './CategoryBreakdown';
 import { InsuranceSavingsBanner } from './InsuranceSavingsBanner';
 import { RiskActionPlan } from './RiskActionPlan';
 import { RiskAnswers } from '@/lib/riskCalculations';
+import { NextStepCard } from '@/components/seo/NextStepCard';
 
 interface ProtectionReportProps {
   breakdown: RiskScoreBreakdown;
@@ -95,6 +96,9 @@ export function ProtectionReport({
           Email My Protection Plan
         </Button>
       </div>
+
+      {/* Next Step Card - Prevents traffic leaks */}
+      <NextStepCard currentToolPath="/risk-diagnostic" className="mt-6" />
 
       {/* Footer */}
       <p className="text-xs text-muted-foreground text-center pt-4">

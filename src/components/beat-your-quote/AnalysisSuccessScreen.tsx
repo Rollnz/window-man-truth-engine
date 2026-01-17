@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { CheckCircle, MessageSquare, Shield, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import confetti from 'canvas-confetti';
+import { NextStepCard } from '@/components/seo/NextStepCard';
 
 interface AnalysisSuccessScreenProps {
   leadName?: string;
@@ -104,6 +105,11 @@ export function AnalysisSuccessScreen({
               Continue Browsing
             </Button>
           )}
+        </div>
+
+        {/* Next Step Card - Prevents traffic leaks */}
+        <div className="mt-8 w-full max-w-md">
+          <NextStepCard currentToolPath="/beat-your-quote" />
         </div>
       </div>
     </div>

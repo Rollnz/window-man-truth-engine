@@ -10,6 +10,7 @@ import { VaultSyncButton } from './VaultSyncButton';
 import { WhyVaultFAQ } from './WhyVaultFAQ';
 import { DownsellStickyFooter } from './DownsellStickyFooter';
 import { trackPriceAnalysisViewed, trackPhoneLead } from '@/lib/gtm';
+import { NextStepCard } from '@/components/seo/NextStepCard';
 
 interface QuizResultsProps {
   analysis: PriceAnalysis;
@@ -298,6 +299,9 @@ export function QuizResults({
         <div className="mb-8">
           <WhyVaultFAQ />
         </div>
+
+        {/* Next Step Card - Prevents traffic leaks */}
+        <NextStepCard currentToolPath="/fair-price-quiz" className="mb-8" />
 
         {/* Footer disclaimer */}
         <p className="text-xs text-center text-muted-foreground mt-8">

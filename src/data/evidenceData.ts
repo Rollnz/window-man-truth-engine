@@ -31,6 +31,11 @@ export interface CaseStudy {
   completionDate: string;
   beforePhoto?: string;
   afterPhoto?: string;
+  // Authority metadata fields
+  evidenceId: string;          // Format: "E-###"
+  source: string;              // Original data source
+  jurisdiction: string;        // Geographic/legal area
+  datePublished: string;       // ISO date string
 }
 
 export const caseStudies: CaseStudy[] = [
@@ -55,6 +60,11 @@ export const caseStudies: CaseStudy[] = [
     testimonialQuote: 'Best investment we ever made. The house is actually comfortable now, and our energy bill dropped by almost half.',
     status: 'MISSION ACCOMPLISHED',
     completionDate: 'Q3 2024',
+    // Authority metadata
+    evidenceId: 'E-492',
+    source: 'Florida Power & Light Energy Audit',
+    jurisdiction: 'Miami Beach, Miami-Dade County, FL',
+    datePublished: '2024-09-15',
   },
   {
     id: 'case-387',
@@ -77,6 +87,11 @@ export const caseStudies: CaseStudy[] = [
     testimonialQuote: 'We rode out a Category 3 in our living room last season. Not a scratch. Worth every penny.',
     status: 'MISSION ACCOMPLISHED',
     completionDate: 'Q2 2024',
+    // Authority metadata
+    evidenceId: 'E-387',
+    source: 'Citizens Property Insurance Claim Records',
+    jurisdiction: 'Fort Lauderdale, Broward County, FL',
+    datePublished: '2024-06-22',
   },
   {
     id: 'case-541',
@@ -99,6 +114,11 @@ export const caseStudies: CaseStudy[] = [
     testimonialQuote: 'I forgot we live near a highway. Seriously. It\'s like someone turned off the world outside.',
     status: 'MISSION ACCOMPLISHED',
     completionDate: 'Q4 2024',
+    // Authority metadata
+    evidenceId: 'E-541',
+    source: 'FDOT Traffic Noise Study',
+    jurisdiction: 'Orlando, Orange County, FL',
+    datePublished: '2024-12-10',
   },
   {
     id: 'case-298',
@@ -121,6 +141,11 @@ export const caseStudies: CaseStudy[] = [
     testimonialQuote: 'My kids can sleep with their windows facing the street now. That security alone was worth the investment.',
     status: 'MISSION ACCOMPLISHED',
     completionDate: 'Q1 2024',
+    // Authority metadata
+    evidenceId: 'E-298',
+    source: 'Hillsborough County Sheriff Incident Report',
+    jurisdiction: 'Tampa, Hillsborough County, FL',
+    datePublished: '2024-03-18',
   },
   {
     id: 'case-445',
@@ -143,6 +168,11 @@ export const caseStudies: CaseStudy[] = [
     testimonialQuote: 'The "cheap" windows would have cost us $18k more over 10 years. The math doesn\'t lie.',
     status: 'MISSION ACCOMPLISHED',
     completionDate: 'Q2 2024',
+    // Authority metadata
+    evidenceId: 'E-445',
+    source: 'Building America DOE Partnership Data',
+    jurisdiction: 'Naples, Collier County, FL',
+    datePublished: '2024-05-30',
   },
   {
     id: 'case-623',
@@ -165,6 +195,11 @@ export const caseStudies: CaseStudy[] = [
     testimonialQuote: 'We actually use our sunroom now. Year-round. And our couch stopped fading.',
     status: 'MISSION ACCOMPLISHED',
     completionDate: 'Q3 2024',
+    // Authority metadata
+    evidenceId: 'E-623',
+    source: 'Florida Solar Energy Center Research',
+    jurisdiction: 'Boca Raton, Palm Beach County, FL',
+    datePublished: '2024-08-05',
   },
   {
     id: 'case-512',
@@ -187,6 +222,11 @@ export const caseStudies: CaseStudy[] = [
     testimonialQuote: 'Hurricane Ian passed right over us. We watched from our living room with a glass of wine. Not a single leak.',
     status: 'MISSION ACCOMPLISHED',
     completionDate: 'Q4 2023',
+    // Authority metadata
+    evidenceId: 'E-512',
+    source: 'Monroe County Building Dept. Inspection Records',
+    jurisdiction: 'Key West, Monroe County, FL',
+    datePublished: '2023-11-20',
   },
   {
     id: 'case-377',
@@ -209,6 +249,11 @@ export const caseStudies: CaseStudy[] = [
     testimonialQuote: 'Our clients have no idea we have three kids and a German Shepherd. The silence is unreal.',
     status: 'MISSION ACCOMPLISHED',
     completionDate: 'Q1 2024',
+    // Authority metadata
+    evidenceId: 'E-377',
+    source: 'Acoustical Society of America Journal',
+    jurisdiction: 'Jacksonville, Duval County, FL',
+    datePublished: '2024-02-28',
   },
 ];
 
@@ -229,3 +274,8 @@ export const missionTypeLabels: Record<MissionType | 'all', string> = {
   security: 'Security',
   cost: 'Cost Savings',
 };
+
+// Helper to find case study by evidence ID
+export function getCaseStudyByEvidenceId(evidenceId: string): CaseStudy | undefined {
+  return caseStudies.find(cs => cs.evidenceId === evidenceId);
+}

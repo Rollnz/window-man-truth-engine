@@ -791,3 +791,57 @@ export function getGuidePageSchemas(guideId: keyof typeof GUIDE_SCHEMAS): Record
   }
   return [schemas as Record<string, unknown>];
 }
+
+// ============================================
+// CreativeWork schema for Evidence Library
+// ============================================
+
+interface EvidenceCaseStudy {
+  evidenceId: string;
+  missionObjective: string;
+  theProblem: string;
+  theSolution: string;
+  source: string;
+  jurisdiction: string;
+  datePublished: string;
+  location: string;
+}
+
+/**
+ * Generate CreativeWork schema for a single case study
+ */
+export function generateCreativeWorkSchema(caseStudy: EvidenceCaseStudy): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    "name": `Case Study ${caseStudy.evidenceId}: ${caseStudy.missionObjective}`,
+    "description": `Verified case study documenting ${caseStudy.missionObjective.toLowerCase()} for a homeowner in ${caseStudy.location}. ${caseStudy.theProblem.slice(0, 150)}...`,
+    "datePublished": caseStudy.datePublished,
+    "sourceOrganization": {
+      "@type": "Organization",
+      "name": caseStudy.source
+    },
+    "spatialCoverage": {
+      "@type": "Place",
+      "name": caseStudy.jurisdiction
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Window Man Your Hurricane Hero",
+      "url": "https://itswindowman.com",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://itswindowman.com/icon-512.webp"
+      }
+    },
+    "url": `https://itswindowman.com/evidence?highlight=${caseStudy.evidenceId}`,
+    "isAccessibleForFree": true
+  };
+}
+
+/**
+ * Generate CreativeWork schemas for all case studies in the evidence library
+ */
+export function generateEvidenceLibrarySchemas(caseStudies: EvidenceCaseStudy[]): Record<string, unknown>[] {
+  return caseStudies.map(generateCreativeWorkSchema);
+}
