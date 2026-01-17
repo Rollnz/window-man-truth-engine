@@ -30,7 +30,7 @@ import { ROUTES } from '@/config/navigation';
 import { useNavigate } from 'react-router-dom';
 import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { ProTipBox } from '@/components/seo';
-import { ReviewedByBadge } from '@/components/authority';
+import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
 
 const SalesTacticsGuide = () => {
   usePageTracking('sales-tactics-guide');
@@ -428,6 +428,13 @@ const SalesTacticsGuide = () => {
         </div>
       </footer>
       </div>
+
+      {/* Exit Intent Modal for lead capture */}
+      <ExitIntentModal
+        sourceTool="sales-tactics-guide"
+        hasConverted={isSubmitting}
+        resultSummary="11 Sales Tactics Guide"
+      />
     </div>
   );
 };
