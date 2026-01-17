@@ -427,6 +427,20 @@ const BREADCRUMB_CONFIGS: Record<string, BreadcrumbItem[]> = {
     { name: "Intel Library", url: `${SITE_URL}/intel` },
     { name: "Kitchen Table Guide", url: `${SITE_URL}/kitchen-table-guide` }
   ],
+
+  // Legal Pages (2 levels)
+  'privacy': [
+    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Privacy Policy", url: `${SITE_URL}/privacy` }
+  ],
+  'terms': [
+    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Terms of Service", url: `${SITE_URL}/terms` }
+  ],
+  'disclaimer': [
+    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Disclaimer", url: `${SITE_URL}/disclaimer` }
+  ],
 };
 
 /**

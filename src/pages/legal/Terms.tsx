@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { Navbar } from '@/components/home/Navbar';
+import { SEO } from '@/components/SEO';
+import { getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { ROUTES } from '@/config/navigation';
 
 export default function Terms() {
@@ -9,11 +11,17 @@ export default function Terms() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Terms of Service"
+        description="Terms of Service for Window Man Truth Engine. By using our site, you agree to these terms governing the use of our free tools and contractor referral services."
+        canonicalUrl="https://itswindowman.com/terms"
+        jsonLd={[getBreadcrumbSchema('terms')]}
+      />
       <Navbar />
 
       <div className="max-w-3xl mx-auto px-4 py-12 pt-20">
         <h1 className="text-3xl font-bold mb-2">Terms of Service</h1>
-        <p className="text-muted-foreground mb-8">Last Updated: [Insert Date]</p>
+        <p className="text-muted-foreground mb-8">Last Updated: January 17, 2025</p>
         
         <div className="prose prose-invert max-w-none space-y-6">
           <section>
@@ -60,7 +68,7 @@ export default function Terms() {
               <Button asChild>
                 <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
               </Button>
-              <Button asChild variant="outline">
+              <Button asChild variant="secondary-action">
                 <Link to={ROUTES.SPEC_CHECKLIST_GUIDE}>Download Spec Checklist</Link>
               </Button>
             </div>
