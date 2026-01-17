@@ -1,10 +1,13 @@
+import { useEffect, useState } from 'react';
 import { CaseStudy, MissionType } from '@/data/evidenceData';
 import { CheckCircle, ArrowRight } from 'lucide-react';
-import { ClassifiedPlaceholder } from './ClassifiedPlaceholder';
+import { cn } from '@/lib/utils';
 
 interface CaseFileCardProps {
   caseStudy: CaseStudy;
   onOpenCase: (caseId: string) => void;
+  /** Whether this card is highlighted from a deep link */
+  isHighlighted?: boolean;
 }
 
 // Semantic colors based on mission type
@@ -41,15 +44,41 @@ const missionColors: Record<MissionType, { bg: string; border: string; text: str
   },
 };
 
-export function CaseFileCard({ caseStudy, onOpenCase }: CaseFileCardProps) {
+export function CaseFileCard({ caseStudy, onOpenCase, isHighlighted = false }: CaseFileCardProps) {
   const primaryStat = caseStudy.verifiedStats[0];
   const colors = missionColors[caseStudy.missionType] || missionColors.cost;
+  
+  // Animate highlight effect - pulse then fade
+  const [showHighlight, setShowHighlight] = useState(isHighlighted);
+  
+  useEffect(() => {
+    if (isHighlighted) {
+      setShowHighlight(true);
+      // Keep highlight for 3 seconds, then fade
+      const timer = setTimeout(() => {
+        setShowHighlight(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isHighlighted]);
 
   return (
     <div 
-      className="group relative flex flex-col rounded-xl bg-card border border-border card-hover frame-card cursor-pointer"
+      className={cn(
+        "group relative flex flex-col rounded-xl bg-card border card-hover frame-card cursor-pointer transition-all duration-500",
+        showHighlight 
+          ? "border-primary ring-2 ring-primary/30 shadow-lg shadow-primary/20 scale-[1.02]" 
+          : "border-border"
+      )}
       onClick={() => onOpenCase(caseStudy.id)}
     >
+      {/* Highlight badge */}
+      {showHighlight && (
+        <div className="absolute -top-3 -right-3 z-10 px-2 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full animate-pulse">
+          {caseStudy.evidenceId}
+        </div>
+      )}
+      
       {/* Folder tab effect */}
       <div className="absolute -top-0 left-4 w-2/5 h-3 bg-muted rounded-t-md" />
       
@@ -58,7 +87,7 @@ export function CaseFileCard({ caseStudy, onOpenCase }: CaseFileCardProps) {
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs text-muted-foreground uppercase tracking-wider">
-              {caseStudy.caseNumber}
+              {caseStudy.caseNumber} • {caseStudy.evidenceId}
             </div>
             <div className="text-sm font-medium text-foreground">
               {caseStudy.location}

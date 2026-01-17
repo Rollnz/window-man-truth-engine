@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { caseStudies, MissionType } from "@/data/evidenceData";
+import { caseStudies, MissionType, getCaseStudyByEvidenceId } from "@/data/evidenceData";
 import { useSessionData } from "@/hooks/useSessionData";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { SEO } from "@/components/SEO";
@@ -14,7 +14,7 @@ import { RelatedIntelligence } from "@/components/evidence/RelatedIntelligence";
 import { StickyCTA } from "@/components/evidence/StickyCTA";
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
-import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
+import { getToolPageSchemas, getBreadcrumbSchema, generateEvidenceLibrarySchemas } from "@/lib/seoSchemas";
 import type { SourceTool } from "@/types/sourceTool";
 import { ROUTES } from "@/config/navigation";
 
@@ -23,6 +23,7 @@ export default function Evidence() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { sessionData, updateFields, markToolCompleted } = useSessionData();
+  const gridRef = useRef<HTMLDivElement>(null);
 
   // Modals state
   const [showLeadCapture, setShowLeadCapture] = useState(false);
@@ -35,16 +36,23 @@ export default function Evidence() {
     [activeCaseId],
   );
 
+  // URL-synced highlight (from EvidenceCitation deep links)
+  const highlightId = searchParams.get("highlight");
+  const highlightedCase = useMemo(
+    () => (highlightId ? getCaseStudyByEvidenceId(highlightId) : null),
+    [highlightId],
+  );
+
   // URL-synced filter
   const urlFilter = (searchParams.get("filter") as MissionType | "all") || "all";
 
   // Track page view
-  useState(() => {
+  useEffect(() => {
     if (!sessionData.evidenceLockerViewed) {
       updateFields({ evidenceLockerViewed: true });
       markToolCompleted("evidence-locker");
     }
-  });
+  }, []);
 
   const handleOpenCase = (caseId: string) => {
     const params = new URLSearchParams(searchParams);
@@ -101,13 +109,20 @@ export default function Evidence() {
     setShowConsultation(false);
   };
 
+  // Combined schemas including CreativeWork for evidence library
+  const combinedSchemas = useMemo(() => [
+    ...getToolPageSchemas('evidence-locker'),
+    getBreadcrumbSchema('evidence-locker'),
+    ...generateEvidenceLibrarySchemas(caseStudies),
+  ], []);
+
   return (
     <div className="min-h-screen bg-background">
       <SEO 
         title="Evidence Locker - Real Homeowner Case Studies"
         description="Browse real case studies showing how homeowners saved thousands on window replacements. See actual savings, strategies used, and tools that worked."
         canonicalUrl="https://itswindowman.com/evidence"
-        jsonLd={[...getToolPageSchemas('evidence-locker'), getBreadcrumbSchema('evidence-locker')]}
+        jsonLd={combinedSchemas}
       />
       <Navbar />
 
@@ -117,13 +132,18 @@ export default function Evidence() {
       </div>
 
       {/* Main Content */}
-      <section className="py-8">
+      <section className="py-8" ref={gridRef}>
         <div className="container px-4 space-y-8">
           {/* Filter Bar */}
           <FilterBar activeFilter={urlFilter} onFilterChange={handleFilterChange} />
 
-          {/* Case Grid */}
-          <CaseFileGrid caseStudies={caseStudies} activeFilter={urlFilter} onOpenCase={handleOpenCase} />
+          {/* Case Grid with highlighting support */}
+          <CaseFileGrid 
+            caseStudies={caseStudies} 
+            activeFilter={urlFilter} 
+            onOpenCase={handleOpenCase}
+            highlightedCaseId={highlightedCase?.id}
+          />
         </div>
       </section>
 
