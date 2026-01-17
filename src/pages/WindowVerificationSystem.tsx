@@ -10,6 +10,7 @@ import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
 import { ReviewedByBadge } from "@/components/authority";
 import { getReviewBoardSchema } from "@/config/expertIdentity";
+import { generatePillarSchemaGraph, generateFAQSchema } from "@/lib/seoSchemas";
 
 const pillar = PILLARS['window-verification-system'];
 
@@ -29,51 +30,9 @@ const WindowVerificationSystem = () => {
     },
   ];
 
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    "@id": "https://itswindowman.com/window-verification-system",
-    "headline": pillar.h1,
-    "description": pillar.description,
-    "author": {
-      "@type": "Person",
-      "@id": "https://itswindowman.com/#expert",
-      "name": "WindowMan Review Board",
-      "jobTitle": "Florida Impact Window Specialists"
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Window Man Your Hurricane Hero",
-      "url": "https://itswindowman.com"
-    },
-    "mainEntityOfPage": "https://itswindowman.com/window-verification-system",
-    "datePublished": "2025-01-16",
-    "dateModified": "2025-01-16",
-    "about": pillar.intent,
-    "keywords": pillar.ownsQueries.join(", ")
-  };
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": faqs.map(faq => ({
-      "@type": "Question",
-      "name": faq.question,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": faq.answer
-      }
-    }))
-  };
-
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://itswindowman.com" },
-      { "@type": "ListItem", "position": 2, "name": "Window Verification System", "item": "https://itswindowman.com/window-verification-system" }
-    ]
-  };
+  // Use centralized pillar schema generator for topical cluster hierarchy
+  const pillarSchemaGraph = generatePillarSchemaGraph('window-verification-system');
+  const faqSchema = generateFAQSchema(faqs);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -81,7 +40,7 @@ const WindowVerificationSystem = () => {
         title="Window Verification System: How to Verify Quotes & Installers Before Signing"
         description={pillar.description}
         canonicalUrl="https://itswindowman.com/window-verification-system"
-        jsonLd={[articleSchema, faqSchema, breadcrumbSchema, getReviewBoardSchema()]}
+        jsonLd={[pillarSchemaGraph, faqSchema, getReviewBoardSchema()]}
       />
       <Navbar />
 
