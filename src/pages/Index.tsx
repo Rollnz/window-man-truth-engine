@@ -9,6 +9,7 @@ import { CommunityImpact } from '@/components/authority/CommunityImpact';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
 import { getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { getReviewBoardSchema } from '@/config/expertIdentity';
 
 const Index = () => {
   usePageTracking('homepage');
@@ -17,6 +18,7 @@ const Index = () => {
     {
       "@context": "https://schema.org",
       "@type": "Organization",
+      "@id": "https://itswindowman.com/#organization",
       "name": "Window Man Your Hurricane Hero",
       "url": "https://itswindowman.com/",
       "logo": "https://itswindowman.com/icon-512.webp",
@@ -29,13 +31,24 @@ const Index = () => {
         "@type": "ContactPoint",
         "telephone": "+1-561-468-5571",
         "contactType": "customer service"
-      }
+      },
+      "knowsAbout": [
+        "Florida Building Code",
+        "Impact Window Cost Analysis",
+        "Hurricane Mitigation",
+        "Miami-Dade NOA Certification"
+      ],
+      "member": getReviewBoardSchema()
     },
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
+      "@id": "https://itswindowman.com/#website",
       "name": "Window Man Truth Engine",
       "url": "https://itswindowman.com/",
+      "publisher": {
+        "@id": "https://itswindowman.com/#organization"
+      },
       "potentialAction": {
         "@type": "SearchAction",
         "target": "https://itswindowman.com/tools?q={search_term_string}",
@@ -71,7 +84,8 @@ const Index = () => {
           }
         }
       ]
-    }
+    },
+    getReviewBoardSchema()
   ];
 
   return (
