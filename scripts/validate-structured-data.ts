@@ -112,7 +112,7 @@ const PAGE_CONFIGS: Record<string, {
   },
   '/about': {
     file: 'src/pages/About.tsx',
-    expectedSchemas: ['Organization', 'AboutPage', 'BreadcrumbList'],
+    expectedSchemas: ['AboutPage', 'WebPage', 'Person', 'BreadcrumbList'],
     breadcrumbLevels: 2
   },
   '/faq': {
@@ -142,7 +142,28 @@ const PAGE_CONFIGS: Record<string, {
   },
   '/kitchen-table-guide': {
     file: 'src/pages/KitchenTableGuide.tsx',
-    expectedSchemas: ['SoftwareApplication', 'FAQPage', 'BreadcrumbList'],
+    expectedSchemas: ['Article', 'FAQPage', 'BreadcrumbList'],
+    breadcrumbLevels: 3
+  },
+  // Truth Pillars (3 levels - under Tools hierarchy)
+  '/window-cost-truth': {
+    file: 'src/pages/WindowCostTruth.tsx',
+    expectedSchemas: ['Article', 'FAQPage', 'BreadcrumbList'],
+    breadcrumbLevels: 3
+  },
+  '/window-sales-truth': {
+    file: 'src/pages/WindowSalesTruth.tsx',
+    expectedSchemas: ['Article', 'FAQPage', 'BreadcrumbList'],
+    breadcrumbLevels: 3
+  },
+  '/window-risk-and-code': {
+    file: 'src/pages/WindowRiskAndCode.tsx',
+    expectedSchemas: ['Article', 'FAQPage', 'BreadcrumbList'],
+    breadcrumbLevels: 3
+  },
+  '/window-verification-system': {
+    file: 'src/pages/WindowVerificationSystem.tsx',
+    expectedSchemas: ['Article', 'FAQPage', 'BreadcrumbList'],
     breadcrumbLevels: 3
   }
 };
@@ -157,7 +178,10 @@ const REQUIRED_PROPERTIES: Record<string, string[]> = {
   'HowTo': ['@type', 'name', 'step'],
   'BreadcrumbList': ['@type', 'itemListElement'],
   'ItemList': ['@type', 'itemListElement'],
-  'AboutPage': ['@type', 'mainEntity']
+  'AboutPage': ['@type', 'mainEntity'],
+  'WebPage': ['@type', 'url', 'name'],
+  'Person': ['@type', 'name', 'jobTitle'],
+  'CreativeWork': ['@type', 'name', 'description']
 };
 
 interface ValidationResult {
@@ -240,27 +264,34 @@ function checkFileForSchemaUsage(filePath: string, expectedSchemas: string[]): {
       switch (schema) {
         case 'SoftwareApplication':
           isFound = content.includes('getToolPageSchemas') || 
-                    content.includes('generateToolSchema');
+                    content.includes('generateToolSchema') ||
+                    content.includes('"@type": "SoftwareApplication"');
           break;
         case 'FAQPage':
           isFound = content.includes('getToolPageSchemas') || 
                     content.includes('getGuidePageSchemas') ||
-                    content.includes('generateFAQSchema');
+                    content.includes('generateFAQSchema') ||
+                    content.includes('"@type": "FAQPage"');
           break;
         case 'Article':
-          isFound = content.includes('getGuidePageSchemas');
+          isFound = content.includes('getGuidePageSchemas') ||
+                    content.includes('"@type": "Article"');
           break;
         case 'HowTo':
-          isFound = content.includes('generateHowToSchema');
+          isFound = content.includes('generateHowToSchema') ||
+                    content.includes('"@type": "HowTo"');
           break;
         case 'BreadcrumbList':
-          isFound = content.includes('getBreadcrumbSchema');
+          isFound = content.includes('getBreadcrumbSchema') ||
+                    content.includes('"@type": "BreadcrumbList"');
           break;
         case 'Organization':
-          isFound = content.includes('generateOrganizationSchema');
+          isFound = content.includes('generateOrganizationSchema') ||
+                    content.includes('"@type": "Organization"');
           break;
         case 'WebSite':
-          isFound = content.includes('generateWebSiteSchema');
+          isFound = content.includes('generateWebSiteSchema') ||
+                    content.includes('"@type": "WebSite"');
           break;
         case 'ItemList':
           isFound = content.includes('ItemList') || 
@@ -268,7 +299,22 @@ function checkFileForSchemaUsage(filePath: string, expectedSchemas: string[]): {
           break;
         case 'AboutPage':
           isFound = content.includes('AboutPage') ||
-                    content.includes('getToolPageSchemas(\'about\')');
+                    content.includes('getAboutPageSchemas');
+          break;
+        case 'WebPage':
+          isFound = content.includes('WebPage') ||
+                    content.includes('getAboutPageSchemas');
+          break;
+        case 'Person':
+          isFound = content.includes('Person') ||
+                    content.includes('getReviewBoardSchema') ||
+                    content.includes('getAboutPageSchemas') ||
+                    content.includes('getAuthorReference');
+          break;
+        case 'CreativeWork':
+          isFound = content.includes('CreativeWork') ||
+                    content.includes('generateEvidenceLibrarySchemas') ||
+                    content.includes('generateCreativeWorkSchema');
           break;
       }
       
