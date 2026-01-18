@@ -23,6 +23,8 @@ export function Navbar() {
           <img 
             src="/icon-512.webp" 
             alt="Its Window Man Logo" 
+            width={36}
+            height={36}
             className="w-9 h-9 object-contain"
           />
           <span style={{ color: '#2278BF' }}>Its Window Man</span>
@@ -55,6 +57,8 @@ export function Navbar() {
             <img 
               src="/icon-512.webp" 
               alt="" 
+              width={16}
+              height={16}
               className="w-4 h-4 rounded-full object-contain"
             />
             Beat Your Quote
@@ -149,6 +153,8 @@ export function Navbar() {
               <img 
                 src="/icon-512.webp" 
                 alt="" 
+                width={16}
+                height={16}
                 className="w-4 h-4 rounded-full object-contain"
               />
               Beat Your Quote
