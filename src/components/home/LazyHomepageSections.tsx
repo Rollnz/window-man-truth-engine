@@ -21,8 +21,8 @@ const CommunityImpact = lazy(() =>
 const SocialProof = lazy(() => 
   import('@/components/home/SocialProof').then(m => ({ default: m.SocialProof }))
 );
-const Footer = lazy(() => 
-  import('@/components/home/Footer').then(m => ({ default: m.Footer }))
+const UnifiedFooter = lazy(() => 
+  import('@/components/navigation/UnifiedFooter').then(m => ({ default: m.UnifiedFooter }))
 );
 
 /**
@@ -104,10 +104,10 @@ export function LazySocialProof() {
   );
 }
 
-export function LazyFooter() {
+export function LazyUnifiedFooter() {
   return (
     <Suspense fallback={<FooterSkeleton />}>
-      <Footer />
+      <UnifiedFooter />
     </Suspense>
   );
 }
