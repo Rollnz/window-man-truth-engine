@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.call-dispatcher]
 verify_jwt = false
+
+[functions.phone-call-outcome]
+verify_jwt = false
