@@ -61,7 +61,7 @@ export function VoiceOfReasonSection({
     >
       {/* Guardian Positioning Block */}
       <div className="max-w-3xl mx-auto mb-12">
-        <div className="flex items-center justify-center gap-3 mb-6">
+        <div className="wm-reveal wm-stagger-0 flex items-center justify-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
             <Shield className="w-6 h-6 text-primary" />
           </div>
@@ -70,7 +70,7 @@ export function VoiceOfReasonSection({
           </Badge>
         </div>
         
-        <div className="text-center space-y-4 mb-8">
+        <div className="wm-reveal wm-stagger-1 text-center space-y-4 mb-8">
           <p className="text-lg">
             This is <strong>not</strong> a chatbot.<br />
             It does <strong>not</strong> sell.<br />
@@ -91,7 +91,12 @@ export function VoiceOfReasonSection({
           ].map((item, i) => (
             <div 
               key={i}
-              className="flex items-start gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20"
+              className={cn(
+                "wm-reveal flex items-start gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20",
+                i === 0 && "wm-stagger-2",
+                i === 1 && "wm-stagger-3",
+                i === 2 && "wm-stagger-4"
+              )}
             >
               <MessageSquare className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <span className="text-sm">{item}</span>
@@ -129,17 +134,20 @@ export function VoiceOfReasonSection({
 
         {/* Transcript Cards */}
         <div className="space-y-4">
-          {filteredTranscripts.map((transcript, index) => (
+          {filteredTranscripts.slice(0, 6).map((transcript, index) => (
             <Card 
               key={transcript.id}
               className={cn(
-                'overflow-hidden transition-all duration-300',
+                "wm-reveal overflow-hidden transition-opacity transition-transform duration-300",
                 'hover:border-primary/30',
-                expandedTranscript === transcript.id && 'border-primary/50'
+                expandedTranscript === transcript.id && 'border-primary/50',
+                index === 0 && "wm-stagger-0",
+                index === 1 && "wm-stagger-1",
+                index === 2 && "wm-stagger-2",
+                index === 3 && "wm-stagger-3",
+                index === 4 && "wm-stagger-4",
+                index >= 5 && "wm-stagger-4"
               )}
-              style={{
-                animationDelay: `${index * 60}ms`,
-              }}
             >
               <CardContent className="p-0">
                 {/* Header - Always visible */}
@@ -229,11 +237,11 @@ export function VoiceOfReasonSection({
       </div>
 
       {/* CTA */}
-      <div className="text-center">
+      <div className="wm-reveal wm-stagger-4 text-center">
         <Button 
           size="lg" 
           onClick={onListenToCall}
-          className="gap-2"
+          className="gap-2 wm-btn-press"
         >
           <Phone className="w-5 h-5" />
           Listen to a Real Call

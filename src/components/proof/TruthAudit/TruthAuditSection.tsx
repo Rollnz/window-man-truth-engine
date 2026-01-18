@@ -49,7 +49,7 @@ export function TruthAuditSection({ onAuditQuote, onSectionView }: TruthAuditSec
     >
       {/* Deception Mechanics */}
       <div className="max-w-3xl mx-auto mb-12">
-        <p className="text-muted-foreground mb-6 text-center">
+        <p className="wm-reveal wm-stagger-0 text-muted-foreground mb-6 text-center">
           Contractors rarely inflate prices directly. Instead, margin is hidden inside:
         </p>
         
@@ -62,7 +62,13 @@ export function TruthAuditSection({ onAuditQuote, onSectionView }: TruthAuditSec
           ].map((item, i) => (
             <div 
               key={i}
-              className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800"
+              className={cn(
+                "wm-reveal flex items-start gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800",
+                i === 0 && "wm-stagger-1",
+                i === 1 && "wm-stagger-2",
+                i === 2 && "wm-stagger-3",
+                i === 3 && "wm-stagger-4"
+              )}
             >
               <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
               <span className="text-sm text-amber-900 dark:text-amber-100">{item}</span>
@@ -106,7 +112,7 @@ export function TruthAuditSection({ onAuditQuote, onSectionView }: TruthAuditSec
       <div className="max-w-5xl mx-auto mb-12">
         <div className="grid md:grid-cols-2 gap-6">
           {/* Contractor Quote Card */}
-          <Card className="relative overflow-hidden">
+          <Card className="wm-reveal wm-stagger-1 relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -135,7 +141,7 @@ export function TruthAuditSection({ onAuditQuote, onSectionView }: TruthAuditSec
           </Card>
 
           {/* AI Breakdown Card */}
-          <Card className="relative overflow-hidden">
+          <Card className="wm-reveal wm-stagger-2 wm-sweep relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
             {/* Scan sweep animation */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -222,11 +228,11 @@ export function TruthAuditSection({ onAuditQuote, onSectionView }: TruthAuditSec
       </div>
 
       {/* CTA */}
-      <div className="text-center">
+      <div className="wm-reveal wm-stagger-3 text-center">
         <Button 
           size="lg" 
           onClick={onAuditQuote}
-          className="gap-2"
+          className="gap-2 wm-btn-press"
         >
           Audit My Quote Now
           <ArrowRight className="w-5 h-5" />

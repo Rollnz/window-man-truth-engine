@@ -74,14 +74,18 @@ export function GoldenThreadNextSteps({
     >
       <div className="max-w-4xl mx-auto">
         <div className="grid sm:grid-cols-2 gap-4">
-          {nextStepTools.map((tool) => (
+          {nextStepTools.map((tool, index) => (
             <Card 
               key={tool.id}
               className={cn(
-                'group cursor-pointer overflow-hidden',
-                'transition-all duration-300',
+                'wm-reveal group cursor-pointer overflow-hidden',
+                'transition-opacity transition-transform duration-300',
                 'hover:border-primary/50 hover:shadow-md',
-                'focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20'
+                'focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
+                index === 0 && 'wm-stagger-0',
+                index === 1 && 'wm-stagger-1',
+                index === 2 && 'wm-stagger-2',
+                index === 3 && 'wm-stagger-3'
               )}
               onClick={() => onToolSelect(tool)}
               tabIndex={0}
