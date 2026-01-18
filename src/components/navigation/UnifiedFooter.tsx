@@ -139,7 +139,7 @@ export function UnifiedFooter() {
                 <Button
                   asChild
                   variant="outline"
-                  className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 font-semibold"
+                  className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 hover:text-primary font-semibold"
                   onClick={() => handleCTAClick('scan_quote')}
                 >
                   <Link to={FOOTER_NAV.SCAN_QUOTE}>
