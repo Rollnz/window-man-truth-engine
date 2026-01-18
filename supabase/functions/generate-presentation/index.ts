@@ -301,25 +301,26 @@ Deno.serve(async (req) => {
 
     console.log(`[generate-presentation] Calling Gamma API for ${reportType}...`);
 
-    // Call Gamma API - using correct endpoint
-    // Note: Gamma's API may have changed. Trying the documented endpoint.
-    const gammaEndpoint = "https://api.gamma.app/api/generate";
+    // Gamma API v1.0 - Verified endpoint and parameters
+    const gammaEndpoint = "https://public-api.gamma.app/v1.0/generations";
     
     let gammaResponse: Response;
     try {
+      const requestBody = {
+        inputText: prompt,
+        textMode: "generate", // Required: "generate", "condense", or "preserve"
+        format: "presentation",
+      };
+      
+      console.log("[generate-presentation] Request body:", JSON.stringify(requestBody).substring(0, 200));
+      
       gammaResponse = await fetch(gammaEndpoint, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${gammaApiKey}`,
+          "X-API-KEY": gammaApiKey, // Gamma uses X-API-KEY, not Bearer token
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          prompt,
-          type: "presentation",
-          title: reportType === "quote-analysis" 
-            ? "Window Quote Analysis Report" 
-            : "Window Comparison Guide",
-        }),
+        body: JSON.stringify(requestBody),
       });
     } catch (fetchError) {
       console.error("[generate-presentation] Gamma API fetch error:", fetchError);
