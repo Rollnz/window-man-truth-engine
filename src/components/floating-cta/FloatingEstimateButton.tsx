@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
-import { MessageSquare } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { EstimateSlidePanel } from './EstimateSlidePanel';
 import { cn } from '@/lib/utils';
@@ -8,57 +6,78 @@ import { cn } from '@/lib/utils';
 /**
  * FloatingEstimateButton
  * 
- * A persistent floating action button that appears in the bottom-right corner
- * of all pages. When clicked, it opens a slide-in panel with options to either
- * call the Voice AI agent or fill out a 3-step estimate request form.
- * 
- * Design: "Calm and Authoritative" - matches the Truth Engine aesthetic
+ * A persistent floating action button featuring the Window Man logo.
+ * Appears in the bottom-right corner and syncs with the mobile sticky footer's
+ * scroll hide/show behavior. Opens a slide-in panel for estimate requests.
  */
 export function FloatingEstimateButton() {
   const [isOpen, setIsOpen] = useState(false);
-  const [hasScrolled, setHasScrolled] = useState(false);
-  const [isPulsing, setIsPulsing] = useState(true);
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
 
-  // Track scroll to show/hide subtle animation
+  // Scroll handler - synced with MobileStickyFooter logic
+  const handleScroll = useCallback(() => {
+    if (!ticking.current) {
+      window.requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        const scrollingDown = currentScrollY > lastScrollY.current;
+        const scrollingUp = currentScrollY < lastScrollY.current;
+        
+        // Require 10px+ delta to prevent jitter
+        if (Math.abs(currentScrollY - lastScrollY.current) > 10) {
+          if (scrollingDown && currentScrollY > 100) {
+            setIsVisible(false);
+          } else if (scrollingUp) {
+            setIsVisible(true);
+          }
+          lastScrollY.current = currentScrollY;
+        }
+        
+        ticking.current = false;
+      });
+      ticking.current = true;
+    }
+  }, []);
+
   useEffect(() => {
-    const handleScroll = () => {
-      setHasScrolled(window.scrollY > 200);
-    };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Stop pulsing after 10 seconds to avoid annoyance
-  useEffect(() => {
-    const timer = setTimeout(() => setIsPulsing(false), 10000);
-    return () => clearTimeout(timer);
-  }, []);
+  }, [handleScroll]);
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button
-          size="lg"
+        <button
           className={cn(
-            // Positioning
-            'fixed bottom-6 right-6 z-50',
-            // Size and shape
-            'h-14 w-14 rounded-full p-0',
-            // Colors - using primary with glow effect
-            'bg-primary hover:bg-primary/90 shadow-lg',
-            // Hover effects
-            'hover:scale-105 transition-all duration-300',
-            // Glow effect matching Truth Engine style
-            'shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)]',
-            // Pulse animation when not scrolled
-            isPulsing && !hasScrolled && 'animate-pulse',
-            // Mobile adjustments
-            'md:h-16 md:w-16'
+            // Positioning - above mobile footer, normal on desktop
+            'fixed right-4 z-50',
+            'bottom-[120px] md:bottom-6 md:right-6',
+            
+            // Size: 52px mobile, 64px desktop
+            'h-[52px] w-[52px] md:h-16 md:w-16',
+            
+            // Circular, transparent background (no shadow - logo has built-in depth)
+            'rounded-full p-0 bg-transparent border-0',
+            
+            // Hover scale effect
+            'hover:scale-110 transition-all duration-300 ease-in-out',
+            
+            // Visibility animation - only on mobile (md+ always visible)
+            isVisible 
+              ? 'translate-y-0 opacity-100' 
+              : 'translate-y-20 opacity-0 pointer-events-none md:translate-y-0 md:opacity-100 md:pointer-events-auto',
+            
+            // Cursor
+            'cursor-pointer'
           )}
+          style={{
+            backgroundImage: "url('/images/windowman.webp')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
           aria-label="Get a free estimate"
-        >
-          <MessageSquare className="h-6 w-6 md:h-7 md:w-7 text-primary-foreground" />
-        </Button>
+        />
       </SheetTrigger>
       
       <EstimateSlidePanel onClose={() => setIsOpen(false)} />
