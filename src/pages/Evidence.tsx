@@ -16,6 +16,7 @@ import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { CommunityImpact } from "@/components/authority/CommunityImpact";
 import { getToolPageSchemas, getBreadcrumbSchema, generateEvidenceLibrarySchemas } from "@/lib/seoSchemas";
+import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
 import type { SourceTool } from "@/types/sourceTool";
 import { ROUTES } from "@/config/navigation";
 
@@ -127,8 +128,13 @@ export default function Evidence() {
       />
       <Navbar />
 
+      {/* PillarBreadcrumb - links UP to parent pillar */}
+      <div className="container px-4 pt-16 pb-2">
+        <PillarBreadcrumb toolPath="/evidence" variant="badge" />
+      </div>
+
       {/* Hero */}
-      <div className="pt-14">
+      <div className="pt-2">
         <EvidenceHero />
       </div>
 

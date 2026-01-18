@@ -16,6 +16,7 @@ import { ROUTES } from '@/config/navigation';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { PillarBreadcrumb } from '@/components/seo/PillarBreadcrumb';
 
 export default function Intel() {
   usePageTracking('intel-library');
@@ -65,8 +66,13 @@ export default function Intel() {
       />
       <Navbar />
 
+      {/* PillarBreadcrumb - links UP to parent pillar */}
+      <div className="container px-4 pt-16 pb-2">
+        <PillarBreadcrumb toolPath="/intel" variant="badge" />
+      </div>
+
       {/* Hero */}
-      <div className="pt-14">
+      <div className="pt-2">
         <IntelHero />
       </div>
 

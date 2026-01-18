@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { ROUTES } from "@/config/navigation";
 import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
+import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
 
 const redFlags = [
   "Quotes without line-item pricing for glass, frames, and installation.",
@@ -25,7 +26,12 @@ const Defense = () => {
       />
       <Navbar />
 
-      <main className="pt-20">
+      {/* PillarBreadcrumb - links UP to parent pillar */}
+      <div className="container px-4 pt-16 pb-2">
+        <PillarBreadcrumb toolPath="/defense" variant="badge" />
+      </div>
+
+      <main className="pt-4">
         <section className="container px-4 py-12 space-y-8">
           <div className="space-y-3 max-w-3xl">
             <p className="text-sm font-semibold text-primary">Defense Mode</p>

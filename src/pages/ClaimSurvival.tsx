@@ -8,7 +8,6 @@ import { usePageTracking } from "@/hooks/usePageTracking";
 import { useToast } from "@/hooks/use-toast";
 import { useEvidenceAnalysis } from "@/hooks/useEvidenceAnalysis";
 import { SEO } from "@/components/SEO";
-import { getBreadcrumbSchema } from "@/lib/seoSchemas";
 import { Navbar } from "@/components/home/Navbar";
 import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { ClaimHero } from "@/components/claim-survival/ClaimHero";
@@ -33,74 +32,9 @@ import { ConsultationBookingModal } from "@/components/conversion/ConsultationBo
 import { claimDocuments } from "@/data/claimSurvivalData";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
+import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
+import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 import type { SourceTool } from "@/types/sourceTool";
-
-const claimSurvivalSchema = [
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "Insurance Claim Survival Kit",
-    "applicationCategory": "UtilityApplication",
-    "operatingSystem": "Web",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "description": "Free tool to organize your insurance claim documents, track your readiness score, and avoid common mistakes that delay or deny claims.",
-    "url": "https://itswindowman.com/claim-survival"
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    "name": "How to File a Successful Insurance Claim",
-    "description": "Step-by-step guide to organizing your documents and filing a successful insurance claim after storm damage.",
-    "step": [
-      {
-        "@type": "HowToStep",
-        "name": "Gather Critical Documents",
-        "text": "Collect your insurance policy, photos of damage, receipts, and contractor estimates."
-      },
-      {
-        "@type": "HowToStep",
-        "name": "Document All Damage",
-        "text": "Follow our photo protocol to capture evidence that adjusters need to approve your claim."
-      },
-      {
-        "@type": "HowToStep",
-        "name": "Follow the 24-Hour Playbook",
-        "text": "Take immediate action after a storm using our timeline to protect your claim rights."
-      },
-      {
-        "@type": "HowToStep",
-        "name": "Analyze Your Readiness",
-        "text": "Use our AI tool to identify gaps in your documentation before submitting your claim."
-      }
-    ]
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "What documents do I need for an insurance claim?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "You need 7 critical documents: insurance policy, photos of damage before and after, contractor estimates, receipts for emergency repairs, inventory of damaged items, written timeline of events, and communication records with your insurer."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "How soon should I file a claim after storm damage?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "File your claim as soon as possible, ideally within 24-48 hours. Document damage immediately and take steps to prevent further damage. Our 24-Hour Playbook guides you through the critical first steps."
-        }
-      }
-    ]
-  }
-];
 
 export default function ClaimSurvival() {
   usePageTracking("claim-survival-kit");
@@ -327,12 +261,17 @@ export default function ClaimSurvival() {
         title="Insurance Claim Survival Kit"
         description="Free tool to organize your insurance claim documents, track readiness, and avoid mistakes that delay or deny claims. Includes 24-hour playbook and AI analysis."
         canonicalUrl="https://itswindowman.com/claim-survival"
-        jsonLd={[...claimSurvivalSchema, getBreadcrumbSchema('claim-survival')]}
+        jsonLd={[...getToolPageSchemas('claim-survival'), getBreadcrumbSchema('claim-survival')]}
       />
       <Navbar />
 
+      {/* PillarBreadcrumb - links UP to parent pillar */}
+      <div className="container px-4 pt-16 pb-2">
+        <PillarBreadcrumb toolPath="/claim-survival" variant="badge" />
+      </div>
+
       {/* Sticky Progress Bar */}
-      <div className="pt-14">
+      <div className="pt-2">
         <StickyProgress
           visible={showStickyProgress}
           completed={completedCount}

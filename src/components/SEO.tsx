@@ -25,11 +25,17 @@ export const SEO = ({
       {description && <meta name="description" content={description} />}
       {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
       
+      {/* Indexing and Author */}
+      <meta name="robots" content="index, follow" />
+      <meta name="author" content="Window Man Your Hurricane Hero" />
+      
       {/* Open Graph */}
       <meta property="og:title" content={fullTitle} />
       {description && <meta property="og:description" content={description} />}
       <meta property="og:image" content={ogImage} />
       <meta property="og:type" content="website" />
+      <meta property="og:site_name" content="Window Man Truth Engine" />
+      <meta property="og:locale" content="en_US" />
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
       
       {/* Twitter Card */}

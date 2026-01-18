@@ -19,6 +19,7 @@ import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { ExitIntentModal } from '@/components/authority';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
+import { PillarBreadcrumb } from '@/components/seo/PillarBreadcrumb';
 import type { SourceTool } from '@/types/sourceTool';
 
 type Phase = 'hero' | 'quiz' | 'analysis' | 'blur-gate' | 'results';
@@ -249,7 +250,12 @@ export default function FairPriceQuiz() {
       />
       <Navbar />
 
-      <div className="pt-14">
+      {/* PillarBreadcrumb - links UP to parent pillar */}
+      <div className="container px-4 pt-16 pb-2">
+        <PillarBreadcrumb toolPath="/fair-price-quiz" variant="badge" />
+      </div>
+
+      <div className="pt-2">
         {phase === 'hero' && <QuizHero onStart={handleStart} />}
 
         {phase === 'quiz' && currentQuestion && (

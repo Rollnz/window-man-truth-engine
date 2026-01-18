@@ -116,7 +116,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
             <div className="absolute inset-0">
               <img
                 src={`data:image/jpeg;base64,${imagePreview}`}
-                alt="Uploaded quote"
+                alt="Preview of your uploaded window replacement quote"
                 className="w-full h-full object-contain opacity-70"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />

@@ -15,6 +15,7 @@ import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { PillarBreadcrumb } from '@/components/seo/PillarBreadcrumb';
 import type { Difficulty, GameResult, AnalysisResult } from '@/types/roleplay';
 
 const cn = (...classes: (string | undefined | null | false)[]) => {
@@ -167,8 +168,13 @@ export default function Roleplay() {
       )}>
         <Navbar />
       </div>
+
+      {/* PillarBreadcrumb - links UP to parent pillar */}
+      <div className="container px-4 pt-16 pb-2">
+        <PillarBreadcrumb toolPath="/roleplay" variant="badge" />
+      </div>
       
-      <div className="pt-14">
+      <div className="pt-2">
         <ErrorBoundary
           title="Roleplay Game Error"
           description="Something went wrong with the sales roleplay simulation. Please restart the game."
