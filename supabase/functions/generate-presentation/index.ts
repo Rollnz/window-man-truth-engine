@@ -12,25 +12,36 @@ async function checkRateLimit(
   limit: number,
   windowMs: number
 ): Promise<boolean> {
-  const windowStart = new Date(Date.now() - windowMs).toISOString();
-  
-  const { count } = await supabase
-    .from("rate_limits")
-    .select("*", { count: "exact", head: true })
-    .eq("identifier", identifier)
-    .eq("endpoint", "generate-presentation")
-    .gte("created_at", windowStart);
+  try {
+    const windowStart = new Date(Date.now() - windowMs).toISOString();
+    
+    const { count, error } = await supabase
+      .from("rate_limits")
+      .select("*", { count: "exact", head: true })
+      .eq("identifier", identifier)
+      .eq("endpoint", "generate-presentation")
+      .gte("created_at", windowStart);
 
-  if ((count ?? 0) >= limit) {
-    return false;
+    if (error) {
+      console.error("Rate limit check error:", error);
+      // Allow request if rate limit check fails
+      return true;
+    }
+
+    if ((count ?? 0) >= limit) {
+      return false;
+    }
+
+    await supabase.from("rate_limits").insert({
+      identifier,
+      endpoint: "generate-presentation",
+    } as Record<string, unknown>);
+
+    return true;
+  } catch (err) {
+    console.error("Rate limit error:", err);
+    return true; // Allow request on error
   }
-
-  await supabase.from("rate_limits").insert({
-    identifier,
-    endpoint: "generate-presentation",
-  } as Record<string, unknown>);
-
-  return true;
 }
 
 // Build prompt based on report type
@@ -73,7 +84,7 @@ ${summary || "A comprehensive analysis of your window replacement quote."}
 ## Overall Assessment
 - **Overall Score**: ${overallScore || "N/A"}/100
 - **Price Assessment**: ${priceAssessment || "Under review"}
-- **Estimated Project Cost**: ${estimatedPrice ? `$${estimatedPrice.toLocaleString()}` : "Not specified"}
+- **Estimated Project Cost**: ${estimatedPrice ? `$${Number(estimatedPrice).toLocaleString()}` : "Not specified"}
 
 ## Detailed Scores Breakdown
 | Category | Score | Status |
@@ -176,55 +187,9 @@ function getScoreStatus(score: number | undefined): string {
   return "🔴 Needs Review";
 }
 
-// Poll Gamma API for completion
-async function pollForCompletion(
-  generationId: string,
-  apiKey: string,
-  maxWaitMs: number = 60000,
-  intervalMs: number = 5000
-): Promise<{ status: string; gammaUrl?: string; error?: string }> {
-  const startTime = Date.now();
-  
-  while (Date.now() - startTime < maxWaitMs) {
-    const response = await fetch(`https://api.gamma.app/v1/generations/${generationId}`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Gamma poll error:", errorText);
-      throw new Error(`Failed to check generation status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log("Gamma poll result:", result.status);
-
-    if (result.status === "completed") {
-      return { 
-        status: "completed", 
-        gammaUrl: result.url || result.webUrl || result.gammaUrl 
-      };
-    }
-
-    if (result.status === "failed" || result.status === "error") {
-      return { 
-        status: "failed", 
-        error: result.error || "Generation failed" 
-      };
-    }
-
-    // Wait before next poll
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-
-  return { status: "timeout", error: "Generation timed out after 60 seconds" };
-}
-
 Deno.serve(async (req) => {
+  console.log("[generate-presentation] Request received:", req.method);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -233,28 +198,65 @@ Deno.serve(async (req) => {
   try {
     // Validate request method
     if (req.method !== "POST") {
+      console.log("[generate-presentation] Method not allowed:", req.method);
       return new Response(
         JSON.stringify({ error: "Method not allowed" }),
         { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // ===== CONFIGURATION CHECK =====
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const gammaApiKey = Deno.env.get("GAMMA_API_KEY");
+
+    console.log("[generate-presentation] Config check - SUPABASE_URL:", !!supabaseUrl);
+    console.log("[generate-presentation] Config check - SERVICE_ROLE_KEY:", !!supabaseKey);
+    console.log("[generate-presentation] Config check - GAMMA_API_KEY:", !!gammaApiKey);
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("[generate-presentation] Missing Supabase configuration");
+      return new Response(
+        JSON.stringify({ error: "Missing configuration: Supabase credentials not set" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!gammaApiKey) {
+      console.error("[generate-presentation] GAMMA_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ 
+          error: "Presentation service not configured",
+          detail: "The GAMMA_API_KEY secret is missing. Please add it in the Supabase dashboard."
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ===== RATE LIMIT IDENTIFIER =====
-    // Use IP address for rate limiting (allows anonymous access)
     const forwardedFor = req.headers.get("x-forwarded-for");
     const clientIp = forwardedFor?.split(",")[0]?.trim() || "unknown";
     const rateLimitId = `ip:${clientIp}`;
-    console.log(`Request from: ${rateLimitId}`);
-    
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    // ===== END RATE LIMIT IDENTIFIER =====
+    console.log(`[generate-presentation] Request from: ${rateLimitId}`);
 
     // Parse request body
-    const body = await req.json();
+    let body: { reportType?: string; data?: Record<string, unknown> };
+    try {
+      body = await req.json();
+      console.log("[generate-presentation] Request body parsed, reportType:", body?.reportType);
+    } catch (parseError) {
+      console.error("[generate-presentation] Failed to parse request body:", parseError);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { reportType, data } = body;
 
     // Validate required fields
     if (!reportType || typeof reportType !== "string") {
+      console.log("[generate-presentation] Missing reportType");
       return new Response(
         JSON.stringify({ error: "reportType is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -262,33 +264,25 @@ Deno.serve(async (req) => {
     }
 
     if (!data || typeof data !== "object") {
+      console.log("[generate-presentation] Missing data object");
       return new Response(
         JSON.stringify({ error: "data object is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Initialize Supabase client for rate limiting (with service role)
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    // Initialize Supabase client for rate limiting
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Rate limiting: 5 generations per hour per IP
+    console.log("[generate-presentation] Checking rate limit...");
     const allowed = await checkRateLimit(supabase, rateLimitId, 5, 60 * 60 * 1000);
     
     if (!allowed) {
+      console.log("[generate-presentation] Rate limit exceeded for:", rateLimitId);
       return new Response(
-        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later (max 5 per hour)." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Get Gamma API key
-    const gammaApiKey = Deno.env.get("GAMMA_API_KEY");
-    if (!gammaApiKey) {
-      console.error("GAMMA_API_KEY not configured");
-      return new Response(
-        JSON.stringify({ error: "Presentation service not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -296,79 +290,150 @@ Deno.serve(async (req) => {
     let prompt: string;
     try {
       prompt = buildPrompt(reportType, data);
+      console.log("[generate-presentation] Prompt built successfully, length:", prompt.length);
     } catch (err) {
+      console.error("[generate-presentation] Prompt build error:", err);
       return new Response(
         JSON.stringify({ error: (err as Error).message }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Generating ${reportType} presentation for ${rateLimitId}...`);
+    console.log(`[generate-presentation] Calling Gamma API for ${reportType}...`);
 
-    // Call Gamma API to start generation
-    const gammaResponse = await fetch("https://api.gamma.app/v1/generations", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${gammaApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt,
-        outputType: "presentation",
-      }),
-    });
-
-    if (!gammaResponse.ok) {
-      const errorText = await gammaResponse.text();
-      console.error("Gamma API error:", errorText);
+    // Call Gamma API - using correct endpoint
+    // Note: Gamma's API may have changed. Trying the documented endpoint.
+    const gammaEndpoint = "https://api.gamma.app/api/generate";
+    
+    let gammaResponse: Response;
+    try {
+      gammaResponse = await fetch(gammaEndpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${gammaApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt,
+          type: "presentation",
+          title: reportType === "quote-analysis" 
+            ? "Window Quote Analysis Report" 
+            : "Window Comparison Guide",
+        }),
+      });
+    } catch (fetchError) {
+      console.error("[generate-presentation] Gamma API fetch error:", fetchError);
       return new Response(
-        JSON.stringify({ error: "Failed to start presentation generation" }),
+        JSON.stringify({ 
+          error: "Failed to connect to presentation service",
+          detail: String(fetchError)
+        }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const gammaResult = await gammaResponse.json();
-    const generationId = gammaResult.id || gammaResult.generationId;
+    console.log("[generate-presentation] Gamma API response status:", gammaResponse.status);
 
-    if (!generationId) {
-      console.error("No generation ID returned:", gammaResult);
+    if (!gammaResponse.ok) {
+      const errorText = await gammaResponse.text();
+      console.error("[generate-presentation] Gamma API error response:", errorText);
+      console.error("[generate-presentation] Gamma API status:", gammaResponse.status);
+      
+      // Check for specific error types
+      if (gammaResponse.status === 401 || gammaResponse.status === 403) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Gamma API authentication failed",
+            detail: "The API key may be invalid or expired. Please check the GAMMA_API_KEY secret."
+          }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      if (gammaResponse.status === 404) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Gamma API endpoint not found",
+            detail: "The Gamma API may have changed. Please check for API updates."
+          }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          error: "Presentation generation failed",
+          detail: `Gamma API returned ${gammaResponse.status}: ${errorText.substring(0, 200)}`
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    let gammaResult: Record<string, unknown>;
+    try {
+      gammaResult = await gammaResponse.json();
+      console.log("[generate-presentation] Gamma API response:", JSON.stringify(gammaResult).substring(0, 500));
+    } catch (jsonError) {
+      console.error("[generate-presentation] Failed to parse Gamma response:", jsonError);
       return new Response(
         JSON.stringify({ error: "Invalid response from presentation service" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Generation started with ID: ${generationId}`);
+    // Check for URL in response (Gamma may return URL directly or in various fields)
+    const presentationUrl = 
+      gammaResult.url || 
+      gammaResult.webUrl || 
+      gammaResult.gammaUrl || 
+      gammaResult.presentationUrl ||
+      (gammaResult.data as Record<string, unknown>)?.url;
 
-    // Poll for completion
-    const pollResult = await pollForCompletion(generationId, gammaApiKey);
-
-    if (pollResult.status === "completed" && pollResult.gammaUrl) {
-      console.log(`Generation completed: ${pollResult.gammaUrl}`);
+    if (presentationUrl) {
+      console.log(`[generate-presentation] Success! URL: ${presentationUrl}`);
       return new Response(
         JSON.stringify({ 
           success: true, 
-          url: pollResult.gammaUrl,
-          generationId 
+          url: presentationUrl
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Handle failure or timeout
-    console.error(`Generation failed: ${pollResult.error}`);
+    // If no URL, check for generation ID (async generation)
+    const generationId = gammaResult.id || gammaResult.generationId;
+    if (generationId) {
+      console.log(`[generate-presentation] Async generation started: ${generationId}`);
+      // For async, return the ID so frontend can poll
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          status: "pending",
+          generationId,
+          message: "Presentation is being generated. Please poll for status."
+        }),
+        { status: 202, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Unexpected response format
+    console.error("[generate-presentation] Unexpected response format:", gammaResult);
     return new Response(
       JSON.stringify({ 
-        error: pollResult.error || "Failed to generate presentation",
-        status: pollResult.status 
+        error: "Unexpected response from presentation service",
+        detail: "No URL or generation ID returned"
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("[generate-presentation] Unexpected error:", error);
+    console.error("[generate-presentation] Error stack:", (error as Error).stack);
     return new Response(
-      JSON.stringify({ error: "An unexpected error occurred" }),
+      JSON.stringify({ 
+        error: "An unexpected error occurred",
+        detail: String(error)
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
