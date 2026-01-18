@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.notify-dead-letter]
 verify_jwt = false
+
+[functions.track]
+verify_jwt = false
