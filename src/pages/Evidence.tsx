@@ -5,7 +5,6 @@ import { useSessionData } from "@/hooks/useSessionData";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
-import { EvidenceHero } from "@/components/evidence/EvidenceHero";
 import { FilterBar } from "@/components/evidence/FilterBar";
 import { CaseFileGrid } from "@/components/evidence/CaseFileGrid";
 import { CaseDebriefModal } from "@/components/evidence/CaseDebriefModal";
@@ -129,11 +128,6 @@ export default function Evidence() {
       {/* PillarBreadcrumb - links UP to parent pillar */}
       <div className="container px-4 pt-16 pb-2">
         <PillarBreadcrumb toolPath="/evidence" variant="badge" />
-      </div>
-
-      {/* Hero */}
-      <div className="pt-2">
-        <EvidenceHero />
       </div>
 
       {/* Main Content */}
