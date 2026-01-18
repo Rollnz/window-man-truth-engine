@@ -13,8 +13,8 @@ import {
   ArrowRight,
   ScanSearch,
   Calculator,
-  Lock
 } from 'lucide-react';
+import { getResourceById } from '@/data/intelData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,6 +36,10 @@ const KitchenTableGuide = () => {
   const { sessionData } = useSessionData();
   const frameControl = getFrameControl('kitchen-table-guide');
   const smartTools = getSmartRelatedTools('kitchen-table-guide', sessionData.toolsCompleted);
+  
+  // Single source of truth for book image
+  const defenseKitResource = getResourceById('defense-kit');
+  const bookImageUrl = defenseKitResource?.bookImageUrl || '/images/defense-kit-book.webp';
 
   const {
     values,
@@ -134,7 +138,7 @@ const KitchenTableGuide = () => {
               <div className="relative">
                 <div className="relative bg-card rounded-xl shadow-2xl p-2 border border-border">
                   <img 
-                    src="/images/defense-kit-book.webp"
+                    src={bookImageUrl}
                     alt="Kitchen Table Defense Kit Preview"
                     className="w-64 sm:w-80 h-auto rounded-lg"
                   />
@@ -212,26 +216,12 @@ const KitchenTableGuide = () => {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="flex justify-center">
-              <div className="relative bg-muted rounded-xl p-8 border border-border">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground">The Kitchen Table Guide</p>
-                    <p className="text-sm text-muted-foreground">12 Pages • PDF • 1.2MB</p>
-                  </div>
-                </div>
-                <div className="space-y-2 mb-6">
-                  <div className="h-3 bg-muted-foreground/20 rounded w-full" />
-                  <div className="h-3 bg-muted-foreground/20 rounded w-5/6" />
-                  <div className="h-3 bg-muted-foreground/20 rounded w-4/6" />
-                  <div className="h-3 bg-muted-foreground/20 rounded w-3/4" />
-                </div>
-                <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
-                  <Lock className="w-4 h-4" />
-                  Preview Locked
-                </div>
+              <div className="relative">
+                <img 
+                  src={bookImageUrl}
+                  alt="The Kitchen Table Defense Kit"
+                  className="w-64 sm:w-72 h-auto rounded-lg shadow-2xl"
+                />
               </div>
             </div>
             
