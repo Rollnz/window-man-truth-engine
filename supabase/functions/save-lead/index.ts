@@ -257,7 +257,8 @@ async function sendStapeGTMEvent(payload: StapeGTMPayload): Promise<void> {
       action_source: 'website',
     };
 
-    console.log('[Stape GTM] Sending event for lead:', payload.leadId);
+    // Log full payload for debugging
+    console.log('[Stape GTM] Sending payload:', JSON.stringify(gtmPayload, null, 2));
 
     const response = await fetch(STAPE_GTM_ENDPOINT, {
       method: 'POST',
@@ -267,10 +268,17 @@ async function sendStapeGTMEvent(payload: StapeGTMPayload): Promise<void> {
       body: JSON.stringify(gtmPayload),
     });
 
+    const responseText = await response.text();
+    
     if (!response.ok) {
-      console.error('[Stape GTM] Error response:', response.status, await response.text());
+      console.error('[Stape GTM] Error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseText,
+        sentPayload: gtmPayload,
+      });
     } else {
-      console.log('[Stape GTM] Event sent successfully for lead:', payload.leadId);
+      console.log('[Stape GTM] Success for lead:', payload.leadId, '| Response:', responseText);
     }
   } catch (error) {
     // Non-blocking - don't fail the main request
