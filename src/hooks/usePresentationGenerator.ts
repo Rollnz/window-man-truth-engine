@@ -10,6 +10,56 @@ interface GenerationResult {
   error?: string;
 }
 
+interface PollResult {
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'error';
+  url?: string;
+  error?: string;
+}
+
+async function pollForPresentation(
+  generationId: string,
+  maxAttempts = 30,
+  intervalMs = 2000
+): Promise<string> {
+  console.log(`[pollForPresentation] Starting poll for: ${generationId}`);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    console.log(`[pollForPresentation] Attempt ${attempt}/${maxAttempts}`);
+
+    const { data, error } = await supabase.functions.invoke<PollResult>(
+      'get-presentation-status',
+      { body: { generationId } }
+    );
+
+    if (error) {
+      console.error('[pollForPresentation] Function error:', error);
+      throw new Error(error.message || 'Failed to check presentation status');
+    }
+
+    if (!data) {
+      throw new Error('No response from status check');
+    }
+
+    console.log(`[pollForPresentation] Status: ${data.status}`);
+
+    if (data.status === 'completed' && data.url) {
+      console.log('[pollForPresentation] Presentation ready:', data.url);
+      return data.url;
+    }
+
+    if (data.status === 'failed' || data.status === 'error') {
+      throw new Error(data.error || 'Presentation generation failed');
+    }
+
+    // Still pending/processing - wait and try again
+    if (attempt < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, intervalMs));
+    }
+  }
+
+  throw new Error('Presentation generation timed out. Please try again.');
+}
+
 export function usePresentationGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,18 +104,50 @@ export function usePresentationGenerator() {
         return { success: false, error: result.error };
       }
 
+      // Handle immediate URL response (backward compatibility)
       if (result?.success && result?.url) {
-        console.log('Presentation generated:', result.url);
-        
-        // Open in new tab
+        console.log('Presentation generated immediately:', result.url);
         window.open(result.url, '_blank', 'noopener,noreferrer');
-        
         toast({
           title: 'Presentation Ready!',
           description: 'Your presentation has been generated and opened in a new tab.',
         });
-
         return { success: true, url: result.url };
+      }
+
+      // Handle async generation - poll for completion
+      if (result?.status === 'pending' && result?.generationId) {
+        console.log('Async generation started, polling for completion...');
+        
+        // Show progress toast
+        toast({
+          title: 'Generating Presentation...',
+          description: 'This may take 15-30 seconds. Please wait.',
+        });
+
+        try {
+          const url = await pollForPresentation(result.generationId);
+          
+          // Open the completed presentation
+          window.open(url, '_blank', 'noopener,noreferrer');
+          
+          toast({
+            title: 'Presentation Ready!',
+            description: 'Your presentation has been generated and opened in a new tab.',
+          });
+
+          return { success: true, url };
+        } catch (pollError) {
+          const pollErrorMessage = pollError instanceof Error ? pollError.message : 'Polling failed';
+          console.error('Polling error:', pollError);
+          setError(pollErrorMessage);
+          toast({
+            title: 'Generation Failed',
+            description: pollErrorMessage,
+            variant: 'destructive',
+          });
+          return { success: false, error: pollErrorMessage };
+        }
       }
 
       const unknownError = 'Unexpected response from presentation service';
