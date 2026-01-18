@@ -1,9 +1,15 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// ============= CORS Headers =============
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Cache-Control': 'no-store',
 };
+
+// ============= Constants =============
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const ALLOWED_MIME_TYPES = [
   'application/pdf',
@@ -11,173 +17,313 @@ const ALLOWED_MIME_TYPES = [
   'image/png',
   'image/heic',
   'image/webp',
-];
+] as const;
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+// Hardcoded allowlist - DO NOT import from frontend
+const ALLOWED_DOCUMENT_TYPES = [
+  'purchase-invoice',
+  'installation-contract',
+  'noa-certificate',
+  'permit-record',
+  'warranty-document',
+  'pre-storm-photos',
+  'post-storm-photos',
+] as const;
 
+const RATE_LIMIT_MAX = 10; // per hour
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const COOLDOWN_SECONDS = 10;
+
+// ============= Magic Bytes =============
+const MAGIC_BYTES: Record<string, number[][]> = {
+  'application/pdf': [[0x25, 0x50, 0x44, 0x46]], // %PDF
+  'image/jpeg': [[0xFF, 0xD8, 0xFF]],
+  'image/png': [[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]],
+};
+
+// ============= Validation Helpers =============
+function isValidUUIDv4(id: string): boolean {
+  if (!id || typeof id !== 'string') return false;
+  const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidV4Regex.test(id);
+}
+
+function isValidDocumentType(docType: string): docType is typeof ALLOWED_DOCUMENT_TYPES[number] {
+  return ALLOWED_DOCUMENT_TYPES.includes(docType as typeof ALLOWED_DOCUMENT_TYPES[number]);
+}
+
+function validateMagicBytes(buffer: Uint8Array, mimeType: string): boolean {
+  const signatures = MAGIC_BYTES[mimeType];
+  if (!signatures) {
+    // HEIC and WebP: MIME-only validation (no magic byte check)
+    return mimeType === 'image/heic' || mimeType === 'image/webp';
+  }
+  
+  return signatures.some(signature => 
+    signature.every((byte, index) => buffer[index] === byte)
+  );
+}
+
+function logSafe(sessionId: string): string {
+  return sessionId.substring(0, 8) + '...';
+}
+
+// ============= Rate Limiting (Degraded Mode) =============
+interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  degraded: boolean;
+  cooldownViolation: boolean;
+}
+
+// Use 'any' for Supabase client type in Edge Functions to avoid type conflicts
+// deno-lint-ignore no-explicit-any
+type SupabaseClient = any;
+
+async function checkRateLimit(
+  supabase: SupabaseClient,
+  sessionId: string
+): Promise<RateLimitResult> {
+  const cutoff = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+  
+  try {
+    // Check total count in window
+    const { count, error: countError } = await supabase
+      .from('rate_limits')
+      .select('*', { count: 'exact', head: true })
+      .eq('identifier', sessionId)
+      .eq('endpoint', 'upload-document')
+      .gte('created_at', cutoff);
+    
+    if (countError) {
+      console.warn(`[upload-document] Rate limit check failed for ${logSafe(sessionId)}:`, countError.message);
+      // Degraded mode: attempt cooldown check
+      return await checkCooldownOnly(supabase, sessionId);
+    }
+    
+    const currentCount = count || 0;
+    if (currentCount >= RATE_LIMIT_MAX) {
+      return { allowed: false, remaining: 0, degraded: false, cooldownViolation: false };
+    }
+    
+    // Check cooldown (last upload within 10 seconds)
+    const cooldownCutoff = new Date(Date.now() - COOLDOWN_SECONDS * 1000).toISOString();
+    const { count: recentCount, error: cooldownError } = await supabase
+      .from('rate_limits')
+      .select('*', { count: 'exact', head: true })
+      .eq('identifier', sessionId)
+      .eq('endpoint', 'upload-document')
+      .gte('created_at', cooldownCutoff);
+    
+    if (cooldownError) {
+      console.warn(`[upload-document] Cooldown check failed for ${logSafe(sessionId)}, allowing:`, cooldownError.message);
+      // Allow but log degraded
+      return { allowed: true, remaining: RATE_LIMIT_MAX - currentCount, degraded: true, cooldownViolation: false };
+    }
+    
+    if ((recentCount || 0) > 0) {
+      return { allowed: false, remaining: RATE_LIMIT_MAX - currentCount, degraded: false, cooldownViolation: true };
+    }
+    
+    return { allowed: true, remaining: RATE_LIMIT_MAX - currentCount - 1, degraded: false, cooldownViolation: false };
+  } catch (err) {
+    console.error(`[upload-document] Rate limit exception for ${logSafe(sessionId)}:`, err);
+    // Degraded mode: allow with logging
+    return { allowed: true, remaining: 0, degraded: true, cooldownViolation: false };
+  }
+}
+
+async function checkCooldownOnly(
+  supabase: SupabaseClient,
+  sessionId: string
+): Promise<RateLimitResult> {
+  try {
+    const cooldownCutoff = new Date(Date.now() - COOLDOWN_SECONDS * 1000).toISOString();
+    const { count, error } = await supabase
+      .from('rate_limits')
+      .select('*', { count: 'exact', head: true })
+      .eq('identifier', sessionId)
+      .eq('endpoint', 'upload-document')
+      .gte('created_at', cooldownCutoff);
+    
+    if (error) {
+      console.warn(`[upload-document] COOLDOWN_SKIPPED for ${logSafe(sessionId)}:`, error.message);
+      return { allowed: true, remaining: 0, degraded: true, cooldownViolation: false };
+    }
+    
+    if ((count || 0) > 0) {
+      return { allowed: false, remaining: 0, degraded: true, cooldownViolation: true };
+    }
+    
+    console.warn(`[upload-document] RATE_LIMIT_DEGRADED for ${logSafe(sessionId)}`);
+    return { allowed: true, remaining: 0, degraded: true, cooldownViolation: false };
+  } catch {
+    console.warn(`[upload-document] RATE_LIMIT_DEGRADED + COOLDOWN_SKIPPED for ${logSafe(sessionId)}`);
+    return { allowed: true, remaining: 0, degraded: true, cooldownViolation: false };
+  }
+}
+
+async function recordRateLimitHit(
+  supabase: SupabaseClient,
+  sessionId: string
+): Promise<boolean> {
+  try {
+    const { error } = await supabase.from('rate_limits').insert({
+      identifier: sessionId,
+      endpoint: 'upload-document',
+    });
+    
+    if (error) {
+      console.warn(`[upload-document] Failed to record rate limit hit for ${logSafe(sessionId)}:`, error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn(`[upload-document] Rate limit record exception for ${logSafe(sessionId)}:`, err);
+    return false;
+  }
+}
+
+// ============= Response Helpers =============
+function errorResponse(
+  status: number,
+  errorCode: string,
+  message: string
+): Response {
+  return new Response(
+    JSON.stringify({ success: false, error_code: errorCode, message }),
+    { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+function successResponse(data: Record<string, unknown>): Response {
+  return new Response(
+    JSON.stringify({ success: true, ...data }),
+    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+// ============= Main Handler =============
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Only allow POST
+  if (req.method !== 'POST') {
+    return errorResponse(405, 'METHOD_NOT_ALLOWED', 'Only POST method is allowed');
+  }
+
   try {
-    // ===== AUTHENTICATION CHECK =====
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Authentication required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
-    // Create client with user's auth token
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    
-    if (claimsError || !claimsData?.claims) {
-      console.error('Auth error:', claimsError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const userId = claimsData.claims.sub;
-    console.log(`Authenticated user: ${userId}`);
-    // ===== END AUTHENTICATION CHECK =====
-
+    // ===== Parse Form Data =====
     const formData = await req.formData();
-    const file = formData.get('file') as File;
-    const sessionId = formData.get('sessionId') as string;
-    const documentType = formData.get('documentType') as string;
+    const file = formData.get('file') as File | null;
+    const sessionId = formData.get('sessionId') as string | null;
+    const documentType = formData.get('documentType') as string | null;
 
-    // Validate required fields
+    // ===== Validate Required Fields =====
     if (!file) {
-      return new Response(
-        JSON.stringify({ error: 'No file provided' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse(400, 'MISSING_FILE', 'No file provided');
     }
 
     if (!sessionId) {
-      return new Response(
-        JSON.stringify({ error: 'No sessionId provided' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse(400, 'INVALID_SESSION', 'No sessionId provided');
+    }
+
+    if (!isValidUUIDv4(sessionId)) {
+      console.warn(`[upload-document] Invalid sessionId format: ${sessionId?.substring(0, 20)}...`);
+      return errorResponse(400, 'INVALID_SESSION', 'Invalid session format');
     }
 
     if (!documentType) {
-      return new Response(
-        JSON.stringify({ error: 'No documentType provided' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse(400, 'INVALID_DOC_TYPE', 'No documentType provided');
     }
 
-    // Validate file type
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid file type',
-          allowed: ALLOWED_MIME_TYPES,
-          received: file.type
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!isValidDocumentType(documentType)) {
+      console.warn(`[upload-document] Invalid documentType: ${documentType}`);
+      return errorResponse(400, 'INVALID_DOC_TYPE', 'Invalid document type');
     }
 
-    // Validate file size
+    // ===== Validate File Type =====
+    if (!ALLOWED_MIME_TYPES.includes(file.type as typeof ALLOWED_MIME_TYPES[number])) {
+      return errorResponse(400, 'INVALID_MIME', `Invalid file type: ${file.type}`);
+    }
+
+    // ===== Validate File Size =====
     if (file.size > MAX_FILE_SIZE) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'File too large',
-          maxSize: '10MB',
-          receivedSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse(413, 'FILE_TOO_LARGE', `File exceeds 10MB limit (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
     }
 
-    // Create Supabase client with service role for storage operations
+    // ===== Validate Magic Bytes =====
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBuffer = new Uint8Array(arrayBuffer);
+    
+    if (!validateMagicBytes(fileBuffer, file.type)) {
+      console.warn(`[upload-document] Magic byte mismatch for ${logSafe(sessionId)}, type: ${file.type}`);
+      return errorResponse(400, 'INVALID_FILE_CONTENT', 'File content does not match declared type');
+    }
+
+    // ===== Initialize Supabase Client =====
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Generate unique file path: userId/documentType/timestamp-filename
-    // Use userId for path isolation (security best practice)
+    // ===== Rate Limiting (Degraded Mode) =====
+    const rateLimit = await checkRateLimit(supabase, sessionId);
+    
+    if (!rateLimit.allowed) {
+      if (rateLimit.cooldownViolation) {
+        return errorResponse(429, 'RATE_LIMITED', 'Please wait 10 seconds between uploads');
+      }
+      return errorResponse(429, 'RATE_LIMITED', 'Upload limit reached (10 per hour)');
+    }
+
+    if (rateLimit.degraded) {
+      console.warn(`[upload-document] Operating in degraded mode for ${logSafe(sessionId)}`);
+    }
+
+    // ===== Generate Storage Path =====
     const timestamp = Date.now();
-    const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const filePath = `${userId}/${documentType}/${timestamp}-${sanitizedFilename}`;
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'bin';
+    const uniqueId = crypto.randomUUID();
+    const storagePath = `anon/${sessionId}/${documentType}/${timestamp}-${uniqueId}.${fileExtension}`;
 
-    console.log(`Uploading file: ${filePath}, size: ${file.size}, type: ${file.type}`);
+    console.log(`[upload-document] Uploading for ${logSafe(sessionId)}: ${documentType}, size: ${file.size}`);
 
-    // Convert file to ArrayBuffer then to Uint8Array for upload
-    const arrayBuffer = await file.arrayBuffer();
-    const fileBuffer = new Uint8Array(arrayBuffer);
-
-    // Upload to Supabase Storage
+    // ===== Upload to Storage =====
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('claim-documents')
-      .upload(filePath, fileBuffer, {
+      .upload(storagePath, fileBuffer, {
         contentType: file.type,
         upsert: false,
       });
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to upload file', details: uploadError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error(`[upload-document] Storage error for ${logSafe(sessionId)}:`, uploadError.message);
+      return errorResponse(500, 'UPLOAD_FAILED', 'Failed to store file');
     }
 
-    console.log('Upload successful:', uploadData);
+    console.log(`[upload-document] Upload successful: ${uploadData.path}`);
 
-    // Generate signed URL for access (1 hour expiry)
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-      .from('claim-documents')
-      .createSignedUrl(filePath, 3600); // 1 hour
-
-    if (signedUrlError) {
-      console.error('Signed URL error:', signedUrlError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to generate access URL', details: signedUrlError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // ===== Record Rate Limit Hit =====
+    const recorded = await recordRateLimitHit(supabase, sessionId);
+    if (!recorded) {
+      // Log warning but do NOT delete file (per degraded mode spec)
+      console.warn(`[upload-document] Rate limit record failed for ${logSafe(sessionId)}, file retained`);
     }
 
-    console.log('Signed URL generated successfully');
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        filePath: uploadData.path,
-        signedUrl: signedUrlData.signedUrl,
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        documentType,
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    // ===== Return Success =====
+    return successResponse({
+      file_path: uploadData.path,
+      original_file_name: file.name,
+      file_size: file.size,
+      document_type: documentType,
+      remaining_uploads: rateLimit.remaining,
+    });
 
   } catch (error) {
-    console.error('Unexpected error:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error', 
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error('[upload-document] Unexpected error:', error);
+    return errorResponse(500, 'INTERNAL_ERROR', 'An unexpected error occurred');
   }
 });
