@@ -1,6 +1,8 @@
+import { useState, useCallback } from 'react';
 import { FileSpreadsheet, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePresentationGenerator } from '@/hooks/usePresentationGenerator';
+import { WindowTriviaLoader } from '@/components/ui/WindowTriviaLoader';
 
 interface QuoteAnalysisResult {
   overallScore: number;
@@ -27,10 +29,12 @@ export function GenerateProposalButton({
   homeownerName,
   areaName 
 }: GenerateProposalButtonProps) {
-  const { generatePresentation, isGenerating } = usePresentationGenerator();
+  const { generatePresentation, isGenerating, generationPhase } = usePresentationGenerator();
+  const [showLoader, setShowLoader] = useState(false);
 
-  const handleGenerate = async () => {
-    await generatePresentation('quote-analysis', {
+  const handleGenerate = useCallback(async () => {
+    setShowLoader(true);
+    const result = await generatePresentation('quote-analysis', {
       overallScore: analysisResult.overallScore,
       safetyScore: analysisResult.safetyScore,
       scopeScore: analysisResult.scopeScore,
@@ -45,26 +49,45 @@ export function GenerateProposalButton({
       homeownerName,
       areaName,
     });
-  };
+    
+    // If error, close loader immediately
+    if (!result.success) {
+      setShowLoader(false);
+    }
+  }, [analysisResult, homeownerName, areaName, generatePresentation]);
+
+  const handleLoaderComplete = useCallback(() => {
+    setShowLoader(false);
+  }, []);
+
+  const isComplete = generationPhase === 'complete';
 
   return (
-    <Button
-      onClick={handleGenerate}
-      disabled={isGenerating}
-      className="w-full gap-2"
-      variant="cta"
-    >
-      {isGenerating ? (
-        <>
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Generating Proposal...
-        </>
-      ) : (
-        <>
-          <FileSpreadsheet className="w-4 h-4" />
-          Generate Homeowner Proposal
-        </>
-      )}
-    </Button>
+    <>
+      <Button
+        onClick={handleGenerate}
+        disabled={isGenerating || showLoader}
+        className="w-full gap-2"
+        variant="cta"
+      >
+        {isGenerating && !showLoader ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Generating Proposal...
+          </>
+        ) : (
+          <>
+            <FileSpreadsheet className="w-4 h-4" />
+            Generate Homeowner Proposal
+          </>
+        )}
+      </Button>
+
+      <WindowTriviaLoader 
+        isActive={showLoader}
+        isComplete={isComplete}
+        onComplete={handleLoaderComplete}
+      />
+    </>
   );
 }

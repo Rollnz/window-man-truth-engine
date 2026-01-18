@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 export type ReportType = 'quote-analysis' | 'comparison-report';
+export type GenerationPhase = 'idle' | 'submitting' | 'polling' | 'complete' | 'error';
 
 interface GenerationResult {
   success: boolean;
@@ -62,6 +63,7 @@ async function pollForPresentation(
 
 export function usePresentationGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationPhase, setGenerationPhase] = useState<GenerationPhase>('idle');
   const [error, setError] = useState<string | null>(null);
 
   const generatePresentation = useCallback(async (
@@ -69,6 +71,7 @@ export function usePresentationGenerator() {
     data: Record<string, unknown>
   ): Promise<GenerationResult> => {
     setIsGenerating(true);
+    setGenerationPhase('submitting');
     setError(null);
 
     try {
@@ -85,6 +88,7 @@ export function usePresentationGenerator() {
         console.error('Edge function error:', fnError);
         const errorMessage = fnError.message || 'Failed to generate presentation';
         setError(errorMessage);
+        setGenerationPhase('error');
         toast({
           title: 'Generation Failed',
           description: errorMessage,
@@ -96,6 +100,7 @@ export function usePresentationGenerator() {
       if (result?.error) {
         console.error('Generation error:', result.error);
         setError(result.error);
+        setGenerationPhase('error');
         toast({
           title: 'Generation Failed',
           description: result.error,
@@ -107,6 +112,7 @@ export function usePresentationGenerator() {
       // Handle immediate URL response (backward compatibility)
       if (result?.success && result?.url) {
         console.log('Presentation generated immediately:', result.url);
+        setGenerationPhase('complete');
         window.open(result.url, '_blank', 'noopener,noreferrer');
         toast({
           title: 'Presentation Ready!',
@@ -118,15 +124,12 @@ export function usePresentationGenerator() {
       // Handle async generation - poll for completion
       if (result?.status === 'pending' && result?.generationId) {
         console.log('Async generation started, polling for completion...');
-        
-        // Show progress toast
-        toast({
-          title: 'Generating Presentation...',
-          description: 'This may take 15-30 seconds. Please wait.',
-        });
+        setGenerationPhase('polling');
 
         try {
           const url = await pollForPresentation(result.generationId);
+          
+          setGenerationPhase('complete');
           
           // Open the completed presentation
           window.open(url, '_blank', 'noopener,noreferrer');
@@ -141,6 +144,7 @@ export function usePresentationGenerator() {
           const pollErrorMessage = pollError instanceof Error ? pollError.message : 'Polling failed';
           console.error('Polling error:', pollError);
           setError(pollErrorMessage);
+          setGenerationPhase('error');
           toast({
             title: 'Generation Failed',
             description: pollErrorMessage,
@@ -152,6 +156,7 @@ export function usePresentationGenerator() {
 
       const unknownError = 'Unexpected response from presentation service';
       setError(unknownError);
+      setGenerationPhase('error');
       toast({
         title: 'Generation Failed',
         description: unknownError,
@@ -163,6 +168,7 @@ export function usePresentationGenerator() {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       console.error('Generation error:', err);
       setError(errorMessage);
+      setGenerationPhase('error');
       toast({
         title: 'Generation Failed',
         description: errorMessage,
@@ -177,11 +183,13 @@ export function usePresentationGenerator() {
   const reset = useCallback(() => {
     setError(null);
     setIsGenerating(false);
+    setGenerationPhase('idle');
   }, []);
 
   return {
     generatePresentation,
     isGenerating,
+    generationPhase,
     error,
     reset,
   };

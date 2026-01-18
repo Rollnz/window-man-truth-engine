@@ -212,6 +212,12 @@ export default {
           "0%": { backgroundPosition: "200% 0" },
           "100%": { backgroundPosition: "-200% 0" },
         },
+        "trivia-fade": {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "10%": { opacity: "1", transform: "translateY(0)" },
+          "90%": { opacity: "1", transform: "translateY(0)" },
+          "100%": { opacity: "0", transform: "translateY(-8px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -224,6 +230,7 @@ export default {
         "float": "float 6s ease-in-out infinite",
         "glow-pulse": "glow-pulse 3s ease-in-out infinite",
         "border-shimmer": "border-shimmer 3s ease-in-out infinite",
+        "trivia-fade": "trivia-fade 3.5s ease-in-out",
       },
     },
   },
