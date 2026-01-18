@@ -297,6 +297,7 @@ export function ExitIntentModal({
               
               <Button 
                 type="submit" 
+                variant="cta"
                 size="lg" 
                 className="w-full gap-2" 
                 disabled={vaultSubmit.isSubmitting}

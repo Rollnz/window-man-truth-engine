@@ -191,14 +191,14 @@ export function IntelLeadModal({
                   <img 
                     src={resource.bookImageUrl} 
                     alt={resource.title}
-                    className="h-32 w-auto object-contain drop-shadow-lg"
+                    className="h-20 sm:h-32 w-auto object-contain drop-shadow-lg"
                   />
                 </div>
               )}
               {!resource.bookImageUrl && (
                 <div className="flex justify-center mb-2">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Unlock className="w-6 h-6 text-primary" />
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Unlock className="w-4 h-4 text-primary" />
                   </div>
                 </div>
               )}
@@ -212,7 +212,7 @@ export function IntelLeadModal({
 
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="intel-email" className={emailHasError ? 'text-destructive' : ''}>
+                <Label htmlFor="intel-email" className={`font-semibold text-slate-700 dark:text-foreground ${emailHasError ? 'text-destructive' : ''}`}>
                   Email Address
                 </Label>
                 <Input
@@ -233,6 +233,7 @@ export function IntelLeadModal({
 
               <Button
                 type="submit"
+                variant="cta"
                 className="w-full"
                 disabled={isLoading || !values.email.trim()}
               >

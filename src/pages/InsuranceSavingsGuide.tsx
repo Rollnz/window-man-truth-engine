@@ -285,12 +285,12 @@ const InsuranceSavingsGuide = () => {
           <div className="bg-background rounded-xl p-6 sm:p-8 shadow-2xl">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-foreground">First Name</Label>
+                <Label htmlFor="name" className="text-slate-900 dark:text-foreground font-semibold">First Name</Label>
                 <Input 
                   id="name"
                   {...getFieldProps('name')}
                   placeholder="Your name"
-                  className={`bg-background ${hasError('name') ? 'border-destructive' : ''}`}
+                  className={hasError('name') ? 'border-destructive' : ''}
                   disabled={isSubmitting}
                 />
                 {hasError('name') && (
@@ -298,13 +298,13 @@ const InsuranceSavingsGuide = () => {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-foreground">Email Address</Label>
+                <Label htmlFor="email" className="text-slate-900 dark:text-foreground font-semibold">Email Address</Label>
                 <Input 
                   id="email"
                   type="email"
                   {...getFieldProps('email')}
                   placeholder="you@example.com"
-                  className={`bg-background ${hasError('email') ? 'border-destructive' : ''}`}
+                  className={hasError('email') ? 'border-destructive' : ''}
                   disabled={isSubmitting}
                 />
                 {hasError('email') && (
@@ -312,7 +312,7 @@ const InsuranceSavingsGuide = () => {
                 )}
               </div>
               
-              <Button type="submit" size="lg" className="w-full gap-2" disabled={isSubmitting}>
+              <Button type="submit" variant="cta" size="lg" className="w-full gap-2" disabled={isSubmitting}>
                 {isSubmitting ? 'Sending...' : 'Send Me the Blueprint'}
                 {!isSubmitting && <ArrowRight className="w-4 h-4" />}
               </Button>

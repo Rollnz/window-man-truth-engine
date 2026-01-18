@@ -274,8 +274,8 @@ export function LeadCaptureModal({
           <>
             <DialogHeader>
               <div className="flex justify-center mb-2">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Mail className="w-6 h-6 text-primary" />
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Mail className="w-4 h-4 text-primary" />
                 </div>
               </div>
               <DialogTitle className="text-center">{modalTitle}</DialogTitle>
@@ -287,7 +287,7 @@ export function LeadCaptureModal({
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               {requiresFullContact && (
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name" className="font-semibold text-slate-700 dark:text-foreground">Name</Label>
                   <Input
                     id="name"
                     type="text"
@@ -301,7 +301,7 @@ export function LeadCaptureModal({
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className={emailHasError ? 'text-destructive' : ''}>
+                <Label htmlFor="email" className={`font-semibold text-slate-700 dark:text-foreground ${emailHasError ? 'text-destructive' : ''}`}>
                   Email Address
                 </Label>
                 <Input
@@ -322,7 +322,7 @@ export function LeadCaptureModal({
 
               {requiresFullContact && (
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone" className="font-semibold text-slate-700 dark:text-foreground">Phone Number</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -336,6 +336,7 @@ export function LeadCaptureModal({
 
               <Button
                 type="submit"
+                variant="cta"
                 className="w-full"
                 disabled={isLoading || !values.email.trim() || (requiresFullContact && (!name.trim() || !phone.trim()))}
               >

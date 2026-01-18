@@ -108,12 +108,12 @@ const MainCTASection: React.FC<MainCTASectionProps> = ({ id, onSuccess, hasConve
         <div className="bg-background rounded-xl p-6 sm:p-8 shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-foreground">First Name</Label>
+              <Label htmlFor="firstName" className="text-slate-900 dark:text-foreground font-semibold">First Name</Label>
               <Input 
                 id="firstName"
                 {...getFieldProps('firstName')}
                 placeholder="Your first name"
-                className={`bg-background ${hasError('firstName') ? 'border-destructive' : ''}`}
+                className={hasError('firstName') ? 'border-destructive' : ''}
                 disabled={isSubmitting}
                 onFocus={handleFieldFocus}
               />
@@ -123,13 +123,13 @@ const MainCTASection: React.FC<MainCTASectionProps> = ({ id, onSuccess, hasConve
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">Email Address</Label>
+              <Label htmlFor="email" className="text-slate-900 dark:text-foreground font-semibold">Email Address</Label>
               <Input 
                 id="email"
                 type="email"
                 {...getFieldProps('email')}
                 placeholder="your@email.com"
-                className={`bg-background ${hasError('email') ? 'border-destructive' : ''}`}
+                className={hasError('email') ? 'border-destructive' : ''}
                 disabled={isSubmitting}
                 onFocus={handleFieldFocus}
               />
@@ -156,6 +156,7 @@ const MainCTASection: React.FC<MainCTASectionProps> = ({ id, onSuccess, hasConve
             
             <Button 
               type="submit" 
+              variant="cta"
               size="lg" 
               className="w-full gap-2 mt-4" 
               disabled={isSubmitting}
