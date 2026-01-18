@@ -400,25 +400,26 @@ export function OutcomeFolders({
       </div>
 
       {/* Lead Capture Modal */}
+      {/* Lead Capture Modal */}
       <Dialog open={isModalOpen} onOpenChange={handleModalClose}>
-        <DialogContent className="sm:max-w-md bg-dossier-modal border border-white/10 shadow-2xl shadow-tools-truth-engine/5">
+        <DialogContent className="sm:max-w-md bg-white dark:bg-white border-t-4 border-t-primary shadow-2xl max-h-[90vh] overflow-y-auto">
           {isSuccess ? <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="w-16 h-16 rounded-full bg-tools-truth-engine/20 flex items-center justify-center mb-4">
-                <CheckCircle className="w-8 h-8 text-tools-truth-engine" />
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-primary" />
               </div>
-              <DialogTitle className="text-xl mb-2">Mission Initiated!</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-xl font-bold text-slate-900 mb-2">Mission Initiated!</DialogTitle>
+              <DialogDescription className="text-slate-600">
                 Redirecting you to the Quote Scanner...
               </DialogDescription>
             </div> : <>
               <DialogHeader>
                 <div className="flex justify-center mb-2">
-                  <div className="w-12 h-12 rounded-full bg-tools-truth-engine/10 flex items-center justify-center">
-                    <Mail className="w-6 h-6 text-tools-truth-engine" />
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Mail className="w-4 h-4 text-primary" />
                   </div>
                 </div>
-                <DialogTitle className="text-center">Start Your Mission</DialogTitle>
-                <DialogDescription className="text-center">
+                <DialogTitle className="text-center text-xl font-bold text-slate-900">Start Your Mission</DialogTitle>
+                <DialogDescription className="text-center text-slate-600">
                   Enter your details to upload your quote and receive your personalized analysis within 24 hours.
                 </DialogDescription>
               </DialogHeader>
@@ -426,49 +427,49 @@ export function OutcomeFolders({
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="mission-name">Name</Label>
+                    <Label htmlFor="mission-name" className="font-semibold text-slate-900">Name</Label>
                     {isNameValid && <CheckCircle className="w-4 h-4 text-green-500" />}
                   </div>
-                  <Input id="mission-name" type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} onFocus={() => handleFieldFocus('name')} disabled={isLoading} autoFocus />
+                  <Input id="mission-name" type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} onFocus={() => handleFieldFocus('name')} disabled={isLoading} autoFocus className="h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm" />
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="mission-email" className={emailHasError ? 'text-destructive' : ''}>
+                    <Label htmlFor="mission-email" className={`font-semibold ${emailHasError ? 'text-destructive' : 'text-slate-900'}`}>
                       Email Address
                     </Label>
                     {isEmailValid && <CheckCircle className="w-4 h-4 text-green-500" />}
                   </div>
-                  <Input id="mission-email" type="email" placeholder="you@example.com" {...emailProps} onFocus={() => handleFieldFocus('email')} disabled={isLoading} className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''} aria-invalid={emailHasError} aria-describedby={emailHasError ? 'mission-email-error' : undefined} />
+                  <Input id="mission-email" type="email" placeholder="you@example.com" {...emailProps} onFocus={() => handleFieldFocus('email')} disabled={isLoading} className={`h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm ${emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''}`} aria-invalid={emailHasError} aria-describedby={emailHasError ? 'mission-email-error' : undefined} />
                   {emailHasError && <p id="mission-email-error" className="text-sm text-destructive">{emailError}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="mission-phone">Phone Number</Label>
+                    <Label htmlFor="mission-phone" className="font-semibold text-slate-900">Phone Number</Label>
                     {isPhoneValid && <CheckCircle className="w-4 h-4 text-green-500" />}
                   </div>
-                  <Input id="mission-phone" type="tel" placeholder="(555) 123-4567" value={phone} onChange={handlePhoneChange} onFocus={() => handleFieldFocus('phone')} disabled={isLoading} />
+                  <Input id="mission-phone" type="tel" placeholder="(555) 123-4567" value={phone} onChange={handlePhoneChange} onFocus={() => handleFieldFocus('phone')} disabled={isLoading} className="h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="mission-cost">Project Cost</Label>
+                      <Label htmlFor="mission-cost" className="font-semibold text-slate-900">Project Cost</Label>
                       {projectCost && <CheckCircle className="w-4 h-4 text-green-500" />}
                     </div>
-                    <Input id="mission-cost" type="text" placeholder="$15,000" value={projectCost} onChange={handleProjectCostChange} disabled={isLoading} />
+                    <Input id="mission-cost" type="text" placeholder="$15,000" value={projectCost} onChange={handleProjectCostChange} disabled={isLoading} className="h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm" />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="mission-windows">Window Count</Label>
+                      <Label htmlFor="mission-windows" className="font-semibold text-slate-900">Window Count</Label>
                       {windowCount && <CheckCircle className="w-4 h-4 text-green-500" />}
                     </div>
-                    <Input id="mission-windows" type="number" placeholder="10" min="1" max="100" value={windowCount} onChange={e => setWindowCount(e.target.value)} disabled={isLoading} />
+                    <Input id="mission-windows" type="number" placeholder="10" min="1" max="100" value={windowCount} onChange={e => setWindowCount(e.target.value)} disabled={isLoading} className="h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm" />
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full bg-tools-truth-engine hover:bg-tools-truth-engine/90 text-black font-bold" disabled={isLoading || !isFormValid}>
+                <Button type="submit" variant="cta" className="w-full" disabled={isLoading || !isFormValid}>
                   {isLoading ? <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Initiating Mission...
