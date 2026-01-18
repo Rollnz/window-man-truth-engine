@@ -68,7 +68,7 @@ export const ROUTES = {
 
 /**
  * Footer Navigation Links
- * Used by MinimalFooter component for sticky navigation
+ * Used by UnifiedFooter and MobileStickyFooter components
  */
 export const FOOTER_NAV = {
   // Primary CTAs
