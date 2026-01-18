@@ -248,8 +248,8 @@ async function sendStapeGTMEvent(payload: StapeGTMPayload): Promise<void> {
       event_name: 'Lead',
       event_id: payload.leadId,           // Deduplication key
       external_id: payload.leadId,
-      em: hashedEmail,                    // SHA256 hashed email
-      ph: hashedPhone || undefined,       // SHA256 hashed phone (optional)
+      email: hashedEmail,                 // SHA256 hashed email (for FB CAPI mapping)
+      phone: hashedPhone || undefined,    // SHA256 hashed phone (for FB CAPI mapping)
       _fbp: payload.fbp || undefined,
       _fbc: payload.fbc || undefined,
       client_user_agent: payload.userAgent,
