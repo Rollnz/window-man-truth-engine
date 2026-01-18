@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
@@ -18,7 +17,7 @@ import { Mail, Check, Loader2, Unlock } from 'lucide-react';
 import { trackEvent, trackModalOpen } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import type { SourceTool } from '@/types/sourceTool';
-import { FormSurfaceProvider } from '@/components/forms/FormSurfaceProvider';
+import { TrustModal } from '@/components/forms/TrustModal';
 
 interface IntelLeadModalProps {
   isOpen: boolean;
@@ -172,8 +171,7 @@ export function IntelLeadModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      {/* White card modal with trust styling */}
-      <DialogContent className="sm:max-w-md bg-white dark:bg-white border-t-4 border-t-primary shadow-xl">
+      <TrustModal className="sm:max-w-md">
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
@@ -212,56 +210,54 @@ export function IntelLeadModal({
               </DialogDescription>
             </DialogHeader>
 
-            {/* Wrap form in FormSurfaceProvider for automatic trust styling */}
-            <FormSurfaceProvider surface="trust">
-              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="intel-email" className={`font-semibold text-slate-900 ${emailHasError ? 'text-destructive' : ''}`}>
-                    Email Address
-                  </Label>
-                  <Input
-                    id="intel-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    {...emailProps}
-                    disabled={isLoading}
-                    autoFocus
-                    className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''}
-                    aria-invalid={emailHasError}
-                    aria-describedby={emailHasError ? 'intel-email-error' : undefined}
-                  />
-                  {emailHasError && (
-                    <p id="intel-email-error" className="text-sm text-destructive">{emailError}</p>
-                  )}
-                </div>
+            {/* TrustModal auto-wraps children with FormSurfaceProvider surface="trust" */}
+            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="intel-email" className={`font-semibold text-slate-900 ${emailHasError ? 'text-destructive' : ''}`}>
+                  Email Address
+                </Label>
+                <Input
+                  id="intel-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  {...emailProps}
+                  disabled={isLoading}
+                  autoFocus
+                  className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  aria-invalid={emailHasError}
+                  aria-describedby={emailHasError ? 'intel-email-error' : undefined}
+                />
+                {emailHasError && (
+                  <p id="intel-email-error" className="text-sm text-destructive">{emailError}</p>
+                )}
+              </div>
 
-                <Button
-                  type="submit"
-                  variant="cta"
-                  className="w-full"
-                  disabled={isLoading || !values.email.trim()}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Unlocking...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Unlock & Access
-                    </>
-                  )}
-                </Button>
-                
-                <p className="text-xs text-slate-500 text-center">
-                  No spam. Just your document + helpful resources.
-                </p>
-              </form>
-            </FormSurfaceProvider>
+              <Button
+                type="submit"
+                variant="cta"
+                className="w-full"
+                disabled={isLoading || !values.email.trim()}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Unlocking...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Unlock & Access
+                  </>
+                )}
+              </Button>
+              
+              <p className="text-xs text-slate-500 text-center">
+                No spam. Just your document + helpful resources.
+              </p>
+            </form>
           </>
         )}
-      </DialogContent>
+      </TrustModal>
     </Dialog>
   );
 }

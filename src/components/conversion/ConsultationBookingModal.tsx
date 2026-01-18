@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import { Calendar, Check, Loader2 } from "lucide-react";
 import { trackEvent, trackModalOpen } from "@/lib/gtm";
 import { getAttributionData, buildAIContextFromSession } from "@/lib/attribution";
 import type { SourceTool } from "@/types/sourceTool";
-import { FormSurfaceProvider } from "@/components/forms/FormSurfaceProvider";
+import { TrustModal } from "@/components/forms/TrustModal";
 
 interface ConsultationBookingModalProps {
   isOpen: boolean;
@@ -199,8 +199,7 @@ export function ConsultationBookingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      {/* White card modal with trust styling */}
-      <DialogContent className="sm:max-w-md p-5 bg-white dark:bg-white border-t-4 border-t-primary shadow-xl">
+      <TrustModal className="sm:max-w-md p-5">
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center py-6 text-center">
             <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mb-3">
@@ -220,144 +219,142 @@ export function ConsultationBookingModal({
               </DialogDescription>
             </DialogHeader>
 
-            {/* Wrap form in FormSurfaceProvider - inputs auto-style correctly */}
-            <FormSurfaceProvider surface="trust">
-              <form onSubmit={handleSubmit} className="space-y-3">
-                <div className="space-y-1">
-                  <Label htmlFor="name" className={`text-sm font-semibold text-slate-900 ${hasError("name") ? "text-destructive" : ""}`}>
-                    Your Name
-                  </Label>
-                  <Input
-                    id="name"
-                    placeholder="John Smith"
-                    {...nameProps}
-                    disabled={isLoading}
-                    className={`h-9 ${hasError("name") ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    aria-invalid={hasError("name")}
-                    aria-describedby={hasError("name") ? "name-error" : undefined}
-                  />
-                  {hasError("name") && (
-                    <p id="name-error" className="text-xs text-destructive">
-                      {getError("name")}
-                    </p>
-                  )}
-                </div>
+            {/* TrustModal auto-wraps children with FormSurfaceProvider surface="trust" */}
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="name" className={`text-sm font-semibold text-slate-900 ${hasError("name") ? "text-destructive" : ""}`}>
+                  Your Name
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="John Smith"
+                  {...nameProps}
+                  disabled={isLoading}
+                  className={`h-9 ${hasError("name") ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  aria-invalid={hasError("name")}
+                  aria-describedby={hasError("name") ? "name-error" : undefined}
+                />
+                {hasError("name") && (
+                  <p id="name-error" className="text-xs text-destructive">
+                    {getError("name")}
+                  </p>
+                )}
+              </div>
 
-                <div className="space-y-1">
-                  <Label htmlFor="consult-email" className={`text-sm font-semibold text-slate-900 ${hasError("email") ? "text-destructive" : ""}`}>
-                    Email Address
-                  </Label>
-                  <Input
-                    id="consult-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    {...emailProps}
-                    disabled={isLoading}
-                    className={`h-9 ${hasError("email") ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    aria-invalid={hasError("email")}
-                    aria-describedby={hasError("email") ? "email-error" : undefined}
-                  />
-                  {hasError("email") && (
-                    <p id="email-error" className="text-xs text-destructive">
-                      {getError("email")}
-                    </p>
-                  )}
-                </div>
+              <div className="space-y-1">
+                <Label htmlFor="consult-email" className={`text-sm font-semibold text-slate-900 ${hasError("email") ? "text-destructive" : ""}`}>
+                  Email Address
+                </Label>
+                <Input
+                  id="consult-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  {...emailProps}
+                  disabled={isLoading}
+                  className={`h-9 ${hasError("email") ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  aria-invalid={hasError("email")}
+                  aria-describedby={hasError("email") ? "email-error" : undefined}
+                />
+                {hasError("email") && (
+                  <p id="email-error" className="text-xs text-destructive">
+                    {getError("email")}
+                  </p>
+                )}
+              </div>
 
-                <div className="space-y-1">
-                  <Label htmlFor="phone" className={`text-sm font-semibold text-slate-900 ${hasError("phone") ? "text-destructive" : ""}`}>
-                    Phone Number
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="(555) 123-4567"
-                    {...phoneProps}
-                    disabled={isLoading}
-                    className={`h-9 ${hasError("phone") ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    aria-invalid={hasError("phone")}
-                    aria-describedby={hasError("phone") ? "phone-error" : undefined}
-                  />
-                  {hasError("phone") && (
-                    <p id="phone-error" className="text-xs text-destructive">
-                      {getError("phone")}
-                    </p>
-                  )}
-                </div>
+              <div className="space-y-1">
+                <Label htmlFor="phone" className={`text-sm font-semibold text-slate-900 ${hasError("phone") ? "text-destructive" : ""}`}>
+                  Phone Number
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="(555) 123-4567"
+                  {...phoneProps}
+                  disabled={isLoading}
+                  className={`h-9 ${hasError("phone") ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  aria-invalid={hasError("phone")}
+                  aria-describedby={hasError("phone") ? "phone-error" : undefined}
+                />
+                {hasError("phone") && (
+                  <p id="phone-error" className="text-xs text-destructive">
+                    {getError("phone")}
+                  </p>
+                )}
+              </div>
 
-                <div className="space-y-1">
-                  <Label
-                    htmlFor="preferred-time"
-                    className={`text-sm font-semibold text-slate-900 ${hasError("preferredTime") ? "text-destructive" : ""}`}
-                  >
-                    Best Time to Call
-                  </Label>
-                  <Select
-                    value={values.preferredTime}
-                    onValueChange={(value) => setValue("preferredTime", value)}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger
-                      id="preferred-time"
-                      className={`h-9 ${hasError("preferredTime") ? "border-destructive focus:ring-destructive" : ""}`}
-                      aria-invalid={hasError("preferredTime")}
-                      aria-describedby={hasError("preferredTime") ? "time-error" : undefined}
-                    >
-                      <SelectValue placeholder="Select a time..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {hasError("preferredTime") && (
-                    <p id="time-error" className="text-xs text-destructive">
-                      {getError("preferredTime")}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="notes" className="text-sm font-semibold text-slate-900">
-                    Additional Notes (Optional)
-                  </Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Any specific questions or concerns?"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    disabled={isLoading}
-                    rows={2}
-                    className="resize-none"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  variant="cta"
-                  className="w-full h-10 mt-2"
+              <div className="space-y-1">
+                <Label
+                  htmlFor="preferred-time"
+                  className={`text-sm font-semibold text-slate-900 ${hasError("preferredTime") ? "text-destructive" : ""}`}
+                >
+                  Best Time to Call
+                </Label>
+                <Select
+                  value={values.preferredTime}
+                  onValueChange={(value) => setValue("preferredTime", value)}
                   disabled={isLoading}
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Scheduling...
-                    </>
-                  ) : (
-                    <>
-                      <Calendar className="mr-2 h-4 w-4" />
-                      Request Consultation
-                    </>
-                  )}
-                </Button>
-              </form>
-            </FormSurfaceProvider>
+                  <SelectTrigger
+                    id="preferred-time"
+                    className={`h-9 ${hasError("preferredTime") ? "border-destructive focus:ring-destructive" : ""}`}
+                    aria-invalid={hasError("preferredTime")}
+                    aria-describedby={hasError("preferredTime") ? "time-error" : undefined}
+                  >
+                    <SelectValue placeholder="Select a time..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {hasError("preferredTime") && (
+                  <p id="time-error" className="text-xs text-destructive">
+                    {getError("preferredTime")}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="notes" className="text-sm font-semibold text-slate-900">
+                  Additional Notes (Optional)
+                </Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Any specific questions or concerns?"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  disabled={isLoading}
+                  rows={2}
+                  className="resize-none"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                variant="cta"
+                className="w-full h-10 mt-2"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Scheduling...
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Request Consultation
+                  </>
+                )}
+              </Button>
+            </form>
           </>
         )}
-      </DialogContent>
+      </TrustModal>
     </Dialog>
   );
 }
