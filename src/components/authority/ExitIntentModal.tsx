@@ -25,6 +25,7 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { trackEvent } from '@/lib/gtm';
 import type { SourceTool } from '@/types/sourceTool';
+import { FormSurfaceProvider } from '@/components/forms/FormSurfaceProvider';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -628,7 +629,7 @@ export function ExitIntentModal({
     >
       <div
         className={`
-          relative w-full max-w-md bg-white rounded-xl border-t-4 border-primary shadow-2xl
+          relative w-full max-w-md bg-white dark:bg-white rounded-xl border-t-4 border-primary shadow-2xl
           animate-in fade-in slide-in-from-right-4 duration-300
           max-h-[90vh] overflow-y-auto
           ${currentStep === 'insider_price' ? 'p-6 sm:p-8' : ''}
@@ -636,6 +637,8 @@ export function ExitIntentModal({
           ${currentStep === 'kitchen_table' ? 'p-4 sm:p-6' : ''}
         `}
       >
+      {/* FormSurfaceProvider wraps all form content for trust styling */}
+      <FormSurfaceProvider surface="trust">
         {/* Close button */}
         <button
           onClick={() => handleClose('user_closed')}
@@ -697,7 +700,7 @@ export function ExitIntentModal({
                   {...step1Form.getFieldProps('name')}
                   onChange={handleInputChange('name', step1Form.getFieldProps('name').onChange)}
                   placeholder="Your name"
-                  className={`bg-white border-gray-300 shadow-sm ${step1Form.hasError('name') ? 'border-destructive' : ''}`}
+                  className={step1Form.hasError('name') ? 'border-destructive' : ''}
                   disabled={step1Submit.isSubmitting}
                 />
                 {step1Form.hasError('name') && (
@@ -712,7 +715,7 @@ export function ExitIntentModal({
                   {...step1Form.getFieldProps('email')}
                   onChange={handleInputChange('email', step1Form.getFieldProps('email').onChange)}
                   placeholder="your@email.com"
-                  className={`bg-white border-gray-300 shadow-sm ${step1Form.hasError('email') ? 'border-destructive' : ''}`}
+                  className={step1Form.hasError('email') ? 'border-destructive' : ''}
                   disabled={step1Submit.isSubmitting}
                 />
                 {step1Form.hasError('email') && (
@@ -727,7 +730,7 @@ export function ExitIntentModal({
                   {...step1Form.getFieldProps('phone')}
                   onChange={handleInputChange('phone', step1Form.getFieldProps('phone').onChange)}
                   placeholder="(555) 555-5555"
-                  className={`bg-white border-gray-300 shadow-sm ${step1Form.hasError('phone') ? 'border-destructive' : ''}`}
+                  className={step1Form.hasError('phone') ? 'border-destructive' : ''}
                   disabled={step1Submit.isSubmitting}
                 />
                 {step1Form.hasError('phone') && (
@@ -792,7 +795,7 @@ export function ExitIntentModal({
                   {...step2Form.getFieldProps('phone')}
                   onChange={handleInputChange('phone', step2Form.getFieldProps('phone').onChange)}
                   placeholder="(555) 555-5555"
-                  className={`bg-white border-gray-300 shadow-sm ${step2Form.hasError('phone') ? 'border-destructive' : ''}`}
+                  className={step2Form.hasError('phone') ? 'border-destructive' : ''}
                   disabled={step2Submit.isSubmitting}
                 />
                 {step2Form.hasError('phone') && (
@@ -851,7 +854,7 @@ export function ExitIntentModal({
                   {...step3Form.getFieldProps('email')}
                   onChange={handleInputChange('email', step3Form.getFieldProps('email').onChange)}
                   placeholder="your@email.com"
-                  className={`bg-white border-gray-300 shadow-sm ${step3Form.hasError('email') ? 'border-destructive' : ''}`}
+                  className={step3Form.hasError('email') ? 'border-destructive' : ''}
                   disabled={step3Submit.isSubmitting}
                 />
                 {step3Form.hasError('email') && (
@@ -882,6 +885,7 @@ export function ExitIntentModal({
             </form>
           </div>
         )}
+        </FormSurfaceProvider>
       </div>
     </div>
   );
