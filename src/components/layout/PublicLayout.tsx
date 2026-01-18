@@ -1,7 +1,12 @@
 import { Outlet } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { UnifiedFooter } from '@/components/navigation/UnifiedFooter';
 import { MobileStickyFooter } from '@/components/navigation/MobileStickyFooter';
-import { FloatingEstimateButton } from '@/components/floating-cta';
+
+// Lazy load FAB - ensures it's the absolute last thing to load
+const FloatingEstimateButton = lazy(() => 
+  import('@/components/floating-cta/FloatingEstimateButton').then(m => ({ default: m.FloatingEstimateButton }))
+);
 
 /**
  * PublicLayout wraps all public-facing pages with the unified footer system.
@@ -29,8 +34,10 @@ export function PublicLayout() {
       {/* Mobile-only sticky CTA bar */}
       <MobileStickyFooter />
       
-      {/* Floating CTA button - appears on all public pages */}
-      <FloatingEstimateButton />
+      {/* Floating CTA button - lazy loaded, appears last on all public pages */}
+      <Suspense fallback={null}>
+        <FloatingEstimateButton />
+      </Suspense>
     </div>
   );
 }
