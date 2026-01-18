@@ -738,8 +738,8 @@ serve(async (req) => {
     // GUARD: Cap body size (7MB for image)
     capBodySize(rawBody, 7_000_000);
     
-    // GUARD: Rate limit (10 per hour per IP)
-    const rateLimitCheck = await checkRateLimit(clientIP, "quote-scanner", 10, 3600000);
+    // GUARD: Rate limit (50 per hour per IP - increased for development testing)
+    const rateLimitCheck = await checkRateLimit(clientIP, "quote-scanner", 50, 3600000);
     if (!rateLimitCheck.allowed) {
       return new Response(
         JSON.stringify({ 
