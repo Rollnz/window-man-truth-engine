@@ -14,7 +14,12 @@ import {
   GoldenThreadNextSteps,
   type NextStepTool,
 } from '@/components/proof';
-import { trackEvent as trackGTMEvent } from '@/lib/gtm';
+import { 
+  track, 
+  trackSectionView, 
+  trackCTAClick, 
+  trackToolRoute 
+} from '@/lib/tracking';
 
 /**
  * /proof - The Evidence Locker
@@ -30,140 +35,87 @@ export default function Proof() {
   const navigate = useNavigate();
   const { sessionData, updateFields, markToolCompleted } = useSessionData();
 
-  // Track section views for lead scoring
+  // Track section views for lead scoring (deduped in trackSectionView)
   const handleSectionView = useCallback((sectionId: string) => {
-    const storageKey = `wm_proof_viewed_${sectionId}`;
-    if (sessionStorage.getItem(storageKey)) return;
-    
-    sessionStorage.setItem(storageKey, '1');
-    
-    trackGTMEvent('wm_proof_section_view', {
-      section_id: sectionId,
-      page_path: '/proof',
-    });
+    trackSectionView(sectionId, '/proof');
   }, []);
 
-  // CTA handlers with tracking
+  // CTA handlers with unified tracking
   const handleWatchVoiceAgent = useCallback(() => {
-    trackGTMEvent('wm_proof_cta_click', {
-      cta_id: 'watch_voice_agent',
-      section_id: 'hero',
-      target_path: '#voice-agent',
-    });
-    
+    trackCTAClick('watch_voice_agent', 'hero', '#voice-agent', '/proof');
     document.getElementById('voice-agent')?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
   const handleViewCaseStudies = useCallback(() => {
-    trackGTMEvent('wm_proof_cta_click', {
-      cta_id: 'view_case_studies',
-      section_id: 'hero',
-      target_path: '#case-vault',
-    });
-    
+    trackCTAClick('view_case_studies', 'hero', '#case-vault', '/proof');
     document.getElementById('case-vault')?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
   const handleAuditQuote = useCallback(() => {
-    trackGTMEvent('wm_proof_cta_click', {
-      cta_id: 'audit_my_quote',
-      section_id: 'truth-audit',
-      target_path: '/ai-scanner',
-    });
-    trackGTMEvent('wm_tool_route', {
-      from_page: '/proof',
-      to_tool: 'quote_scanner',
-      target_path: '/ai-scanner',
-    });
-    
+    trackCTAClick('audit_my_quote', 'truth-audit', '/ai-scanner', '/proof');
+    trackToolRoute('/proof', 'quote_scanner', '/ai-scanner');
     navigate('/ai-scanner');
   }, [navigate]);
 
   const handleListenToCall = useCallback(() => {
-    trackGTMEvent('wm_proof_cta_click', {
-      cta_id: 'listen_real_call',
+    trackCTAClick('listen_real_call', 'voice-agent', 'call_player', '/proof');
+    track('wm_proof_call_player_open', {
       section_id: 'voice-agent',
-      target_path: 'call_player',
+      page_path: '/proof',
     });
-    
-    // TODO: Open call player modal
     // For now, navigate to expert page
     navigate('/expert');
   }, [navigate]);
 
   const handleTranscriptOpen = useCallback((transcriptId: string, topic: string) => {
-    trackGTMEvent('wm_proof_transcript_open', {
+    track('wm_proof_transcript_open', {
       section_id: 'voice-agent',
       transcript_id: transcriptId,
       topic,
+      page_path: '/proof',
     });
   }, []);
 
   const handleTranscriptFilterChange = useCallback((topic: string) => {
-    trackGTMEvent('wm_proof_transcript_filter', {
+    track('wm_proof_transcript_filter', {
       section_id: 'voice-agent',
       filter_topic: topic,
+      page_path: '/proof',
     });
   }, []);
 
   const handleCalculateCostOfInaction = useCallback(() => {
-    trackGTMEvent('wm_proof_cta_click', {
-      cta_id: 'calculate_cost_of_inaction',
-      section_id: 'economic-proof',
-      target_path: '/cost-calculator',
-    });
-    trackGTMEvent('wm_tool_route', {
-      from_page: '/proof',
-      to_tool: 'cost_of_inaction',
-      target_path: '/cost-calculator',
-    });
-    
+    trackCTAClick('calculate_cost_of_inaction', 'economic-proof', '/cost-calculator', '/proof');
+    trackToolRoute('/proof', 'cost_of_inaction', '/cost-calculator');
     navigate('/cost-calculator');
   }, [navigate]);
 
   const handleDossierOpen = useCallback((caseId: string, county: string, scenarioType: string) => {
-    trackGTMEvent('wm_proof_dossier_open', {
+    track('wm_proof_dossier_open', {
       section_id: 'case-vault',
       case_id: caseId,
       county,
       scenario_type: scenarioType,
+      page_path: '/proof',
     });
   }, []);
 
   const handleDossierFilterChange = useCallback((filters: { county?: string; scenarioType?: string }) => {
-    trackGTMEvent('wm_proof_dossier_filter', {
+    track('wm_proof_dossier_filter', {
       section_id: 'case-vault',
-      filters,
+      page_path: '/proof',
     });
   }, []);
 
   const handleSeeHowMyHomeCompares = useCallback(() => {
-    trackGTMEvent('wm_proof_cta_click', {
-      cta_id: 'see_how_my_home_compares',
-      section_id: 'case-vault',
-      target_path: '/reality-check',
-    });
-    trackGTMEvent('wm_tool_route', {
-      from_page: '/proof',
-      to_tool: 'reality_check',
-      target_path: '/reality-check',
-    });
-    
+    trackCTAClick('see_how_my_home_compares', 'case-vault', '/reality-check', '/proof');
+    trackToolRoute('/proof', 'reality_check', '/reality-check');
     navigate('/reality-check');
   }, [navigate]);
 
   const handleToolSelect = useCallback((tool: NextStepTool) => {
-    trackGTMEvent('wm_proof_cta_click', {
-      cta_id: tool.ctaId,
-      section_id: 'golden-thread',
-      target_path: tool.path,
-    });
-    trackGTMEvent('wm_tool_route', {
-      from_page: '/proof',
-      to_tool: tool.id.replace('-', '_'),
-      target_path: tool.path,
-    });
-    
+    trackCTAClick(tool.ctaId, 'golden-thread', tool.path, '/proof');
+    trackToolRoute('/proof', tool.id.replace('-', '_'), tool.path);
     navigate(tool.path);
   }, [navigate]);
 

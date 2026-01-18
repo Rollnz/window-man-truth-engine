@@ -14,7 +14,8 @@ interface SectionFrameProps {
 /**
  * SectionFrame - Standard section wrapper with IntersectionObserver
  * Sets data-inview="true" once when section enters viewport
- * Respects prefers-reduced-motion
+ * Children use .wm-reveal for staggered entrance animations
+ * Respects prefers-reduced-motion via CSS
  */
 export function SectionFrame({
   id,
@@ -56,10 +57,6 @@ export function SectionFrame({
       data-inview={inView}
       className={cn(
         'py-12 md:py-20 scroll-mt-20',
-        // Entrance animation (respects reduced motion)
-        'transition-all duration-500 ease-out',
-        !inView && 'opacity-0 translate-y-4 motion-reduce:opacity-100 motion-reduce:translate-y-0',
-        inView && 'opacity-100 translate-y-0',
         className
       )}
     >
@@ -68,19 +65,19 @@ export function SectionFrame({
         {(eyebrow || title || subtitle) && (
           <div className="max-w-3xl mx-auto text-center mb-8 md:mb-12">
             {eyebrow && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
+              <div className="wm-reveal wm-stagger-0 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
                 <span className="text-sm text-primary font-medium">{eyebrow}</span>
               </div>
             )}
             
             {title && (
-              <h2 className="text-2xl md:text-4xl font-bold mb-4">
+              <h2 className="wm-reveal wm-stagger-1 text-2xl md:text-4xl font-bold mb-4">
                 {title}
               </h2>
             )}
             
             {subtitle && (
-              <p className="text-lg text-muted-foreground">
+              <p className="wm-reveal wm-stagger-2 text-lg text-muted-foreground">
                 {subtitle}
               </p>
             )}

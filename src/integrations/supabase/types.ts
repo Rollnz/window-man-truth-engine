@@ -109,6 +109,51 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_activities: {
+        Row: {
+          client_id: string
+          created_at: string
+          event_id: string
+          event_name: string
+          id: string
+          lead_id: string | null
+          page_path: string | null
+          payload: Json
+          score_delta: number
+          section_id: string | null
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          event_id: string
+          event_name: string
+          id?: string
+          lead_id?: string | null
+          page_path?: string | null
+          payload?: Json
+          score_delta?: number
+          section_id?: string | null
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          event_id?: string
+          event_name?: string
+          id?: string
+          lead_id?: string | null
+          page_path?: string | null
+          payload?: Json
+          score_delta?: number
+          section_id?: string | null
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       lead_notes: {
         Row: {
           admin_email: string | null
@@ -147,19 +192,28 @@ export type Database = {
       leads: {
         Row: {
           chat_history: Json | null
+          client_id: string | null
           created_at: string | null
           email: string
           emotional_state: string | null
           fbc: string | null
           fbp: string | null
+          first_touch: Json | null
           gclid: string | null
           id: string
           insurance_carrier: string | null
+          last_activity_at: string | null
+          last_evidence: Json | null
+          last_touch: Json | null
+          lead_score_last_7d: number | null
+          lead_score_total: number | null
+          lead_status: string | null
           msclkid: string | null
           name: string | null
           phone: string | null
           session_data: Json | null
           source_form: string | null
+          source_page: string | null
           source_tool: string
           specific_detail: string | null
           updated_at: string | null
@@ -174,19 +228,28 @@ export type Database = {
         }
         Insert: {
           chat_history?: Json | null
+          client_id?: string | null
           created_at?: string | null
           email: string
           emotional_state?: string | null
           fbc?: string | null
           fbp?: string | null
+          first_touch?: Json | null
           gclid?: string | null
           id?: string
           insurance_carrier?: string | null
+          last_activity_at?: string | null
+          last_evidence?: Json | null
+          last_touch?: Json | null
+          lead_score_last_7d?: number | null
+          lead_score_total?: number | null
+          lead_status?: string | null
           msclkid?: string | null
           name?: string | null
           phone?: string | null
           session_data?: Json | null
           source_form?: string | null
+          source_page?: string | null
           source_tool?: string
           specific_detail?: string | null
           updated_at?: string | null
@@ -201,19 +264,28 @@ export type Database = {
         }
         Update: {
           chat_history?: Json | null
+          client_id?: string | null
           created_at?: string | null
           email?: string
           emotional_state?: string | null
           fbc?: string | null
           fbp?: string | null
+          first_touch?: Json | null
           gclid?: string | null
           id?: string
           insurance_carrier?: string | null
+          last_activity_at?: string | null
+          last_evidence?: Json | null
+          last_touch?: Json | null
+          lead_score_last_7d?: number | null
+          lead_score_total?: number | null
+          lead_status?: string | null
           msclkid?: string | null
           name?: string | null
           phone?: string | null
           session_data?: Json | null
           source_form?: string | null
+          source_page?: string | null
           source_tool?: string
           specific_detail?: string | null
           updated_at?: string | null

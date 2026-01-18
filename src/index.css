@@ -694,3 +694,106 @@
     border: 1px solid hsl(var(--primary) / 0.3);
   }
 }
+
+/* ============================================
+   WINDOW MAN MOTION DISCIPLINE SYSTEM
+   CSS-first, GPU-accelerated, reduced-motion safe
+   ============================================ */
+
+/* Base reveal class - children of [data-inview="true"] animate in */
+.wm-reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 350ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+[data-inview="true"] .wm-reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger utilities for sequential reveals */
+.wm-stagger-0 { transition-delay: 0ms; }
+.wm-stagger-1 { transition-delay: 80ms; }
+.wm-stagger-2 { transition-delay: 160ms; }
+.wm-stagger-3 { transition-delay: 240ms; }
+.wm-stagger-4 { transition-delay: 320ms; }
+.wm-stagger-5 { transition-delay: 400ms; }
+
+/* Directional slide variants */
+.wm-slide-left {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 350ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+.wm-slide-right {
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 350ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+[data-inview="true"] .wm-slide-left,
+[data-inview="true"] .wm-slide-right {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Scan sweep effect - light bar passes across element once */
+.wm-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.wm-sweep::after {
+  content: "";
+  position: absolute;
+  inset: -20% auto -20% -120%;
+  width: 60%;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.12), transparent);
+  transform: translateX(0);
+  pointer-events: none;
+}
+
+[data-inview="true"] .wm-sweep::after {
+  animation: wmSweep 900ms cubic-bezier(0.2, 0.8, 0.2, 1) 1;
+}
+
+@keyframes wmSweep {
+  from { transform: translateX(0); }
+  to { transform: translateX(240%); }
+}
+
+/* Button press micro-interaction */
+.wm-btn-press {
+  transition: transform 150ms ease-out;
+}
+
+.wm-btn-press:active {
+  transform: scale(0.98);
+}
+
+/* Reduced motion - respect user preferences */
+@media (prefers-reduced-motion: reduce) {
+  .wm-reveal,
+  .wm-slide-left,
+  .wm-slide-right {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  
+  .wm-sweep::after {
+    animation: none !important;
+  }
+  
+  .wm-btn-press:active {
+    transform: none !important;
+  }
+}
