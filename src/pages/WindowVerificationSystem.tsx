@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
-import { ReviewedByBadge } from "@/components/authority";
+import { ReviewedByBadge, ExitIntentModal } from "@/components/authority";
 import { getReviewBoardSchema } from "@/config/expertIdentity";
 import { generatePillarSchemaGraph, generateFAQSchema } from "@/lib/seoSchemas";
 
@@ -253,6 +253,12 @@ const WindowVerificationSystem = () => {
       </main>
 
       <Footer />
+
+      <ExitIntentModal
+        sourceTool="window-verification-system"
+        hasConverted={false}
+        resultSummary="Verifying window quotes and installers before signing"
+      />
     </div>
   );
 };
