@@ -91,6 +91,24 @@ export type Database = {
           },
         ]
       }
+      job_heartbeats: {
+        Row: {
+          job_name: string
+          last_run_at: string
+          last_summary: Json | null
+        }
+        Insert: {
+          job_name: string
+          last_run_at?: string
+          last_summary?: Json | null
+        }
+        Update: {
+          job_name?: string
+          last_run_at?: string
+          last_summary?: Json | null
+        }
+        Relationships: []
+      }
       lead_notes: {
         Row: {
           admin_email: string | null
@@ -703,6 +721,10 @@ export type Database = {
           phone_e164: string
           source_tool: string
         }[]
+      }
+      rpc_retry_dead_letter: {
+        Args: { p_call_request_id: string }
+        Returns: Json
       }
       update_lead_score_from_session: {
         Args: { p_session_id: string }
