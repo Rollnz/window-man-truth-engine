@@ -62,11 +62,23 @@ interface ChartData {
   total: number;
 }
 
+/**
+ * Obscures a phone number by replacing all leading characters with asterisks while preserving the last four digits.
+ *
+ * @param phone - The phone number string to mask.
+ * @returns `****` followed by the last four characters of `phone`, or `'****'` if `phone` is empty or has fewer than four characters.
+ */
 function maskPhone(phone: string): string {
   if (!phone || phone.length < 4) return '****';
   return `****${phone.slice(-4)}`;
 }
 
+/**
+ * Render a status Badge component for a phone call status.
+ *
+ * @param status - The status key (e.g., "pending", "completed", "dead_letter") used to determine the badge label and visual variant
+ * @returns A React element (`Badge`) whose label and variant correspond to the provided `status`; if the status is unknown the raw status string is shown with the `outline` variant
+ */
 function getStatusBadge(status: string) {
   const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
     pending: { variant: 'outline', label: 'Pending' },
@@ -82,6 +94,12 @@ function getStatusBadge(status: string) {
   return <Badge variant={config.variant}>{config.label}</Badge>;
 }
 
+/**
+ * Render a Badge for a given sentiment value.
+ *
+ * @param sentiment - The sentiment key (`'positive'`, `'neutral'`, `'negative'`) or `null`.
+ * @returns A Badge element with an appropriate label for the sentiment, or `null` if `sentiment` is `null` or empty.
+ */
 function getSentimentBadge(sentiment: string | null) {
   if (!sentiment) return null;
   const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive'; label: string }> = {
@@ -93,6 +111,16 @@ function getSentimentBadge(sentiment: string | null) {
   return <Badge variant={config.variant}>{config.label}</Badge>;
 }
 
+/**
+ * Render the phone call operations dashboard for monitoring and managing call queues and recent outcomes.
+ *
+ * Displays KPI cards, a seven-day sentiment stacked bar chart by source, a filterable call queue with retry actions,
+ * a table of recent call outcomes with review and playback links, and a call review modal.
+ *
+ * The component fetches and derives live stats and logs, and exposes UI controls for filtering, refreshing, retrying dead-letter calls, and opening a review modal.
+ *
+ * @returns A React element containing the operations dashboard UI (KPIs, chart, queue table, outcomes table, and review modal).
+ */
 export function PhoneCallOpsPanel() {
   const [stats, setStats] = useState<QueueStats | null>(null);
   const [pendingCalls, setPendingCalls] = useState<PendingCall[]>([]);

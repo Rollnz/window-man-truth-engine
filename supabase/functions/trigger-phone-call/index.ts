@@ -22,7 +22,12 @@ interface RequestBody {
   context?: Record<string, unknown>;
 }
 
-// Normalize phone to E.164 format (basic normalization)
+/**
+ * Normalizes a phone number string into a basic E.164-like format.
+ *
+ * @param phone - The input phone number, which may include spaces, punctuation, or a leading `+`.
+ * @returns The phone formatted for E.164-like usage: preserves a leading `+`, removes other non-digit characters, prepends `+1` for 10-digit numbers (assumed US), prepends `+` for 11-digit numbers starting with `1`, and otherwise ensures the result starts with `+`.
+ */
 function normalizePhone(phone: string): string {
   // Remove all non-digit characters except leading +
   let cleaned = phone.replace(/[^\d+]/g, '');
@@ -46,7 +51,12 @@ function normalizePhone(phone: string): string {
   return `+${cleaned}`;
 }
 
-// Compute SHA-256 hash of phone for idempotency
+/**
+ * Produce a SHA-256 hex digest of a phone string for idempotent identification.
+ *
+ * @param phone - The phone string to hash (preferably normalized to E.164 before calling)
+ * @returns The lowercase hex-encoded SHA-256 digest of `phone`
+ */
 async function hashPhone(phone: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(phone);
@@ -55,13 +65,24 @@ async function hashPhone(phone: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Mask phone for logging
+/**
+ * Obfuscates a phone number for logging by showing only its last four characters.
+ *
+ * @param phone - The phone number to mask
+ * @returns A string containing only the last four characters of `phone` preceded by `****`; returns `****` if `phone` is missing or shorter than four characters
+ */
 function maskPhone(phone: string): string {
   if (!phone || phone.length < 4) return '****';
   return `****${phone.slice(-4)}`;
 }
 
-// Interpolate template variables
+/**
+ * Replaces `{first_name}` in a message template with the given first name, or removes the placeholder and surrounding punctuation/extra whitespace when no name is provided.
+ *
+ * @param template - Message template that may contain `{first_name}` placeholders
+ * @param firstName - Optional first name to insert; if omitted or empty, the placeholder is removed and nearby commas/spaces are cleaned up
+ * @returns The rendered message with the `{first_name}` placeholder replaced or removed
+ */
 function interpolateTemplate(template: string, firstName?: string): string {
   if (!firstName || firstName.trim() === '') {
     // Remove the name placeholder and clean up
@@ -73,7 +94,19 @@ function interpolateTemplate(template: string, firstName?: string): string {
   return template.replace(/\{first_name\}/gi, firstName);
 }
 
-// Build allowlisted payload for storage
+/**
+ * Constructs a sanitized, allowlisted payload from provided context, email, and first name for storage.
+ *
+ * Includes `email` (as `email`) and `firstName` (as `first_name`) when provided. From `context`, only the
+ * allowlisted keys `quote_file_id`, `quoteFileId`, `preferredTime`, `notes`, `grade`, `verdict`, and
+ * `originalSourceTool` are copied, and only when their values are scalar (`string`, `number`, or `boolean`)
+ * and not `null`/`undefined`.
+ *
+ * @param context - Arbitrary key/value map; only the listed allowlisted scalar fields may be included in the result.
+ * @param email - Optional email to include as `email` in the payload.
+ * @param firstName - Optional first name to include as `first_name` in the payload.
+ * @returns An object containing the allowed, sanitized payload fields ready for storage.
+ */
 function buildPayload(context?: Record<string, unknown>, email?: string, firstName?: string): Record<string, unknown> {
   const payload: Record<string, unknown> = {};
   

@@ -29,6 +29,14 @@ const formatPhoneNumber = (value: string): string => {
   }
 };
 
+/**
+ * Render the contact details step of the estimate form.
+ *
+ * @param formData - Current estimate form values (name, email, phone).
+ * @param updateFormData - Callback to apply partial updates to the form data.
+ * @param onNext - Callback invoked when the user proceeds to the next step after validation.
+ * @returns The contact details step UI as a React element.
+ */
 export function ContactDetailsStep({ formData, updateFormData, onNext }: ContactDetailsStepProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 

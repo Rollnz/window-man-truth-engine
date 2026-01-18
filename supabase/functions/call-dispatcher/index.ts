@@ -47,19 +47,35 @@ interface HealthStats {
   };
 }
 
-// Helper to mask phone for logging (show only last 4 digits)
+/**
+ * Mask a phone number for safe logging by revealing only the last four digits.
+ *
+ * @param phone - The phone number to mask; may be empty or shorter than four characters.
+ * @returns `****` if `phone` is empty or has fewer than four characters, otherwise `****` followed by the last four digits of `phone`.
+ */
 function maskPhone(phone: string): string {
   if (!phone || phone.length < 4) return '****';
   return `****${phone.slice(-4)}`;
 }
 
-// Helper to truncate error messages for storage
+/**
+ * Convert an error value to a string and truncate it to a maximum length for storage.
+ *
+ * @param error - The error or value to convert to a message string.
+ * @param maxLength - Maximum allowed length of the returned string; defaults to 500.
+ * @returns The error message as a string truncated to at most `maxLength` characters, with `...` appended when truncated.
+ */
 function truncateError(error: unknown, maxLength = 500): string {
   const message = error instanceof Error ? error.message : String(error);
   return message.length > maxLength ? message.slice(0, maxLength) + '...' : message;
 }
 
-// Build flat metadata object for PhoneCall.bot (allowlist only, no nested objects)
+/**
+ * Constructs a flat metadata object for PhoneCall.bot from a claimed call, including an allowlisted set of payload fields.
+ *
+ * @param call - The claimed call to extract metadata from
+ * @returns An object mapping metadata keys to `string`, `number`, or `null`. Always includes `call_request_id`, `source_tool`, and `lead_id` (which is `null` if absent). Also includes any of the allowlisted payload fields present: `email`, `first_name`, `quote_file_id`, `preferredTime`, `grade`, and `verdict`.
+ */
 function buildMetadata(call: ClaimedCall): Record<string, string | number | null> {
   const metadata: Record<string, string | number | null> = {
     call_request_id: call.call_request_id,
@@ -84,7 +100,17 @@ function buildMetadata(call: ClaimedCall): Record<string, string | number | null
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>;
 
-// Health check: get queue stats and today's outcomes
+/**
+ * Collects current queue counts and today's call outcome counts from the database.
+ *
+ * Queries the pending call queue for counts by status and tallies phone call log outcomes
+ * recorded since the start of the current day, returning a timestamped snapshot.
+ *
+ * @returns A `HealthStats` object with:
+ *  - `timestamp`: ISO timestamp of when the snapshot was taken,
+ *  - `queue_stats`: counts for `pending`, `processing`, `called`, and `dead_letter`,
+ *  - `outcomes_today`: counts for `completed`, `no_answer`, `failed`, and `in_progress`.
+ */
 async function getHealthStats(supabase: AnySupabaseClient): Promise<HealthStats> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -140,7 +166,13 @@ async function getHealthStats(supabase: AnySupabaseClient): Promise<HealthStats>
   };
 }
 
-// Update heartbeat record
+/**
+ * Upserts the 'call-dispatcher' heartbeat row with the current timestamp and a summary of results.
+ *
+ * If the database update fails, the error is logged and not rethrown.
+ *
+ * @param result - Summary of dispatch outcomes to store in the heartbeat record
+ */
 async function updateHeartbeat(
   supabase: AnySupabaseClient,
   result: DispatchResult
@@ -158,7 +190,13 @@ async function updateHeartbeat(
   }
 }
 
-// Dispatch a single call to PhoneCall.bot with timeout
+/**
+ * Dispatches a single claimed call to the PhoneCall.bot webhook.
+ *
+ * @param call - The claimed call record to dispatch (contains phone, agent_id, first_message, and payload).
+ * @param webhookUrl - The full webhook URL for PhoneCall.bot to receive the dispatch request.
+ * @returns `true` if the webhook accepted the request and a provider call was created, `false` otherwise; `providerCallId` contains the provider's call identifier when available; `error` contains a short error message when `success` is `false`.
+ */
 async function dispatchCall(
   call: ClaimedCall,
   webhookUrl: string
@@ -237,7 +275,13 @@ async function dispatchCall(
   }
 }
 
-// Notify dead letter handler
+/**
+ * Notify the system that a call request has been moved to the dead-letter queue.
+ *
+ * Invokes the Supabase edge function `notify-dead-letter` with the provided call request ID.
+ *
+ * @param callRequestId - The `call_request_id` of the dead-lettered call to notify about
+ */
 async function notifyDeadLetter(
   supabase: AnySupabaseClient,
   callRequestId: string

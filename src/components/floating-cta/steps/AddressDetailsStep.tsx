@@ -37,6 +37,17 @@ const STATES = [
 // Simple ZIP code validation (5 digits)
 const ZIP_REGEX = /^\d{5}$/;
 
+/**
+ * Render the address details step with street, city, state, and ZIP inputs and inline validation.
+ *
+ * The component validates that street and city are non-empty, a state is selected, and ZIP is a 5-digit code.
+ * Validation errors are shown next to their corresponding fields; an external `error` prop is displayed as a global banner.
+ *
+ * @param updateFormData - Callback to merge partial updates into the parent `formData` object (e.g., `{ city: "Miami" }`).
+ * @param onSubmit - Called when the form passes validation and the user submits the step.
+ * @param error - Optional external error message to display as a global alert banner.
+ * @returns The JSX element for the address details form step.
+ */
 export function AddressDetailsStep({ 
   formData, 
   updateFormData, 

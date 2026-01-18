@@ -25,13 +25,27 @@ interface NotificationContext {
   lead_email?: string;
 }
 
-// Helper to mask phone (show only last 4 digits)
+/**
+ * Masks a phone number by replacing all but the last four digits with asterisks.
+ *
+ * @returns The masked phone string: `'****'` if `phone` is missing or shorter than four characters, otherwise `'****'` followed by the last four digits.
+ */
 function maskPhone(phone: string): string {
   if (!phone || phone.length < 4) return '****';
   return `****${phone.slice(-4)}`;
 }
 
-// Send notification via Resend email
+/**
+ * Send a contextual dead-letter notification email to the admin via Resend.
+ *
+ * Uses fields from `context` (call and optional lead details, masked phone, error, etc.)
+ * to build an HTML message and posts it to the Resend Emails API using `resendApiKey`.
+ *
+ * @param context - NotificationContext containing call metadata and optional lead information used in the email body
+ * @param resendApiKey - Resend API key used to authenticate the request
+ * @param adminEmail - Destination email address for the notification
+ * @returns `true` if the email was sent successfully, `false` otherwise
+ */
 async function sendEmailNotification(
   context: NotificationContext,
   resendApiKey: string,
@@ -118,7 +132,13 @@ async function sendEmailNotification(
   }
 }
 
-// Send notification via webhook
+/**
+ * Send a `dead_letter` event payload (including the notification context and timestamp) to a webhook URL.
+ *
+ * @param context - Notification context containing call and lead details
+ * @param webhookUrl - Full URL of the webhook endpoint to receive the JSON payload
+ * @returns `true` if the webhook responded with a successful HTTP status, `false` otherwise
+ */
 async function sendWebhookNotification(
   context: NotificationContext,
   webhookUrl: string
@@ -149,7 +169,13 @@ async function sendWebhookNotification(
   }
 }
 
-// Send Slack notification
+/**
+ * Post a formatted dead-letter alert to a Slack incoming webhook.
+ *
+ * @param context - Notification context containing call details and optional lead info
+ * @param slackWebhookUrl - Slack incoming webhook URL to receive the alert
+ * @returns `true` if Slack accepted the message, `false` otherwise.
+ */
 async function sendSlackNotification(
   context: NotificationContext,
   slackWebhookUrl: string

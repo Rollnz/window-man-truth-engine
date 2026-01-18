@@ -10,6 +10,14 @@ interface SuccessStepProps {
   onCallNow: () => void;
 }
 
+/**
+ * Render a confirmation step displaying a personalized success message, request summary, next steps, and action buttons.
+ *
+ * @param formData - Estimate form values used to populate the personalized greeting and request summary (windows, project type, timeline, city, state).
+ * @param onClose - Callback invoked when the user chooses to close the step or continue exploring tools.
+ * @param onCallNow - Callback invoked when the user selects the "Call Now" action.
+ * @returns The rendered confirmation step React element.
+ */
 export function SuccessStep({ formData, onClose, onCallNow }: SuccessStepProps) {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">

@@ -12,9 +12,15 @@ interface SectionFrameProps {
 }
 
 /**
- * SectionFrame - Standard section wrapper with IntersectionObserver
- * Sets data-inview="true" once when section enters viewport
- * Respects prefers-reduced-motion
+ * Wraps content in a section that marks itself in-view when it first enters the viewport.
+ *
+ * When the section intersects the viewport (threshold 0.15, rootMargin '-50px') it sets the
+ * `data-inview` attribute to `true` once and invokes `onInView` with the section `id` if provided.
+ * The component applies an entrance animation that respects users' reduced-motion preferences.
+ *
+ * @param id - The HTML id applied to the section; passed to `onInView` when the section becomes visible.
+ * @param onInView - Optional callback invoked once with the section `id` when the section first enters view.
+ * @returns The section element containing an optional eyebrow, title, subtitle, and the provided children.
  */
 export function SectionFrame({
   id,

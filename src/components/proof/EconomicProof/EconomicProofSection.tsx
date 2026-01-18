@@ -11,8 +11,11 @@ interface EconomicProofSectionProps {
 }
 
 /**
- * EconomicProofSection - Energy Efficiency + Insurance ROI
- * Where curiosity turns into conviction
+ * Renders the "Economic Proof" section presenting verified energy-efficiency outcomes, insurance ROI, a key stat, and a CTA.
+ *
+ * @param onCalculateCostOfInaction - Callback invoked when the "Calculate My Cost of Inaction" button is clicked.
+ * @param onSectionView - Optional callback invoked with the section id when the section comes into view.
+ * @returns The Economic Proof section React element.
  */
 export function EconomicProofSection({ 
   onCalculateCostOfInaction,

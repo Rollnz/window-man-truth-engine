@@ -70,7 +70,16 @@ const PageLoader = () => (
 
 const queryClient = new QueryClient();
 
-// Inner component to use hooks inside providers
+/**
+ * Render the application's route tree and global UI primitives used inside provider contexts.
+ *
+ * Renders a WelcomeToast, invokes session page-timing side effects, and defines the public, private,
+ * admin, and internal routes. Public routes are wrapped with PublicLayout, programmatic redirects
+ * from ROUTE_REDIRECTS are applied, and a public 404 catch-all is provided. The `/vault` route is
+ * protected by AuthGuard with a PageLoader suspense fallback.
+ *
+ * @returns The React element tree that composes the app routes and global UI primitives.
+ */
 function AppContent() {
   // Awards 10 points after 2 minutes on site (once per session)
   usePageTimer();

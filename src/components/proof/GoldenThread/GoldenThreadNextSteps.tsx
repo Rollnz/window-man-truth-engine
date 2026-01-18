@@ -53,8 +53,14 @@ interface GoldenThreadNextStepsProps {
 }
 
 /**
- * GoldenThreadNextSteps - "Ops Console" style next actions
- * Not button spam - feels like choosing your next move
+ * Renders a "What To Do Next" section with selectable tool cards that represent next-step actions.
+ *
+ * Each card is keyboard and mouse accessible; clicking or pressing Enter/Space on a card invokes `onToolSelect`
+ * with the associated tool. When the section enters view, `onSectionView` is called with the section id.
+ *
+ * @param onToolSelect - Callback invoked with the selected tool when a card is activated.
+ * @param onSectionView - Optional callback invoked with the section id when the section enters the viewport.
+ * @returns A section frame containing a responsive grid of interactive next-step tool cards.
  */
 export function GoldenThreadNextSteps({ 
   onToolSelect,

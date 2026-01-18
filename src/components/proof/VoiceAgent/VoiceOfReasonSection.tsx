@@ -15,8 +15,15 @@ interface VoiceOfReasonSectionProps {
 }
 
 /**
- * VoiceOfReasonSection - AI Voice Agent as Guardian/Expert
- * Shows real transcripts demonstrating expertise
+ * Render the "Voice of Reason" section with Guardian Mode and a filterable gallery of real conversation transcripts.
+ *
+ * Renders a positioning block that explains Guardian Mode, topic filter buttons, expandable transcript cards showing excerpts and full transcripts, key phrases, optional homeowner quotes, and a CTA to listen to a real call.
+ *
+ * @param onListenToCall - Callback invoked when the "Listen to a Real Call" CTA is clicked.
+ * @param onSectionView - Optional callback invoked when the section enters the viewport with the section id.
+ * @param onTranscriptOpen - Optional callback invoked when a transcript is expanded; receives the transcript id and topic.
+ * @param onFilterChange - Optional callback invoked when a non-"all" topic filter is selected; receives the topic.
+ * @returns A React element that renders the Voice of Reason section.
  */
 export function VoiceOfReasonSection({ 
   onListenToCall, 

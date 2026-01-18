@@ -14,8 +14,11 @@ interface EvidenceStatProps {
 }
 
 /**
- * EvidenceStat - Reusable stat tile with optional count-up animation
- * Respects prefers-reduced-motion
+ * Render a stat tile showing a value with label, optional note and verified badge, supporting prefix/suffix, variants, and an optional viewport-triggered count-up animation.
+ *
+ * Respects the user's `prefers-reduced-motion` setting. When `animate` is true and the value is numeric, the component performs a single ease-out count-up from zero to the numeric value when the tile becomes at least 50% visible; non-numeric values are displayed as provided.
+ *
+ * @returns A React element representing the stat tile.
  */
 export function EvidenceStat({
   label,

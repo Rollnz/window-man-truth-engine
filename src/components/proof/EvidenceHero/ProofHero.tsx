@@ -9,9 +9,15 @@ interface ProofHeroProps {
 }
 
 /**
- * ProofHero - Consumer Advocate Positioning
- * Light, trust-forward design. Not dark intelligence-room.
- * Emotional arc: Curious → Safe → Informed
+ * Render a trust-focused marketing hero with live proof counters and two CTA buttons.
+ *
+ * Displays an eyebrow label, headline and subheadline that includes real-time counts,
+ * a primary CTA that triggers `onWatchVoiceAgent`, a secondary CTA that triggers
+ * `onViewCaseStudies`, and four live proof statistics sourced from `proofStats`.
+ *
+ * @param onWatchVoiceAgent - Callback invoked when the primary "Watch the AI Voice Agent Expose a Quote" CTA is clicked
+ * @param onViewCaseStudies - Callback invoked when the "View Verified Case Studies" CTA is clicked
+ * @returns The hero section JSX element containing the header, CTAs, and live proof counters
  */
 export function ProofHero({ onWatchVoiceAgent, onViewCaseStudies }: ProofHeroProps) {
   return (

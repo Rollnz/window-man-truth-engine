@@ -16,7 +16,12 @@ interface PhoneCallOutcomePayload {
   metadata?: Record<string, unknown>;
 }
 
-// Map provider status to our enum
+/**
+ * Translate a provider-specific call status into the service's internal call status.
+ *
+ * @param providerStatus - Provider status string (e.g., "completed", "no-answer", "busy", "voicemail", "canceled")
+ * @returns The internal status: "completed", "failed", "no_answer", or "voicemail"; returns "failed" for unrecognized statuses.
+ */
 function mapCallStatus(providerStatus: string): string {
   const statusMap: Record<string, string> = {
     completed: "completed",
@@ -29,13 +34,24 @@ function mapCallStatus(providerStatus: string): string {
   return statusMap[providerStatus] || "failed";
 }
 
-// Validate UUID format
+/**
+ * Determines whether a string is a valid RFC 4122 UUID (versions 1–5) in hyphenated form.
+ *
+ * @param str - The string to validate as a UUID.
+ * @returns `true` if `str` is a valid UUID version 1–5 in standard hyphenated form, `false` otherwise.
+ */
 function isValidUUID(str: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(str);
 }
 
-// Truncate string for safety
+/**
+ * Truncates a string to at most `maxLength` characters or returns `null` when the input is undefined or empty.
+ *
+ * @param str - The input string to truncate; an empty string is treated as missing and results in `null`.
+ * @param maxLength - The maximum number of characters to keep from `str`.
+ * @returns `null` if `str` is undefined or empty, otherwise `str` truncated to `maxLength` characters (or the original `str` if shorter).
+ */
 function truncateString(str: string | undefined, maxLength: number): string | null {
   if (!str) return null;
   return str.length > maxLength ? str.substring(0, maxLength) : str;

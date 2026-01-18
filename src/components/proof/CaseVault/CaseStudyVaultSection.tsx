@@ -15,8 +15,17 @@ interface CaseStudyVaultSectionProps {
 }
 
 /**
- * CaseStudyVaultSection - Dossier-style case studies
- * Lie/Truth/Outcome schema with "unsealing" interaction
+ * Render a filterable, expandable vault of case studies organized as "The Lie", "The Truth", and "The Outcome".
+ *
+ * Displays filter controls (county and scenario), a grid of dossier-style case cards that expand to reveal
+ * lie/truth/outcome sections, and a CTA to compare a user's home. Expansion state and filters are managed
+ * locally; callbacks are invoked for section view, dossier open, filter changes, and CTA click.
+ *
+ * @param onSeeHowMyHomeCompares - Callback invoked when the primary CTA ("See How My Home Compares") is clicked.
+ * @param onSectionView - Optional callback invoked when the section enters view.
+ * @param onDossierOpen - Optional callback invoked when a dossier is expanded; receives the case ID, county, and scenario type.
+ * @param onFilterChange - Optional callback invoked when filters change; receives an object with `county` and `scenarioType`.
+ * @returns A JSX element rendering the case study vault component.
  */
 export function CaseStudyVaultSection({ 
   onSeeHowMyHomeCompares,

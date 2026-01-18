@@ -26,6 +26,17 @@ const TIMELINES = [
   { value: 'just-exploring', label: 'Just Exploring', description: 'Gathering info' },
 ];
 
+/**
+ * Render the project details step of the estimate form.
+ *
+ * Validates required fields (window count >= 1, project type, timeline), displays inputs and selectable options,
+ * shows per-field validation messages, and advances to the next step when validation succeeds.
+ *
+ * @param formData - Current estimate form values for this step.
+ * @param updateFormData - Function to update the form data with a partial set of fields.
+ * @param onNext - Callback invoked when the user continues and validation passes.
+ * @returns The rendered JSX element for the project details step.
+ */
 export function ProjectDetailsStep({ formData, updateFormData, onNext }: ProjectDetailsStepProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 

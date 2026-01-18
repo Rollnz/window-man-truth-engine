@@ -5,8 +5,10 @@ interface ProofPageShellProps {
 }
 
 /**
- * ProofPageShell - Wraps the proof page with consistent styling
- * Light background, trust-forward design, mobile-first
+ * Provide a page-level shell that applies a light, trust-forward background and decorative radial gradient.
+ *
+ * @param children - The page content to render inside the shell.
+ * @returns The rendered page shell containing `children`.
  */
 export function ProofPageShell({ children }: ProofPageShellProps) {
   return (

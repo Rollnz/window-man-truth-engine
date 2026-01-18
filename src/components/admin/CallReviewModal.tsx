@@ -39,6 +39,12 @@ interface TranscriptSegment {
   message?: string;
 }
 
+/**
+ * Maps a call status string to a UI badge variant.
+ *
+ * @param status - Call status (e.g., `completed`, `no_answer`, `failed`, `in_progress`, `pending`)
+ * @returns The badge variant to use: `'default'`, `'secondary'`, `'destructive'`, or `'outline'`. Returns `'outline'` for unknown statuses.
+ */
 function getStatusBadgeVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
   const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
     completed: 'default',
@@ -50,6 +56,12 @@ function getStatusBadgeVariant(status: string): 'default' | 'secondary' | 'destr
   return variants[status] || 'outline';
 }
 
+/**
+ * Format a duration in seconds into a human-readable minutes-and-seconds string.
+ *
+ * @param seconds - Total duration in seconds (may be null). A falsy value results in no available duration.
+ * @returns The formatted duration as "`Xm Ys`" (e.g., "2m 5s"), or `"N/A"` if `seconds` is `null` or otherwise falsy.
+ */
 function formatDuration(seconds: number | null): string {
   if (!seconds) return 'N/A';
   const mins = Math.floor(seconds / 60);
@@ -57,7 +69,12 @@ function formatDuration(seconds: number | null): string {
   return `${mins}m ${secs}s`;
 }
 
-// Safe transcript extractor from various payload structures
+/**
+ * Extracts transcript data from a JSON payload that may store the transcript in several common locations.
+ *
+ * @param payload - The raw JSON payload to inspect; may be null or an object containing a transcript property (e.g., `transcript`, `data.transcript`, `call.transcript`, `analysis.transcript`, `result.transcript`, or `outcome.transcript`).
+ * @returns `TranscriptSegment[]` if a segmented transcript is found, `string` if a plain transcript string is found, or `null` if no transcript is present.
+ */
 function extractTranscript(payload: Json | null): TranscriptSegment[] | string | null {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     return null;
@@ -89,7 +106,16 @@ function extractTranscript(payload: Json | null): TranscriptSegment[] | string |
   return null;
 }
 
-// Format a single transcript segment as text line
+/**
+ * Format a transcript segment into a single human-readable line.
+ *
+ * The resulting line includes the speaker or role in square brackets if present, the time in
+ * parentheses (numeric times are formatted as `m:ss`) if present, followed by the segment text.
+ *
+ * @param segment - Transcript segment containing optional `speaker` or `role`, a time value
+ *   from `time`, `timestamp`, or `start`, and text from `text`, `content`, or `message`.
+ * @returns The formatted single-line representation of the segment.
+ */
 function formatSegmentLine(segment: TranscriptSegment): string {
   const speaker = segment.speaker || segment.role;
   const time = segment.time ?? segment.timestamp ?? segment.start;
@@ -112,7 +138,12 @@ function formatSegmentLine(segment: TranscriptSegment): string {
   return line;
 }
 
-// Convert transcript to plain text for export
+/**
+ * Converts a transcript into plain text suitable for export.
+ *
+ * @param transcript - Transcript data provided as a string, an array of `TranscriptSegment`, or `null`.
+ * @returns The transcript as a single string (segments joined with newlines), or `null` when no transcript is available.
+ */
 function transcriptToPlainText(transcript: TranscriptSegment[] | string | null): string | null {
   if (!transcript) return null;
 
@@ -127,7 +158,13 @@ function transcriptToPlainText(transcript: TranscriptSegment[] | string | null):
   return null;
 }
 
-// Generate export file content
+/**
+ * Builds a plain-text export combining call metadata header and the supplied transcript.
+ *
+ * @param log - Call log whose fields (source tool, status, duration, sentiment, timestamps) populate the header
+ * @param transcriptText - Transcript content (plain text) to append after the header
+ * @returns The full export text consisting of a metadata header followed by the transcript
+ */
 function generateExportContent(log: PhoneCallLogRow, transcriptText: string): string {
   const header = [
     '='.repeat(60),
@@ -150,7 +187,12 @@ function generateExportContent(log: PhoneCallLogRow, transcriptText: string): st
   return header.join('\n') + transcriptText;
 }
 
-// Trigger file download
+/**
+ * Initiates a browser download of a plain-text export containing call metadata and the provided transcript.
+ *
+ * @param log - Call log used to populate export metadata and to generate the filename (uses source_tool, triggered_at date, and call_request_id).
+ * @param transcriptText - Plain-text transcript content to include in the exported file.
+ */
 function downloadTranscript(log: PhoneCallLogRow, transcriptText: string) {
   const content = generateExportContent(log, transcriptText);
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -168,7 +210,17 @@ function downloadTranscript(log: PhoneCallLogRow, transcriptText: string) {
   URL.revokeObjectURL(url);
 }
 
-// Render transcript segments safely
+/**
+ * Renders transcript data into safe, readable UI elements.
+ *
+ * @param transcript - Transcript data which may be:
+ *   - a `string` containing newline-separated paragraphs,
+ *   - an array of `TranscriptSegment` objects (with optional `speaker`/`role`, `time`/`timestamp`/`start`, and `text`/`content`/`message`), or
+ *   - `null`/undefined when no transcript is available.
+ *   When the transcript is missing or invalid, an inline alert message is shown.
+ *
+ * @returns The rendered transcript UI: an alert message if unavailable, paragraph elements for string transcripts, or a list of formatted segments with optional speaker badges and timestamps.
+ */
 function TranscriptDisplay({ transcript }: { transcript: TranscriptSegment[] | string | null }) {
   if (!transcript) {
     return (
@@ -229,6 +281,16 @@ function TranscriptDisplay({ transcript }: { transcript: TranscriptSegment[] | s
   );
 }
 
+/**
+ * Displays a modal with call metadata, recording playback, AI notes, transcript rendering, and a transcript export action.
+ *
+ * Renders nothing when `isOpen` is false or `log` is null; when open, extracts and formats the transcript, handles audio playback errors, and provides a download button for the transcript if available.
+ *
+ * @param isOpen - Whether the modal is visible
+ * @param onClose - Callback invoked to close the modal
+ * @param log - The call log to display (metadata, recording URL, AI notes, and raw transcript payload)
+ * @returns A React element for the call review modal, or `null` when closed or no `log` is provided
+ */
 export function CallReviewModal({ isOpen, onClose, log }: CallReviewModalProps) {
   const [audioError, setAudioError] = useState(false);
 

@@ -6,13 +6,14 @@ import { EstimateSlidePanel } from './EstimateSlidePanel';
 import { cn } from '@/lib/utils';
 
 /**
- * FloatingEstimateButton
- * 
- * A persistent floating action button that appears in the bottom-right corner
- * of all pages. When clicked, it opens a slide-in panel with options to either
- * call the Voice AI agent or fill out a 3-step estimate request form.
- * 
- * Design: "Calm and Authoritative" - matches the Truth Engine aesthetic
+ * Render a persistent floating action button that opens an estimate slide-in panel.
+ *
+ * The button appears fixed in the bottom-right corner and opens a Sheet containing
+ * options to call a Voice AI agent or complete a 3-step estimate form. The button
+ * shows an initial pulsing animation to draw attention; the pulse stops after 10
+ * seconds or once the page is scrolled more than 200 pixels.
+ *
+ * @returns The FloatingEstimateButton React element.
  */
 export function FloatingEstimateButton() {
   const [isOpen, setIsOpen] = useState(false);

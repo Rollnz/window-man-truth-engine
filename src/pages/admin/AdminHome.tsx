@@ -12,6 +12,15 @@ import { PhoneCallOpsPanel } from '@/components/admin/PhoneCallOpsPanel';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Skeleton } from '@/components/ui/skeleton';
 
+/**
+ * Render the Admin Command Center UI with an overview and phone-calls tab.
+ *
+ * Renders a sticky header with search and refresh controls, an Overview tab that shows
+ * stats, quick actions, and a recent activity feed, and a Phone Calls tab hosting
+ * phone-call operations. Also mounts the global lead search overlay.
+ *
+ * @returns The rendered Admin Command Center content as a JSX element.
+ */
 function AdminHomeContent() {
   const { stats, recentActivity, isLoading, refetch } = useAdminDashboard();
   const { setIsOpen } = useGlobalSearch();

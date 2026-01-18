@@ -17,13 +17,11 @@ import {
 import { trackEvent as trackGTMEvent } from '@/lib/gtm';
 
 /**
- * /proof - The Evidence Locker
- * Consumer Advocate Superhero Conviction Engine
- * 
- * Emotional arc: Curious → Safe → Informed → Certain → Ready to Act
- * 
- * Theme: Light, trust-forward design. NOT dark intelligence-room.
- * Think: Consumer watchdog, investigative journalist, homeowner advocate.
+ * Render the /proof page ("The Evidence Locker") and wire section-level analytics and navigation handlers.
+ *
+ * Renders the page layout and sections, tracks page and section views, and provides CTA handlers that emit GTM events and perform scrolling or route navigation.
+ *
+ * @returns The rendered Proof page React element.
  */
 export default function Proof() {
   usePageTracking('proof');

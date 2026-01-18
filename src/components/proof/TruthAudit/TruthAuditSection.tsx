@@ -29,8 +29,14 @@ const aiBreakdownItems = [
 ];
 
 /**
- * TruthAuditSection - Explains how deception happens and how AI catches it
- * Visual: Quote comparison with "reveal" interaction
+ * Render the Truth Audit section comparing a contractor quote to an AI line-item analysis.
+ *
+ * The component presents deception mechanics, AI strengths, a side-by-side contractor vs. AI comparison,
+ * an interactive "Reveal Line-Item Analysis" flow, a summary stat, and a CTA to audit a quote.
+ *
+ * @param onAuditQuote - Callback invoked when the "Audit My Quote Now" button is clicked.
+ * @param onSectionView - Optional callback invoked with the section id when the section enters view.
+ * @returns A JSX element representing the Truth Audit UI section.
  */
 export function TruthAuditSection({ onAuditQuote, onSectionView }: TruthAuditSectionProps) {
   const [showBreakdown, setShowBreakdown] = useState(false);

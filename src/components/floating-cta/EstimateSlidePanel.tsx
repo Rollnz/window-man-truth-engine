@@ -57,14 +57,11 @@ interface EstimateSlidePanelProps {
 }
 
 /**
- * EstimateSlidePanel
- * 
- * The main slide-in panel that contains:
- * 1. Initial choice screen (Call Now vs. Request Estimate)
- * 2. 3-step wizard form (Project -> Contact -> Address)
- * 3. Success confirmation
- * 
- * Integrates with the Golden Thread (useLeadIdentity) for lead tracking.
+ * Slide-in panel offering a choice between calling or requesting a free estimate and a three-step request form with a success confirmation.
+ *
+ * Presents an initial choice screen (Call Now vs Request an Estimate), a three-step wizard (Project -> Contact -> Address) that persists progress in sessionStorage, and a success confirmation. Integrates lead/session tracking and submission via the save-lead edge function; initiates phone calls for the Call Now flow.
+ *
+ * @param onClose - Callback invoked when the panel should be closed (e.g., after success or user dismissal)
  */
 export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
   const [step, setStep] = useState<Step>('choice');
