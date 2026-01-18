@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SEO } from '@/components/SEO';
 import { Navbar } from '@/components/home/Navbar';
-import { Footer } from '@/components/home/Footer';
 import { GameSetup } from '@/components/roleplay/GameSetup';
 import { GamePlayArea } from '@/components/roleplay/GamePlayArea';
 import { ResultsScreen } from '@/components/roleplay/ResultsScreen';
@@ -225,8 +224,6 @@ export default function Roleplay() {
         description={getFrameControl('roleplay').description}
         tools={getSmartRelatedTools('roleplay')}
       />
-      
-      <Footer />
     </div>
   );
 }

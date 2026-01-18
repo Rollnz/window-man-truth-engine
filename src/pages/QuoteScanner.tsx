@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { SEO } from '@/components/SEO';
 import { Navbar } from '@/components/home/Navbar';
-import { Footer } from '@/components/home/Footer';
 import { QuoteScannerHero } from '@/components/quote-scanner/QuoteScannerHero';
 import { QuoteUploadZone } from '@/components/quote-scanner/QuoteUploadZone';
 import { QuoteAnalysisResults } from '@/components/quote-scanner/QuoteAnalysisResults';
@@ -201,8 +200,6 @@ export default function QuoteScanner() {
           tools={getSmartRelatedTools('quote-scanner', sessionData.toolsCompleted)}
         />
       </main>
-
-      <Footer />
 
       <LeadCaptureModal
         isOpen={showLeadCapture}

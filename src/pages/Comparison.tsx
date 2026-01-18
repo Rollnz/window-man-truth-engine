@@ -16,7 +16,6 @@ import { ConsultationCTA } from "@/components/comparison/ConsultationCTA";
 import { GenerateComparisonReportButton } from "@/components/comparison/GenerateComparisonReportButton";
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
-import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
 import { ToolFAQSection } from "@/components/seo";
@@ -133,9 +132,6 @@ export default function Comparison() {
         description={getFrameControl("comparison").description}
         tools={getSmartRelatedTools("comparison", sessionData.toolsCompleted)}
       />
-
-      {/* Minimal Footer */}
-      <MinimalFooter />
     </div>
   );
 }

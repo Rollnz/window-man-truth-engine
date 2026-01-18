@@ -8,7 +8,6 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { trackToolCompletion } from '@/lib/gtm';
 import { Navbar } from '@/components/home/Navbar';
-import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { CalculatorInputs, ValidatedInputs } from '@/components/cost-calculator/CalculatorInputs';
 import { CostBreakdown } from '@/components/cost-calculator/CostBreakdown';
 import { TimelineChartLazy } from '@/components/cost-calculator/TimelineChartLazy';
@@ -227,9 +226,6 @@ export default function CostCalculator() {
           resultSummary={`$${projection.year5.toLocaleString()} in 5-year energy loss`}
         />
       )}
-
-      {/* Minimal Footer */}
-      <MinimalFooter />
     </div>
   );
 }

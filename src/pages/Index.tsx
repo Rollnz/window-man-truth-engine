@@ -6,7 +6,6 @@ import {
   LazyToolGrid,
   LazyCommunityImpact,
   LazySocialProof,
-  LazyFooter,
 } from '@/components/home/LazyHomepageSections';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
@@ -110,7 +109,6 @@ const Index = () => {
         <LazyToolGrid />
         <LazyCommunityImpact />
         <LazySocialProof />
-        <LazyFooter />
       </div>
     </div>
   );

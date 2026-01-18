@@ -1,6 +1,5 @@
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
-import { Footer } from "@/components/home/Footer";
 import { ToolGrid } from "@/components/home/ToolGrid";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
@@ -30,7 +29,6 @@ const Tools = () => {
         </div>
         <ToolGrid />
       </main>
-      <Footer />
     </div>
   );
 };

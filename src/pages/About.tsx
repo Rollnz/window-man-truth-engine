@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
-import { Footer } from "@/components/home/Footer";
 import { Button } from "@/components/ui/button";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { CommunityImpact } from "@/components/authority/CommunityImpact";
@@ -299,8 +298,6 @@ const About = () => {
           />
         </section>
       </main>
-
-      <Footer />
     </div>
   );
 };

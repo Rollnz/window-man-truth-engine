@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { DollarSign, TrendingUp, Calculator, BarChart3, FileCheck, ArrowRight } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
-import { Footer } from "@/components/home/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -215,8 +214,6 @@ const WindowCostTruth = () => {
           </div>
         </section>
       </main>
-
-      <Footer />
 
       <ExitIntentModal
         sourceTool="window-cost-truth"

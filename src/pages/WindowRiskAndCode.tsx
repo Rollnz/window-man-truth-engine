@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { ShieldCheck, AlertTriangle, FileText, Scale, ArrowRight } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
-import { Footer } from "@/components/home/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -240,8 +239,6 @@ const WindowRiskAndCode = () => {
           </div>
         </section>
       </main>
-
-      <Footer />
 
       <ExitIntentModal
         sourceTool="window-risk-and-code"
