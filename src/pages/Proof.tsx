@@ -177,7 +177,7 @@ export default function Proof() {
     mainEntity: {
       '@type': 'ItemList',
       name: 'Verified Case Studies',
-      numberOfItems: 5,
+      numberOfItems: 3,
       itemListElement: [
         {
           '@type': 'ListItem',

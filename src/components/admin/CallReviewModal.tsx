@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Mic, FileText, AlertCircle, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -231,6 +231,13 @@ function TranscriptDisplay({ transcript }: { transcript: TranscriptSegment[] | s
 
 export function CallReviewModal({ isOpen, onClose, log }: CallReviewModalProps) {
   const [audioError, setAudioError] = useState(false);
+
+  // Reset audio error when modal opens or log changes
+  useEffect(() => {
+    if (isOpen) {
+      setAudioError(false);
+    }
+  }, [isOpen, log?.id]);
 
   if (!isOpen || !log) return null;
 

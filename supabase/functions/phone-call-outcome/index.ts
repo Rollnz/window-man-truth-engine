@@ -23,7 +23,7 @@ function mapCallStatus(providerStatus: string): string {
     failed: "failed",
     "no-answer": "no_answer",
     busy: "no_answer",
-    voicemail: "voicemail",
+    voicemail: "no_answer",
     canceled: "failed",
   };
   return statusMap[providerStatus] || "failed";
@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
     }
 
     // Check if already in terminal state
-    const terminalStates = ["completed", "failed", "no_answer", "voicemail"];
+    const terminalStates = ["completed", "failed", "no_answer"];
     if (terminalStates.includes(existingLog.call_status)) {
       console.log("[phone-call-outcome] Call already in terminal state:", existingLog.call_status);
       return new Response(

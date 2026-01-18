@@ -386,8 +386,8 @@ Deno.serve(async (req) => {
           result.failed++;
         }
 
-        // Calculate next attempt time with exponential-ish backoff (5 min * attempt_count)
-        const backoffMinutes = newAttemptCount * 5;
+        // Calculate next attempt time with true exponential backoff: 5, 10, 20 minutes
+        const backoffMinutes = 5 * Math.pow(2, newAttemptCount - 1);
         const nextAttemptAt = new Date(Date.now() + backoffMinutes * 60 * 1000);
 
         const { error: updateError } = await supabase
