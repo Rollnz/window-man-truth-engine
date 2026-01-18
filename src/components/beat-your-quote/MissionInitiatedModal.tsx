@@ -149,9 +149,9 @@ export function MissionInitiatedModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && !isSubmitting && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-white dark:bg-white border-t-4 border-t-primary shadow-2xl">
         {showScanning ? (
-          // Scanning animation state
+          // Scanning animation state - colors adjusted for white background
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="relative mb-6">
               <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
@@ -159,19 +159,17 @@ export function MissionInitiatedModal({
               </div>
               <div className="absolute inset-0 w-20 h-20 rounded-full border-2 border-primary/30 animate-ping" />
             </div>
-            <p className="text-lg font-semibold mb-2">Scanning Your Quote...</p>
-            <p className="text-sm text-muted-foreground">AI analysis in progress</p>
+            <p className="text-lg font-semibold text-slate-900 mb-2">Scanning Your Quote...</p>
+            <p className="text-sm text-slate-500">AI analysis in progress</p>
           </div>
         ) : (
-          // Form state
+          // Form state - clean white card with high contrast
           <>
             <DialogHeader className="space-y-1">
-              <div className="flex items-center gap-2 text-primary mb-2">
-                <Shield className="w-5 h-5" />
-                <span className="text-xs font-mono uppercase tracking-wider">Mission Initiated</span>
-              </div>
-              <DialogTitle className="text-xl">Analysis in Progress...</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-xl font-bold text-slate-900">
+                Analysis in Progress...
+              </DialogTitle>
+              <DialogDescription className="text-slate-600">
                 Where should we send the report?
               </DialogDescription>
             </DialogHeader>
@@ -179,11 +177,14 @@ export function MissionInitiatedModal({
             <form onSubmit={handleSubmit} className="space-y-3 mt-4">
               {/* Name */}
               <div className="space-y-1">
-                <Label htmlFor="mission-name">Name</Label>
+                <Label htmlFor="mission-name" className="font-semibold text-slate-900">Name</Label>
                 <Input
                   id="mission-name"
                   placeholder="Your name"
-                  className={cn("h-9", hasError('name') && "border-destructive")}
+                  className={cn(
+                    "h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm",
+                    hasError('name') && "border-destructive"
+                  )}
                   {...getFieldProps('name')}
                   disabled={isSubmitting}
                 />
@@ -194,12 +195,15 @@ export function MissionInitiatedModal({
 
               {/* Email */}
               <div className="space-y-1">
-                <Label htmlFor="mission-email">Email</Label>
+                <Label htmlFor="mission-email" className="font-semibold text-slate-900">Email</Label>
                 <Input
                   id="mission-email"
                   type="email"
                   placeholder="your@email.com"
-                  className={cn("h-9", hasError('email') && "border-destructive")}
+                  className={cn(
+                    "h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm",
+                    hasError('email') && "border-destructive"
+                  )}
                   {...getFieldProps('email')}
                   disabled={isSubmitting}
                 />
@@ -210,12 +214,15 @@ export function MissionInitiatedModal({
 
               {/* Phone */}
               <div className="space-y-1">
-                <Label htmlFor="mission-phone">Phone</Label>
+                <Label htmlFor="mission-phone" className="font-semibold text-slate-900">Phone</Label>
                 <Input
                   id="mission-phone"
                   type="tel"
                   placeholder="(555) 123-4567"
-                  className={cn("h-9", hasError('phone') && "border-destructive")}
+                  className={cn(
+                    "h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm",
+                    hasError('phone') && "border-destructive"
+                  )}
                   {...getFieldProps('phone')}
                   disabled={isSubmitting}
                 />
@@ -224,9 +231,10 @@ export function MissionInitiatedModal({
                 )}
               </div>
 
-              {/* Submit Button */}
+              {/* Submit Button - CTA variant for maximum visibility */}
               <Button
                 type="submit"
+                variant="cta"
                 className="w-full mt-4"
                 disabled={isSubmitting}
               >
@@ -243,8 +251,8 @@ export function MissionInitiatedModal({
                 )}
               </Button>
 
-              {/* Trust indicator */}
-              <p className="text-xs text-center text-muted-foreground pt-2">
+              {/* Trust indicator - dark text for white background */}
+              <p className="text-xs text-center text-slate-500 pt-2">
                 <Shield className="inline w-3 h-3 mr-1" />
                 Your info is encrypted and never shared with contractors.
               </p>

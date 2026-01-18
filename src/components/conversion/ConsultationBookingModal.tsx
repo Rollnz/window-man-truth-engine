@@ -198,7 +198,7 @@ export function ConsultationBookingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md p-5">
+      <DialogContent className="sm:max-w-md p-5 border-t-4 border-t-primary shadow-xl">
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center py-6 text-center">
             <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mb-3">
@@ -210,20 +210,18 @@ export function ConsultationBookingModal({
         ) : (
           <>
             <DialogHeader className="space-y-1 pb-2">
-              <div className="flex justify-center mb-1">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-primary" />
-                </div>
-              </div>
-              <DialogTitle className="text-center">Schedule a Free Consultation</DialogTitle>
-              <DialogDescription className="text-center text-sm">
+              {/* Removed generic calendar icon - saves 60px+ on mobile */}
+              <DialogTitle className="text-center text-xl font-bold text-slate-900">
+                Schedule a Free Consultation
+              </DialogTitle>
+              <DialogDescription className="text-center text-sm text-slate-600">
                 Get personalized advice from a local window expert at no cost.
               </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="name" className={`text-sm font-semibold text-slate-700 dark:text-foreground ${hasError("name") ? "text-destructive" : ""}`}>
+                <Label htmlFor="name" className={`text-sm font-semibold text-slate-700 ${hasError("name") ? "text-destructive" : ""}`}>
                   Your Name
                 </Label>
                 <Input
@@ -231,7 +229,7 @@ export function ConsultationBookingModal({
                   placeholder="John Smith"
                   {...nameProps}
                   disabled={isLoading}
-                  className={`h-9 ${hasError("name") ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  className={`h-9 bg-white border-gray-300 shadow-sm text-slate-900 ${hasError("name") ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   aria-invalid={hasError("name")}
                   aria-describedby={hasError("name") ? "name-error" : undefined}
                 />
@@ -243,7 +241,7 @@ export function ConsultationBookingModal({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="consult-email" className={`text-sm font-semibold text-slate-700 dark:text-foreground ${hasError("email") ? "text-destructive" : ""}`}>
+                <Label htmlFor="consult-email" className={`text-sm font-semibold text-slate-700 ${hasError("email") ? "text-destructive" : ""}`}>
                   Email Address
                 </Label>
                 <Input
@@ -252,7 +250,7 @@ export function ConsultationBookingModal({
                   placeholder="you@example.com"
                   {...emailProps}
                   disabled={isLoading}
-                  className={`h-9 ${hasError("email") ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  className={`h-9 bg-white border-gray-300 shadow-sm text-slate-900 ${hasError("email") ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   aria-invalid={hasError("email")}
                   aria-describedby={hasError("email") ? "email-error" : undefined}
                 />
@@ -264,7 +262,7 @@ export function ConsultationBookingModal({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="phone" className={`text-sm font-semibold text-slate-700 dark:text-foreground ${hasError("phone") ? "text-destructive" : ""}`}>
+                <Label htmlFor="phone" className={`text-sm font-semibold text-slate-700 ${hasError("phone") ? "text-destructive" : ""}`}>
                   Phone Number
                 </Label>
                 <Input
@@ -273,7 +271,7 @@ export function ConsultationBookingModal({
                   placeholder="(555) 123-4567"
                   {...phoneProps}
                   disabled={isLoading}
-                  className={`h-9 ${hasError("phone") ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  className={`h-9 bg-white border-gray-300 shadow-sm text-slate-900 ${hasError("phone") ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   aria-invalid={hasError("phone")}
                   aria-describedby={hasError("phone") ? "phone-error" : undefined}
                 />
@@ -287,7 +285,7 @@ export function ConsultationBookingModal({
               <div className="space-y-1">
                 <Label
                   htmlFor="preferred-time"
-                  className={`text-sm ${hasError("preferredTime") ? "text-destructive" : ""}`}
+                  className={`text-sm font-semibold text-slate-700 ${hasError("preferredTime") ? "text-destructive" : ""}`}
                 >
                   Best Time to Call
                 </Label>
@@ -298,7 +296,7 @@ export function ConsultationBookingModal({
                 >
                   <SelectTrigger
                     id="preferred-time"
-                    className={`h-9 ${hasError("preferredTime") ? "border-destructive focus:ring-destructive" : ""}`}
+                    className={`h-9 bg-white border-gray-300 shadow-sm text-slate-900 ${hasError("preferredTime") ? "border-destructive focus:ring-destructive" : ""}`}
                     aria-invalid={hasError("preferredTime")}
                     aria-describedby={hasError("preferredTime") ? "time-error" : undefined}
                   >
@@ -320,7 +318,7 @@ export function ConsultationBookingModal({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="notes" className="text-sm">
+                <Label htmlFor="notes" className="text-sm font-semibold text-slate-700">
                   Additional Notes (Optional)
                 </Label>
                 <Textarea
@@ -330,15 +328,16 @@ export function ConsultationBookingModal({
                   onChange={(e) => setNotes(e.target.value)}
                   disabled={isLoading}
                   rows={2}
-                  className="resize-none"
+                  className="resize-none bg-white border-gray-300 shadow-sm text-slate-900"
                 />
               </div>
 
+              {/* Fixed ghost button: removed disabled state for incomplete fields - users can click and see validation */}
               <Button
                 type="submit"
                 variant="cta"
                 className="w-full h-10 mt-2"
-                disabled={isLoading || !values.name || !values.email || !values.phone || !values.preferredTime}
+                disabled={isLoading}
               >
                 {isLoading ? (
                   <>
