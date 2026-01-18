@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      call_agents: {
+        Row: {
+          agent_id: string
+          created_at: string
+          enabled: boolean
+          first_message_template: string
+          id: string
+          source_tool: string
+          updated_at: string
+          webhook_url: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          enabled?: boolean
+          first_message_template: string
+          id?: string
+          source_tool: string
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          enabled?: boolean
+          first_message_template?: string
+          id?: string
+          source_tool?: string
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       consultations: {
         Row: {
           created_at: string | null
@@ -177,6 +210,146 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_calls: {
+        Row: {
+          agent_id: string
+          attempt_count: number
+          call_request_id: string
+          completed_at: string | null
+          created_at: string
+          created_date: string | null
+          first_message: string
+          id: string
+          last_error: string | null
+          lead_id: string | null
+          next_attempt_at: string
+          payload: Json
+          phone_e164: string
+          phone_hash: string
+          provider_call_id: string | null
+          scheduled_for: string
+          source_tool: string
+          status: Database["public"]["Enums"]["pending_call_status"]
+          triggered_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          attempt_count?: number
+          call_request_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_date?: string | null
+          first_message: string
+          id?: string
+          last_error?: string | null
+          lead_id?: string | null
+          next_attempt_at?: string
+          payload?: Json
+          phone_e164: string
+          phone_hash: string
+          provider_call_id?: string | null
+          scheduled_for: string
+          source_tool: string
+          status?: Database["public"]["Enums"]["pending_call_status"]
+          triggered_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          attempt_count?: number
+          call_request_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_date?: string | null
+          first_message?: string
+          id?: string
+          last_error?: string | null
+          lead_id?: string | null
+          next_attempt_at?: string
+          payload?: Json
+          phone_e164?: string
+          phone_hash?: string
+          provider_call_id?: string | null
+          scheduled_for?: string
+          source_tool?: string
+          status?: Database["public"]["Enums"]["pending_call_status"]
+          triggered_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      phone_call_logs: {
+        Row: {
+          agent_id: string
+          ai_notes: string | null
+          call_duration_sec: number | null
+          call_request_id: string
+          call_sentiment:
+            | Database["public"]["Enums"]["phone_call_sentiment"]
+            | null
+          call_status: Database["public"]["Enums"]["phone_call_status"]
+          created_at: string
+          ended_at: string | null
+          id: string
+          lead_id: string | null
+          provider_call_id: string | null
+          raw_outcome_payload: Json | null
+          recording_url: string | null
+          source_tool: string
+          triggered_at: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          ai_notes?: string | null
+          call_duration_sec?: number | null
+          call_request_id: string
+          call_sentiment?:
+            | Database["public"]["Enums"]["phone_call_sentiment"]
+            | null
+          call_status?: Database["public"]["Enums"]["phone_call_status"]
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          lead_id?: string | null
+          provider_call_id?: string | null
+          raw_outcome_payload?: Json | null
+          recording_url?: string | null
+          source_tool: string
+          triggered_at?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          ai_notes?: string | null
+          call_duration_sec?: number | null
+          call_request_id?: string
+          call_sentiment?:
+            | Database["public"]["Enums"]["phone_call_sentiment"]
+            | null
+          call_status?: Database["public"]["Enums"]["phone_call_status"]
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          lead_id?: string | null
+          provider_call_id?: string | null
+          raw_outcome_payload?: Json | null
+          recording_url?: string | null
+          source_tool?: string
+          triggered_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_call_logs_call_request_id_fkey"
+            columns: ["call_request_id"]
+            isOneToOne: false
+            referencedRelation: "pending_calls"
+            referencedColumns: ["call_request_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -278,6 +451,27 @@ export type Database = {
           endpoint?: string
           id?: string
           identifier?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -489,12 +683,20 @@ export type Database = {
         Returns: number
       }
       get_lead_quality: { Args: { score: number }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       update_lead_score_from_session: {
         Args: { p_session_id: string }
         Returns: undefined
       }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       lead_status:
         | "new"
         | "qualifying"
@@ -504,6 +706,23 @@ export type Database = {
         | "closed_won"
         | "closed_lost"
         | "dead"
+      pending_call_status:
+        | "pending"
+        | "processing"
+        | "called"
+        | "completed"
+        | "no_answer"
+        | "failed"
+        | "dead_letter"
+        | "suppressed"
+      phone_call_sentiment: "positive" | "neutral" | "negative"
+      phone_call_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "no_answer"
+        | "failed"
+        | "canceled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -631,6 +850,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       lead_status: [
         "new",
         "qualifying",
@@ -640,6 +860,25 @@ export const Constants = {
         "closed_won",
         "closed_lost",
         "dead",
+      ],
+      pending_call_status: [
+        "pending",
+        "processing",
+        "called",
+        "completed",
+        "no_answer",
+        "failed",
+        "dead_letter",
+        "suppressed",
+      ],
+      phone_call_sentiment: ["positive", "neutral", "negative"],
+      phone_call_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "no_answer",
+        "failed",
+        "canceled",
       ],
     },
   },
