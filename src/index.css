@@ -8,6 +8,9 @@
 
 @layer base {
   :root {
+    /* Mobile sticky footer height (used by PublicLayout for bottom padding) */
+    --mobile-sticky-footer-h: 104px;
+    
     /* Dark mode is default - industrial dark theme */
     --background: 220 20% 6%;
     --foreground: 210 40% 98%;

@@ -9,6 +9,7 @@ import { ROUTE_REDIRECTS } from "@/config/navigation";
 import ScrollToTop from "./components/ScrollToTop";
 import { usePageTimer } from "@/hooks/usePageTimer";
 import { WelcomeToast } from "@/components/onboarding/WelcomeToast";
+import { PublicLayout } from "@/components/layout/PublicLayout";
 
 // Critical path - load immediately
 import Index from "./pages/Index";
@@ -77,53 +78,68 @@ function AppContent() {
     <>
       <WelcomeToast />
       <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/reality-check" element={<RealityCheck />} />
-        <Route path="/cost-calculator" element={<CostCalculator />} />
-        <Route path="/expert" element={<Expert />} />
-        <Route path="/comparison" element={<Comparison />} />
-        <Route path="/risk-diagnostic" element={<RiskDiagnostic />} />
-        <Route path="/fast-win" element={<FastWin />} />
-        <Route path="/evidence" element={<Evidence />} />
-        <Route path="/vulnerability-test" element={<VulnerabilityTest />} />
-        <Route path="/intel" element={<Intel />} />
-        <Route path="/claim-survival" element={<ClaimSurvival />} />
-        <Route path="/kitchen-table-guide" element={<KitchenTableGuide />} />
-        <Route path="/sales-tactics-guide" element={<SalesTacticsGuide />} />
-        <Route path="/spec-checklist-guide" element={<SpecChecklistGuide />} />
-        <Route path="/insurance-savings-guide" element={<InsuranceSavingsGuide />} />
-        <Route path="/ai-scanner" element={<QuoteScanner />} />
-        <Route path="/free-estimate" element={<CalculateEstimate />} />
-        <Route path="/impact-window-calculator" element={<CostCalculator />} />
-        <Route path="/tools" element={<Tools />} />
+        {/* ============================================
+            PUBLIC ROUTES (with UnifiedFooter system)
+            All marketing pages wrapped in PublicLayout
+        ============================================ */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<Index />} />
+          <Route path="/reality-check" element={<RealityCheck />} />
+          <Route path="/cost-calculator" element={<CostCalculator />} />
+          <Route path="/expert" element={<Expert />} />
+          <Route path="/comparison" element={<Comparison />} />
+          <Route path="/risk-diagnostic" element={<RiskDiagnostic />} />
+          <Route path="/fast-win" element={<FastWin />} />
+          <Route path="/evidence" element={<Evidence />} />
+          <Route path="/vulnerability-test" element={<VulnerabilityTest />} />
+          <Route path="/intel" element={<Intel />} />
+          <Route path="/claim-survival" element={<ClaimSurvival />} />
+          <Route path="/kitchen-table-guide" element={<KitchenTableGuide />} />
+          <Route path="/sales-tactics-guide" element={<SalesTacticsGuide />} />
+          <Route path="/spec-checklist-guide" element={<SpecChecklistGuide />} />
+          <Route path="/insurance-savings-guide" element={<InsuranceSavingsGuide />} />
+          <Route path="/ai-scanner" element={<QuoteScanner />} />
+          <Route path="/free-estimate" element={<CalculateEstimate />} />
+          <Route path="/impact-window-calculator" element={<CostCalculator />} />
+          <Route path="/tools" element={<Tools />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/defense" element={<Defense />} />
+          <Route path="/roleplay" element={<Roleplay />} />
+          <Route path="/beat-your-quote" element={<BeatYourQuote />} />
+          <Route path="/fair-price-quiz" element={<FairPriceQuiz />} />
+          {/* Semantic Pillar Pages */}
+          <Route path="/window-cost-truth" element={<WindowCostTruth />} />
+          <Route path="/window-risk-and-code" element={<WindowRiskAndCode />} />
+          <Route path="/window-sales-truth" element={<WindowSalesTruth />} />
+          <Route path="/window-verification-system" element={<WindowVerificationSystem />} />
+          {/* Legacy redirects - programmatically generated */}
+          {Object.entries(ROUTE_REDIRECTS).map(([from, to]) => (
+            <Route key={from} path={from} element={<Navigate to={to} replace />} />
+          ))}
+          {/* 404 catch-all for public routes */}
+          <Route path="*" element={<NotFound />} />
+        </Route>
+
+        {/* ============================================
+            PRIVATE ROUTES (without footer system)
+            Auth, Vault, Admin - no marketing footer
+        ============================================ */}
         <Route path="/auth" element={<Auth />} />
         <Route path="/vault" element={<Suspense fallback={<PageLoader />}><AuthGuard><Vault /></AuthGuard></Suspense>} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/faq" element={<FAQ />} />
-        <Route path="/defense" element={<Defense />} />
-        <Route path="/roleplay" element={<Roleplay />} />
-        <Route path="/beat-your-quote" element={<BeatYourQuote />} />
-        <Route path="/fair-price-quiz" element={<FairPriceQuiz />} />
-        <Route path="/button-audit" element={<ButtonAudit />} />
-        {/* Semantic Pillar Pages */}
-        <Route path="/window-cost-truth" element={<WindowCostTruth />} />
-        <Route path="/window-risk-and-code" element={<WindowRiskAndCode />} />
-        <Route path="/window-sales-truth" element={<WindowSalesTruth />} />
-        <Route path="/window-verification-system" element={<WindowVerificationSystem />} />
+        
+        {/* Admin Routes */}
         <Route path="/admin" element={<AdminHome />} />
         <Route path="/admin/analytics" element={<Analytics />} />
         <Route path="/admin/attribution" element={<AttributionDashboard />} />
         <Route path="/admin/crm" element={<CRMDashboard />} />
         <Route path="/admin/quotes" element={<QuotesDashboard />} />
         <Route path="/admin/leads/:id" element={<LeadDetail />} />
-        {/* Legacy redirects - programmatically generated */}
-        {Object.entries(ROUTE_REDIRECTS).map(([from, to]) => (
-          <Route key={from} path={from} element={<Navigate to={to} replace />} />
-        ))}
-        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<NotFound />} />
+        
+        {/* Internal dev tools (no footer) */}
+        <Route path="/button-audit" element={<ButtonAudit />} />
       </Routes>
     </>
   );

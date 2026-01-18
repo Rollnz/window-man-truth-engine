@@ -5,13 +5,11 @@ import { useSessionData } from "@/hooks/useSessionData";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
-import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { EvidenceHero } from "@/components/evidence/EvidenceHero";
 import { FilterBar } from "@/components/evidence/FilterBar";
 import { CaseFileGrid } from "@/components/evidence/CaseFileGrid";
 import { CaseDebriefModal } from "@/components/evidence/CaseDebriefModal";
 import { RelatedIntelligence } from "@/components/evidence/RelatedIntelligence";
-import { StickyCTA } from "@/components/evidence/StickyCTA";
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { CommunityImpact } from "@/components/authority/CommunityImpact";
@@ -192,15 +190,6 @@ export default function Evidence() {
         leadId={sessionData.leadId}
         sourceTool="evidence-locker"
       />
-
-      {/* Sticky CTA (Mobile) */}
-      <StickyCTA
-        onConsultation={handleConsultation}
-        isModalOpen={!!activeCase || showLeadCapture || showConsultation}
-      />
-
-      {/* Minimal Footer */}
-      <MinimalFooter />
     </div>
   );
 }

@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { Eye, Users, ScanSearch, MessageSquare, ArrowRight } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
-import { Footer } from "@/components/home/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -223,8 +222,6 @@ const WindowSalesTruth = () => {
           </div>
         </section>
       </main>
-
-      <Footer />
 
       <ExitIntentModal
         sourceTool="window-sales-truth"
