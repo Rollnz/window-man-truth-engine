@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { UnifiedFooter } from '@/components/navigation/UnifiedFooter';
 import { MobileStickyFooter } from '@/components/navigation/MobileStickyFooter';
+import { FloatingEstimateButton } from '@/components/floating-cta';
 
 /**
  * PublicLayout wraps all public-facing pages with the unified footer system.
@@ -27,6 +28,9 @@ export function PublicLayout() {
       
       {/* Mobile-only sticky CTA bar */}
       <MobileStickyFooter />
+      
+      {/* Floating CTA button - appears on all public pages */}
+      <FloatingEstimateButton />
     </div>
   );
 }

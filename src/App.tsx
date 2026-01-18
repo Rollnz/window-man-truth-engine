@@ -50,6 +50,7 @@ const Terms = lazy(() => import("./pages/legal/Terms"));
 const BeatYourQuote = lazy(() => import("./pages/BeatYourQuote"));
 const FairPriceQuiz = lazy(() => import("./pages/FairPriceQuiz"));
 const ButtonAudit = lazy(() => import("./pages/ButtonAudit"));
+const Proof = lazy(() => import("./pages/Proof"));
 
 // Semantic Pillar Pages
 const WindowCostTruth = lazy(() => import("./pages/WindowCostTruth"));
@@ -91,6 +92,7 @@ function AppContent() {
           <Route path="/risk-diagnostic" element={<RiskDiagnostic />} />
           <Route path="/fast-win" element={<FastWin />} />
           <Route path="/evidence" element={<Evidence />} />
+          <Route path="/proof" element={<Proof />} />
           <Route path="/vulnerability-test" element={<VulnerabilityTest />} />
           <Route path="/intel" element={<Intel />} />
           <Route path="/claim-survival" element={<ClaimSurvival />} />

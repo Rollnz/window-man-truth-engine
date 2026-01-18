@@ -47,3 +47,12 @@ verify_jwt = false
 
 [functions.admin-quotes]
 verify_jwt = false
+
+[functions.call-dispatcher]
+verify_jwt = false
+
+[functions.phone-call-outcome]
+verify_jwt = false
+
+[functions.notify-dead-letter]
+verify_jwt = false
