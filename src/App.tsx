@@ -135,7 +135,7 @@ const App = () => (
       <TooltipProvider delayDuration={0} skipDelayDuration={0}>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
             <AppContent />
