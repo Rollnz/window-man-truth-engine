@@ -211,11 +211,11 @@ export function ConsultationBookingModal({
           <>
             <DialogHeader className="space-y-1 pb-2">
               <div className="flex justify-center mb-1">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-primary" />
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-primary" />
                 </div>
               </div>
-              <DialogTitle className="text-center text-lg">Schedule a Free Consultation</DialogTitle>
+              <DialogTitle className="text-center">Schedule a Free Consultation</DialogTitle>
               <DialogDescription className="text-center text-sm">
                 Get personalized advice from a local window expert at no cost.
               </DialogDescription>
@@ -223,7 +223,7 @@ export function ConsultationBookingModal({
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="name" className={`text-sm ${hasError("name") ? "text-destructive" : ""}`}>
+                <Label htmlFor="name" className={`text-sm font-semibold text-slate-700 dark:text-foreground ${hasError("name") ? "text-destructive" : ""}`}>
                   Your Name
                 </Label>
                 <Input
@@ -243,7 +243,7 @@ export function ConsultationBookingModal({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="consult-email" className={`text-sm ${hasError("email") ? "text-destructive" : ""}`}>
+                <Label htmlFor="consult-email" className={`text-sm font-semibold text-slate-700 dark:text-foreground ${hasError("email") ? "text-destructive" : ""}`}>
                   Email Address
                 </Label>
                 <Input
@@ -264,7 +264,7 @@ export function ConsultationBookingModal({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="phone" className={`text-sm ${hasError("phone") ? "text-destructive" : ""}`}>
+                <Label htmlFor="phone" className={`text-sm font-semibold text-slate-700 dark:text-foreground ${hasError("phone") ? "text-destructive" : ""}`}>
                   Phone Number
                 </Label>
                 <Input
@@ -336,6 +336,7 @@ export function ConsultationBookingModal({
 
               <Button
                 type="submit"
+                variant="cta"
                 className="w-full h-10 mt-2"
                 disabled={isLoading || !values.name || !values.email || !values.phone || !values.preferredTime}
               >

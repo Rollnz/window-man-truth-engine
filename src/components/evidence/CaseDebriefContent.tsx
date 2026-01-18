@@ -124,7 +124,7 @@ export function CaseDebriefContent({
       {/* CTAs */}
       <div className="flex flex-col sm:flex-row gap-3">
         <Button 
-          variant="outline" 
+          variant="cta" 
           className="flex-1"
           onClick={onDownload}
         >
@@ -132,6 +132,7 @@ export function CaseDebriefContent({
           Download Case Study
         </Button>
         <Button 
+          variant="cta"
           className="flex-1"
           onClick={onConsultation}
         >

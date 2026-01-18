@@ -94,12 +94,12 @@ const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess
         <div className="bg-card rounded-xl p-6 sm:p-8 shadow-lg border border-border">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="secondaryFirstName" className="text-foreground">First Name</Label>
+              <Label htmlFor="secondaryFirstName" className="text-slate-900 dark:text-foreground font-semibold">First Name</Label>
               <Input 
                 id="secondaryFirstName"
                 {...getFieldProps('firstName')}
                 placeholder="Your first name"
-                className={`bg-background ${hasError('firstName') ? 'border-destructive' : ''}`}
+                className={hasError('firstName') ? 'border-destructive' : ''}
                 disabled={isSubmitting}
               />
               {hasError('firstName') && (
@@ -108,13 +108,13 @@ const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="secondaryEmail" className="text-foreground">Email Address</Label>
+              <Label htmlFor="secondaryEmail" className="text-slate-900 dark:text-foreground font-semibold">Email Address</Label>
               <Input 
                 id="secondaryEmail"
                 type="email"
                 {...getFieldProps('email')}
                 placeholder="your@email.com"
-                className={`bg-background ${hasError('email') ? 'border-destructive' : ''}`}
+                className={hasError('email') ? 'border-destructive' : ''}
                 disabled={isSubmitting}
               />
               {hasError('email') && (
@@ -139,6 +139,7 @@ const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess
             
             <Button 
               type="submit" 
+              variant="cta"
               size="lg" 
               className="w-full gap-2 mt-4" 
               disabled={isSubmitting}
