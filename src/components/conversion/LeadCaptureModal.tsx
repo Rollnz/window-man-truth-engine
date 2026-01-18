@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
@@ -17,7 +16,7 @@ import { Mail, Check, Loader2 } from 'lucide-react';
 import { trackEvent, trackModalOpen } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import { SourceTool } from '@/types/sourceTool';
-import { FormSurfaceProvider } from '@/components/forms/FormSurfaceProvider';
+import { TrustModal } from '@/components/forms/TrustModal';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -260,8 +259,7 @@ export function LeadCaptureModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      {/* White card modal with trust styling */}
-      <DialogContent className="sm:max-w-md bg-white dark:bg-white border-t-4 border-t-primary shadow-xl">
+      <TrustModal className="sm:max-w-md">
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
@@ -286,81 +284,79 @@ export function LeadCaptureModal({
               </DialogDescription>
             </DialogHeader>
 
-            {/* Wrap form in FormSurfaceProvider for automatic trust styling */}
-            <FormSurfaceProvider surface="trust">
-              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                {requiresFullContact && (
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="font-semibold text-slate-900">Name</Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="Your name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      disabled={isLoading}
-                      autoFocus
-                    />
-                  </div>
-                )}
-
+            {/* TrustModal auto-wraps children with FormSurfaceProvider surface="trust" */}
+            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              {requiresFullContact && (
                 <div className="space-y-2">
-                  <Label htmlFor="email" className={`font-semibold text-slate-900 ${emailHasError ? 'text-destructive' : ''}`}>
-                    Email Address
-                  </Label>
+                  <Label htmlFor="name" className="font-semibold text-slate-900">Name</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    {...emailProps}
+                    id="name"
+                    type="text"
+                    placeholder="Your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     disabled={isLoading}
-                    autoFocus={!requiresFullContact}
-                    className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''}
-                    aria-invalid={emailHasError}
-                    aria-describedby={emailHasError ? 'email-error' : undefined}
+                    autoFocus
                   />
-                  {emailHasError && (
-                    <p id="email-error" className="text-sm text-destructive">{emailError}</p>
-                  )}
                 </div>
+              )}
 
-                {requiresFullContact && (
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="font-semibold text-slate-900">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="(555) 123-4567"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className={`font-semibold text-slate-900 ${emailHasError ? 'text-destructive' : ''}`}>
+                  Email Address
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  {...emailProps}
+                  disabled={isLoading}
+                  autoFocus={!requiresFullContact}
+                  className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  aria-invalid={emailHasError}
+                  aria-describedby={emailHasError ? 'email-error' : undefined}
+                />
+                {emailHasError && (
+                  <p id="email-error" className="text-sm text-destructive">{emailError}</p>
                 )}
+              </div>
 
-                <Button
-                  type="submit"
-                  variant="cta"
-                  className="w-full"
-                  disabled={isLoading || !values.email.trim() || (requiresFullContact && (!name.trim() || !phone.trim()))}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="mr-2 h-4 w-4" />
-                      {buttonText}
-                    </>
-                  )}
-                </Button>
-              </form>
-            </FormSurfaceProvider>
+              {requiresFullContact && (
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="font-semibold text-slate-900">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="(555) 123-4567"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                variant="cta"
+                className="w-full"
+                disabled={isLoading || !values.email.trim() || (requiresFullContact && (!name.trim() || !phone.trim()))}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="mr-2 h-4 w-4" />
+                    {buttonText}
+                  </>
+                )}
+              </Button>
+            </form>
           </>
         )}
-      </DialogContent>
+      </TrustModal>
     </Dialog>
   );
 }
