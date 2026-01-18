@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Mic, FileText, AlertCircle } from 'lucide-react';
+import { X, Mic, FileText, AlertCircle, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -32,6 +32,8 @@ interface TranscriptSegment {
   role?: string;
   time?: number | string;
   timestamp?: number | string;
+  start?: number;
+  end?: number;
   text?: string;
   content?: string;
   message?: string;
@@ -87,6 +89,85 @@ function extractTranscript(payload: Json | null): TranscriptSegment[] | string |
   return null;
 }
 
+// Format a single transcript segment as text line
+function formatSegmentLine(segment: TranscriptSegment): string {
+  const speaker = segment.speaker || segment.role;
+  const time = segment.time ?? segment.timestamp ?? segment.start;
+  const text = segment.text || segment.content || segment.message || '';
+
+  let line = '';
+  if (speaker) {
+    line += `[${speaker}]`;
+  }
+  if (time !== undefined) {
+    const timeStr = typeof time === 'number'
+      ? `${Math.floor(time / 60)}:${String(Math.floor(time % 60)).padStart(2, '0')}`
+      : String(time);
+    line += ` (${timeStr})`;
+  }
+  if (line) {
+    line += ' ';
+  }
+  line += String(text);
+  return line;
+}
+
+// Convert transcript to plain text for export
+function transcriptToPlainText(transcript: TranscriptSegment[] | string | null): string | null {
+  if (!transcript) return null;
+
+  if (typeof transcript === 'string') {
+    return transcript;
+  }
+
+  if (Array.isArray(transcript) && transcript.length > 0) {
+    return transcript.map(formatSegmentLine).join('\n');
+  }
+
+  return null;
+}
+
+// Generate export file content
+function generateExportContent(log: PhoneCallLogRow, transcriptText: string): string {
+  const header = [
+    '='.repeat(60),
+    'WINDOW MAN CALL TRANSCRIPT',
+    '='.repeat(60),
+    '',
+    `Source Tool: ${log.source_tool}`,
+    `Call Status: ${log.call_status}`,
+    `Duration: ${formatDuration(log.call_duration_sec)}`,
+    `Sentiment: ${log.call_sentiment || 'N/A'}`,
+    `Triggered At: ${new Date(log.triggered_at).toLocaleString()}`,
+    `Ended At: ${log.ended_at ? new Date(log.ended_at).toLocaleString() : 'N/A'}`,
+    '',
+    '-'.repeat(60),
+    'TRANSCRIPT',
+    '-'.repeat(60),
+    '',
+  ];
+
+  return header.join('\n') + transcriptText;
+}
+
+// Trigger file download
+function downloadTranscript(log: PhoneCallLogRow, transcriptText: string) {
+  const content = generateExportContent(log, transcriptText);
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  const date = new Date(log.triggered_at).toISOString().split('T')[0];
+  const filename = `windowman-call_${log.source_tool}_${date}_${log.call_request_id}.txt`;
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 // Render transcript segments safely
 function TranscriptDisplay({ transcript }: { transcript: TranscriptSegment[] | string | null }) {
   if (!transcript) {
@@ -114,19 +195,21 @@ function TranscriptDisplay({ transcript }: { transcript: TranscriptSegment[] | s
     return (
       <div className="space-y-3">
         {transcript.map((segment, idx) => {
-          const speaker = segment.speaker || segment.role || 'Unknown';
-          const time = segment.time || segment.timestamp;
+          const speaker = segment.speaker || segment.role;
+          const time = segment.time ?? segment.timestamp ?? segment.start;
           const text = segment.text || segment.content || segment.message || '';
 
           return (
             <div key={idx} className="flex gap-3">
               <div className="flex-shrink-0">
-                <Badge variant="outline" className="text-xs">
-                  {String(speaker)}
-                </Badge>
+                {speaker && (
+                  <Badge variant="outline" className="text-xs">
+                    {String(speaker)}
+                  </Badge>
+                )}
                 {time !== undefined && (
                   <span className="text-xs text-muted-foreground ml-2">
-                    {typeof time === 'number' ? `${Math.floor(time / 60)}:${String(time % 60).padStart(2, '0')}` : String(time)}
+                    {typeof time === 'number' ? `${Math.floor(time / 60)}:${String(Math.floor(time % 60)).padStart(2, '0')}` : String(time)}
                   </span>
                 )}
               </div>
@@ -152,9 +235,17 @@ export function CallReviewModal({ isOpen, onClose, log }: CallReviewModalProps) 
   if (!isOpen || !log) return null;
 
   const transcript = extractTranscript(log.raw_outcome_payload);
+  const transcriptText = transcriptToPlainText(transcript);
+  const hasTranscript = !!transcriptText;
 
   const handleAudioError = () => {
     setAudioError(true);
+  };
+
+  const handleDownload = () => {
+    if (transcriptText) {
+      downloadTranscript(log, transcriptText);
+    }
   };
 
   return (
@@ -176,9 +267,21 @@ export function CallReviewModal({ isOpen, onClose, log }: CallReviewModalProps) 
             </Badge>
             <Badge variant="outline">{log.source_tool}</Badge>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              disabled={!hasTranscript}
+              title={hasTranscript ? 'Download transcript as text file' : 'No transcript available'}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              Download Transcript
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Body */}
