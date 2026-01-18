@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
-import { ReviewedByBadge } from "@/components/authority";
+import { ReviewedByBadge, ExitIntentModal } from "@/components/authority";
 import { getReviewBoardSchema } from "@/config/expertIdentity";
 import { generatePillarSchemaGraph, generateFAQSchema } from "@/lib/seoSchemas";
 
@@ -242,6 +242,12 @@ const WindowRiskAndCode = () => {
       </main>
 
       <Footer />
+
+      <ExitIntentModal
+        sourceTool="window-risk-and-code"
+        hasConverted={false}
+        resultSummary="Understanding Florida hurricane protection requirements and building codes"
+      />
     </div>
   );
 };

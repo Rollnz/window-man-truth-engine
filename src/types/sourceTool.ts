@@ -26,6 +26,10 @@ export const SOURCE_TOOLS = [
   'beat-your-quote',
   'fair-price-quiz',
   'vulnerability-test',
+  'window-cost-truth',
+  'window-risk-and-code',
+  'window-sales-truth',
+  'window-verification-system',
 ] as const;
 
 export type SourceTool = typeof SOURCE_TOOLS[number];

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
-import { ReviewedByBadge } from "@/components/authority";
+import { ReviewedByBadge, ExitIntentModal } from "@/components/authority";
 import { getReviewBoardSchema } from "@/config/expertIdentity";
 import { generatePillarSchemaGraph, generateFAQSchema } from "@/lib/seoSchemas";
 
@@ -225,6 +225,12 @@ const WindowSalesTruth = () => {
       </main>
 
       <Footer />
+
+      <ExitIntentModal
+        sourceTool="window-sales-truth"
+        hasConverted={false}
+        resultSummary="Spotting manipulation tactics and negotiating fair window quotes"
+      />
     </div>
   );
 };
