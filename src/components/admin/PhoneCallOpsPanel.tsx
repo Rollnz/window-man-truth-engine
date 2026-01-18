@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Phone, Clock, AlertTriangle, CheckCircle2, RefreshCw, Play, Mic, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { CallReviewModal, PhoneCallLogRow } from './CallReviewModal';
 import { Json } from '@/integrations/supabase/types';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface QueueStats {
   dueNow: number;
@@ -42,6 +52,14 @@ interface CallLog {
   triggered_at: string;
   ended_at: string | null;
   created_at: string;
+}
+
+interface ChartData {
+  source_tool: string;
+  positive: number;
+  neutral: number;
+  negative: number;
+  total: number;
 }
 
 function maskPhone(phone: string): string {
@@ -85,6 +103,7 @@ export function PhoneCallOpsPanel() {
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<PhoneCallLogRow | null>(null);
+  const [chartLogs, setChartLogs] = useState<CallLog[]>([]);
 
   const handleOpenReview = (log: CallLog) => {
     setSelectedLog(log as PhoneCallLogRow);
@@ -96,6 +115,32 @@ export function PhoneCallOpsPanel() {
     setSelectedLog(null);
   };
 
+  // Compute chart data from 7-day logs
+  const chartData = useMemo((): ChartData[] => {
+    const finishedStatuses = ['completed', 'no_answer', 'failed'];
+    const finished = chartLogs.filter((l) => finishedStatuses.includes(l.call_status));
+
+    const grouped = new Map<string, { positive: number; neutral: number; negative: number }>();
+
+    for (const log of finished) {
+      const source = log.source_tool || 'unknown';
+      if (!grouped.has(source)) {
+        grouped.set(source, { positive: 0, neutral: 0, negative: 0 });
+      }
+      const entry = grouped.get(source)!;
+      const sentiment = log.call_sentiment || 'neutral'; // treat null as neutral
+      if (sentiment === 'positive') entry.positive++;
+      else if (sentiment === 'negative') entry.negative++;
+      else entry.neutral++;
+    }
+
+    return Array.from(grouped.entries()).map(([source_tool, counts]) => ({
+      source_tool,
+      ...counts,
+      total: counts.positive + counts.neutral + counts.negative,
+    }));
+  }, [chartLogs]);
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -103,6 +148,11 @@ export function PhoneCallOpsPanel() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayIso = today.toISOString();
+
+      // Calculate 7 days ago for chart query
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgoIso = sevenDaysAgo.toISOString();
 
       // Fetch pending calls
       const { data: pendingData, error: pendingError } = await supabase
@@ -121,6 +171,15 @@ export function PhoneCallOpsPanel() {
         .limit(25);
 
       if (logsError) throw logsError;
+
+      // Fetch last 7 days of logs for chart (only needed fields)
+      const { data: chartData, error: chartError } = await supabase
+        .from('phone_call_logs')
+        .select('source_tool, call_status, call_sentiment, triggered_at')
+        .gte('triggered_at', sevenDaysAgoIso)
+        .order('triggered_at', { ascending: false });
+
+      if (chartError) throw chartError;
 
       const calls = pendingData || [];
       const logs = logsData || [];
@@ -147,6 +206,7 @@ export function PhoneCallOpsPanel() {
       setStats({ dueNow, processing, deadLetters24h, connectionRate });
       setPendingCalls(calls);
       setCallLogs(logs);
+      setChartLogs(chartData as CallLog[] || []);
     } catch (error) {
       console.error('Error fetching phone call data:', error);
       toast.error('Failed to load phone call data');
@@ -256,6 +316,65 @@ export function PhoneCallOpsPanel() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Sentiment Chart */}
+      {chartData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Call Outcomes by Source (Last 7 Days)</CardTitle>
+            <CardDescription>Volume breakdown by source tool with sentiment distribution</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis
+                    dataKey="source_tool"
+                    tick={{ fontSize: 12 }}
+                    className="fill-muted-foreground"
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12 }}
+                    className="fill-muted-foreground"
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      borderColor: 'hsl(var(--border))',
+                      borderRadius: '0.5rem',
+                    }}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  />
+                  <Legend />
+                  <Bar
+                    dataKey="positive"
+                    name="Positive"
+                    stackId="a"
+                    fill="hsl(142, 76%, 36%)"
+                    radius={[0, 0, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="neutral"
+                    name="Neutral"
+                    stackId="a"
+                    fill="hsl(220, 9%, 46%)"
+                    radius={[0, 0, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="negative"
+                    name="Negative"
+                    stackId="a"
+                    fill="hsl(0, 84%, 60%)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Queue Table */}
       <Card>
