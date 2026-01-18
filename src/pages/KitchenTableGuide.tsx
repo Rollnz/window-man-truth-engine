@@ -409,7 +409,7 @@ const KitchenTableGuide = () => {
           <p className="text-muted-foreground mb-8">
             Want someone to measure your windows without a sales pitch? Book a no-obligation measurement from our independent technicians. No commission, no pressure.
           </p>
-          <Button variant="outline" size="lg" className="gap-2">
+          <Button variant="cta" size="lg" className="gap-2">
             Learn About Professional Measurements <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
