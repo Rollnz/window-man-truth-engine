@@ -49,7 +49,7 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
       newErrors.phone = 'Please enter your phone number';
     } else {
       const digits = formData.phone.replace(/\D/g, '');
-      if (digits.length < 10) {
+      if (digits.length !== 10) {
         newErrors.phone = 'Please enter a valid 10-digit phone number';
       }
     }

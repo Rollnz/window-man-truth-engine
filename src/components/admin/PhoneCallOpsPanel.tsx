@@ -37,6 +37,7 @@ interface PendingCall {
   attempt_count: number;
   phone_e164: string;
   last_error: string | null;
+  updated_at: string;
 }
 
 interface CallLog {

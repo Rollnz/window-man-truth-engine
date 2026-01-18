@@ -51,10 +51,13 @@ export function EvidenceStat({
           if (entry.isIntersecting && !hasAnimated) {
             setHasAnimated(true);
             
-            // Only animate numeric values
+            // Only animate numeric values - extract first number from string (handles ranges like '18-20%')
             const numericValue = typeof value === 'number' 
               ? value 
-              : parseFloat(String(value).replace(/[^0-9.]/g, ''));
+              : (() => {
+                  const match = String(value).match(/^[+-]?(\d+\.?\d*|\d*\.?\d+)/);
+                  return match ? parseFloat(match[0]) : NaN;
+                })();
 
             if (!isNaN(numericValue)) {
               const duration = 900;
