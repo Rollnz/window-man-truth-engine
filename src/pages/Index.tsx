@@ -1,11 +1,13 @@
 import { Navbar } from '@/components/home/Navbar';
 import { Hero } from '@/components/home/Hero';
-import { MascotTransition } from '@/components/home/MascotTransition';
-import { UncomfortableTruth } from '@/components/home/UncomfortableTruth';
-import { ToolGrid } from '@/components/home/ToolGrid';
-import { SocialProof } from '@/components/home/SocialProof';
-import { Footer } from '@/components/home/Footer';
-import { CommunityImpact } from '@/components/authority/CommunityImpact';
+import {
+  LazyMascotTransition,
+  LazyUncomfortableTruth,
+  LazyToolGrid,
+  LazyCommunityImpact,
+  LazySocialProof,
+  LazyFooter,
+} from '@/components/home/LazyHomepageSections';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
 import { getBreadcrumbSchema, getPillarHasPartReferences, generateLocalBusinessSchema } from '@/lib/seoSchemas';
@@ -103,12 +105,12 @@ const Index = () => {
       <Navbar />
       <div className="pt-14"> {/* Padding for fixed navbar */}
         <Hero />
-        <MascotTransition />
-        <UncomfortableTruth />
-        <ToolGrid />
-        <CommunityImpact />
-        <SocialProof />
-        <Footer />
+        <LazyMascotTransition />
+        <LazyUncomfortableTruth />
+        <LazyToolGrid />
+        <LazyCommunityImpact />
+        <LazySocialProof />
+        <LazyFooter />
       </div>
     </div>
   );
