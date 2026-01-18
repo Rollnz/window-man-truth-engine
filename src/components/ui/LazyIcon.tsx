@@ -31,16 +31,21 @@ const iconCache = new Map<IconName, React.LazyExoticComponent<React.ComponentTyp
  */
 function getLazyIcon(name: IconName) {
   if (!iconCache.has(name)) {
-    const LazyComponent = lazy(async () => {
-      const iconImport = dynamicIconImports[name];
-      if (!iconImport) {
-        console.warn(`Icon "${name}" not found in lucide-react`);
-        return { default: () => null as any };
-      }
-      const module = await iconImport();
-      return { default: module.default };
-    });
-    iconCache.set(name, LazyComponent as any);
+    const iconImport = dynamicIconImports[name];
+    if (!iconImport) {
+      console.warn(`Icon "${name}" not found in lucide-react`);
+      // Return a no-op component
+      const NoOpComponent = lazy(() => Promise.resolve({ 
+        default: (() => null) as unknown as React.ComponentType<LucideProps> 
+      }));
+      iconCache.set(name, NoOpComponent);
+      return NoOpComponent;
+    }
+    
+    const LazyComponent = lazy(() => 
+      iconImport().then((mod) => ({ default: mod.default as React.ComponentType<LucideProps> }))
+    );
+    iconCache.set(name, LazyComponent);
   }
   return iconCache.get(name)!;
 }
