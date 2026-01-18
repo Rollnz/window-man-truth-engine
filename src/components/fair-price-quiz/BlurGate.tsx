@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { PriceAnalysis } from '@/lib/fairPriceCalculations';
 import { gradeConfig } from '@/data/fairPriceQuizData';
 import { z } from 'zod';
+import { FormSurfaceProvider } from '@/components/forms/FormSurfaceProvider';
 
 interface BlurGateProps {
   analysis: PriceAnalysis;
@@ -68,8 +69,8 @@ export function BlurGate({ analysis, onSubmit }: BlurGateProps) {
         </div>
       </div>
 
-      {/* Lead capture modal */}
-      <div className="relative z-10 max-w-md w-full mx-auto bg-card border border-border rounded-xl p-8 shadow-2xl">
+      {/* Lead capture card - White card trust styling */}
+      <div className="relative z-10 max-w-md w-full mx-auto bg-white dark:bg-white border border-slate-200 rounded-xl p-8 shadow-2xl border-t-4 border-t-primary">
         {/* Grade preview (visible) */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
@@ -78,59 +79,63 @@ export function BlurGate({ analysis, onSubmit }: BlurGateProps) {
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold text-foreground text-center mb-2">
+        <h2 className="text-2xl font-bold text-slate-900 text-center mb-2">
           🎯 Your Fair Price Analysis is Ready
         </h2>
-        <p className="text-muted-foreground text-center mb-6">
+        <p className="text-slate-600 text-center mb-6">
           Enter your name and email to see your detailed breakdown
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="firstName">First Name</Label>
-            <Input
-              id="firstName"
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="Your first name"
-              className={errors.firstName ? 'border-destructive' : ''}
-            />
-            {errors.firstName && (
-              <p className="text-sm text-destructive mt-1">{errors.firstName}</p>
-            )}
-          </div>
+        {/* Wrap form in FormSurfaceProvider for automatic trust styling */}
+        <FormSurfaceProvider surface="trust">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="firstName" className="font-semibold text-slate-900">First Name</Label>
+              <Input
+                id="firstName"
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Your first name"
+                className={errors.firstName ? 'border-destructive' : ''}
+              />
+              {errors.firstName && (
+                <p className="text-sm text-destructive mt-1">{errors.firstName}</p>
+              )}
+            </div>
 
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className={errors.email ? 'border-destructive' : ''}
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive mt-1">{errors.email}</p>
-            )}
-          </div>
+            <div>
+              <Label htmlFor="email" className="font-semibold text-slate-900">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className={errors.email ? 'border-destructive' : ''}
+              />
+              {errors.email && (
+                <p className="text-sm text-destructive mt-1">{errors.email}</p>
+              )}
+            </div>
 
-          <Button
-            type="submit"
-            className="w-full text-lg py-6 glow"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Loading...' : 'See My Results →'}
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              variant="cta"
+              className="w-full text-lg py-6"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Loading...' : 'See My Results →'}
+            </Button>
+          </form>
+        </FormSurfaceProvider>
 
-        <p className="text-xs text-muted-foreground text-center mt-4">
+        <p className="text-xs text-slate-500 text-center mt-4">
           We'll also email you a copy for your records
         </p>
 
         {/* Social proof */}
-        <p className="text-sm text-muted-foreground text-center mt-6">
+        <p className="text-sm text-slate-600 text-center mt-6">
           ✓ 2,847 homeowners analyzed their quotes this month
         </p>
       </div>
