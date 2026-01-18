@@ -16,7 +16,7 @@ import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
-import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
+import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 import type { SourceTool } from "@/types/sourceTool";
 
 type Phase = "hero" | "questions" | "calculating" | "result";

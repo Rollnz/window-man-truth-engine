@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { ROUTES } from "@/config/navigation";
-import { getGuidePageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
+import { getGuidePageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 
 const faqs = [
   {

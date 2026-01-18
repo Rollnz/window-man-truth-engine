@@ -18,7 +18,7 @@ import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { ExitIntentModal } from '@/components/authority';
-import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import type { SourceTool } from '@/types/sourceTool';
 
 type Phase = 'hero' | 'quiz' | 'analysis' | 'blur-gate' | 'results';

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { Navbar } from '@/components/home/Navbar';
 import { SEO } from '@/components/SEO';
-import { getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { ROUTES } from '@/config/navigation';
 
 export default function Privacy() {

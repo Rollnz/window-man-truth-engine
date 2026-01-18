@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { CommunityImpact } from "@/components/authority/CommunityImpact";
 import { ROUTES } from "@/config/navigation";
-import { getAboutPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
+import { getAboutPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 import { REVIEW_BOARD } from "@/config/expertIdentity";
 
 const About = () => {

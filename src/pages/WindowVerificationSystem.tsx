@@ -10,7 +10,7 @@ import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
 import { ReviewedByBadge, ExitIntentModal } from "@/components/authority";
 import { getReviewBoardSchema } from "@/config/expertIdentity";
-import { generatePillarSchemaGraph, generateFAQSchema } from "@/lib/seoSchemas";
+import { generatePillarSchemaGraph, generateFAQSchema } from "@/lib/seoSchemas/index";
 
 const pillar = PILLARS['window-verification-system'];
 
