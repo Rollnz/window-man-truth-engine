@@ -5,7 +5,7 @@
 import { Shield } from "lucide-react";
 import { ROUTES } from "@/config/navigation";
 import { SEO } from "@/components/SEO";
-import { getBreadcrumbSchema } from "@/lib/seoSchemas";
+import { getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { useQuoteBuilder } from "@/hooks/useQuoteBuilder";
 import { ErrorBoundary } from "@/components/error";

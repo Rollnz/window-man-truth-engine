@@ -10,7 +10,7 @@ import {
 } from '@/components/home/LazyHomepageSections';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
-import { getBreadcrumbSchema, getPillarHasPartReferences, generateLocalBusinessSchema } from '@/lib/seoSchemas';
+import { getBreadcrumbSchema, getPillarHasPartReferences, generateLocalBusinessSchema } from '@/lib/seoSchemas/index';
 import { getReviewBoardSchema } from '@/config/expertIdentity';
 
 const Index = () => {

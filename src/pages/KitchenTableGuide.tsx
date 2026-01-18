@@ -26,7 +26,7 @@ import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
-import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { ProTipBox } from '@/components/seo';
 import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
 

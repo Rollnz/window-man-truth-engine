@@ -28,7 +28,7 @@ import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
 import { useNavigate } from 'react-router-dom';
-import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { ProTipBox } from '@/components/seo';
 import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
 

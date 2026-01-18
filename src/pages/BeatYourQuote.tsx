@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useSessionData } from '@/hooks/useSessionData';
 import { SEO } from '@/components/SEO';
-import { getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { Navbar } from '@/components/home/Navbar';
 import { MinimalFooter } from '@/components/navigation/MinimalFooter';
 import { DossierHero } from '@/components/beat-your-quote/DossierHero';

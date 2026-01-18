@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SEO } from '@/components/SEO';
-import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { trackToolCompletion } from '@/lib/gtm';

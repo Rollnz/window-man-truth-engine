@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSessionData } from "@/hooks/useSessionData";
 import { SEO } from "@/components/SEO";
-import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
+import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { windowTiers } from "@/data/windowData";
 import { calculateTierTrueCost, TrueCostBreakdown } from "@/lib/comparisonCalculations";

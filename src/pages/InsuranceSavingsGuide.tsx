@@ -25,7 +25,7 @@ import { Navbar } from '@/components/home/Navbar';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { useSessionData } from '@/hooks/useSessionData';
-import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { ProTipBox } from '@/components/seo';
 import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
 

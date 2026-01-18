@@ -5,7 +5,7 @@ import { trackToolCompletion } from "@/lib/gtm";
 import { getQuestionByIndex, getTotalQuestions } from "@/data/riskDiagnosticData";
 import { calculateRiskScores, RiskAnswers } from "@/lib/riskCalculations";
 import { SEO } from "@/components/SEO";
-import { getBreadcrumbSchema } from "@/lib/seoSchemas";
+import { getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 import { Navbar } from "@/components/home/Navbar";
 import { RiskHero } from "@/components/risk-diagnostic/RiskHero";
 import { RiskQuestion } from "@/components/risk-diagnostic/RiskQuestion";

@@ -18,7 +18,7 @@ import { ErrorBoundary } from '@/components/error';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
-import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
+import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { ToolFAQSection, PillarBreadcrumb } from '@/components/seo';
 import { getToolFAQs } from '@/data/toolFAQs';
 // New supporting sections

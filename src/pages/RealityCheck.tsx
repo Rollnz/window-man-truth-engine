@@ -3,7 +3,7 @@ import { ROUTES } from "@/config/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { SEO } from "@/components/SEO";
-import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
+import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { Navbar } from "@/components/home/Navbar";
