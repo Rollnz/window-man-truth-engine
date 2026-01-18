@@ -13,8 +13,17 @@ import { cn } from '@/lib/utils';
 export function FloatingEstimateButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [hasEntered, setHasEntered] = useState(false);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
+
+  // Delayed entrance - loads last after 2 seconds
+  useEffect(() => {
+    const entranceTimer = setTimeout(() => {
+      setHasEntered(true);
+    }, 2000);
+    return () => clearTimeout(entranceTimer);
+  }, []);
 
   // Scroll handler - synced with MobileStickyFooter logic
   const handleScroll = useCallback(() => {
@@ -63,10 +72,12 @@ export function FloatingEstimateButton() {
             // Hover scale effect
             'hover:scale-110 transition-all duration-300 ease-in-out',
             
-            // Visibility animation - only on mobile (md+ always visible)
-            isVisible 
-              ? 'translate-y-0 opacity-100' 
-              : 'translate-y-20 opacity-0 pointer-events-none md:translate-y-0 md:opacity-100 md:pointer-events-auto',
+            // Visibility animation - entrance slide-up, then scroll sync (mobile only)
+            !hasEntered 
+              ? 'translate-y-32 opacity-0 pointer-events-none'
+              : isVisible 
+                ? 'translate-y-0 opacity-100' 
+                : 'translate-y-20 opacity-0 pointer-events-none md:translate-y-0 md:opacity-100 md:pointer-events-auto',
             
             // Cursor
             'cursor-pointer'
