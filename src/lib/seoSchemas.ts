@@ -1132,8 +1132,6 @@ export function generateEvidenceLibrarySchemas(caseStudies: EvidenceCaseStudy[])
  * Generate AboutPage and WebPage structured data with authority entity
  */
 export function getAboutPageSchemas(): Record<string, unknown>[] {
-  const { getReviewBoardSchema } = require("@/config/expertIdentity");
-  
   const aboutPageSchema = {
     "@context": "https://schema.org",
     "@type": "AboutPage",
