@@ -200,6 +200,84 @@ async function triggerEmailNotification(payload: {
   }
 }
 
+// ============= Stape Server-Side GTM Integration =============
+const STAPE_GTM_ENDPOINT = 'https://lunaa.itswindowman.com';
+
+// SHA256 hash helper using Web Crypto API
+async function sha256Hash(text: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Normalize and hash email (lowercase, trimmed, then SHA256)
+async function hashEmail(email: string): Promise<string> {
+  const normalized = email.toLowerCase().trim();
+  return sha256Hash(normalized);
+}
+
+// Normalize and hash phone (digits only, then SHA256)
+async function hashPhone(phone: string): Promise<string> {
+  const digitsOnly = phone.replace(/\D/g, '');
+  if (!digitsOnly) return '';
+  return sha256Hash(digitsOnly);
+}
+
+interface StapeGTMPayload {
+  leadId: string;
+  email: string;
+  phone?: string | null;
+  fbp?: string | null;
+  fbc?: string | null;
+  userAgent: string;
+  eventSourceUrl: string;
+}
+
+// Fire-and-forget Stape GTM server-side event
+async function sendStapeGTMEvent(payload: StapeGTMPayload): Promise<void> {
+  try {
+    // Hash sensitive data
+    const [hashedEmail, hashedPhone] = await Promise.all([
+      hashEmail(payload.email),
+      payload.phone ? hashPhone(payload.phone) : Promise.resolve(''),
+    ]);
+
+    const gtmPayload = {
+      event_name: 'Lead',
+      event_id: payload.leadId,           // Deduplication key
+      external_id: payload.leadId,
+      em: hashedEmail,                    // SHA256 hashed email
+      ph: hashedPhone || undefined,       // SHA256 hashed phone (optional)
+      _fbp: payload.fbp || undefined,
+      _fbc: payload.fbc || undefined,
+      client_user_agent: payload.userAgent,
+      event_source_url: payload.eventSourceUrl,
+      action_source: 'website',
+    };
+
+    console.log('[Stape GTM] Sending event for lead:', payload.leadId);
+
+    const response = await fetch(STAPE_GTM_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(gtmPayload),
+    });
+
+    if (!response.ok) {
+      console.error('[Stape GTM] Error response:', response.status, await response.text());
+    } else {
+      console.log('[Stape GTM] Event sent successfully for lead:', payload.leadId);
+    }
+  } catch (error) {
+    // Non-blocking - don't fail the main request
+    console.error('[Stape GTM] Failed to send event (non-blocking):', error);
+  }
+}
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -216,6 +294,10 @@ serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Capture request headers for server-side tracking
+  const clientUserAgent = req.headers.get('user-agent') || 'unknown';
+  const referer = req.headers.get('referer') || '';
 
   // ============= Rate Limiting =============
   const clientIp = getClientIp(req);
@@ -466,6 +548,20 @@ serve(async (req) => {
               fbc: attribution?.fbc ? 'present' : undefined,
             },
           },
+        });
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // STAPE GTM: Send server-side conversion event (non-blocking)
+        // Deduplication via event_id (leadId) - Stape will ignore duplicates
+        // ═══════════════════════════════════════════════════════════════════════
+        sendStapeGTMEvent({
+          leadId,
+          email: normalizedEmail,
+          phone: phone || null,
+          fbp: attribution?.fbp || null,
+          fbc: attribution?.fbc || null,
+          userAgent: clientUserAgent,
+          eventSourceUrl: referer || aiContext?.source_form || 'https://itswindowman.com',
         });
       }
     } catch (dbError) {
