@@ -1,9 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // CALL DISPATCHER EDGE FUNCTION
 // Cron-triggered function that claims pending calls and dispatches to PhoneCall.bot
+// Includes health check endpoint and heartbeat monitoring
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,6 +29,22 @@ interface DispatchResult {
   succeeded: number;
   failed: number;
   dead_lettered: number;
+}
+
+interface HealthStats {
+  timestamp: string;
+  queue_stats: {
+    pending: number;
+    processing: number;
+    called: number;
+    dead_letter: number;
+  };
+  outcomes_today: {
+    completed: number;
+    no_answer: number;
+    failed: number;
+    in_progress: number;
+  };
 }
 
 // Helper to mask phone for logging (show only last 4 digits)
@@ -62,6 +79,83 @@ function buildMetadata(call: ClaimedCall): Record<string, string | number | null
   }
 
   return metadata;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnySupabaseClient = SupabaseClient<any, any, any>;
+
+// Health check: get queue stats and today's outcomes
+async function getHealthStats(supabase: AnySupabaseClient): Promise<HealthStats> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayIso = today.toISOString();
+
+  // Get queue stats by status
+  const { data: queueData } = await supabase
+    .from('pending_calls')
+    .select('status');
+
+  const queueStats = {
+    pending: 0,
+    processing: 0,
+    called: 0,
+    dead_letter: 0,
+  };
+
+  if (queueData) {
+    for (const row of queueData) {
+      const status = row.status as keyof typeof queueStats;
+      if (status in queueStats) {
+        queueStats[status]++;
+      }
+    }
+  }
+
+  // Get today's outcomes
+  const { data: outcomesData } = await supabase
+    .from('phone_call_logs')
+    .select('call_status')
+    .gte('created_at', todayIso);
+
+  const outcomesToday = {
+    completed: 0,
+    no_answer: 0,
+    failed: 0,
+    in_progress: 0,
+  };
+
+  if (outcomesData) {
+    for (const row of outcomesData) {
+      const status = row.call_status as keyof typeof outcomesToday;
+      if (status in outcomesToday) {
+        outcomesToday[status]++;
+      }
+    }
+  }
+
+  return {
+    timestamp: new Date().toISOString(),
+    queue_stats: queueStats,
+    outcomes_today: outcomesToday,
+  };
+}
+
+// Update heartbeat record
+async function updateHeartbeat(
+  supabase: AnySupabaseClient,
+  result: DispatchResult
+): Promise<void> {
+  try {
+    await supabase
+      .from('job_heartbeats')
+      .upsert({
+        job_name: 'call-dispatcher',
+        last_run_at: new Date().toISOString(),
+        last_summary: result,
+      }, { onConflict: 'job_name' });
+  } catch (error) {
+    console.error('[Dispatcher] Failed to update heartbeat:', error);
+  }
 }
 
 // Dispatch a single call to PhoneCall.bot with timeout
@@ -143,6 +237,27 @@ async function dispatchCall(
   }
 }
 
+// Notify dead letter handler
+async function notifyDeadLetter(
+  supabase: AnySupabaseClient,
+  callRequestId: string
+): Promise<void> {
+  try {
+    // Call the notify-dead-letter edge function
+    const { error } = await supabase.functions.invoke('notify-dead-letter', {
+      body: { call_request_id: callRequestId },
+    });
+
+    if (error) {
+      console.error('[Dispatcher] Failed to notify dead letter:', error);
+    } else {
+      console.log('[Dispatcher] Dead letter notification sent for:', callRequestId);
+    }
+  } catch (error) {
+    console.error('[Dispatcher] Error invoking notify-dead-letter:', error);
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -161,6 +276,19 @@ Deno.serve(async (req) => {
     );
   }
 
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  // Check for health check request
+  const url = new URL(req.url);
+  if (url.searchParams.get('health') === '1') {
+    console.log('[Dispatcher] Health check requested');
+    const healthStats = await getHealthStats(supabase);
+    return new Response(
+      JSON.stringify(healthStats),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   if (!webhookUrl) {
     console.error('[Dispatcher] Missing PHONECALL_BOT_WEBHOOK_URL');
     return new Response(
@@ -168,8 +296,6 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const result: DispatchResult = {
     picked: 0,
@@ -193,6 +319,8 @@ Deno.serve(async (req) => {
 
     if (!claimedCalls || claimedCalls.length === 0) {
       console.log('[Dispatcher] No pending calls to process');
+      // Still update heartbeat even with no calls
+      await updateHeartbeat(supabase, result);
       return new Response(
         JSON.stringify({ ...result, message: 'No pending calls' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -276,8 +404,30 @@ Deno.serve(async (req) => {
         if (updateError) {
           console.error('[Dispatcher] Failed to update failed call:', updateError);
         }
+
+        // If dead-lettered, create a log entry and notify
+        if (isDeadLetter) {
+          // Insert a failed log entry if one doesn't exist
+          await supabase
+            .from('phone_call_logs')
+            .insert({
+              call_request_id: call.call_request_id,
+              lead_id: call.lead_id,
+              source_tool: call.source_tool,
+              agent_id: call.agent_id,
+              call_status: 'failed',
+              triggered_at: new Date().toISOString(),
+              ai_notes: `Dead-lettered after ${newAttemptCount} attempts. Last error: ${truncateError(dispatchResult.error, 200)}`,
+            });
+
+          // Trigger notification (fire and forget)
+          notifyDeadLetter(supabase, call.call_request_id);
+        }
       }
     }
+
+    // Update heartbeat with result
+    await updateHeartbeat(supabase, result);
 
     console.log(`[Dispatcher] Batch complete:`, result);
 
