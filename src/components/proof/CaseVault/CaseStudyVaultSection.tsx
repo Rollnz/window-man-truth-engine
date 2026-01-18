@@ -68,7 +68,7 @@ export function CaseStudyVaultSection({
       onInView={onSectionView}
     >
       {/* Filters */}
-      <div className="max-w-4xl mx-auto mb-8">
+      <div className="wm-reveal wm-stagger-0 wm-sweep max-w-4xl mx-auto mb-8">
         <div className="flex flex-wrap items-center gap-4 justify-center">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-muted-foreground" />
@@ -110,9 +110,13 @@ export function CaseStudyVaultSection({
             <Card 
               key={caseStudy.id}
               className={cn(
-                'overflow-hidden transition-all duration-300',
+                "wm-reveal overflow-hidden transition-opacity transition-transform duration-300",
                 'hover:border-primary/30',
-                isExpanded && 'border-primary/50 shadow-md'
+                isExpanded && 'border-primary/50 shadow-md',
+                index === 0 && "wm-stagger-1",
+                index === 1 && "wm-stagger-2",
+                index === 2 && "wm-stagger-3",
+                index >= 3 && "wm-stagger-4"
               )}
             >
               <CardContent className="p-0">
@@ -241,11 +245,11 @@ export function CaseStudyVaultSection({
       </div>
 
       {/* CTA */}
-      <div className="text-center">
+      <div className="wm-reveal wm-stagger-4 text-center">
         <Button 
           size="lg" 
           onClick={onSeeHowMyHomeCompares}
-          className="gap-2"
+          className="gap-2 wm-btn-press"
         >
           See How My Home Compares
         </Button>

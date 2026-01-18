@@ -33,7 +33,7 @@ export function EconomicProofSection({
       {/* Two-Panel Proof Grid */}
       <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto mb-12">
         {/* Energy Efficiency Panel */}
-        <Card className="relative overflow-hidden">
+        <Card className="wm-reveal wm-stagger-0 wm-slide-left relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-green-500" />
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -76,7 +76,7 @@ export function EconomicProofSection({
         </Card>
 
         {/* Insurance ROI Panel */}
-        <Card className="relative overflow-hidden">
+        <Card className="wm-reveal wm-stagger-1 wm-slide-right relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -118,7 +118,7 @@ export function EconomicProofSection({
       </div>
 
       {/* Key Statement */}
-      <div className="max-w-3xl mx-auto text-center mb-12">
+      <div className="wm-reveal wm-stagger-2 max-w-3xl mx-auto text-center mb-12">
         <p className="text-lg text-muted-foreground">
           This is not theoretical efficiency.<br />
           It is <strong className="text-foreground">measurable household economics</strong>.
@@ -138,11 +138,11 @@ export function EconomicProofSection({
       </div>
 
       {/* CTA */}
-      <div className="text-center">
+      <div className="wm-reveal wm-stagger-4 text-center">
         <Button 
           size="lg" 
           onClick={onCalculateCostOfInaction}
-          className="gap-2 group"
+          className="gap-2 group wm-btn-press"
         >
           Calculate My Cost of Inaction
           <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
