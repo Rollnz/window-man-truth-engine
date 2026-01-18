@@ -224,6 +224,83 @@ export const TOOL_SCHEMAS = {
         question: "What does the scanner look for?",
         answer: "The scanner analyzes line item pricing, identifies hidden fees, checks for inflated labor costs, and compares against fair market rates in your area."
       }
+    ]),
+    howTo: generateHowToSchema(
+      "How to Scan Your Window Quote for Red Flags",
+      "Upload your quote and get instant AI analysis identifying hidden fees and fair pricing.",
+      [
+        { name: "Upload Your Quote", text: "Take a photo or upload PDF of your window replacement quote" },
+        { name: "AI Analysis", text: "Our AI scans for red flags, hidden fees, and pricing issues" },
+        { name: "Get Results", text: "Receive detailed report with negotiation tips and fair price comparison" }
+      ]
+    )
+  },
+
+  'risk-diagnostic': {
+    tool: generateToolSchema({
+      name: "Home Protection Risk Diagnostic",
+      description: "Free diagnostic tool to assess your home's protection level against storms, security threats, and insurance gaps. Get personalized recommendations.",
+      url: `${SITE_URL}/risk-diagnostic`
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "What does the risk diagnostic measure?",
+        answer: "The diagnostic evaluates four key areas: storm protection, home security, insurance coverage, and warranty status. You'll receive a protection score and personalized action plan."
+      },
+      {
+        question: "How long does the diagnostic take?",
+        answer: "The diagnostic takes about 2-3 minutes to complete. Answer simple questions about your home and receive instant results with actionable recommendations."
+      },
+      {
+        question: "Is my information kept private?",
+        answer: "Yes, your diagnostic results are private. We only collect the information you choose to share when requesting a consultation or saving your report."
+      }
+    ])
+  },
+
+  'claim-survival': {
+    tool: generateToolSchema({
+      name: "Insurance Claim Survival Kit",
+      description: "Free tool to organize your insurance claim documents, track your readiness score, and avoid common mistakes that delay or deny claims.",
+      url: `${SITE_URL}/claim-survival`
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "What documents do I need for an insurance claim?",
+        answer: "You need 7 critical documents: insurance policy, photos of damage before and after, contractor estimates, receipts for emergency repairs, inventory of damaged items, written timeline of events, and communication records with your insurer."
+      },
+      {
+        question: "How soon should I file a claim after storm damage?",
+        answer: "File your claim as soon as possible, ideally within 24-48 hours. Document damage immediately and take steps to prevent further damage."
+      }
+    ]),
+    howTo: generateHowToSchema(
+      "How to File a Successful Insurance Claim",
+      "Step-by-step guide to organizing your documents and filing a successful insurance claim after storm damage.",
+      [
+        { name: "Gather Critical Documents", text: "Collect your insurance policy, photos of damage, receipts, and contractor estimates." },
+        { name: "Document All Damage", text: "Follow our photo protocol to capture evidence that adjusters need to approve your claim." },
+        { name: "Follow the 24-Hour Playbook", text: "Take immediate action after a storm using our timeline to protect your claim rights." },
+        { name: "Analyze Your Readiness", text: "Use our AI tool to identify gaps in your documentation before submitting your claim." }
+      ]
+    )
+  },
+
+  'beat-your-quote': {
+    tool: generateToolSchema({
+      name: "Beat Your Quote - Quote Bloat Analyzer",
+      description: "Upload your window quote and discover hidden markups, bloated pricing, and negotiation leverage points.",
+      url: `${SITE_URL}/beat-your-quote`
+    }),
+    faq: generateFAQSchema([
+      {
+        question: "How does the quote bloat analyzer work?",
+        answer: "Upload your contractor's quote and our AI scans for inflated line items, unnecessary add-ons, and pricing that exceeds market rates."
+      },
+      {
+        question: "What hidden fees does it detect?",
+        answer: "Common bloat includes excessive labor charges, duplicate line items, premium markups on standard materials, and vague 'miscellaneous' fees."
+      }
     ])
   },
 
@@ -420,21 +497,25 @@ export const TOOL_SCHEMAS = {
 
 /**
  * Get complete schema array for a tool page
+ * Now includes HowTo schemas when present
  */
 export function getToolPageSchemas(toolId: keyof typeof TOOL_SCHEMAS): Record<string, unknown>[] {
   const schemas = TOOL_SCHEMAS[toolId];
+  const results: Record<string, unknown>[] = [];
   
-  // Handle different schema structures
-  if ('tool' in schemas && 'faq' in schemas) {
-    return [schemas.tool, schemas.faq];
-  }
-  if ('itemList' in schemas) {
-    return [schemas.itemList as Record<string, unknown>];
-  }
-  if ('organization' in schemas && 'aboutPage' in schemas) {
-    return [schemas.organization, schemas.aboutPage as Record<string, unknown>];
-  }
+  // Add tool schema if present
+  if ('tool' in schemas) results.push(schemas.tool);
   
-  // Fallback - return all values
-  return Object.values(schemas) as Record<string, unknown>[];
+  // Add FAQ schema if present
+  if ('faq' in schemas) results.push(schemas.faq);
+  
+  // Add HowTo schema if present (NEW)
+  if ('howTo' in schemas) results.push(schemas.howTo as Record<string, unknown>);
+  
+  // Handle other schema types
+  if ('itemList' in schemas) results.push(schemas.itemList as Record<string, unknown>);
+  if ('organization' in schemas) results.push(schemas.organization);
+  if ('aboutPage' in schemas) results.push(schemas.aboutPage as Record<string, unknown>);
+  
+  return results;
 }

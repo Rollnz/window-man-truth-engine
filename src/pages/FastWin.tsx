@@ -17,6 +17,7 @@ import { ConsultationBookingModal } from "@/components/conversion/ConsultationBo
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
 import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
+import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
 import type { SourceTool } from "@/types/sourceTool";
 
 type Phase = "hero" | "questions" | "calculating" | "result";
@@ -134,8 +135,13 @@ export default function FastWin() {
       />
       <Navbar />
 
+      {/* PillarBreadcrumb - links UP to parent pillar */}
+      <div className="container px-4 pt-16 pb-2">
+        <PillarBreadcrumb toolPath="/fast-win" variant="badge" />
+      </div>
+
       {/* Phases */}
-      <div className="pt-14">
+      <div className="pt-2">
         {phase === "hero" && <FastWinHero onStart={handleStart} hasSessionData={hasExistingData} />}
 
         {phase === "questions" && (

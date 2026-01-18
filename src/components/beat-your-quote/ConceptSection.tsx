@@ -6,7 +6,13 @@ export function ConceptSection() {
           {/* Image Side */}
           <div className="relative order-2 lg:order-1">
             <div className="relative rounded-lg overflow-hidden border-2 border-primary/30 shadow-2xl">
-              <img src="/images/beat-your-quote/windowmaninwindow.webp" alt="The Window Man - Sam Glass" className="w-full h-auto" />
+              <img 
+                src="/images/beat-your-quote/windowmaninwindow.webp" 
+                alt="Sam Glass - Florida window replacement expert and consumer advocate" 
+                width={600}
+                height={800}
+                className="w-full h-auto max-w-full" 
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
             </div>
             {/* Decorative elements */}

@@ -45,7 +45,9 @@ export function DossierHero({ onUploadSuccess }: DossierHeroProps) {
           <Shield className="w-20 h-20 text-primary" strokeWidth={1.5} />
           <img
             src="/favicon.png"
-            alt="Window Man Logo"
+            alt="Window Man Your Hurricane Hero - Florida Protection Expert"
+            width={40}
+            height={40}
             className="absolute inset-0 w-10 h-10 m-auto object-contain"
           />
         </div>

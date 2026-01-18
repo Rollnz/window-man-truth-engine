@@ -175,6 +175,12 @@ export const PAGE_TO_PILLAR: Record<string, PillarKey> = {
   '/evidence': 'window-verification-system',
   '/intel': 'window-verification-system',
   '/vault': 'window-verification-system',
+  '/expert': 'window-verification-system',
+  
+  // Additional mappings
+  '/fast-win': 'window-cost-truth',
+  '/reality-check': 'window-cost-truth',
+  '/calculate-estimate': 'window-cost-truth',
 };
 
 /**

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SEO } from "@/components/SEO";
 import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
+import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
 import { useToast } from "@/hooks/use-toast";
 import { useSessionData } from "@/hooks/useSessionData";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
@@ -176,6 +177,11 @@ export default function Expert() {
         jsonLd={[...getToolPageSchemas('expert-system'), getBreadcrumbSchema('expert-system')]}
       />
       <Navbar />
+
+      {/* PillarBreadcrumb - links UP to parent pillar */}
+      <div className="container px-4 pt-16 pb-2">
+        <PillarBreadcrumb toolPath="/expert" variant="badge" />
+      </div>
 
       {/* Section 1: Chat Interface (Hero) */}
       <section ref={chatSectionRef} className="min-h-[80vh] flex flex-col">

@@ -20,6 +20,7 @@ import { MinimalFooter } from "@/components/navigation/MinimalFooter";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
 import { ToolFAQSection } from "@/components/seo";
+import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
 import { getToolFAQs } from "@/data/toolFAQs";
 import type { SourceTool } from "@/types/sourceTool";
 
@@ -57,8 +58,13 @@ export default function Comparison() {
       />
       <Navbar />
 
+      {/* PillarBreadcrumb - links UP to parent pillar */}
+      <div className="container px-4 pt-16 pb-2">
+        <PillarBreadcrumb toolPath="/comparison" variant="badge" />
+      </div>
+
       {/* Hero Section */}
-      <div className="pt-14">
+      <div className="pt-2">
         <ComparisonHero sessionData={sessionData} />
       </div>
 

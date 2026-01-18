@@ -109,7 +109,13 @@ export function ManipulationTactics() {
           {/* Image - Sticky on Desktop */}
           <div className="lg:sticky lg:top-24 order-2 lg:order-1">
             <div className="relative rounded-xl overflow-hidden border border-red-500/30">
-              <img src="/images/beat-your-quote/manipulation-tactics.webp" alt="Contractor manipulation tactics exposed" className="w-full h-auto" />
+              <img 
+                src="/images/beat-your-quote/manipulation-tactics.webp" 
+                alt="Infographic exposing common window contractor manipulation tactics" 
+                width={600}
+                height={400}
+                className="w-full h-auto max-w-full" 
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0A0F14] via-transparent to-transparent" />
               
               {/* Overlay Badge */}
