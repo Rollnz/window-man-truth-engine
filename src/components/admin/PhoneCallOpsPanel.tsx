@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Phone, Clock, AlertTriangle, CheckCircle2, RefreshCw, Play, Mic } from 'lucide-react';
+import { Phone, Clock, AlertTriangle, CheckCircle2, RefreshCw, Play, Mic, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { CallReviewModal, PhoneCallLogRow } from './CallReviewModal';
+import { Json } from '@/integrations/supabase/types';
 
 interface QueueStats {
   dueNow: number;
@@ -36,6 +38,9 @@ interface CallLog {
   call_sentiment: string | null;
   recording_url: string | null;
   ai_notes: string | null;
+  raw_outcome_payload: Json | null;
+  triggered_at: string;
+  ended_at: string | null;
   created_at: string;
 }
 
@@ -78,6 +83,18 @@ export function PhoneCallOpsPanel() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<PhoneCallLogRow | null>(null);
+
+  const handleOpenReview = (log: CallLog) => {
+    setSelectedLog(log as PhoneCallLogRow);
+    setReviewModalOpen(true);
+  };
+
+  const handleCloseReview = () => {
+    setReviewModalOpen(false);
+    setSelectedLog(null);
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -96,10 +113,10 @@ export function PhoneCallOpsPanel() {
 
       if (pendingError) throw pendingError;
 
-      // Fetch call logs (last 25)
+      // Fetch call logs (last 25) with all fields needed for review modal
       const { data: logsData, error: logsError } = await supabase
         .from('phone_call_logs')
-        .select('*')
+        .select('id, call_request_id, source_tool, call_status, call_duration_sec, call_sentiment, recording_url, ai_notes, raw_outcome_payload, triggered_at, ended_at, created_at')
         .order('created_at', { ascending: false })
         .limit(25);
 
@@ -364,12 +381,13 @@ export function PhoneCallOpsPanel() {
                   <TableHead>Sentiment</TableHead>
                   <TableHead>Recording</TableHead>
                   <TableHead>Notes</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {callLogs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       No call outcomes yet
                     </TableCell>
                   </TableRow>
@@ -405,6 +423,18 @@ export function PhoneCallOpsPanel() {
                       <TableCell className="max-w-[200px] truncate" title={log.ai_notes || ''}>
                         {log.ai_notes ? log.ai_notes.slice(0, 50) + '...' : '-'}
                       </TableCell>
+                      <TableCell>
+                        {['completed', 'no_answer', 'failed'].includes(log.call_status) && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleOpenReview(log)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Review
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -413,6 +443,13 @@ export function PhoneCallOpsPanel() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Call Review Modal */}
+      <CallReviewModal
+        isOpen={reviewModalOpen}
+        onClose={handleCloseReview}
+        log={selectedLog}
+      />
     </div>
   );
 }
