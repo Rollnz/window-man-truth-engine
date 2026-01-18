@@ -5,7 +5,7 @@ import { usePageTracking } from "@/hooks/usePageTracking";
 import { trackToolCompletion } from "@/lib/gtm";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
-import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+
 import { fastWinQuestions } from "@/data/fastWinData";
 import { calculateFastWin, type FastWinAnswers, type FastWinResult } from "@/lib/fastWinLogic";
 import { FastWinHero } from "@/components/fast-win/FastWinHero";
@@ -189,8 +189,6 @@ export default function FastWin() {
         tools={getSmartRelatedTools("fast-win", sessionData.toolsCompleted)}
       />
 
-      {/* Minimal Footer */}
-      <MinimalFooter />
     </div>
   );
 }

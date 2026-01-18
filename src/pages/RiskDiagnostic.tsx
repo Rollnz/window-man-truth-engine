@@ -13,7 +13,7 @@ import { ProtectionReport } from "@/components/risk-diagnostic/ProtectionReport"
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { ExitIntentModal } from "@/components/authority";
-import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
 import { ToolFAQSection } from "@/components/seo";
@@ -181,8 +181,6 @@ export default function RiskDiagnostic() {
         tools={getSmartRelatedTools("risk-diagnostic", sessionData.toolsCompleted)}
       />
 
-      {/* Minimal Footer */}
-      <MinimalFooter />
     </div>
   );
 }

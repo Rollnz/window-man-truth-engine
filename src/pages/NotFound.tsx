@@ -1,7 +1,7 @@
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { usePageTracking } from "@/hooks/usePageTracking";
-import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+
 import { SEO } from "@/components/SEO";
 import { ROUTES } from "@/config/navigation";
 
@@ -38,8 +38,6 @@ const NotFound = () => {
         </div>
       </div>
 
-      {/* Minimal Footer */}
-      <MinimalFooter />
     </div>
   );
 };

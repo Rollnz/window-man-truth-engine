@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getAttributionData } from '@/lib/attribution';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
-import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+
 import { ExitIntentModal } from '@/components/authority';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { PillarBreadcrumb } from '@/components/seo/PillarBreadcrumb';
@@ -304,8 +304,6 @@ export default function FairPriceQuiz() {
           resultSummary={`${analysis.grade} grade quote analysis`}
         />
       )}
-      
-      <MinimalFooter />
     </div>
   );
 }

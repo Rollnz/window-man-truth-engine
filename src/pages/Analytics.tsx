@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Construction } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+
 import { ROUTES } from '@/config/navigation';
 
 export default function Analytics() {
@@ -37,8 +37,6 @@ export default function Analytics() {
           </CardContent>
         </Card>
       </div>
-
-      <MinimalFooter />
     </div>
   );
 }

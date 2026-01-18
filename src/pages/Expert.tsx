@@ -10,7 +10,7 @@ import { useSessionData } from "@/hooks/useSessionData";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { Navbar } from "@/components/home/Navbar";
-import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+
 import { ChatMessage } from "@/components/expert/ChatMessage";
 import { ChatInput } from "@/components/expert/ChatInput";
 import { SuggestedQuestions } from "@/components/expert/SuggestedQuestions";
@@ -283,8 +283,6 @@ export default function Expert() {
         sourceTool="expert-system"
       />
 
-      {/* Minimal Footer */}
-      <MinimalFooter />
     </div>
   );
 }

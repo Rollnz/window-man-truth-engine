@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Mail, ArrowLeft, Vault, CheckCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
-import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+
 import { SEO } from '@/components/SEO';
 import { ROUTES } from '@/config/navigation';
 
@@ -213,8 +213,6 @@ export default function Auth() {
         </Card>
       </main>
 
-      {/* Minimal Footer */}
-      <MinimalFooter />
     </div>
   );
 }

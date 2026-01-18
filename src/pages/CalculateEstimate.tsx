@@ -10,7 +10,7 @@ import { usePageTracking } from "@/hooks/usePageTracking";
 import { useQuoteBuilder } from "@/hooks/useQuoteBuilder";
 import { ErrorBoundary } from "@/components/error";
 import { Navbar } from "@/components/home/Navbar";
-import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { formatCurrency } from "@/utils/quoteCalculatorConstants";
 import { ToolFAQSection, PillarBreadcrumb } from "@/components/seo";
@@ -196,7 +196,6 @@ export default function CalculateEstimate() {
       />
 
       <RelatedToolsSection />
-      <MinimalFooter />
     </div>
   );
 }
