@@ -690,6 +690,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      rpc_claim_pending_calls: {
+        Args: { batch_size?: number }
+        Returns: {
+          agent_id: string
+          attempt_count: number
+          call_request_id: string
+          first_message: string
+          id: string
+          lead_id: string
+          payload: Json
+          phone_e164: string
+          source_tool: string
+        }[]
+      }
       update_lead_score_from_session: {
         Args: { p_session_id: string }
         Returns: undefined
