@@ -51,8 +51,8 @@ export function AnalysisSuccessScreen({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm">
-      <div className="relative max-w-md mx-auto px-6 text-center animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm overflow-y-auto py-6">
+      <div className="relative max-w-md mx-auto px-6 text-center animate-fade-in max-h-[90vh] overflow-y-auto">
         {/* Success Icon */}
         <div className="relative w-24 h-24 mx-auto mb-6">
           <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" style={{ animationDuration: '2s' }} />
@@ -114,7 +114,7 @@ export function AnalysisSuccessScreen({
         </div>
 
         {/* Next Step Card - Prevents traffic leaks */}
-        <div className="mt-8 w-full max-w-md">
+        <div className="mt-8 w-full max-w-md pb-6">
           <NextStepCard currentToolPath="/beat-your-quote" />
         </div>
       </div>
