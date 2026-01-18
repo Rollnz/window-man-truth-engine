@@ -11,7 +11,7 @@ import { IntelHero } from '@/components/intel/IntelHero';
 import { ResourceGrid } from '@/components/intel/ResourceGrid';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { intelResources, IntelResource } from '@/data/intelData';
-import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+
 import { ROUTES } from '@/config/navigation';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
@@ -127,8 +127,6 @@ export default function Intel() {
         tools={getSmartRelatedTools('intel', sessionData.toolsCompleted)}
       />
 
-      {/* Minimal Footer */}
-      <MinimalFooter />
     </div>
   );
 }

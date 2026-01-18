@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEvidenceAnalysis } from "@/hooks/useEvidenceAnalysis";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
-import { MinimalFooter } from "@/components/navigation/MinimalFooter";
+
 import { ClaimHero } from "@/components/claim-survival/ClaimHero";
 import { ReadinessScore } from "@/components/claim-survival/ReadinessScore";
 import { StickyProgress } from "@/components/claim-survival/StickyProgress";
@@ -450,8 +450,6 @@ export default function ClaimSurvival() {
           tools={getSmartRelatedTools("claim-survival", sessionData.toolsCompleted)}
         />
 
-        {/* Minimal Footer */}
-        <MinimalFooter />
       </div>
     </div>
   );

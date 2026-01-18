@@ -393,30 +393,6 @@ const InsuranceSavingsGuide = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 bg-card border-t border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-primary rounded flex items-center justify-center text-primary-foreground font-bold text-xs">
-                W
-              </div>
-              <span className="text-sm text-muted-foreground">© 2025 Windowman Vault</span>
-            </div>
-            <div className="flex gap-6 text-sm text-muted-foreground">
-              <button onClick={() => navigate(ROUTES.PRIVACY)} className="hover:text-foreground transition-colors">
-                Privacy
-              </button>
-              <button onClick={() => navigate(ROUTES.TERMS)} className="hover:text-foreground transition-colors">
-                Terms
-              </button>
-              <button onClick={() => navigate(ROUTES.INTEL)} className="hover:text-foreground transition-colors">
-                Intel Library
-              </button>
-            </div>
-          </div>
-        </div>
-      </footer>
       </div>
 
       {/* Exit Intent Modal for lead capture */}

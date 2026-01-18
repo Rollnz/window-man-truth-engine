@@ -4,7 +4,7 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { SEO } from '@/components/SEO';
 import { getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { Navbar } from '@/components/home/Navbar';
-import { MinimalFooter } from '@/components/navigation/MinimalFooter';
+
 import { DossierHero } from '@/components/beat-your-quote/DossierHero';
 import { ConceptSection } from '@/components/beat-your-quote/ConceptSection';
 import { ManipulationTactics } from '@/components/beat-your-quote/ManipulationTactics';
@@ -171,7 +171,6 @@ export default function BeatYourQuote() {
           tools={getSmartRelatedTools('beat-your-quote', sessionData.toolsCompleted)}
         />
       </main>
-      <MinimalFooter onGetQuoteClick={scrollToTop} />
 
       {/* Mission Initiated Lead Capture Modal */}
       {uploadedFileId && (
