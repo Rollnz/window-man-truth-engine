@@ -14,6 +14,8 @@ import { claimDocuments } from '@/data/claimSurvivalData';
 import { supabase } from '@/integrations/supabase/client';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { useAuth } from '@/hooks/useAuth';
+import { useDocumentUpload } from '@/hooks/useDocumentUpload';
 import { trackEvent } from '@/lib/gtm';
 import type { SourceTool } from '@/types/sourceTool';
 
@@ -25,72 +27,6 @@ interface DocumentUploadModalProps {
   sessionId: string;
   leadId?: string;
   sourceTool?: SourceTool;
-}
-
-// ============= Constants =============
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/webp'];
-const UPLOAD_TIMEOUT_MS = 25000; // 25 second watchdog
-const SESSION_STORAGE_KEY = 'wm-session-id';
-
-// ============= Types =============
-type UploadStage = 'idle' | 'validating' | 'sending' | 'processing' | 'done' | 'error';
-
-// ============= Error Messages =============
-const ERROR_MESSAGES: Record<string, string> = {
-  'RATE_LIMITED': 'Too many uploads. Please wait and try again.',
-  'FILE_TOO_LARGE': 'File is too large (max 10MB).',
-  'INVALID_MIME': 'Invalid file type. Use PDF, JPG, PNG, HEIC, or WebP.',
-  'INVALID_FILE_CONTENT': 'File appears corrupted or misnamed.',
-  'INVALID_SESSION': 'Session expired. Please refresh the page.',
-  'INVALID_DOC_TYPE': 'Invalid document type.',
-  'SERVICE_UNAVAILABLE': 'Upload service is temporarily unavailable. Please try again.',
-  'UPLOAD_FAILED': 'Failed to store file. Please try again.',
-  'INTERNAL_ERROR': 'An unexpected error occurred. Please try again.',
-  'METHOD_NOT_ALLOWED': 'Invalid request method.',
-  'MISSING_FILE': 'No file was provided.',
-  'TIMEOUT': 'Upload timed out. Please check your connection and try again.',
-  'NETWORK_ERROR': 'Network error. Please check your connection.',
-};
-
-function getErrorMessage(errorCode: string | undefined, fallback: string): string {
-  if (errorCode && ERROR_MESSAGES[errorCode]) {
-    return ERROR_MESSAGES[errorCode];
-  }
-  return fallback || 'Upload failed. Please try again.';
-}
-
-// ============= Session ID Helper =============
-function ensureSessionId(providedSessionId: string | undefined): string {
-  // If valid UUID provided, use it
-  if (providedSessionId && isValidUUID(providedSessionId)) {
-    return providedSessionId;
-  }
-  
-  // Check localStorage
-  try {
-    const stored = localStorage.getItem(SESSION_STORAGE_KEY);
-    if (stored && isValidUUID(stored)) {
-      return stored;
-    }
-  } catch {
-    // localStorage not available
-  }
-  
-  // Generate new UUID and persist
-  const newId = crypto.randomUUID();
-  try {
-    localStorage.setItem(SESSION_STORAGE_KEY, newId);
-  } catch {
-    console.warn('[DocumentUploadModal] Failed to persist sessionId');
-  }
-  
-  return newId;
-}
-
-function isValidUUID(id: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(id);
 }
 
 export function DocumentUploadModal({
@@ -105,77 +41,59 @@ export function DocumentUploadModal({
   const { toast } = useToast();
   const { sessionData } = useSessionData();
   const { leadId: hookLeadId } = useLeadIdentity();
+  const { session } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Use the unified upload hook
+  const { 
+    state: uploadState, 
+    upload, 
+    reset: resetUpload,
+    validateFile,
+    allowedTypes,
+  } = useDocumentUpload();
   
   // Golden Thread: Use prop if provided, otherwise fallback to hook
   const effectiveLeadId = leadIdProp || hookLeadId;
   
-  // State
+  // Local UI state (file selection only)
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadStage, setUploadStage] = useState<UploadStage>('idle');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const document = documentId ? claimDocuments.find(d => d.id === documentId) : null;
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (abortControllerRef.current) abortControllerRef.current.abort();
-    };
-  }, []);
-
-  const resetState = useCallback(() => {
+  // Reset local state when modal closes
+  const resetLocalState = useCallback(() => {
     setSelectedFile(null);
-    setUploadProgress(0);
-    setUploadStage('idle');
-    setErrorMessage(null);
     setIsDragging(false);
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
   }, []);
 
+  // Handle close - block during upload
   const handleClose = useCallback(() => {
-    if (uploadStage !== 'sending' && uploadStage !== 'processing') {
-      resetState();
+    if (!uploadState.isUploading) {
+      resetUpload();
+      resetLocalState();
       onClose();
     }
-  }, [uploadStage, resetState, onClose]);
+  }, [uploadState.isUploading, resetUpload, resetLocalState, onClose]);
 
-  const validateFile = (file: File): string | null => {
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return 'Invalid file type. Please upload a PDF or image (JPG, PNG, HEIC, WebP).';
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      return `File too large. Maximum size is 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB.`;
-    }
-    return null;
-  };
-
+  // File selection with validation
   const handleFileSelect = useCallback((file: File) => {
-    const error = validateFile(file);
-    if (error) {
+    const validation = validateFile(file);
+    if (!validation.ok) {
       toast({
         title: 'Invalid File',
-        description: error,
+        description: validation.errorMessage || 'Please select a valid file.',
         variant: 'destructive',
       });
       return;
     }
     setSelectedFile(file);
-    setUploadStage('idle');
-    setErrorMessage(null);
-  }, [toast]);
+    // Reset upload state if there was a previous error
+    if (uploadState.stage === 'error') {
+      resetUpload();
+    }
+  }, [validateFile, toast, uploadState.stage, resetUpload]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -203,79 +121,18 @@ export function DocumentUploadModal({
     }
   };
 
+  // Main upload handler using the hook
   const handleUpload = async () => {
     if (!selectedFile || !documentId) return;
 
-    // Hard guard: ensure valid sessionId
-    const uploadSessionId = ensureSessionId(propSessionId);
+    const result = await upload({
+      file: selectedFile,
+      documentType: documentId,
+      leadId: effectiveLeadId || undefined,
+      sourceTool: sourceTool || 'claim-survival',
+    });
 
-    // Reset error state
-    setErrorMessage(null);
-    setUploadStage('validating');
-    setUploadProgress(10);
-
-    // Create abort controller for timeout
-    abortControllerRef.current = new AbortController();
-
-    // Set up timeout watchdog
-    timeoutRef.current = setTimeout(() => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      setUploadStage('error');
-      setErrorMessage(ERROR_MESSAGES['TIMEOUT']);
-      setUploadProgress(0);
-    }, UPLOAD_TIMEOUT_MS);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('sessionId', uploadSessionId);
-      formData.append('documentType', documentId);
-      if (effectiveLeadId) formData.append('leadId', effectiveLeadId);
-      if (sourceTool) formData.append('sourceTool', sourceTool);
-
-      setUploadStage('sending');
-      setUploadProgress(30);
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-document`,
-        {
-          method: 'POST',
-          body: formData,
-          signal: abortControllerRef.current.signal,
-        }
-      );
-
-      // Clear timeout on response
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-
-      setUploadProgress(70);
-
-      // Parse response
-      const data = await response.json();
-      
-      setUploadStage('processing');
-      setUploadProgress(85);
-
-      if (!response.ok) {
-        const errorCode = data?.error_code || 'UPLOAD_FAILED';
-        const message = getErrorMessage(errorCode, data?.message);
-        throw new Error(message);
-      }
-
-      if (!data.success) {
-        const errorCode = data?.error_code || 'UPLOAD_FAILED';
-        const message = getErrorMessage(errorCode, data?.message);
-        throw new Error(message);
-      }
-
-      setUploadProgress(100);
-      setUploadStage('done');
-      
+    if (result.success && result.filePath) {
       // Track successful upload for GTM/analytics
       trackEvent('document_uploaded', {
         document_type: documentId,
@@ -284,56 +141,41 @@ export function DocumentUploadModal({
         source_tool: sourceTool || 'claim-survival',
       });
       
-      // Send upload confirmation email (fire and forget)
-      const userEmail = sessionData?.email;
-      if (userEmail) {
-        supabase.functions.invoke('send-email-notification', {
-          body: {
-            email: userEmail,
-            type: 'claim-vault-upload-confirmation',
-            data: {
-              documentName: document?.title || selectedFile.name,
+      // Send upload confirmation email ONLY if user is authenticated
+      // This prevents 401 errors for anonymous users
+      if (session?.access_token) {
+        const userEmail = sessionData?.email;
+        if (userEmail) {
+          supabase.functions.invoke('send-email-notification', {
+            body: {
+              email: userEmail,
+              type: 'claim-vault-upload-confirmation',
+              data: {
+                documentName: document?.title || selectedFile.name,
+              },
             },
-          },
-        }).catch((err) => {
-          console.error('[DocumentUploadModal] Email notification error:', err);
-        });
+          }).catch((err) => {
+            console.info('[DocumentUploadModal] Email notification skipped or failed:', err);
+          });
+        }
+      } else {
+        console.info('[DocumentUploadModal] Skipping email notification for anonymous user');
       }
       
       // Delay before calling success to show completion state
       setTimeout(() => {
-        // Use file_path as the identifier (signed URL can be generated on-demand)
-        onSuccess(documentId, data.file_path);
-        resetState();
+        onSuccess(documentId, result.filePath!);
+        resetUpload();
+        resetLocalState();
       }, 1000);
-
-    } catch (error) {
-      // Clear timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-
-      console.error('[DocumentUploadModal] Upload error:', error);
-      
-      // Handle abort/timeout
-      if (error instanceof Error && error.name === 'AbortError') {
-        setErrorMessage(ERROR_MESSAGES['TIMEOUT']);
-      } else if (error instanceof TypeError && error.message.includes('fetch')) {
-        setErrorMessage(ERROR_MESSAGES['NETWORK_ERROR']);
-      } else {
-        setErrorMessage(error instanceof Error ? error.message : 'Upload failed');
-      }
-      
-      setUploadStage('error');
-      setUploadProgress(0);
     }
+    // Error state is handled by the hook and rendered via uploadState
   };
 
+  // Retry handler
   const handleRetry = () => {
-    setUploadStage('idle');
-    setErrorMessage(null);
-    setUploadProgress(0);
+    resetUpload();
+    // Keep the selected file so user can retry
   };
 
   const getFileIcon = (type: string) => {
@@ -343,9 +185,8 @@ export function DocumentUploadModal({
     return <FileText className="w-8 h-8 text-primary" />;
   };
 
-  const isUploading = uploadStage === 'validating' || uploadStage === 'sending' || uploadStage === 'processing';
-  const isComplete = uploadStage === 'done';
-  const isError = uploadStage === 'error';
+  const isComplete = uploadState.stage === 'done';
+  const isError = uploadState.stage === 'error';
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -384,7 +225,7 @@ export function DocumentUploadModal({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.heic,.webp"
+                accept={allowedTypes.map(t => t === 'image/jpeg' ? '.jpg,.jpeg' : `.${t.split('/')[1]}`).join(',')}
                 onChange={handleInputChange}
                 className="hidden"
               />
@@ -402,7 +243,7 @@ export function DocumentUploadModal({
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
-                {!isUploading && (
+                {!uploadState.isUploading && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -414,14 +255,14 @@ export function DocumentUploadModal({
               </div>
 
               {/* Progress Bar */}
-              {isUploading && (
+              {uploadState.isUploading && (
                 <div className="mt-3">
-                  <Progress value={uploadProgress} className="h-2" />
+                  <Progress value={uploadState.progress} className="h-2" />
                   <p className="text-xs text-muted-foreground mt-1 text-center">
-                    {uploadStage === 'validating' && 'Validating...'}
-                    {uploadStage === 'sending' && 'Uploading...'}
-                    {uploadStage === 'processing' && 'Processing...'}
-                    {' '}{uploadProgress}%
+                    {uploadState.stage === 'validating' && 'Validating...'}
+                    {uploadState.stage === 'sending' && 'Uploading...'}
+                    {uploadState.stage === 'processing' && 'Processing...'}
+                    {' '}{uploadState.progress}%
                   </p>
                 </div>
               )}
@@ -436,7 +277,7 @@ export function DocumentUploadModal({
               </div>
               <p className="text-lg font-semibold text-destructive">Upload Failed</p>
               <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
-                {errorMessage}
+                {uploadState.errorMessage}
               </p>
               <div className="flex gap-2 justify-center mt-4">
                 <Button variant="outline" onClick={handleClose}>
@@ -469,17 +310,17 @@ export function DocumentUploadModal({
               <Button
                 variant="outline"
                 onClick={handleClose}
-                disabled={isUploading}
+                disabled={uploadState.isUploading}
                 className="flex-1"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleUpload}
-                disabled={isUploading}
+                disabled={uploadState.isUploading}
                 className="flex-1"
               >
-                {isUploading ? (
+                {uploadState.isUploading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Uploading
