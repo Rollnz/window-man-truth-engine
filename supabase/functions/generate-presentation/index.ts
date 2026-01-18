@@ -274,14 +274,15 @@ Deno.serve(async (req) => {
     // Initialize Supabase client for rate limiting
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Rate limiting: 5 generations per hour per IP
+    // Rate limiting: 50 generations per hour per IP (increased for development testing)
+    // TODO: Reduce to 5-10 for production to control Gamma API costs
     console.log("[generate-presentation] Checking rate limit...");
-    const allowed = await checkRateLimit(supabase, rateLimitId, 5, 60 * 60 * 1000);
+    const allowed = await checkRateLimit(supabase, rateLimitId, 50, 60 * 60 * 1000);
     
     if (!allowed) {
       console.log("[generate-presentation] Rate limit exceeded for:", rateLimitId);
       return new Response(
-        JSON.stringify({ error: "Rate limit exceeded. Please try again later (max 5 per hour)." }),
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later (max 50 per hour)." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
