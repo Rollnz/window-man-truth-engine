@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
 import { SessionData } from '@/hooks/useSessionData';
 import { IntelResource } from '@/data/intelData';
 import { Mail, Check, Loader2, Unlock } from 'lucide-react';
@@ -36,6 +37,7 @@ export function IntelLeadModal({
 }: IntelLeadModalProps) {
   const { toast } = useToast();
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
+  const { trackToolComplete } = useTrackToolCompletion();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [modalOpenTime, setModalOpenTime] = useState<number>(0);
@@ -119,6 +121,12 @@ export function IntelLeadModal({
           resource_id: resource?.id,
           resource_title: resource?.title,
           lead_id: data.leadId, // Golden Thread: include in analytics
+        });
+
+        // Track tool completion with delta value for value-based bidding
+        trackToolComplete('intel-library', {
+          resource_id: resource?.id,
+          resource_title: resource?.title,
         });
 
         toast({

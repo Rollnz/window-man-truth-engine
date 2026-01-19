@@ -6,6 +6,7 @@ import { SEO } from "@/components/SEO";
 import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import { useTrackToolCompletion } from "@/hooks/useTrackToolCompletion";
 import { Navbar } from "@/components/home/Navbar";
 
 import ProgressBar from "@/components/reality-check/ProgressBar";
@@ -122,6 +123,7 @@ const calculateScore = (answers: Record<string, string | number | undefined>) =>
 const RealityCheck = () => {
   usePageTracking('reality-check');
   const { sessionData, updateField, updateFields, markToolCompleted, getPrefilledValue } = useSessionData();
+  const { trackToolComplete } = useTrackToolCompletion();
   const [currentStep, setCurrentStep] = useState(1);
   const [answers, setAnswers] = useState<Record<string, string | number | undefined>>({});
   const [showResults, setShowResults] = useState(false);
@@ -172,7 +174,13 @@ const RealityCheck = () => {
       });
       markToolCompleted('reality-check');
 
-      // Track tool completion
+      // Track tool completion with delta value for value-based bidding
+      trackToolComplete('reality-check', {
+        score: finalScore,
+        urgency: finalScore >= 70 ? 'high' : finalScore >= 40 ? 'medium' : 'low',
+      });
+
+      // Also fire the legacy trackToolCompletion for backwards compatibility
       trackToolCompletion({ toolName: 'reality-check', score: finalScore });
       
       setShowResults(true);

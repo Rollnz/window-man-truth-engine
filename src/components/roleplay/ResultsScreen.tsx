@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, XCircle, RotateCcw, Clock, Zap, BookOpen, ChevronDown, ChevronUp, Loader2, Cpu } from 'lucide-react';
 import type { GameResult, AnalysisResult } from '@/types/roleplay';
 import { NextStepCard } from '@/components/seo/NextStepCard';
 import { MethodologyBadge } from '@/components/authority/MethodologyBadge';
+import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
 
 const cn = (...classes: (string | undefined | null | false)[]) => {
   return classes.filter(Boolean).join(' ');
@@ -42,7 +43,17 @@ interface ResultsScreenProps {
 
 export function ResultsScreen({ result, analysis, isAnalyzing, onPlayAgain }: ResultsScreenProps) {
   const [showAnalysis, setShowAnalysis] = useState(false);
-
+  const { trackToolComplete } = useTrackToolCompletion();
+  
+  // Track tool completion when results are displayed
+  useEffect(() => {
+    trackToolComplete('roleplay', {
+      won: result.won,
+      turns: result.turns,
+      duration_seconds: Math.floor(result.duration),
+      grade: analysis?.scoreCard.overallGrade,
+    });
+  }, []); // Fire once on mount
   return (
     <div className="flex flex-col min-h-[calc(100vh-56px)] px-4 py-8 overflow-y-auto bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
       <div className="text-center mb-8 relative">
