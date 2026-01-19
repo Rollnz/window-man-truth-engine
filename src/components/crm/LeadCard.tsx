@@ -2,11 +2,12 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Draggable } from '@hello-pangea/dnd';
 import { formatDistanceToNow } from 'date-fns';
-import { User, Phone, DollarSign, Clock, Zap, ExternalLink } from 'lucide-react';
+import { User, Phone, DollarSign, Clock, Zap, ExternalLink, Signal } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { CRMLead, LEAD_QUALITY_CONFIG } from '@/types/crm';
+import { CRMLead } from '@/types/crm';
 import { QualityBadge } from './StatusBadge';
 
 interface LeadCardProps {
@@ -53,11 +54,24 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
           )}
         >
           <CardContent className="p-3 space-y-2">
-            {/* Header: Name + Quality */}
+            {/* Header: Name + Quality + Attribution Badge */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span className="font-medium text-sm truncate">{displayName}</span>
+                {/* Ad Attribution Signal Badge */}
+                {(lead.lead_id) && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Signal className="h-3 w-3 text-primary flex-shrink-0" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Ad-sourced lead (has click attribution)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
               <QualityBadge quality={lead.lead_quality} />
             </div>

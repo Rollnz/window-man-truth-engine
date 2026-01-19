@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { CRMLead, LeadStatus, KANBAN_COLUMNS } from '@/types/crm';
-import { trackEvent, trackOfflineConversion } from '@/lib/gtm';
-import { getAttributionData } from '@/lib/attribution';
+import { CRMLead, LeadStatus } from '@/types/crm';
+import { trackOfflineConversion } from '@/lib/gtm';
 
 interface CRMSummary {
   total: number;
@@ -125,17 +124,19 @@ export function useCRMLeads(): UseCRMLeadsReturn {
         ));
       }
 
-      // Track GTM event for key conversions (Phase 7: Offline Conversions)
-      // Get stored attribution for gclid/fbclid
-      const attribution = getAttributionData();
+      // Phase 7: Offline Conversion Tracking
+      // Use the LEAD's original attribution from the database (not admin's browser)
+      const attribution = data.attribution || {};
       
-      if (newStatus === 'closed_won' || newStatus === 'appointment_set') {
+      if (newStatus === 'closed_won' || newStatus === 'appointment_set' || newStatus === 'sat') {
         await trackOfflineConversion({
           leadId,
-          newStatus: newStatus as 'closed_won' | 'appointment_set',
+          newStatus: newStatus as 'closed_won' | 'appointment_set' | 'sat',
           dealValue: extras?.actualDealValue,
+          // Use lead's original click IDs for proper ad attribution
           gclid: attribution.gclid,
           fbclid: attribution.fbc?.split('.').pop(), // Extract fbclid from _fbc format
+          email: attribution.email, // For Enhanced Match
         });
       }
 
