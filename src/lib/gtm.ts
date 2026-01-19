@@ -343,52 +343,91 @@ export interface OfflineConversionParams {
   leadId: string;
   newStatus: 'appointment_set' | 'sat' | 'closed_won' | 'closed_lost';
   dealValue?: number;
-  gclid?: string;
-  fbclid?: string;
+  gclid?: string | null;
+  fbclid?: string | null;
+  email?: string; // For Enhanced Match
 }
+
+// Offline conversion values - tuned for value-based bidding
+const OFFLINE_CONVERSION_VALUES: Record<string, number> = {
+  'appointment_set': 50,  // Qualified prospect with scheduled time
+  'sat': 150,             // High-intent, in-home consultation completed
+  'closed_won': 1500,     // Default sale value (overridden by dealValue)
+  'closed_lost': 0,
+};
 
 /**
  * Track offline conversion when CRM status changes
- * This allows Google/Meta to attribute back to the original ad click
+ * Enables Google/Meta to attribute sales back to original ad clicks
+ * 
+ * IMPORTANT: This uses the LEAD's original gclid/fbclid from the database,
+ * not the admin's browser attribution data
  */
 export const trackOfflineConversion = async (params: OfflineConversionParams) => {
-  const valueMap: Record<string, number> = {
-    'appointment_set': 25,
-    'sat': 100,
-    'closed_won': params.dealValue || 500,
-    'closed_lost': 0,
-  };
+  const value = params.newStatus === 'closed_won' 
+    ? (params.dealValue || OFFLINE_CONVERSION_VALUES['closed_won'])
+    : (OFFLINE_CONVERSION_VALUES[params.newStatus] || 0);
   
+  // Hash email for Enhanced Match (improves Meta Event Match Quality)
+  const hashedEmail = params.email ? await sha256(params.email) : undefined;
+  
+  // Core offline conversion event
   trackEvent('offline_conversion', {
     lead_id: params.leadId,
     conversion_action: params.newStatus,
-    value: valueMap[params.newStatus] || 0,
+    value: value,
     currency: 'USD',
     deal_value: params.dealValue,
+    
+    // Click IDs for platform attribution
     gclid: params.gclid,
     fbclid: params.fbclid,
+    
+    // Enhanced Match for Meta CAPI
+    user_data: hashedEmail ? {
+      sha256_email_address: hashedEmail,
+    } : undefined,
+    
+    // Source tracking
     page_location: typeof window !== 'undefined' ? window.location.href : undefined,
   });
   
-  // Also fire specific event for GTM triggers
+  // Fire specific events for cleaner GTM trigger configuration
   if (params.newStatus === 'closed_won') {
-    trackEvent('sale_completed', {
+    trackEvent('crm_sale_completed', {
       lead_id: params.leadId,
-      value: params.dealValue || 500,
+      value: value,
+      currency: 'USD',
+      gclid: params.gclid,
+      fbclid: params.fbclid,
+      user_data: hashedEmail ? { sha256_email_address: hashedEmail } : undefined,
+    });
+  } else if (params.newStatus === 'appointment_set') {
+    trackEvent('crm_appointment_set', {
+      lead_id: params.leadId,
+      value: OFFLINE_CONVERSION_VALUES['appointment_set'],
       currency: 'USD',
       gclid: params.gclid,
       fbclid: params.fbclid,
     });
-  } else if (params.newStatus === 'appointment_set') {
-    trackEvent('appointment_set', {
+  } else if (params.newStatus === 'sat') {
+    trackEvent('crm_sat_completed', {
       lead_id: params.leadId,
-      value: 25,
+      value: OFFLINE_CONVERSION_VALUES['sat'],
+      currency: 'USD',
       gclid: params.gclid,
       fbclid: params.fbclid,
     });
   }
   
-  console.log('[GTM] offline_conversion event pushed:', params);
+  console.log('[GTM] offline_conversion event pushed:', {
+    lead_id: params.leadId,
+    status: params.newStatus,
+    value,
+    has_gclid: !!params.gclid,
+    has_fbclid: !!params.fbclid,
+    has_email: !!params.email,
+  });
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

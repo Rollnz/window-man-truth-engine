@@ -83,6 +83,31 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Get original attribution data from leads table for offline conversion tracking
+    let originalAttribution = { 
+      gclid: null as string | null, 
+      fbc: null as string | null, 
+      fbp: null as string | null, 
+      email: currentLead.email as string,
+    };
+    
+    if (currentLead.lead_id) {
+      const { data: sourceLead } = await supabase
+        .from("leads")
+        .select("gclid, fbc, fbp, email")
+        .eq("id", currentLead.lead_id)
+        .single();
+      
+      if (sourceLead) {
+        originalAttribution = {
+          gclid: sourceLead.gclid,
+          fbc: sourceLead.fbc,
+          fbp: sourceLead.fbp,
+          email: sourceLead.email || currentLead.email,
+        };
+      }
+    }
+
     const previousStatus = currentLead.status;
 
     // Build update object
@@ -202,6 +227,8 @@ Deno.serve(async (req) => {
       lead: updatedLead,
       previousStatus,
       newStatus,
+      // Include original attribution for offline conversion tracking
+      attribution: originalAttribution,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
