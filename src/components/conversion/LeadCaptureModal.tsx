@@ -1,10 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -259,31 +254,31 @@ export function LeadCaptureModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <TrustModal className="sm:max-w-md">
+      <TrustModal 
+        className="sm:max-w-md"
+        modalTitle={isSuccess ? undefined : modalTitle}
+        modalDescription={isSuccess ? undefined : modalDescription}
+        headerAlign="center"
+      >
+        {/* Mail icon above title */}
+        {!isSuccess && (
+          <div className="flex justify-center mb-2 -mt-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Mail className="w-4 h-4 text-primary" />
+            </div>
+          </div>
+        )}
+        
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
               <Check className="w-8 h-8 text-primary" />
             </div>
-            <DialogTitle className="text-xl mb-2 text-slate-900">{successTitle}</DialogTitle>
-            <DialogDescription className="text-slate-600">
-              {successDescription}
-            </DialogDescription>
+            <h2 className="text-xl font-semibold mb-2 text-slate-900">{successTitle}</h2>
+            <p className="text-slate-600">{successDescription}</p>
           </div>
         ) : (
           <>
-            <DialogHeader>
-              <div className="flex justify-center mb-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Mail className="w-4 h-4 text-primary" />
-                </div>
-              </div>
-              <DialogTitle className="text-center text-slate-900">{modalTitle}</DialogTitle>
-              <DialogDescription className="text-center text-slate-600">
-                {modalDescription}
-              </DialogDescription>
-            </DialogHeader>
-
             {/* TrustModal auto-wraps children with FormSurfaceProvider surface="trust" */}
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               {requiresFullContact && (
