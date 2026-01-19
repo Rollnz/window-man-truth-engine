@@ -22,7 +22,6 @@ export interface ToolConfig {
   bgColor?: string;
   borderColor?: string;
 }
-
 interface RelatedToolsGridProps {
   /** Section heading */
   title: string;
@@ -41,17 +40,15 @@ interface RelatedToolsGridProps {
   /** Section background variant */
   variant?: 'default' | 'muted' | 'dossier';
 }
-
 const columnClasses = {
   2: 'md:grid-cols-2',
   3: 'md:grid-cols-3',
-  4: 'md:grid-cols-2 lg:grid-cols-4',
+  4: 'md:grid-cols-2 lg:grid-cols-4'
 };
-
 const variantClasses = {
   default: '',
   muted: 'bg-muted/30 border-t border-border',
-  dossier: 'bg-dossier-page',
+  dossier: 'bg-dossier-page'
 };
 
 /**
@@ -68,69 +65,46 @@ export function RelatedToolsGrid({
   staggerDelay = 100,
   onToolClick,
   className,
-  variant = 'default',
+  variant = 'default'
 }: RelatedToolsGridProps) {
   // Don't render header section if title is empty
   const showHeader = title.length > 0;
-
   const handleToolClick = (tool: ToolConfig | ToolDefinition) => {
     // Get engagement score from ToolDefinition, or use default
     const score = 'engagementScore' in tool ? tool.engagementScore : 15;
     trackEngagement('related_tool_click', score, tool.id);
-    
+
     // Call custom handler if provided
     if (onToolClick) {
       onToolClick(tool);
     }
   };
-
-  return (
-    <section className={cn('py-12', variantClasses[variant], className)}>
+  return <section className={cn('py-12', variantClasses[variant], className)}>
       <div className="container px-4 mx-auto">
         {/* Header */}
-        {showHeader && (
-          <div className="text-center mb-8">
-            <h2 className={cn(
-              'text-xl md:text-2xl font-bold mb-2',
-              variant === 'dossier' ? 'text-white' : 'text-foreground'
-            )}>
+        {showHeader && <div className="text-center mb-8">
+            <h2 className={cn("text-xl md:text-2xl font-bold mb-2 text-primary-foreground", variant === 'dossier' ? 'text-white' : 'text-foreground')}>
               {title}
             </h2>
-            {description && (
-              <p className={cn(
-                'max-w-2xl mx-auto',
-                variant === 'dossier' ? 'text-white/70' : 'text-muted-foreground'
-              )}>
+            {description && <p className={cn('max-w-2xl mx-auto', variant === 'dossier' ? 'text-white/70' : 'text-muted-foreground')}>
                 {description}
-              </p>
-            )}
-          </div>
-        )}
+              </p>}
+          </div>}
 
         {/* Tool Cards Grid */}
-        <div className={cn(
-          'grid grid-cols-1 gap-4 max-w-5xl mx-auto',
-          columnClasses[columns]
-        )}>
+        <div className={cn('grid grid-cols-1 gap-4 max-w-5xl mx-auto', columnClasses[columns])}>
           {tools.map((tool, index) => {
-            const Icon = tool.icon;
-            const iconColor = tool.iconColor || 'text-primary';
-            const bgColor = tool.bgColor || 'bg-primary/20';
-            const borderColor = tool.borderColor || 'border-primary/40';
-            const ctaText = tool.cta || 'Use Tool';
-            // Get tooltip from ToolDefinition if available
-            const tooltipText = 'tooltip' in tool ? tool.tooltip : undefined;
-
-            const cardContent = (
-              <ImpactWindowCard className="h-full">
+          const Icon = tool.icon;
+          const iconColor = tool.iconColor || 'text-primary';
+          const bgColor = tool.bgColor || 'bg-primary/20';
+          const borderColor = tool.borderColor || 'border-primary/40';
+          const ctaText = tool.cta || 'Use Tool';
+          // Get tooltip from ToolDefinition if available
+          const tooltipText = 'tooltip' in tool ? tool.tooltip : undefined;
+          const cardContent = <ImpactWindowCard className="h-full">
                 <div className="p-5 flex flex-col h-full">
                   {/* Icon Badge */}
-                  <div className={cn(
-                    'w-12 h-12 rounded-lg flex items-center justify-center mb-4',
-                    bgColor,
-                    'border',
-                    borderColor
-                  )}>
+                  <div className={cn('w-12 h-12 rounded-lg flex items-center justify-center mb-4', bgColor, 'border', borderColor)}>
                     <Icon className={cn('w-6 h-6', iconColor)} />
                   </div>
 
@@ -145,50 +119,29 @@ export function RelatedToolsGrid({
                   </p>
 
                   {/* CTA Button */}
-                  {onToolClick ? (
-                    <Button
-                      variant="cta"
-                      size="sm"
-                      className="w-full justify-between"
-                      onClick={() => handleToolClick(tool)}
-                    >
+                  {onToolClick ? <Button variant="cta" size="sm" className="w-full justify-between" onClick={() => handleToolClick(tool)}>
                       <span>{ctaText}</span>
                       <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  ) : (
-                    <Link to={tool.path} onClick={() => handleToolClick(tool)}>
+                    </Button> : <Link to={tool.path} onClick={() => handleToolClick(tool)}>
                       <Button variant="cta" size="sm" className="w-full justify-between">
                         <span>{ctaText}</span>
                         <ArrowRight className="w-4 h-4" />
                       </Button>
-                    </Link>
-                  )}
+                    </Link>}
                 </div>
-              </ImpactWindowCard>
-            );
-
-            return (
-              <AnimateOnScroll key={tool.id} delay={index * staggerDelay}>
-                {tooltipText ? (
-                  <Tooltip delayDuration={0}>
+              </ImpactWindowCard>;
+          return <AnimateOnScroll key={tool.id} delay={index * staggerDelay}>
+                {tooltipText ? <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                       {cardContent}
                     </TooltipTrigger>
-                    <TooltipContent 
-                      side="top" 
-                      className="max-w-xs bg-slate-900 text-white border-slate-700 px-4 py-3 text-sm leading-relaxed shadow-xl"
-                    >
+                    <TooltipContent side="top" className="max-w-xs bg-slate-900 text-white border-slate-700 px-4 py-3 text-sm leading-relaxed shadow-xl">
                       {tooltipText}
                     </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  cardContent
-                )}
-              </AnimateOnScroll>
-            );
-          })}
+                  </Tooltip> : cardContent}
+              </AnimateOnScroll>;
+        })}
         </div>
       </div>
-    </section>
-  );
+    </section>;
 }
