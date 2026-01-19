@@ -8,7 +8,7 @@ import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { SessionData, useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { Mail, Check, Loader2 } from 'lucide-react';
-import { trackEvent, trackModalOpen, trackAllConversions } from '@/lib/gtm';
+import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import { SourceTool } from '@/types/sourceTool';
 import { TrustModal } from '@/components/forms/TrustModal';
@@ -142,8 +142,8 @@ export function LeadCaptureModal({
           lead_id: data.leadId,
         });
 
-        // Fire Google Ads + Facebook Pixel conversion on successful submission
-        trackAllConversions({ transactionId: data.leadId, sourceTool });
+        // Push conversion event to dataLayer for GTM to handle
+        trackLeadSubmissionSuccess({ leadId: data.leadId, sourceTool });
 
         toast({
           title: 'Conversation Saved!',

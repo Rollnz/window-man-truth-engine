@@ -10,7 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { useLeadIdentity } from './useLeadIdentity';
 import { useSessionData } from './useSessionData';
 import { getAttributionData } from '@/lib/attribution';
-import { trackLeadCapture, trackFormSubmit, trackEvent, trackAllConversions } from '@/lib/gtm';
+import { trackLeadCapture, trackFormSubmit, trackEvent, trackLeadSubmissionSuccess } from '@/lib/gtm';
 import type { SourceTool } from '@/types/sourceTool';
 
 export interface LeadFormData {
@@ -176,8 +176,8 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
         lead_id: effectiveLeadId,
       });
 
-      // Fire Google Ads + Facebook Pixel conversion on successful submission
-      trackAllConversions({ transactionId: effectiveLeadId, value: leadScore, sourceTool });
+      // Push conversion event to dataLayer for GTM to handle
+      trackLeadSubmissionSuccess({ leadId: effectiveLeadId, value: leadScore, sourceTool });
 
       // Show success toast
       toast({

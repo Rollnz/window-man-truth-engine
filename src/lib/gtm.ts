@@ -1,18 +1,9 @@
 // Google Tag Manager utilities
 export const GTM_ID = 'GTM-NHVFR5QZ';
 
-// Google Ads Conversion ID
-export const GOOGLE_ADS_ID = 'AW-17439985315';
-export const GOOGLE_ADS_LEAD_CONVERSION_LABEL = '-1ITCNSm2-gbEKOdhPxA';
-
-// Facebook Pixel ID
-export const FB_PIXEL_ID = '1908588773426244';
-
 declare global {
   interface Window {
     dataLayer: Record<string, unknown>[];
-    gtag?: (...args: unknown[]) => void;
-    fbq?: (...args: unknown[]) => void;
   }
 }
 
@@ -173,83 +164,24 @@ export const trackVaultSyncClicked = (params: {
 };
 
 /**
- * Track Google Ads conversion for lead form submissions.
- * This fires only on successful lead capture (not button clicks).
+ * Track lead form submission success via GTM dataLayer.
+ * GTM will handle firing Google Ads and Facebook Pixel conversions.
  * 
- * @param params Optional additional parameters for the conversion event
+ * @param params Parameters for the conversion event
  */
-export const trackGoogleAdsConversion = (params?: {
-  /** Optional transaction ID for deduplication */
-  transactionId?: string;
-  /** Optional lead value */
-  value?: number;
-}) => {
-  if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('event', 'conversion', {
-      send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_LEAD_CONVERSION_LABEL}`,
-      ...(params?.transactionId && { transaction_id: params.transactionId }),
-      ...(params?.value && { value: params.value, currency: 'USD' }),
-    });
-    console.log('[Google Ads] Conversion event fired:', {
-      send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_LEAD_CONVERSION_LABEL}`,
-      ...params,
-    });
-  } else {
-    console.warn('[Google Ads] gtag not available - conversion not tracked');
-  }
-};
-
-/**
- * Track Facebook Pixel Lead conversion for form submissions.
- * This fires only on successful lead capture (not button clicks).
- * 
- * @param params Optional additional parameters for the conversion event
- */
-export const trackFacebookConversion = (params?: {
-  /** Event ID for deduplication (use leadId) */
-  eventId?: string;
-  /** Lead value */
-  value?: number;
-  /** Content name (e.g., source tool) */
-  contentName?: string;
-}) => {
-  if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('track', 'Lead', {
-      content_name: params?.contentName || 'lead_form',
-      value: params?.value || 0,
-      currency: 'USD',
-    }, {
-      eventID: params?.eventId, // For CAPI deduplication
-    });
-    console.log('[Facebook Pixel] Lead event fired:', {
-      eventId: params?.eventId,
-      contentName: params?.contentName,
-      value: params?.value,
-    });
-  } else {
-    console.warn('[Facebook Pixel] fbq not available - conversion not tracked');
-  }
-};
-
-/**
- * Track conversions on both Google Ads and Facebook Pixel.
- * Convenience function that fires both platform conversions at once.
- */
-export const trackAllConversions = (params?: {
-  /** Transaction/Event ID for deduplication */
-  transactionId?: string;
+export const trackLeadSubmissionSuccess = (params?: {
+  /** Lead ID for deduplication */
+  leadId?: string;
   /** Lead value */
   value?: number;
   /** Source tool name */
   sourceTool?: string;
 }) => {
-  trackGoogleAdsConversion({
-    transactionId: params?.transactionId,
-    value: params?.value,
+  trackEvent('lead_submission_success', {
+    lead_id: params?.leadId,
+    value: params?.value || 0,
+    currency: 'USD',
+    source_tool: params?.sourceTool,
   });
-  trackFacebookConversion({
-    eventId: params?.transactionId,
-    value: params?.value,
-    contentName: params?.sourceTool,
-  });
+  console.log('[GTM] lead_submission_success event pushed:', params);
 };
