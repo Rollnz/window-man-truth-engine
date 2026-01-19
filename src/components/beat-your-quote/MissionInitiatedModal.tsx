@@ -14,7 +14,7 @@ import { useFormValidation, formatPhoneNumber, commonSchemas } from '@/hooks/use
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useSessionData } from '@/hooks/useSessionData';
 import { getAttributionData } from '@/lib/attribution';
-import { trackLeadCapture, trackFormSubmit, trackEvent } from '@/lib/gtm';
+import { trackLeadCapture, trackFormSubmit, trackEvent, trackGoogleAdsConversion } from '@/lib/gtm';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -123,6 +123,9 @@ export function MissionInitiatedModal({
         lead_id: effectiveLeadId,
         source: 'beat-your-quote',
       });
+
+      // Fire Google Ads conversion on successful submission
+      trackGoogleAdsConversion({ transactionId: effectiveLeadId });
 
       toast({
         title: 'Mission Received!',
