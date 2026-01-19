@@ -4,6 +4,7 @@
  * Implements the "Linking Law" from the SEO PRD:
  * - Tools link UP to their parent pillar
  * - Shows a subtle badge/breadcrumb connecting this tool to its authority pillar
+ * - Dossier variant for dark pages like /beat-your-quote
  */
 
 import { Link } from 'react-router-dom';
@@ -13,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 interface PillarBreadcrumbProps {
   toolPath: string;
-  variant?: 'badge' | 'inline' | 'minimal';
+  variant?: 'badge' | 'inline' | 'minimal' | 'dossier';
   className?: string;
 }
 
@@ -26,6 +27,26 @@ export function PillarBreadcrumb({
 
   if (!parentPillar) {
     return null;
+  }
+
+  // Dossier variant - white text for dark backgrounds
+  if (variant === 'dossier') {
+    return (
+      <Link
+        to={parentPillar.url}
+        className={cn(
+          "inline-flex items-center gap-2 px-3 py-1.5 rounded-full",
+          "bg-white/10 border border-white/20 hover:border-white/40",
+          "text-xs font-medium text-white/90 hover:text-white",
+          "transition-all duration-200",
+          className
+        )}
+      >
+        <BookOpen className="w-3.5 h-3.5" />
+        <span>Part of {parentPillar.shortTitle}</span>
+        <ChevronRight className="w-3 h-3" />
+      </Link>
+    );
   }
 
   if (variant === 'minimal') {

@@ -123,7 +123,7 @@ export default function BeatYourQuote() {
   ];
 
   return (
-    <div className="min-h-screen dossier-bg">
+    <div className="min-h-screen dossier-bg dossier-page">
       <SEO 
         title="Beat Your Quote - Free Quote Analysis"
         description="Upload your window replacement quote for a free expert analysis. Identify hidden markups and learn how to negotiate a better price with our AI-powered scanner."
@@ -134,7 +134,7 @@ export default function BeatYourQuote() {
       <main>
         {/* Pillar Breadcrumb */}
         <div className="container px-4 pt-20 mb-2">
-          <PillarBreadcrumb toolPath="/beat-your-quote" variant="badge" />
+          <PillarBreadcrumb toolPath="/beat-your-quote" variant="dossier" />
         </div>
 
         <DossierHero onUploadSuccess={handleUploadSuccess} />
@@ -157,6 +157,7 @@ export default function BeatYourQuote() {
           faqs={getToolFAQs('beat-your-quote')}
           title="Beat Your Quote FAQs"
           description="How we help you negotiate better pricing"
+          variant="dossier"
         />
 
         {/* Legacy Interrogation FAQ */}

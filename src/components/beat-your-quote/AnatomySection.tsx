@@ -114,13 +114,13 @@ export function AnatomySection({
           <span className="text-white"> OF YOUR QUOTE</span>
         </h2>
 
-        <p className="text-center mb-12 max-w-2xl mx-auto text-primary-foreground">
+        <p className="text-center mb-12 max-w-2xl mx-auto text-white/90">
           Every contractor quote contains hidden markups. Scroll to dissolve the bloat.
         </p>
 
         {/* Original Quote Display */}
         <div className="flex justify-between items-center mb-8 px-4">
-          <span className="text-muted-foreground">Original Contractor Quote</span>
+          <span className="text-white">Original Contractor Quote</span>
           <span className="text-2xl font-bold text-red-400 font-mono">
             ${ORIGINAL_QUOTE.toLocaleString()}
           </span>
