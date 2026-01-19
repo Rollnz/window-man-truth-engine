@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useSessionData } from "@/hooks/useSessionData";
 import { usePageTracking } from "@/hooks/usePageTracking";
-import { trackToolCompletion } from "@/lib/gtm";
+import { useTrackToolCompletion } from "@/hooks/useTrackToolCompletion";
 import { getQuestionByIndex, getTotalQuestions } from "@/data/riskDiagnosticData";
 import { calculateRiskScores, RiskAnswers } from "@/lib/riskCalculations";
 import { SEO } from "@/components/SEO";
@@ -27,6 +27,7 @@ type Direction = "forward" | "backward";
 export default function RiskDiagnostic() {
   usePageTracking("risk-diagnostic");
   const { sessionData, updateField, updateFields, markToolCompleted } = useSessionData();
+  const { trackToolComplete } = useTrackToolCompletion();
   const [phase, setPhase] = useState<Phase>("hero");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<RiskAnswers>({});
@@ -71,8 +72,12 @@ export default function RiskDiagnostic() {
           });
           markToolCompleted("risk-diagnostic");
 
-          // Track tool completion
-          trackToolCompletion({ toolName: "risk-diagnostic", score: finalBreakdown.protectionScore });
+          // Track tool completion with delta value
+          trackToolComplete('risk-diagnostic', { 
+            score: finalBreakdown.protectionScore,
+            storm_score: Math.round(finalBreakdown.storm.protectionPercentage),
+            security_score: Math.round(finalBreakdown.security.protectionPercentage),
+          });
 
           setPhase("results");
         }

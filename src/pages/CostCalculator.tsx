@@ -6,7 +6,7 @@ import { SEO } from '@/components/SEO';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
-import { trackToolCompletion } from '@/lib/gtm';
+import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
 import { Navbar } from '@/components/home/Navbar';
 import { CalculatorInputs, ValidatedInputs } from '@/components/cost-calculator/CalculatorInputs';
 import { CostBreakdown } from '@/components/cost-calculator/CostBreakdown';
@@ -32,6 +32,7 @@ import { getToolFAQs } from '@/data/toolFAQs';
 export default function CostCalculator() {
   usePageTracking('cost-calculator');
   const { sessionData, updateFields, markToolCompleted } = useSessionData();
+  const { trackToolComplete } = useTrackToolCompletion();
   const [projection, setProjection] = useState<CostProjection | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -72,8 +73,12 @@ export default function CostCalculator() {
       // Mark tool as completed
       markToolCompleted('cost-calculator');
 
-      // Track tool completion
-      trackToolCompletion({ toolName: 'cost-calculator' });
+      // Track tool completion with delta value
+      trackToolComplete('cost-calculator', { 
+        year5_loss: result.year5,
+        daily_waste: result.daily,
+        break_even_years: result.breakEvenYears,
+      });
     }, 800);
   };
 
