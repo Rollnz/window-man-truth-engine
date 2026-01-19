@@ -32,7 +32,7 @@ function ProgressRing({
   const offset = circumference - progress / 100 * circumference;
   return <svg width={size} height={size} className={cn('transform -rotate-90', className)}>
       {/* Background ring */}
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} className="text-muted/30" />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} className="text-muted/30 border-primary-foreground" />
       {/* Progress ring */}
       <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} className={cn('transition-all duration-700 ease-out', className)} />
     </svg>;
