@@ -4,6 +4,7 @@ import { getErrorMessage, isRateLimitError } from '@/lib/errors';
 import { useToast } from '@/hooks/use-toast';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
 
 export interface QuoteAnalysisResult {
   overallScore: number;
@@ -108,6 +109,7 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
   const { toast } = useToast();
   const { sessionData, sessionId, updateField } = useSessionData();
   const { leadId } = useLeadIdentity();
+  const { trackToolComplete } = useTrackToolCompletion();
   
   // Analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -175,6 +177,12 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
       
       setAnalysisResult(resultWithTimestamp);
       updateField('quoteAnalysisResult', resultWithTimestamp);
+      
+      // Track tool completion with delta value for value-based bidding
+      trackToolComplete('quote-scanner', {
+        score: resultWithTimestamp.overallScore,
+        quote_amount: parseFloat(resultWithTimestamp.pricePerOpening.replace(/[^0-9.]/g, '')) || undefined,
+      });
       
     } catch (err) {
       console.error('Quote analysis error:', err);

@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
-import { trackGoogleAdsConversion } from "@/lib/gtm";
 import type { LeadModalProps, LeadFormData } from "@/types/quote-builder";
 
 export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModalProps) => {

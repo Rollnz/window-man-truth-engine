@@ -12,6 +12,7 @@ import { RateLimitError } from "@/lib/errors";
 import { callGemini } from "@/utils/geminiHelper";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { useSessionData } from "@/hooks/useSessionData";
+import { useTrackToolCompletion } from "@/hooks/useTrackToolCompletion";
 import { 
   CONFIG, STYLE_OPTIONS, SIZE_OPTIONS, PRODUCT_TYPE_CONFIG, 
   formatCurrency, DEFAULT_PRICES 
@@ -26,6 +27,7 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
   // Golden Thread: Get and persist leadId and sessionId
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
   const { updateField, sessionId } = useSessionData();
+  const { trackToolComplete } = useTrackToolCompletion();
 
   const [state, setState] = useState<QuoteBuilderState>({
     productType: "window",
@@ -283,6 +285,13 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
 
         setShowModal(false);
         setState(prev => ({ ...prev, isUnlocked: true, isLeadSubmitted: true }));
+        
+        // Track tool completion with delta value for value-based bidding
+        trackToolComplete('quote-builder', {
+          items_count: cart.length,
+          estimate_total: grandTotal,
+        });
+        
         toast.success("Quote Unlocked! Check your email for a copy.");
       } else {
         throw new Error(result.error || 'Unexpected error');

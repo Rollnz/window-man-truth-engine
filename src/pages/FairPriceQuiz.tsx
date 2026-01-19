@@ -11,6 +11,7 @@ import { calculatePriceAnalysis, QuizAnswers, PriceAnalysis, calculateLeadScore 
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
 import { trackEvent, trackLeadCapture, trackToolCompletion } from '@/lib/gtm';
 import { supabase } from '@/integrations/supabase/client';
 import { getAttributionData } from '@/lib/attribution';
@@ -28,6 +29,7 @@ export default function FairPriceQuiz() {
   usePageTracking('fair-price-quiz');
   const { updateFields, markToolCompleted } = useSessionData();
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
+  const { trackToolComplete } = useTrackToolCompletion();
 
   const [phase, setPhase] = useState<Phase>('hero');
   const [currentStep, setCurrentStep] = useState(0);
@@ -162,6 +164,13 @@ export default function FairPriceQuiz() {
       console.error('Failed to save lead:', error);
     }
 
+    // Track tool completion with delta value for value-based bidding
+    trackToolComplete('fair-price-quiz', {
+      grade: analysis?.grade,
+      quote_amount: analysis?.quoteAmount,
+      score: calculateLeadScore(quizAnswers, false),
+    });
+    
     markToolCompleted('fair-price-quiz');
     setPhase('results');
   };
