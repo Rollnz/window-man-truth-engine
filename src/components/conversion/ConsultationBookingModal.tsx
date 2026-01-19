@@ -9,8 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
 import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
+import { useFormAbandonment } from "@/hooks/useFormAbandonment";
 import { Calendar, Check, Loader2 } from "lucide-react";
-import { trackEvent, trackModalOpen } from "@/lib/gtm";
+import { trackEvent, trackModalOpen, trackConsultationBooked, trackFormStart } from "@/lib/gtm";
 import { getAttributionData, buildAIContextFromSession } from "@/lib/attribution";
 import type { SourceTool } from "@/types/sourceTool";
 import { TrustModal } from "@/components/forms/TrustModal";
@@ -49,6 +50,13 @@ export function ConsultationBookingModal({
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
   const { updateFields } = useSessionData();
   const effectiveLeadId = leadId || hookLeadId;
+
+  // Form abandonment tracking (Phase 7)
+  const { trackFieldEntry, resetTracking } = useFormAbandonment({
+    formId: 'consultation_booking',
+    sourceTool,
+    isSubmitted: isSuccess,
+  });
 
   const { values, errors, setValue, setValues, hasError, getError, getFieldProps, validateAll, clearErrors } =
     useFormValidation({
@@ -139,11 +147,18 @@ export function ConsultationBookingModal({
           });
         }
 
-        // Track successful consultation booking
-        trackEvent("consultation_booked", {
-          preferred_time: values.preferredTime,
-          lead_id: data.leadId,
-          source_tool: sourceTool,
+        // Track Enhanced Consultation Booking (Phase 2)
+        await trackConsultationBooked({
+          leadId: data.leadId,
+          email: values.email,
+          phone: values.phone,
+          name: values.name,
+          preferredTime: values.preferredTime,
+          metadata: {
+            windowCount: sessionData.windowCount,
+            projectValue: sessionData.fairPriceQuizResults?.quoteAmount,
+            urgencyLevel: sessionData.urgencyLevel,
+          },
         });
 
         toast({
@@ -181,6 +196,7 @@ export function ConsultationBookingModal({
       }
 
       setIsSuccess(false);
+      resetTracking(); // Reset abandonment tracking
       setValues({
         name: sessionData.name || "",
         email: sessionData.email || "",
@@ -191,6 +207,11 @@ export function ConsultationBookingModal({
       clearErrors();
       onClose();
     }
+  };
+
+  // Track form start on first field focus
+  const handleFirstFieldFocus = () => {
+    trackFormStart({ formId: 'consultation_booking', sourceTool });
   };
 
   const nameProps = getFieldProps("name");

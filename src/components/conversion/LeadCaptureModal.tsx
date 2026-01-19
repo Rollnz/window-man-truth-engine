@@ -7,9 +7,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { SessionData, useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { useFormAbandonment } from '@/hooks/useFormAbandonment';
 import { Mail, Check, Loader2 } from 'lucide-react';
-import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess } from '@/lib/gtm';
+import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess, trackFormStart } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
+import { getLeadQuality } from '@/lib/leadQuality';
 import { SourceTool } from '@/types/sourceTool';
 import { TrustModal } from '@/components/forms/TrustModal';
 
@@ -48,6 +50,13 @@ export function LeadCaptureModal({
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
   const { updateFields } = useSessionData();
   const effectiveLeadId = leadId || hookLeadId;
+
+  // Form abandonment tracking (Phase 7)
+  const { trackFieldEntry, resetTracking } = useFormAbandonment({
+    formId: 'lead_capture',
+    sourceTool,
+    isSubmitted: isSuccess,
+  });
 
   const requiresFullContact = sourceTool === 'quote-scanner';
 
@@ -142,8 +151,20 @@ export function LeadCaptureModal({
           lead_id: data.leadId,
         });
 
-        // Push conversion event to dataLayer for GTM to handle
-        trackLeadSubmissionSuccess({ leadId: data.leadId, sourceTool });
+        // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
+        const leadQuality = getLeadQuality(sessionData);
+        await trackLeadSubmissionSuccess({
+          leadId: data.leadId,
+          email: values.email.trim(),
+          phone: phone.trim() || undefined,
+          sourceTool,
+          leadQuality,
+          metadata: {
+            windowCount: sessionData.windowCount,
+            urgencyLevel: sessionData.urgencyLevel,
+            quoteAmount: sessionData.fairPriceQuizResults?.quoteAmount,
+          },
+        });
 
         toast({
           title: 'Conversation Saved!',
@@ -181,8 +202,14 @@ export function LeadCaptureModal({
       }
 
       setIsSuccess(false);
+      resetTracking(); // Reset abandonment tracking
       onClose();
     }
+  };
+
+  // Track form start on first field focus
+  const handleFirstFieldFocus = () => {
+    trackFormStart({ formId: 'lead_capture', sourceTool });
   };
 
   // Dynamic content based on source tool
@@ -310,6 +337,10 @@ export function LeadCaptureModal({
                   {...emailProps}
                   disabled={isLoading}
                   autoFocus={!requiresFullContact}
+                  onFocus={handleFirstFieldFocus}
+                  onBlur={() => {
+                    if (values.email) trackFieldEntry('email');
+                  }}
                   className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''}
                   aria-invalid={emailHasError}
                   aria-describedby={emailHasError ? 'email-error' : undefined}
@@ -327,6 +358,7 @@ export function LeadCaptureModal({
                     type="tel"
                     placeholder="(555) 123-4567"
                     value={phone}
+                    onBlur={() => phone && trackFieldEntry('phone')}
                     onChange={(e) => setPhone(e.target.value)}
                     disabled={isLoading}
                   />

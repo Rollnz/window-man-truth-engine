@@ -13,8 +13,10 @@ import { Label } from '@/components/ui/label';
 import { useFormValidation, formatPhoneNumber, commonSchemas } from '@/hooks/useFormValidation';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useSessionData } from '@/hooks/useSessionData';
+import { useFormAbandonment } from '@/hooks/useFormAbandonment';
 import { getAttributionData } from '@/lib/attribution';
-import { trackLeadCapture, trackFormSubmit, trackEvent, trackLeadSubmissionSuccess } from '@/lib/gtm';
+import { trackLeadCapture, trackFormSubmit, trackEvent, trackLeadSubmissionSuccess, trackFormStart } from '@/lib/gtm';
+import { getLeadQuality } from '@/lib/leadQuality';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -36,8 +38,16 @@ export function MissionInitiatedModal({
 }: MissionInitiatedModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showScanning, setShowScanning] = useState(true);
+  const [formStarted, setFormStarted] = useState(false);
   const { leadId: existingLeadId, setLeadId } = useLeadIdentity();
   const { sessionData } = useSessionData();
+
+  // Form abandonment tracking (Phase 7)
+  const { trackFieldEntry, resetTracking } = useFormAbandonment({
+    formId: 'mission_initiated',
+    sourceTool: 'beat-your-quote',
+    isSubmitted: isSubmitting,
+  });
 
   const {
     values,
@@ -124,8 +134,19 @@ export function MissionInitiatedModal({
         source: 'beat-your-quote',
       });
 
-      // Push conversion event to dataLayer for GTM to handle
-      trackLeadSubmissionSuccess({ leadId: effectiveLeadId, sourceTool: 'beat-your-quote' });
+      // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
+      const leadQuality = getLeadQuality(sessionData);
+      await trackLeadSubmissionSuccess({
+        leadId: effectiveLeadId || '',
+        email: values.email,
+        phone: values.phone,
+        sourceTool: 'beat-your-quote',
+        leadQuality,
+        metadata: {
+          windowCount: sessionData.windowCount,
+          urgencyLevel: sessionData.urgencyLevel,
+        },
+      });
 
       toast({
         title: 'Mission Received!',

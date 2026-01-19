@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ROUTES } from "@/config/navigation";
 import { getAttributionData } from "@/lib/attribution";
 import { trackLeadCapture, trackLeadSubmissionSuccess } from "@/lib/gtm";
+import { getLeadQuality } from "@/lib/leadQuality";
 import { RateLimitError } from "@/lib/errors";
 import { callGemini } from "@/utils/geminiHelper";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
@@ -266,8 +267,19 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
           leadId: result.leadId,
         });
 
-        // Push conversion event to dataLayer for GTM to handle
-        trackLeadSubmissionSuccess({ leadId: result.leadId, sourceTool: 'quote-builder' });
+        // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
+        const leadQuality = getLeadQuality({ windowCount: cart.length });
+        await trackLeadSubmissionSuccess({
+          leadId: result.leadId,
+          email: data.email.trim(),
+          phone: data.phone?.trim(),
+          sourceTool: 'quote-builder',
+          leadQuality,
+          metadata: {
+            windowCount: cart.length,
+            quoteAmount: grandTotal,
+          },
+        });
 
         setShowModal(false);
         setState(prev => ({ ...prev, isUnlocked: true, isLeadSubmitted: true }));
