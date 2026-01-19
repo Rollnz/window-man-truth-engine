@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -199,25 +199,22 @@ export function ConsultationBookingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <TrustModal className="sm:max-w-md p-5">
+      <TrustModal 
+        className="sm:max-w-md p-5"
+        modalTitle={isSuccess ? undefined : "Schedule a Free Consultation"}
+        modalDescription={isSuccess ? undefined : "Get personalized advice from a local window expert at no cost."}
+        headerAlign="center"
+      >
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center py-6 text-center">
             <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mb-3">
               <Check className="w-7 h-7 text-primary" />
             </div>
-            <DialogTitle className="text-xl mb-2 text-slate-900">Consultation Requested!</DialogTitle>
-            <DialogDescription className="text-slate-600">Thanks! A window expert will contact you within 24 hours.</DialogDescription>
+            <h2 className="text-xl font-semibold mb-2 text-slate-900">Consultation Requested!</h2>
+            <p className="text-slate-600">Thanks! A window expert will contact you within 24 hours.</p>
           </div>
         ) : (
           <>
-            <DialogHeader className="space-y-1 pb-2">
-              <DialogTitle className="text-center text-xl font-bold text-slate-900">
-                Schedule a Free Consultation
-              </DialogTitle>
-              <DialogDescription className="text-center text-sm text-slate-600">
-                Get personalized advice from a local window expert at no cost.
-              </DialogDescription>
-            </DialogHeader>
 
             {/* TrustModal auto-wraps children with FormSurfaceProvider surface="trust" */}
             <form onSubmit={handleSubmit} className="space-y-3">
