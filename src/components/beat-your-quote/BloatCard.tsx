@@ -79,7 +79,7 @@ export function BloatCard({
       </div>
       
       {/* Description */}
-      <p className="text-sm text-muted-foreground leading-relaxed pr-8">
+      <p className="text-sm text-white/85 leading-relaxed pr-8">
         {description}
       </p>
     </div>

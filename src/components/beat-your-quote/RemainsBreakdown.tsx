@@ -41,15 +41,15 @@ export function RemainsBreakdown({
         
         {/* Breakdown */}
         <div className="space-y-2 mb-4">
-          <div className="flex justify-between text-muted-foreground">
+          <div className="flex justify-between text-white">
             <span>Materials</span>
             <span className="font-mono">${materials.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between text-muted-foreground">
+          <div className="flex justify-between text-white">
             <span>Labor</span>
             <span className="font-mono">${labor.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between text-muted-foreground">
+          <div className="flex justify-between text-white">
             <span>Permit</span>
             <span className="font-mono">${permit.toLocaleString()}</span>
           </div>
@@ -67,18 +67,18 @@ export function RemainsBreakdown({
         </div>
         
         {/* Tagline */}
-        <p className="text-center text-sm text-muted-foreground italic mt-4">
+        <p className="text-center text-sm text-white/90 italic mt-4">
           "That's it. That's what windows actually cost."
         </p>
       </div>
       
       {/* Total Bloat Eliminated Summary */}
       <div className="p-6 rounded-lg border border-tools-truth-engine/30 bg-tools-truth-engine/5 text-center">
-        <div className="text-sm text-muted-foreground mb-2">Total Bloat Eliminated</div>
+        <div className="text-sm text-white mb-2">Total Bloat Eliminated</div>
         <div className="text-4xl font-bold text-tools-truth-engine font-mono mb-2">
           ${totalBloat.toLocaleString()}
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-white">
           That's <span className="text-tools-truth-engine font-medium">{bloatPercentage}%</span> of your quote going to people who never touch a window.
         </p>
       </div>

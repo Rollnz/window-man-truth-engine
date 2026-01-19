@@ -38,12 +38,12 @@ export function DossierHero({
         </h1>
 
         {/* Subtitle */}
-        <p className="text-xl md:text-2xl text-muted-foreground mb-4 animate-fade-in">
+        <p className="text-xl md:text-2xl text-white mb-4 animate-fade-in">
           Florida's Impact Window Homeowner Advocate
         </p>
 
         {/* Description */}
-        <p className="text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in">
+        <p className="text-white/90 max-w-2xl mx-auto mb-10 animate-fade-in">
           Upload your contractor's quote below and let our AI expose hidden fees instantly.
         </p>
 
@@ -52,7 +52,7 @@ export function DossierHero({
           <QuoteUploadDropzone onSuccess={onUploadSuccess} sourcePage="beat-your-quote" className="mb-4" />
 
           {/* Trust indicators with tooltip */}
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 text-sm text-white/90">
             <Shield className="w-4 h-4 text-primary" />
             <span>Your quote is encrypted and analyzed by AI. We never share your data.</span>
             <TooltipProvider>

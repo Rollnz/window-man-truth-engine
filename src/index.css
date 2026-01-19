@@ -797,3 +797,34 @@
     transform: none !important;
   }
 }
+
+/* ============================================
+   DOSSIER PAGE OVERRIDES - /beat-your-quote
+   Forces white text on the dark dossier theme
+   ============================================ */
+
+.dossier-page {
+  /* Override muted-foreground to white for better contrast */
+  --muted-foreground: 0 0% 100%;
+  --muted: 215 25% 18%;
+}
+
+/* Specific overrides for dossier page elements */
+.dossier-page .text-muted-foreground {
+  color: hsl(0 0% 100% / 0.85);
+}
+
+/* FAQ Section Blue Header Override */
+.dossier-faq-header {
+  background-color: #3E8FDA;
+  color: white;
+}
+
+/* Dossier variant for shared components */
+.dossier-variant-text {
+  color: hsl(0 0% 100%) !important;
+}
+
+.dossier-variant-muted {
+  color: hsl(0 0% 100% / 0.8) !important;
+}
