@@ -11,6 +11,7 @@ import { useLeadIdentity } from './useLeadIdentity';
 import { useSessionData } from './useSessionData';
 import { getAttributionData } from '@/lib/attribution';
 import { trackLeadCapture, trackFormSubmit, trackEvent, trackLeadSubmissionSuccess } from '@/lib/gtm';
+import { getLeadQuality } from '@/lib/leadQuality';
 import type { SourceTool } from '@/types/sourceTool';
 
 export interface LeadFormData {
@@ -176,8 +177,19 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
         lead_id: effectiveLeadId,
       });
 
-      // Push conversion event to dataLayer for GTM to handle
-      trackLeadSubmissionSuccess({ leadId: effectiveLeadId, value: leadScore, sourceTool });
+      // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
+      const leadQuality = getLeadQuality(sessionData);
+      await trackLeadSubmissionSuccess({
+        leadId: effectiveLeadId || '',
+        email: data.email,
+        phone: data.phone,
+        sourceTool,
+        leadQuality,
+        metadata: {
+          windowCount: sessionData.windowCount,
+          urgencyLevel: sessionData.urgencyLevel,
+        },
+      });
 
       // Show success toast
       toast({

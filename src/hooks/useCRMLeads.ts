@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CRMLead, LeadStatus, KANBAN_COLUMNS } from '@/types/crm';
-import { trackEvent } from '@/lib/gtm';
+import { trackEvent, trackOfflineConversion } from '@/lib/gtm';
+import { getAttributionData } from '@/lib/attribution';
 
 interface CRMSummary {
   total: number;
@@ -124,11 +125,18 @@ export function useCRMLeads(): UseCRMLeadsReturn {
         ));
       }
 
-      // Track GTM event for key conversions
-      if (newStatus === 'closed_won') {
-        trackEvent('sale_completed');
-      } else if (newStatus === 'appointment_set') {
-        trackEvent('appointment_set');
+      // Track GTM event for key conversions (Phase 7: Offline Conversions)
+      // Get stored attribution for gclid/fbclid
+      const attribution = getAttributionData();
+      
+      if (newStatus === 'closed_won' || newStatus === 'appointment_set') {
+        await trackOfflineConversion({
+          leadId,
+          newStatus: newStatus as 'closed_won' | 'appointment_set',
+          dealValue: extras?.actualDealValue,
+          gclid: attribution.gclid,
+          fbclid: attribution.fbc?.split('.').pop(), // Extract fbclid from _fbc format
+        });
       }
 
       toast({
