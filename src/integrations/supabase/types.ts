@@ -618,7 +618,9 @@ export type Database = {
           estimated_deal_value: number | null
           facebook_ad_id: string | null
           facebook_page_name: string | null
+          fbclid: string | null
           first_name: string | null
+          gclid: string | null
           id: string
           last_contacted_at: string | null
           last_name: string | null
@@ -643,7 +645,9 @@ export type Database = {
           estimated_deal_value?: number | null
           facebook_ad_id?: string | null
           facebook_page_name?: string | null
+          fbclid?: string | null
           first_name?: string | null
+          gclid?: string | null
           id?: string
           last_contacted_at?: string | null
           last_name?: string | null
@@ -668,7 +672,9 @@ export type Database = {
           estimated_deal_value?: number | null
           facebook_ad_id?: string | null
           facebook_page_name?: string | null
+          fbclid?: string | null
           first_name?: string | null
+          gclid?: string | null
           id?: string
           last_contacted_at?: string | null
           last_name?: string | null

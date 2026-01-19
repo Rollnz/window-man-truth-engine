@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Draggable } from '@hello-pangea/dnd';
 import { formatDistanceToNow } from 'date-fns';
-import { User, Phone, DollarSign, Clock, Zap, ExternalLink, Signal } from 'lucide-react';
+import { User, Phone, DollarSign, Clock, Zap, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -38,6 +38,10 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
   }, [lead.created_at]);
 
   const dealValue = lead.actual_deal_value || lead.estimated_deal_value || 0;
+  
+  // Check for ad attribution (gclid = Google, fbclid = Meta)
+  const hasGoogleAttribution = !!lead.gclid;
+  const hasMetaAttribution = !!lead.fbclid;
 
   return (
     <Draggable draggableId={lead.id} index={index}>
@@ -54,24 +58,43 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
           )}
         >
           <CardContent className="p-3 space-y-2">
-            {/* Header: Name + Quality + Attribution Badge */}
+            {/* Header: Name + Quality + Attribution Badges */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span className="font-medium text-sm truncate">{displayName}</span>
-                {/* Ad Attribution Signal Badge */}
-                {(lead.lead_id) && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Signal className="h-3 w-3 text-primary flex-shrink-0" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs">Ad-sourced lead (has click attribution)</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
+                
+                {/* Ad Attribution Platform Badges */}
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  {hasGoogleAttribution && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 px-1 rounded cursor-default">
+                            G
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">Google Ads sourced (gclid)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                  {hasMetaAttribution && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-1 rounded cursor-default">
+                            M
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">Meta Ads sourced (fbclid)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
               </div>
               <QualityBadge quality={lead.lead_quality} />
             </div>

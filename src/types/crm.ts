@@ -34,6 +34,9 @@ export interface CRMLead {
   actual_deal_value: number | null;
   closed_at: string | null;
   assigned_to: string | null;
+  // Ad attribution for visual indicators
+  gclid: string | null;
+  fbclid: string | null;
 }
 
 export interface CRMColumn {
