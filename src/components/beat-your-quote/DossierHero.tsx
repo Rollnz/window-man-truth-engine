@@ -33,12 +33,12 @@ export function DossierHero({
 
         {/* Main Title */}
         <h1 className="font-typewriter text-4xl md:text-6xl lg:text-7xl font-bold mb-4 animate-fade-in">
-          <span className="text-primary-foreground">THE </span>
+          <span className="text-primary">THE </span>
           <span className="glow-cyan text-primary-foreground">WINDOW MAN</span>
         </h1>
 
         {/* Subtitle */}
-        <p className="text-xl md:text-2xl mb-4 animate-fade-in text-primary-foreground">
+        <p className="text-xl md:text-2xl text-muted-foreground mb-4 animate-fade-in">
           Florida's Impact Window Homeowner Advocate
         </p>
 
