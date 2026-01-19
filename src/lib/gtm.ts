@@ -1,9 +1,14 @@
 // Google Tag Manager utilities
 export const GTM_ID = 'GTM-NHVFR5QZ';
 
+// Google Ads Conversion ID
+export const GOOGLE_ADS_ID = 'AW-17439985315';
+export const GOOGLE_ADS_LEAD_CONVERSION_LABEL = '-1ITCNSm2-gbEKOdhPxA';
+
 declare global {
   interface Window {
     dataLayer: Record<string, unknown>[];
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -161,4 +166,31 @@ export const trackVaultSyncClicked = (params: {
     source: params.source,
     grade: params.grade,
   });
+};
+
+/**
+ * Track Google Ads conversion for lead form submissions.
+ * This fires only on successful lead capture (not button clicks).
+ * 
+ * @param params Optional additional parameters for the conversion event
+ */
+export const trackGoogleAdsConversion = (params?: {
+  /** Optional transaction ID for deduplication */
+  transactionId?: string;
+  /** Optional lead value */
+  value?: number;
+}) => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'conversion', {
+      send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_LEAD_CONVERSION_LABEL}`,
+      ...(params?.transactionId && { transaction_id: params.transactionId }),
+      ...(params?.value && { value: params.value, currency: 'USD' }),
+    });
+    console.log('[Google Ads] Conversion event fired:', {
+      send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_LEAD_CONVERSION_LABEL}`,
+      ...params,
+    });
+  } else {
+    console.warn('[Google Ads] gtag not available - conversion not tracked');
+  }
 };

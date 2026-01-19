@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ROUTES } from "@/config/navigation";
 import { getAttributionData } from "@/lib/attribution";
-import { trackLeadCapture } from "@/lib/gtm";
+import { trackLeadCapture, trackGoogleAdsConversion } from "@/lib/gtm";
 import { RateLimitError } from "@/lib/errors";
 import { callGemini } from "@/utils/geminiHelper";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
@@ -265,6 +265,9 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
           email: data.email.trim(),
           leadId: result.leadId,
         });
+
+        // Fire Google Ads conversion on successful submission
+        trackGoogleAdsConversion({ transactionId: result.leadId });
 
         setShowModal(false);
         setState(prev => ({ ...prev, isUnlocked: true, isLeadSubmitted: true }));
