@@ -1,31 +1,16 @@
 import { Shield, ChevronDown, HelpCircle } from 'lucide-react';
 import { StampBadge } from './StampBadge';
 import { QuoteUploadDropzone } from './QuoteUploadDropzone';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 interface DossierHeroProps {
   onUploadSuccess?: (fileId: string, filePath: string) => void;
 }
-
-export function DossierHero({ onUploadSuccess }: DossierHeroProps) {
-  return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0A0F14]">
+export function DossierHero({
+  onUploadSuccess
+}: DossierHeroProps) {
+  return <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0A0F14]">
       {/* Background Image - z-0, LCP candidate for this page */}
-      <img
-        src="/images/beat-your-quote/hero-dossier.webp"
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover opacity-40 z-0"
-        fetchPriority="high"
-        loading="eager"
-        decoding="async"
-        width={1920}
-        height={1080}
-      />
+      <img src="/images/beat-your-quote/hero-dossier.webp" alt="" className="absolute inset-0 w-full h-full object-cover opacity-40 z-0" fetchPriority="high" loading="eager" decoding="async" width={1920} height={1080} />
 
       {/* Dark Overlay - z-[1] */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#0A0F14]/70 via-[#0A0F14]/50 to-[#0A0F14] z-[1]" />
@@ -43,13 +28,7 @@ export function DossierHero({ onUploadSuccess }: DossierHeroProps) {
         {/* Shield Icon with Logo */}
         <div className="relative w-20 h-20 mx-auto mb-6 animate-fade-in">
           <Shield className="w-20 h-20 text-primary" strokeWidth={1.5} />
-          <img
-            src="/favicon.png"
-            alt="Window Man Your Hurricane Hero - Florida Protection Expert"
-            width={40}
-            height={40}
-            className="absolute inset-0 w-10 h-10 m-auto object-contain"
-          />
+          <img src="/favicon.png" alt="Window Man Your Hurricane Hero - Florida Protection Expert" width={40} height={40} className="absolute inset-0 w-10 h-10 m-auto object-contain" />
         </div>
 
         {/* Main Title */}
@@ -59,7 +38,7 @@ export function DossierHero({ onUploadSuccess }: DossierHeroProps) {
         </h1>
 
         {/* Subtitle */}
-        <p className="text-xl md:text-2xl text-muted-foreground mb-4 animate-fade-in">
+        <p className="text-xl md:text-2xl mb-4 animate-fade-in text-primary-foreground">
           Florida's Impact Window Homeowner Advocate
         </p>
 
@@ -70,11 +49,7 @@ export function DossierHero({ onUploadSuccess }: DossierHeroProps) {
 
         {/* Quote Upload Dropzone - Replaces old CTA buttons */}
         <div className="max-w-xl mx-auto animate-fade-in">
-          <QuoteUploadDropzone
-            onSuccess={onUploadSuccess}
-            sourcePage="beat-your-quote"
-            className="mb-4"
-          />
+          <QuoteUploadDropzone onSuccess={onUploadSuccess} sourcePage="beat-your-quote" className="mb-4" />
 
           {/* Trust indicators with tooltip */}
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -83,11 +58,7 @@ export function DossierHero({ onUploadSuccess }: DossierHeroProps) {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button 
-                    type="button"
-                    className="inline-flex items-center justify-center rounded-full hover:bg-muted/50 p-0.5"
-                    aria-label="Learn more about upload security"
-                  >
+                  <button type="button" className="inline-flex items-center justify-center rounded-full hover:bg-muted/50 p-0.5" aria-label="Learn more about upload security">
                     <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
                   </button>
                 </TooltipTrigger>
@@ -104,6 +75,5 @@ export function DossierHero({ onUploadSuccess }: DossierHeroProps) {
           <ChevronDown className="w-8 h-8 text-primary opacity-60 mx-auto" />
         </div>
       </div>
-    </section>
-  );
+    </section>;
 }
