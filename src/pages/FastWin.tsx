@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { ROUTES } from "@/config/navigation";
 import { useSessionData } from "@/hooks/useSessionData";
 import { usePageTracking } from "@/hooks/usePageTracking";
-import { trackToolCompletion } from "@/lib/gtm";
+import { useTrackToolCompletion } from "@/hooks/useTrackToolCompletion";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 
@@ -25,6 +25,7 @@ type Phase = "hero" | "questions" | "calculating" | "result";
 export default function FastWin() {
   usePageTracking("fast-win");
   const { sessionData, updateFields, markToolCompleted, hasExistingData } = useSessionData();
+  const { trackToolComplete } = useTrackToolCompletion();
 
   const [phase, setPhase] = useState<Phase>("hero");
   const [currentStep, setCurrentStep] = useState(0);
@@ -103,11 +104,15 @@ export default function FastWin() {
 
     markToolCompleted("fast-win");
 
-    // Track tool completion
-    trackToolCompletion({ toolName: "fast-win" });
+    // Track tool completion with delta value
+    trackToolComplete('fast-win', { 
+      product_id: finalResult.product.id,
+      product_name: finalResult.product.name,
+      match_score: finalResult.matchScore,
+    });
 
     setPhase("result");
-  }, [answers, updateFields, markToolCompleted]);
+  }, [answers, updateFields, markToolCompleted, trackToolComplete]);
 
   const handleSave = () => {
     setShowLeadModal(true);
