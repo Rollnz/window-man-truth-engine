@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Calculator, ScanSearch } from 'lucide-react';
+import { BadgeDollarSign, ScanSearch } from 'lucide-react';
 import { FOOTER_NAV } from '@/config/navigation';
 import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/gtm';
@@ -39,7 +39,7 @@ export function MobileStickyFooter() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  const handleCTAClick = (cta: 'build_quote' | 'scan_quote') => {
+  const handleCTAClick = (cta: 'beat_your_quote' | 'scan_quote') => {
     trackEvent('footer_cta_click', {
       cta,
       surface: 'sticky_footer',
@@ -68,17 +68,17 @@ export function MobileStickyFooter() {
       `}
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="px-4 py-3 space-y-2">
-        {/* Primary CTA Row - Build & Scan Buttons */}
+      <div className="px-4 py-3 space-y-1.5">
+        {/* Primary CTA Row - Beat & Scan Buttons */}
         <div className="flex gap-2">
           <Button
             asChild
             className="flex-1 h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-sm"
-            onClick={() => handleCTAClick('build_quote')}
+            onClick={() => handleCTAClick('beat_your_quote')}
           >
-            <Link to={FOOTER_NAV.BUILD_QUOTE}>
-              <Calculator className="w-4 h-4 mr-2" aria-hidden="true" />
-              Build Quote
+            <Link to={FOOTER_NAV.BEAT_YOUR_QUOTE}>
+              <BadgeDollarSign className="w-4 h-4 mr-2" aria-hidden="true" />
+              Beat Your Quote
             </Link>
           </Button>
           <Button
@@ -93,6 +93,11 @@ export function MobileStickyFooter() {
             </Link>
           </Button>
         </div>
+
+        {/* Micro-copy */}
+        <p className="text-[11px] text-slate-500 text-center">
+          Upload your quote for a free analysis
+        </p>
 
         {/* Secondary Navigation Row */}
         <div className="flex items-center justify-center gap-6 text-sm">

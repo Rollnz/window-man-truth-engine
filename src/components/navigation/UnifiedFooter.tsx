@@ -1,14 +1,20 @@
 import { Link, useLocation } from 'react-router-dom';
-import { MessageSquare, Shield, Lock, Calculator, ScanSearch } from 'lucide-react';
+import { MessageSquare, Shield, Lock, BadgeDollarSign, ScanSearch } from 'lucide-react';
 import { ROUTES, FOOTER_NAV } from '@/config/navigation';
 import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/gtm';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export function UnifiedFooter() {
   const location = useLocation();
   const currentYear = new Date().getFullYear();
 
-  const handleCTAClick = (cta: 'build_quote' | 'scan_quote') => {
+  const handleCTAClick = (cta: 'beat_your_quote' | 'scan_quote') => {
     trackEvent('footer_cta_click', {
       cta,
       surface: 'full_footer',
@@ -125,29 +131,50 @@ export function UnifiedFooter() {
               </p>
 
               {/* CTA Buttons - Center */}
-              <div className="flex flex-col sm:flex-row gap-3 order-1 md:order-2">
-                <Button
-                  asChild
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
-                  onClick={() => handleCTAClick('build_quote')}
-                >
-                  <Link to={FOOTER_NAV.BUILD_QUOTE}>
-                    <Calculator className="w-4 h-4 mr-2" aria-hidden="true" />
-                    Build Quote
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 hover:text-primary font-semibold"
-                  onClick={() => handleCTAClick('scan_quote')}
-                >
-                  <Link to={FOOTER_NAV.SCAN_QUOTE}>
-                    <ScanSearch className="w-4 h-4 mr-2" aria-hidden="true" />
-                    Scan Quote
-                  </Link>
-                </Button>
-              </div>
+              <TooltipProvider>
+                <div className="flex flex-col items-center order-1 md:order-2">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          asChild
+                          className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+                          onClick={() => handleCTAClick('beat_your_quote')}
+                        >
+                          <Link to={FOOTER_NAV.BEAT_YOUR_QUOTE}>
+                            <BadgeDollarSign className="w-4 h-4 mr-2" aria-hidden="true" />
+                            Beat Your Quote
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Compare your contractor's price against fair market rates</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 hover:text-primary font-semibold"
+                          onClick={() => handleCTAClick('scan_quote')}
+                        >
+                          <Link to={FOOTER_NAV.SCAN_QUOTE}>
+                            <ScanSearch className="w-4 h-4 mr-2" aria-hidden="true" />
+                            Scan Quote
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>AI analyzes your quote to flag overcharges and missing details</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <p className="text-xs text-slate-500 text-center mt-2">
+                    Upload your quote for a free analysis
+                  </p>
+                </div>
+              </TooltipProvider>
 
               {/* Legal links - Right */}
               <div className="flex items-center justify-center md:justify-end gap-4 md:gap-6 order-2 md:order-3">
