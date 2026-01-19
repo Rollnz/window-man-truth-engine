@@ -1,19 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
-import { 
-  Upload, 
-  FileText, 
-  Image, 
-  X, 
-  CheckCircle, 
-  AlertCircle,
-  Loader2,
-  Shield
-} from 'lucide-react';
+import { Upload, FileText, Image, X, CheckCircle, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useQuoteUpload } from '@/hooks/useQuoteUpload';
-
 interface QuoteUploadDropzoneProps {
   onSuccess?: (fileId: string, filePath: string) => void;
   onError?: (error: string) => void;
@@ -23,18 +13,16 @@ interface QuoteUploadDropzoneProps {
   /** Compact mode for embedding in cards */
   compact?: boolean;
 }
-
 export function QuoteUploadDropzone({
   onSuccess,
   onError,
   className,
   sourcePage = 'beat-your-quote',
-  compact = false,
+  compact = false
 }: QuoteUploadDropzoneProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
   const {
     isUploading,
     progress,
@@ -45,28 +33,23 @@ export function QuoteUploadDropzone({
     reset,
     clearError,
     allowedTypes,
-    maxFileSizeMB,
+    maxFileSizeMB
   } = useQuoteUpload();
-
   const isComplete = lastUpload?.success === true;
-
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   }, []);
-
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   }, []);
-
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-
     const file = e.dataTransfer.files[0];
     if (file) {
       const validation = validateFile(file);
@@ -76,7 +59,6 @@ export function QuoteUploadDropzone({
       }
     }
   }, [validateFile, clearError]);
-
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -89,74 +71,46 @@ export function QuoteUploadDropzone({
     // Reset input so same file can be re-selected
     e.target.value = '';
   }, [validateFile, clearError]);
-
   const handleUpload = async () => {
     if (!selectedFile) return;
-
-    const result = await uploadFile(selectedFile, { sourcePage });
-    
+    const result = await uploadFile(selectedFile, {
+      sourcePage
+    });
     if (result.success && result.file_id && result.file_path) {
       onSuccess?.(result.file_id, result.file_path);
     } else if (!result.success) {
       onError?.(result.message || 'Upload failed');
     }
   };
-
   const handleRemoveFile = () => {
     setSelectedFile(null);
     reset();
   };
-
   const handleClickZone = () => {
     if (!isUploading && !isComplete) {
       fileInputRef.current?.click();
     }
   };
-
   const getFileIcon = (file: File) => {
     if (file.type.startsWith('image/')) {
       return <Image className="w-6 h-6 text-primary" />;
     }
     return <FileText className="w-6 h-6 text-primary" />;
   };
-
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
-
-  return (
-    <div className={cn(compact ? "space-y-2" : "space-y-4", className)}>
+  return <div className={cn(compact ? "space-y-2" : "space-y-4", className)}>
       {/* Drop Zone */}
-      {!selectedFile && !isComplete && (
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={handleClickZone}
-          className={cn(
-            "relative border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-200",
-            "flex flex-col items-center justify-center",
-            compact 
-              ? "p-4 gap-2 min-h-[120px]" 
-              : "p-8 gap-4 min-h-[200px]",
-            isDragging
-              ? "border-primary bg-primary/5 scale-[1.01]"
-              : "border-border hover:border-primary/50 bg-card/50 hover:bg-card/80"
-          )}
-        >
+      {!selectedFile && !isComplete && <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={handleClickZone} className={cn("relative border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-200", "flex flex-col items-center justify-center", compact ? "p-4 gap-2 min-h-[120px]" : "p-8 gap-4 min-h-[200px]", isDragging ? "border-primary bg-primary/5 scale-[1.01]" : "border-border hover:border-primary/50 bg-card/50 hover:bg-card/80")}>
           {/* Classified stamp watermark - hide in compact mode */}
-          {!compact && (
-            <div className="absolute top-4 right-4 text-xs font-mono text-muted-foreground/30 uppercase tracking-widest rotate-12">
+          {!compact && <div className="absolute top-4 right-4 text-xs font-mono text-muted-foreground/30 uppercase tracking-widest rotate-12">
               CLASSIFIED
-            </div>
-          )}
+            </div>}
 
-          <div className={cn(
-            "rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center",
-            compact ? "w-10 h-10" : "w-16 h-16"
-          )}>
+          <div className={cn("rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center", compact ? "w-10 h-10" : "w-16 h-16")}>
             <Upload className={cn(compact ? "w-5 h-5" : "w-8 h-8", "text-primary")} />
           </div>
 
@@ -164,35 +118,21 @@ export function QuoteUploadDropzone({
             <p className={cn("font-semibold", compact ? "text-sm mb-0.5" : "text-lg mb-1")}>
               {compact ? "Drop Quote or Click" : "Drop Your Contractor Quote Here"}
             </p>
-            {!compact && (
-              <p className="text-sm text-muted-foreground">
+            {!compact && <p className="text-sm text-muted-foreground">
                 or click to browse your files
-              </p>
-            )}
+              </p>}
           </div>
 
-          <div className={cn(
-            "flex items-center gap-2 text-muted-foreground",
-            compact ? "text-[10px]" : "text-xs"
-          )}>
+          <div className={cn("flex items-center gap-2 text-muted-foreground", compact ? "text-[10px]" : "text-xs")}>
             <Shield className="w-3 h-3" />
             <span>{compact ? `PDF, JPG, PNG • ${maxFileSizeMB}MB` : `PDF, JPG, PNG • Max ${maxFileSizeMB}MB • Encrypted & Secure`}</span>
           </div>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            onChange={handleFileSelect}
-            className="hidden"
-            aria-label="Upload contractor quote"
-          />
-        </div>
-      )}
+          <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileSelect} className="hidden" aria-label="Upload contractor quote" />
+        </div>}
 
       {/* Selected File Preview */}
-      {selectedFile && !isComplete && (
-        <div className="border border-border rounded-xl p-4 bg-card">
+      {selectedFile && !isComplete && <div className="border border-border rounded-xl p-4 bg-card">
           <div className="flex items-center gap-4">
             {/* File Icon */}
             <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -208,21 +148,13 @@ export function QuoteUploadDropzone({
             </div>
 
             {/* Remove Button (when not uploading) */}
-            {!isUploading && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRemoveFile}
-                aria-label="Remove file"
-              >
+            {!isUploading && <Button variant="ghost" size="icon" onClick={handleRemoveFile} aria-label="Remove file">
                 <X className="w-4 h-4" />
-              </Button>
-            )}
+              </Button>}
           </div>
 
           {/* Progress Bar */}
-          {isUploading && (
-            <div className="mt-4 space-y-2">
+          {isUploading && <div className="mt-4 space-y-2">
               <Progress value={progress} className="h-2" />
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
@@ -231,42 +163,28 @@ export function QuoteUploadDropzone({
                 </span>
                 <span>{progress}%</span>
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* Error Display */}
-          {error && !isUploading && (
-            <div className="mt-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
+          {error && !isUploading && <div className="mt-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
               <div className="text-sm text-destructive">{error}</div>
-            </div>
-          )}
+            </div>}
 
           {/* Upload Button */}
-          {!isUploading && (
-            <div className="mt-4 flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleRemoveFile}
-                className="flex-1"
-              >
+          {!isUploading && <div className="mt-4 flex gap-2">
+              <Button variant="outline" onClick={handleRemoveFile} className="flex-1">
                 Cancel
               </Button>
-              <Button
-                onClick={handleUpload}
-                className="flex-1"
-              >
+              <Button onClick={handleUpload} className="flex-1">
                 <Upload className="mr-2 h-4 w-4" />
                 Upload Quote
               </Button>
-            </div>
-          )}
-        </div>
-      )}
+            </div>}
+        </div>}
 
       {/* Success State */}
-      {isComplete && lastUpload && (
-        <div className="border border-primary/30 rounded-xl p-6 bg-primary/5 text-center">
+      {isComplete && lastUpload && <div className="border border-primary/30 rounded-xl p-6 bg-primary/5 text-center">
           <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-primary" />
           </div>
@@ -274,29 +192,22 @@ export function QuoteUploadDropzone({
           <p className="text-sm text-muted-foreground mb-4">
             Your document is secured and ready for analysis.
           </p>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSelectedFile(null);
-              reset();
-            }}
-          >
+          <Button variant="outline" onClick={() => {
+        setSelectedFile(null);
+        reset();
+      }}>
             Upload Another Quote
           </Button>
-        </div>
-      )}
+        </div>}
 
       {/* Trust indicators - hide in compact mode */}
-      {!compact && (
-        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
+      {!compact && <div className="flex items-center justify-center gap-4 text-xs text-primary">
+          <span className="flex items-center gap-1 text-primary">
             <Shield className="w-3 h-3" />
             256-bit encryption
           </span>
           <span>•</span>
           <span>Never shared with contractors</span>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 }
