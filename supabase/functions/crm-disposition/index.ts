@@ -206,13 +206,30 @@ Deno.serve(async (req) => {
         if (newStatus === "dead" && previousStatus !== "dead") {
           await logAttributionEvent({
             sessionId,
-            eventName: "lead_marked_dead",
-            eventCategory: "crm",
+            eventName: "lead_disqualified",
+            eventCategory: "conversion",
             pagePath: "/admin/crm",
             eventData: {
               lead_id: leadId,
               email: currentLead.email,
+              source_tool: currentLead.original_source_tool,
               previous_status: previousStatus,
+              negative_value: -50, // Penalty for garbage leads
+            },
+          });
+        }
+        
+        // Fire qualified event for MQL status
+        if (newStatus === "mql" && previousStatus !== "mql") {
+          await logAttributionEvent({
+            sessionId,
+            eventName: "lead_qualified",
+            eventCategory: "conversion",
+            pagePath: "/admin/crm",
+            eventData: {
+              lead_id: leadId,
+              email: currentLead.email,
+              source_tool: currentLead.original_source_tool,
             },
           });
         }

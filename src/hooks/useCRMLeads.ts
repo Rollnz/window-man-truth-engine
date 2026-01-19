@@ -124,14 +124,17 @@ export function useCRMLeads(): UseCRMLeadsReturn {
         ));
       }
 
-      // Phase 7: Offline Conversion Tracking
+      // Qualification-Based Offline Conversion Tracking
       // Use the LEAD's original attribution from the database (not admin's browser)
       const attribution = data.attribution || {};
       
-      if (newStatus === 'closed_won' || newStatus === 'appointment_set' || newStatus === 'sat') {
+      // Fire offline conversion for qualifying statuses (including dead for negative signal)
+      const conversionStatuses = ['qualified', 'mql', 'appointment_set', 'sat', 'closed_won', 'closed_lost', 'dead'];
+      
+      if (conversionStatuses.includes(newStatus)) {
         await trackOfflineConversion({
           leadId,
-          newStatus: newStatus as 'closed_won' | 'appointment_set' | 'sat',
+          newStatus: newStatus as 'qualified' | 'mql' | 'appointment_set' | 'sat' | 'closed_won' | 'closed_lost' | 'dead',
           dealValue: extras?.actualDealValue,
           // Use lead's original click IDs for proper ad attribution
           gclid: attribution.gclid,

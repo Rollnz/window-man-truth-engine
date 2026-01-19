@@ -336,31 +336,105 @@ export const trackFormAbandonment = (params: {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CRM Offline Conversion Tracking (Phase 7)
+// Value-Based Bidding: Delta Tracking (Aligned with Postgres get_event_score)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Delta value map aligned with Postgres get_event_score for consistency
+ * These represent incremental "points" for each user action
+ */
+export const DELTA_VALUES: Record<string, number> = {
+  'quote_scanned': 25,
+  'quote_generated': 25,
+  'evidence_analyzed': 20,
+  'fair_price_quiz_completed': 20,
+  'reality_check_completed': 15,
+  'risk_diagnostic_completed': 15,
+  'fast_win_completed': 15,
+  'vulnerability_test_completed': 15,
+  'cost_calculator_completed': 15,
+  'roleplay_completed': 20,
+  'lead_captured': 30,
+  'consultation_booked': 50,
+  'guide_downloaded': 15,
+  'expert_chat_session': 20,
+  'vault_sync': 15,
+  'document_uploaded': 20,
+  'email_results_sent': 10,
+  'tool_started': 5,
+  'tool_viewed': 2,
+};
+
+/**
+ * Track incremental "delta" conversion value for Value-Based Bidding
+ * Enables Google/Meta to optimize for "Super Users" with high engagement
+ * 
+ * Uses existing sha256 and trackEvent utilities for Enhanced Conversions
+ */
+export const trackConversionValue = async (params: {
+  eventName: string;
+  value: number; // The incremental "delta" points (e.g., +50)
+  email?: string;
+  phone?: string;
+  cumulativeScore?: number; // Total score for debugging
+  metadata?: Record<string, unknown>;
+}) => {
+  const userData = (params.email || params.phone) ? {
+    sha256_email_address: params.email ? await sha256(params.email) : undefined,
+    sha256_phone_number: params.phone ? await sha256(params.phone.replace(/\D/g, '')) : undefined,
+  } : undefined;
+
+  trackEvent(params.eventName, {
+    value: params.value,
+    currency: 'USD',
+    user_data: userData,
+    cumulative_score: params.cumulativeScore,
+    ...params.metadata,
+    page_location: typeof window !== 'undefined' ? window.location.href : undefined,
+    page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
+  });
+  
+  console.log(`[GTM] ${params.eventName} delta tracked:`, { 
+    value: params.value,
+    cumulative: params.cumulativeScore,
+    has_user_data: !!userData,
+  });
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CRM Offline Conversion Tracking (Qualification-Based Bidding)
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface OfflineConversionParams {
   leadId: string;
-  newStatus: 'appointment_set' | 'sat' | 'closed_won' | 'closed_lost';
+  newStatus: 'qualified' | 'mql' | 'appointment_set' | 'sat' | 'closed_won' | 'closed_lost' | 'dead';
   dealValue?: number;
   gclid?: string | null;
   fbclid?: string | null;
   email?: string; // For Enhanced Match
 }
 
-// Offline conversion values - tuned for value-based bidding
+/**
+ * Qualification-Based Offline Conversion Values
+ * 
+ * Strategy: Train algorithms to find interested, reachable homeowners.
+ * We DO NOT penalize closed_lost (they had intent) - we penalize garbage leads (dead).
+ */
 const OFFLINE_CONVERSION_VALUES: Record<string, number> = {
-  'appointment_set': 50,  // Qualified prospect with scheduled time
-  'sat': 150,             // High-intent, in-home consultation completed
-  'closed_won': 1500,     // Default sale value (overridden by dealValue)
-  'closed_lost': 0,
+  'qualified': 35,       // Verified interest + contact info
+  'mql': 35,             // Marketing qualified (same as qualified)
+  'appointment_set': 50, // Committed time for rep visit
+  'sat': 150,            // HIGH-QUALITY SIGNAL: Rep entered the home
+  'closed_won': 1500,    // Default sale value (overridden by dealValue)
+  'closed_lost': 50,     // NEUTRAL: Same as appointment - they had intent!
+  'dead': -50,           // PENALTY: Fake info, spam, not interested
 };
 
 /**
  * Track offline conversion when CRM status changes
  * Enables Google/Meta to attribute sales back to original ad clicks
  * 
- * IMPORTANT: This uses the LEAD's original gclid/fbclid from the database,
+ * IMPORTANT: Uses the LEAD's original gclid/fbclid from the database,
  * not the admin's browser attribution data
  */
 export const trackOfflineConversion = async (params: OfflineConversionParams) => {
@@ -414,6 +488,23 @@ export const trackOfflineConversion = async (params: OfflineConversionParams) =>
     trackEvent('crm_sat_completed', {
       lead_id: params.leadId,
       value: OFFLINE_CONVERSION_VALUES['sat'],
+      currency: 'USD',
+      gclid: params.gclid,
+      fbclid: params.fbclid,
+    });
+  } else if (params.newStatus === 'dead') {
+    // Fire negative signal for garbage leads
+    trackEvent('crm_lead_disqualified', {
+      lead_id: params.leadId,
+      value: OFFLINE_CONVERSION_VALUES['dead'], // -$50
+      currency: 'USD',
+      gclid: params.gclid,
+      fbclid: params.fbclid,
+    });
+  } else if (params.newStatus === 'qualified' || params.newStatus === 'mql') {
+    trackEvent('crm_lead_qualified', {
+      lead_id: params.leadId,
+      value: OFFLINE_CONVERSION_VALUES['qualified'],
       currency: 'USD',
       gclid: params.gclid,
       fbclid: params.fbclid,
