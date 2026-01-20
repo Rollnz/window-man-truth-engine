@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Impact Windows Lead Generation - Dark Industrial Theme with Neon Blue Accent (#00D4FF)
+/* Impact Windows Lead Generation - Industrial Blue + Safety Orange Theme
    All colors MUST be HSL.
 */
 
@@ -10,101 +10,154 @@
   :root {
     /* Mobile sticky footer height (used by PublicLayout for bottom padding) */
     --mobile-sticky-footer-h: 104px;
-    
-    /* Dark mode is default - industrial dark theme */
+
+    /* ============================================================
+       GLOBAL THEME — Dark (default)
+       Industrial SaaS: Window Blue + Safety Orange
+       ============================================================ */
+
     --background: 220 20% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 220 20% 10%;
+    --card: 220 18% 10%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 220 20% 10%;
+    --popover: 220 18% 10%;
     --popover-foreground: 210 40% 98%;
 
-    /* Neon Blue #00D4FF = hsl(189, 100%, 50%) */
-    --primary: 189 100% 50%;
+    /* Primary = Window Blue */
+    --primary: 209 68% 55%;
     --primary-foreground: 0 0% 100%;
+    --ring: 209 68% 55%;
 
-    --secondary: 220 20% 14%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary = Safety Orange (real contrast / CTA offset) */
+    --secondary: 25 95% 55%;
+    --secondary-foreground: 220 20% 6%;
+
+    /* Accent should be a SUPPORT surface color, not "primary 2.0" */
+    --accent: 220 18% 14%;
+    --accent-foreground: 210 40% 98%;
 
     --muted: 220 15% 18%;
-    --muted-foreground: 215 20% 65%;
+    --muted-foreground: 215 20% 68%;
 
-    --accent: 189 100% 50%;
-    --accent-foreground: 220 20% 6%;
+    --border: 220 12% 22%;
+    --input: 220 12% 22%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 189 100% 50%;
-
     --radius: 0.5rem;
 
-    /* Neon glow effect */
-    --glow: 189 100% 50%;
-    --glow-muted: 189 60% 40%;
+    /* Glow follows primary (site-wide) */
+    --glow: 209 68% 55%;
+    --glow-muted: 209 55% 45%;
 
-    /* Success/warning colors */
-    --success: 142 76% 36%;
+    /* Semantic colors preserved */
+    --success: 142 71% 45%;
     --success-foreground: 210 40% 98%;
-    --warning: 38 92% 50%;
+    --warning: 48 96% 53%;
     --warning-foreground: 220 20% 6%;
 
+    /* Sidebar (keep consistent with site-wide theme) */
     --sidebar-background: 220 20% 8%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 189 100% 50%;
-    --sidebar-primary-foreground: 220 20% 6%;
-    --sidebar-accent: 220 20% 14%;
+    --sidebar-primary: 209 68% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 18% 14%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 189 100% 50%;
+    --sidebar-border: 220 12% 22%;
+    --sidebar-ring: 209 68% 55%;
+
+    /* ============================================================
+       DEPTH SYSTEM — surfaces, elevation, text lift
+       These make cards "feel lifted" and sections feel separated.
+       ============================================================ */
+
+    --accent-orange: 25 95% 55%;
+
+    --surface-1: 220 18% 9%;
+    --surface-2: 220 16% 12%;
+    --surface-3: 220 14% 16%;
+
+    --shadow-sm: 0 10px 18px -14px hsl(220 20% 2% / 0.60);
+    --shadow-md: 0 18px 40px -22px hsl(220 20% 2% / 0.72);
+    --shadow-lg: 0 30px 70px -30px hsl(220 20% 2% / 0.82);
+
+    /* "Words lift off the screen" — use ONLY on big headers */
+    --text-lift: 0 1px 0 hsl(0 0% 0% / 0.16), 0 18px 50px hsl(220 20% 2% / 0.35);
+
+    /* ============================================================
+       LEGACY DOSSIER (cyan forensic) — used ONLY on /beat-your-quote
+       Keeps that page looking exactly like it does today.
+       ============================================================ */
+    --dossier-primary: 189 100% 50%;
+    --dossier-ring: 189 100% 50%;
+    --dossier-glow: 189 100% 50%;
+    --dossier-glow-muted: 189 60% 40%;
   }
 
-  /* Light mode - Glass Frame Theme */
+  /* ============================================================
+     GLOBAL THEME — Light
+     Glass Frame: clean, dimensional, not sterile.
+     ============================================================ */
   .light {
-    /* Glass Frame Theme - Soft Blue/White with Dimensional Depth */
-    --background: 210 35% 97%;           /* Soft blue-white #f5f8fa */
-    --foreground: 209 80% 12%;           /* Dark navy #0a2540 */
-    
-    --card: 210 40% 99%;                 /* Near-white with blue tint */
+    --background: 210 35% 98%;
+    --foreground: 209 80% 12%;
+
+    --card: 0 0% 100%;
     --card-foreground: 209 80% 12%;
-    
+
     --popover: 0 0% 100%;
     --popover-foreground: 209 80% 12%;
-    
-    /* Primary #3993DD = hsl(209, 68%, 55%) */
+
     --primary: 209 68% 55%;
     --primary-foreground: 0 0% 100%;
-    
-    --secondary: 209 35% 93%;
-    --secondary-foreground: 209 60% 25%;
-    
-    --muted: 209 30% 92%;
-    --muted-foreground: 209 25% 42%;     /* WCAG AA: 5.2:1 */
-    
-    /* Accent uses deeper blue */
-    --accent: 209 72% 42%;
-    --accent-foreground: 0 0% 100%;
-    
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 0% 100%;
-    
-    /* Frame borders - prominent blue-gray */
-    --border: 209 40% 78%;
-    --input: 209 35% 88%;
     --ring: 209 68% 55%;
-    
-    /* Glow for light mode */
+
+    --secondary: 25 95% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 209 35% 93%;
+    --accent-foreground: 209 60% 20%;
+
+    --muted: 209 30% 92%;
+    --muted-foreground: 209 25% 42%;
+
+    --border: 209 35% 86%;
+    --input: 209 35% 88%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
     --glow: 209 68% 55%;
     --glow-muted: 209 50% 65%;
-    
-    /* Custom tokens for glass frame */
-    --frame: 209 50% 60%;                /* Thick frame borders */
-    --glass: 209 30% 96%;                /* Glass pane background */
-    --inset: 209 40% 88%;                /* Inset shadow color */
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 209 80% 12%;
+
+    --sidebar-background: 210 35% 97%;
+    --sidebar-foreground: 209 80% 12%;
+    --sidebar-primary: 209 68% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 209 35% 93%;
+    --sidebar-accent-foreground: 209 60% 20%;
+    --sidebar-border: 209 35% 86%;
+    --sidebar-ring: 209 68% 55%;
+
+    --accent-orange: 25 95% 55%;
+
+    --surface-1: 210 35% 97%;
+    --surface-2: 210 30% 95%;
+    --surface-3: 210 25% 92%;
+
+    --shadow-sm: 0 10px 18px -14px hsl(209 40% 20% / 0.16);
+    --shadow-md: 0 18px 40px -22px hsl(209 40% 20% / 0.18);
+    --shadow-lg: 0 30px 70px -30px hsl(209 40% 20% / 0.20);
+
+    --text-lift: 0 1px 0 hsl(0 0% 100% / 0.70), 0 18px 45px hsl(209 40% 20% / 0.18);
   }
 }
 
@@ -120,10 +173,44 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  }
+
+  h1, h2, h3 {
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.03;
+  }
+
+  .display-h1 {
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    line-height: 0.98;
   }
 }
 
 @layer utilities {
+  /* Lifted cards */
+  .elev-sm { box-shadow: var(--shadow-sm); }
+  .elev-md { box-shadow: var(--shadow-md); }
+  .elev-lg { box-shadow: var(--shadow-lg); }
+
+  /* Lifted headlines (use sparingly) */
+  .text-lift { text-shadow: var(--text-lift); }
+
+  /* Section separation + "faded backgrounds that look nice" */
+  .section-surface {
+    background:
+      radial-gradient(1200px 600px at 20% 0%, hsl(var(--primary) / 0.10) 0%, transparent 60%),
+      radial-gradient(900px 500px at 85% 15%, hsl(var(--accent-orange) / 0.08) 0%, transparent 55%),
+      linear-gradient(180deg, hsl(var(--surface-1)) 0%, hsl(var(--surface-2)) 100%);
+  }
+
+  .section-divider {
+    border-top: 1px solid hsl(var(--border) / 0.65);
+    box-shadow: 0 -1px 0 hsl(var(--primary) / 0.06);
+  }
+
   /* Neon glow utilities */
   .glow {
     box-shadow: 0 0 20px hsl(var(--glow) / 0.4), 0 0 40px hsl(var(--glow) / 0.2);
@@ -827,4 +914,32 @@
 
 .dossier-variant-muted {
   color: hsl(0 0% 100% / 0.8) !important;
+}
+
+/* ============================================================
+   THEME PROTECTION LAYER
+   1) ImpactWindowCard: fixed dark aesthetic must remain readable
+   2) /beat-your-quote dossier: must keep cyan forensic look
+   ============================================================ */
+
+/* 1) ImpactWindowCard: keep text readable in BOTH themes */
+.impact-window-frame,
+.impact-window-glass,
+.impact-window-content {
+  /* Force tokens inside glass to remain "dark-card with light text" */
+  --foreground: 210 40% 98% !important;
+  --muted-foreground: 210 20% 80% !important;
+  --card: 220 20% 10% !important;
+  --card-foreground: 210 40% 98% !important;
+
+  color: hsl(var(--foreground)) !important;
+}
+
+/* 2) Dossier page: restore cyan forensic tokens locally */
+.dossier-page,
+.dossier-bg {
+  --primary: var(--dossier-primary) !important;
+  --ring: var(--dossier-ring) !important;
+  --glow: var(--dossier-glow) !important;
+  --glow-muted: var(--dossier-glow-muted) !important;
 }
