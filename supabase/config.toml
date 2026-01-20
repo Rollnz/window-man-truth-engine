@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.admin-phonecallbot-health]
 verify_jwt = false
+
+[functions.admin-global-search]
+verify_jwt = false
