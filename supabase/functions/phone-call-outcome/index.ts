@@ -1,3 +1,9 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// PHONE CALL OUTCOME - WEBHOOK HANDLER
+// Receives callbacks from PhoneCall.bot with call outcomes
+// Verifies signatures when secret is configured, writes timeline events
+// ═══════════════════════════════════════════════════════════════════════════
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -29,16 +35,99 @@ function mapCallStatus(providerStatus: string): string {
   return statusMap[providerStatus] || "failed";
 }
 
-// Validate UUID format
-function isValidUUID(str: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
-}
-
 // Truncate string for safety
 function truncateString(str: string | undefined, maxLength: number): string | null {
   if (!str) return null;
   return str.length > maxLength ? str.substring(0, maxLength) : str;
+}
+
+// COMPAT MODE: Support both header variants and both timestamp units
+async function verifyPhonecallbotSignature(
+  req: Request,
+  rawBody: string
+): Promise<{ ok: boolean; mode: string; error?: string }> {
+  const secret = Deno.env.get("PHONECALLBOT_WEBHOOK_SECRET");
+  if (!secret) {
+    console.warn("[phone-call-outcome] No PHONECALLBOT_WEBHOOK_SECRET configured - running in insecure mode");
+    return { ok: true, mode: "insecure_no_secret" };
+  }
+
+  // Try both header variants
+  const signature = req.headers.get("x-signature") || req.headers.get("x-phonecallbot-signature");
+  const timestampRaw = req.headers.get("x-timestamp") || req.headers.get("x-phonecallbot-timestamp");
+
+  if (!signature || !timestampRaw) {
+    console.error("[phone-call-outcome] Missing signature headers", {
+      has_signature: !!signature,
+      has_timestamp: !!timestampRaw,
+    });
+    return { ok: false, mode: "missing_headers", error: "Missing signature or timestamp header" };
+  }
+
+  // Detect timestamp unit (ms vs sec)
+  const timestampNum = parseInt(timestampRaw, 10);
+  if (isNaN(timestampNum)) {
+    return { ok: false, mode: "invalid_timestamp", error: "Invalid timestamp format" };
+  }
+
+  let timestampMs: number;
+  let detectedMode: string;
+  if (timestampNum > 1e12) {
+    timestampMs = timestampNum;
+    detectedMode = "ms_timestamp";
+  } else {
+    timestampMs = timestampNum * 1000;
+    detectedMode = "sec_timestamp";
+  }
+
+  // Replay protection: reject timestamps older than 5 minutes
+  const ageMs = Date.now() - timestampMs;
+  if (ageMs > 5 * 60 * 1000) {
+    console.error("[phone-call-outcome] Timestamp too old", { ageMs, maxMs: 5 * 60 * 1000 });
+    return { ok: false, mode: "timestamp_expired", error: `Timestamp expired (${Math.round(ageMs / 1000)}s old)` };
+  }
+  if (ageMs < -60 * 1000) {
+    console.error("[phone-call-outcome] Timestamp in future", { ageMs });
+    return { ok: false, mode: "timestamp_future", error: "Timestamp in future" };
+  }
+
+  // Compute expected signature: HMAC-SHA256 of "{timestamp}.{body}"
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signedData = `${timestampRaw}.${rawBody}`;
+  const signatureBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(signedData));
+  const expectedSig = Array.from(new Uint8Array(signatureBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  // Constant-time comparison
+  if (expectedSig.length !== signature.length) {
+    console.error("[phone-call-outcome] Signature length mismatch", {
+      expected: expectedSig.length,
+      received: signature.length,
+    });
+    return { ok: false, mode: "signature_mismatch", error: "Signature length mismatch" };
+  }
+
+  let mismatch = 0;
+  for (let i = 0; i < expectedSig.length; i++) {
+    mismatch |= expectedSig.charCodeAt(i) ^ signature.charCodeAt(i);
+  }
+
+  if (mismatch !== 0) {
+    console.error("[phone-call-outcome] Signature mismatch");
+    return { ok: false, mode: "signature_mismatch", error: "Signature invalid" };
+  }
+
+  console.log(`[phone-call-outcome] Signature verified (mode: ${detectedMode})`);
+  return { ok: true, mode: detectedMode };
 }
 
 Deno.serve(async (req) => {
@@ -58,8 +147,29 @@ Deno.serve(async (req) => {
   const startTime = Date.now();
 
   try {
-    // Parse payload
-    const payload: PhoneCallOutcomePayload = await req.json();
+    // Read raw body ONCE for signature verification
+    const rawBody = await req.text();
+
+    // Verify signature (if secret is configured)
+    const sigResult = await verifyPhonecallbotSignature(req, rawBody);
+    if (!sigResult.ok) {
+      return new Response(
+        JSON.stringify({ error: sigResult.error, mode: sigResult.mode }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Parse payload after verification
+    let payload: PhoneCallOutcomePayload;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     console.log("[phone-call-outcome] Received payload:", JSON.stringify({
       call_id: payload.call_id,
       status: payload.status,
@@ -67,6 +177,7 @@ Deno.serve(async (req) => {
       sentiment: payload.sentiment,
       has_notes: !!payload.ai_notes,
       has_recording: !!payload.recording_url,
+      signature_mode: sigResult.mode,
     }));
 
     // Validate required fields
@@ -100,10 +211,10 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find the call log by provider_call_id
+    // Find the call log by provider_call_id - include lead_id and source_tool for timeline
     const { data: existingLog, error: findError } = await supabase
       .from("phone_call_logs")
-      .select("id, call_status")
+      .select("id, call_status, lead_id, source_tool")
       .eq("provider_call_id", payload.call_id)
       .maybeSingle();
 
@@ -116,14 +227,18 @@ Deno.serve(async (req) => {
     }
 
     if (!existingLog) {
-      console.warn("[phone-call-outcome] No call log found for provider_call_id:", payload.call_id);
-      // Return 200 to acknowledge receipt even if we don't have a matching record
-      // This prevents webhook retries for orphaned calls
+      // DEAD LETTER: No matching log found - log full payload for manual review
+      console.error("[phone-call-outcome] DEAD-LETTER: No call log found for provider_call_id:", {
+        provider_call_id: payload.call_id,
+        metadata_call_request_id: payload.metadata?.call_request_id,
+        full_payload: rawBody,
+      });
+      // Return 200 to acknowledge receipt (prevents webhook retries)
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          warning: "No matching call log found",
-          provider_call_id: payload.call_id 
+        JSON.stringify({
+          success: true,
+          warning: "No matching call log found - dead-lettered",
+          provider_call_id: payload.call_id,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -134,10 +249,10 @@ Deno.serve(async (req) => {
     if (terminalStates.includes(existingLog.call_status)) {
       console.log("[phone-call-outcome] Call already in terminal state:", existingLog.call_status);
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           warning: "Call already in terminal state",
-          current_status: existingLog.call_status 
+          current_status: existingLog.call_status,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -165,7 +280,6 @@ Deno.serve(async (req) => {
     }
 
     if (payload.recording_url) {
-      // Basic URL validation
       try {
         new URL(payload.recording_url);
         updateData.recording_url = truncateString(payload.recording_url, 2000);
@@ -213,8 +327,50 @@ Deno.serve(async (req) => {
       .eq("provider_call_id", payload.call_id);
 
     if (pendingUpdateError) {
-      // Log but don't fail - pending_calls update is optional
       console.warn("[phone-call-outcome] Failed to update pending_calls:", pendingUpdateError.message);
+    }
+
+    // === TIMELINE EVENTS: Write to lead_notes (always) and wm_events (if session exists) ===
+    if (existingLog.lead_id) {
+      // Find wm_lead to get wm_lead.id and original_session_id
+      const { data: wmLead } = await supabase
+        .from("wm_leads")
+        .select("id, original_session_id")
+        .eq("lead_id", existingLog.lead_id)
+        .maybeSingle();
+
+      const duration = payload.duration_seconds ?? null;
+      const sentiment = payload.sentiment ?? null;
+      const recordingUrl = payload.recording_url ?? null;
+
+      const outcomeNote = `📞 Call ${mappedStatus}${duration ? ` (${duration}s)` : ""}${recordingUrl ? " [Recording available]" : ""}${sentiment ? ` | Sentiment: ${sentiment}` : ""}`;
+
+      // ALWAYS write to lead_notes (immutable audit trail)
+      if (wmLead?.id) {
+        await supabase.from("lead_notes").insert({
+          lead_id: wmLead.id,
+          content: outcomeNote,
+          admin_email: "system@windowman.ai",
+        });
+      }
+
+      // ADDITIONALLY write to wm_events if session exists
+      if (wmLead?.original_session_id) {
+        await supabase.from("wm_events").insert({
+          session_id: wmLead.original_session_id,
+          event_name: `call_${mappedStatus}`,
+          event_category: "phone",
+          page_path: "/admin/lead-detail",
+          event_data: {
+            provider_call_id: payload.call_id,
+            call_log_id: existingLog.id,
+            duration_seconds: duration,
+            sentiment,
+            has_recording: !!recordingUrl,
+            source_tool: existingLog.source_tool,
+          },
+        });
+      }
     }
 
     const duration = Date.now() - startTime;
@@ -226,16 +382,16 @@ Deno.serve(async (req) => {
         call_log_id: existingLog.id,
         new_status: mappedStatus,
         processing_time_ms: duration,
+        signature_mode: sigResult.mode,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
   } catch (error) {
     console.error("[phone-call-outcome] Unexpected error:", error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error"
+        details: error instanceof Error ? error.message : "Unknown error",
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

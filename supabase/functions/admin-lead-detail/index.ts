@@ -150,12 +150,39 @@ serve(async (req) => {
         sessionData = data;
       }
 
+      // Fetch phone call logs and pending calls
+      let calls: any[] = [];
+      let pendingCalls: any[] = [];
+
+      if (lead.lead_id) {
+        // Phone call logs (completed/failed calls)
+        const { data: callData } = await supabase
+          .from('phone_call_logs')
+          .select('*')
+          .eq('lead_id', lead.lead_id)
+          .order('triggered_at', { ascending: false })
+          .limit(20);
+
+        if (callData) calls = callData;
+
+        // Pending calls (queued/in-progress)
+        const { data: pendingData } = await supabase
+          .from('pending_calls')
+          .select('*')
+          .eq('lead_id', lead.lead_id)
+          .order('created_at', { ascending: false });
+
+        if (pendingData) pendingCalls = pendingData;
+      }
+
       return new Response(JSON.stringify({
         lead,
         events,
         files,
         notes: notes || [],
         session: sessionData,
+        calls,
+        pendingCalls,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

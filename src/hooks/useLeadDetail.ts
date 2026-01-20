@@ -46,6 +46,33 @@ export interface LeadSession {
   created_at: string;
 }
 
+export interface PhoneCallLog {
+  id: string;
+  call_request_id: string;
+  lead_id: string | null;
+  source_tool: string;
+  agent_id: string;
+  call_status: string;
+  call_duration_sec: number | null;
+  call_sentiment: string | null;
+  recording_url: string | null;
+  ai_notes: string | null;
+  triggered_at: string;
+  ended_at: string | null;
+  created_at: string;
+}
+
+export interface PendingCall {
+  id: string;
+  call_request_id: string;
+  lead_id: string | null;
+  source_tool: string;
+  status: string;
+  scheduled_for: string;
+  attempt_count: number;
+  created_at: string;
+}
+
 export interface LeadDetailData {
   id: string;
   lead_id: string | null;
@@ -78,6 +105,8 @@ interface UseLeadDetailReturn {
   files: LeadFile[];
   notes: LeadNote[];
   session: LeadSession | null;
+  calls: PhoneCallLog[];
+  pendingCalls: PendingCall[];
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -93,6 +122,8 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
   const [files, setFiles] = useState<LeadFile[]>([]);
   const [notes, setNotes] = useState<LeadNote[]>([]);
   const [session, setSession] = useState<LeadSession | null>(null);
+  const [calls, setCalls] = useState<PhoneCallLog[]>([]);
+  const [pendingCalls, setPendingCalls] = useState<PendingCall[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -154,6 +185,8 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
       setFiles(data.files || []);
       setNotes(data.notes || []);
       setSession(data.session);
+      setCalls(data.calls || []);
+      setPendingCalls(data.pendingCalls || []);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load lead details';
       setError(message);
@@ -247,6 +280,8 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
     files,
     notes,
     session,
+    calls,
+    pendingCalls,
     isLoading,
     error,
     refetch: fetchData,
