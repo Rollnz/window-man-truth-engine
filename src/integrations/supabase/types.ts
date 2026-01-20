@@ -628,6 +628,12 @@ export type Database = {
           landing_page: string | null
           last_contacted_at: string | null
           last_name: string | null
+          last_non_direct_channel: string | null
+          last_non_direct_fbclid: string | null
+          last_non_direct_gclid: string | null
+          last_non_direct_landing_page: string | null
+          last_non_direct_utm_medium: string | null
+          last_non_direct_utm_source: string | null
           lead_id: string | null
           lead_quality: string | null
           notes: string | null
@@ -666,6 +672,12 @@ export type Database = {
           landing_page?: string | null
           last_contacted_at?: string | null
           last_name?: string | null
+          last_non_direct_channel?: string | null
+          last_non_direct_fbclid?: string | null
+          last_non_direct_gclid?: string | null
+          last_non_direct_landing_page?: string | null
+          last_non_direct_utm_medium?: string | null
+          last_non_direct_utm_source?: string | null
           lead_id?: string | null
           lead_quality?: string | null
           notes?: string | null
@@ -704,6 +716,12 @@ export type Database = {
           landing_page?: string | null
           last_contacted_at?: string | null
           last_name?: string | null
+          last_non_direct_channel?: string | null
+          last_non_direct_fbclid?: string | null
+          last_non_direct_gclid?: string | null
+          last_non_direct_landing_page?: string | null
+          last_non_direct_utm_medium?: string | null
+          last_non_direct_utm_source?: string | null
           lead_id?: string | null
           lead_quality?: string | null
           notes?: string | null

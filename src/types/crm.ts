@@ -43,12 +43,27 @@ export interface CRMLead {
   actual_deal_value: number | null;
   closed_at: string | null;
   assigned_to: string | null;
-  // Ad attribution for visual indicators
+  
+  // Ad attribution for visual indicators (last touch)
   gclid: string | null;
   fbclid: string | null;
   // UTM source fallback for attribution badges
   utm_source: string | null;
-  // Phase 1: Server truth columns
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
+  landing_page: string | null;
+  
+  // Phase 1B: Last Non-Direct Attribution (preserved from paid visits)
+  last_non_direct_utm_source: string | null;
+  last_non_direct_utm_medium: string | null;
+  last_non_direct_gclid: string | null;
+  last_non_direct_fbclid: string | null;
+  last_non_direct_channel: string | null;
+  last_non_direct_landing_page: string | null;
+  
+  // Phase 1A: Server truth columns
   qualified_cv_fired?: boolean;
   captured_at?: string | null;
   qualified_at?: string | null;
