@@ -17,8 +17,9 @@ const ADMIN_EMAILS = [
  * Searches across:
  * - wm_leads: email, phone, first_name, last_name, id, lead_id, city, notes, original_source_tool
  * - lead_notes: content (joined back to wm_leads)
+ * - phone_call_logs: ai_notes (joined back to wm_leads via lead_id)
  * 
- * Returns suggestions with match highlighting data
+ * Returns suggestions with match highlighting data and total count for "View all" feature
  */
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -74,12 +75,12 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const query = url.searchParams.get('q')?.trim() || '';
     const limitParam = parseInt(url.searchParams.get('limit') || '8', 10);
-    const limit = Math.min(Math.max(1, limitParam), 20);
+    const limit = Math.min(Math.max(1, limitParam), 50); // Increased max for full results page
 
     // If query too short, return empty
     if (query.length < 2) {
       return new Response(
-        JSON.stringify({ q: query, suggestions: [], results: [] }),
+        JSON.stringify({ q: query, suggestions: [], results: [], total_count: 0, has_more: false }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -91,11 +92,13 @@ Deno.serve(async (req) => {
     const digitsOnly = query.replace(/\D/g, '');
     const isUUID = /^[0-9a-f-]{8,36}$/i.test(query);
 
-    // Results map to deduplicate
+    // Results map to deduplicate (key = wm_leads.id)
     const resultsMap = new Map<string, any>();
+    
+    // Track total potential matches for "has_more" indicator
+    let totalPotentialMatches = 0;
 
     // 1. Search wm_leads directly
-    // Build OR filter for multiple fields
     let orConditions: string[] = [
       `email.ilike.${searchPattern}`,
       `phone.ilike.${searchPattern}`,
@@ -110,6 +113,14 @@ Deno.serve(async (req) => {
     if (digitsOnly.length >= 3) {
       orConditions.push(`phone.ilike.%${digitsOnly}%`);
     }
+
+    // Get count first for total
+    const { count: leadCount } = await supabaseAdmin
+      .from('wm_leads')
+      .select('id', { count: 'exact', head: true })
+      .or(orConditions.join(','));
+    
+    totalPotentialMatches += leadCount || 0;
 
     const { data: leadMatches, error: leadError } = await supabaseAdmin
       .from('wm_leads')
@@ -166,11 +177,16 @@ Deno.serve(async (req) => {
 
     // 3. Search lead_notes content
     if (resultsMap.size < limit) {
-      const { data: noteMatches, error: noteError } = await supabaseAdmin
+      const { data: noteMatches, count: noteCount, error: noteError } = await supabaseAdmin
         .from('lead_notes')
-        .select('lead_id, content')
+        .select('lead_id, content', { count: 'exact' })
         .ilike('content', searchPattern)
         .limit(limit);
+
+      // Add unique note matches to total (approximate)
+      if (noteCount) {
+        totalPotentialMatches += noteCount;
+      }
 
       if (noteError) {
         console.error('Note search error:', noteError);
@@ -191,7 +207,7 @@ Deno.serve(async (req) => {
           if (noteLeads) {
             for (const lead of noteLeads) {
               const noteContent = noteMatches.find(n => n.lead_id === lead.id)?.content || '';
-              const snippetInfo = createSnippet(noteContent, query);
+              const snippetInfo = createSnippet(noteContent, query, 'notes');
               
               resultsMap.set(lead.id, {
                 type: 'lead',
@@ -210,13 +226,77 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 4. Search phone_call_logs.ai_notes (NEW)
+    if (resultsMap.size < limit) {
+      const { data: callMatches, count: callCount, error: callError } = await supabaseAdmin
+        .from('phone_call_logs')
+        .select('lead_id, ai_notes, source_tool, call_status', { count: 'exact' })
+        .not('lead_id', 'is', null)
+        .ilike('ai_notes', searchPattern)
+        .limit(limit);
+
+      // Add unique call log matches to total
+      if (callCount) {
+        totalPotentialMatches += callCount;
+      }
+
+      if (callError) {
+        console.error('Call log search error:', callError);
+      }
+
+      if (callMatches && callMatches.length > 0) {
+        // Get unique lead_ids not already in results
+        const callLeadIds = [...new Set(callMatches.map(c => c.lead_id))]
+          .filter(id => id && !resultsMap.has(id));
+
+        if (callLeadIds.length > 0) {
+          // phone_call_logs.lead_id references leads.id, need to find corresponding wm_leads
+          // First get the lead_id -> wm_leads mapping
+          const { data: wmLeads } = await supabaseAdmin
+            .from('wm_leads')
+            .select('id, lead_id, email, phone, first_name, last_name, status, engagement_score')
+            .in('lead_id', callLeadIds)
+            .limit(limit - resultsMap.size);
+
+          if (wmLeads) {
+            for (const lead of wmLeads) {
+              const callLog = callMatches.find(c => c.lead_id === lead.lead_id);
+              if (callLog && callLog.ai_notes) {
+                const snippetInfo = createSnippet(callLog.ai_notes, query, 'call_notes');
+                
+                resultsMap.set(lead.id, {
+                  type: 'lead',
+                  id: lead.id,
+                  title: formatName(lead.first_name, lead.last_name, lead.email),
+                  subtitle: formatSubtitle(lead.email, lead.phone),
+                  status: lead.status,
+                  engagement_score: lead.engagement_score,
+                  match_field: 'call_notes',
+                  match_snippet: snippetInfo.snippet,
+                  match_positions: snippetInfo.positions,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
     const suggestions = Array.from(resultsMap.values()).slice(0, limit);
+    const totalCount = resultsMap.size;
+    const hasMore = totalPotentialMatches > limit;
 
     // Log search (masked PII)
-    console.log(`[admin-global-search] query_len=${query.length} results=${suggestions.length}`);
+    console.log(`[admin-global-search] query_len=${query.length} results=${suggestions.length} total_potential=${totalPotentialMatches}`);
 
     return new Response(
-      JSON.stringify({ q: query, suggestions, results: suggestions }),
+      JSON.stringify({ 
+        q: query, 
+        suggestions, 
+        results: suggestions,
+        total_count: totalCount,
+        has_more: hasMore,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
@@ -275,7 +355,6 @@ function determineMatchField(
     // Digits-only match
     const phoneDigits = lead.phone.replace(/\D/g, '');
     if (digitsOnly.length >= 3 && phoneDigits.includes(digitsOnly)) {
-      // Find position in original phone string (approximate)
       const digitPos = phoneDigits.indexOf(digitsOnly);
       return {
         match_field: 'phone',
@@ -317,7 +396,12 @@ function determineMatchField(
 
   // Check notes (on lead itself)
   if (lead.notes?.toLowerCase().includes(q)) {
-    return createSnippet(lead.notes, query, 'notes');
+    const snippetInfo = createSnippet(lead.notes, query, 'notes');
+    return {
+      match_field: snippetInfo.match_field,
+      match_snippet: snippetInfo.snippet,
+      match_positions: snippetInfo.positions,
+    };
   }
 
   // Check source tool
@@ -343,13 +427,13 @@ function createSnippet(
   text: string,
   query: string,
   field: string = 'notes'
-): { match_field: string; snippet: string; match_snippet: string; positions: Array<{ start: number; length: number }>; match_positions: Array<{ start: number; length: number }> } {
+): { match_field: string; snippet: string; positions: Array<{ start: number; length: number }> } {
   const lowerText = text.toLowerCase();
   const lowerQuery = query.toLowerCase();
   const pos = lowerText.indexOf(lowerQuery);
 
   if (pos === -1) {
-    return { match_field: field, snippet: text.slice(0, 60), match_snippet: text.slice(0, 60), positions: [], match_positions: [] };
+    return { match_field: field, snippet: text.slice(0, 60), positions: [] };
   }
 
   const snippetRadius = 30;
@@ -368,8 +452,6 @@ function createSnippet(
   return {
     match_field: field,
     snippet,
-    match_snippet: snippet,
     positions: [{ start: adjustedPos, length: query.length }],
-    match_positions: [{ start: adjustedPos, length: query.length }],
   };
 }

@@ -13,6 +13,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/admin/attribution': 'Attribution',
   '/admin/quotes': 'Quote Uploads',
   '/admin/leads': 'Lead Detail',
+  '/admin/search': 'Search Results',
 };
 
 interface AdminBreadcrumbProps {

@@ -1,4 +1,4 @@
-import { Search, User, Clock, Loader2, FileText, Mail, Phone, MapPin, Tag } from 'lucide-react';
+import { Search, User, Clock, Loader2, FileText, Mail, Phone, MapPin, Tag, PhoneCall, ExternalLink } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -6,6 +6,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
 import { useGlobalSearch, SearchSuggestion } from '@/hooks/useGlobalSearch';
@@ -28,6 +29,7 @@ const MATCH_FIELD_ICONS: Record<string, typeof Mail> = {
   phone: Phone,
   name: User,
   notes: FileText,
+  call_notes: PhoneCall,
   city: MapPin,
   source: Tag,
   id: Tag,
@@ -39,6 +41,7 @@ const MATCH_FIELD_LABELS: Record<string, string> = {
   phone: 'phone',
   name: 'name',
   notes: 'notes',
+  call_notes: 'call summary',
   city: 'city',
   source: 'source',
   id: 'ID',
@@ -72,7 +75,7 @@ function SearchResultItem({
   const highlightTitle = result.match_field === 'name';
   const highlightEmail = result.match_field === 'email';
   const highlightPhone = result.match_field === 'phone';
-  const showNotesSnippet = result.match_field === 'notes' && result.match_snippet;
+  const showSnippet = ['notes', 'call_notes'].includes(result.match_field) && result.match_snippet;
 
   return (
     <CommandItem
@@ -120,10 +123,12 @@ function SearchResultItem({
           )}
         </div>
 
-        {/* Notes snippet if matched on notes */}
-        {showNotesSnippet && (
+        {/* Snippet for notes or call_notes */}
+        {showSnippet && (
           <div className="text-xs bg-muted/50 rounded px-2 py-1 mt-0.5 truncate">
-            <span className="text-muted-foreground">Note: </span>
+            <span className="text-muted-foreground">
+              {result.match_field === 'call_notes' ? 'Call: ' : 'Note: '}
+            </span>
             <HighlightMatch text={result.match_snippet!} positions={result.match_positions} />
           </div>
         )}
@@ -147,8 +152,10 @@ export function GlobalLeadSearch() {
     setIsOpen,
     searchResults,
     navigateToLead,
+    viewAllResults,
     isLoading,
     error,
+    hasMore,
   } = useGlobalSearch();
 
   const hasQuery = searchQuery.trim().length >= 2;
@@ -156,7 +163,7 @@ export function GlobalLeadSearch() {
   return (
     <CommandDialog open={isOpen} onOpenChange={setIsOpen}>
       <CommandInput
-        placeholder="Search leads by name, email, phone, notes, or ID..."
+        placeholder="Search leads by name, email, phone, notes, call summaries..."
         value={searchQuery}
         onValueChange={setSearchQuery}
       />
@@ -223,15 +230,33 @@ export function GlobalLeadSearch() {
 
         {/* Search results with highlighting */}
         {!isLoading && !error && hasQuery && searchResults.length > 0 && (
-          <CommandGroup heading="Search Results">
-            {searchResults.map((result) => (
-              <SearchResultItem
-                key={result.id}
-                result={result}
-                onSelect={() => navigateToLead(result.id)}
-              />
-            ))}
-          </CommandGroup>
+          <>
+            <CommandGroup heading="Search Results">
+              {searchResults.map((result) => (
+                <SearchResultItem
+                  key={result.id}
+                  result={result}
+                  onSelect={() => navigateToLead(result.id)}
+                />
+              ))}
+            </CommandGroup>
+
+            {/* View all results link */}
+            {hasMore && (
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem
+                    onSelect={viewAllResults}
+                    className="cursor-pointer justify-center text-primary"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    <span>View all results</span>
+                  </CommandItem>
+                </CommandGroup>
+              </>
+            )}
+          </>
         )}
       </CommandList>
     </CommandDialog>
