@@ -1,4 +1,4 @@
-import { Search, User, Clock, Loader2, FileText, Mail, Phone, MapPin, Tag, PhoneCall, ExternalLink } from 'lucide-react';
+import { Search, User, Clock, Loader2, FileText, Mail, Phone, MapPin, Tag, PhoneCall, ExternalLink, Filter } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -9,8 +9,15 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { useGlobalSearch, SearchSuggestion } from '@/hooks/useGlobalSearch';
 import { HighlightMatch } from '@/components/ui/highlight-match';
+import { SearchFilters as SearchFiltersComponent, ActiveFilterBadges } from '@/components/admin/SearchFilters';
 
 const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-500/20 text-blue-600 border-blue-500/30',
@@ -148,6 +155,8 @@ export function GlobalLeadSearch() {
     recentLeads,
     searchQuery,
     setSearchQuery,
+    filters,
+    setFilters,
     isOpen,
     setIsOpen,
     searchResults,
@@ -159,14 +168,52 @@ export function GlobalLeadSearch() {
   } = useGlobalSearch();
 
   const hasQuery = searchQuery.trim().length >= 2;
+  const hasActiveFilters = !!(
+    filters.status?.length ||
+    filters.quality?.length ||
+    filters.matchType?.length ||
+    filters.dateFrom ||
+    filters.dateTo
+  );
 
   return (
     <CommandDialog open={isOpen} onOpenChange={setIsOpen}>
-      <CommandInput
-        placeholder="Search leads by name, email, phone, notes, call summaries..."
-        value={searchQuery}
-        onValueChange={setSearchQuery}
-      />
+      <div className="flex items-center border-b px-3">
+        <Search className="h-4 w-4 shrink-0 opacity-50" />
+        <input
+          placeholder="Search leads by name, email, phone, notes, call summaries..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex h-11 w-full rounded-md bg-transparent py-3 px-2 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-7 px-2 gap-1">
+              <Filter className="h-3.5 w-3.5" />
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="h-4 px-1 text-[10px] rounded-full">
+                  !
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-80 p-4">
+            <SearchFiltersComponent
+              filters={filters}
+              onFiltersChange={setFilters}
+              variant="full"
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Active filter badges */}
+      {hasActiveFilters && (
+        <div className="px-3 py-2 border-b bg-muted/30">
+          <ActiveFilterBadges filters={filters} onFiltersChange={setFilters} />
+        </div>
+      )}
+
       <CommandList>
         {/* Loading state */}
         {isLoading && (
