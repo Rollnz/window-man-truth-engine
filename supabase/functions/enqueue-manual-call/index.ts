@@ -229,7 +229,6 @@ Deno.serve(async (req) => {
   // Also RESET dispatcher fields to clean state
   const scheduledFor = new Date(Date.now() + 2 * 60 * 1000).toISOString();
   const nowIso = new Date().toISOString();
-  const createdDate = new Date().toISOString().slice(0, 10);
 
   const { data: pendingRow, error: upsertErr } = await supabaseAdmin
     .from("pending_calls")
@@ -257,7 +256,7 @@ Deno.serve(async (req) => {
         last_error: null,
         triggered_at: null,
         completed_at: null,
-        created_date: createdDate,
+        // NOTE: created_date is GENERATED ALWAYS - do not set explicitly
 
         // Manual dispatch metadata
         reason,
