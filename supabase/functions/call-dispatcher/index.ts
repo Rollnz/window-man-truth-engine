@@ -169,7 +169,7 @@ async function dispatchCall(
   try {
     const body = {
       agent_id: call.agent_id,
-      phone_number: call.phone_e164, // PhoneCall.bot expects 'phone_number', not 'phone'
+      to: call.phone_e164, // PhoneCall.bot API uses 'to' field for destination number
       first_message: call.first_message,
       metadata: buildMetadata(call),
     };
@@ -177,8 +177,8 @@ async function dispatchCall(
     console.log(`[Dispatcher] Sending to PhoneCall.bot`, {
       call_request_id: call.call_request_id,
       source_tool: call.source_tool,
-      phone: maskPhone(call.phone_e164),
-      phone_number_field: 'phone_number', // Log confirming correct field name
+      to: maskPhone(call.phone_e164),
+      request_body: JSON.stringify(body),
       attempt_count: call.attempt_count + 1,
     });
 
