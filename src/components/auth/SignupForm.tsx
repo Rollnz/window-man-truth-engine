@@ -8,6 +8,7 @@ import { Mail, Loader2, CheckCircle } from 'lucide-react';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/config/navigation';
+import { GoogleSignInButton } from './GoogleSignInButton';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 
@@ -97,72 +98,85 @@ export function SignupForm({ onLogin }: SignupFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            id="email"
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setError(null);
-            }}
-            className="pl-10"
-            required
-            disabled={isSubmitting}
-            autoComplete="email"
-          />
+    <div className="space-y-4">
+      <GoogleSignInButton mode="signup" />
+      
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-border" />
         </div>
-        {error && (
-          <p className="text-sm text-destructive">{error}</p>
-        )}
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
+        </div>
       </div>
       
-      <Button 
-        type="submit" 
-        className="w-full" 
-        disabled={isSubmitting || !email}
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Sending...
-          </>
-        ) : (
-          'Continue with Email'
-        )}
-      </Button>
-      
-      <p className="text-xs text-center text-muted-foreground">
-        We'll send you a link to verify your email and create a password.
-      </p>
-      
-      <div className="text-center">
-        <span className="text-sm text-muted-foreground">Already have an account? </span>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError(null);
+              }}
+              className="pl-10"
+              required
+              disabled={isSubmitting}
+              autoComplete="email"
+            />
+          </div>
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
+        </div>
+        
         <Button 
-          type="button"
-          variant="link" 
-          onClick={onLogin}
-          className="p-0 h-auto text-sm"
+          type="submit" 
+          className="w-full" 
+          disabled={isSubmitting || !email}
         >
-          Sign in
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Sending...
+            </>
+          ) : (
+            'Continue with Email'
+          )}
         </Button>
-      </div>
-      
-      <p className="text-xs text-center text-muted-foreground">
-        By continuing, you agree to our{' '}
-        <Link to={ROUTES.TERMS} className="underline hover:text-foreground">
-          Terms
-        </Link>{' '}
-        and{' '}
-        <Link to={ROUTES.PRIVACY} className="underline hover:text-foreground">
-          Privacy Policy
-        </Link>
-      </p>
-    </form>
+        
+        <p className="text-xs text-center text-muted-foreground">
+          We'll send you a link to verify your email and create a password.
+        </p>
+        
+        <div className="text-center">
+          <span className="text-sm text-muted-foreground">Already have an account? </span>
+          <Button 
+            type="button"
+            variant="link" 
+            onClick={onLogin}
+            className="p-0 h-auto text-sm"
+          >
+            Sign in
+          </Button>
+        </div>
+        
+        <p className="text-xs text-center text-muted-foreground">
+          By continuing, you agree to our{' '}
+          <Link to={ROUTES.TERMS} className="underline hover:text-foreground">
+            Terms
+          </Link>{' '}
+          and{' '}
+          <Link to={ROUTES.PRIVACY} className="underline hover:text-foreground">
+            Privacy Policy
+          </Link>
+        </p>
+      </form>
+    </div>
   );
 }
