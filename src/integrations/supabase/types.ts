@@ -632,6 +632,7 @@ export type Database = {
           phone: string | null
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
+          utm_source: string | null
           verified_social_url: string | null
         }
         Insert: {
@@ -659,6 +660,7 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
+          utm_source?: string | null
           verified_social_url?: string | null
         }
         Update: {
@@ -686,6 +688,7 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
+          utm_source?: string | null
           verified_social_url?: string | null
         }
         Relationships: [
@@ -815,6 +818,7 @@ export type Database = {
         | "new"
         | "qualifying"
         | "mql"
+        | "qualified"
         | "appointment_set"
         | "sat"
         | "closed_won"
@@ -969,6 +973,7 @@ export const Constants = {
         "new",
         "qualifying",
         "mql",
+        "qualified",
         "appointment_set",
         "sat",
         "closed_won",
