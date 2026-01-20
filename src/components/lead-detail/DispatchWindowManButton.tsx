@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Phone, AlertTriangle, Check, Loader2, Clock } from 'lucide-react';
+import { Phone, AlertTriangle, Check, Loader2, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,15 +7,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { LeadDetailData, PendingCall } from '@/hooks/useLeadDetail';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 interface DispatchWindowManButtonProps {
   lead: LeadDetailData;
@@ -23,29 +20,34 @@ interface DispatchWindowManButtonProps {
   onSuccess: () => void;
 }
 
-type DispatchState = 'idle' | 'dispatching' | 'success' | 'blocked' | 'warning';
+type DispatchState = 'idle' | 'dispatching' | 'success' | 'error';
 
-interface BlockerInfo {
-  type: string;
-  message: string;
+interface DirectDialResponse {
+  ok: boolean;
+  provider_http_status: number;
+  provider_call_id?: string | null;
+  response_preview: string;
+  agent_id_used: string;
+  warnings?: string[];
+  code?: string;
+  error?: string;
 }
 
 export function DispatchWindowManButton({ lead, pendingCalls, onSuccess }: DispatchWindowManButtonProps) {
   const [state, setState] = useState<DispatchState>('idle');
-  const [blocker, setBlocker] = useState<BlockerInfo | null>(null);
-  const [warning, setWarning] = useState<string | null>(null);
-  const [showWarningDialog, setShowWarningDialog] = useState(false);
+  const [showResponseDialog, setShowResponseDialog] = useState(false);
+  const [response, setResponse] = useState<DirectDialResponse | null>(null);
+  const [showFullResponse, setShowFullResponse] = useState(false);
   const { toast } = useToast();
 
-  // Check if there's an active pending call
+  // Check if there's an active pending call (for display purposes)
   const activePendingCall = pendingCalls.find(
     (pc) => ['pending', 'processing', 'called'].includes(pc.status) && pc.source_tool === 'manual_dispatch'
   );
 
-  const handleDispatch = async (overrideWarnings = false) => {
+  const handleDispatch = async () => {
     setState('dispatching');
-    setBlocker(null);
-    setWarning(null);
+    setResponse(null);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -55,66 +57,54 @@ export function DispatchWindowManButton({ lead, pendingCalls, onSuccess }: Dispa
         return;
       }
 
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enqueue-manual-call`;
-      const response = await fetch(url, {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-direct-dial`;
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          wm_lead_id: lead.id,
-          reason: 'manual_dispatch',
-          override_warnings: overrideWarnings,
-        }),
+        body: JSON.stringify({ wm_lead_id: lead.id }),
       });
 
-      const data = await response.json();
+      const data: DirectDialResponse = await res.json();
+      setResponse(data);
+      setShowResponseDialog(true);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to dispatch call');
-      }
-
-      // Handle response states
-      if (data.queued) {
+      if (data.ok) {
         setState('success');
         toast({
-          title: 'Call Dispatched',
-          description: `WindowMan Agent will call in ~2 minutes`,
+          title: 'Call Initiated',
+          description: `Provider returned ${data.provider_http_status}`,
         });
         onSuccess();
-        // Reset after animation
         setTimeout(() => setState('idle'), 3000);
-      } else if (data.blocker) {
-        setState('blocked');
-        setBlocker(data.blocker);
-      } else if (data.warning) {
-        setState('warning');
-        setWarning(data.warning);
-        setShowWarningDialog(true);
+      } else {
+        setState('error');
+        toast({
+          title: 'Call Failed',
+          description: data.error || `HTTP ${data.provider_http_status}`,
+          variant: 'destructive',
+        });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to dispatch call';
       toast({ title: 'Error', description: message, variant: 'destructive' });
-      setState('idle');
+      setState('error');
+      setResponse({
+        ok: false,
+        provider_http_status: 0,
+        response_preview: message,
+        agent_id_used: 'unknown',
+        error: message,
+      });
+      setShowResponseDialog(true);
     }
   };
 
-  const handleWarningConfirm = () => {
-    setShowWarningDialog(false);
-    handleDispatch(true);
-  };
-
-  const handleWarningCancel = () => {
-    setShowWarningDialog(false);
-    setState('idle');
-    setWarning(null);
-  };
-
-  // Render based on state
   const renderContent = () => {
-    // Show active call badge
-    if (activePendingCall) {
+    // Show active call badge (from queue system, if any)
+    if (activePendingCall && state === 'idle') {
       return (
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-4">
@@ -123,36 +113,11 @@ export function DispatchWindowManButton({ lead, pendingCalls, onSuccess }: Dispa
                 <Phone className="h-5 w-5 text-primary animate-pulse" />
               </div>
               <div className="flex-1">
-                <p className="font-medium text-sm">Call in Progress</p>
+                <p className="font-medium text-sm">Call in Queue</p>
                 <p className="text-xs text-muted-foreground">
                   Status: {activePendingCall.status}
                 </p>
               </div>
-              <Badge variant="outline" className="bg-primary/10">
-                <Clock className="h-3 w-3 mr-1" />
-                Queued
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    if (state === 'blocked' && blocker) {
-      return (
-        <Card className="border-destructive/20 bg-destructive/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-destructive/10 rounded-full">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-sm text-destructive">Cannot Dispatch</p>
-                <p className="text-xs text-muted-foreground">{blocker.message}</p>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => setState('idle')}>
-                Dismiss
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -168,9 +133,32 @@ export function DispatchWindowManButton({ lead, pendingCalls, onSuccess }: Dispa
                 <Check className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1">
-                <p className="font-medium text-sm text-primary">Call Dispatched!</p>
-                <p className="text-xs text-muted-foreground">WindowMan Agent will call shortly</p>
+                <p className="font-medium text-sm text-primary">Call Sent!</p>
+                <p className="text-xs text-muted-foreground">Check response dialog for details</p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (state === 'error') {
+      return (
+        <Card className="border-destructive/20 bg-destructive/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-destructive/10 rounded-full">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm text-destructive">Call Failed</p>
+                <p className="text-xs text-muted-foreground">
+                  {response?.error || 'Check response dialog for details'}
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setState('idle')}>
+                Retry
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -182,7 +170,7 @@ export function DispatchWindowManButton({ lead, pendingCalls, onSuccess }: Dispa
       <Card className="hover:border-primary/30 transition-colors">
         <CardContent className="p-4">
           <Button
-            onClick={() => handleDispatch()}
+            onClick={handleDispatch}
             disabled={state === 'dispatching' || !lead.phone}
             className="w-full"
             variant="default"
@@ -190,17 +178,17 @@ export function DispatchWindowManButton({ lead, pendingCalls, onSuccess }: Dispa
             {state === 'dispatching' ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Dispatching...
+                Calling...
               </>
             ) : (
               <>
                 <Phone className="h-4 w-4 mr-2" />
-                Dispatch WindowMan Agent
+                Dispatcher
               </>
             )}
           </Button>
           <p className="text-xs text-muted-foreground text-center mt-2">
-            {lead.phone ? 'Queues outbound call via Voice AI' : 'No phone number on file'}
+            {lead.phone ? 'Immediate outbound call via Voice AI' : 'No phone number on file'}
           </p>
         </CardContent>
       </Card>
@@ -211,25 +199,100 @@ export function DispatchWindowManButton({ lead, pendingCalls, onSuccess }: Dispa
     <>
       {renderContent()}
 
-      <AlertDialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              Outside Business Hours
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {warning || 'It is currently outside 9am-9pm EST. Calls outside business hours may have lower answer rates.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleWarningCancel}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleWarningConfirm}>
-              Dispatch Anyway
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Dialog open={showResponseDialog} onOpenChange={setShowResponseDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {response?.ok ? (
+                <Check className="h-5 w-5 text-primary" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              )}
+              Provider Response
+            </DialogTitle>
+            <DialogDescription>
+              Direct dial result from PhoneCall.bot
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Status Row */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">HTTP Status</span>
+              <Badge variant={response?.ok ? 'default' : 'destructive'}>
+                {response?.provider_http_status || 0}
+              </Badge>
+            </div>
+
+            {/* Provider Call ID */}
+            {response?.provider_call_id && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Provider Call ID</span>
+                <code className="text-xs bg-muted px-2 py-1 rounded">
+                  {response.provider_call_id}
+                </code>
+              </div>
+            )}
+
+            {/* Agent ID */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Agent Used</span>
+              <code className="text-xs bg-muted px-2 py-1 rounded">
+                {response?.agent_id_used || 'unknown'}
+              </code>
+            </div>
+
+            {/* Warnings */}
+            {response?.warnings && response.warnings.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-sm font-medium text-destructive">Warnings</span>
+                {response.warnings.map((w, i) => (
+                  <p key={i} className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                    {w}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {/* Response Preview */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Response Body</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowFullResponse(!showFullResponse)}
+                  className="h-6 px-2 text-xs"
+                >
+                  {showFullResponse ? (
+                    <>
+                      <ChevronUp className="h-3 w-3 mr-1" />
+                      Collapse
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3 w-3 mr-1" />
+                      Expand
+                    </>
+                  )}
+                </Button>
+              </div>
+              <pre className={`text-xs bg-muted p-3 rounded overflow-x-auto font-mono whitespace-pre-wrap ${
+                showFullResponse ? 'max-h-80' : 'max-h-24'
+              } overflow-y-auto`}>
+                {response?.response_preview || 'No response'}
+              </pre>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setShowResponseDialog(false)}>
+              <X className="h-4 w-4 mr-1" />
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Phone, Clock, AlertTriangle, CheckCircle2, RefreshCw, Play, Mic, Eye } from 'lucide-react';
+import { Phone, Clock, AlertTriangle, CheckCircle2, RefreshCw, Play, Mic, Eye, HeartPulse, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { CallReviewModal, PhoneCallLogRow } from './CallReviewModal';
 import { Json } from '@/integrations/supabase/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   BarChart,
   Bar,
@@ -94,6 +95,14 @@ function getSentimentBadge(sentiment: string | null) {
   return <Badge variant={config.variant}>{config.label}</Badge>;
 }
 
+interface HealthCheckResponse {
+  ok: boolean;
+  webhook_url_configured: boolean;
+  health_status: number;
+  response_preview: string;
+  checked_at: string;
+}
+
 export function PhoneCallOpsPanel() {
   const [stats, setStats] = useState<QueueStats | null>(null);
   const [pendingCalls, setPendingCalls] = useState<PendingCall[]>([]);
@@ -105,6 +114,49 @@ export function PhoneCallOpsPanel() {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<PhoneCallLogRow | null>(null);
   const [chartLogs, setChartLogs] = useState<CallLog[]>([]);
+  
+  // Health check state
+  const [healthCheckOpen, setHealthCheckOpen] = useState(false);
+  const [healthCheckLoading, setHealthCheckLoading] = useState(false);
+  const [healthCheckResponse, setHealthCheckResponse] = useState<HealthCheckResponse | null>(null);
+
+  const handleHealthCheck = async () => {
+    setHealthCheckLoading(true);
+    setHealthCheckResponse(null);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Not authenticated');
+        return;
+      }
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-phonecallbot-health`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data: HealthCheckResponse = await res.json();
+      setHealthCheckResponse(data);
+      setHealthCheckOpen(true);
+    } catch (err) {
+      toast.error('Health check failed');
+      setHealthCheckResponse({
+        ok: false,
+        webhook_url_configured: false,
+        health_status: 0,
+        response_preview: err instanceof Error ? err.message : 'Unknown error',
+        checked_at: new Date().toISOString(),
+      });
+      setHealthCheckOpen(true);
+    } finally {
+      setHealthCheckLoading(false);
+    }
+  };
 
   const handleOpenReview = (log: CallLog) => {
     setSelectedLog(log as PhoneCallLogRow);
@@ -272,7 +324,36 @@ export function PhoneCallOpsPanel() {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* PhoneCall.bot Health Card */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Provider Health</CardTitle>
+            <HeartPulse className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleHealthCheck}
+              disabled={healthCheckLoading}
+              className="w-full"
+            >
+              {healthCheckLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  Checking...
+                </>
+              ) : (
+                <>
+                  <HeartPulse className="h-4 w-4 mr-1" />
+                  Check Now
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2">PhoneCall.bot status</p>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Due Now</CardTitle>
@@ -570,6 +651,53 @@ export function PhoneCallOpsPanel() {
         onClose={handleCloseReview}
         log={selectedLog}
       />
+
+      {/* Health Check Dialog */}
+      <Dialog open={healthCheckOpen} onOpenChange={setHealthCheckOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HeartPulse className={`h-5 w-5 ${healthCheckResponse?.ok ? 'text-primary' : 'text-destructive'}`} />
+              PhoneCall.bot Health Check
+            </DialogTitle>
+            <DialogDescription>
+              Provider connectivity status
+            </DialogDescription>
+          </DialogHeader>
+
+          {healthCheckResponse && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">URL Configured</span>
+                <Badge variant={healthCheckResponse.webhook_url_configured ? 'default' : 'destructive'}>
+                  {healthCheckResponse.webhook_url_configured ? 'Yes' : 'No'}
+                </Badge>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Health Status</span>
+                <Badge variant={healthCheckResponse.health_status > 0 ? 'default' : 'destructive'}>
+                  {healthCheckResponse.health_status || 'N/A'}
+                </Badge>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Checked At</span>
+                <code className="text-xs bg-muted px-2 py-1 rounded">
+                  {new Date(healthCheckResponse.checked_at).toLocaleString()}
+                </code>
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-sm font-medium">Response Preview</span>
+                <pre className="text-xs bg-muted p-3 rounded overflow-x-auto font-mono whitespace-pre-wrap max-h-40 overflow-y-auto">
+                  {healthCheckResponse.response_preview || 'No response'}
+                </pre>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
