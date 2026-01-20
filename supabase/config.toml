@@ -83,3 +83,9 @@ verify_jwt = false
 
 [functions.admin-update-call-agent]
 verify_jwt = false
+
+[functions.admin-direct-dial]
+verify_jwt = false
+
+[functions.admin-phonecallbot-health]
+verify_jwt = false
