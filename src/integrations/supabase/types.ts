@@ -335,6 +335,8 @@ export type Database = {
           phone_e164: string
           phone_hash: string
           provider_call_id: string | null
+          reason: string | null
+          requested_by_user_id: string | null
           scheduled_for: string
           source_tool: string
           status: Database["public"]["Enums"]["pending_call_status"]
@@ -357,6 +359,8 @@ export type Database = {
           phone_e164: string
           phone_hash: string
           provider_call_id?: string | null
+          reason?: string | null
+          requested_by_user_id?: string | null
           scheduled_for: string
           source_tool: string
           status?: Database["public"]["Enums"]["pending_call_status"]
@@ -379,6 +383,8 @@ export type Database = {
           phone_e164?: string
           phone_hash?: string
           provider_call_id?: string | null
+          reason?: string | null
+          requested_by_user_id?: string | null
           scheduled_for?: string
           source_tool?: string
           status?: Database["public"]["Enums"]["pending_call_status"]

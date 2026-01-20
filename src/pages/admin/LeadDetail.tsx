@@ -10,7 +10,7 @@ import { LeadIdentityCard } from '@/components/lead-detail/LeadIdentityCard';
 import { LeadTimeline } from '@/components/lead-detail/LeadTimeline';
 import { NotesWidget } from '@/components/lead-detail/NotesWidget';
 import { FilesWidget } from '@/components/lead-detail/FilesWidget';
-import { WebhookExportButton } from '@/components/lead-detail/WebhookExportButton';
+import { DispatchWindowManButton } from '@/components/lead-detail/DispatchWindowManButton';
 import { ConversionPathTimeline } from '@/components/lead-detail/ConversionPathTimeline';
 import { ProjectedRevenueCard } from '@/components/lead-detail/ProjectedRevenueCard';
 import { IntentSignalsSummary } from '@/components/lead-detail/IntentSignalsSummary';
@@ -22,7 +22,7 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 function LeadDetailContent() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { lead, events, files, notes, session, isLoading, error, updateStatus, addNote, updateSocialUrl } = useLeadDetail(id);
+  const { lead, events, files, notes, session, calls, pendingCalls, isLoading, error, refetch, updateStatus, addNote, updateSocialUrl } = useLeadDetail(id);
   const { previousLeadId, nextLeadId, currentIndex, totalLeads, goToPrevious, goToNext } = useLeadNavigation(id);
   const { setIsOpen, addToRecent } = useGlobalSearch();
 
@@ -173,7 +173,7 @@ function LeadDetailContent() {
           <aside className="lg:col-span-3 space-y-4">
             <NotesWidget onAddNote={addNote} />
             <FilesWidget files={files} />
-            <WebhookExportButton lead={lead} events={events} notes={notes} />
+            <DispatchWindowManButton lead={lead} pendingCalls={pendingCalls} onSuccess={refetch} />
           </aside>
         </div>
       </main>
