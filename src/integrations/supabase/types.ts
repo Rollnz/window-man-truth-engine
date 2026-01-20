@@ -204,6 +204,12 @@ export type Database = {
           insurance_carrier: string | null
           last_activity_at: string | null
           last_evidence: Json | null
+          last_non_direct_channel: string | null
+          last_non_direct_fbclid: string | null
+          last_non_direct_gclid: string | null
+          last_non_direct_landing_page: string | null
+          last_non_direct_utm_medium: string | null
+          last_non_direct_utm_source: string | null
           last_touch: Json | null
           lead_score_last_7d: number | null
           lead_score_total: number | null
@@ -240,6 +246,12 @@ export type Database = {
           insurance_carrier?: string | null
           last_activity_at?: string | null
           last_evidence?: Json | null
+          last_non_direct_channel?: string | null
+          last_non_direct_fbclid?: string | null
+          last_non_direct_gclid?: string | null
+          last_non_direct_landing_page?: string | null
+          last_non_direct_utm_medium?: string | null
+          last_non_direct_utm_source?: string | null
           last_touch?: Json | null
           lead_score_last_7d?: number | null
           lead_score_total?: number | null
@@ -276,6 +288,12 @@ export type Database = {
           insurance_carrier?: string | null
           last_activity_at?: string | null
           last_evidence?: Json | null
+          last_non_direct_channel?: string | null
+          last_non_direct_fbclid?: string | null
+          last_non_direct_gclid?: string | null
+          last_non_direct_landing_page?: string | null
+          last_non_direct_utm_medium?: string | null
+          last_non_direct_utm_source?: string | null
           last_touch?: Json | null
           lead_score_last_7d?: number | null
           lead_score_total?: number | null
