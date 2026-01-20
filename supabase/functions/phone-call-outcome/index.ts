@@ -1,11 +1,12 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// PHONE CALL OUTCOME - WEBHOOK HANDLER (Hardened B+D+F)
+// PHONE CALL OUTCOME - WEBHOOK HANDLER (Hardened B+D+F + Step C Fix)
 // Receives callbacks from PhoneCall.bot with call outcomes
 // - Persists ALL inbound webhooks to webhook_receipts for audit/debugging
 // - Progressive signature enforcement (ENFORCE | LOG_ONLY | DISABLED)
-// - 4-step correlation fallback with dead-letter persistence
+// - 4-step correlation fallback with Step C UPSERT fix
 // - Idempotency protection via outcome_timeline_written flag + idempotency_key
 // - Deterministic pending_calls state mapping
+// - ALWAYS returns 200 OK (except ENFORCE mode signature failures)
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -299,9 +300,10 @@ Deno.serve(async (req) => {
 
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error("[phone-call-outcome] Missing environment variables");
+    // Still return 200 to prevent provider retries
     return new Response(
-      JSON.stringify({ error: "Server configuration error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ success: false, error: "Server configuration error" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -326,6 +328,19 @@ Deno.serve(async (req) => {
   let errorCode: string | null = null;
   let errorMessage: string | null = null;
   let signatureResult: SignatureResult = { ok: true, mode: "PENDING", valid: null };
+
+  // Helper to update receipt and return 200 OK
+  async function finalizeReceipt(status: string, code?: string, message?: string) {
+    if (receiptId) {
+      await supabase.from("webhook_receipts").update({
+        correlation_status: status,
+        matched_phone_call_log_id: matchedPhoneCallLogId,
+        correlation_step: correlationStep,
+        error_code: code || errorCode,
+        error_message: message || errorMessage,
+      }).eq("id", receiptId);
+    }
+  }
 
   try {
     // ═══════════════════════════════════════════════════════════════════════
@@ -393,7 +408,7 @@ Deno.serve(async (req) => {
     // ═══════════════════════════════════════════════════════════════════════
     signatureResult = await verifySignature(req, rawBody, signatureMode);
 
-    // In ENFORCE mode with invalid signature, persist and reject
+    // In ENFORCE mode with invalid signature, persist and reject (ONLY exception to 200 rule)
     if (!signatureResult.ok) {
       correlationStatus = "invalid";
       errorCode = "SIGNATURE_INVALID";
@@ -468,13 +483,7 @@ Deno.serve(async (req) => {
       errorCode = "MISSING_CALL_ID";
       errorMessage = "Missing required field: call_id";
       
-      if (receiptId) {
-        await supabase.from("webhook_receipts").update({
-          correlation_status: correlationStatus,
-          error_code: errorCode,
-          error_message: errorMessage,
-        }).eq("id", receiptId);
-      }
+      await finalizeReceipt(correlationStatus, errorCode, errorMessage);
       
       console.error("[phone-call-outcome] Missing call_id");
       return new Response(
@@ -488,13 +497,7 @@ Deno.serve(async (req) => {
       errorCode = "MISSING_STATUS";
       errorMessage = "Missing required field: status";
       
-      if (receiptId) {
-        await supabase.from("webhook_receipts").update({
-          correlation_status: correlationStatus,
-          error_code: errorCode,
-          error_message: errorMessage,
-        }).eq("id", receiptId);
-      }
+      await finalizeReceipt(correlationStatus, errorCode, errorMessage);
       
       console.error("[phone-call-outcome] Missing status");
       return new Response(
@@ -507,7 +510,7 @@ Deno.serve(async (req) => {
     const validPayload = payload as PhoneCallOutcomePayload;
 
     // ═══════════════════════════════════════════════════════════════════════
-    // STEP 6: 4-Step Correlation Algorithm (Item B)
+    // STEP 6: 4-Step Correlation Algorithm (with Step C UPSERT fix)
     // ═══════════════════════════════════════════════════════════════════════
     const callRequestId = (validPayload.metadata?.call_request_id as string) || null;
     let existingLog: {
@@ -517,12 +520,13 @@ Deno.serve(async (req) => {
       source_tool: string;
       outcome_timeline_written: boolean | null;
       call_request_id: string | null;
+      agent_id: string;
     } | null = null;
 
     // Step A: Match by provider_call_id
     const { data: logByProviderId } = await supabase
       .from("phone_call_logs")
-      .select("id, call_status, lead_id, source_tool, outcome_timeline_written, call_request_id")
+      .select("id, call_status, lead_id, source_tool, outcome_timeline_written, call_request_id, agent_id")
       .eq("provider_call_id", validPayload.call_id)
       .maybeSingle();
 
@@ -536,7 +540,7 @@ Deno.serve(async (req) => {
     if (!existingLog && callRequestId) {
       const { data: logByRequestId } = await supabase
         .from("phone_call_logs")
-        .select("id, call_status, lead_id, source_tool, outcome_timeline_written, call_request_id")
+        .select("id, call_status, lead_id, source_tool, outcome_timeline_written, call_request_id, agent_id")
         .eq("call_request_id", callRequestId)
         .maybeSingle();
 
@@ -547,40 +551,67 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Step C: Match via pending_calls.call_request_id, then find/use lead_id
+    // Step C: Match via pending_calls.call_request_id → UPSERT phone_call_logs if missing
+    let pendingCallForStepC: {
+      id: string;
+      lead_id: string | null;
+      source_tool: string;
+      agent_id: string;
+      call_request_id: string;
+      triggered_at: string | null;
+    } | null = null;
+
     if (!existingLog && callRequestId) {
       const { data: pendingCall } = await supabase
         .from("pending_calls")
-        .select("id, lead_id, source_tool, agent_id")
+        .select("id, lead_id, source_tool, agent_id, call_request_id, triggered_at")
         .eq("call_request_id", callRequestId)
         .maybeSingle();
 
       if (pendingCall) {
-        // We have a pending call but no phone_call_logs entry - this shouldn't normally happen
-        // but we can still proceed by updating pending_calls
+        pendingCallForStepC = pendingCall;
         correlationStep = "call_request_id_pending";
-        console.log("[phone-call-outcome] Found pending_call but no phone_call_logs - proceeding with partial update", {
+        
+        console.log("[phone-call-outcome] Step C: Found pending_call, will UPSERT phone_call_logs", {
           pending_call_id: pendingCall.id,
           call_request_id: callRequestId,
         });
         
-        // Create a synthetic existingLog for the rest of the logic
-        // Note: We won't have a phone_call_logs.id to update, but we can update pending_calls
-        existingLog = null; // Keep as null, handle specially below
+        // UPSERT phone_call_logs using call_request_id as the unique key
+        // This handles the gap where dispatcher failed to create the log
+        const { data: upsertedLog, error: upsertError } = await supabase
+          .from("phone_call_logs")
+          .upsert(
+            {
+              call_request_id: callRequestId,
+              lead_id: pendingCall.lead_id,
+              source_tool: pendingCall.source_tool,
+              agent_id: pendingCall.agent_id,
+              provider_call_id: validPayload.call_id,
+              call_status: "pending", // Will be updated below
+              triggered_at: pendingCall.triggered_at || new Date().toISOString(),
+            },
+            { onConflict: "call_request_id", ignoreDuplicates: false }
+          )
+          .select("id, call_status, lead_id, source_tool, outcome_timeline_written, call_request_id, agent_id")
+          .single();
+
+        if (upsertError) {
+          console.error("[phone-call-outcome] Step C UPSERT failed:", upsertError.message);
+          // Continue with partial processing
+        } else if (upsertedLog) {
+          existingLog = upsertedLog;
+          console.log("[phone-call-outcome] Step C: UPSERTED phone_call_logs:", existingLog.id);
+        }
       }
     }
 
     // Step D: No match - dead letter
-    if (!existingLog && correlationStep !== "call_request_id_pending") {
+    if (!existingLog) {
       correlationStatus = "unmatched";
       errorMessage = "No matching phone_call_logs or pending_calls found";
       
-      if (receiptId) {
-        await supabase.from("webhook_receipts").update({
-          correlation_status: correlationStatus,
-          error_message: errorMessage,
-        }).eq("id", receiptId);
-      }
+      await finalizeReceipt(correlationStatus, undefined, errorMessage);
       
       console.error("[phone-call-outcome] DEAD-LETTER: No correlation found", {
         provider_call_id: validPayload.call_id,
@@ -603,16 +634,11 @@ Deno.serve(async (req) => {
     // ═══════════════════════════════════════════════════════════════════════
     const terminalStates = ["completed", "failed", "no_answer", "canceled"];
     
-    if (existingLog && terminalStates.includes(existingLog.call_status) && existingLog.outcome_timeline_written === true) {
+    if (terminalStates.includes(existingLog.call_status) && existingLog.outcome_timeline_written === true) {
       correlationStatus = "duplicate";
+      matchedPhoneCallLogId = existingLog.id;
       
-      if (receiptId) {
-        await supabase.from("webhook_receipts").update({
-          correlation_status: correlationStatus,
-          matched_phone_call_log_id: existingLog.id,
-          correlation_step: correlationStep,
-        }).eq("id", receiptId);
-      }
+      await finalizeReceipt(correlationStatus);
       
       console.log("[phone-call-outcome] IDEMPOTENT SKIP: Call already processed with timeline written", {
         call_id: validPayload.call_id,
@@ -633,65 +659,62 @@ Deno.serve(async (req) => {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // STEP 8: Update phone_call_logs (if we have a match)
+    // STEP 8: Update phone_call_logs
     // ═══════════════════════════════════════════════════════════════════════
     const mappedStatus = mapCallStatus(validPayload.status);
     const parsedDuration = parseDuration(validPayload.duration_seconds);
+    matchedPhoneCallLogId = existingLog.id;
+    
+    const updateData: Record<string, unknown> = {
+      call_status: mappedStatus,
+      updated_at: new Date().toISOString(),
+      raw_outcome_payload: validPayload,
+      provider_call_id: validPayload.call_id, // Ensure provider_call_id is set
+    };
 
-    if (existingLog) {
-      matchedPhoneCallLogId = existingLog.id;
-      
-      const updateData: Record<string, unknown> = {
-        call_status: mappedStatus,
-        updated_at: new Date().toISOString(),
-        raw_outcome_payload: validPayload,
-        provider_call_id: validPayload.call_id, // Ensure provider_call_id is set
-      };
+    if (parsedDuration !== null && parsedDuration >= 0) {
+      updateData.call_duration_sec = parsedDuration;
+    }
 
-      if (parsedDuration !== null && parsedDuration >= 0) {
-        updateData.call_duration_sec = parsedDuration;
+    if (validPayload.sentiment && ["positive", "neutral", "negative"].includes(validPayload.sentiment)) {
+      updateData.call_sentiment = validPayload.sentiment;
+    }
+
+    if (validPayload.ai_notes) {
+      updateData.ai_notes = truncateString(validPayload.ai_notes, 5000);
+    }
+
+    if (validPayload.recording_url) {
+      try {
+        new URL(validPayload.recording_url);
+        updateData.recording_url = truncateString(validPayload.recording_url, 2000);
+      } catch {
+        console.warn("[phone-call-outcome] Invalid recording URL, skipping");
       }
+    }
 
-      if (validPayload.sentiment && ["positive", "neutral", "negative"].includes(validPayload.sentiment)) {
-        updateData.call_sentiment = validPayload.sentiment;
-      }
-
-      if (validPayload.ai_notes) {
-        updateData.ai_notes = truncateString(validPayload.ai_notes, 5000);
-      }
-
-      if (validPayload.recording_url) {
-        try {
-          new URL(validPayload.recording_url);
-          updateData.recording_url = truncateString(validPayload.recording_url, 2000);
-        } catch {
-          console.warn("[phone-call-outcome] Invalid recording URL, skipping");
+    if (validPayload.ended_at) {
+      try {
+        const endedDate = new Date(validPayload.ended_at);
+        if (!isNaN(endedDate.getTime())) {
+          updateData.ended_at = endedDate.toISOString();
         }
-      }
-
-      if (validPayload.ended_at) {
-        try {
-          const endedDate = new Date(validPayload.ended_at);
-          if (!isNaN(endedDate.getTime())) {
-            updateData.ended_at = endedDate.toISOString();
-          }
-        } catch {
-          updateData.ended_at = new Date().toISOString();
-        }
-      } else {
+      } catch {
         updateData.ended_at = new Date().toISOString();
       }
+    } else {
+      updateData.ended_at = new Date().toISOString();
+    }
 
-      const { error: updateError } = await supabase
-        .from("phone_call_logs")
-        .update(updateData)
-        .eq("id", existingLog.id);
+    const { error: updateError } = await supabase
+      .from("phone_call_logs")
+      .update(updateData)
+      .eq("id", existingLog.id);
 
-      if (updateError) {
-        console.error("[phone-call-outcome] Error updating call log:", updateError.message);
-        errorCode = "UPDATE_FAILED";
-        errorMessage = updateError.message;
-      }
+    if (updateError) {
+      console.error("[phone-call-outcome] Error updating call log:", updateError.message);
+      errorCode = "UPDATE_FAILED";
+      errorMessage = updateError.message;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -741,7 +764,7 @@ Deno.serve(async (req) => {
     // ═══════════════════════════════════════════════════════════════════════
     let timelineWritten = false;
 
-    if (existingLog?.lead_id && !existingLog.outcome_timeline_written) {
+    if (existingLog.lead_id && !existingLog.outcome_timeline_written) {
       // Find wm_lead to get wm_lead.id and original_session_id
       const { data: wmLead } = await supabase
         .from("wm_leads")
@@ -805,7 +828,7 @@ Deno.serve(async (req) => {
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 11: Set idempotency flag (only after successful timeline writes)
     // ═══════════════════════════════════════════════════════════════════════
-    if (timelineWritten && existingLog) {
+    if (timelineWritten) {
       const { error: flagError } = await supabase
         .from("phone_call_logs")
         .update({ outcome_timeline_written: true })
@@ -822,16 +845,7 @@ Deno.serve(async (req) => {
     // STEP 12: Update receipt with final status
     // ═══════════════════════════════════════════════════════════════════════
     correlationStatus = "processed";
-    
-    if (receiptId) {
-      await supabase.from("webhook_receipts").update({
-        correlation_status: correlationStatus,
-        matched_phone_call_log_id: matchedPhoneCallLogId,
-        correlation_step: correlationStep,
-        error_code: errorCode,
-        error_message: errorMessage,
-      }).eq("id", receiptId);
-    }
+    await finalizeReceipt(correlationStatus);
 
     const duration = Date.now() - startTime;
     console.log(`[phone-call-outcome] Successfully processed call in ${duration}ms`, {
@@ -861,20 +875,16 @@ Deno.serve(async (req) => {
     console.error("[phone-call-outcome] Unexpected error:", error);
     
     // Try to update receipt with error
-    if (receiptId) {
-      await supabase.from("webhook_receipts").update({
-        correlation_status: "invalid",
-        error_code: "UNEXPECTED_ERROR",
-        error_message: error instanceof Error ? error.message : "Unknown error",
-      }).eq("id", receiptId);
-    }
+    await finalizeReceipt("invalid", "UNEXPECTED_ERROR", error instanceof Error ? error.message : "Unknown error");
 
+    // ALWAYS return 200 to prevent provider retry storms
     return new Response(
       JSON.stringify({
+        success: false,
         error: "Internal server error",
         details: error instanceof Error ? error.message : "Unknown error",
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
