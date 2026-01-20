@@ -592,6 +592,72 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_receipts: {
+        Row: {
+          call_request_id: string | null
+          correlation_status: Database["public"]["Enums"]["webhook_correlation_status"]
+          correlation_step: string | null
+          error_code: string | null
+          error_message: string | null
+          headers: Json
+          id: string
+          idempotency_key: string | null
+          matched_phone_call_log_id: string | null
+          parsed_payload: Json | null
+          provider: string
+          provider_call_id: string | null
+          raw_body: string | null
+          raw_body_sha256: string
+          received_at: string
+          retention_until: string
+          signature_error: string | null
+          signature_mode: string | null
+          signature_valid: boolean | null
+        }
+        Insert: {
+          call_request_id?: string | null
+          correlation_status?: Database["public"]["Enums"]["webhook_correlation_status"]
+          correlation_step?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          headers: Json
+          id?: string
+          idempotency_key?: string | null
+          matched_phone_call_log_id?: string | null
+          parsed_payload?: Json | null
+          provider?: string
+          provider_call_id?: string | null
+          raw_body?: string | null
+          raw_body_sha256: string
+          received_at?: string
+          retention_until?: string
+          signature_error?: string | null
+          signature_mode?: string | null
+          signature_valid?: boolean | null
+        }
+        Update: {
+          call_request_id?: string | null
+          correlation_status?: Database["public"]["Enums"]["webhook_correlation_status"]
+          correlation_step?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          headers?: Json
+          id?: string
+          idempotency_key?: string | null
+          matched_phone_call_log_id?: string | null
+          parsed_payload?: Json | null
+          provider?: string
+          provider_call_id?: string | null
+          raw_body?: string | null
+          raw_body_sha256?: string
+          received_at?: string
+          retention_until?: string
+          signature_error?: string | null
+          signature_mode?: string | null
+          signature_valid?: boolean | null
+        }
+        Relationships: []
+      }
       wm_events: {
         Row: {
           created_at: string
@@ -852,6 +918,7 @@ export type Database = {
         Returns: Json
       }
       cleanup_rate_limits: { Args: never; Returns: undefined }
+      cleanup_webhook_receipts: { Args: never; Returns: Json }
       get_event_score: {
         Args: { event_category: string; event_name: string }
         Returns: number
@@ -916,6 +983,13 @@ export type Database = {
         | "no_answer"
         | "failed"
         | "canceled"
+      webhook_correlation_status:
+        | "unprocessed"
+        | "matched"
+        | "unmatched"
+        | "invalid"
+        | "duplicate"
+        | "processed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1073,6 +1147,14 @@ export const Constants = {
         "no_answer",
         "failed",
         "canceled",
+      ],
+      webhook_correlation_status: [
+        "unprocessed",
+        "matched",
+        "unmatched",
+        "invalid",
+        "duplicate",
+        "processed",
       ],
     },
   },
