@@ -279,8 +279,8 @@ Deno.serve(async (req) => {
     scheduled_for: pendingRow.scheduled_for,
   });
 
-  // === Immutable audit trail ===
-  // Count prior dispatch events for this lead to get sequence number
+  // === CALL DISPATCH TRUTH TABLE (Phase 2) ===
+  // Comprehensive audit note with all dispatch details for debugging
   const { count: priorDispatchCount } = await supabaseAdmin
     .from("lead_notes")
     .select("*", { count: "exact", head: true })
@@ -288,12 +288,35 @@ Deno.serve(async (req) => {
     .ilike("content", "%Call dispatched%");
 
   const dispatchSeq = (priorDispatchCount || 0) + 1;
-  const auditContent = `📞 [#${dispatchSeq}] Call dispatched by ${email} (reason: ${reason}) | pending_call_id: ${pendingRow.id} | scheduled_for: ${pendingRow.scheduled_for}`;
+  const maskedPhone = phoneE164.slice(0, 5) + "****" + phoneE164.slice(-2);
+  const businessHoursStatus = isWithinBusinessHoursNY() 
+    ? "within_hours" 
+    : overrideWarnings 
+      ? "outside_hours_OVERRIDDEN" 
+      : "outside_hours";
+
+  // Truth Table format for maximum debuggability
+  const truthTableContent = [
+    `📞 DISPATCH TRUTH TABLE [#${dispatchSeq}]`,
+    `────────────────────────────`,
+    `pending_call_id: ${pendingRow.id}`,
+    `call_request_id: ${pendingRow.call_request_id}`,
+    `source_tool: manual_dispatch`,
+    `agent_id: ${agent.agent_id}`,
+    `phone: ${maskedPhone}`,
+    `scheduled_for: ${pendingRow.scheduled_for}`,
+    `business_hours: ${businessHoursStatus}`,
+    `reason: ${reason}`,
+    `dispatched_by: ${email}`,
+    `lead_id (leads): ${wmLead.lead_id}`,
+    `wm_lead_id: ${wmLead.id}`,
+    `session_id: ${wmLead.original_session_id || "NONE"}`,
+  ].join("\n");
 
   // ALWAYS write to lead_notes (immutable audit trail + timeline fallback)
   await supabaseAdmin.from("lead_notes").insert({
     lead_id: wmLead.id, // lead_notes expects wm_leads.id
-    content: auditContent,
+    content: truthTableContent,
     admin_email: email,
   });
 

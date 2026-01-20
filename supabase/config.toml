@@ -80,3 +80,6 @@ verify_jwt = true
 
 [functions.admin-webhook-receipts]
 verify_jwt = false
+
+[functions.admin-update-call-agent]
+verify_jwt = false
