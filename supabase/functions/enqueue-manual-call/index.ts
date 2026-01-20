@@ -225,51 +225,41 @@ Deno.serve(async (req) => {
   const messageTemplate = agent.first_message_template || "Hi {first_name}, this is WindowMan.";
   const firstMessage = messageTemplate.replaceAll("{first_name}", firstName);
 
-  // UPSERT (Critical): allows re-dispatch despite unique index
-  // Also RESET dispatcher fields to clean state
+  // INSERT new pending call (we've already verified no active call exists above)
   const scheduledFor = new Date(Date.now() + 2 * 60 * 1000).toISOString();
   const nowIso = new Date().toISOString();
 
-  const { data: pendingRow, error: upsertErr } = await supabaseAdmin
+  const { data: pendingRow, error: insertErr } = await supabaseAdmin
     .from("pending_calls")
-    .upsert(
-      {
-        lead_id: wmLead.lead_id, // leads.id (FK)
-        source_tool: "manual_dispatch",
+    .insert({
+      lead_id: wmLead.lead_id, // leads.id (FK)
+      source_tool: "manual_dispatch",
 
-        phone_e164: phoneE164,
-        phone_hash: phoneHash,
-        agent_id: agent.agent_id, // TEXT agent_id, not UUID
-        first_message: firstMessage,
-        payload: {
-          wm_lead_id: wmLead.id,
-          email: wmLead.email,
-          first_name: wmLead.first_name,
-        },
-
-        // RESET all dispatcher fields
-        status: "pending",
-        scheduled_for: scheduledFor,
-        next_attempt_at: nowIso,
-        attempt_count: 0,
-        provider_call_id: null,
-        last_error: null,
-        triggered_at: null,
-        completed_at: null,
-        // NOTE: created_date is GENERATED ALWAYS - do not set explicitly
-
-        // Manual dispatch metadata
-        reason,
-        requested_by_user_id: user.id,
+      phone_e164: phoneE164,
+      phone_hash: phoneHash,
+      agent_id: agent.agent_id, // TEXT agent_id, not UUID
+      first_message: firstMessage,
+      payload: {
+        wm_lead_id: wmLead.id,
+        email: wmLead.email,
+        first_name: wmLead.first_name,
       },
-      { onConflict: "lead_id,source_tool", ignoreDuplicates: false }
-    )
+
+      status: "pending",
+      scheduled_for: scheduledFor,
+      next_attempt_at: nowIso,
+      attempt_count: 0,
+
+      // Manual dispatch metadata
+      reason,
+      requested_by_user_id: user.id,
+    })
     .select("id, call_request_id, scheduled_for")
     .single();
 
-  if (upsertErr || !pendingRow) {
-    console.error("[enqueue-manual-call] UPSERT failed:", upsertErr?.message);
-    return json(500, { queued: false, error: "Failed to enqueue call", details: String(upsertErr?.message || upsertErr) });
+  if (insertErr || !pendingRow) {
+    console.error("[enqueue-manual-call] INSERT failed:", insertErr?.message);
+    return json(500, { queued: false, error: "Failed to enqueue call", details: String(insertErr?.message || insertErr) });
   }
 
   console.log("[enqueue-manual-call] Call enqueued successfully", {
