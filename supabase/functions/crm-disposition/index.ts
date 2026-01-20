@@ -15,6 +15,63 @@ const ADMIN_EMAILS = [
   "mongoloyd@protonmail.com",
 ];
 
+// =============================================================================
+// STATE MACHINE: Allowed Transitions Matrix
+// =============================================================================
+// Key insight: This prevents bidding corruption by ensuring CRM state cannot be
+// manipulated by UI bugs or client-side tampering.
+
+type LeadStatus = 
+  | "new" 
+  | "qualifying" 
+  | "mql" 
+  | "qualified" 
+  | "appointment_set" 
+  | "sat" 
+  | "closed_won" 
+  | "closed_lost" 
+  | "dead";
+
+const ALLOWED_TRANSITIONS: Record<LeadStatus, LeadStatus[]> = {
+  // Entry state
+  new: ["qualifying", "mql", "dead"],
+  
+  // Qualification funnel
+  qualifying: ["mql", "qualified", "dead"],
+  mql: ["qualified", "appointment_set", "dead"],
+  qualified: ["appointment_set", "dead"],
+  
+  // Sales funnel  
+  appointment_set: ["sat", "closed_won", "closed_lost", "dead"],
+  sat: ["closed_won", "closed_lost", "dead"],
+  
+  // Terminal states - NO transitions out (except admin override)
+  closed_won: [],
+  closed_lost: [],
+  dead: [],
+};
+
+// Disqualification reason codes for granular tracking
+const VALID_DISQUALIFICATION_REASONS = [
+  "outside_service_area",
+  "non_window_inquiry",
+  "duplicate",
+  "price_shopper",
+  "spam",
+] as const;
+
+type DisqualificationReason = typeof VALID_DISQUALIFICATION_REASONS[number];
+
+function isValidTransition(from: LeadStatus, to: LeadStatus): boolean {
+  const allowed = ALLOWED_TRANSITIONS[from];
+  if (!allowed) return false;
+  return allowed.includes(to);
+}
+
+function isTerminalStatus(status: LeadStatus): boolean {
+  return ["closed_won", "closed_lost", "dead"].includes(status);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -60,13 +117,33 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { leadId, newStatus, actualDealValue, notes, estimatedDealValue } = body;
+    const { 
+      leadId, 
+      newStatus, 
+      actualDealValue, 
+      notes, 
+      estimatedDealValue,
+      disqualificationReason,
+      adminOverride = false, // Allow terminal state escape hatch for admins
+    } = body;
 
     if (!leadId || !newStatus) {
       return new Response(JSON.stringify({ error: "leadId and newStatus required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Validate disqualification reason if moving to dead
+    if (newStatus === "dead" && disqualificationReason) {
+      if (!VALID_DISQUALIFICATION_REASONS.includes(disqualificationReason)) {
+        return new Response(JSON.stringify({ 
+          error: `Invalid disqualification reason. Valid options: ${VALID_DISQUALIFICATION_REASONS.join(", ")}` 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Get current lead data
@@ -79,6 +156,37 @@ Deno.serve(async (req) => {
     if (fetchError || !currentLead) {
       return new Response(JSON.stringify({ error: "Lead not found" }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const previousStatus = currentLead.status as LeadStatus;
+
+    // ==========================================================================
+    // STATE MACHINE ENFORCEMENT (Server-side truth)
+    // ==========================================================================
+    
+    // Block transitions out of terminal states unless admin override
+    if (isTerminalStatus(previousStatus) && !adminOverride) {
+      return new Response(JSON.stringify({ 
+        error: `Cannot transition from terminal status '${previousStatus}'. Use adminOverride flag if intentional.`,
+        previousStatus,
+        attemptedStatus: newStatus,
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate the transition is allowed (unless admin override)
+    if (!adminOverride && !isValidTransition(previousStatus, newStatus as LeadStatus)) {
+      return new Response(JSON.stringify({ 
+        error: `Invalid transition from '${previousStatus}' to '${newStatus}'`,
+        previousStatus,
+        attemptedStatus: newStatus,
+        allowedTransitions: ALLOWED_TRANSITIONS[previousStatus] || [],
+      }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -108,8 +216,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    const previousStatus = currentLead.status;
-
     // Build update object
     const updateData: Record<string, unknown> = {
       status: newStatus,
@@ -124,12 +230,43 @@ Deno.serve(async (req) => {
       updateData.estimated_deal_value = estimatedDealValue;
     }
 
+    // ==========================================================================
+    // IMMUTABLE TIMESTAMPS (Set once, never overwrite)
+    // ==========================================================================
+    const now = new Date().toISOString();
+
+    // captured_at: Set when entering any status beyond 'new' (first real interaction)
+    if (previousStatus === "new" && newStatus !== "new" && !currentLead.captured_at) {
+      updateData.captured_at = now;
+    }
+
+    // qualified_at: Set when entering qualified/mql/appointment_set (first qualification)
+    const qualifyingStatuses = ["mql", "qualified", "appointment_set"];
+    if (qualifyingStatuses.includes(newStatus) && !currentLead.qualified_at) {
+      updateData.qualified_at = now;
+    }
+
+    // disqualified_at: Set when entering dead
+    if (newStatus === "dead" && !currentLead.disqualified_at) {
+      updateData.disqualified_at = now;
+      if (disqualificationReason) {
+        updateData.disqualification_reason = disqualificationReason;
+      }
+    }
+
     // Handle closed_won - record the sale
     if (newStatus === "closed_won") {
-      updateData.closed_at = new Date().toISOString();
+      if (!currentLead.closed_at) {
+        updateData.closed_at = now;
+      }
       if (actualDealValue !== undefined) {
         updateData.actual_deal_value = actualDealValue;
       }
+    }
+
+    // Handle closed_lost
+    if (newStatus === "closed_lost" && !currentLead.closed_at) {
+      updateData.closed_at = now;
     }
 
     // Handle appointment_set - update lead quality
@@ -170,6 +307,7 @@ Deno.serve(async (req) => {
             previous_status: previousStatus,
             new_status: newStatus,
             changed_by: userEmail,
+            transition_valid: true,
           },
         });
 
@@ -214,12 +352,14 @@ Deno.serve(async (req) => {
               email: currentLead.email,
               source_tool: currentLead.original_source_tool,
               previous_status: previousStatus,
+              disqualification_reason: disqualificationReason || "unspecified",
               negative_value: -50, // Penalty for garbage leads
             },
           });
         }
         
         // Fire qualified event for 'qualified' status (sales qualified)
+        // Note: cv_qualified_lead is gated separately via mark-qualified-conversion
         if (newStatus === "qualified" && previousStatus !== "qualified") {
           await logAttributionEvent({
             sessionId,
@@ -260,6 +400,7 @@ Deno.serve(async (req) => {
       lead: updatedLead,
       previousStatus,
       newStatus,
+      transitioned: true, // Indicates valid transition occurred
       // Include original attribution for offline conversion tracking
       attribution: originalAttribution,
     }), {

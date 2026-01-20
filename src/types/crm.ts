@@ -15,6 +15,14 @@ export type LeadStatus =
 
 export type LeadQuality = "cold" | "warm" | "hot" | "qualified";
 
+// Disqualification reason codes for granular tracking
+export type DisqualificationReason = 
+  | "outside_service_area"
+  | "non_window_inquiry"
+  | "duplicate"
+  | "price_shopper"
+  | "spam";
+
 export interface CRMLead {
   id: string;
   created_at: string;
@@ -40,6 +48,12 @@ export interface CRMLead {
   fbclid: string | null;
   // UTM source fallback for attribution badges
   utm_source: string | null;
+  // Phase 1: Server truth columns
+  qualified_cv_fired?: boolean;
+  captured_at?: string | null;
+  qualified_at?: string | null;
+  disqualified_at?: string | null;
+  disqualification_reason?: DisqualificationReason | null;
 }
 
 export interface CRMColumn {
@@ -48,6 +62,19 @@ export interface CRMColumn {
   color: string;
   leads: CRMLead[];
 }
+
+// State machine: Allowed transitions for CRM
+export const ALLOWED_TRANSITIONS: Record<LeadStatus, LeadStatus[]> = {
+  new: ["qualifying", "mql", "dead"],
+  qualifying: ["mql", "qualified", "dead"],
+  mql: ["qualified", "appointment_set", "dead"],
+  qualified: ["appointment_set", "dead"],
+  appointment_set: ["sat", "closed_won", "closed_lost", "dead"],
+  sat: ["closed_won", "closed_lost", "dead"],
+  closed_won: [],
+  closed_lost: [],
+  dead: [],
+};
 
 export const LEAD_STATUS_CONFIG: Record<LeadStatus, { title: string; color: string; description: string }> = {
   new: {
@@ -93,7 +120,7 @@ export const LEAD_STATUS_CONFIG: Record<LeadStatus, { title: string; color: stri
   dead: {
     title: "Dead",
     color: "bg-gray-500",
-    description: "Fake info or not interested",
+    description: "Disqualified lead",
   },
 };
 
@@ -104,4 +131,12 @@ export const LEAD_QUALITY_CONFIG: Record<LeadQuality, { label: string; color: st
   warm: { label: "Warm", color: "bg-amber-100 text-amber-800" },
   hot: { label: "Hot", color: "bg-orange-100 text-orange-800" },
   qualified: { label: "Qualified", color: "bg-green-100 text-green-800" },
+};
+
+export const DISQUALIFICATION_REASONS: Record<DisqualificationReason, { label: string; description: string }> = {
+  outside_service_area: { label: "Outside Service Area", description: "Lead location not serviceable" },
+  non_window_inquiry: { label: "Non-Window Inquiry", description: "Not interested in windows" },
+  duplicate: { label: "Duplicate", description: "Already exists in system" },
+  price_shopper: { label: "Price Shopper", description: "Only comparing prices, not serious" },
+  spam: { label: "Spam", description: "Fake or bot submission" },
 };

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { CRMLead, LeadStatus } from '@/types/crm';
+import { CRMLead, LeadStatus, DisqualificationReason } from '@/types/crm';
 import { trackOfflineConversion } from '@/lib/gtm';
 
 interface CRMSummary {
@@ -11,18 +11,27 @@ interface CRMSummary {
   totalValue: number;
 }
 
+interface UpdateLeadExtras {
+  actualDealValue?: number;
+  notes?: string;
+  estimatedDealValue?: number;
+  disqualificationReason?: DisqualificationReason;
+  adminOverride?: boolean;
+}
+
 interface UseCRMLeadsReturn {
   leads: CRMLead[];
   summary: CRMSummary | null;
   isLoading: boolean;
   error: string | null;
   fetchLeads: (startDate?: string, endDate?: string) => Promise<void>;
-  updateLeadStatus: (leadId: string, newStatus: LeadStatus, extras?: {
-    actualDealValue?: number;
-    notes?: string;
-    estimatedDealValue?: number;
-  }) => Promise<boolean>;
+  updateLeadStatus: (leadId: string, newStatus: LeadStatus, extras?: UpdateLeadExtras) => Promise<boolean>;
   getLeadsByStatus: (status: LeadStatus) => CRMLead[];
+  /**
+   * Mark a lead's qualification conversion as fired (server-side truth).
+   * Returns { fired: true } only once per lead lifetime - safe for cv_qualified_lead.
+   */
+  markQualifiedConversion: (leadId: string) => Promise<{ fired: boolean }>;
 }
 
 export function useCRMLeads(): UseCRMLeadsReturn {
@@ -75,14 +84,55 @@ export function useCRMLeads(): UseCRMLeadsReturn {
     }
   }, [toast]);
 
+  /**
+   * SERVER-SIDE TRUTH: Mark qualified conversion as fired.
+   * 
+   * This is the ONLY way cv_qualified_lead should be gated.
+   * - Returns { fired: true } only once per lead (ever)
+   * - Prevents refresh, cross-device, localStorage-wipe duplicates
+   * - Client should fire cv_qualified_lead ONLY if this returns true
+   */
+  const markQualifiedConversion = useCallback(async (leadId: string): Promise<{ fired: boolean }> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn('[markQualifiedConversion] Not authenticated');
+        return { fired: false };
+      }
+
+      const response = await supabase.functions.invoke('mark-qualified-conversion', {
+        body: { leadId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.error) {
+        console.error('[markQualifiedConversion] Error:', response.error);
+        return { fired: false };
+      }
+
+      const { fired } = response.data || { fired: false };
+      
+      if (import.meta.env.DEV) {
+        console.log(
+          `%c[Qualified CV] ${fired ? '✅ FIRST TIME' : '⏸️ Already fired'}`,
+          fired ? 'color: #10b981; font-weight: bold' : 'color: #f59e0b',
+          { leadId }
+        );
+      }
+
+      return { fired };
+    } catch (err) {
+      console.error('[markQualifiedConversion] Unexpected error:', err);
+      return { fired: false };
+    }
+  }, []);
+
   const updateLeadStatus = useCallback(async (
     leadId: string, 
     newStatus: LeadStatus,
-    extras?: {
-      actualDealValue?: number;
-      notes?: string;
-      estimatedDealValue?: number;
-    }
+    extras?: UpdateLeadExtras
   ): Promise<boolean> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -117,6 +167,11 @@ export function useCRMLeads(): UseCRMLeadsReturn {
 
       const data = response.data;
 
+      // Check if server rejected the transition (state machine enforcement)
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
       // Update with server response
       if (data.lead) {
         setLeads(prev => prev.map(lead => 
@@ -124,23 +179,42 @@ export function useCRMLeads(): UseCRMLeadsReturn {
         ));
       }
 
-      // Qualification-Based Offline Conversion Tracking
-      // Use the LEAD's original attribution from the database (not admin's browser)
+      // ==========================================================================
+      // OFFLINE CONVERSION TRACKING (Server-Gated for Qualification)
+      // ==========================================================================
       const attribution = data.attribution || {};
       
-      // Fire offline conversion for qualifying statuses (including dead for negative signal)
+      // Fire offline conversion for qualifying statuses
       const conversionStatuses = ['qualified', 'mql', 'appointment_set', 'sat', 'closed_won', 'closed_lost', 'dead'];
       
       if (conversionStatuses.includes(newStatus)) {
-        await trackOfflineConversion({
-          leadId,
-          newStatus: newStatus as 'qualified' | 'mql' | 'appointment_set' | 'sat' | 'closed_won' | 'closed_lost' | 'dead',
-          dealValue: extras?.actualDealValue,
-          // Use lead's original click IDs for proper ad attribution
-          gclid: attribution.gclid,
-          fbclid: attribution.fbc?.split('.').pop(), // Extract fbclid from _fbc format
-          email: attribution.email, // For Enhanced Match
-        });
+        // For 'qualified' status, use server-gated cv_qualified_lead
+        if (newStatus === 'qualified' || newStatus === 'mql') {
+          // CRITICAL: Gate cv_qualified_lead on server truth
+          const { fired } = await markQualifiedConversion(leadId);
+          
+          if (fired) {
+            // Only fire the primary conversion if server confirms first-time
+            await trackOfflineConversion({
+              leadId,
+              newStatus: newStatus as 'qualified' | 'mql',
+              gclid: attribution.gclid,
+              fbclid: attribution.fbc?.split('.').pop(),
+              email: attribution.email,
+            });
+          }
+          // If not fired, skip - prevents duplicate cv_qualified_lead events
+        } else {
+          // Other statuses don't need the server gate
+          await trackOfflineConversion({
+            leadId,
+            newStatus: newStatus as 'appointment_set' | 'sat' | 'closed_won' | 'closed_lost' | 'dead',
+            dealValue: extras?.actualDealValue,
+            gclid: attribution.gclid,
+            fbclid: attribution.fbc?.split('.').pop(),
+            email: attribution.email,
+          });
+        }
       }
 
       toast({
@@ -162,7 +236,7 @@ export function useCRMLeads(): UseCRMLeadsReturn {
       });
       return false;
     }
-  }, [toast, fetchLeads]);
+  }, [toast, fetchLeads, markQualifiedConversion]);
 
   const getLeadsByStatus = useCallback((status: LeadStatus): CRMLead[] => {
     return leads.filter(lead => lead.status === status);
@@ -211,5 +285,6 @@ export function useCRMLeads(): UseCRMLeadsReturn {
     fetchLeads,
     updateLeadStatus,
     getLeadsByStatus,
+    markQualifiedConversion,
   };
 }
