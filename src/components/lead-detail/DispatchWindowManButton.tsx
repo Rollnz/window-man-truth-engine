@@ -40,9 +40,10 @@ export function DispatchWindowManButton({ lead, pendingCalls, onSuccess }: Dispa
   const [showFullResponse, setShowFullResponse] = useState(false);
   const { toast } = useToast();
 
-  // Check if there's an active pending call (for display purposes)
+  // Only block if there's a truly pending/processing call (not yet dispatched)
+  // 'called' means it was already sent to provider - user can retry
   const activePendingCall = pendingCalls.find(
-    (pc) => ['pending', 'processing', 'called'].includes(pc.status) && pc.source_tool === 'manual_dispatch'
+    (pc) => ['pending', 'processing'].includes(pc.status) && pc.source_tool === 'manual_dispatch'
   );
 
   const handleDispatch = async () => {
