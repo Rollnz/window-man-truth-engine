@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Loader2, Calculator, FileText, Activity, Zap } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Loader2, Calculator, FileText, Activity, Zap, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
@@ -8,9 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useCRMLeads } from '@/hooks/useCRMLeads';
+import { useGlobalSearch } from '@/hooks/useGlobalSearch';
 import { KanbanBoard } from '@/components/crm/KanbanBoard';
 import { CRMSummaryCards } from '@/components/crm/CRMSummaryCards';
 import { DateRangePicker, DateRange } from '@/components/admin/DateRangePicker';
+import { SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
 import { subDays, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -27,6 +29,7 @@ const ADMIN_EMAILS = [
 export default function CRMDashboard() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { setIsOpen } = useGlobalSearch();
   
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: subDays(new Date(), 30),
@@ -158,6 +161,9 @@ export default function CRMDashboard() {
             </div>
 
             <div className="flex items-center gap-3 flex-wrap">
+              {/* Search Trigger */}
+              <SearchKeyboardHint onClick={() => setIsOpen(true)} />
+
               {/* High-Touch Lead Filter */}
               <div className="flex items-center gap-2 px-3 py-1.5 border border-border/50 rounded-lg bg-card/50">
                 <Switch

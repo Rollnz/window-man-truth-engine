@@ -225,11 +225,23 @@ Deno.serve(async (req) => {
 
     // 3. Search lead_notes content (if searchNotes)
     if (searchNotes && resultsMap.size < limit) {
-      const { data: noteMatches, count: noteCount, error: noteError } = await supabaseAdmin
+      let notesQuery = supabaseAdmin
         .from('lead_notes')
         .select('lead_id, content', { count: 'exact' })
         .ilike('content', searchPattern)
         .limit(limit);
+
+      // Apply date filters to notes search
+      if (dateFrom) {
+        notesQuery = notesQuery.gte('created_at', dateFrom);
+      }
+      if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setDate(endDate.getDate() + 1);
+        notesQuery = notesQuery.lt('created_at', endDate.toISOString().split('T')[0]);
+      }
+
+      const { data: noteMatches, count: noteCount, error: noteError } = await notesQuery;
 
       // Add unique note matches to total (approximate)
       if (noteCount) {
@@ -412,15 +424,36 @@ function determineMatchField(
         match_positions: [{ start: pos, length: query.length }],
       };
     }
-    // Digits-only match
+    // Digits-only match - calculate position in the FORMATTED phone string
     const phoneDigits = lead.phone.replace(/\D/g, '');
     if (digitsOnly.length >= 3 && phoneDigits.includes(digitsOnly)) {
-      const digitPos = phoneDigits.indexOf(digitsOnly);
-      return {
-        match_field: 'phone',
-        match_snippet: lead.phone,
-        match_positions: [{ start: digitPos, length: digitsOnly.length }],
-      };
+      const digitMatchStart = phoneDigits.indexOf(digitsOnly);
+      
+      // Walk through the original phone to find the visual position
+      let visualStart = -1;
+      let visualEnd = -1;
+      let digitCount = 0;
+      
+      for (let i = 0; i < lead.phone.length; i++) {
+        if (/\d/.test(lead.phone[i])) {
+          if (digitCount === digitMatchStart) {
+            visualStart = i;
+          }
+          if (digitCount === digitMatchStart + digitsOnly.length - 1) {
+            visualEnd = i + 1;
+            break;
+          }
+          digitCount++;
+        }
+      }
+      
+      if (visualStart !== -1 && visualEnd !== -1) {
+        return {
+          match_field: 'phone',
+          match_snippet: lead.phone,
+          match_positions: [{ start: visualStart, length: visualEnd - visualStart }],
+        };
+      }
     }
   }
 

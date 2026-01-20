@@ -16,7 +16,7 @@ import { ProjectedRevenueCard } from '@/components/lead-detail/ProjectedRevenueC
 import { IntentSignalsSummary } from '@/components/lead-detail/IntentSignalsSummary';
 import { AdminBreadcrumb } from '@/components/admin/AdminBreadcrumb';
 import { LeadNavigation } from '@/components/admin/LeadNavigation';
-import { GlobalLeadSearch, SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
+import { SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 
 function LeadDetailContent() {
@@ -177,8 +177,6 @@ function LeadDetailContent() {
           </aside>
         </div>
       </main>
-
-      <GlobalLeadSearch />
     </div>
   );
 }
