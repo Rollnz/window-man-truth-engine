@@ -7,7 +7,7 @@ import { useGlobalSearch } from '@/hooks/useGlobalSearch';
 import { StatsCard } from '@/components/admin/StatsCard';
 import { ActivityFeed } from '@/components/admin/ActivityFeed';
 import { QuickActionCard } from '@/components/admin/QuickActionCard';
-import { GlobalLeadSearch, SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
+import { SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
 import { PhoneCallOpsPanel } from '@/components/admin/PhoneCallOpsPanel';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -133,8 +133,6 @@ function AdminHomeContent() {
           </TabsContent>
         </Tabs>
       </main>
-
-      <GlobalLeadSearch />
     </div>
   );
 }

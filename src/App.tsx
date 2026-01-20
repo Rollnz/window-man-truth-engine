@@ -10,6 +10,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import { usePageTimer } from "@/hooks/usePageTimer";
 import { WelcomeToast } from "@/components/onboarding/WelcomeToast";
 import { PublicLayout } from "@/components/layout/PublicLayout";
+import { AdminLayout } from "@/layouts/AdminLayout";
 import { GTMDebugPanel } from "@/components/debug/GTMDebugPanel";
 
 // Critical path - load immediately
@@ -136,16 +137,18 @@ function AppContent() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/vault" element={<Suspense fallback={<PageLoader />}><AuthGuard><Vault /></AuthGuard></Suspense>} />
         
-        {/* Admin Routes */}
-        <Route path="/admin" element={<AdminHome />} />
-        <Route path="/admin/analytics" element={<Analytics />} />
-        <Route path="/admin/attribution" element={<AttributionDashboard />} />
-        <Route path="/admin/attribution-health" element={<AttributionHealthDashboard />} />
-        <Route path="/admin/roi" element={<LeadSourceROI />} />
-        <Route path="/admin/crm" element={<CRMDashboard />} />
-        <Route path="/admin/quotes" element={<QuotesDashboard />} />
-        <Route path="/admin/search" element={<SearchResults />} />
-        <Route path="/admin/leads/:id" element={<LeadDetail />} />
+        {/* Admin Routes - wrapped with AdminLayout for global search */}
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminHome />} />
+          <Route path="/admin/analytics" element={<Analytics />} />
+          <Route path="/admin/attribution" element={<AttributionDashboard />} />
+          <Route path="/admin/attribution-health" element={<AttributionHealthDashboard />} />
+          <Route path="/admin/roi" element={<LeadSourceROI />} />
+          <Route path="/admin/crm" element={<CRMDashboard />} />
+          <Route path="/admin/quotes" element={<QuotesDashboard />} />
+          <Route path="/admin/search" element={<SearchResults />} />
+          <Route path="/admin/leads/:id" element={<LeadDetail />} />
+        </Route>
         
         {/* Internal dev tools (no footer) */}
         <Route path="/button-audit" element={<ButtonAudit />} />
