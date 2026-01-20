@@ -2,13 +2,14 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Draggable } from '@hello-pangea/dnd';
 import { formatDistanceToNow } from 'date-fns';
-import { User, Phone, DollarSign, Clock, Zap, ExternalLink } from 'lucide-react';
+import { User, Phone, DollarSign, Zap, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { CRMLead } from '@/types/crm';
 import { QualityBadge } from './StatusBadge';
+import { LeadVelocityBadge } from './LeadVelocityBadge';
 
 interface LeadCardProps {
   lead: CRMLead;
@@ -33,9 +34,10 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
       .join(' ');
   }, [lead.original_source_tool]);
 
-  const timeAgo = useMemo(() => {
-    return formatDistanceToNow(new Date(lead.created_at), { addSuffix: true });
-  }, [lead.created_at]);
+  // Use updated_at as "stage entered at" for velocity tracking
+  const stageEnteredAt = useMemo(() => {
+    return lead.updated_at || lead.created_at;
+  }, [lead.updated_at, lead.created_at]);
 
   const dealValue = lead.actual_deal_value || lead.estimated_deal_value || 0;
   
@@ -122,6 +124,13 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
                     </TooltipProvider>
                   )}
                 </div>
+                
+                {/* Velocity Badge */}
+                <LeadVelocityBadge 
+                  status={lead.status} 
+                  stageEnteredAt={stageEnteredAt}
+                  compact
+                />
               </div>
               <QualityBadge quality={lead.lead_quality} />
             </div>
@@ -161,10 +170,9 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
                 )}
               </div>
 
-              {/* Time */}
+              {/* Time - using formatDistanceToNow directly */}
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                <span>{timeAgo}</span>
+                <span>{formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}</span>
               </div>
             </div>
 
