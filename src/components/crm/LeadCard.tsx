@@ -57,6 +57,9 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
   // Display logic - show both if lead touched both platforms (high-touch lead)
   const showGoogleBadge = hasGoogleClickId || hasGoogleUTM;
   const showMetaBadge = hasMetaClickId || hasMetaUTM;
+  
+  // Campaign tracking for ROAS analysis
+  const utmCampaign = (lead as { utm_campaign?: string }).utm_campaign;
 
   return (
     <Draggable draggableId={lead.id} index={index}>
