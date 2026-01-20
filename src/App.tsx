@@ -10,6 +10,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import { usePageTimer } from "@/hooks/usePageTimer";
 import { WelcomeToast } from "@/components/onboarding/WelcomeToast";
 import { PublicLayout } from "@/components/layout/PublicLayout";
+import { GTMDebugPanel } from "@/components/debug/GTMDebugPanel";
 
 // Critical path - load immediately
 import Index from "./pages/Index";
@@ -143,6 +144,9 @@ function AppContent() {
         {/* Internal dev tools (no footer) */}
         <Route path="/button-audit" element={<ButtonAudit />} />
       </Routes>
+      
+      {/* GTM Debug Panel - only renders in development mode */}
+      <GTMDebugPanel />
     </>
   );
 }

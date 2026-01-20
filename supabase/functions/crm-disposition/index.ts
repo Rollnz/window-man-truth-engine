@@ -219,6 +219,22 @@ Deno.serve(async (req) => {
           });
         }
         
+        // Fire qualified event for 'qualified' status (sales qualified)
+        if (newStatus === "qualified" && previousStatus !== "qualified") {
+          await logAttributionEvent({
+            sessionId,
+            eventName: "lead_qualified",
+            eventCategory: "conversion",
+            pagePath: "/admin/crm",
+            eventData: {
+              lead_id: leadId,
+              email: currentLead.email,
+              source_tool: currentLead.original_source_tool,
+              qualification_value: 35, // $35 offline conversion value
+            },
+          });
+        }
+        
         // Fire qualified event for MQL status
         if (newStatus === "mql" && previousStatus !== "mql") {
           await logAttributionEvent({

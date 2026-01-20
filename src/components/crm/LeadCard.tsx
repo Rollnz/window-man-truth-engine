@@ -39,9 +39,22 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
 
   const dealValue = lead.actual_deal_value || lead.estimated_deal_value || 0;
   
-  // Check for ad attribution (gclid = Google, fbclid = Meta)
-  const hasGoogleAttribution = !!lead.gclid;
-  const hasMetaAttribution = !!lead.fbclid;
+  // Multi-touch attribution detection
+  // Primary: Click IDs (gclid/fbclid) - indicates paid ad click
+  // Fallback: UTM source - indicates organic or untracked paid
+  const hasGoogleClickId = !!lead.gclid;
+  const hasMetaClickId = !!lead.fbclid;
+  
+  // UTM fallback when click IDs are blocked/missing
+  const utmSource = lead.utm_source?.toLowerCase() || '';
+  const hasGoogleUTM = !hasGoogleClickId && 
+    ['google', 'google_ads', 'gads', 'adwords'].includes(utmSource);
+  const hasMetaUTM = !hasMetaClickId && 
+    ['facebook', 'meta', 'instagram', 'fb', 'ig'].includes(utmSource);
+  
+  // Display logic - show both if lead touched both platforms (high-touch lead)
+  const showGoogleBadge = hasGoogleClickId || hasGoogleUTM;
+  const showMetaBadge = hasMetaClickId || hasMetaUTM;
 
   return (
     <Draggable draggableId={lead.id} index={index}>
@@ -64,32 +77,46 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
                 <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span className="font-medium text-sm truncate">{displayName}</span>
                 
-                {/* Ad Attribution Platform Badges */}
+                {/* Ad Attribution Platform Badges - supports multi-touch */}
                 <div className="flex items-center gap-0.5 flex-shrink-0">
-                  {hasGoogleAttribution && (
+                  {showGoogleBadge && (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 px-1 rounded cursor-default">
+                          <span className={cn(
+                            "text-[10px] font-bold px-1 rounded cursor-default",
+                            hasGoogleClickId 
+                              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300" // Click ID (solid)
+                              : "bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-700" // UTM (outline)
+                          )}>
                             G
                           </span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-xs">Google Ads sourced (gclid)</p>
+                          <p className="text-xs">
+                            {hasGoogleClickId ? 'Google Ads (gclid)' : 'Google (UTM source)'}
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   )}
-                  {hasMetaAttribution && (
+                  {showMetaBadge && (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-1 rounded cursor-default">
+                          <span className={cn(
+                            "text-[10px] font-bold px-1 rounded cursor-default",
+                            hasMetaClickId 
+                              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300" // Click ID (solid)
+                              : "bg-indigo-50 text-indigo-500 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700" // UTM (outline)
+                          )}>
                             M
                           </span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-xs">Meta Ads sourced (fbclid)</p>
+                          <p className="text-xs">
+                            {hasMetaClickId ? 'Meta Ads (fbclid)' : 'Meta (UTM source)'}
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
