@@ -10,17 +10,30 @@ declare global {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Imports
+// ═══════════════════════════════════════════════════════════════════════════
+
+import type { SourceTool } from '@/types/sourceTool';
+import type { LeadQuality } from '@/lib/leadQuality';
+import { hasMarketingConsent } from '@/lib/consent';
+import { normalizeToE164 } from '@/lib/phoneFormat';
+import { generateEventId, isDuplicateEvent } from '@/lib/eventDeduplication';
+
+// ═══════════════════════════════════════════════════════════════════════════
 // SHA-256 Hashing for Enhanced Conversions (GA4 + Meta CAPI)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * SHA-256 hash function for Enhanced Conversions
  * Hashes PII (email, phone) for privacy-safe server matching
+ * 
+ * NORMALIZATION: Email is lowercased and trimmed before hashing
  */
 export async function sha256(text: string): Promise<string> {
   if (!text) return '';
   try {
     const encoder = new TextEncoder();
+    // Normalize: lowercase and trim (Google requirement)
     const data = encoder.encode(text.toLowerCase().trim());
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     return Array.from(new Uint8Array(hashBuffer))
@@ -33,12 +46,39 @@ export async function sha256(text: string): Promise<string> {
 }
 
 /**
- * Hash phone number (strips non-digits before hashing)
+ * Safe hash wrapper that never throws
+ * Returns undefined on any failure instead of throwing
  */
-export async function hashPhone(phone: string): Promise<string> {
-  if (!phone) return '';
-  const digitsOnly = phone.replace(/\D/g, '');
-  return sha256(digitsOnly);
+async function safeHash(text: string | undefined | null): Promise<string | undefined> {
+  if (!text) return undefined;
+  try {
+    const hash = await sha256(text);
+    return hash || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Hash phone number with E.164 normalization
+ * 
+ * IMPORTANT: Google expects E.164 format (+1XXXXXXXXXX) for phone hashing
+ * Invalid phone numbers return undefined to avoid match quality issues
+ */
+export async function hashPhone(phone: string | undefined | null): Promise<string | undefined> {
+  if (!phone) return undefined;
+  
+  // Normalize to E.164 first (returns undefined if invalid)
+  const e164 = normalizeToE164(phone);
+  if (!e164) {
+    if (import.meta.env.DEV) {
+      console.warn('[GTM] Phone number could not be normalized to E.164:', phone);
+    }
+    return undefined;
+  }
+  
+  // Hash the E.164 formatted number
+  return safeHash(e164);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -82,10 +122,6 @@ export const trackPageView = (url: string) => {
   trackEvent('page_view', { page_path: url });
 };
 
-import type { SourceTool } from '@/types/sourceTool';
-import type { LeadQuality } from '@/lib/leadQuality';
-import { hasMarketingConsent } from '@/lib/consent';
-
 // ═══════════════════════════════════════════════════════════════════════════
 // Enhanced Lead Capture Tracking (Phase 1)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -112,8 +148,8 @@ export const trackLeadSubmissionSuccess = async (params: EnhancedLeadParams) => 
   const value = CONVERSION_VALUES[params.sourceTool] || CONVERSION_VALUES['default'];
   
   // Hash PII for Enhanced Conversions (GA4 + Meta CAPI)
-  const hashedEmail = await sha256(params.email);
-  const hashedPhone = params.phone ? await hashPhone(params.phone) : undefined;
+  const hashedEmail = await safeHash(params.email);
+  const hashedPhone = await hashPhone(params.phone);
   
   trackEvent('lead_submission_success', {
     // Core conversion data
@@ -174,7 +210,7 @@ export interface ConsultationParams {
  * Track consultation booking - highest value conversion
  */
 export const trackConsultationBooked = async (params: ConsultationParams) => {
-  const hashedEmail = await sha256(params.email);
+  const hashedEmail = await safeHash(params.email);
   const hashedPhone = await hashPhone(params.phone);
   
   trackEvent('consultation_booked', {
@@ -371,10 +407,12 @@ export const DELTA_VALUES: Record<string, number> = {
  * Enables Google/Meta to optimize for "Super Users" with high engagement
  * 
  * EXPERT-GRADE SAFEGUARDS:
- * 1. Try/catch with fallback to ensure no data loss
- * 2. Privacy-first consent check before including PII
- * 3. Standardized cv_ prefix for clean GTM reporting
- * 4. Enhanced dev logging with full payload visibility
+ * 1. Event deduplication via UUID to prevent double-fires
+ * 2. Try/catch with fallback to ensure no data loss
+ * 3. Privacy-first: PII only included with consent, anonymous events always fire
+ * 4. Standardized cv_ prefix for clean GTM reporting
+ * 5. E.164 phone normalization for proper match quality
+ * 6. Value clamped to sane range (0-10000)
  */
 export const trackConversionValue = async (params: {
   eventName: string;
@@ -383,33 +421,50 @@ export const trackConversionValue = async (params: {
   phone?: string;
   cumulativeScore?: number; // Total score for debugging
   metadata?: Record<string, unknown>;
+  eventId?: string; // Optional: provide your own event ID for deduplication
 }) => {
+  // Generate event ID for deduplication
+  const eventId = params.eventId || generateEventId();
+  
+  // Check for duplicate event
+  if (isDuplicateEvent(eventId)) {
+    if (import.meta.env.DEV) {
+      console.log(`%c[GTM] Duplicate event blocked: ${params.eventName}`, 'color: #f59e0b');
+    }
+    return;
+  }
+  
   // Enforce cv_ prefix for clean GTM reporting
   const prefixedEventName = params.eventName.startsWith('cv_') 
     ? params.eventName 
     : `cv_${params.eventName}`;
   
+  // Clamp value to sane range (no negatives, max 10000)
+  const clampedValue = Math.max(0, Math.min(params.value, 10000));
+  
   try {
-    // PRIVACY-FIRST: Only include PII if user has consented
+    // PRIVACY-FIRST: PII only with consent, anonymous events ALWAYS fire
     const hasConsent = hasMarketingConsent();
     let userData: Record<string, string | undefined> | undefined = undefined;
     let piiStatus: 'included' | 'no_pii_provided' | 'stripped_no_consent' = 'no_pii_provided';
     
+    // Only include PII if user has consented (form submission)
     if (hasConsent && (params.email || params.phone)) {
       userData = {
-        sha256_email_address: params.email ? await sha256(params.email) : undefined,
-        sha256_phone_number: params.phone ? await sha256(params.phone.replace(/\D/g, '')) : undefined,
+        sha256_email_address: await safeHash(params.email),
+        sha256_phone_number: await hashPhone(params.phone), // Uses E.164
       };
       piiStatus = 'included';
     } else if (!hasConsent && (params.email || params.phone)) {
       piiStatus = 'stripped_no_consent';
     }
 
-    // Fire the full conversion event
+    // Fire the conversion event (anonymous events ALWAYS fire)
     trackEvent(prefixedEventName, {
-      value: params.value,
+      event_id: eventId, // For server-side deduplication
+      value: clampedValue,
       currency: 'USD',
-      user_data: userData,
+      user_data: userData, // Only present if consent + PII provided
       cumulative_score: params.cumulativeScore,
       has_consent: hasConsent,
       pii_status: piiStatus,
@@ -424,7 +479,8 @@ export const trackConversionValue = async (params: {
         `%c[GTM] ${prefixedEventName}`,
         'color: #22c55e; font-weight: bold',
         {
-          delta: params.value,
+          event_id: eventId.slice(0, 8) + '...',
+          delta: clampedValue,
           cumulative: params.cumulativeScore,
           pii_status: piiStatus,
           metadata: params.metadata,
@@ -437,7 +493,8 @@ export const trackConversionValue = async (params: {
     console.warn('[GTM] trackConversionValue error, using fallback:', error);
     
     trackEvent(prefixedEventName, {
-      value: params.value,
+      event_id: eventId,
+      value: clampedValue,
       currency: 'USD',
       fallback: true,
       original_event: params.eventName,
@@ -446,6 +503,7 @@ export const trackConversionValue = async (params: {
     
     // Fire debug event for monitoring fallback frequency
     trackEvent('cv_tracking_fallback', {
+      event_id: generateEventId(),
       original_event: params.eventName,
       error_message: error instanceof Error ? error.message : 'Unknown error',
     });
@@ -468,8 +526,13 @@ export interface OfflineConversionParams {
 /**
  * Qualification-Based Offline Conversion Values
  * 
- * Strategy: Train algorithms to find interested, reachable homeowners.
- * We DO NOT penalize closed_lost (they had intent) - we penalize garbage leads (dead).
+ * STRATEGY: 
+ * - Positive signals for real engagement (optimize bidding toward these)
+ * - "Dead" leads fire a SEPARATE exclusion event (not negative value)
+ * 
+ * NOTE: Negative values don't work as expected in Google/Meta bidding.
+ * Instead of -$50 for dead, we fire a separate "lead_disqualified" event
+ * that should be used for audience exclusions, not bidding optimization.
  */
 const OFFLINE_CONVERSION_VALUES: Record<string, number> = {
   'qualified': 35,       // Verified interest + contact info
@@ -478,7 +541,7 @@ const OFFLINE_CONVERSION_VALUES: Record<string, number> = {
   'sat': 150,            // HIGH-QUALITY SIGNAL: Rep entered the home
   'closed_won': 1500,    // Default sale value (overridden by dealValue)
   'closed_lost': 50,     // NEUTRAL: Same as appointment - they had intent!
-  'dead': -50,           // PENALTY: Fake info, spam, not interested
+  'dead': 0,             // No value - fires separate exclusion event instead
 };
 
 /**
@@ -489,37 +552,46 @@ const OFFLINE_CONVERSION_VALUES: Record<string, number> = {
  * not the admin's browser attribution data
  */
 export const trackOfflineConversion = async (params: OfflineConversionParams) => {
+  const eventId = generateEventId();
+  
+  // Skip if dead - we fire a separate exclusion event instead
+  const isDead = params.newStatus === 'dead';
+  
   const value = params.newStatus === 'closed_won' 
     ? (params.dealValue || OFFLINE_CONVERSION_VALUES['closed_won'])
     : (OFFLINE_CONVERSION_VALUES[params.newStatus] || 0);
   
   // Hash email for Enhanced Match (improves Meta Event Match Quality)
-  const hashedEmail = params.email ? await sha256(params.email) : undefined;
+  const hashedEmail = await safeHash(params.email);
   
-  // Core offline conversion event
-  trackEvent('offline_conversion', {
-    lead_id: params.leadId,
-    conversion_action: params.newStatus,
-    value: value,
-    currency: 'USD',
-    deal_value: params.dealValue,
-    
-    // Click IDs for platform attribution
-    gclid: params.gclid,
-    fbclid: params.fbclid,
-    
-    // Enhanced Match for Meta CAPI
-    user_data: hashedEmail ? {
-      sha256_email_address: hashedEmail,
-    } : undefined,
-    
-    // Source tracking
-    page_location: typeof window !== 'undefined' ? window.location.href : undefined,
-  });
+  // Core offline conversion event (skip for dead leads)
+  if (!isDead && value > 0) {
+    trackEvent('offline_conversion', {
+      event_id: eventId,
+      lead_id: params.leadId,
+      conversion_action: params.newStatus,
+      value: value,
+      currency: 'USD',
+      deal_value: params.dealValue,
+      
+      // Click IDs for platform attribution
+      gclid: params.gclid,
+      fbclid: params.fbclid,
+      
+      // Enhanced Match for Meta CAPI
+      user_data: hashedEmail ? {
+        sha256_email_address: hashedEmail,
+      } : undefined,
+      
+      // Source tracking
+      page_location: typeof window !== 'undefined' ? window.location.href : undefined,
+    });
+  }
   
   // Fire specific events for cleaner GTM trigger configuration
   if (params.newStatus === 'closed_won') {
     trackEvent('crm_sale_completed', {
+      event_id: generateEventId(),
       lead_id: params.leadId,
       value: value,
       currency: 'USD',
@@ -529,6 +601,7 @@ export const trackOfflineConversion = async (params: OfflineConversionParams) =>
     });
   } else if (params.newStatus === 'appointment_set') {
     trackEvent('crm_appointment_set', {
+      event_id: generateEventId(),
       lead_id: params.leadId,
       value: OFFLINE_CONVERSION_VALUES['appointment_set'],
       currency: 'USD',
@@ -537,6 +610,7 @@ export const trackOfflineConversion = async (params: OfflineConversionParams) =>
     });
   } else if (params.newStatus === 'sat') {
     trackEvent('crm_sat_completed', {
+      event_id: generateEventId(),
       lead_id: params.leadId,
       value: OFFLINE_CONVERSION_VALUES['sat'],
       currency: 'USD',
@@ -544,16 +618,23 @@ export const trackOfflineConversion = async (params: OfflineConversionParams) =>
       fbclid: params.fbclid,
     });
   } else if (params.newStatus === 'dead') {
-    // Fire negative signal for garbage leads
-    trackEvent('crm_lead_disqualified', {
+    // EXCLUSION EVENT: For audience suppression, NOT bidding optimization
+    // This should be configured as a secondary conversion in Google Ads
+    // and used for audience exclusions in Meta
+    trackEvent('lead_disqualified', {
+      event_id: generateEventId(),
       lead_id: params.leadId,
-      value: OFFLINE_CONVERSION_VALUES['dead'], // -$50
+      disqualification_reason: 'dead', // spam, fake info, not interested
       currency: 'USD',
+      // Include click IDs for proper attribution matching in exclusions
       gclid: params.gclid,
       fbclid: params.fbclid,
+      // Include hashed email for Meta exclusion audiences
+      user_data: hashedEmail ? { sha256_email_address: hashedEmail } : undefined,
     });
   } else if (params.newStatus === 'qualified' || params.newStatus === 'mql') {
     trackEvent('crm_lead_qualified', {
+      event_id: generateEventId(),
       lead_id: params.leadId,
       value: OFFLINE_CONVERSION_VALUES['qualified'],
       currency: 'USD',
@@ -565,7 +646,7 @@ export const trackOfflineConversion = async (params: OfflineConversionParams) =>
   console.log('[GTM] offline_conversion event pushed:', {
     lead_id: params.leadId,
     status: params.newStatus,
-    value,
+    value: isDead ? 'excluded' : value,
     has_gclid: !!params.gclid,
     has_fbclid: !!params.fbclid,
     has_email: !!params.email,
