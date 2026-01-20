@@ -23,6 +23,7 @@ export function KanbanBoard({ leads, onStatusChange }: KanbanBoardProps) {
       new: [],
       qualifying: [],
       mql: [],
+      qualified: [],
       appointment_set: [],
       sat: [],
       closed_won: [],

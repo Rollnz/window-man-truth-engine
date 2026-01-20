@@ -84,6 +84,7 @@ export const trackPageView = (url: string) => {
 
 import type { SourceTool } from '@/types/sourceTool';
 import type { LeadQuality } from '@/lib/leadQuality';
+import { hasMarketingConsent } from '@/lib/consent';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Enhanced Lead Capture Tracking (Phase 1)
@@ -369,7 +370,11 @@ export const DELTA_VALUES: Record<string, number> = {
  * Track incremental "delta" conversion value for Value-Based Bidding
  * Enables Google/Meta to optimize for "Super Users" with high engagement
  * 
- * Uses existing sha256 and trackEvent utilities for Enhanced Conversions
+ * EXPERT-GRADE SAFEGUARDS:
+ * 1. Try/catch with fallback to ensure no data loss
+ * 2. Privacy-first consent check before including PII
+ * 3. Standardized cv_ prefix for clean GTM reporting
+ * 4. Enhanced dev logging with full payload visibility
  */
 export const trackConversionValue = async (params: {
   eventName: string;
@@ -379,26 +384,72 @@ export const trackConversionValue = async (params: {
   cumulativeScore?: number; // Total score for debugging
   metadata?: Record<string, unknown>;
 }) => {
-  const userData = (params.email || params.phone) ? {
-    sha256_email_address: params.email ? await sha256(params.email) : undefined,
-    sha256_phone_number: params.phone ? await sha256(params.phone.replace(/\D/g, '')) : undefined,
-  } : undefined;
-
-  trackEvent(params.eventName, {
-    value: params.value,
-    currency: 'USD',
-    user_data: userData,
-    cumulative_score: params.cumulativeScore,
-    ...params.metadata,
-    page_location: typeof window !== 'undefined' ? window.location.href : undefined,
-    page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
-  });
+  // Enforce cv_ prefix for clean GTM reporting
+  const prefixedEventName = params.eventName.startsWith('cv_') 
+    ? params.eventName 
+    : `cv_${params.eventName}`;
   
-  console.log(`[GTM] ${params.eventName} delta tracked:`, { 
-    value: params.value,
-    cumulative: params.cumulativeScore,
-    has_user_data: !!userData,
-  });
+  try {
+    // PRIVACY-FIRST: Only include PII if user has consented
+    const hasConsent = hasMarketingConsent();
+    let userData: Record<string, string | undefined> | undefined = undefined;
+    let piiStatus: 'included' | 'no_pii_provided' | 'stripped_no_consent' = 'no_pii_provided';
+    
+    if (hasConsent && (params.email || params.phone)) {
+      userData = {
+        sha256_email_address: params.email ? await sha256(params.email) : undefined,
+        sha256_phone_number: params.phone ? await sha256(params.phone.replace(/\D/g, '')) : undefined,
+      };
+      piiStatus = 'included';
+    } else if (!hasConsent && (params.email || params.phone)) {
+      piiStatus = 'stripped_no_consent';
+    }
+
+    // Fire the full conversion event
+    trackEvent(prefixedEventName, {
+      value: params.value,
+      currency: 'USD',
+      user_data: userData,
+      cumulative_score: params.cumulativeScore,
+      has_consent: hasConsent,
+      pii_status: piiStatus,
+      ...params.metadata,
+      page_location: typeof window !== 'undefined' ? window.location.href : undefined,
+      page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
+    });
+
+    // DEV LOGGING: Full payload visibility
+    if (import.meta.env.DEV) {
+      console.log(
+        `%c[GTM] ${prefixedEventName}`,
+        'color: #22c55e; font-weight: bold',
+        {
+          delta: params.value,
+          cumulative: params.cumulativeScore,
+          pii_status: piiStatus,
+          metadata: params.metadata,
+        }
+      );
+    }
+    
+  } catch (error) {
+    // FALLBACK: Fire synchronous event without PII to prevent data loss
+    console.warn('[GTM] trackConversionValue error, using fallback:', error);
+    
+    trackEvent(prefixedEventName, {
+      value: params.value,
+      currency: 'USD',
+      fallback: true,
+      original_event: params.eventName,
+      error_type: error instanceof Error ? error.name : 'unknown',
+    });
+    
+    // Fire debug event for monitoring fallback frequency
+    trackEvent('cv_tracking_fallback', {
+      original_event: params.eventName,
+      error_message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

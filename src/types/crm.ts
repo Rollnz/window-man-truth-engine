@@ -6,6 +6,7 @@ export type LeadStatus =
   | "new"
   | "qualifying"
   | "mql"
+  | "qualified"  // Sales qualified, ready for appointment
   | "appointment_set"
   | "sat"
   | "closed_won"
@@ -37,6 +38,8 @@ export interface CRMLead {
   // Ad attribution for visual indicators
   gclid: string | null;
   fbclid: string | null;
+  // UTM source fallback for attribution badges
+  utm_source: string | null;
 }
 
 export interface CRMColumn {
@@ -61,6 +64,11 @@ export const LEAD_STATUS_CONFIG: Record<LeadStatus, { title: string; color: stri
     title: "MQL",
     color: "bg-amber-500",
     description: "Verified, high interest",
+  },
+  qualified: {
+    title: "Qualified",
+    color: "bg-emerald-500",
+    description: "Sales qualified, ready for appointment",
   },
   appointment_set: {
     title: "Appt Set",
@@ -89,7 +97,7 @@ export const LEAD_STATUS_CONFIG: Record<LeadStatus, { title: string; color: stri
   },
 };
 
-export const KANBAN_COLUMNS: LeadStatus[] = ["new", "qualifying", "mql", "appointment_set", "sat", "closed_won"];
+export const KANBAN_COLUMNS: LeadStatus[] = ["new", "qualifying", "mql", "qualified", "appointment_set", "sat", "closed_won"];
 
 export const LEAD_QUALITY_CONFIG: Record<LeadQuality, { label: string; color: string }> = {
   cold: { label: "Cold", color: "bg-blue-100 text-blue-800" },
