@@ -23,9 +23,30 @@ interface DataLayerEvent {
   [key: string]: unknown;
 }
 
+/**
+ * Check if we're in a sandbox/development environment
+ * Allows: localhost, *.lovable.app, *.lovableproject.com
+ * Blocks: custom production domains
+ */
+function isSandboxEnvironment(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  const hostname = window.location.hostname;
+  
+  // Allow localhost/local development
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
+  
+  // Allow Lovable preview/sandbox URLs
+  if (hostname.endsWith('.lovable.app')) return true;
+  if (hostname.endsWith('.lovableproject.com')) return true;
+  
+  // Block everything else (custom production domains)
+  return false;
+}
+
 export function GTMDebugPanel() {
-  // Only render in development
-  if (!import.meta.env.DEV) return null;
+  // Only render in sandbox/development environments
+  if (!isSandboxEnvironment()) return null;
   
   return <GTMDebugPanelInner />;
 }
@@ -117,7 +138,7 @@ function GTMDebugPanelInner() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "fixed bottom-4 right-4 z-[9999] p-2.5 rounded-full shadow-lg transition-all",
+          "fixed bottom-4 left-4 z-[9999] p-2.5 rounded-full shadow-lg transition-all",
           "hover:scale-110 active:scale-95",
           isOpen 
             ? "bg-red-600 text-white" 
@@ -131,7 +152,7 @@ function GTMDebugPanelInner() {
       {/* Panel */}
       {isOpen && (
         <div className={cn(
-          "fixed bottom-16 right-4 z-[9998] overflow-hidden",
+          "fixed bottom-16 left-4 z-[9998] overflow-hidden",
           "rounded-lg bg-gray-900 text-white shadow-xl border border-gray-700",
           "transition-all duration-200",
           isMinimized ? "w-64 max-h-20" : "w-80 max-h-[480px]"
