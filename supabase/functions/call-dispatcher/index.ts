@@ -169,7 +169,7 @@ async function dispatchCall(
   try {
     const body = {
       agent_id: call.agent_id,
-      phone: call.phone_e164,
+      phone_number: call.phone_e164, // PhoneCall.bot expects 'phone_number', not 'phone'
       first_message: call.first_message,
       metadata: buildMetadata(call),
     };
