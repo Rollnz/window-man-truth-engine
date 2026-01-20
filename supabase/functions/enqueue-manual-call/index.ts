@@ -22,12 +22,13 @@ function json(status: number, body: unknown) {
 }
 
 // EXACT parity with trigger-phone-call lines 26-56
-function normalizePhone(phone: string): string {
-  let cleaned = phone.replace(/[^\\d+]/g, "");
-  if (cleaned.startsWith("+")) return cleaned;
+function normalizePhone(phone: string | null | undefined): string {
+  if (!phone) return "";
+  // Remove all non-digit characters except leading +
+  const cleaned = phone.replace(/[^\d]/g, "");
   if (cleaned.length === 10) return `+1${cleaned}`;
   if (cleaned.length === 11 && cleaned.startsWith("1")) return `+${cleaned}`;
-  return `+${cleaned}`;
+  return cleaned ? `+${cleaned}` : "";
 }
 
 async function hashPhone(phone: string): Promise<string> {
