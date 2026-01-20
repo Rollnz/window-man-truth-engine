@@ -43,6 +43,7 @@ const LeadSourceROI = lazy(() => import("./pages/admin/LeadSourceROI"));
 const CRMDashboard = lazy(() => import("./pages/admin/CRMDashboard"));
 const QuotesDashboard = lazy(() => import("./pages/admin/QuotesDashboard"));
 const LeadDetail = lazy(() => import("./pages/admin/LeadDetail"));
+const SearchResults = lazy(() => import("./pages/admin/SearchResults"));
 const AdminHome = lazy(() => import("./pages/admin/AdminHome"));
 const About = lazy(() => import("./pages/About"));
 const FAQ = lazy(() => import("./pages/FAQ"));
@@ -143,6 +144,7 @@ function AppContent() {
         <Route path="/admin/roi" element={<LeadSourceROI />} />
         <Route path="/admin/crm" element={<CRMDashboard />} />
         <Route path="/admin/quotes" element={<QuotesDashboard />} />
+        <Route path="/admin/search" element={<SearchResults />} />
         <Route path="/admin/leads/:id" element={<LeadDetail />} />
         
         {/* Internal dev tools (no footer) */}

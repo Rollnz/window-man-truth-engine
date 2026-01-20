@@ -10,6 +10,11 @@ const MIN_QUERY_LENGTH = 2;
 
 /**
  * Search suggestion returned from admin-global-search edge function
+ * 
+ * Searches across:
+ * - wm_leads: email, phone, first_name, last_name, id, city, notes, source
+ * - lead_notes: content
+ * - phone_call_logs: ai_notes (call summaries)
  */
 export interface SearchSuggestion {
   type: 'lead';
@@ -18,7 +23,7 @@ export interface SearchSuggestion {
   subtitle: string;
   status: string;
   engagement_score: number | null;
-  match_field: 'email' | 'phone' | 'name' | 'notes' | 'id' | 'city' | 'source' | 'unknown';
+  match_field: 'email' | 'phone' | 'name' | 'notes' | 'call_notes' | 'id' | 'city' | 'source' | 'unknown';
   match_snippet?: string;
   match_positions?: Array<{ start: number; length: number }>;
 }
@@ -32,8 +37,11 @@ export interface UseGlobalSearchReturn {
   searchResults: SearchSuggestion[];
   addToRecent: (lead: CRMLead) => void;
   navigateToLead: (leadId: string) => void;
+  viewAllResults: () => void;
   isLoading: boolean;
   error: string | null;
+  hasMore: boolean;
+  totalCount: number;
 }
 
 export function useGlobalSearch(): UseGlobalSearchReturn {
@@ -44,6 +52,8 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
   
   // Refs for debounce and abort
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -93,6 +103,8 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
       setSearchResults([]);
       setError(null);
       setIsLoading(false);
+      setHasMore(false);
+      setTotalCount(0);
       return;
     }
 
@@ -113,7 +125,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
           return;
         }
 
-        // Call edge function
+        // Call edge function (limit to 8 for dropdown)
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-global-search?q=${encodeURIComponent(trimmedQuery)}&limit=8`,
           {
@@ -135,11 +147,14 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
           }
           setSearchResults([]);
           setIsLoading(false);
+          setHasMore(false);
           return;
         }
 
         const data = await response.json();
         setSearchResults(data.suggestions || []);
+        setHasMore(data.has_more || false);
+        setTotalCount(data.total_count || data.suggestions?.length || 0);
         setError(null);
       } catch (err) {
         // Ignore abort errors
@@ -149,6 +164,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
         console.error('Search error:', err);
         setError('Search failed');
         setSearchResults([]);
+        setHasMore(false);
       } finally {
         setIsLoading(false);
       }
@@ -171,6 +187,8 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
           setSearchQuery('');
           setSearchResults([]);
           setError(null);
+          setHasMore(false);
+          setTotalCount(0);
         }
       }, 200);
       return () => clearTimeout(timeout);
@@ -219,6 +237,14 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     [recentLeads, searchResults, addToRecent, navigate]
   );
 
+  const viewAllResults = useCallback(() => {
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery.length >= MIN_QUERY_LENGTH) {
+      setIsOpen(false);
+      navigate(`/admin/search?q=${encodeURIComponent(trimmedQuery)}`);
+    }
+  }, [searchQuery, navigate]);
+
   return {
     recentLeads,
     searchQuery,
@@ -228,7 +254,10 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     searchResults,
     addToRecent,
     navigateToLead,
+    viewAllResults,
     isLoading,
     error,
+    hasMore,
+    totalCount,
   };
 }
