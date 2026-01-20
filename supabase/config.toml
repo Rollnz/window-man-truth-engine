@@ -59,3 +59,18 @@ verify_jwt = false
 
 [functions.track]
 verify_jwt = false
+
+[functions.crm-disposition]
+verify_jwt = false
+
+[functions.crm-leads]
+verify_jwt = false
+
+[functions.admin-lead-detail]
+verify_jwt = false
+
+[functions.upload-quote]
+verify_jwt = false
+
+[functions.mark-qualified-conversion]
+verify_jwt = false

@@ -610,9 +610,12 @@ export type Database = {
         Row: {
           actual_deal_value: number | null
           assigned_to: string | null
+          captured_at: string | null
           city: string | null
           closed_at: string | null
           created_at: string
+          disqualification_reason: string | null
+          disqualified_at: string | null
           email: string
           engagement_score: number | null
           estimated_deal_value: number | null
@@ -631,6 +634,8 @@ export type Database = {
           original_session_id: string | null
           original_source_tool: string | null
           phone: string | null
+          qualified_at: string | null
+          qualified_cv_fired: boolean | null
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
           utm_campaign: string | null
@@ -643,9 +648,12 @@ export type Database = {
         Insert: {
           actual_deal_value?: number | null
           assigned_to?: string | null
+          captured_at?: string | null
           city?: string | null
           closed_at?: string | null
           created_at?: string
+          disqualification_reason?: string | null
+          disqualified_at?: string | null
           email: string
           engagement_score?: number | null
           estimated_deal_value?: number | null
@@ -664,6 +672,8 @@ export type Database = {
           original_session_id?: string | null
           original_source_tool?: string | null
           phone?: string | null
+          qualified_at?: string | null
+          qualified_cv_fired?: boolean | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
           utm_campaign?: string | null
@@ -676,9 +686,12 @@ export type Database = {
         Update: {
           actual_deal_value?: number | null
           assigned_to?: string | null
+          captured_at?: string | null
           city?: string | null
           closed_at?: string | null
           created_at?: string
+          disqualification_reason?: string | null
+          disqualified_at?: string | null
           email?: string
           engagement_score?: number | null
           estimated_deal_value?: number | null
@@ -697,6 +710,8 @@ export type Database = {
           original_session_id?: string | null
           original_source_tool?: string | null
           phone?: string | null
+          qualified_at?: string | null
+          qualified_cv_fired?: boolean | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
           utm_campaign?: string | null
