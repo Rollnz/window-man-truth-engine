@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { CRMLead } from '@/types/crm';
+import { SearchFilters } from '@/components/admin/SearchFilters';
 
 const RECENT_LEADS_KEY = 'admin_recent_leads';
 const MAX_RECENT = 5;
@@ -32,6 +33,8 @@ export interface UseGlobalSearchReturn {
   recentLeads: CRMLead[];
   searchQuery: string;
   setSearchQuery: (q: string) => void;
+  filters: SearchFilters;
+  setFilters: (filters: SearchFilters) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   searchResults: SearchSuggestion[];
@@ -44,10 +47,34 @@ export interface UseGlobalSearchReturn {
   totalCount: number;
 }
 
+// Build URL search params from filters
+function buildFilterParams(filters: SearchFilters): string {
+  const params = new URLSearchParams();
+  
+  if (filters.status?.length) {
+    params.set('status', filters.status.join(','));
+  }
+  if (filters.quality?.length) {
+    params.set('quality', filters.quality.join(','));
+  }
+  if (filters.matchType?.length) {
+    params.set('match_type', filters.matchType.join(','));
+  }
+  if (filters.dateFrom) {
+    params.set('date_from', filters.dateFrom);
+  }
+  if (filters.dateTo) {
+    params.set('date_to', filters.dateTo);
+  }
+  
+  return params.toString();
+}
+
 export function useGlobalSearch(): UseGlobalSearchReturn {
   const navigate = useNavigate();
   const [recentLeads, setRecentLeads] = useState<CRMLead[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<SearchFilters>({});
   const [searchResults, setSearchResults] = useState<SearchSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -84,7 +111,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Debounced search when query changes
+  // Debounced search when query or filters change
   useEffect(() => {
     // Clear previous debounce
     if (debounceRef.current) {
@@ -125,9 +152,14 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
           return;
         }
 
+        // Build filter params
+        const filterParams = buildFilterParams(filters);
+        const baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-global-search`;
+        const queryParams = `q=${encodeURIComponent(trimmedQuery)}&limit=8${filterParams ? `&${filterParams}` : ''}`;
+
         // Call edge function (limit to 8 for dropdown)
         const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-global-search?q=${encodeURIComponent(trimmedQuery)}&limit=8`,
+          `${baseUrl}?${queryParams}`,
           {
             headers: {
               Authorization: `Bearer ${sessionData.session.access_token}`,
@@ -176,7 +208,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [searchQuery]);
+  }, [searchQuery, filters]);
 
   // Clear state when dialog closes
   useEffect(() => {
@@ -189,6 +221,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
           setError(null);
           setHasMore(false);
           setTotalCount(0);
+          // Don't clear filters - keep them for next search
         }
       }, 200);
       return () => clearTimeout(timeout);
@@ -241,14 +274,37 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     const trimmedQuery = searchQuery.trim();
     if (trimmedQuery.length >= MIN_QUERY_LENGTH) {
       setIsOpen(false);
-      navigate(`/admin/search?q=${encodeURIComponent(trimmedQuery)}`);
+      
+      // Build URL with query and filters
+      const params = new URLSearchParams();
+      params.set('q', trimmedQuery);
+      
+      if (filters.status?.length) {
+        params.set('status', filters.status.join(','));
+      }
+      if (filters.quality?.length) {
+        params.set('quality', filters.quality.join(','));
+      }
+      if (filters.matchType?.length) {
+        params.set('match_type', filters.matchType.join(','));
+      }
+      if (filters.dateFrom) {
+        params.set('date_from', filters.dateFrom);
+      }
+      if (filters.dateTo) {
+        params.set('date_to', filters.dateTo);
+      }
+      
+      navigate(`/admin/search?${params.toString()}`);
     }
-  }, [searchQuery, navigate]);
+  }, [searchQuery, filters, navigate]);
 
   return {
     recentLeads,
     searchQuery,
     setSearchQuery,
+    filters,
+    setFilters,
     isOpen,
     setIsOpen,
     searchResults,
