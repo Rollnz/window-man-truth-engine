@@ -15,9 +15,9 @@ declare global {
 
 import type { SourceTool } from '@/types/sourceTool';
 import type { LeadQuality } from '@/lib/leadQuality';
-import { hasMarketingConsent } from '@/lib/consent';
+import { hasExplicitSubmission, getSubmittedLeadId } from '@/lib/consent';
 import { normalizeToE164 } from '@/lib/phoneFormat';
-import { generateEventId, isDuplicateEvent } from '@/lib/eventDeduplication';
+import { generateEventId, isDuplicateEvent, isSemanticDuplicate } from '@/lib/eventDeduplication';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SHA-256 Hashing for Enhanced Conversions (GA4 + Meta CAPI)
@@ -422,16 +422,34 @@ export const trackConversionValue = async (params: {
   cumulativeScore?: number; // Total score for debugging
   metadata?: Record<string, unknown>;
   eventId?: string; // Optional: provide your own event ID for deduplication
+  leadId?: string; // For semantic dedupe
+  toolId?: string; // For semantic dedupe
 }) => {
   // Generate event ID for deduplication
   const eventId = params.eventId || generateEventId();
   
-  // Check for duplicate event
-  if (isDuplicateEvent(eventId)) {
-    if (import.meta.env.DEV) {
-      console.log(`%c[GTM] Duplicate event blocked: ${params.eventName}`, 'color: #f59e0b');
+  // PHASE 2: Use semantic dedupe for tool events
+  const isToolEvent = params.eventName.includes('tool_') || params.toolId;
+  
+  if (isToolEvent) {
+    // Use semantic dedupe for tool events
+    if (isSemanticDuplicate(params.eventName, {
+      leadId: params.leadId || getSubmittedLeadId() || undefined,
+      toolId: params.toolId,
+    })) {
+      if (import.meta.env.DEV) {
+        console.log(`%c[GTM] Semantic duplicate blocked: ${params.eventName}`, 'color: #f59e0b');
+      }
+      return;
     }
-    return;
+  } else {
+    // Legacy UUID dedupe for non-tool events
+    if (isDuplicateEvent(eventId)) {
+      if (import.meta.env.DEV) {
+        console.log(`%c[GTM] Duplicate event blocked: ${params.eventName}`, 'color: #f59e0b');
+      }
+      return;
+    }
   }
   
   // Enforce cv_ prefix for clean GTM reporting
@@ -443,20 +461,21 @@ export const trackConversionValue = async (params: {
   const clampedValue = Math.max(0, Math.min(params.value, 10000));
   
   try {
-    // PRIVACY-FIRST: PII only with consent, anonymous events ALWAYS fire
-    const hasConsent = hasMarketingConsent();
+    // PHASE 1A: PII ONLY with explicit submission flag
+    // This replaces the old implicit consent check
+    const hasSubmitted = hasExplicitSubmission();
     let userData: Record<string, string | undefined> | undefined = undefined;
-    let piiStatus: 'included' | 'no_pii_provided' | 'stripped_no_consent' = 'no_pii_provided';
+    let piiStatus: 'included' | 'no_pii_provided' | 'no_explicit_submission' = 'no_pii_provided';
     
-    // Only include PII if user has consented (form submission)
-    if (hasConsent && (params.email || params.phone)) {
+    // Only include PII if explicit submission flag is set
+    if (hasSubmitted && (params.email || params.phone)) {
       userData = {
         sha256_email_address: await safeHash(params.email),
         sha256_phone_number: await hashPhone(params.phone), // Uses E.164
       };
       piiStatus = 'included';
-    } else if (!hasConsent && (params.email || params.phone)) {
-      piiStatus = 'stripped_no_consent';
+    } else if (!hasSubmitted && (params.email || params.phone)) {
+      piiStatus = 'no_explicit_submission';
     }
 
     // Fire the conversion event (anonymous events ALWAYS fire)
@@ -464,10 +483,12 @@ export const trackConversionValue = async (params: {
       event_id: eventId, // For server-side deduplication
       value: clampedValue,
       currency: 'USD',
-      user_data: userData, // Only present if consent + PII provided
+      user_data: userData, // Only present if explicit submission + PII provided
       cumulative_score: params.cumulativeScore,
-      has_consent: hasConsent,
+      has_explicit_submission: hasSubmitted,
       pii_status: piiStatus,
+      lead_id: params.leadId || getSubmittedLeadId(),
+      tool_id: params.toolId,
       ...params.metadata,
       page_location: typeof window !== 'undefined' ? window.location.href : undefined,
       page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
@@ -483,6 +504,7 @@ export const trackConversionValue = async (params: {
           delta: clampedValue,
           cumulative: params.cumulativeScore,
           pii_status: piiStatus,
+          has_explicit_submission: hasSubmitted,
           metadata: params.metadata,
         }
       );

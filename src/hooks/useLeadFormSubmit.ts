@@ -3,15 +3,18 @@
 // ============================================
 // Shared lead submission logic for Golden Thread integration.
 // Handles validation, API calls, identity sync, and tracking.
+// 
+// PHASE 1A: Sets explicit_submission_flag ONLY after successful lead POST
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLeadIdentity } from './useLeadIdentity';
 import { useSessionData } from './useSessionData';
-import { getAttributionData } from '@/lib/attribution';
+import { getAttributionData, getFullAttributionData } from '@/lib/attribution';
 import { trackLeadCapture, trackFormSubmit, trackEvent, trackLeadSubmissionSuccess } from '@/lib/gtm';
 import { getLeadQuality } from '@/lib/leadQuality';
+import { setExplicitSubmission } from '@/lib/consent';
 import type { SourceTool } from '@/types/sourceTool';
 
 export interface LeadFormData {
@@ -114,11 +117,17 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       // Get or generate sessionId for Golden Thread
       const sessionId = sessionData.claimVaultSessionId || crypto.randomUUID();
 
+      // Get full attribution data (Phase 1B: three-tier attribution)
+      const fullAttribution = getFullAttributionData();
+
       // Build payload
       const payload: Record<string, unknown> = {
         email: data.email.trim(),
         sourceTool,
-        attribution: getAttributionData(),
+        // Phase 1B: Include all three attribution tiers
+        attribution: fullAttribution.last_touch,
+        first_touch: fullAttribution.first_touch,
+        last_non_direct: fullAttribution.last_non_direct,
         aiContext: {
           source_form: formLocation ? `${sourceTool}-${formLocation}` : sourceTool,
           ...aiContext,
@@ -152,6 +161,11 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       const newLeadId = responseData?.leadId;
       if (newLeadId) {
         setLeadId(newLeadId);
+        
+        // PHASE 1A: Set explicit submission flag ONLY after successful POST
+        // This is the ONLY place where PII tracking gets enabled
+        setExplicitSubmission(newLeadId);
+        console.log('[useLeadFormSubmit] Explicit submission flag set for:', newLeadId.slice(0, 8) + '...');
       }
 
       // Track analytics with lead_id

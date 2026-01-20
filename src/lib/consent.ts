@@ -1,61 +1,120 @@
 /**
- * Privacy-First Consent Utility
+ * Privacy-First Consent & Submission Flag Utility
  * 
- * SCOPE: Only governs PII inclusion (hashed email/phone in user_data).
- * Anonymous telemetry events ALWAYS fire regardless of consent.
+ * PHASE 1A: Explicit Submission Flag for PII Gating
  * 
- * Consent is granted when:
- * - User explicitly submits a form (email/phone provided)
- * - User explicitly opts in via cookie banner (setMarketingConsent)
+ * PII (hashed email/phone in user_data) is ONLY included when:
+ * - explicit_submission_flag === true
+ * - This flag is set ONLY after successful lead POST + lead_id persisted
  * 
- * NOTE: "Implied consent by interaction" is avoided for legal safety.
- * PII is only included AFTER form submission, not based on tool usage alone.
+ * This replaces the old implicit consent logic that inferred consent from
+ * email presence in session storage (which was a legal/security risk).
+ * 
+ * Anonymous telemetry events ALWAYS fire regardless of submission status.
  */
 
-const CONSENT_KEY = 'wte-marketing-consent';
+const SUBMISSION_FLAG_KEY = 'wte-explicit-submission';
+const SUBMITTED_LEAD_ID_KEY = 'wte-submitted-lead-id';
 
 /**
- * Check if user has consented to PII inclusion in tracking
+ * Check if user has explicitly submitted a form with PII
  * 
  * Returns true ONLY if:
- * - User has explicitly provided email/phone via form submission
- * - User has explicitly opted in via setMarketingConsent()
+ * - setExplicitSubmission() was called after a successful lead POST
+ * - A valid lead_id was persisted alongside the flag
  * 
- * Tool completions alone do NOT grant consent - this is a legal safety measure.
+ * This is the ONLY way to gate PII in enhanced conversions.
  */
-export function hasMarketingConsent(): boolean {
+export function hasExplicitSubmission(): boolean {
   try {
-    // Check session data for EXPLICIT form submission (email provided)
-    const sessionData = localStorage.getItem('impact-windows-session');
-    if (sessionData) {
-      const parsed = JSON.parse(sessionData);
-      // Email submission = explicit consent for PII tracking
-      if (parsed.email) return true;
-    }
+    const flag = localStorage.getItem(SUBMISSION_FLAG_KEY);
+    const leadId = localStorage.getItem(SUBMITTED_LEAD_ID_KEY);
     
-    // Check explicit consent flag (from cookie banner or direct opt-in)
-    const explicit = localStorage.getItem(CONSENT_KEY);
-    return explicit === 'true';
+    // Both flag AND leadId must be present
+    return flag === 'true' && !!leadId;
   } catch {
-    // If storage fails, default to no consent (privacy-first)
+    // If storage fails, default to no submission (privacy-first)
     return false;
   }
 }
 
 /**
- * Explicitly set marketing consent preference
- * Used when user completes a form or opts in via cookie banner
+ * Get the submitted lead ID (if any)
+ */
+export function getSubmittedLeadId(): string | null {
+  try {
+    return localStorage.getItem(SUBMITTED_LEAD_ID_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Mark explicit submission after successful lead POST
+ * 
+ * MUST be called only after:
+ * 1. Lead POST to save-lead succeeds
+ * 2. A valid lead_id is returned from the server
+ * 
+ * This is the ONLY way to enable PII in tracking.
+ */
+export function setExplicitSubmission(leadId: string): void {
+  if (!leadId) {
+    console.warn('[Consent] Cannot set explicit submission without leadId');
+    return;
+  }
+  
+  try {
+    localStorage.setItem(SUBMISSION_FLAG_KEY, 'true');
+    localStorage.setItem(SUBMITTED_LEAD_ID_KEY, leadId);
+    console.log('[Consent] Explicit submission flag set for lead:', leadId.slice(0, 8) + '...');
+  } catch {
+    // Silently fail - storage might be full or blocked
+    console.warn('[Consent] Failed to set explicit submission flag');
+  }
+}
+
+/**
+ * Clear submission flag (for GDPR opt-out or testing)
+ */
+export function clearExplicitSubmission(): void {
+  try {
+    localStorage.removeItem(SUBMISSION_FLAG_KEY);
+    localStorage.removeItem(SUBMITTED_LEAD_ID_KEY);
+  } catch {
+    // Silently fail
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DEPRECATED: Legacy consent functions (kept for backward compatibility)
+// These should NOT be used for PII gating anymore
+// ═══════════════════════════════════════════════════════════════════════════
+
+const CONSENT_KEY = 'wte-marketing-consent';
+
+/**
+ * @deprecated Use hasExplicitSubmission() instead for PII gating
+ * This function is kept only for backward compatibility with non-PII tracking
+ */
+export function hasMarketingConsent(): boolean {
+  // Now delegates to explicit submission check
+  return hasExplicitSubmission();
+}
+
+/**
+ * @deprecated Use setExplicitSubmission(leadId) instead
  */
 export function setMarketingConsent(value: boolean): void {
   try {
     localStorage.setItem(CONSENT_KEY, String(value));
   } catch {
-    // Silently fail - storage might be full or blocked
+    // Silently fail
   }
 }
 
 /**
- * Clear marketing consent (for GDPR opt-out requests)
+ * @deprecated Use clearExplicitSubmission() instead
  */
 export function clearMarketingConsent(): void {
   try {
@@ -66,9 +125,10 @@ export function clearMarketingConsent(): void {
 }
 
 /**
- * Grant consent after form submission
- * Called automatically when user provides email/phone
+ * @deprecated Use setExplicitSubmission(leadId) directly in useLeadFormSubmit
  */
 export function grantConsentOnFormSubmit(): void {
-  setMarketingConsent(true);
+  // No-op: This should never be called anymore
+  // Explicit submission requires a leadId
+  console.warn('[Consent] grantConsentOnFormSubmit is deprecated. Use setExplicitSubmission(leadId) instead.');
 }
