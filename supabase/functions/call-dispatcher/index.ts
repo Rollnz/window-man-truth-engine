@@ -174,11 +174,10 @@ async function dispatchCall(
       metadata: buildMetadata(call),
     };
 
-    console.log(`[Dispatcher] Sending to PhoneCall.bot`, {
+    console.log(`[Dispatcher] Calling PhoneCall.bot`, {
       call_request_id: call.call_request_id,
       source_tool: call.source_tool,
-      to: maskPhone(call.phone_e164),
-      request_body: JSON.stringify(body),
+      phone: maskPhone(call.phone_e164),
       attempt_count: call.attempt_count + 1,
     });
 
