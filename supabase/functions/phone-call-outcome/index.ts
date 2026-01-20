@@ -2,6 +2,7 @@
 // PHONE CALL OUTCOME - WEBHOOK HANDLER
 // Receives callbacks from PhoneCall.bot with call outcomes
 // Verifies signatures when secret is configured, writes timeline events
+// Includes idempotency protection to prevent duplicate timeline entries
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -14,7 +15,7 @@ const corsHeaders = {
 interface PhoneCallOutcomePayload {
   call_id: string; // provider_call_id from PhoneCall.bot
   status: "completed" | "failed" | "no-answer" | "busy" | "voicemail" | "canceled";
-  duration_seconds?: number;
+  duration_seconds?: number | string; // Accept both number and string
   sentiment?: "positive" | "neutral" | "negative";
   ai_notes?: string;
   recording_url?: string;
@@ -33,6 +34,17 @@ function mapCallStatus(providerStatus: string): string {
     canceled: "failed",
   };
   return statusMap[providerStatus] || "failed";
+}
+
+// Safely parse duration (Item C: string/int/null tolerance)
+function parseDuration(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return Math.floor(value);
+  if (typeof value === "string") {
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? null : Math.floor(parsed);
+  }
+  return null;
 }
 
 // Truncate string for safety
@@ -211,10 +223,10 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find the call log by provider_call_id - include lead_id and source_tool for timeline
+    // Find the call log by provider_call_id - include outcome_timeline_written for idempotency
     const { data: existingLog, error: findError } = await supabase
       .from("phone_call_logs")
-      .select("id, call_status, lead_id, source_tool")
+      .select("id, call_status, lead_id, source_tool, outcome_timeline_written")
       .eq("provider_call_id", payload.call_id)
       .maybeSingle();
 
@@ -244,15 +256,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if already in terminal state
+    // ═══════════════════════════════════════════════════════════════════════
+    // IDEMPOTENCY CHECK (Item A): Skip if terminal state AND timeline written
+    // ═══════════════════════════════════════════════════════════════════════
     const terminalStates = ["completed", "failed", "no_answer"];
-    if (terminalStates.includes(existingLog.call_status)) {
-      console.log("[phone-call-outcome] Call already in terminal state:", existingLog.call_status);
+    if (terminalStates.includes(existingLog.call_status) && existingLog.outcome_timeline_written === true) {
+      console.log("[phone-call-outcome] IDEMPOTENT SKIP: Call already processed with timeline written", {
+        call_id: payload.call_id,
+        current_status: existingLog.call_status,
+        outcome_timeline_written: existingLog.outcome_timeline_written,
+      });
       return new Response(
         JSON.stringify({
           success: true,
-          warning: "Call already in terminal state",
+          warning: "Already processed (idempotent)",
           current_status: existingLog.call_status,
+          outcome_timeline_written: existingLog.outcome_timeline_written,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -266,9 +285,10 @@ Deno.serve(async (req) => {
       raw_outcome_payload: payload,
     };
 
-    // Add optional fields if present
-    if (typeof payload.duration_seconds === "number" && payload.duration_seconds >= 0) {
-      updateData.call_duration_sec = Math.floor(payload.duration_seconds);
+    // Parse duration safely (Item C: string/int/null tolerance)
+    const parsedDuration = parseDuration(payload.duration_seconds);
+    if (parsedDuration !== null && parsedDuration >= 0) {
+      updateData.call_duration_sec = parsedDuration;
     }
 
     if (payload.sentiment && ["positive", "neutral", "negative"].includes(payload.sentiment)) {
@@ -302,7 +322,7 @@ Deno.serve(async (req) => {
       updateData.ended_at = new Date().toISOString();
     }
 
-    // Update the call log
+    // Update the call log (but NOT outcome_timeline_written yet)
     const { error: updateError } = await supabase
       .from("phone_call_logs")
       .update(updateData)
@@ -330,8 +350,13 @@ Deno.serve(async (req) => {
       console.warn("[phone-call-outcome] Failed to update pending_calls:", pendingUpdateError.message);
     }
 
-    // === TIMELINE EVENTS: Write to lead_notes (always) and wm_events (if session exists) ===
-    if (existingLog.lead_id) {
+    // ═══════════════════════════════════════════════════════════════════════
+    // TIMELINE EVENTS: Write to lead_notes (always) and wm_events (if session)
+    // Only if not already written (checked via outcome_timeline_written flag)
+    // ═══════════════════════════════════════════════════════════════════════
+    let timelineWritten = false;
+    
+    if (existingLog.lead_id && !existingLog.outcome_timeline_written) {
       // Find wm_lead to get wm_lead.id and original_session_id
       const { data: wmLead } = await supabase
         .from("wm_leads")
@@ -339,24 +364,36 @@ Deno.serve(async (req) => {
         .eq("lead_id", existingLog.lead_id)
         .maybeSingle();
 
-      const duration = payload.duration_seconds ?? null;
+      const duration = parsedDuration;
       const sentiment = payload.sentiment ?? null;
       const recordingUrl = payload.recording_url ?? null;
 
-      const outcomeNote = `📞 Call ${mappedStatus}${duration ? ` (${duration}s)` : ""}${recordingUrl ? " [Recording available]" : ""}${sentiment ? ` | Sentiment: ${sentiment}` : ""}`;
+      // Build note with provider_call_id appended for debugging (Item C)
+      const outcomeNote = `📞 Call ${mappedStatus}${duration ? ` (${duration}s)` : ""}${recordingUrl ? " [Recording available]" : ""}${sentiment ? ` | Sentiment: ${sentiment}` : ""} | provider_call_id: ${payload.call_id}`;
 
-      // ALWAYS write to lead_notes (immutable audit trail)
+      // Track timeline write success
+      let noteWritten = false;
+      let eventWritten = false;
+
+      // ALWAYS write to lead_notes if wm_lead exists
       if (wmLead?.id) {
-        await supabase.from("lead_notes").insert({
+        const { error: noteError } = await supabase.from("lead_notes").insert({
           lead_id: wmLead.id,
           content: outcomeNote,
           admin_email: "system@windowman.ai",
         });
+        
+        if (noteError) {
+          console.error("[phone-call-outcome] Failed to write lead_note:", noteError.message);
+        } else {
+          noteWritten = true;
+          console.log("[phone-call-outcome] Timeline note written for lead:", wmLead.id);
+        }
       }
 
       // ADDITIONALLY write to wm_events if session exists
       if (wmLead?.original_session_id) {
-        await supabase.from("wm_events").insert({
+        const { error: eventError } = await supabase.from("wm_events").insert({
           session_id: wmLead.original_session_id,
           event_name: `call_${mappedStatus}`,
           event_category: "phone",
@@ -370,17 +407,47 @@ Deno.serve(async (req) => {
             source_tool: existingLog.source_tool,
           },
         });
+        
+        if (eventError) {
+          console.error("[phone-call-outcome] Failed to write wm_event:", eventError.message);
+        } else {
+          eventWritten = true;
+          console.log("[phone-call-outcome] Timeline event written for session:", wmLead.original_session_id);
+        }
+      }
+
+      // Mark as written if EITHER succeeded (safe: we have at least one record)
+      timelineWritten = noteWritten || eventWritten;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SET IDEMPOTENCY FLAG: Only after timeline writes succeeded
+    // ═══════════════════════════════════════════════════════════════════════
+    if (timelineWritten) {
+      const { error: flagError } = await supabase
+        .from("phone_call_logs")
+        .update({ outcome_timeline_written: true })
+        .eq("id", existingLog.id);
+      
+      if (flagError) {
+        console.error("[phone-call-outcome] Failed to set outcome_timeline_written flag:", flagError.message);
+      } else {
+        console.log("[phone-call-outcome] Idempotency flag set for call:", existingLog.id);
       }
     }
 
     const duration = Date.now() - startTime;
-    console.log(`[phone-call-outcome] Successfully updated call ${existingLog.id} to ${mappedStatus} in ${duration}ms`);
+    console.log(`[phone-call-outcome] Successfully updated call ${existingLog.id} to ${mappedStatus} in ${duration}ms`, {
+      timeline_written: timelineWritten,
+      provider_call_id: payload.call_id,
+    });
 
     return new Response(
       JSON.stringify({
         success: true,
         call_log_id: existingLog.id,
         new_status: mappedStatus,
+        timeline_written: timelineWritten,
         processing_time_ms: duration,
         signature_mode: sigResult.mode,
       }),
