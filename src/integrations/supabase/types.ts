@@ -91,6 +91,48 @@ export type Database = {
           },
         ]
       }
+      global_search_index: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          keywords: string | null
+          lead_id: string | null
+          payload: Json | null
+          search_tsv: unknown
+          subtitle: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          keywords?: string | null
+          lead_id?: string | null
+          payload?: Json | null
+          search_tsv?: unknown
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          keywords?: string | null
+          lead_id?: string | null
+          payload?: Json | null
+          search_tsv?: unknown
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       job_heartbeats: {
         Row: {
           job_name: string
@@ -919,6 +961,11 @@ export type Database = {
       }
       cleanup_rate_limits: { Args: never; Returns: undefined }
       cleanup_webhook_receipts: { Args: never; Returns: Json }
+      delete_search_index: {
+        Args: { p_entity_id: string; p_entity_type: string }
+        Returns: undefined
+      }
+      extract_digits: { Args: { input: string }; Returns: string }
       get_event_score: {
         Args: { event_category: string; event_name: string }
         Returns: number
@@ -949,8 +996,22 @@ export type Database = {
         Args: { p_call_request_id: string }
         Returns: Json
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       update_lead_score_from_session: {
         Args: { p_session_id: string }
+        Returns: undefined
+      }
+      upsert_search_index: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_keywords: string
+          p_lead_id: string
+          p_payload?: Json
+          p_subtitle: string
+          p_title: string
+        }
         Returns: undefined
       }
     }
