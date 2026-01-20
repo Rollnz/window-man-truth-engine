@@ -224,6 +224,13 @@ export default function CRMDashboard() {
                   Health
                 </Button>
               </Link>
+
+              <Link to="/admin/roi">
+                <Button variant="outline" size="sm">
+                  <Calculator className="h-4 w-4 mr-2" />
+                  ROI
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
