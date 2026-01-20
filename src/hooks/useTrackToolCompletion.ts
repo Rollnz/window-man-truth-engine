@@ -5,9 +5,11 @@
  * Automatically pulls user data from session for Enhanced Conversions.
  * 
  * EXPERT-GRADE FEATURES:
- * 1. Two-Step Pattern: Value-only event immediately, Enhanced Match after email capture
- * 2. Cumulative Score: Included for debugging without double-counting
- * 3. Auto Identity Fetch: Always gets latest email/phone from session
+ * 1. Event Deduplication: Each tool fires only once per session
+ * 2. Two-Step Pattern: Value-only event immediately, Enhanced Match after email capture
+ * 3. Cumulative Score: Included for debugging without double-counting
+ * 4. Auto Identity Fetch: Always gets latest email/phone from session
+ * 5. E.164 Phone Normalization: Proper format for Enhanced Conversions
  * 
  * Usage:
  * ```tsx
@@ -26,6 +28,7 @@ import { useSessionData } from './useSessionData';
 import { trackConversionValue } from '@/lib/gtm';
 import { getToolDeltaConfig } from '@/config/toolDeltaValues';
 import { getEngagementScore } from '@/services/analytics';
+import { createToolEventId, isToolEventTracked, markToolEventTracked } from '@/lib/eventDeduplication';
 import type { ToolCompletionMetadata } from '@/types/tracking';
 import type { SourceTool } from '@/types/sourceTool';
 
@@ -35,8 +38,10 @@ interface UseTrackToolCompletionReturn {
    * and Enhanced Conversions user data injection.
    * 
    * Fires a "value_only" event if no email in session, or "full" event with PII.
+   * 
+   * DEDUPLICATION: Each tool fires only once per session unless forced.
    */
-  trackToolComplete: (toolId: SourceTool, metadata?: ToolCompletionMetadata) => void;
+  trackToolComplete: (toolId: SourceTool, metadata?: ToolCompletionMetadata, force?: boolean) => void;
   
   /**
    * Fire an "Enhanced Match" event AFTER email capture for gated tools.
@@ -57,11 +62,22 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
   /**
    * STEP 1: Fire "Value Only" or "Full" event based on email presence
    * This is the primary tracking call made immediately upon tool completion
+   * 
+   * DEDUPLICATION: Uses session-based event ID to prevent double-fires
    */
   const trackToolComplete = useCallback((
     toolId: SourceTool,
-    metadata?: ToolCompletionMetadata
+    metadata?: ToolCompletionMetadata,
+    force: boolean = false
   ) => {
+    // DEDUPLICATION: Check if already tracked this session
+    if (!force && isToolEventTracked(toolId, 'completed')) {
+      if (import.meta.env.DEV) {
+        console.log(`%c[Tool] ${toolId} already tracked this session`, 'color: #f59e0b');
+      }
+      return;
+    }
+    
     // Get the delta config for this tool
     const config = getToolDeltaConfig(toolId);
     
@@ -75,6 +91,9 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
     // Determine tracking step based on email presence
     const trackingStep = email ? 'full' : 'value_only';
     
+    // Create deterministic event ID for this tool completion
+    const eventId = createToolEventId(toolId, 'completed');
+    
     // Fire the conversion value event with full context
     trackConversionValue({
       eventName: config.eventName,
@@ -82,13 +101,19 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
       email,
       phone,
       cumulativeScore,
+      eventId, // Deterministic ID for deduplication
       metadata: {
         tool_id: toolId,
+        tool_version: '1.0', // For future versioning
         session_id: sessionData.leadId || 'anonymous',
         tracking_step: trackingStep,
+        score_snapshot: cumulativeScore,
         ...metadata,
       },
     });
+    
+    // Mark as tracked in deduplication system
+    markToolEventTracked(toolId, 'completed');
     
     // Mark tool as completed in session (for UX purposes)
     markToolCompleted(toolId);
@@ -104,6 +129,7 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
           step: trackingStep,
           hasEmail: !!email,
           hasPhone: !!phone,
+          eventId: eventId.slice(0, 8) + '...',
           metadata,
         }
       );
@@ -114,8 +140,18 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
    * STEP 2: Fire "Enhanced Match" event AFTER email capture
    * Links identity to the previous value-only event for gated tools.
    * Does NOT add additional delta points - just links identity.
+   * 
+   * DEDUPLICATION: Fires only once per tool per session
    */
   const trackEnhancedMatch = useCallback((toolId: SourceTool) => {
+    // DEDUPLICATION: Check if enhanced match already fired
+    if (isToolEventTracked(toolId, 'enhanced_match')) {
+      if (import.meta.env.DEV) {
+        console.log(`%c[Enhanced Match] ${toolId} already tracked`, 'color: #f59e0b');
+      }
+      return;
+    }
+    
     const email = sessionData.email;
     const phone = sessionData.phone;
     
@@ -129,6 +165,9 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
     // Get cumulative score for debugging
     const cumulativeScore = getEngagementScore();
     
+    // Create deterministic event ID
+    const eventId = createToolEventId(toolId, 'enhanced_match');
+    
     // Fire identity linking event (no additional delta value)
     trackConversionValue({
       eventName: 'enhanced_match',
@@ -136,12 +175,16 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
       email,
       phone,
       cumulativeScore,
+      eventId,
       metadata: {
         tool_id: toolId,
         session_id: sessionData.leadId,
         tracking_step: 'enhanced_match',
       },
     });
+    
+    // Mark as tracked
+    markToolEventTracked(toolId, 'enhanced_match');
     
     // DEV LOGGING: Enhanced Match visibility
     if (import.meta.env.DEV) {
@@ -158,7 +201,7 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
   }, [sessionData.email, sessionData.phone, sessionData.leadId]);
 
   const isToolTracked = useCallback((toolId: SourceTool): boolean => {
-    return isToolCompleted(toolId);
+    return isToolCompleted(toolId) || isToolEventTracked(toolId, 'completed');
   }, [isToolCompleted]);
 
   return {

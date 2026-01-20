@@ -622,6 +622,7 @@ export type Database = {
           first_name: string | null
           gclid: string | null
           id: string
+          landing_page: string | null
           last_contacted_at: string | null
           last_name: string | null
           lead_id: string | null
@@ -632,7 +633,11 @@ export type Database = {
           phone: string | null
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
           utm_source: string | null
+          utm_term: string | null
           verified_social_url: string | null
         }
         Insert: {
@@ -650,6 +655,7 @@ export type Database = {
           first_name?: string | null
           gclid?: string | null
           id?: string
+          landing_page?: string | null
           last_contacted_at?: string | null
           last_name?: string | null
           lead_id?: string | null
@@ -660,7 +666,11 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
           utm_source?: string | null
+          utm_term?: string | null
           verified_social_url?: string | null
         }
         Update: {
@@ -678,6 +688,7 @@ export type Database = {
           first_name?: string | null
           gclid?: string | null
           id?: string
+          landing_page?: string | null
           last_contacted_at?: string | null
           last_name?: string | null
           lead_id?: string | null
@@ -688,7 +699,11 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
           utm_source?: string | null
+          utm_term?: string | null
           verified_social_url?: string | null
         }
         Relationships: [
