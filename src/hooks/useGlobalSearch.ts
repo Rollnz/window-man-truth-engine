@@ -2,85 +2,77 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { CRMLead } from '@/types/crm';
-import { SearchFilters } from '@/components/admin/SearchFilters';
 
 const RECENT_LEADS_KEY = 'admin_recent_leads';
 const MAX_RECENT = 5;
-const DEBOUNCE_MS = 250;
+const DEBOUNCE_MS = 200;
 const MIN_QUERY_LENGTH = 2;
 
 /**
- * Search suggestion returned from admin-global-search edge function
- * 
- * Searches across:
- * - wm_leads: email, phone, first_name, last_name, id, city, notes, source
- * - lead_notes: content
- * - phone_call_logs: ai_notes (call summaries)
+ * Entity types returned from global search
  */
-export interface SearchSuggestion {
-  type: 'lead';
-  id: string;
+export type EntityType = 'lead' | 'call' | 'pending_call' | 'note' | 'session' | 'quote_upload' | 'consultation';
+
+/**
+ * Search result item from the unified global_search_index
+ */
+export interface SearchResultItem {
+  entity_type: EntityType;
+  entity_type_label: string;
+  entity_id: string;
+  lead_id: string | null;
   title: string;
   subtitle: string;
-  status: string;
-  engagement_score: number | null;
-  match_field: 'email' | 'phone' | 'name' | 'notes' | 'call_notes' | 'id' | 'city' | 'source' | 'unknown';
+  updated_at: string;
+  payload: Record<string, any>;
+  match_reason: 'exact_id' | 'exact_match' | 'keyword_match' | 'digits' | 'partial';
+  match_field: string;
   match_snippet?: string;
   match_positions?: Array<{ start: number; length: number }>;
 }
+
+/**
+ * Grouped search results by entity type
+ */
+export type GroupedResults = Record<EntityType, SearchResultItem[]>;
 
 export interface UseGlobalSearchReturn {
   recentLeads: CRMLead[];
   searchQuery: string;
   setSearchQuery: (q: string) => void;
-  filters: SearchFilters;
-  setFilters: (filters: SearchFilters) => void;
+  entityTypeFilter: EntityType[];
+  setEntityTypeFilter: (types: EntityType[]) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  searchResults: SearchSuggestion[];
+  searchResults: SearchResultItem[];
+  groupedResults: GroupedResults;
   addToRecent: (lead: CRMLead) => void;
+  navigateToResult: (result: SearchResultItem) => void;
   navigateToLead: (leadId: string) => void;
   viewAllResults: () => void;
   isLoading: boolean;
   error: string | null;
   hasMore: boolean;
   totalCount: number;
-}
-
-// Build URL search params from filters
-function buildFilterParams(filters: SearchFilters): string {
-  const params = new URLSearchParams();
-  
-  if (filters.status?.length) {
-    params.set('status', filters.status.join(','));
-  }
-  if (filters.quality?.length) {
-    params.set('quality', filters.quality.join(','));
-  }
-  if (filters.matchType?.length) {
-    params.set('match_type', filters.matchType.join(','));
-  }
-  if (filters.dateFrom) {
-    params.set('date_from', filters.dateFrom);
-  }
-  if (filters.dateTo) {
-    params.set('date_to', filters.dateTo);
-  }
-  
-  return params.toString();
+  // Keyboard navigation
+  selectedIndex: number;
+  setSelectedIndex: (index: number) => void;
+  handleKeyDown: (e: React.KeyboardEvent) => void;
 }
 
 export function useGlobalSearch(): UseGlobalSearchReturn {
   const navigate = useNavigate();
   const [recentLeads, setRecentLeads] = useState<CRMLead[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<SearchFilters>({});
-  const [searchResults, setSearchResults] = useState<SearchSuggestion[]>([]);
+  const [entityTypeFilter, setEntityTypeFilter] = useState<EntityType[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
+  const [groupedResults, setGroupedResults] = useState<GroupedResults>({} as GroupedResults);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   
   // Refs for debounce and abort
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -111,7 +103,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Debounced search when query or filters change
+  // Debounced search when query changes
   useEffect(() => {
     // Clear previous debounce
     if (debounceRef.current) {
@@ -128,10 +120,12 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     const trimmedQuery = searchQuery.trim();
     if (trimmedQuery.length < MIN_QUERY_LENGTH) {
       setSearchResults([]);
+      setGroupedResults({} as GroupedResults);
       setError(null);
       setIsLoading(false);
       setHasMore(false);
       setTotalCount(0);
+      setSelectedIndex(-1);
       return;
     }
 
@@ -152,14 +146,20 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
           return;
         }
 
-        // Build filter params
-        const filterParams = buildFilterParams(filters);
-        const baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-global-search`;
-        const queryParams = `q=${encodeURIComponent(trimmedQuery)}&limit=8${filterParams ? `&${filterParams}` : ''}`;
+        // Build query params
+        const params = new URLSearchParams();
+        params.set('q', trimmedQuery);
+        params.set('limit', '12');
+        
+        if (entityTypeFilter.length > 0) {
+          params.set('entity_type', entityTypeFilter.join(','));
+        }
 
-        // Call edge function (limit to 8 for dropdown)
+        const baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-global-search`;
+
+        // Call edge function
         const response = await fetch(
-          `${baseUrl}?${queryParams}`,
+          `${baseUrl}?${params.toString()}`,
           {
             headers: {
               Authorization: `Bearer ${sessionData.session.access_token}`,
@@ -178,16 +178,19 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
             setError('Search failed');
           }
           setSearchResults([]);
+          setGroupedResults({} as GroupedResults);
           setIsLoading(false);
           setHasMore(false);
           return;
         }
 
         const data = await response.json();
-        setSearchResults(data.suggestions || []);
+        setSearchResults(data.items || []);
+        setGroupedResults(data.grouped || {});
         setHasMore(data.has_more || false);
-        setTotalCount(data.total_count || data.suggestions?.length || 0);
+        setTotalCount(data.total_count || data.items?.length || 0);
         setError(null);
+        setSelectedIndex(-1); // Reset selection on new results
       } catch (err) {
         // Ignore abort errors
         if (err instanceof Error && err.name === 'AbortError') {
@@ -196,6 +199,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
         console.error('Search error:', err);
         setError('Search failed');
         setSearchResults([]);
+        setGroupedResults({} as GroupedResults);
         setHasMore(false);
       } finally {
         setIsLoading(false);
@@ -208,20 +212,20 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [searchQuery, filters]);
+  }, [searchQuery, entityTypeFilter]);
 
   // Clear state when dialog closes
   useEffect(() => {
     if (!isOpen) {
-      // Clear after a short delay to avoid flicker on reopen
       const timeout = setTimeout(() => {
         if (!isOpen) {
           setSearchQuery('');
           setSearchResults([]);
+          setGroupedResults({} as GroupedResults);
           setError(null);
           setHasMore(false);
           setTotalCount(0);
-          // Don't clear filters - keep them for next search
+          setSelectedIndex(-1);
         }
       }, 200);
       return () => clearTimeout(timeout);
@@ -237,83 +241,135 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     });
   }, []);
 
-  const navigateToLead = useCallback(
-    (leadId: string) => {
-      // Try to find lead in recent leads to add to history
-      const recentLead = recentLeads.find((l) => l.id === leadId);
-      if (recentLead) {
-        addToRecent(recentLead);
-      } else {
-        // If from search results, create a minimal CRMLead object for recent
-        const searchResult = searchResults.find((s) => s.id === leadId);
-        if (searchResult) {
-          // Partial lead for recent storage - only fields needed for display
-          const minimalLead = {
-            id: searchResult.id,
-            email: searchResult.subtitle.split(' | ')[0] || '',
-            phone: searchResult.subtitle.split(' | ')[1] || null,
-            first_name: searchResult.title.split(' ')[0] || null,
-            last_name: searchResult.title.split(' ').slice(1).join(' ') || null,
-            status: searchResult.status,
-            engagement_score: searchResult.engagement_score,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          } as CRMLead;
-          addToRecent(minimalLead);
+  // Navigate to a specific result based on its entity type
+  const navigateToResult = useCallback((result: SearchResultItem) => {
+    setIsOpen(false);
+    setSearchQuery('');
+
+    // For leads, navigate directly to lead detail
+    if (result.entity_type === 'lead') {
+      navigate(`/admin/leads/${result.entity_id}`);
+      return;
+    }
+
+    // For entities with a lead_id, navigate to that lead
+    if (result.lead_id) {
+      navigate(`/admin/leads/${result.lead_id}`);
+      return;
+    }
+
+    // Fallback: navigate based on entity type
+    switch (result.entity_type) {
+      case 'call':
+      case 'pending_call':
+        // Navigate to calls page or lead if available
+        if (result.lead_id) {
+          navigate(`/admin/leads/${result.lead_id}`);
+        } else {
+          navigate('/admin/crm');
         }
-      }
-      
-      setIsOpen(false);
-      setSearchQuery('');
-      navigate(`/admin/leads/${leadId}`);
-    },
-    [recentLeads, searchResults, addToRecent, navigate]
-  );
+        break;
+      case 'note':
+        // Notes should have lead_id, fallback to CRM
+        navigate('/admin/crm');
+        break;
+      case 'quote_upload':
+        navigate('/admin/quotes');
+        break;
+      case 'session':
+        // Sessions are analytics-focused
+        navigate('/admin/attribution');
+        break;
+      case 'consultation':
+        navigate('/admin/crm');
+        break;
+      default:
+        navigate('/admin/crm');
+    }
+  }, [navigate]);
+
+  const navigateToLead = useCallback((leadId: string) => {
+    // Find in recent or search results
+    const recentLead = recentLeads.find((l) => l.id === leadId);
+    if (recentLead) {
+      addToRecent(recentLead);
+    }
+    
+    setIsOpen(false);
+    setSearchQuery('');
+    navigate(`/admin/leads/${leadId}`);
+  }, [recentLeads, addToRecent, navigate]);
 
   const viewAllResults = useCallback(() => {
     const trimmedQuery = searchQuery.trim();
     if (trimmedQuery.length >= MIN_QUERY_LENGTH) {
       setIsOpen(false);
       
-      // Build URL with query and filters
       const params = new URLSearchParams();
       params.set('q', trimmedQuery);
       
-      if (filters.status?.length) {
-        params.set('status', filters.status.join(','));
-      }
-      if (filters.quality?.length) {
-        params.set('quality', filters.quality.join(','));
-      }
-      if (filters.matchType?.length) {
-        params.set('match_type', filters.matchType.join(','));
-      }
-      if (filters.dateFrom) {
-        params.set('date_from', filters.dateFrom);
-      }
-      if (filters.dateTo) {
-        params.set('date_to', filters.dateTo);
+      if (entityTypeFilter.length > 0) {
+        params.set('entity_type', entityTypeFilter.join(','));
       }
       
       navigate(`/admin/search?${params.toString()}`);
     }
-  }, [searchQuery, filters, navigate]);
+  }, [searchQuery, entityTypeFilter, navigate]);
+
+  // Keyboard navigation handler
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const totalItems = searchResults.length + (hasMore ? 1 : 0); // +1 for "View all" option
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex((prev) => {
+          const next = prev + 1;
+          return next >= totalItems ? 0 : next;
+        });
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex((prev) => {
+          const next = prev - 1;
+          return next < 0 ? totalItems - 1 : next;
+        });
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < searchResults.length) {
+          navigateToResult(searchResults[selectedIndex]);
+        } else if (selectedIndex === searchResults.length && hasMore) {
+          viewAllResults();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setIsOpen(false);
+        break;
+    }
+  }, [searchResults, hasMore, selectedIndex, navigateToResult, viewAllResults]);
 
   return {
     recentLeads,
     searchQuery,
     setSearchQuery,
-    filters,
-    setFilters,
+    entityTypeFilter,
+    setEntityTypeFilter,
     isOpen,
     setIsOpen,
     searchResults,
+    groupedResults,
     addToRecent,
+    navigateToResult,
     navigateToLead,
     viewAllResults,
     isLoading,
     error,
     hasMore,
     totalCount,
+    selectedIndex,
+    setSelectedIndex,
+    handleKeyDown,
   };
 }
