@@ -38,6 +38,7 @@ const Vault = lazy(() => import("./pages/Vault"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const AttributionDashboard = lazy(() => import("./pages/admin/AttributionDashboard"));
+const AttributionHealthDashboard = lazy(() => import("./pages/admin/AttributionHealthDashboard"));
 const CRMDashboard = lazy(() => import("./pages/admin/CRMDashboard"));
 const QuotesDashboard = lazy(() => import("./pages/admin/QuotesDashboard"));
 const LeadDetail = lazy(() => import("./pages/admin/LeadDetail"));
@@ -137,6 +138,7 @@ function AppContent() {
         <Route path="/admin" element={<AdminHome />} />
         <Route path="/admin/analytics" element={<Analytics />} />
         <Route path="/admin/attribution" element={<AttributionDashboard />} />
+        <Route path="/admin/attribution-health" element={<AttributionHealthDashboard />} />
         <Route path="/admin/crm" element={<CRMDashboard />} />
         <Route path="/admin/quotes" element={<QuotesDashboard />} />
         <Route path="/admin/leads/:id" element={<LeadDetail />} />

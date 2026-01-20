@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Loader2, Calculator, FileText } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Loader2, Calculator, FileText, Activity, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useCRMLeads } from '@/hooks/useCRMLeads';
 import { KanbanBoard } from '@/components/crm/KanbanBoard';
@@ -30,6 +33,7 @@ export default function CRMDashboard() {
     endDate: new Date(),
   });
   const [isRecalculating, setIsRecalculating] = useState(false);
+  const [showHighTouchOnly, setShowHighTouchOnly] = useState(false);
 
   const { 
     leads, 
@@ -47,6 +51,24 @@ export default function CRMDashboard() {
   }, [authLoading, isAuthenticated, navigate]);
 
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
+
+  // Filter for high-touch leads (both gclid AND fbclid)
+  const filteredLeads = useMemo(() => {
+    if (!showHighTouchOnly) return leads;
+    return leads.filter(lead => {
+      const hasGoogle = !!(lead as any).gclid;
+      const hasMeta = !!(lead as any).fbclid;
+      return hasGoogle && hasMeta;
+    });
+  }, [leads, showHighTouchOnly]);
+
+  const highTouchCount = useMemo(() => {
+    return leads.filter(lead => {
+      const hasGoogle = !!(lead as any).gclid;
+      const hasMeta = !!(lead as any).fbclid;
+      return hasGoogle && hasMeta;
+    }).length;
+  }, [leads]);
 
   const handleRefresh = () => {
     if (dateRange.startDate && dateRange.endDate) {
@@ -129,12 +151,31 @@ export default function CRMDashboard() {
               <div>
                 <h1 className="text-2xl font-bold">Lead Warehouse</h1>
                 <p className="text-sm text-muted-foreground">
-                  CRM Kanban Board • {leads.length} leads
+                  CRM Kanban Board • {filteredLeads.length} leads
+                  {showHighTouchOnly && ` (filtered from ${leads.length})`}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* High-Touch Lead Filter */}
+              <div className="flex items-center gap-2 px-3 py-1.5 border border-border/50 rounded-lg bg-card/50">
+                <Switch
+                  id="high-touch-filter"
+                  checked={showHighTouchOnly}
+                  onCheckedChange={setShowHighTouchOnly}
+                />
+                <Label htmlFor="high-touch-filter" className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Zap className="h-4 w-4 text-purple-500" />
+                  High-Touch Only
+                  {highTouchCount > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {highTouchCount}
+                    </Badge>
+                  )}
+                </Label>
+              </div>
+
               <DateRangePicker
                 value={dateRange}
                 onChange={setDateRange}
@@ -176,6 +217,13 @@ export default function CRMDashboard() {
                   Attribution
                 </Button>
               </Link>
+
+              <Link to="/admin/attribution-health">
+                <Button variant="outline" size="sm">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Health
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -209,9 +257,20 @@ export default function CRMDashboard() {
               </div>
             ))}
           </div>
+        ) : filteredLeads.length === 0 && showHighTouchOnly ? (
+          <div className="text-center py-12 border rounded-lg border-dashed border-border/50">
+            <Zap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground mb-2">No high-touch leads found</p>
+            <p className="text-sm text-muted-foreground">
+              High-touch leads have both Google (gclid) and Meta (fbclid) attribution
+            </p>
+            <Button variant="outline" className="mt-4" onClick={() => setShowHighTouchOnly(false)}>
+              Show All Leads
+            </Button>
+          </div>
         ) : (
           <KanbanBoard 
-            leads={leads} 
+            leads={filteredLeads} 
             onStatusChange={updateLeadStatus}
           />
         )}
