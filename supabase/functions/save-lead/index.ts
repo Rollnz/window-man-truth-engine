@@ -52,6 +52,16 @@ const attributionSchema = z.object({
   msclkid: z.string().max(255).optional().nullable(),
 }).optional().nullable();
 
+// Last Non-Direct Attribution schema (Phase 1B - preserves paid attribution)
+const lastNonDirectSchema = z.object({
+  utm_source: z.string().max(255).optional().nullable(),
+  utm_medium: z.string().max(255).optional().nullable(),
+  gclid: z.string().max(255).optional().nullable(),
+  fbclid: z.string().max(255).optional().nullable(), // Note: fbclid not fbc for consistency
+  channel: z.string().max(50).optional().nullable(),
+  landing_page: z.string().max(2000).optional().nullable(),
+}).optional().nullable();
+
 // AI Context schema
 const aiContextSchema = z.object({
   source_form: z.string().max(100).optional().nullable(),
@@ -73,6 +83,8 @@ const leadSchema = z.object({
   consultation: consultationSchema,
   attribution: attributionSchema,
   aiContext: aiContextSchema,
+  // Phase 1B: Last Non-Direct attribution (preserves paid attribution on direct returns)
+  lastNonDirect: lastNonDirectSchema,
   // Golden Thread: Optional lead ID for identity persistence
   // If provided, UPDATE existing record instead of creating new one
   leadId: z.string().uuid('Invalid lead ID format').optional().nullable(),
@@ -375,7 +387,7 @@ serve(async (req) => {
 
     const { 
       email, name, phone, sourceTool, sessionData, chatHistory, consultation,
-      attribution, aiContext, leadId: providedLeadId, sessionId, quoteFileId 
+      attribution, aiContext, lastNonDirect, leadId: providedLeadId, sessionId, quoteFileId 
     } = parseResult.data;
 
     // Check email hourly limit (after validation so we have a valid email)
@@ -410,7 +422,7 @@ serve(async (req) => {
       source_tool: sourceTool,
       session_data: sessionData || {},
       chat_history: chatHistory || [],
-      // Attribution fields
+      // Attribution fields (last-touch)
       utm_source: attribution?.utm_source || null,
       utm_medium: attribution?.utm_medium || null,
       utm_campaign: attribution?.utm_campaign || null,
@@ -420,6 +432,13 @@ serve(async (req) => {
       fbp: attribution?.fbp || null,
       gclid: attribution?.gclid || null,
       msclkid: attribution?.msclkid || null,
+      // Last Non-Direct attribution (Phase 1B - preserves paid attribution)
+      last_non_direct_utm_source: lastNonDirect?.utm_source || null,
+      last_non_direct_utm_medium: lastNonDirect?.utm_medium || null,
+      last_non_direct_gclid: lastNonDirect?.gclid || null,
+      last_non_direct_fbclid: lastNonDirect?.fbclid || null,
+      last_non_direct_channel: lastNonDirect?.channel || null,
+      last_non_direct_landing_page: lastNonDirect?.landing_page || null,
       // AI Context fields
       source_form: aiContext?.source_form || null,
       specific_detail: aiContext?.specific_detail || null,
@@ -433,13 +452,21 @@ serve(async (req) => {
     // GOLDEN THREAD LOGIC: leadId takes precedence over email matching
     // ═══════════════════════════════════════════════════════════════════════════
     try {
-      let existingLead: { id: string; utm_source: string | null; gclid: string | null; fbc: string | null; msclkid: string | null } | null = null;
+      let existingLead: { 
+        id: string; 
+        utm_source: string | null; 
+        gclid: string | null; 
+        fbc: string | null; 
+        msclkid: string | null;
+        last_non_direct_gclid: string | null;
+        last_non_direct_fbclid: string | null;
+      } | null = null;
 
       // PRIORITY 1: If leadId is provided, use it directly (Golden Thread)
       if (providedLeadId) {
         const { data: leadById, error: leadByIdError } = await supabase
           .from('leads')
-          .select('id, utm_source, gclid, fbc, msclkid')
+          .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid')
           .eq('id', providedLeadId)
           .maybeSingle();
 
@@ -458,7 +485,7 @@ serve(async (req) => {
       if (!existingLead) {
         const { data: leadByEmail, error: emailSelectError } = await supabase
           .from('leads')
-          .select('id, utm_source, gclid, fbc, msclkid')
+          .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid')
           .eq('email', normalizedEmail)
           .maybeSingle();
 
@@ -511,6 +538,21 @@ serve(async (req) => {
         }
         if (!existingLead?.msclkid && attribution?.msclkid) {
           updateRecord.msclkid = attribution.msclkid;
+        }
+        
+        // Phase 1B: Last Non-Direct attribution - ALWAYS update if provided (newer wins)
+        // This preserves the most recent paid attribution even on updates
+        if (lastNonDirect?.utm_source) {
+          updateRecord.last_non_direct_utm_source = lastNonDirect.utm_source;
+          updateRecord.last_non_direct_utm_medium = lastNonDirect.utm_medium;
+          updateRecord.last_non_direct_channel = lastNonDirect.channel;
+          updateRecord.last_non_direct_landing_page = lastNonDirect.landing_page;
+        }
+        if (lastNonDirect?.gclid) {
+          updateRecord.last_non_direct_gclid = lastNonDirect.gclid;
+        }
+        if (lastNonDirect?.fbclid) {
+          updateRecord.last_non_direct_fbclid = lastNonDirect.fbclid;
         }
 
         const { error: updateError } = await supabase
