@@ -11,6 +11,9 @@ import { LeadTimeline } from '@/components/lead-detail/LeadTimeline';
 import { NotesWidget } from '@/components/lead-detail/NotesWidget';
 import { FilesWidget } from '@/components/lead-detail/FilesWidget';
 import { WebhookExportButton } from '@/components/lead-detail/WebhookExportButton';
+import { ConversionPathTimeline } from '@/components/lead-detail/ConversionPathTimeline';
+import { ProjectedRevenueCard } from '@/components/lead-detail/ProjectedRevenueCard';
+import { IntentSignalsSummary } from '@/components/lead-detail/IntentSignalsSummary';
 import { AdminBreadcrumb } from '@/components/admin/AdminBreadcrumb';
 import { LeadNavigation } from '@/components/admin/LeadNavigation';
 import { GlobalLeadSearch, SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
@@ -137,18 +140,32 @@ function LeadDetailContent() {
       {/* 3-Pane Layout */}
       <main className="max-w-7xl mx-auto p-4 lg:p-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Pane: Identity Card */}
-          <aside className="lg:col-span-3">
+          {/* Left Pane: Identity + Intent + Revenue */}
+          <aside className="lg:col-span-3 space-y-4">
             <LeadIdentityCard
               lead={lead}
               session={session}
               onStatusChange={updateStatus}
               onSaveSocialUrl={updateSocialUrl}
             />
+            
+            {/* Intent Signals - Sales Cheat Sheet */}
+            <IntentSignalsSummary events={events} />
+            
+            {/* Projected Revenue */}
+            <ProjectedRevenueCard
+              engagementScore={lead.engagement_score || 0}
+              leadQuality={lead.lead_quality}
+              estimatedDealValue={lead.estimated_deal_value}
+            />
           </aside>
 
-          {/* Center Pane: Timeline */}
-          <section className="lg:col-span-6">
+          {/* Center Pane: Timeline + Conversion Path */}
+          <section className="lg:col-span-6 space-y-4">
+            {/* Conversion Path Timeline - what cv_ events they triggered */}
+            <ConversionPathTimeline events={events} />
+            
+            {/* Full Activity Timeline */}
             <LeadTimeline events={events} notes={notes} isFacebookSource={isFacebookSource} />
           </section>
 
