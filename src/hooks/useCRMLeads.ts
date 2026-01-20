@@ -57,18 +57,26 @@ export function useCRMLeads(): UseCRMLeadsReturn {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
 
-      const response = await supabase.functions.invoke('crm-leads', {
-        body: null,
+      // Use GET request with query params (edge function only handles GET)
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const queryString = params.toString();
+      const url = `${supabaseUrl}/functions/v1/crm-leads${queryString ? `?${queryString}` : ''}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to fetch leads');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to fetch leads (${response.status})`);
       }
 
-      const data = response.data;
+      const data = await response.json();
       setLeads(data.leads || []);
       setSummary(data.summary || null);
     } catch (err) {
