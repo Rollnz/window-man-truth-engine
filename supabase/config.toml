@@ -76,7 +76,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.enqueue-manual-call]
-verify_jwt = true
+verify_jwt = false
 
 [functions.admin-webhook-receipts]
 verify_jwt = false
