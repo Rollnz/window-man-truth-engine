@@ -407,6 +407,7 @@ export type Database = {
           ended_at: string | null
           id: string
           lead_id: string | null
+          outcome_timeline_written: boolean | null
           provider_call_id: string | null
           raw_outcome_payload: Json | null
           recording_url: string | null
@@ -427,6 +428,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           lead_id?: string | null
+          outcome_timeline_written?: boolean | null
           provider_call_id?: string | null
           raw_outcome_payload?: Json | null
           recording_url?: string | null
@@ -447,6 +449,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           lead_id?: string | null
+          outcome_timeline_written?: boolean | null
           provider_call_id?: string | null
           raw_outcome_payload?: Json | null
           recording_url?: string | null
