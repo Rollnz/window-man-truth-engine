@@ -145,11 +145,8 @@ Deno.serve(async (req) => {
     const { data: indexResults, error: indexError } = await searchQuery;
 
     if (indexError) {
-      console.error('Search index error:', indexError);
-      return new Response(
-        JSON.stringify({ error: 'Search failed', details: indexError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error('[admin-global-search] Search index error:', indexError);
+      throw new Error('Search query failed: ' + indexError.message);
     }
 
     const hasMore = (indexResults?.length || 0) > limit;
