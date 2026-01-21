@@ -864,6 +864,93 @@ export type Database = {
         }
         Relationships: []
       }
+      wm_event_log: {
+        Row: {
+          campaign_id: string | null
+          client_id: string | null
+          created_at: string
+          event_id: string
+          event_name: string
+          event_time: string
+          event_type: string
+          external_id: string | null
+          fbc: string | null
+          fbclid: string | null
+          fbp: string | null
+          funnel_stage: string | null
+          gclid: string | null
+          id: string
+          ingested_by: string
+          intent_tier: number | null
+          lead_id: string | null
+          lead_score: number | null
+          metadata: Json
+          page_path: string | null
+          session_id: string | null
+          source_system: string
+          source_tool: string | null
+          traffic_medium: string | null
+          traffic_source: string | null
+          user_data: Json | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          event_id: string
+          event_name: string
+          event_time?: string
+          event_type?: string
+          external_id?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
+          funnel_stage?: string | null
+          gclid?: string | null
+          id?: string
+          ingested_by?: string
+          intent_tier?: number | null
+          lead_id?: string | null
+          lead_score?: number | null
+          metadata?: Json
+          page_path?: string | null
+          session_id?: string | null
+          source_system?: string
+          source_tool?: string | null
+          traffic_medium?: string | null
+          traffic_source?: string | null
+          user_data?: Json | null
+        }
+        Update: {
+          campaign_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          event_id?: string
+          event_name?: string
+          event_time?: string
+          event_type?: string
+          external_id?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
+          funnel_stage?: string | null
+          gclid?: string | null
+          id?: string
+          ingested_by?: string
+          intent_tier?: number | null
+          lead_id?: string | null
+          lead_score?: number | null
+          metadata?: Json
+          page_path?: string | null
+          session_id?: string | null
+          source_system?: string
+          source_tool?: string | null
+          traffic_medium?: string | null
+          traffic_source?: string | null
+          user_data?: Json | null
+        }
+        Relationships: []
+      }
       wm_events: {
         Row: {
           created_at: string
