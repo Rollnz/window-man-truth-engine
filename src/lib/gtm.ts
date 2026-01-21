@@ -242,7 +242,10 @@ export const trackConsultationBooked = async (params: ConsultationParams) => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Track lead capture (email submitted) - legacy signature
+ * Track lead capture (email submitted) - PHASE 2 DEDUPLICATION
+ * 
+ * CRITICAL: This must fire ONLY after Supabase confirms insert success.
+ * Includes event_id and external_id for browser + server deduplication.
  */
 export const trackLeadCapture = (params: {
   sourceTool: SourceTool;
@@ -251,13 +254,38 @@ export const trackLeadCapture = (params: {
   hasPhone?: boolean;
   leadId?: string;
 }) => {
+  // PHASE 2 REQUIREMENT: leadId is mandatory for deduplication
+  if (!params.leadId) {
+    console.error('[GTM] trackLeadCapture: leadId is required for deduplication');
+    return;
+  }
+
+  // Push the canonical lead_captured event with deduplication parameters
   trackEvent('lead_captured', {
+    // DEDUPLICATION (Phase 2 - Non-negotiable)
+    event_id: params.leadId,           // Deduplication key for browser + server
+    external_id: params.leadId,        // Facebook CAPI external_id
+    lead_source: params.sourceTool,    // Tool or page identifier
+    content_name: params.sourceTool,   // Funnel name for attribution
+    
+    // User data for Facebook EMQ matching
+    user_data: {
+      external_id: params.leadId,      // CRM anchor
+    },
+    
+    // Legacy fields (for backward compatibility)
     source_tool: params.sourceTool,
     email_domain: params.email.split('@')[1] || 'unknown',
     lead_score: params.leadScore || 0,
     has_phone: params.hasPhone || false,
     conversion_type: 'lead',
     lead_id: params.leadId,
+  });
+  
+  console.log('[GTM] lead_captured event pushed with deduplication:', {
+    event_id: params.leadId,
+    external_id: params.leadId,
+    lead_source: params.sourceTool,
   });
 };
 
