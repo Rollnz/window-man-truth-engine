@@ -133,17 +133,27 @@ Deno.serve(async (req) => {
         countQuery = countQuery.is("lead_id", null);
       }
 
-      const { count: totalCount } = await countQuery;
+      const { count: totalCount, error: countError } = await countQuery;
+      
+      if (countError) {
+        console.error("[admin-quotes] Count query error:", countError);
+        throw new Error("Failed to count quote files");
+      }
 
       // Fetch lead info for linked quotes
       const leadIds = [...new Set((quoteFiles || []).filter(q => q.lead_id).map(q => q.lead_id))];
       let leadMap: Record<string, { name: string | null; email: string; phone: string | null }> = {};
 
       if (leadIds.length > 0) {
-        const { data: leads } = await supabase
+        const { data: leads, error: leadsError } = await supabase
           .from("leads")
           .select("id, name, email, phone")
           .in("id", leadIds);
+
+        if (leadsError) {
+          console.error("[admin-quotes] Leads query error:", leadsError);
+          throw new Error("Failed to fetch leads data");
+        }
 
         if (leads) {
           leadMap = leads.reduce((acc, lead) => {
