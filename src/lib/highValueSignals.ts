@@ -147,12 +147,26 @@ export async function logHighValueSignal(params: LogSignalParams): Promise<void>
       ingested_by: 'high-value-signal',
     };
 
-    // Get the log secret from environment
-    const logSecret = import.meta.env.VITE_WM_LOG_SECRET;
+    // Get the log secret from environment (only works if embedded at build time)
+    const logSecret = import.meta.env.VITE_WM_LOG_SECRET as string | undefined;
     
-    if (!logSecret) {
-      console.warn('[highValueSignals] WM_LOG_SECRET not configured, skipping signal:', eventName);
-      return;
+    // Build headers - prefer secret header, fallback to anon key
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (logSecret) {
+      headers['X-WM-LOG-SECRET'] = logSecret;
+    } else {
+      // Fallback: Use Supabase anon key auth pattern
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+      if (anonKey) {
+        headers['apikey'] = anonKey;
+        headers['Authorization'] = `Bearer ${anonKey}`;
+      } else {
+        console.warn('[highValueSignals] No auth available, skipping signal:', eventName);
+        return;
+      }
     }
 
     // Send to log-event with keepalive for reliability on page unload
@@ -160,10 +174,7 @@ export async function logHighValueSignal(params: LogSignalParams): Promise<void>
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/log-event`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-WM-LOG-SECRET': logSecret,
-        },
+        headers,
         body: JSON.stringify(payload),
         keepalive: true,
       }

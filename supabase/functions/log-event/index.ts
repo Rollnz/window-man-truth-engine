@@ -26,19 +26,32 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Secret header gate
+  // Authentication: Accept either secret header OR Supabase anon key
+  // Secret header is for server-to-server, anon key is for frontend signals
   const providedSecret = req.headers.get("x-wm-log-secret");
   const expectedSecret = Deno.env.get("WM_LOG_SECRET");
+  const authHeader = req.headers.get("authorization");
+  const apiKeyHeader = req.headers.get("apikey");
+  const expectedAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
   
-  if (!expectedSecret) {
-    console.error("[log-event] WM_LOG_SECRET not configured");
-    return new Response(JSON.stringify({ error: "Server misconfigured" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+  // Check secret header auth (server-to-server)
+  const secretValid = expectedSecret && providedSecret && providedSecret === expectedSecret;
+  
+  // Check anon key auth (frontend signals via Supabase client pattern)
+  const anonKeyValid = expectedAnonKey && (
+    apiKeyHeader === expectedAnonKey ||
+    authHeader === `Bearer ${expectedAnonKey}`
+  );
+  
+  if (!secretValid && !anonKeyValid) {
+    // Log which auth methods were attempted for debugging
+    console.warn("[log-event] Auth failed:", {
+      hasSecretHeader: !!providedSecret,
+      hasApiKey: !!apiKeyHeader,
+      hasAuthHeader: !!authHeader,
+      secretConfigured: !!expectedSecret,
+      anonKeyConfigured: !!expectedAnonKey,
     });
-  }
-  
-  if (!providedSecret || providedSecret !== expectedSecret) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
