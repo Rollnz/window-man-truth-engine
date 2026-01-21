@@ -75,14 +75,14 @@ export function CaseFileCard({
 
         {/* Intel Section */}
         <div className="bg-background/50 border border-border/30 rounded p-4 mb-4">
-          <div className="text-xs font-mono tracking-widest mb-3 text-black">
+          <div className="text-xs font-mono tracking-widest mb-3 text-foreground">
             THE INTEL
           </div>
 
           <div className="space-y-2 text-sm font-mono">
             {/* Contractor - Redacted */}
             <div className="flex justify-between">
-              <span className="text-black">Contractor:</span>
+              <span className="text-foreground">Contractor:</span>
               <span className="bg-muted-foreground/80 text-transparent select-none px-8 rounded">
                 REDACTED
               </span>
@@ -91,15 +91,15 @@ export function CaseFileCard({
             {/* Type 1: Defeated Quote */}
             {data.originalQuote && <>
                 <div className="flex justify-between">
-                  <span className="text-black">Original Quote:</span>
+                  <span className="text-foreground">Original Quote:</span>
                   <span className="text-primary">${data.originalQuote.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-black">Bloat Detected:</span>
+                  <span className="text-foreground">Bloat Detected:</span>
                   <span className="text-red-400">-${data.bloatDetected?.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between border-t border-border/30 pt-2 mt-2">
-                  <span className="text-black">Window Man Price:</span>
+                  <span className="text-foreground">Window Man Price:</span>
                   <span className="text-primary font-bold">${data.finalPrice?.toLocaleString()}</span>
                 </div>
               </>}
@@ -107,15 +107,15 @@ export function CaseFileCard({
             {/* Type 2: Upgraded Specs */}
             {data.competitorSpec && <>
                 <div className="flex justify-between">
-                  <span className="text-black">Competitor Spec:</span>
+                  <span className="text-foreground">Competitor Spec:</span>
                   <span className="text-red-400 line-through">{data.competitorSpec}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-black">Window Man Spec:</span>
+                  <span className="text-foreground">Window Man Spec:</span>
                   <span className="text-primary">{data.windowManSpec}</span>
                 </div>
                 <div className="flex justify-between border-t border-border/30 pt-2 mt-2">
-                  <span className="text-black">Savings:</span>
+                  <span className="text-foreground">Savings:</span>
                   <span className="text-primary font-bold">${data.savings?.toLocaleString()}</span>
                 </div>
               </>}
@@ -123,15 +123,15 @@ export function CaseFileCard({
             {/* Type 3: Validated Quote */}
             {data.riskAnalysis && <>
                 <div className="flex justify-between">
-                  <span className="text-black">Risk Analysis:</span>
+                  <span className="text-foreground">Risk Analysis:</span>
                   <span className="text-green-400">{data.riskAnalysis}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-black">Price Check:</span>
+                  <span className="text-foreground">Price Check:</span>
                   <span className="text-green-400">{data.priceCheck}</span>
                 </div>
                 <div className="flex justify-between border-t border-border/30 pt-2 mt-2">
-                  <span className="text-black">Outcome:</span>
+                  <span className="text-foreground">Outcome:</span>
                   <span className="text-green-400 font-bold">{data.outcome}</span>
                 </div>
               </>}
