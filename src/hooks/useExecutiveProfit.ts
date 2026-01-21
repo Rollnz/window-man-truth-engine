@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { track } from '@/lib/tracking';
@@ -102,8 +102,22 @@ export function useExecutiveProfit({
   const [data, setData] = useState<ExecutiveData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Request deduplication: abort previous request when new one starts
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
 
   const fetchData = useCallback(async () => {
+    // Abort any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const currentRequestId = ++requestIdRef.current;
+
     try {
       setIsLoading(true);
       setError(null);
@@ -126,7 +140,13 @@ export function useExecutiveProfit({
           Authorization: `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
       });
+
+      // Check if this request is still current
+      if (currentRequestId !== requestIdRef.current) {
+        return; // Stale request, ignore result
+      }
 
       const result: ExecutiveResponse = await res.json();
 
@@ -150,16 +170,34 @@ export function useExecutiveProfit({
         });
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load executive data';
-      setError(message);
-      console.error('[useExecutiveProfit] Error:', err);
+      // Ignore abort errors
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+      
+      // Only update state if this is still the current request
+      if (currentRequestId === requestIdRef.current) {
+        const message = err instanceof Error ? err.message : 'Failed to load executive data';
+        setError(message);
+        console.error('[useExecutiveProfit] Error:', err);
+      }
     } finally {
-      setIsLoading(false);
+      // Only update loading state if this is still the current request
+      if (currentRequestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [startDate, endDate, groupBy, basis]);
 
   useEffect(() => {
     fetchData();
+    
+    // Cleanup: abort on unmount
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchData]);
 
   return {

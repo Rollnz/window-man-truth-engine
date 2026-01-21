@@ -323,16 +323,16 @@ serve(async (req) => {
     // ===== Group revenue/profit by platform or campaign =====
     type GroupData = {
       spend: number;
-      matchedSpend: number;
       revenue: number;
       profit: number;
       deals: number;
       leads: number;
+      hasSpendData: boolean; // Track if this group has spend data for match coverage
     };
 
     const groupedData = new Map<string, GroupData>();
 
-    // Initialize with spend data
+    // Initialize with spend data - track which groups have spend
     adSpend.forEach((row) => {
       let groupKey: string;
       if (groupBy === "campaign") {
@@ -343,47 +343,41 @@ serve(async (req) => {
 
       const existing = groupedData.get(groupKey) || {
         spend: 0,
-        matchedSpend: 0,
         revenue: 0,
         profit: 0,
         deals: 0,
         leads: 0,
+        hasSpendData: true,
       };
       existing.spend += Number(row.spend || 0);
+      existing.hasSpendData = true;
       groupedData.set(groupKey, existing);
     });
 
     // Aggregate revenue/profit from deals
+    // Track matched revenue = revenue from deals whose group has spend data
     let totalMatchedRevenue = 0;
-    let totalMatchedSpend = 0;
 
     (deals || []).forEach((deal) => {
       const lead = leadMap.get(deal.wm_lead_id);
       if (!lead) return;
 
       let groupKey: string;
-      let spendMatchKey: string | null = null;
 
       if (groupBy === "campaign") {
         const normalizedCampaign = normalizeCampaign(lead.utm_campaign);
         groupKey = normalizedCampaign || "unattributed";
-
-        // Try to match to spend campaign
-        if (normalizedCampaign && spendCampaignNormMap.has(normalizedCampaign)) {
-          spendMatchKey = normalizedCampaign;
-        }
       } else {
         groupKey = derivePlatform(lead);
-        spendMatchKey = groupKey;
       }
 
       const existing = groupedData.get(groupKey) || {
         spend: 0,
-        matchedSpend: 0,
         revenue: 0,
         profit: 0,
         deals: 0,
         leads: 0,
+        hasSpendData: false,
       };
 
       const revenue = Number(deal.gross_revenue || 0);
@@ -393,11 +387,9 @@ serve(async (req) => {
       existing.profit += profit;
       existing.deals += 1;
 
-      // Track matched spend (for match coverage calculation)
-      if (spendMatchKey && existing.spend > 0) {
+      // If this group has spend data, the revenue is "matched"
+      if (existing.hasSpendData && existing.spend > 0) {
         totalMatchedRevenue += revenue;
-        totalMatchedSpend += existing.spend;
-        existing.matchedSpend = existing.spend;
       }
 
       groupedData.set(groupKey, existing);
@@ -414,14 +406,22 @@ serve(async (req) => {
 
       const existing = groupedData.get(groupKey) || {
         spend: 0,
-        matchedSpend: 0,
         revenue: 0,
         profit: 0,
         deals: 0,
         leads: 0,
+        hasSpendData: false,
       };
       existing.leads += 1;
       groupedData.set(groupKey, existing);
+    });
+
+    // Calculate matched spend = spend from groups that have revenue
+    let totalMatchedSpend = 0;
+    groupedData.forEach((data) => {
+      if (data.hasSpendData && data.revenue > 0) {
+        totalMatchedSpend += data.spend;
+      }
     });
 
     // ===== Build rows array =====

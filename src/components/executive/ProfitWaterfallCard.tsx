@@ -11,7 +11,8 @@ interface WaterfallLineProps {
   isHighlight?: boolean;
 }
 
-function WaterfallLine({ label, value, isSubtraction, isTotal, isHighlight }: WaterfallLineProps) {
+// Separated as a plain function to avoid forwardRef warning
+const WaterfallLine = ({ label, value, isSubtraction, isTotal, isHighlight }: WaterfallLineProps) => {
   const formattedValue = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -44,7 +45,7 @@ function WaterfallLine({ label, value, isSubtraction, isTotal, isHighlight }: Wa
       </span>
     </div>
   );
-}
+};
 
 interface ProfitWaterfallCardProps {
   waterfall: ExecutiveWaterfall | null;
