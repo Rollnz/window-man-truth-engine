@@ -119,7 +119,10 @@ serve(async (req) => {
     const sessionIds = [...new Set((events || []).map(e => e.session_id))];
     
     // Fetch wm_leads data for these sessions (LEFT JOIN equivalent)
+    // Returns both wm_lead_id (canonical) and lead_id (public) for routing
     let leadsMap: Record<string, {
+      wm_lead_id: string;  // Canonical admin ID (wm_leads.id)
+      lead_id: string | null;  // Public lead reference (leads.id)
       first_name: string | null;
       last_name: string | null;
       email: string;
@@ -131,7 +134,7 @@ serve(async (req) => {
     if (sessionIds.length > 0) {
       const { data: leadsData, error: leadsError } = await supabaseAdmin
         .from('wm_leads')
-        .select('original_session_id, first_name, last_name, email, phone, engagement_score, lead_quality')
+        .select('id, lead_id, original_session_id, first_name, last_name, email, phone, engagement_score, lead_quality')
         .in('original_session_id', sessionIds);
       
       if (leadsError) {
@@ -143,6 +146,8 @@ serve(async (req) => {
         for (const lead of leadsData) {
           if (lead.original_session_id) {
             leadsMap[lead.original_session_id] = {
+              wm_lead_id: lead.id,  // Canonical admin routing ID
+              lead_id: lead.lead_id,  // Public leads.id reference
               first_name: lead.first_name,
               last_name: lead.last_name,
               email: lead.email,
@@ -185,12 +190,16 @@ serve(async (req) => {
     }
 
     // Enrich events with lead and session data
+    // Always include both wm_lead_id (canonical) and lead_id (public) for routing
     const enrichedEvents = (events || []).map(event => {
       const leadInfo = leadsMap[event.session_id] || null;
       const sessionInfo = sessionsMap[event.session_id] || null;
       
       return {
         ...event,
+        // === CANONICAL ID FIELDS FOR ROUTING ===
+        wm_lead_id: leadInfo?.wm_lead_id || null,  // Use for /admin/leads/:id routing
+        lead_id: leadInfo?.lead_id || null,  // Public leads.id reference
         // Lead info (from wm_leads)
         lead_first_name: leadInfo?.first_name || null,
         lead_last_name: leadInfo?.last_name || null,

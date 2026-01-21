@@ -127,6 +127,7 @@ serve(async (req) => {
         .from('wm_leads')
         .select(`
           id, 
+          lead_id,
           first_name, 
           last_name, 
           email, 
@@ -152,6 +153,7 @@ serve(async (req) => {
     }
 
     // Enrich deals with lead data and derived platform
+    // Always include both wm_lead_id (canonical) and lead_id (public) for routing
     const enrichedDeals = (deals || []).map(deal => {
       const lead = leadsMap[deal.wm_lead_id] || {};
       const displayName = lead.first_name || lead.last_name 
@@ -160,6 +162,9 @@ serve(async (req) => {
       
       return {
         ...deal,
+        // === CANONICAL ID FIELDS FOR ROUTING ===
+        // wm_lead_id already present from deals table - this is the canonical admin ID
+        lead_id: lead.lead_id || null,  // Public leads.id reference
         lead_name: displayName,
         lead_email: lead.email || null,
         lead_phone: lead.phone || null,
