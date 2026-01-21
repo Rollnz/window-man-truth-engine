@@ -822,6 +822,42 @@ Deno.serve(async (req) => {
         }
       }
 
+      // PHASE 4: Write voice_estimate_confirmed to wm_event_log for attribution
+      // Only for completed calls with positive/neutral sentiment
+      if (mappedStatus === "completed" && existingLog.lead_id) {
+        const shouldLogSignal = sentiment === "positive" || sentiment === "neutral" || !sentiment;
+        
+        if (shouldLogSignal) {
+          const { error: signalError } = await supabase.from("wm_event_log").insert({
+            event_id: crypto.randomUUID(),
+            event_name: "voice_estimate_confirmed",
+            event_type: "signal",
+            event_time: new Date().toISOString(),
+            lead_id: existingLog.lead_id,
+            session_id: wmLead?.original_session_id || null,
+            source_tool: existingLog.source_tool || "voice-ai",
+            page_path: "/voice-call",
+            funnel_stage: "decision",
+            intent_tier: 5,
+            metadata: {
+              call_duration_sec: parsedDuration,
+              call_sentiment: sentiment,
+              provider_call_id: validPayload.call_id,
+              has_recording: !!recordingUrl,
+              agent_id: existingLog.agent_id,
+            },
+            source_system: "webhook",
+            ingested_by: "phone-call-outcome",
+          });
+
+          if (signalError) {
+            console.error("[phone-call-outcome] Failed to write voice_estimate_confirmed signal:", signalError.message);
+          } else {
+            console.log("[phone-call-outcome] voice_estimate_confirmed signal logged for lead:", existingLog.lead_id);
+          }
+        }
+      }
+
       timelineWritten = noteWritten || eventWritten;
     }
 
