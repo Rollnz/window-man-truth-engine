@@ -163,9 +163,24 @@ function checkListInvariants(json: unknown): InvariantResult[] {
   
   // === WM_LEAD_ID INVARIANT ===
   // For collections with lead-related items, verify wm_lead_id is present for routing
-  if (isArray && (foundCollection === "quotes" || foundCollection === "items")) {
+  // This applies to: quotes, items (global search), events (attribution)
+  if (isArray && (foundCollection === "quotes" || foundCollection === "items" || foundCollection === "events")) {
     const arr = collectionValue as Record<string, unknown>[];
-    const itemsWithLeadLink = arr.filter(item => item.lead_id !== null && item.lead_id !== undefined);
+    
+    // For quotes/items: check items that have lead_id
+    // For events: check items that have lead contact info (lead_first_name, lead_email, etc.)
+    let itemsWithLeadLink: Record<string, unknown>[] = [];
+    
+    if (foundCollection === "events") {
+      // Attribution events: if we have lead info, we must have wm_lead_id
+      itemsWithLeadLink = arr.filter(item => 
+        item.lead_first_name || item.lead_last_name || item.lead_email
+      );
+    } else {
+      // Quotes/items: if we have lead_id, we must have wm_lead_id
+      itemsWithLeadLink = arr.filter(item => item.lead_id !== null && item.lead_id !== undefined);
+    }
+    
     if (itemsWithLeadLink.length > 0) {
       const allHaveWmLeadId = itemsWithLeadLink.every(item => 
         typeof item.wm_lead_id === 'string' && 
@@ -176,7 +191,26 @@ function checkListInvariants(json: unknown): InvariantResult[] {
         passed: allHaveWmLeadId,
         detail: allHaveWmLeadId 
           ? `All ${itemsWithLeadLink.length} linked items have valid wm_lead_id` 
-          : "Some items with lead_id missing valid wm_lead_id for routing"
+          : `Some ${foundCollection} items with lead info missing valid wm_lead_id for routing`
+      });
+    }
+  }
+  
+  // === DEALS WM_LEAD_ID INVARIANT ===
+  // For recentDeals in admin-revenue, verify wm_lead_id is present
+  if ("recentDeals" in obj && Array.isArray(obj.recentDeals)) {
+    const deals = obj.recentDeals as Record<string, unknown>[];
+    if (deals.length > 0) {
+      const allHaveWmLeadId = deals.every(deal => 
+        typeof deal.wm_lead_id === 'string' && 
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(deal.wm_lead_id as string)
+      );
+      results.push({
+        name: "deals_wm_lead_id_present",
+        passed: allHaveWmLeadId,
+        detail: allHaveWmLeadId 
+          ? `All ${deals.length} deals have valid wm_lead_id` 
+          : "Some deals missing valid wm_lead_id for routing"
       });
     }
   }

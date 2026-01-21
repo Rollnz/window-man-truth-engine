@@ -15,6 +15,9 @@ export interface EnrichedAttributionEvent {
   page_path: string | null;
   created_at: string;
   session_id: string;
+  // === CANONICAL ID FIELDS FOR ROUTING ===
+  wm_lead_id: string | null;  // Canonical admin ID (wm_leads.id) - use for routing
+  lead_id: string | null;  // Public lead reference (leads.id)
   // Enriched lead data
   lead_first_name: string | null;
   lead_last_name: string | null;
@@ -178,9 +181,9 @@ export function AttributionEventsTable({
           </TableHeader>
           <TableBody>
             {events.map((event) => {
-              const leadId = event.event_data?.lead_id as string | undefined;
-              const wmLeadId = event.event_data?.wm_lead_id as string | undefined;
-              const linkableLeadId = wmLeadId || leadId;
+              // === CANONICAL ID ROUTING ===
+              // Prefer wm_lead_id (canonical admin ID), fallback to event_data for legacy
+              const canonicalLeadId = event.wm_lead_id || (event.event_data?.wm_lead_id as string | undefined);
               const hasLead = !!(event.lead_first_name || event.lead_last_name || event.lead_email);
               const contactName = hasLead 
                 ? `${event.lead_first_name || ''} ${event.lead_last_name || ''}`.trim() || event.lead_email?.split('@')[0]
@@ -206,9 +209,9 @@ export function AttributionEventsTable({
                   <TableCell>
                     {hasLead ? (
                       <div className="space-y-0.5">
-                        {linkableLeadId ? (
+                        {canonicalLeadId ? (
                           <Link 
-                            to={`/admin/leads/${linkableLeadId}`}
+                            to={`/admin/leads/${canonicalLeadId}`}
                             className="font-medium text-sm text-primary hover:underline flex items-center gap-1"
                           >
                             {contactName}
