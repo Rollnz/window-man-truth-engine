@@ -32,31 +32,43 @@ Deno.serve(async (req) => {
   const expectedSecret = Deno.env.get("WM_LOG_SECRET");
   const authHeader = req.headers.get("authorization");
   const apiKeyHeader = req.headers.get("apikey");
+  
+  // Check multiple anon key sources (Lovable Cloud uses JWT format, standard Supabase uses sb_publishable_)
   const expectedAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  // Hardcode the known project anon key as fallback for Lovable Cloud
+  const knownAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6dWxxZXhsZ2F2Z2djeWl6YWJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwODQwNjgsImV4cCI6MjA4MjY2MDA2OH0.QvwUD5ScBk2DrD8yKiS3NBSeOuGAikQ3XT5TKn6Hf5U";
   
   // Check secret header auth (server-to-server)
   const secretValid = expectedSecret && providedSecret && providedSecret === expectedSecret;
   
   // Check anon key auth (frontend signals via Supabase client pattern)
-  const anonKeyValid = expectedAnonKey && (
-    apiKeyHeader === expectedAnonKey ||
-    authHeader === `Bearer ${expectedAnonKey}`
+  // Accept either the env var anon key OR the known project anon key
+  const anonKeyValid = (
+    (expectedAnonKey && (apiKeyHeader === expectedAnonKey || authHeader === `Bearer ${expectedAnonKey}`)) ||
+    (apiKeyHeader === knownAnonKey || authHeader === `Bearer ${knownAnonKey}`)
   );
   
   if (!secretValid && !anonKeyValid) {
-    // Log which auth methods were attempted for debugging
-    console.warn("[log-event] Auth failed:", {
+    // Log which auth methods were attempted for debugging (v2)
+    console.warn("[log-event] Auth failed v2:", {
       hasSecretHeader: !!providedSecret,
       hasApiKey: !!apiKeyHeader,
       hasAuthHeader: !!authHeader,
-      secretConfigured: !!expectedSecret,
-      anonKeyConfigured: !!expectedAnonKey,
+      // Debug: show actual values
+      apiKeyPrefix: apiKeyHeader?.slice(0, 30),
+      authHeaderPrefix: authHeader?.slice(0, 50),
+      expectedKeyPrefix: expectedAnonKey?.slice(0, 30),
+      knownKeyPrefix: knownAnonKey.slice(0, 30),
+      // Check if auth header matches known key
+      authMatchesKnown: authHeader === `Bearer ${knownAnonKey}`,
     });
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  
+  console.log("[log-event] Auth succeeded via:", secretValid ? "secret" : "anon-key");
 
   try {
     const body = await req.json();
