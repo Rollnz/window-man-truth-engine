@@ -129,10 +129,15 @@ serve(async (req) => {
     }> = {};
 
     if (sessionIds.length > 0) {
-      const { data: leadsData } = await supabaseAdmin
+      const { data: leadsData, error: leadsError } = await supabaseAdmin
         .from('wm_leads')
         .select('original_session_id, first_name, last_name, email, phone, engagement_score, lead_quality')
         .in('original_session_id', sessionIds);
+      
+      if (leadsError) {
+        console.error('[admin-attribution] Leads query error:', leadsError);
+        throw new Error('Failed to fetch leads data');
+      }
       
       if (leadsData) {
         for (const lead of leadsData) {
@@ -158,10 +163,15 @@ serve(async (req) => {
     }> = {};
 
     if (sessionIds.length > 0) {
-      const { data: sessionsData } = await supabaseAdmin
+      const { data: sessionsData, error: sessionsError } = await supabaseAdmin
         .from('wm_sessions')
         .select('id, utm_source, utm_medium, utm_campaign')
         .in('id', sessionIds);
+      
+      if (sessionsError) {
+        console.error('[admin-attribution] Sessions query error:', sessionsError);
+        throw new Error('Failed to fetch sessions data');
+      }
       
       if (sessionsData) {
         for (const session of sessionsData) {
