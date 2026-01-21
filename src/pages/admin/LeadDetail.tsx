@@ -11,6 +11,7 @@ import { LeadTimeline } from '@/components/lead-detail/LeadTimeline';
 import { NotesWidget } from '@/components/lead-detail/NotesWidget';
 import { FilesWidget } from '@/components/lead-detail/FilesWidget';
 import { DispatchWindowManButton } from '@/components/lead-detail/DispatchWindowManButton';
+import { FinancialsSection } from '@/components/lead-detail/FinancialsSection';
 import { ConversionPathTimeline } from '@/components/lead-detail/ConversionPathTimeline';
 import { ProjectedRevenueCard } from '@/components/lead-detail/ProjectedRevenueCard';
 import { IntentSignalsSummary } from '@/components/lead-detail/IntentSignalsSummary';
@@ -174,6 +175,7 @@ function LeadDetailContent() {
             <NotesWidget onAddNote={addNote} />
             <FilesWidget files={files} />
             <DispatchWindowManButton lead={lead} pendingCalls={pendingCalls} onSuccess={refetch} />
+            <FinancialsSection wmLeadId={lead.id} />
           </aside>
         </div>
       </main>
