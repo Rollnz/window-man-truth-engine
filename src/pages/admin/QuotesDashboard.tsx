@@ -106,11 +106,6 @@ export default function QuotesDashboard() {
       params.set('limit', ITEMS_PER_PAGE.toString());
       params.set('offset', offset.toString());
 
-      const response = await supabase.functions.invoke('admin-quotes', {
-        body: null,
-        headers: {},
-      });
-
       // Use fetch directly to pass query params
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-quotes?${params.toString()}`;
       const fetchResponse = await fetch(url, {
