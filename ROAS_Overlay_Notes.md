@@ -72,11 +72,12 @@ Platform is derived from lead attribution fields using this priority:
 
 ## Campaign Attribution Logic
 
-Campaign is derived using this priority:
+Campaign is derived using `utm_campaign` from `wm_leads`:
 
-1. `last_non_direct_utm_campaign` (if present)
-2. `utm_campaign` (fallback)
-3. `null` → displays as "Unknown"
+1. `utm_campaign` (primary source - there is NO `last_non_direct_utm_campaign` column)
+2. `null` → displays as "Unknown"
+
+**Note**: Unlike platform attribution, campaign attribution does not have a "last non-direct" variant. The `wm_leads` table only stores `utm_campaign` directly.
 
 ---
 
