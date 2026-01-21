@@ -98,3 +98,6 @@ verify_jwt = false
 
 [functions.admin-revenue]
 verify_jwt = false
+
+[functions.admin-attribution-roas]
+verify_jwt = false

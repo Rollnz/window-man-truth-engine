@@ -7,7 +7,28 @@ const corsHeaders = {
 };
 
 // Admin whitelist (case-insensitive)
-const ADMIN_EMAILS = ['vansiclenp@gmail.com', 'mongoloyd@protonmail.com'];
+const ADMIN_EMAILS = ['vansiclenp@gmail.com', 'mongoloyd@protonmail.com', 'admin@windowman.com', 'support@windowman.com'];
+
+// Helper: Derive platform from lead attribution fields
+function derivePlatform(lead: {
+  last_non_direct_gclid?: string | null;
+  last_non_direct_fbclid?: string | null;
+  gclid?: string | null;
+  fbclid?: string | null;
+  last_non_direct_utm_source?: string | null;
+  utm_source?: string | null;
+}): 'google' | 'meta' | 'other' {
+  if (lead.last_non_direct_gclid) return 'google';
+  if (lead.last_non_direct_fbclid) return 'meta';
+  if (lead.gclid) return 'google';
+  if (lead.fbclid) return 'meta';
+  
+  const utmSource = (lead.last_non_direct_utm_source || lead.utm_source || '').toLowerCase();
+  if (utmSource.includes('google')) return 'google';
+  if (utmSource.includes('facebook') || utmSource.includes('instagram') || utmSource.includes('meta')) return 'meta';
+  
+  return 'other';
+}
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -54,10 +75,17 @@ serve(async (req) => {
       });
     }
 
-    // Global-only mode: Fetch all deals with lead data for KPIs and recent deals list
-    
-    // Fetch all deals with wm_leads join
-    const { data: deals, error: dealsError } = await supabase
+    // Parse query params for filtering
+    const url = new URL(req.url);
+    const platformFilter = url.searchParams.get('platform');
+    const utmCampaignFilter = url.searchParams.get('utm_campaign');
+    const startDate = url.searchParams.get('start_date');
+    const endDate = url.searchParams.get('end_date');
+
+    console.log(`[admin-revenue] Filters: platform=${platformFilter}, campaign=${utmCampaignFilter}, start=${startDate}, end=${endDate}`);
+
+    // Build deals query with date filters
+    let dealsQuery = supabase
       .from('deals')
       .select(`
         id,
@@ -77,18 +105,42 @@ serve(async (req) => {
         updated_at
       `)
       .order('close_date', { ascending: false, nullsFirst: false })
-      .limit(100);
+      .limit(500);
 
+    // Apply date filters to deals (by close_date)
+    if (startDate) {
+      dealsQuery = dealsQuery.gte('close_date', startDate);
+    }
+    if (endDate) {
+      dealsQuery = dealsQuery.lte('close_date', endDate);
+    }
+
+    const { data: deals, error: dealsError } = await dealsQuery;
     if (dealsError) throw dealsError;
 
-    // Fetch wm_leads for each deal
+    // Fetch wm_leads for each deal (with attribution fields)
     const leadIds = [...new Set((deals || []).map(d => d.wm_lead_id))];
     let leadsMap: Record<string, any> = {};
     
     if (leadIds.length > 0) {
       const { data: leads } = await supabase
         .from('wm_leads')
-        .select('id, first_name, last_name, email, phone, utm_campaign, utm_source, original_source_tool')
+        .select(`
+          id, 
+          first_name, 
+          last_name, 
+          email, 
+          phone, 
+          utm_campaign, 
+          utm_source, 
+          original_source_tool,
+          gclid,
+          fbclid,
+          last_non_direct_gclid,
+          last_non_direct_fbclid,
+          last_non_direct_utm_source,
+          last_non_direct_utm_campaign
+        `)
         .in('id', leadIds);
       
       if (leads) {
@@ -96,8 +148,42 @@ serve(async (req) => {
       }
     }
 
-    // Calculate KPIs from won deals only
-    const wonDeals = (deals || []).filter(d => d.outcome === 'won');
+    // Enrich deals with lead data and derived platform
+    const enrichedDeals = (deals || []).map(deal => {
+      const lead = leadsMap[deal.wm_lead_id] || {};
+      const displayName = lead.first_name || lead.last_name 
+        ? `${lead.first_name || ''} ${lead.last_name || ''}`.trim()
+        : (lead.email || 'Unknown');
+      
+      return {
+        ...deal,
+        lead_name: displayName,
+        lead_email: lead.email || null,
+        lead_phone: lead.phone || null,
+        utm_campaign: lead.last_non_direct_utm_campaign || lead.utm_campaign || null,
+        utm_source: lead.last_non_direct_utm_source || lead.utm_source || null,
+        source_tool: lead.original_source_tool || null,
+        derived_platform: derivePlatform(lead),
+      };
+    });
+
+    // Apply platform and campaign filters (post-join filtering)
+    let filteredDeals = enrichedDeals;
+    
+    if (platformFilter) {
+      filteredDeals = filteredDeals.filter(d => d.derived_platform === platformFilter);
+    }
+    
+    if (utmCampaignFilter) {
+      const normalizedFilter = utmCampaignFilter.toLowerCase().trim();
+      filteredDeals = filteredDeals.filter(d => {
+        const campaign = (d.utm_campaign || '').toLowerCase().trim();
+        return campaign === normalizedFilter || campaign.includes(normalizedFilter);
+      });
+    }
+
+    // Calculate KPIs from won deals only (after filtering)
+    const wonDeals = filteredDeals.filter(d => d.outcome === 'won');
     const dealsWon = wonDeals.length;
     const totalRevenue = wonDeals.reduce((sum, d) => sum + (parseFloat(d.gross_revenue) || 0), 0);
     const totalProfit = wonDeals.reduce((sum, d) => sum + (parseFloat(d.net_profit) || 0), 0);
@@ -110,27 +196,20 @@ serve(async (req) => {
       avgDealSize,
     };
 
-    // Enrich deals with lead data for recent deals table
-    const recentDeals = (deals || []).slice(0, 50).map(deal => {
-      const lead = leadsMap[deal.wm_lead_id] || {};
-      const displayName = lead.first_name || lead.last_name 
-        ? `${lead.first_name || ''} ${lead.last_name || ''}`.trim()
-        : (lead.email || 'Unknown');
-      
-      return {
-        ...deal,
-        lead_name: displayName,
-        lead_email: lead.email || null,
-        lead_phone: lead.phone || null,
-        utm_campaign: lead.utm_campaign || null,
-        utm_source: lead.utm_source || null,
-        source_tool: lead.original_source_tool || null,
-      };
-    });
+    // Return filtered deals list (limit to 50 for display)
+    const recentDeals = filteredDeals.slice(0, 50);
+
+    console.log(`[admin-revenue] Returning ${recentDeals.length} deals, KPIs: won=${dealsWon}, revenue=${totalRevenue}`);
 
     return new Response(JSON.stringify({
       kpis,
       recentDeals,
+      filters: {
+        platform: platformFilter,
+        utm_campaign: utmCampaignFilter,
+        start_date: startDate,
+        end_date: endDate,
+      },
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

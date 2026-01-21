@@ -25,6 +25,14 @@ export interface DealWithLead {
   utm_source: string | null;
   source_tool: string | null;
   created_at: string;
+  derived_platform?: string;
+}
+
+interface RevenueFilters {
+  platform?: string;
+  utm_campaign?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 interface UseRevenueReturn {
@@ -33,9 +41,10 @@ interface UseRevenueReturn {
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  filters: RevenueFilters;
 }
 
-export function useRevenue(): UseRevenueReturn {
+export function useRevenue(filters: RevenueFilters = {}): UseRevenueReturn {
   const [kpis, setKpis] = useState<RevenueKPIs>({
     dealsWon: 0,
     totalRevenue: 0,
@@ -58,7 +67,16 @@ export function useRevenue(): UseRevenueReturn {
         return;
       }
 
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-revenue`;
+      // Build query params for filtering
+      const params = new URLSearchParams();
+      if (filters.platform) params.set('platform', filters.platform);
+      if (filters.utm_campaign) params.set('utm_campaign', filters.utm_campaign);
+      if (filters.start_date) params.set('start_date', filters.start_date);
+      if (filters.end_date) params.set('end_date', filters.end_date);
+
+      const queryString = params.toString();
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-revenue${queryString ? `?${queryString}` : ''}`;
+      
       const res = await fetch(url, {
         headers: {
           Authorization: `Bearer ${authSession.access_token}`,
@@ -86,7 +104,7 @@ export function useRevenue(): UseRevenueReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, filters.platform, filters.utm_campaign, filters.start_date, filters.end_date]);
 
   useEffect(() => {
     fetchData();
@@ -98,5 +116,6 @@ export function useRevenue(): UseRevenueReturn {
     isLoading,
     error,
     refetch: fetchData,
+    filters,
   };
 }
