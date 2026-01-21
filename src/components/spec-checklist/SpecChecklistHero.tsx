@@ -23,7 +23,7 @@ const SpecChecklistHero: React.FC<SpecChecklistHeroProps> = ({ onCtaClick }) => 
               <span>Pre-Installation Audit System</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground leading-tight">
+            <h1 className="display-h1 text-lift text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground leading-tight">
               {heroData.headline}
             </h1>
 

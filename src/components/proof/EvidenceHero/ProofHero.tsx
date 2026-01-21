@@ -34,7 +34,7 @@ export function ProofHero({ onWatchVoiceAgent, onViewCaseStudies }: ProofHeroPro
           </div>
           
           {/* Main Headline */}
-          <h1 className="wm-reveal wm-stagger-1 text-3xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+          <h1 className="display-h1 text-lift wm-reveal wm-stagger-1 text-3xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
             Real-Time Data.{' '}
             <span className="text-primary">Verified Savings.</span>{' '}
             Homeowner Wins.

@@ -19,7 +19,7 @@ export function QuizHero({ onStart }: QuizHeroProps) {
         </div>
 
         {/* Headline */}
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 leading-tight">
+        <h1 className="display-h1 text-lift text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 leading-tight">
           Is Your Window Quote{' '}
           <span className="text-primary">Fair?</span>
         </h1>

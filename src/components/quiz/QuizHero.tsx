@@ -19,7 +19,7 @@ export function QuizHero({ onStart }: QuizHeroProps) {
         </div>
 
         {/* Main headline */}
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4">
+        <h1 className="display-h1 text-lift text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4">
           The <span className="text-primary text-glow">Window IQ</span> Challenge
         </h1>
 
