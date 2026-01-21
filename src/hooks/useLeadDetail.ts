@@ -158,14 +158,7 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
         return;
       }
 
-      const response = await supabase.functions.invoke('admin-lead-detail', {
-        body: null,
-        headers: {
-          Authorization: `Bearer ${authSession.access_token}`,
-        },
-      });
-
-      // The function uses query params, so we need to call it differently
+      // Use fetch with query params (GET request)
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-lead-detail?id=${leadId}`;
       const res = await fetch(url, {
         headers: {

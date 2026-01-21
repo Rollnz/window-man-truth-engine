@@ -54,18 +54,20 @@ export function LeadDetailPanel({ lead, isOpen, onClose, onUpdate }: LeadDetailP
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
-        const response = await supabase.functions.invoke('admin-attribution', {
-          body: null,
+        // Use fetch with query params (GET) - filter by session on server for efficiency
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-attribution?session_id=${lead.original_session_id}`;
+        const res = await fetch(url, {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
           },
         });
 
-        if (response.data?.events) {
-          const sessionEvents = response.data.events.filter(
-            (e: TimelineEvent) => e.session_id === lead.original_session_id
-          );
-          setEvents(sessionEvents);
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.events) {
+            setEvents(data.events);
+          }
         }
       } catch (error) {
         console.error('Error fetching events:', error);
