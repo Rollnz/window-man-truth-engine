@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_spend_daily: {
+        Row: {
+          account_id: string | null
+          adset_id: string | null
+          adset_name: string | null
+          campaign_id: string | null
+          campaign_name: string | null
+          clicks: number
+          created_at: string
+          id: string
+          impressions: number
+          leads_reported: number
+          platform: Database["public"]["Enums"]["platform_type"]
+          spend: number
+          spend_date: string
+        }
+        Insert: {
+          account_id?: string | null
+          adset_id?: string | null
+          adset_name?: string | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          clicks?: number
+          created_at?: string
+          id?: string
+          impressions?: number
+          leads_reported?: number
+          platform: Database["public"]["Enums"]["platform_type"]
+          spend?: number
+          spend_date: string
+        }
+        Update: {
+          account_id?: string | null
+          adset_id?: string | null
+          adset_name?: string | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          clicks?: number
+          created_at?: string
+          id?: string
+          impressions?: number
+          leads_reported?: number
+          platform?: Database["public"]["Enums"]["platform_type"]
+          spend?: number
+          spend_date?: string
+        }
+        Relationships: []
+      }
       call_agents: {
         Row: {
           agent_id: string
@@ -87,6 +135,75 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deals: {
+        Row: {
+          close_date: string | null
+          cogs: number
+          commissions: number
+          created_at: string
+          gross_revenue: number
+          id: string
+          invoice_id: string | null
+          labor_cost: number
+          net_profit: number | null
+          opportunity_id: string | null
+          other_cost: number
+          outcome: Database["public"]["Enums"]["deal_outcome"]
+          payment_status: Database["public"]["Enums"]["deal_payment_status"]
+          updated_at: string
+          wm_lead_id: string
+        }
+        Insert: {
+          close_date?: string | null
+          cogs?: number
+          commissions?: number
+          created_at?: string
+          gross_revenue?: number
+          id?: string
+          invoice_id?: string | null
+          labor_cost?: number
+          net_profit?: number | null
+          opportunity_id?: string | null
+          other_cost?: number
+          outcome?: Database["public"]["Enums"]["deal_outcome"]
+          payment_status?: Database["public"]["Enums"]["deal_payment_status"]
+          updated_at?: string
+          wm_lead_id: string
+        }
+        Update: {
+          close_date?: string | null
+          cogs?: number
+          commissions?: number
+          created_at?: string
+          gross_revenue?: number
+          id?: string
+          invoice_id?: string | null
+          labor_cost?: number
+          net_profit?: number | null
+          opportunity_id?: string | null
+          other_cost?: number
+          outcome?: Database["public"]["Enums"]["deal_outcome"]
+          payment_status?: Database["public"]["Enums"]["deal_payment_status"]
+          updated_at?: string
+          wm_lead_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_wm_lead_id_fkey"
+            columns: ["wm_lead_id"]
+            isOneToOne: false
+            referencedRelation: "wm_leads"
             referencedColumns: ["id"]
           },
         ]
@@ -359,6 +476,50 @@ export type Database = {
           window_count?: number | null
         }
         Relationships: []
+      }
+      opportunities: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          expected_value: number
+          id: string
+          notes: string | null
+          probability: number
+          stage: Database["public"]["Enums"]["opportunity_stage"]
+          updated_at: string
+          wm_lead_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          expected_value?: number
+          id?: string
+          notes?: string | null
+          probability?: number
+          stage?: Database["public"]["Enums"]["opportunity_stage"]
+          updated_at?: string
+          wm_lead_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          expected_value?: number
+          id?: string
+          notes?: string | null
+          probability?: number
+          stage?: Database["public"]["Enums"]["opportunity_stage"]
+          updated_at?: string
+          wm_lead_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_wm_lead_id_fkey"
+            columns: ["wm_lead_id"]
+            isOneToOne: false
+            referencedRelation: "wm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pending_calls: {
         Row: {
@@ -1020,6 +1181,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      deal_outcome: "won" | "lost"
+      deal_payment_status:
+        | "unpaid"
+        | "deposit_paid"
+        | "paid_in_full"
+        | "refunded"
       lead_status:
         | "new"
         | "qualifying"
@@ -1030,6 +1197,13 @@ export type Database = {
         | "closed_won"
         | "closed_lost"
         | "dead"
+      opportunity_stage:
+        | "new"
+        | "qualifying"
+        | "quoted"
+        | "negotiating"
+        | "won"
+        | "lost"
       pending_call_status:
         | "pending"
         | "processing"
@@ -1047,6 +1221,7 @@ export type Database = {
         | "no_answer"
         | "failed"
         | "canceled"
+      platform_type: "meta" | "google" | "other"
       webhook_correlation_status:
         | "unprocessed"
         | "matched"
@@ -1182,6 +1357,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      deal_outcome: ["won", "lost"],
+      deal_payment_status: [
+        "unpaid",
+        "deposit_paid",
+        "paid_in_full",
+        "refunded",
+      ],
       lead_status: [
         "new",
         "qualifying",
@@ -1192,6 +1374,14 @@ export const Constants = {
         "closed_won",
         "closed_lost",
         "dead",
+      ],
+      opportunity_stage: [
+        "new",
+        "qualifying",
+        "quoted",
+        "negotiating",
+        "won",
+        "lost",
       ],
       pending_call_status: [
         "pending",
@@ -1212,6 +1402,7 @@ export const Constants = {
         "failed",
         "canceled",
       ],
+      platform_type: ["meta", "google", "other"],
       webhook_correlation_status: [
         "unprocessed",
         "matched",
