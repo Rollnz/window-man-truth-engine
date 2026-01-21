@@ -101,3 +101,6 @@ verify_jwt = false
 
 [functions.admin-attribution-roas]
 verify_jwt = false
+
+[functions.admin-smoke-test]
+verify_jwt = false
