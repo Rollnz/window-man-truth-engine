@@ -1,5 +1,5 @@
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, DollarSign, TrendingUp, CheckCircle2, BarChart3 } from 'lucide-react';
+import { ArrowLeft, DollarSign, TrendingUp, CheckCircle2, BarChart3, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,18 +15,41 @@ import { LeadProfitSummary } from '@/components/lead-detail/LeadProfitSummary';
 import { DEAL_PAYMENT_STATUS_CONFIG } from '@/types/profitability';
 import { format } from 'date-fns';
 
+const PLATFORM_LABELS: Record<string, string> = {
+  google: 'Google Ads',
+  meta: 'Meta (FB/IG)',
+  other: 'Other / Organic',
+};
+
 function RevenueContent() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  
   const wmLeadId = searchParams.get('wm_lead_id');
+  const platform = searchParams.get('platform');
+  const utmCampaign = searchParams.get('utm_campaign');
+  const startDate = searchParams.get('start_date');
+  const endDate = searchParams.get('end_date');
 
-  // Global mode
-  const { kpis, recentDeals, isLoading: globalLoading } = useRevenue();
+  // Determine which filters are active
+  const hasFilters = platform || utmCampaign || startDate || endDate;
+
+  // Global mode (with optional filters)
+  const { kpis, recentDeals, isLoading: globalLoading, filters } = useRevenue({
+    platform: platform || undefined,
+    utm_campaign: utmCampaign || undefined,
+    start_date: startDate || undefined,
+    end_date: endDate || undefined,
+  });
   
   // Lead-focused mode
   const leadFinancials = useLeadFinancials(wmLeadId || undefined);
 
   const isLeadFocused = !!wmLeadId;
+
+  const clearFilters = () => {
+    navigate('/admin/revenue');
+  };
 
   if (isLeadFocused) {
     const leadName = recentDeals.find(d => d.wm_lead_id === wmLeadId)?.lead_name || 'Lead';
@@ -80,7 +103,7 @@ function RevenueContent() {
     );
   }
 
-  // Global Revenue View
+  // Global Revenue View (with optional filters)
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card sticky top-0 z-10">
@@ -89,18 +112,48 @@ function RevenueContent() {
             <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
+            <div className="flex-1">
               <AdminBreadcrumb 
                 items={[{ label: 'Command Center', href: '/admin' }]} 
                 currentLabel="Revenue"
               />
               <h1 className="font-semibold mt-1">Revenue Dashboard</h1>
             </div>
+            
+            {hasFilters && (
+              <Button variant="outline" size="sm" onClick={clearFilters} className="gap-2">
+                <X className="h-4 w-4" />
+                Clear Filters
+              </Button>
+            )}
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto p-4 lg:p-6 space-y-6">
+        {/* Active Filters Banner */}
+        {hasFilters && (
+          <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/50 rounded-lg border">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Filtered by:</span>
+            {platform && (
+              <Badge variant="secondary">
+                Platform: {PLATFORM_LABELS[platform] || platform}
+              </Badge>
+            )}
+            {utmCampaign && (
+              <Badge variant="secondary">
+                Campaign: {utmCampaign}
+              </Badge>
+            )}
+            {startDate && endDate && (
+              <Badge variant="secondary">
+                {startDate} to {endDate}
+              </Badge>
+            )}
+          </div>
+        )}
+
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {globalLoading ? (
@@ -157,7 +210,9 @@ function RevenueContent() {
         {/* Recent Deals Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Deals</CardTitle>
+            <CardTitle>
+              {hasFilters ? 'Filtered Deals' : 'Recent Deals'}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {globalLoading ? (
@@ -167,7 +222,9 @@ function RevenueContent() {
                 <Skeleton className="h-10" />
               </div>
             ) : recentDeals.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No deals yet</p>
+              <p className="text-center text-muted-foreground py-8">
+                {hasFilters ? 'No deals match these filters' : 'No deals yet'}
+              </p>
             ) : (
               <Table>
                 <TableHeader>
