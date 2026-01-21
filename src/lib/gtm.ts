@@ -18,6 +18,8 @@ import type { LeadQuality } from '@/lib/leadQuality';
 import { hasExplicitSubmission, getSubmittedLeadId } from '@/lib/consent';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { generateEventId, isDuplicateEvent, isSemanticDuplicate } from '@/lib/eventDeduplication';
+import { getIntentTier, getToolName, getFunnelStage, getInteractionType } from '@/lib/intentTierMapping';
+import { calculateLeadScore, getRoutingAction, getCRMTags } from '@/lib/leadScoringEngine';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SHA-256 Hashing for Enhanced Conversions (GA4 + Meta CAPI)
@@ -242,11 +244,12 @@ export const trackConsultationBooked = async (params: ConsultationParams) => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Track lead capture (email submitted) - PHASE 2 DEDUPLICATION
+ * Track lead capture (email submitted) - PHASE 2 DEDUPLICATION + PHASE 3 INTENT TIER
  * 
  * CRITICAL: This must fire ONLY after Supabase confirms insert success.
  * Includes event_id and external_id for browser + server deduplication.
  * PHASE 2 REQUIREMENT: Must include email + phone for EMQ ≥ 8.0
+ * PHASE 3 REQUIREMENT: Must include intent tier, funnel stage, interaction type for routing
  */
 export const trackLeadCapture = async (params: {
   sourceTool: SourceTool;
@@ -255,6 +258,9 @@ export const trackLeadCapture = async (params: {
   leadScore?: number;
   hasPhone?: boolean;
   leadId?: string;
+  hasAddress?: boolean;
+  hasProjectDetails?: boolean;
+  hasName?: boolean;
 }) => {
   // PHASE 2 REQUIREMENT: leadId is mandatory for deduplication
   if (!params.leadId) {
@@ -266,36 +272,85 @@ export const trackLeadCapture = async (params: {
   const hashedEmail = await safeHash(params.email);
   const hashedPhone = params.phone ? await hashPhone(params.phone) : undefined;
 
-  // Push the canonical lead_captured event with deduplication parameters
+  // PHASE 3: Get intent tier mapping from lead_source
+  const intentTier = getIntentTier(params.sourceTool);
+  const toolName = getToolName(params.sourceTool);
+  const funnelStage = getFunnelStage(params.sourceTool);
+  const interactionType = getInteractionType(params.sourceTool);
+
+  // PHASE 3: Calculate lead score
+  const leadScoreData = calculateLeadScore({
+    intentTier: intentTier || 3,
+    leadSource: params.sourceTool,
+    hasEmail: !!params.email,
+    hasPhone: !!params.phone,
+    hasAddress: params.hasAddress,
+    hasProjectDetails: params.hasProjectDetails,
+    hasName: params.hasName,
+  });
+
+  // PHASE 3: Get routing action and CRM tags
+  const routingAction = getRoutingAction(leadScoreData.finalScore);
+  const crmTags = getCRMTags({
+    intentTier: intentTier || 3,
+    leadSource: params.sourceTool,
+    hasEmail: !!params.email,
+    hasPhone: !!params.phone,
+    hasAddress: params.hasAddress,
+    hasProjectDetails: params.hasProjectDetails,
+    hasName: params.hasName,
+    finalScore: leadScoreData.finalScore,
+  });
+
+  // Push the canonical lead_captured event with deduplication + intent tier parameters
   trackEvent('lead_captured', {
     // DEDUPLICATION (Phase 2 - Non-negotiable)
     event_id: params.leadId,           // Deduplication key for browser + server
     external_id: params.leadId,        // Facebook CAPI external_id
-    lead_source: params.sourceTool,    // Tool or page identifier
+    
+    // EVENT TAXONOMY (Phase 3 - Platform Standard)
+    lead_source: params.sourceTool,    // Machine ID of tool
+    tool_name: toolName,               // Human readable tool name
+    funnel_stage: funnelStage,         // cold / mid / high
+    intent_tier: intentTier,           // 1-5 scale
+    interaction_type: interactionType, // form / upload / voice / booking
     content_name: params.sourceTool,   // Funnel name for attribution
     
-    // User data for Facebook EMQ matching (Phase 2 requirement - EMQ ≥ 8.0)
+    // USER DATA (Phase 2 requirement - EMQ ≥ 8.0)
     user_data: {
       external_id: params.leadId,      // CRM anchor
       em: hashedEmail,                 // Hashed email for EMQ
       ph: hashedPhone,                 // Hashed phone for EMQ (when available)
     },
     
-    // Legacy fields (for backward compatibility)
+    // LEAD SCORING (Phase 3 - Routing & Optimization)
+    lead_score: leadScoreData.finalScore,
+    lead_score_breakdown: {
+      base_score: leadScoreData.baseScore,
+      tool_multiplier: leadScoreData.toolMultiplier,
+      data_bonus: leadScoreData.dataBonus,
+    },
+    routing_action: routingAction.action,
+    routing_priority: routingAction.priority,
+    crm_tags: crmTags,
+    
+    // LEGACY FIELDS (for backward compatibility)
     source_tool: params.sourceTool,
     email_domain: params.email.split('@')[1] || 'unknown',
-    lead_score: params.leadScore || 0,
     has_phone: params.hasPhone || !!params.phone,
     conversion_type: 'lead',
     lead_id: params.leadId,
   });
   
-  console.log('[GTM] lead_captured event pushed with deduplication:', {
+  console.log('[GTM] lead_captured event pushed with deduplication + intent tier:', {
     event_id: params.leadId,
     external_id: params.leadId,
     lead_source: params.sourceTool,
-    has_email: !!hashedEmail,
-    has_phone: !!hashedPhone,
+    intent_tier: intentTier,
+    funnel_stage: funnelStage,
+    lead_score: leadScoreData.finalScore,
+    routing_action: routingAction.action,
+    crm_tags: crmTags,
   });
 };
 
