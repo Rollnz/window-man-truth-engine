@@ -111,7 +111,7 @@ export function CommunityImpact({ className, variant = 'full' }: CommunityImpact
   }
 
   return (
-    <section className={cn("py-12 md:py-16 bg-muted/30", className)}>
+    <section className={cn("py-12 md:py-16 section-surface", className)}>
       <div className="container px-4">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
