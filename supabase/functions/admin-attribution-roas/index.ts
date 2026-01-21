@@ -44,12 +44,13 @@ function derivePlatform(lead: {
   return 'other';
 }
 
+
 // Helper: Derive campaign key from lead
+// NOTE: wm_leads does NOT have last_non_direct_utm_campaign column - use utm_campaign only
 function deriveCampaign(lead: {
-  last_non_direct_utm_campaign?: string | null;
   utm_campaign?: string | null;
 }): string | null {
-  return lead.last_non_direct_utm_campaign || lead.utm_campaign || null;
+  return lead.utm_campaign || null;
 }
 
 // Helper: Normalize campaign string for matching
@@ -114,6 +115,8 @@ serve(async (req) => {
     console.log(`[admin-attribution-roas] Fetching ROAS data: ${startDate} to ${endDate}, group_by=${groupBy}`);
 
     // 1. Fetch won deals in date range (by close_date)
+    console.log(`[admin-attribution-roas] Querying deals: outcome=won, close_date between ${startDate} and ${endDate}`);
+    
     const { data: deals, error: dealsError } = await supabaseAdmin
       .from('deals')
       .select('id, wm_lead_id, gross_revenue, net_profit, close_date')
@@ -125,6 +128,8 @@ serve(async (req) => {
       console.error('[admin-attribution-roas] Deals query error:', dealsError);
       throw new Error('Failed to fetch deals');
     }
+    
+    console.log(`[admin-attribution-roas] Deals found: ${deals?.length || 0}`, deals);
 
     // 2. Fetch wm_leads for attribution data (get all leads with deals OR created in range)
     const dealLeadIds = [...new Set((deals || []).map(d => d.wm_lead_id))];
@@ -136,19 +141,20 @@ serve(async (req) => {
       gclid: string | null;
       fbclid: string | null;
       last_non_direct_utm_source: string | null;
-      last_non_direct_utm_campaign: string | null;
       utm_source: string | null;
       utm_campaign: string | null;
       created_at: string;
     }> = [];
 
     // Get leads linked to deals
+    console.log(`[admin-attribution-roas] Looking up leads for deal IDs:`, dealLeadIds);
     if (dealLeadIds.length > 0) {
-      const { data: dealLeads } = await supabaseAdmin
+      const { data: dealLeads, error: leadsError } = await supabaseAdmin
         .from('wm_leads')
-        .select('id, last_non_direct_gclid, last_non_direct_fbclid, gclid, fbclid, last_non_direct_utm_source, last_non_direct_utm_campaign, utm_source, utm_campaign, created_at')
+        .select('id, last_non_direct_gclid, last_non_direct_fbclid, gclid, fbclid, last_non_direct_utm_source, utm_source, utm_campaign, created_at')
         .in('id', dealLeadIds);
       
+      console.log(`[admin-attribution-roas] Leads found: ${dealLeads?.length || 0}`, dealLeads, 'error:', leadsError);
       if (dealLeads) leads = dealLeads;
     }
 
@@ -228,7 +234,7 @@ serve(async (req) => {
     // Re-fetch leads in date range for counting
     const { data: leadsInRange } = await supabaseAdmin
       .from('wm_leads')
-      .select('id, last_non_direct_gclid, last_non_direct_fbclid, gclid, fbclid, last_non_direct_utm_source, last_non_direct_utm_campaign, utm_source, utm_campaign')
+      .select('id, last_non_direct_gclid, last_non_direct_fbclid, gclid, fbclid, last_non_direct_utm_source, utm_source, utm_campaign')
       .gte('created_at', `${startDate}T00:00:00`)
       .lte('created_at', `${endDate}T23:59:59`);
 

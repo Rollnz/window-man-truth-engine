@@ -123,7 +123,7 @@ serve(async (req) => {
     let leadsMap: Record<string, any> = {};
     
     if (leadIds.length > 0) {
-      const { data: leads } = await supabase
+      const { data: leads, error: leadsError } = await supabase
         .from('wm_leads')
         .select(`
           id, 
@@ -138,10 +138,13 @@ serve(async (req) => {
           fbclid,
           last_non_direct_gclid,
           last_non_direct_fbclid,
-          last_non_direct_utm_source,
-          last_non_direct_utm_campaign
+          last_non_direct_utm_source
         `)
         .in('id', leadIds);
+      
+      if (leadsError) {
+        console.error('[admin-revenue] Leads query error:', leadsError);
+      }
       
       if (leads) {
         leadsMap = Object.fromEntries(leads.map(l => [l.id, l]));
@@ -160,7 +163,7 @@ serve(async (req) => {
         lead_name: displayName,
         lead_email: lead.email || null,
         lead_phone: lead.phone || null,
-        utm_campaign: lead.last_non_direct_utm_campaign || lead.utm_campaign || null,
+        utm_campaign: lead.utm_campaign || null,
         utm_source: lead.last_non_direct_utm_source || lead.utm_source || null,
         source_tool: lead.original_source_tool || null,
         derived_platform: derivePlatform(lead),
