@@ -20,6 +20,9 @@ export interface SearchResultItem {
   entity_type: EntityType;
   entity_type_label: string;
   entity_id: string;
+  /** Canonical admin lead ID (wm_leads.id) - use for routing */
+  wm_lead_id: string | null;
+  /** Public leads.id - for reference, not routing */
   lead_id: string | null;
   title: string;
   subtitle: string;
@@ -242,19 +245,22 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
   }, []);
 
   // Navigate to a specific result based on its entity type
+  // Uses wm_lead_id (canonical admin ID) for all lead routing
   const navigateToResult = useCallback((result: SearchResultItem) => {
     setIsOpen(false);
     setSearchQuery('');
 
-    // For leads, navigate directly to lead detail
+    // For leads, navigate directly to lead detail using wm_lead_id
     if (result.entity_type === 'lead') {
-      navigate(`/admin/leads/${result.entity_id}`);
+      // For lead entities, wm_lead_id is the entity_id
+      const targetId = result.wm_lead_id || result.entity_id;
+      navigate(`/admin/leads/${targetId}`);
       return;
     }
 
-    // For entities with a lead_id, navigate to that lead
-    if (result.lead_id) {
-      navigate(`/admin/leads/${result.lead_id}`);
+    // For entities with a wm_lead_id, navigate to that lead
+    if (result.wm_lead_id) {
+      navigate(`/admin/leads/${result.wm_lead_id}`);
       return;
     }
 

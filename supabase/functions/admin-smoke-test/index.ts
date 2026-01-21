@@ -161,6 +161,26 @@ function checkListInvariants(json: unknown): InvariantResult[] {
     detail: isArray ? `${foundCollection} has ${(collectionValue as unknown[]).length} items` : `${foundCollection} is not an array` 
   });
   
+  // === WM_LEAD_ID INVARIANT ===
+  // For collections with lead-related items, verify wm_lead_id is present for routing
+  if (isArray && (foundCollection === "quotes" || foundCollection === "items")) {
+    const arr = collectionValue as Record<string, unknown>[];
+    const itemsWithLeadLink = arr.filter(item => item.lead_id !== null && item.lead_id !== undefined);
+    if (itemsWithLeadLink.length > 0) {
+      const allHaveWmLeadId = itemsWithLeadLink.every(item => 
+        typeof item.wm_lead_id === 'string' && 
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.wm_lead_id as string)
+      );
+      results.push({
+        name: "wm_lead_id_present",
+        passed: allHaveWmLeadId,
+        detail: allHaveWmLeadId 
+          ? `All ${itemsWithLeadLink.length} linked items have valid wm_lead_id` 
+          : "Some items with lead_id missing valid wm_lead_id for routing"
+      });
+    }
+  }
+  
   // Check pagination metadata (optional, but if present must be valid)
   const hasMeta = "meta" in obj && typeof obj.meta === "object" && obj.meta !== null;
   const hasTotal = "total" in obj && typeof obj.total === "number";

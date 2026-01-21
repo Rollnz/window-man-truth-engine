@@ -31,6 +31,8 @@ interface QuoteFile {
 }
 
 interface QuoteWithLead extends QuoteFile {
+  /** Canonical admin lead ID (wm_leads.id) - use for routing */
+  wm_lead_id: string | null;
   lead_name: string | null;
   lead_email: string | null;
   lead_phone: string | null;
@@ -143,8 +145,10 @@ Deno.serve(async (req) => {
       // Fetch lead info for linked quotes
       const leadIds = [...new Set((quoteFiles || []).filter(q => q.lead_id).map(q => q.lead_id))];
       let leadMap: Record<string, { name: string | null; email: string; phone: string | null }> = {};
+      let wmLeadMap: Record<string, string> = {}; // leads.id → wm_leads.id mapping
 
       if (leadIds.length > 0) {
+        // Fetch leads table data (name, email, phone)
         const { data: leads, error: leadsError } = await supabase
           .from("leads")
           .select("id, name, email, phone")
@@ -160,6 +164,24 @@ Deno.serve(async (req) => {
             acc[lead.id] = { name: lead.name, email: lead.email, phone: lead.phone };
             return acc;
           }, {} as Record<string, { name: string | null; email: string; phone: string | null }>);
+        }
+
+        // Fetch wm_leads to get canonical admin IDs (wm_leads.id for routing)
+        const { data: wmLeads, error: wmLeadsError } = await supabase
+          .from("wm_leads")
+          .select("id, lead_id")
+          .in("lead_id", leadIds);
+
+        if (wmLeadsError) {
+          console.error("[admin-quotes] wm_leads query error:", wmLeadsError);
+          // Non-fatal: continue without wm_lead_id mapping
+        } else if (wmLeads) {
+          wmLeadMap = wmLeads.reduce((acc, wm) => {
+            if (wm.lead_id) {
+              acc[wm.lead_id] = wm.id;
+            }
+            return acc;
+          }, {} as Record<string, string>);
         }
       }
 
@@ -178,9 +200,12 @@ Deno.serve(async (req) => {
           }
 
           const lead = file.lead_id ? leadMap[file.lead_id] : null;
+          // wm_lead_id is the canonical admin routing ID
+          const wmLeadId = file.lead_id ? wmLeadMap[file.lead_id] || null : null;
 
           return {
             ...file,
+            wm_lead_id: wmLeadId,
             lead_name: lead?.name || null,
             lead_email: lead?.email || null,
             lead_phone: lead?.phone || null,

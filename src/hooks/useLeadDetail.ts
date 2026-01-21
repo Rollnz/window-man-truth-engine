@@ -99,6 +99,31 @@ export interface LeadDetailData {
   updated_at: string;
 }
 
+/** Canonical redirect info when the request used a non-canonical ID */
+export interface CanonicalInfo {
+  wm_lead_id: string;
+  canonical_path: string;
+}
+
+interface UseLeadDetailReturn {
+  lead: LeadDetailData | null;
+  events: LeadEvent[];
+  files: LeadFile[];
+  notes: LeadNote[];
+  session: LeadSession | null;
+  calls: PhoneCallLog[];
+  pendingCalls: PendingCall[];
+  isLoading: boolean;
+  error: string | null;
+  /** Present when URL should be canonicalized (resolved via fallback) */
+  canonical: CanonicalInfo | null;
+  refetch: () => Promise<void>;
+  updateStatus: (status: LeadStatus) => Promise<boolean>;
+  addNote: (content: string) => Promise<boolean>;
+  updateSocialUrl: (url: string) => Promise<boolean>;
+  updateLead: (updates: Partial<LeadDetailData>) => Promise<boolean>;
+}
+
 interface UseLeadDetailReturn {
   lead: LeadDetailData | null;
   events: LeadEvent[];
@@ -126,6 +151,7 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
   const [pendingCalls, setPendingCalls] = useState<PendingCall[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [canonical, setCanonical] = useState<CanonicalInfo | null>(null);
   const { toast } = useToast();
 
   // UUID validation helper
@@ -180,6 +206,13 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
       setSession(data.session);
       setCalls(data.calls || []);
       setPendingCalls(data.pendingCalls || []);
+      
+      // Handle canonical URL info (when resolved via fallback)
+      if (data.canonical) {
+        setCanonical(data.canonical);
+      } else {
+        setCanonical(null);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load lead details';
       setError(message);
@@ -277,6 +310,7 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
     pendingCalls,
     isLoading,
     error,
+    canonical,
     refetch: fetchData,
     updateStatus,
     addNote,
