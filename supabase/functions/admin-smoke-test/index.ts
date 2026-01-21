@@ -608,6 +608,16 @@ Deno.serve(async (req: Request) => {
         expectedKind: "error",
         expectedHttp: 400,
       },
+      // 12. admin-executive-profit (aggregate)
+      {
+        name: "admin-executive-profit",
+        test_name: "GET returns kpis/waterfall/rows",
+        url: `${baseUrl}/functions/v1/admin-executive-profit?start_date=2024-01-01&end_date=2024-12-31`,
+        method: "GET",
+        body: null,
+        expectedKind: "aggregate",
+        expectedHttp: 200,
+      },
     ];
 
     // Run all tests

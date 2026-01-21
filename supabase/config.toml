@@ -104,3 +104,6 @@ verify_jwt = false
 
 [functions.admin-smoke-test]
 verify_jwt = false
+
+[functions.admin-executive-profit]
+verify_jwt = false
