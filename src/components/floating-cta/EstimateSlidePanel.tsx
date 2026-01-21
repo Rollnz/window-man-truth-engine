@@ -184,15 +184,21 @@ export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
         updateFields({ leadId: data.leadId });
       }
 
-      // Track the successful submission
-      await trackLeadCapture({
-        sourceTool: 'floating-estimate-form' as SourceTool,
-        email: formData.email,
-        phone: formData.phone || undefined,
-        leadScore: engagementScore,
-        hasPhone: !!formData.phone,
-        leadId: data?.leadId,
-      });
+      // Track the successful submission with full metadata (Phase 4)
+      await trackLeadCapture(
+        {
+          leadId: data?.leadId,
+          sourceTool: 'floating_cta',
+          conversionAction: 'form_submit',
+        },
+        formData.email,
+        formData.phone || undefined,
+        {
+          hasName: !!formData.name,
+          hasAddress: !!(formData.street && formData.city && formData.zip),
+          hasProjectDetails: !!(formData.windowCount && formData.projectType),
+        }
+      );
 
       trackEvent('estimate_form_submitted', {
         source: 'floating_estimate_panel',

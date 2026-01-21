@@ -13,6 +13,8 @@ import { useQuoteScanner } from '@/hooks/useQuoteScanner';
 import type { SourceTool } from '@/types/sourceTool';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { trackScannerUploadCompleted } from '@/lib/secondarySignalEvents';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { ErrorBoundary } from '@/components/error';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
@@ -46,6 +48,7 @@ export default function QuoteScanner() {
   } = useQuoteScanner();
 
   const { sessionData, updateField } = useSessionData();
+  const { leadId } = useLeadIdentity();
   const [showLeadCapture, setShowLeadCapture] = useState(false);
   const [hasUnlockedResults, setHasUnlockedResults] = useState(!!sessionData.email);
   
@@ -53,7 +56,17 @@ export default function QuoteScanner() {
   const uploadRef = useRef<HTMLDivElement>(null);
 
   const handleFileSelect = async (file: File) => {
+    const startTime = Date.now();
     await analyzeQuote(file);
+    const duration = Math.round((Date.now() - startTime) / 1000);
+
+    // Track secondary signal: Scanner Upload Completed (Phase 4)
+    trackScannerUploadCompleted({
+      leadId: leadId || 'anonymous',
+      fileSize: file.size,
+      uploadDuration: duration,
+    });
+
     // Show lead capture after analysis if user hasn't provided email
     if (!sessionData.email) {
       setShowLeadCapture(true);

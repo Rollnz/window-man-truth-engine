@@ -207,14 +207,21 @@ const RealityCheck = () => {
     updateFields({ leadId });
     setShowLeadModal(false);
     
-    // Track lead capture in GTM
-    trackLeadCapture({
-      sourceTool: 'reality-check' satisfies SourceTool,
-      email: sessionData.email || '',
-      phone: sessionData.phone,
-      leadScore: score,
-      leadId,
-    });
+    // Track lead capture in GTM with full metadata (Phase 4)
+    trackLeadCapture(
+      {
+        leadId,
+        sourceTool: 'reality_check',
+        conversionAction: 'form_submit',
+      },
+      sessionData.email || '',
+      sessionData.phone,
+      {
+        hasName: !!sessionData.name,
+        hasPhone: !!sessionData.phone,
+        hasProjectDetails: !!(sessionData.windowAge || sessionData.currentEnergyBill),
+      }
+    );
   };
   
   const handleConsultSuccess = () => {

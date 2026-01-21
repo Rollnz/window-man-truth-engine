@@ -9,7 +9,7 @@ import { SessionData, useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useFormAbandonment } from '@/hooks/useFormAbandonment';
 import { Mail, Check, Loader2 } from 'lucide-react';
-import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess, trackFormStart } from '@/lib/gtm';
+import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess, trackFormStart, trackLeadCapture } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import { getLeadQuality } from '@/lib/leadQuality';
 import { SourceTool } from '@/types/sourceTool';
@@ -144,12 +144,21 @@ export function LeadCaptureModal({
         setLeadId(data.leadId);
         updateFields({ leadId: data.leadId });
 
-        // Track successful lead capture
-        trackEvent('lead_captured', {
-          modal_type: 'lead_capture',
-          source_tool: sourceTool,
-          lead_id: data.leadId,
-        });
+        // Track successful lead capture with full metadata (Phase 4)
+        await trackLeadCapture(
+          {
+            leadId: data.leadId,
+            sourceTool: sourceTool.replace(/-/g, '_') as any,
+            conversionAction: 'form_submit',
+          },
+          values.email.trim(),
+          phone.trim() || undefined,
+          {
+            hasName: !!name.trim(),
+            hasPhone: !!phone.trim(),
+            hasProjectDetails: !!sessionData.windowCount,
+          }
+        );
 
         // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
         const leadQuality = getLeadQuality(sessionData);

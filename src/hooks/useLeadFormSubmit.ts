@@ -176,14 +176,20 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
         lead_id: effectiveLeadId,
       });
 
-      await trackLeadCapture({
-        sourceTool,
-        email: data.email,
-        phone: data.phone,
-        leadScore,
-        hasPhone: !!data.phone,
-        leadId: effectiveLeadId,
-      });
+      await trackLeadCapture(
+        {
+          leadId: effectiveLeadId || '',
+          sourceTool,
+          conversionAction: formLocation || 'form_submit',
+        },
+        data.email,
+        data.phone,
+        {
+          hasName: !!normalizedName,
+          hasPhone: !!data.phone,
+          hasProjectDetails: !!(sessionData.windowCount || sessionData.projectType),
+        }
+      );
 
       trackEvent('generate_lead', {
         lead_source: sourceTool,

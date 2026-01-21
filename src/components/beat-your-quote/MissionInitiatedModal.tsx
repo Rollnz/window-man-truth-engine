@@ -120,14 +120,20 @@ export function MissionInitiatedModal({
         quote_file_id: quoteFileId,
       });
 
-      await trackLeadCapture({
-        sourceTool: 'beat-your-quote',
-        email: values.email,
-        phone: values.phone,
-        leadScore: 75, // Higher score for quote upload
-        hasPhone: !!values.phone,
-        leadId: effectiveLeadId,
-      });
+      await trackLeadCapture(
+        {
+          leadId: effectiveLeadId || '',
+          sourceTool: 'beat_your_quote',
+          conversionAction: 'quote_upload',
+        },
+        values.email,
+        values.phone,
+        {
+          hasName: !!values.name.trim(),
+          hasPhone: !!values.phone.trim(),
+          hasProjectDetails: true,
+        }
+      );
 
       trackEvent('quote_lead_captured', {
         quote_file_id: quoteFileId,

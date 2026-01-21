@@ -146,14 +146,21 @@ export default function FairPriceQuiz() {
         updateFields({ leadId: data.leadId });
       }
 
-      // Track lead capture via GTM
-      await trackLeadCapture({
-        sourceTool: 'fair-price-quiz' satisfies SourceTool,
+      // Track lead capture via GTM with full metadata (Phase 4)
+      await trackLeadCapture(
+        {
+          leadId: data?.leadId,
+          sourceTool: 'fair_price_quiz',
+          conversionAction: 'form_submit',
+        },
         email,
-        leadScore,
-        hasPhone: false,
-        leadId: data?.leadId,
-      });
+        undefined,
+        {
+          hasName: !!name.trim(),
+          hasPhone: false,
+          hasProjectDetails: !!quizAnswers.windowCount,
+        }
+      );
 
       trackEvent('lead_captured', {
         source_tool: 'fair-price-quiz',

@@ -262,13 +262,21 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
         setLeadId(result.leadId);
         updateField('leadId', result.leadId);
 
-        // Track successful lead capture with leadId
-        await trackLeadCapture({
-          sourceTool: 'quote-builder',
-          email: data.email.trim(),
-          phone: data.phone?.trim(),
-          leadId: result.leadId,
-        });
+        // Track successful lead capture with full metadata (Phase 4)
+        await trackLeadCapture(
+          {
+            leadId: result.leadId,
+            sourceTool: 'quote_builder',
+            conversionAction: 'form_submit',
+          },
+          data.email.trim(),
+          data.phone?.trim(),
+          {
+            hasName: !!data.name.trim(),
+            hasPhone: !!data.phone?.trim(),
+            hasProjectDetails: cart.length > 0,
+          }
+        );
 
         // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
         const leadQuality = getLeadQuality({ windowCount: cart.length });

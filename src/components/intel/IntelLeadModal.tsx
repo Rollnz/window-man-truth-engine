@@ -15,7 +15,7 @@ import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
 import { SessionData } from '@/hooks/useSessionData';
 import { IntelResource } from '@/data/intelData';
 import { Mail, Check, Loader2, Unlock } from 'lucide-react';
-import { trackEvent, trackModalOpen } from '@/lib/gtm';
+import { trackEvent, trackModalOpen, trackLeadCapture } from '@/lib/gtm';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import type { SourceTool } from '@/types/sourceTool';
 import { TrustModal } from '@/components/forms/TrustModal';
@@ -110,12 +110,21 @@ export function IntelLeadModal({
         // Golden Thread: persist leadId for cross-tool tracking
         setLeadId(data.leadId);
 
-        // Track lead capture and intel unlock
-        trackEvent('lead_captured', {
-          modal_type: 'intel_lead',
-          lead_id: data.leadId, // Golden Thread: include in analytics
-          source_tool: 'intel-library',
-        });
+        // Track lead capture with full metadata (Phase 4)
+        await trackLeadCapture(
+          {
+            leadId: data.leadId,
+            sourceTool: 'intel_library',
+            conversionAction: 'ebook_download',
+          },
+          values.email.trim(),
+          sessionData.phone || undefined,
+          {
+            hasName: !!sessionData.name,
+            hasPhone: !!sessionData.phone,
+            hasProjectDetails: !!sessionData.windowCount,
+          }
+        );
 
         trackEvent('intel_unlocked', {
           resource_id: resource?.id,

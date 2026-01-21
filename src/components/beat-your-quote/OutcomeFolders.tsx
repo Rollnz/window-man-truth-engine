@@ -187,14 +187,20 @@ export function OutcomeFolders({
           time_to_complete_seconds: timeToComplete,
           lead_id: data.leadId // Golden Thread: include in analytics
         });
-        await trackLeadCapture({
-          sourceTool: 'beat-your-quote' satisfies SourceTool,
-          email: values.email.trim(),
-          phone: phone || undefined,
-          hasPhone: !!phone,
-          leadScore: completedFieldsCount + (projectCost ? 1 : 0) + (windowCount ? 1 : 0),
-          leadId: data.leadId,
-        });
+        await trackLeadCapture(
+          {
+            leadId: data.leadId,
+            sourceTool: 'beat_your_quote',
+            conversionAction: 'form_submit',
+          },
+          values.email.trim(),
+          phone || undefined,
+          {
+            hasName: !!name.trim(),
+            hasPhone: !!phone.trim(),
+            hasProjectDetails: !!(projectCost || windowCount),
+          }
+        );
         toast({
           title: 'Mission Started!',
           description: 'Redirecting to Quote Scanner...'
