@@ -15,6 +15,7 @@ export interface ActivityEvent {
   title: string;
   subtitle: string;
   timestamp: string;
+  /** Canonical admin lead ID (wm_leads.id) - use for routing */
   leadId?: string;
 }
 

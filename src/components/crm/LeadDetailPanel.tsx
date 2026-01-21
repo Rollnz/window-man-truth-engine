@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { getLeadRoute } from '@/lib/leadRouting';
 import { CRMLead, LeadStatus } from '@/types/crm';
 import { StatusBadge, QualityBadge } from './StatusBadge';
 import { QuickUpdateForm } from './QuickUpdateForm';
@@ -112,7 +113,9 @@ export function LeadDetailPanel({ lead, isOpen, onClose, onUpdate }: LeadDetailP
             className="w-full gap-2"
             onClick={() => {
               onClose();
-              navigate(`/admin/leads/${lead.id}`);
+              // lead.id from CRM API is wm_leads.id (canonical)
+              const route = getLeadRoute({ wm_lead_id: lead.id });
+              if (route) navigate(route);
             }}
           >
             <ExternalLink className="h-4 w-4" />

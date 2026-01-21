@@ -3,6 +3,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { User, FileText, MessageSquare, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getLeadRoute } from '@/lib/leadRouting';
 import { ActivityEvent } from '@/hooks/useAdminDashboard';
 
 interface ActivityFeedProps {
@@ -59,7 +60,7 @@ export function ActivityFeed({ events, isLoading }: ActivityFeedProps) {
                 return (
                   <Link
                     key={event.id}
-                    to={event.leadId ? `/admin/leads/${event.leadId}` : '#'}
+                    to={event.leadId ? (getLeadRoute({ wm_lead_id: event.leadId }) || '#') : '#'}
                     className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors group"
                   >
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
