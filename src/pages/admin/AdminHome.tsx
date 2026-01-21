@@ -9,6 +9,7 @@ import { ActivityFeed } from '@/components/admin/ActivityFeed';
 import { QuickActionCard } from '@/components/admin/QuickActionCard';
 import { SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
 import { PhoneCallOpsPanel } from '@/components/admin/PhoneCallOpsPanel';
+import { SmokeTestButton } from '@/components/admin/SmokeTestButton';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -29,6 +30,7 @@ function AdminHomeContent() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <SmokeTestButton />
               <SearchKeyboardHint onClick={() => setIsOpen(true)} />
               <Button variant="outline" size="icon" onClick={() => refetch()}>
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
