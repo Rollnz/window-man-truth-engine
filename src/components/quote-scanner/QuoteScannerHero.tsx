@@ -22,7 +22,7 @@ export function QuoteScannerHero() {
           </div>
           
           {/* Headline - 2025 SEO Optimized */}
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+          <h1 className="display-h1 text-lift text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
             Is Your Window Quote Fair?{' '}
             <span className="text-primary">AI Analysis in 60 Seconds</span>
           </h1>

@@ -51,7 +51,7 @@ const About = () => {
         <section className="container px-4 py-12 space-y-6">
           <div className="max-w-3xl space-y-4">
             <p className="text-sm font-semibold text-primary">About Its Window Man</p>
-            <h1 className="text-3xl sm:text-4xl font-bold">
+            <h1 className="display-h1 text-lift text-3xl sm:text-4xl font-bold">
               Built to protect Florida homeowners from storm risk and contractor games.
             </h1>
             <p className="text-muted-foreground text-lg">

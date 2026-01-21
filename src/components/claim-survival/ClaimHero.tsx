@@ -25,7 +25,7 @@ export function ClaimHero({
           </div>
 
           {/* Headline */}
-          <h1 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">
+          <h1 className="display-h1 text-lift text-3xl md:text-5xl font-bold mb-4 tracking-tight">
             The Impact Window{' '}
             <span className="text-primary">Claim Survival System</span>
           </h1>
