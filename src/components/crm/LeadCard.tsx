@@ -4,6 +4,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import { formatDistanceToNow } from 'date-fns';
 import { User, Phone, DollarSign, Zap, ExternalLink, TrendingUp } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
+import { getLeadRoute } from '@/lib/leadRouting';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -209,7 +210,9 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
                 className="flex-1 h-7 text-xs gap-1 hover:bg-primary/10 hover:text-primary"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/admin/leads/${lead.id}`);
+                  // lead.id from CRM API is wm_leads.id (canonical)
+                  const route = getLeadRoute({ wm_lead_id: lead.id });
+                  if (route) navigate(route);
                 }}
               >
                 <ExternalLink className="h-3 w-3" />
