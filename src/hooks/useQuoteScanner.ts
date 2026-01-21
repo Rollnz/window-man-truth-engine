@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
+import { logScannerCompleted } from '@/lib/highValueSignals';
 
 export interface QuoteAnalysisResult {
   overallScore: number;
@@ -182,6 +183,15 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
       trackToolComplete('quote-scanner', {
         score: resultWithTimestamp.overallScore,
         quote_amount: parseFloat(resultWithTimestamp.pricePerOpening.replace(/[^0-9.]/g, '')) || undefined,
+      });
+      
+      // PHASE 4: Log high-value scanner_upload_completed signal to wm_event_log
+      await logScannerCompleted({
+        score: resultWithTimestamp.overallScore,
+        quoteAmount: parseFloat(resultWithTimestamp.pricePerOpening.replace(/[^0-9.]/g, '')) || undefined,
+        fileSize: file.size,
+        fileType: file.type,
+        leadId: leadId || undefined,
       });
       
     } catch (err) {

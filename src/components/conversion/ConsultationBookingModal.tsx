@@ -13,6 +13,8 @@ import { useFormAbandonment } from "@/hooks/useFormAbandonment";
 import { Calendar, Check, Loader2 } from "lucide-react";
 import { trackEvent, trackModalOpen, trackConsultationBooked, trackFormStart } from "@/lib/gtm";
 import { getAttributionData, buildAIContextFromSession } from "@/lib/attribution";
+import { setLeadAnchor } from "@/lib/leadAnchor";
+import { logBookingConfirmed } from "@/lib/highValueSignals";
 import type { SourceTool } from "@/types/sourceTool";
 import { TrustModal } from "@/components/forms/TrustModal";
 
@@ -145,6 +147,9 @@ export function ConsultationBookingModal({
             leadId: data.leadId,
             consultationRequested: true 
           });
+          
+          // PHASE 3: Set lead anchor for 400-day persistence
+          setLeadAnchor(data.leadId);
         }
 
         // Track Enhanced Consultation Booking (Phase 2)
@@ -159,6 +164,16 @@ export function ConsultationBookingModal({
             projectValue: sessionData.fairPriceQuizResults?.quoteAmount,
             urgencyLevel: sessionData.urgencyLevel,
           },
+        });
+        
+        // PHASE 4: Log high-value booking_confirmed signal to wm_event_log
+        await logBookingConfirmed({
+          preferredTime: values.preferredTime,
+          bookingType: 'consultation',
+          windowCount: sessionData.windowCount,
+          projectValue: sessionData.fairPriceQuizResults?.quoteAmount,
+          urgencyLevel: sessionData.urgencyLevel,
+          leadId: data.leadId,
         });
 
         toast({
