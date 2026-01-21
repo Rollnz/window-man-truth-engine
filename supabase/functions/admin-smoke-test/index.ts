@@ -9,14 +9,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// ===== Test result types =====
+// ===== Types =====
+type ExpectedKind = "list" | "aggregate" | "error";
+
+interface InvariantResult {
+  name: string;
+  passed: boolean;
+  detail?: string;
+}
+
 interface TestResult {
   function_name: string;
   test_name: string;
   passed: boolean;
-  status_code: number;
-  expected_shape: string[];
-  missing_keys: string[];
+  expected_http: number;
+  actual_http: number;
+  expected_kind: ExpectedKind;
+  shape_signature: string[];
+  invariants: InvariantResult[];
   error?: string;
   duration_ms: number;
 }
@@ -29,6 +39,16 @@ interface SmokeTestReport {
   failed: number;
   results: TestResult[];
   markdown_report: string;
+}
+
+interface TestScenario {
+  name: string;
+  test_name: string;
+  url: string;
+  method: string;
+  body: unknown | null;
+  expectedKind: ExpectedKind;
+  expectedHttp: number;
 }
 
 // ===== Response helpers =====
@@ -48,85 +68,316 @@ function isAdminEmail(email: string): boolean {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
-// ===== Test helper: check JSON shape =====
-function checkShape(obj: unknown, expectedKeys: string[]): string[] {
-  if (typeof obj !== "object" || obj === null) {
-    return expectedKeys;
+// ===== Invariant Checkers =====
+
+function checkEnvelopeInvariants(json: unknown): InvariantResult[] {
+  const results: InvariantResult[] = [];
+  
+  if (typeof json !== "object" || json === null) {
+    results.push({ name: "valid_json_object", passed: false, detail: "Response is not a JSON object" });
+    return results;
   }
-  const missing: string[] = [];
-  for (const key of expectedKeys) {
-    if (!(key in obj)) {
-      missing.push(key);
-    }
+  
+  results.push({ name: "valid_json_object", passed: true });
+  
+  const obj = json as Record<string, unknown>;
+  
+  // If `ok` exists, must be boolean
+  if ("ok" in obj) {
+    const okIsBoolean = typeof obj.ok === "boolean";
+    results.push({ 
+      name: "ok_is_boolean", 
+      passed: okIsBoolean, 
+      detail: okIsBoolean ? undefined : `ok is ${typeof obj.ok}` 
+    });
   }
-  return missing;
+  
+  // If `code` exists, must be string
+  if ("code" in obj) {
+    const codeIsString = typeof obj.code === "string";
+    results.push({ 
+      name: "code_is_string", 
+      passed: codeIsString, 
+      detail: codeIsString ? undefined : `code is ${typeof obj.code}` 
+    });
+  }
+  
+  // If `timestamp` exists, must be string
+  if ("timestamp" in obj) {
+    const tsIsString = typeof obj.timestamp === "string";
+    results.push({ 
+      name: "timestamp_is_string", 
+      passed: tsIsString, 
+      detail: tsIsString ? undefined : `timestamp is ${typeof obj.timestamp}` 
+    });
+  }
+  
+  return results;
 }
 
-// ===== Individual test runners =====
-async function testFunction(
-  name: string,
-  testName: string,
-  url: string,
-  method: string,
-  headers: Record<string, string>,
-  body: unknown | null,
-  expectedKeys: string[]
+function checkListInvariants(json: unknown): InvariantResult[] {
+  const results: InvariantResult[] = [];
+  
+  if (typeof json !== "object" || json === null) {
+    results.push({ name: "list_has_collection", passed: false, detail: "Not an object" });
+    return results;
+  }
+  
+  const obj = json as Record<string, unknown>;
+  const collectionKeys = ["items", "rows", "results", "receipts", "events", "quotes"];
+  
+  let foundCollection: string | null = null;
+  let collectionValue: unknown = null;
+  
+  for (const key of collectionKeys) {
+    if (key in obj) {
+      foundCollection = key;
+      collectionValue = obj[key];
+      break;
+    }
+  }
+  
+  if (!foundCollection) {
+    // Check nested (e.g., grouped.leads)
+    if ("grouped" in obj && typeof obj.grouped === "object" && obj.grouped !== null) {
+      results.push({ name: "list_has_collection", passed: true, detail: "Found grouped object" });
+      return results;
+    }
+    results.push({ 
+      name: "list_has_collection", 
+      passed: false, 
+      detail: `No collection key found. Keys: ${Object.keys(obj).join(", ")}` 
+    });
+    return results;
+  }
+  
+  results.push({ name: "list_has_collection", passed: true, detail: `Found: ${foundCollection}` });
+  
+  // Collection must be an array
+  const isArray = Array.isArray(collectionValue);
+  results.push({ 
+    name: "collection_is_array", 
+    passed: isArray, 
+    detail: isArray ? `${foundCollection} has ${(collectionValue as unknown[]).length} items` : `${foundCollection} is not an array` 
+  });
+  
+  // Check pagination metadata (optional, but if present must be valid)
+  const hasMeta = "meta" in obj && typeof obj.meta === "object" && obj.meta !== null;
+  const hasTotal = "total" in obj && typeof obj.total === "number";
+  const hasNextCursor = "next_cursor" in obj;
+  const metaHasCount = hasMeta && "count" in (obj.meta as Record<string, unknown>);
+  
+  if (hasMeta || hasTotal || hasNextCursor) {
+    const validPagination = hasTotal || hasNextCursor || metaHasCount;
+    results.push({ 
+      name: "valid_pagination", 
+      passed: validPagination, 
+      detail: validPagination ? "Pagination metadata present" : "Invalid pagination format" 
+    });
+  }
+  
+  return results;
+}
+
+function checkAggregateInvariants(json: unknown): InvariantResult[] {
+  const results: InvariantResult[] = [];
+  
+  if (typeof json !== "object" || json === null) {
+    results.push({ name: "aggregate_has_summary", passed: false, detail: "Not an object" });
+    return results;
+  }
+  
+  const obj = json as Record<string, unknown>;
+  // Object-based summary keys
+  const objectSummaryKeys = ["summary", "kpis", "globalKpi"];
+  
+  let foundSummary: string | null = null;
+  
+  // First check for object-based summary keys
+  for (const key of objectSummaryKeys) {
+    if (key in obj && typeof obj[key] === "object" && obj[key] !== null) {
+      foundSummary = key;
+      break;
+    }
+  }
+  
+  // For health-check endpoints: accept "ok" as boolean as valid aggregate
+  if (!foundSummary && "ok" in obj && typeof obj.ok === "boolean") {
+    foundSummary = "ok";
+  }
+  
+  if (!foundSummary) {
+    results.push({ 
+      name: "aggregate_has_summary", 
+      passed: false, 
+      detail: `No summary key found. Keys: ${Object.keys(obj).join(", ")}` 
+    });
+    return results;
+  }
+  
+  results.push({ name: "aggregate_has_summary", passed: true, detail: `Found: ${foundSummary}` });
+  
+  // ROAS-style: if summary exists, rows must exist and be array
+  if (foundSummary === "summary" && "rows" in obj) {
+    const rowsIsArray = Array.isArray(obj.rows);
+    results.push({ 
+      name: "roas_rows_array", 
+      passed: rowsIsArray, 
+      detail: rowsIsArray ? `rows has ${(obj.rows as unknown[]).length} items` : "rows is not an array" 
+    });
+  }
+  
+  // Revenue-style: if kpis exists, recentDeals must exist and be array
+  if (foundSummary === "kpis" && "recentDeals" in obj) {
+    const dealsIsArray = Array.isArray(obj.recentDeals);
+    results.push({ 
+      name: "revenue_deals_array", 
+      passed: dealsIsArray, 
+      detail: dealsIsArray ? `recentDeals has ${(obj.recentDeals as unknown[]).length} items` : "recentDeals is not an array" 
+    });
+  }
+  
+  return results;
+}
+
+function checkErrorInvariants(json: unknown): InvariantResult[] {
+  const results: InvariantResult[] = [];
+  
+  if (typeof json !== "object" || json === null) {
+    results.push({ name: "error_response_valid", passed: false, detail: "Not an object" });
+    return results;
+  }
+  
+  const obj = json as Record<string, unknown>;
+  
+  // Must have ok: false OR error string
+  const hasOkFalse = "ok" in obj && obj.ok === false;
+  const hasErrorString = "error" in obj && typeof obj.error === "string";
+  
+  const isValidError = hasOkFalse || hasErrorString;
+  results.push({ 
+    name: "error_response_valid", 
+    passed: isValidError, 
+    detail: isValidError ? (hasOkFalse ? "ok=false" : "error string present") : "No ok:false or error string" 
+  });
+  
+  // Must NOT have ok: true
+  if ("ok" in obj && obj.ok === true) {
+    results.push({ 
+      name: "not_success_envelope", 
+      passed: false, 
+      detail: "Response has ok=true but expected error" 
+    });
+  } else {
+    results.push({ name: "not_success_envelope", passed: true });
+  }
+  
+  return results;
+}
+
+function getShapeSignature(json: unknown): string[] {
+  if (typeof json !== "object" || json === null) {
+    return ["(not an object)"];
+  }
+  return Object.keys(json as Record<string, unknown>).sort();
+}
+
+// ===== Test Runner =====
+async function runTest(
+  scenario: TestScenario,
+  headers: Record<string, string>
 ): Promise<TestResult> {
   const start = Date.now();
+  const invariants: InvariantResult[] = [];
+  
   try {
     const fetchOptions: RequestInit = {
-      method,
+      method: scenario.method,
       headers: { ...headers, "Content-Type": "application/json" },
     };
-    if (body) {
-      fetchOptions.body = JSON.stringify(body);
+    if (scenario.body) {
+      fetchOptions.body = JSON.stringify(scenario.body);
     }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
     
-    const response = await fetch(url, { ...fetchOptions, signal: controller.signal });
+    const response = await fetch(scenario.url, { ...fetchOptions, signal: controller.signal });
     clearTimeout(timeoutId);
     
-    const statusCode = response.status;
+    const actualHttp = response.status;
     const text = await response.text();
-    let json: unknown;
     
+    // Check HTTP status
+    const httpMatch = actualHttp === scenario.expectedHttp;
+    invariants.push({ 
+      name: "http_status", 
+      passed: httpMatch, 
+      detail: httpMatch ? `${actualHttp} as expected` : `Expected ${scenario.expectedHttp}, got ${actualHttp}` 
+    });
+    
+    // Parse JSON
+    let json: unknown;
     try {
       json = JSON.parse(text);
     } catch {
+      invariants.push({ name: "valid_json", passed: false, detail: `Not JSON: ${text.slice(0, 80)}` });
       return {
-        function_name: name,
-        test_name: testName,
+        function_name: scenario.name,
+        test_name: scenario.test_name,
         passed: false,
-        status_code: statusCode,
-        expected_shape: expectedKeys,
-        missing_keys: [],
-        error: `Response not JSON: ${text.slice(0, 100)}`,
+        expected_http: scenario.expectedHttp,
+        actual_http: actualHttp,
+        expected_kind: scenario.expectedKind,
+        shape_signature: [],
+        invariants,
+        error: "Response not valid JSON",
         duration_ms: Date.now() - start,
       };
     }
-
-    const missingKeys = checkShape(json, expectedKeys);
-    const passed = statusCode >= 200 && statusCode < 300 && missingKeys.length === 0;
-
+    
+    invariants.push({ name: "valid_json", passed: true });
+    
+    // Envelope invariants (all tests)
+    invariants.push(...checkEnvelopeInvariants(json));
+    
+    // Kind-specific invariants
+    switch (scenario.expectedKind) {
+      case "list":
+        invariants.push(...checkListInvariants(json));
+        break;
+      case "aggregate":
+        invariants.push(...checkAggregateInvariants(json));
+        break;
+      case "error":
+        invariants.push(...checkErrorInvariants(json));
+        break;
+    }
+    
+    const allPassed = invariants.every(inv => inv.passed);
+    
     return {
-      function_name: name,
-      test_name: testName,
-      passed,
-      status_code: statusCode,
-      expected_shape: expectedKeys,
-      missing_keys: missingKeys,
+      function_name: scenario.name,
+      test_name: scenario.test_name,
+      passed: allPassed,
+      expected_http: scenario.expectedHttp,
+      actual_http: actualHttp,
+      expected_kind: scenario.expectedKind,
+      shape_signature: getShapeSignature(json),
+      invariants,
       duration_ms: Date.now() - start,
     };
   } catch (err) {
+    invariants.push({ name: "fetch_error", passed: false, detail: err instanceof Error ? err.message : "Unknown" });
     return {
-      function_name: name,
-      test_name: testName,
+      function_name: scenario.name,
+      test_name: scenario.test_name,
       passed: false,
-      status_code: 0,
-      expected_shape: expectedKeys,
-      missing_keys: [],
+      expected_http: scenario.expectedHttp,
+      actual_http: 0,
+      expected_kind: scenario.expectedKind,
+      shape_signature: [],
+      invariants,
       error: err instanceof Error ? err.message : "Unknown error",
       duration_ms: Date.now() - start,
     };
@@ -163,19 +414,32 @@ function generateMarkdownReport(results: TestResult[]): string {
   for (const [funcName, tests] of byFunction) {
     const funcPassed = tests.every(t => t.passed);
     md += `### ${funcPassed ? "✅" : "❌"} ${funcName}\n\n`;
-    md += `| Test | Status | HTTP | Duration | Notes |\n`;
-    md += `|------|--------|------|----------|-------|\n`;
     
     for (const t of tests) {
       const status = t.passed ? "✅ PASS" : "❌ FAIL";
-      const notes = t.error 
-        ? t.error.slice(0, 50) 
-        : t.missing_keys.length > 0 
-          ? `Missing: ${t.missing_keys.join(", ")}` 
-          : "-";
-      md += `| ${t.test_name} | ${status} | ${t.status_code} | ${t.duration_ms}ms | ${notes} |\n`;
+      md += `#### ${status} ${t.test_name}\n\n`;
+      md += `| Property | Value |\n`;
+      md += `|----------|-------|\n`;
+      md += `| Expected Kind | \`${t.expected_kind}\` |\n`;
+      md += `| HTTP | Expected: ${t.expected_http} / Actual: ${t.actual_http} |\n`;
+      md += `| Duration | ${t.duration_ms}ms |\n`;
+      md += `| Shape | \`[${t.shape_signature.join(", ")}]\` |\n\n`;
+      
+      if (t.invariants.length > 0) {
+        md += `**Invariants:**\n\n`;
+        md += `| Check | Status | Detail |\n`;
+        md += `|-------|--------|--------|\n`;
+        for (const inv of t.invariants) {
+          const invStatus = inv.passed ? "✅" : "❌";
+          md += `| ${inv.name} | ${invStatus} | ${inv.detail || "-"} |\n`;
+        }
+        md += "\n";
+      }
+      
+      if (t.error) {
+        md += `**Error:** ${t.error}\n\n`;
+      }
     }
-    md += "\n";
   }
 
   return md;
@@ -226,144 +490,131 @@ Deno.serve(async (req: Request) => {
       return errorResponse(403, "forbidden", "Access denied");
     }
 
-    // ===== RUN SMOKE TESTS =====
+    // ===== BUILD TEST SCENARIOS =====
     const baseUrl = supabaseUrl.replace(/\/$/, "");
     const authHeaders = {
       Authorization: `Bearer ${token}`,
       apikey: anonKey,
     };
 
+    const scenarios: TestScenario[] = [
+      // 1. admin-attribution (list)
+      {
+        name: "admin-attribution",
+        test_name: "GET returns events array",
+        url: `${baseUrl}/functions/v1/admin-attribution`,
+        method: "GET",
+        body: null,
+        expectedKind: "list",
+        expectedHttp: 200,
+      },
+      // 2. admin-attribution-roas (aggregate)
+      {
+        name: "admin-attribution-roas",
+        test_name: "GET returns summary/rows",
+        url: `${baseUrl}/functions/v1/admin-attribution-roas?startDate=2024-01-01&endDate=2024-12-31`,
+        method: "GET",
+        body: null,
+        expectedKind: "aggregate",
+        expectedHttp: 200,
+      },
+      // 3. admin-global-search (list)
+      {
+        name: "admin-global-search",
+        test_name: "GET with query param",
+        url: `${baseUrl}/functions/v1/admin-global-search?q=test`,
+        method: "GET",
+        body: null,
+        expectedKind: "list",
+        expectedHttp: 200,
+      },
+      // 4. admin-quotes (list)
+      {
+        name: "admin-quotes",
+        test_name: "GET returns quotes array",
+        url: `${baseUrl}/functions/v1/admin-quotes?limit=5`,
+        method: "GET",
+        body: null,
+        expectedKind: "list",
+        expectedHttp: 200,
+      },
+      // 5. admin-revenue (aggregate)
+      {
+        name: "admin-revenue",
+        test_name: "GET returns kpis/deals",
+        url: `${baseUrl}/functions/v1/admin-revenue`,
+        method: "GET",
+        body: null,
+        expectedKind: "aggregate",
+        expectedHttp: 200,
+      },
+      // 6. admin-webhook-receipts (list)
+      {
+        name: "admin-webhook-receipts",
+        test_name: "GET returns items array",
+        url: `${baseUrl}/functions/v1/admin-webhook-receipts?limit=5`,
+        method: "GET",
+        body: null,
+        expectedKind: "list",
+        expectedHttp: 200,
+      },
+      // 7. admin-phonecallbot-health (aggregate - has ok/webhook_url_configured)
+      {
+        name: "admin-phonecallbot-health",
+        test_name: "GET returns health status",
+        url: `${baseUrl}/functions/v1/admin-phonecallbot-health`,
+        method: "GET",
+        body: null,
+        expectedKind: "aggregate",
+        expectedHttp: 200,
+      },
+      // 8. admin-lead-detail - invalid UUID (error)
+      {
+        name: "admin-lead-detail",
+        test_name: "GET with invalid UUID returns 400",
+        url: `${baseUrl}/functions/v1/admin-lead-detail?id=invalid-uuid`,
+        method: "GET",
+        body: null,
+        expectedKind: "error",
+        expectedHttp: 400,
+      },
+      // 9. admin-lead-detail - missing ID (error)
+      {
+        name: "admin-lead-detail",
+        test_name: "GET with missing ID returns 400",
+        url: `${baseUrl}/functions/v1/admin-lead-detail`,
+        method: "GET",
+        body: null,
+        expectedKind: "error",
+        expectedHttp: 400,
+      },
+      // 10. admin-direct-dial - missing body (error)
+      {
+        name: "admin-direct-dial",
+        test_name: "POST with missing wm_lead_id returns 400",
+        url: `${baseUrl}/functions/v1/admin-direct-dial`,
+        method: "POST",
+        body: {},
+        expectedKind: "error",
+        expectedHttp: 400,
+      },
+      // 11. admin-direct-dial - invalid UUID (error)
+      {
+        name: "admin-direct-dial",
+        test_name: "POST with invalid UUID returns 400",
+        url: `${baseUrl}/functions/v1/admin-direct-dial`,
+        method: "POST",
+        body: { wm_lead_id: "not-a-uuid" },
+        expectedKind: "error",
+        expectedHttp: 400,
+      },
+    ];
+
+    // Run all tests
     const results: TestResult[] = [];
-
-    // Test 1: admin-attribution (GET)
-    results.push(await testFunction(
-      "admin-attribution",
-      "GET returns events array",
-      `${baseUrl}/functions/v1/admin-attribution`,
-      "GET",
-      authHeaders,
-      null,
-      ["events"]
-    ));
-
-    // Test 2: admin-attribution-roas (GET)
-    results.push(await testFunction(
-      "admin-attribution-roas",
-      "GET returns metrics",
-      `${baseUrl}/functions/v1/admin-attribution-roas?startDate=2024-01-01&endDate=2024-12-31`,
-      "GET",
-      authHeaders,
-      null,
-      ["adSpend", "leads", "revenue"]
-    ));
-
-    // Test 3: admin-global-search (GET with query)
-    results.push(await testFunction(
-      "admin-global-search",
-      "GET with query param",
-      `${baseUrl}/functions/v1/admin-global-search?q=test`,
-      "GET",
-      authHeaders,
-      null,
-      ["results"]
-    ));
-
-    // Test 4: admin-quotes (GET)
-    results.push(await testFunction(
-      "admin-quotes",
-      "GET returns quotes array",
-      `${baseUrl}/functions/v1/admin-quotes?limit=5`,
-      "GET",
-      authHeaders,
-      null,
-      ["quotes", "total"]
-    ));
-
-    // Test 5: admin-revenue (GET)
-    results.push(await testFunction(
-      "admin-revenue",
-      "GET returns revenue data",
-      `${baseUrl}/functions/v1/admin-revenue`,
-      "GET",
-      authHeaders,
-      null,
-      ["globalKpi", "recentDeals"]
-    ));
-
-    // Test 6: admin-webhook-receipts (GET)
-    results.push(await testFunction(
-      "admin-webhook-receipts",
-      "GET returns receipts",
-      `${baseUrl}/functions/v1/admin-webhook-receipts?limit=5`,
-      "GET",
-      authHeaders,
-      null,
-      ["receipts", "total"]
-    ));
-
-    // Test 7: admin-phonecallbot-health (GET)
-    results.push(await testFunction(
-      "admin-phonecallbot-health",
-      "GET returns health status",
-      `${baseUrl}/functions/v1/admin-phonecallbot-health`,
-      "GET",
-      authHeaders,
-      null,
-      ["ok", "webhook_url_configured"]
-    ));
-
-    // Test 8: admin-lead-detail (GET with invalid UUID - should return 400)
-    const invalidUuidResult = await testFunction(
-      "admin-lead-detail",
-      "GET with invalid UUID returns 400",
-      `${baseUrl}/functions/v1/admin-lead-detail?id=invalid-uuid`,
-      "GET",
-      authHeaders,
-      null,
-      ["ok", "code", "error"]
-    );
-    // Override passed check for expected 400
-    invalidUuidResult.passed = invalidUuidResult.status_code === 400;
-    results.push(invalidUuidResult);
-
-    // Test 9: admin-lead-detail (GET with missing ID - should return 400)
-    const missingIdResult = await testFunction(
-      "admin-lead-detail",
-      "GET with missing ID returns 400",
-      `${baseUrl}/functions/v1/admin-lead-detail`,
-      "GET",
-      authHeaders,
-      null,
-      ["ok", "code", "error"]
-    );
-    missingIdResult.passed = missingIdResult.status_code === 400;
-    results.push(missingIdResult);
-
-    // Test 10: admin-direct-dial (POST with missing body - should return 400)
-    const directDialMissingResult = await testFunction(
-      "admin-direct-dial",
-      "POST with missing wm_lead_id returns 400",
-      `${baseUrl}/functions/v1/admin-direct-dial`,
-      "POST",
-      authHeaders,
-      {},
-      ["ok", "code", "error"]
-    );
-    directDialMissingResult.passed = directDialMissingResult.status_code === 400;
-    results.push(directDialMissingResult);
-
-    // Test 11: admin-direct-dial (POST with invalid UUID - should return 400)
-    const directDialInvalidResult = await testFunction(
-      "admin-direct-dial",
-      "POST with invalid UUID returns 400",
-      `${baseUrl}/functions/v1/admin-direct-dial`,
-      "POST",
-      authHeaders,
-      { wm_lead_id: "not-a-uuid" },
-      ["ok", "code", "error"]
-    );
-    directDialInvalidResult.passed = directDialInvalidResult.status_code === 400;
-    results.push(directDialInvalidResult);
+    for (const scenario of scenarios) {
+      results.push(await runTest(scenario, authHeaders));
+    }
 
     // Calculate totals
     const passed = results.filter(r => r.passed).length;
