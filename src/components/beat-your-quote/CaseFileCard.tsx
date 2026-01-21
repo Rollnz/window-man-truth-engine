@@ -48,12 +48,12 @@ export function CaseFileCard({
       {/* Header */}
       <div className="p-5 pb-4">
         {/* Case Number */}
-        <div className="text-sm font-mono text-zinc-100 mb-3 tracking-declassified uppercase font-bold">
+        <div className="text-sm font-mono text-primary-foreground mb-3 tracking-declassified uppercase font-bold">
           {data.caseNumber}
         </div>
 
         {/* Headline - Typewriter effect */}
-        <h3 className="text-lg font-bold text-zinc-100 mb-3 font-typewriter" style={{
+        <h3 className="text-lg font-bold text-primary-foreground mb-3 font-typewriter" style={{
         textDecoration: 'underline',
         textDecorationColor: 'hsl(var(--primary) / 0.4)',
         textUnderlineOffset: '4px'
@@ -62,8 +62,8 @@ export function CaseFileCard({
         </h3>
 
         {/* Homeowner Info */}
-        <div className="flex items-center gap-2 text-sm text-zinc-300 mb-3">
-          <span className="font-semibold text-zinc-100">{data.homeowner}</span>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+          <span className="font-semibold text-primary-foreground">{data.homeowner}</span>
           <span>•</span>
           <span>{data.location}</span>
         </div>
