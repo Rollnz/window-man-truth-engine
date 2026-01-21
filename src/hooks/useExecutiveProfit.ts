@@ -103,6 +103,10 @@ export function useExecutiveProfit({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Stabilize date dependencies by converting to strings
+  const startDateStr = startDate ? format(startDate, 'yyyy-MM-dd') : '';
+  const endDateStr = endDate ? format(endDate, 'yyyy-MM-dd') : '';
+  
   // Request deduplication: abort previous request when new one starts
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
@@ -125,12 +129,13 @@ export function useExecutiveProfit({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         setError('Not authenticated');
+        setIsLoading(false);
         return;
       }
 
       const params = new URLSearchParams();
-      if (startDate) params.set('start_date', format(startDate, 'yyyy-MM-dd'));
-      if (endDate) params.set('end_date', format(endDate, 'yyyy-MM-dd'));
+      if (startDateStr) params.set('start_date', startDateStr);
+      if (endDateStr) params.set('end_date', endDateStr);
       params.set('group_by', groupBy);
       params.set('basis', basis);
 
@@ -170,8 +175,8 @@ export function useExecutiveProfit({
         });
       }
     } catch (err) {
-      // Ignore abort errors
-      if (err instanceof Error && err.name === 'AbortError') {
+      // Silently ignore abort errors - do NOT set error state or toast
+      if (err instanceof Error && (err.name === 'AbortError' || err.message.includes('signal is aborted'))) {
         return;
       }
       
@@ -187,7 +192,7 @@ export function useExecutiveProfit({
         setIsLoading(false);
       }
     }
-  }, [startDate, endDate, groupBy, basis]);
+  }, [startDateStr, endDateStr, groupBy, basis]);
 
   useEffect(() => {
     fetchData();

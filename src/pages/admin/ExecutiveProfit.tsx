@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { format, subDays } from 'date-fns';
 import { RefreshCw, Calendar, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,8 @@ function ExecutiveProfitContent() {
   const [groupBy, setGroupBy] = useState<GroupBy>('platform');
   const [basis, setBasis] = useState<Basis>('closed_won');
 
-  const getDateRange = useCallback(() => {
+  // Memoize date range - use getTime() for stable primitive deps
+  const { start, end } = useMemo(() => {
     const now = new Date();
     switch (preset) {
       case 'today':
@@ -43,9 +44,7 @@ function ExecutiveProfitContent() {
       default:
         return { start: subDays(now, 6), end: now };
     }
-  }, [preset, customStartDate, customEndDate]);
-
-  const { start, end } = getDateRange();
+  }, [preset, customStartDate?.getTime(), customEndDate?.getTime()]);
 
   const { data, isLoading, error, refetch } = useExecutiveProfit({
     startDate: start,
