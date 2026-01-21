@@ -936,6 +936,7 @@ export type Database = {
           lead_id: string | null
           lead_quality: string | null
           notes: string | null
+          original_client_id: string | null
           original_session_id: string | null
           original_source_tool: string | null
           phone: string | null
@@ -980,6 +981,7 @@ export type Database = {
           lead_id?: string | null
           lead_quality?: string | null
           notes?: string | null
+          original_client_id?: string | null
           original_session_id?: string | null
           original_source_tool?: string | null
           phone?: string | null
@@ -1024,6 +1026,7 @@ export type Database = {
           lead_id?: string | null
           lead_quality?: string | null
           notes?: string | null
+          original_client_id?: string | null
           original_session_id?: string | null
           original_source_tool?: string | null
           phone?: string | null
