@@ -85,7 +85,7 @@ function AnimatedStat({ value, suffix, label, icon, iconBg, iconBorder, valueCol
 
 export function UncomfortableTruth() {
   return (
-    <section className="py-20 md:py-32 relative">
+    <section className="py-20 md:py-32 relative section-surface">
       <div className="container px-4">
         {/* Section header */}
         <div className="max-w-3xl mx-auto text-center mb-16">
