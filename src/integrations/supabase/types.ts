@@ -1206,7 +1206,67 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_attribution_first_last_touch: {
+        Row: {
+          first_touch_time: string | null
+          first_touch_tool: string | null
+          last_touch_time: string | null
+          last_touch_tool: string | null
+          lead_id: string | null
+        }
+        Relationships: []
+      }
+      v_event_log_enriched: {
+        Row: {
+          client_id: string | null
+          event_id: string | null
+          event_name: string | null
+          event_time: string | null
+          event_type: string | null
+          fbc: string | null
+          fbclid: string | null
+          fbp: string | null
+          gclid: string | null
+          ingested_by: string | null
+          landing_page: string | null
+          lead_email: string | null
+          lead_id: string | null
+          metadata: Json | null
+          referrer: string | null
+          row_id: string | null
+          session_id: string | null
+          source_system: string | null
+          source_tool: string | null
+          user_data: Json | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Relationships: []
+      }
+      v_funnel_journeys: {
+        Row: {
+          client_id: string | null
+          event_id: string | null
+          event_name: string | null
+          event_time: string | null
+          next_event: string | null
+          previous_event: string | null
+          source_tool: string | null
+        }
+        Relationships: []
+      }
+      v_meta_optimization_segments: {
+        Row: {
+          booking_confirmed: number | null
+          lead_id: string | null
+          used_scanner: number | null
+          used_voice: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       backfill_all_lead_scores: {
