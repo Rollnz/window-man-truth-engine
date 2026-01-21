@@ -107,3 +107,6 @@ verify_jwt = false
 
 [functions.admin-executive-profit]
 verify_jwt = false
+
+[functions.log-event]
+verify_jwt = false
