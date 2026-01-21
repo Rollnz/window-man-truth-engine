@@ -1246,6 +1246,16 @@ export type Database = {
         }
         Relationships: []
       }
+      v_event_log_orphans: {
+        Row: {
+          event_count: number | null
+          lead_id_status: string | null
+          session_id_status: string | null
+          source_system: string | null
+          source_tool: string | null
+        }
+        Relationships: []
+      }
       v_funnel_journeys: {
         Row: {
           client_id: string | null
