@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { ExecutiveKpiRow } from '@/components/executive/ExecutiveKpiRow';
 import { ProfitWaterfallCard } from '@/components/executive/ProfitWaterfallCard';
 import { ProfitBySourceTable } from '@/components/executive/ProfitBySourceTable';
@@ -237,7 +238,13 @@ function ExecutiveProfitContent() {
 export default function ExecutiveProfit() {
   return (
     <AuthGuard>
-      <ExecutiveProfitContent />
+      <ErrorBoundary
+        title="Dashboard Error"
+        description="The Executive Dashboard encountered an error. This may be due to a temporary network issue."
+        onReset={() => window.location.reload()}
+      >
+        <ExecutiveProfitContent />
+      </ErrorBoundary>
     </AuthGuard>
   );
 }
