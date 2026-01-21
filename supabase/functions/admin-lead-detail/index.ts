@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveWmLeadId, isValidUUID } from "../_shared/leadId.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,31 +63,36 @@ serve(async (req) => {
     }
 
     const url = new URL(req.url);
-    const leadId = url.searchParams.get('id');
+    const inputId = url.searchParams.get('id');
 
     // UUID format validation
-    if (leadId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(leadId)) {
+    if (inputId && !isValidUUID(inputId)) {
       return errorResponse(400, 'invalid_uuid', 'Lead ID must be a valid UUID');
     }
 
-    if (!leadId) {
+    if (!inputId) {
       return errorResponse(400, 'missing_id', 'Lead ID required');
     }
 
     // Handle different methods
     if (req.method === 'GET') {
-      // Fetch lead with all related data - HARD FAIL on errors
-      const { data: lead, error: leadError } = await supabase
-        .from('wm_leads')
-        .select('*')
-        .eq('id', leadId)
-        .maybeSingle();
+      // ===== DUAL-ID RESOLUTION =====
+      // Accepts either wm_leads.id (canonical) or leads.id (via wm_leads.lead_id)
+      const resolution = await resolveWmLeadId(supabase, inputId);
 
-      assertNoError(leadError, 'wm_leads.select');
-
-      if (!lead) {
-        return errorResponse(404, 'not_found', 'Lead not found');
+      if (!resolution.found || !resolution.lead) {
+        return errorResponse(404, 'not_found', 'Lead not found', {
+          searched_id: inputId,
+          searched_columns: ['wm_leads.id', 'wm_leads.lead_id'],
+        });
       }
+
+      const lead = resolution.lead;
+      const leadId = resolution.wm_lead_id!; // Canonical wm_leads.id for child queries
+
+      // Log resolution path for debugging (no PII)
+      console.log(`[admin-lead-detail] Lead resolved: id=${leadId} via=${resolution.resolved_via}`);
+
 
       // Fetch events for this lead's session - HARD FAIL
       let events: unknown[] = [];
@@ -247,6 +253,18 @@ serve(async (req) => {
 
       return new Response(JSON.stringify({
         ok: true,
+        // === CANONICAL ID FIELDS ===
+        wm_lead_id: resolution.wm_lead_id,
+        lead_id: resolution.lead_id,
+        resolved_via: resolution.resolved_via,
+        // Include canonical_path when resolved via fallback (for URL normalization)
+        ...(resolution.resolved_via === 'fallback' && {
+          canonical: {
+            wm_lead_id: resolution.wm_lead_id,
+            canonical_path: resolution.canonical_path,
+          },
+        }),
+        // === LEAD DATA ===
         lead,
         events,
         files,
@@ -263,6 +281,18 @@ serve(async (req) => {
     }
 
     if (req.method === 'POST') {
+      // ===== DUAL-ID RESOLUTION FOR POST =====
+      const resolution = await resolveWmLeadId(supabase, inputId);
+
+      if (!resolution.found) {
+        return errorResponse(404, 'not_found', 'Lead not found', {
+          searched_id: inputId,
+          searched_columns: ['wm_leads.id', 'wm_leads.lead_id'],
+        });
+      }
+
+      const leadId = resolution.wm_lead_id!; // Canonical wm_leads.id for all operations
+
       let body: Record<string, unknown>;
       try {
         body = await req.json();

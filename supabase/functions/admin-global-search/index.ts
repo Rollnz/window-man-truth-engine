@@ -156,11 +156,18 @@ Deno.serve(async (req) => {
     const enrichedItems = items.map(item => {
       const matchInfo = calculateMatchHighlight(item.keywords || '', item.title || '', item.subtitle || '', query, digitsOnly);
       
+      // For lead-type entities, entity_id IS the wm_leads.id (canonical)
+      // lead_id in the index refers to the associated leads.id (if any)
+      const isLeadEntity = item.entity_type === 'lead';
+      
       return {
         entity_type: item.entity_type,
         entity_type_label: ENTITY_TYPE_LABELS[item.entity_type] || item.entity_type,
         entity_id: item.entity_id,
-        lead_id: item.lead_id,
+        // === CANONICAL ID FIELDS FOR ROUTING ===
+        // wm_lead_id: For lead entities, this is entity_id. For child entities (notes, calls), this is lead_id
+        wm_lead_id: isLeadEntity ? item.entity_id : item.lead_id,
+        lead_id: item.lead_id, // Public leads.id (for reference, not routing)
         title: item.title,
         subtitle: item.subtitle,
         updated_at: item.updated_at,
