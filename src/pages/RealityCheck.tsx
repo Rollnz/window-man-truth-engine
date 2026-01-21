@@ -211,7 +211,9 @@ const RealityCheck = () => {
     trackLeadCapture({
       sourceTool: 'reality-check' satisfies SourceTool,
       email: sessionData.email || '',
+      phone: sessionData.phone,
       leadScore: score,
+      leadId,
     });
   };
   

@@ -185,9 +185,10 @@ export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
       }
 
       // Track the successful submission
-      trackLeadCapture({
+      await trackLeadCapture({
         sourceTool: 'floating-estimate-form' as SourceTool,
         email: formData.email,
+        phone: formData.phone || undefined,
         leadScore: engagementScore,
         hasPhone: !!formData.phone,
         leadId: data?.leadId,

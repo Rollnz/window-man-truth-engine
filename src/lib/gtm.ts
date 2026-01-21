@@ -246,10 +246,12 @@ export const trackConsultationBooked = async (params: ConsultationParams) => {
  * 
  * CRITICAL: This must fire ONLY after Supabase confirms insert success.
  * Includes event_id and external_id for browser + server deduplication.
+ * PHASE 2 REQUIREMENT: Must include email + phone for EMQ ≥ 8.0
  */
-export const trackLeadCapture = (params: {
+export const trackLeadCapture = async (params: {
   sourceTool: SourceTool;
   email: string;
+  phone?: string;
   leadScore?: number;
   hasPhone?: boolean;
   leadId?: string;
@@ -260,6 +262,10 @@ export const trackLeadCapture = (params: {
     return;
   }
 
+  // Hash PII for Facebook EMQ matching (Phase 2 requirement)
+  const hashedEmail = await safeHash(params.email);
+  const hashedPhone = params.phone ? await hashPhone(params.phone) : undefined;
+
   // Push the canonical lead_captured event with deduplication parameters
   trackEvent('lead_captured', {
     // DEDUPLICATION (Phase 2 - Non-negotiable)
@@ -268,16 +274,18 @@ export const trackLeadCapture = (params: {
     lead_source: params.sourceTool,    // Tool or page identifier
     content_name: params.sourceTool,   // Funnel name for attribution
     
-    // User data for Facebook EMQ matching
+    // User data for Facebook EMQ matching (Phase 2 requirement - EMQ ≥ 8.0)
     user_data: {
       external_id: params.leadId,      // CRM anchor
+      em: hashedEmail,                 // Hashed email for EMQ
+      ph: hashedPhone,                 // Hashed phone for EMQ (when available)
     },
     
     // Legacy fields (for backward compatibility)
     source_tool: params.sourceTool,
     email_domain: params.email.split('@')[1] || 'unknown',
     lead_score: params.leadScore || 0,
-    has_phone: params.hasPhone || false,
+    has_phone: params.hasPhone || !!params.phone,
     conversion_type: 'lead',
     lead_id: params.leadId,
   });
@@ -286,6 +294,8 @@ export const trackLeadCapture = (params: {
     event_id: params.leadId,
     external_id: params.leadId,
     lead_source: params.sourceTool,
+    has_email: !!hashedEmail,
+    has_phone: !!hashedPhone,
   });
 };
 

@@ -176,9 +176,10 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
         lead_id: effectiveLeadId,
       });
 
-      trackLeadCapture({
+      await trackLeadCapture({
         sourceTool,
         email: data.email,
+        phone: data.phone,
         leadScore,
         hasPhone: !!data.phone,
         leadId: effectiveLeadId,

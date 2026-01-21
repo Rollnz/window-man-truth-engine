@@ -147,11 +147,12 @@ export default function FairPriceQuiz() {
       }
 
       // Track lead capture via GTM
-      trackLeadCapture({
+      await trackLeadCapture({
         sourceTool: 'fair-price-quiz' satisfies SourceTool,
         email,
         leadScore,
         hasPhone: false,
+        leadId: data?.leadId,
       });
 
       trackEvent('lead_captured', {

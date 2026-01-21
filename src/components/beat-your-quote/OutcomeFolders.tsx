@@ -187,11 +187,13 @@ export function OutcomeFolders({
           time_to_complete_seconds: timeToComplete,
           lead_id: data.leadId // Golden Thread: include in analytics
         });
-        trackLeadCapture({
+        await trackLeadCapture({
           sourceTool: 'beat-your-quote' satisfies SourceTool,
           email: values.email.trim(),
-          hasPhone: true,
-          leadScore: completedFieldsCount + (projectCost ? 1 : 0) + (windowCount ? 1 : 0)
+          phone: phone || undefined,
+          hasPhone: !!phone,
+          leadScore: completedFieldsCount + (projectCost ? 1 : 0) + (windowCount ? 1 : 0),
+          leadId: data.leadId,
         });
         toast({
           title: 'Mission Started!',

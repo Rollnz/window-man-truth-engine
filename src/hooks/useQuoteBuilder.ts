@@ -263,9 +263,10 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
         updateField('leadId', result.leadId);
 
         // Track successful lead capture with leadId
-        trackLeadCapture({
+        await trackLeadCapture({
           sourceTool: 'quote-builder',
           email: data.email.trim(),
+          phone: data.phone?.trim(),
           leadId: result.leadId,
         });
 

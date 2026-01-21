@@ -365,10 +365,12 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
         // Golden Thread: persist leadId for cross-tool tracking
         setLeadId(data.leadId);
         
-        trackLeadCapture({
+        await trackLeadCapture({
           sourceTool: 'true-cost-calculator' satisfies SourceTool,
           email: values.email,
-          hasPhone: true,
+          phone: values.phone,
+          hasPhone: !!values.phone,
+          leadId: data.leadId,
         });
 
         updateFields({
