@@ -141,14 +141,13 @@ export function MissionInitiatedModal({
         source: 'beat-your-quote',
       });
 
-      // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
-      trackLeadSubmissionSuccess({
+      // Push Enhanced Conversion event with SHA-256 PII hashing (value: 15 USD)
+      await trackLeadSubmissionSuccess({
         leadId: effectiveLeadId || '',
         email: values.email,
-        phone: values.phone,
-        name: values.name,
+        phone: values.phone || undefined,
+        name: values.name || undefined,
         sourceTool: 'beat-your-quote',
-        hasPhone: !!values.phone,
       });
 
       toast({
