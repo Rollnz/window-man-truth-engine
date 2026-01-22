@@ -11,7 +11,7 @@ import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { useFormAbandonment } from "@/hooks/useFormAbandonment";
 import { Calendar, Check, Loader2 } from "lucide-react";
-import { trackEvent, trackModalOpen, trackBookingConfirmed, trackFormStart } from "@/lib/gtm";
+import { trackEvent, trackModalOpen, trackBookingConfirmed, trackFormStart, trackLeadSubmissionSuccess } from "@/lib/gtm";
 import { getAttributionData, buildAIContextFromSession } from "@/lib/attribution";
 import { setLeadAnchor } from "@/lib/leadAnchor";
 import { logBookingConfirmed } from "@/lib/highValueSignals";
@@ -152,7 +152,16 @@ export function ConsultationBookingModal({
           setLeadAnchor(data.leadId);
         }
 
-        // Track Enhanced Consultation Booking with async PII hashing (Phase 2)
+        // Track primary lead capture with Enhanced Conversions (value: 15 USD)
+        await trackLeadSubmissionSuccess({
+          leadId: data.leadId,
+          email: values.email,
+          phone: values.phone,
+          name: values.name,
+          sourceTool,
+        });
+
+        // Track Enhanced Consultation Booking with async PII hashing (value: 75 USD)
         await trackBookingConfirmed({
           leadId: data.leadId,
           email: values.email,
