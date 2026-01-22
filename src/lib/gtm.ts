@@ -545,3 +545,73 @@ export const trackScannerUploadCompleted = (params: {
     source_tool: params.sourceTool ?? 'quote-scanner',
   });
 };
+
+/**
+ * Track booking confirmed with async PII hashing (highest-value conversion)
+ * 
+ * ENHANCED CONVERSIONS: Email and phone are SHA-256 hashed before pushing
+ * to the dataLayer for privacy-safe Enhanced Conversion matching.
+ * 
+ * Value: $75 (highest tier in conversion values reference)
+ */
+export const trackBookingConfirmed = async (params: {
+  leadId: string;
+  email: string;
+  phone?: string;
+  name?: string;
+  preferredTime?: string;
+  sourceTool?: string;
+  windowCount?: number;
+  estimatedProjectValue?: number;
+  urgencyLevel?: string;
+}): Promise<void> => {
+  try {
+    // Async PII hashing for Enhanced Conversions (EMQ ≥ 8.0 requirement)
+    const [hashedEmail, hashedPhone] = await Promise.all([
+      safeHash(params.email),
+      params.phone ? hashPhone(params.phone) : Promise.resolve(undefined),
+    ]);
+    
+    trackEvent('consultation_booked', {
+      lead_id: params.leadId,
+      event_id: params.leadId, // For deduplication with CAPI
+      external_id: params.leadId,
+      value: 75, // Highest conversion value tier
+      currency: 'USD',
+      user_data: {
+        sha256_email_address: hashedEmail,
+        sha256_phone_number: hashedPhone,
+        external_id: params.leadId,
+      },
+      conversion_metadata: {
+        window_count: params.windowCount,
+        estimated_project_value: params.estimatedProjectValue,
+        urgency_level: params.urgencyLevel,
+        preferred_callback_time: params.preferredTime,
+      },
+      source_tool: params.sourceTool,
+      has_name: !!params.name,
+      page_location: typeof window !== 'undefined' ? window.location.href : undefined,
+      page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
+    });
+    
+    if (import.meta.env.DEV) {
+      console.log('[GTM] consultation_booked pushed with Enhanced Conversions', {
+        leadId: params.leadId.slice(0, 8),
+        hasEmail: !!hashedEmail,
+        hasPhone: !!hashedPhone,
+        value: 75,
+      });
+    }
+  } catch (error) {
+    // Fallback: fire event without PII hashing to avoid losing conversion data
+    console.warn('[GTM] Booking PII hashing failed, firing fallback:', error);
+    trackEvent('consultation_booked_fallback', {
+      lead_id: params.leadId,
+      value: 75,
+      currency: 'USD',
+      source_tool: params.sourceTool,
+      hash_error: true,
+    });
+  }
+};
