@@ -4,6 +4,10 @@ import App from "./App.tsx";
 import "./index.css";
 import "./styles/impact-window.css";
 import { initializeAttribution } from "./lib/attribution";
+import { pushBotSignalToDataLayer } from "./lib/botDetection";
+
+// Run bot detection immediately on load (before any other events)
+pushBotSignalToDataLayer();
 
 // Defer attribution capture to idle time for better TBT
 // Safe because initializeAttribution reads from window.location which is always available
