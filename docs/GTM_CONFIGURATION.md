@@ -127,17 +127,35 @@ Create the following variables in GTM:
 | DLV - gclid | gclid |
 | DLV - fbclid | fbclid |
 
+| DLV - is_bot | is_bot |
+| DLV - bot_confidence | bot_confidence |
+
 ---
 
 ### Step 2: Create Triggers
 
+#### Bot Detection Exception Trigger
+Create this trigger FIRST to use as an exception on all conversion triggers:
+- Type: Custom Event
+- Event name: `.*` (regex match all)
+- Trigger fires on: Some Custom Events
+- Condition: `{{DLV - is_bot}}` equals `true`
+
+#### All Server Events Trigger (Human Traffic Only)
+- Type: Custom Event
+- Event name: `.+` (regex match - fires on any event)
+- **Add Exception**: Select "Bot Detection Exception Trigger" above
+- This ensures only human traffic events are sent to server-side tags
+
 #### Lead Submission Trigger
 - Type: Custom Event
 - Event name: `lead_submission_success`
+- **Add Exception**: Bot Detection Exception Trigger
 
 #### Consultation Trigger
 - Type: Custom Event
 - Event name: `consultation_booked`
+- **Add Exception**: Bot Detection Exception Trigger
 
 #### Offline Conversion Trigger
 - Type: Custom Event
