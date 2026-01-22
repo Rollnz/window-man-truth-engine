@@ -458,22 +458,90 @@ export const trackPhoneLead = (params?: {
 };
 
 /**
- * Track conversion value (Two-Step Tracking pattern)
+ * Track conversion value with async PII hashing (Two-Step Tracking pattern)
+ * 
+ * ENHANCED CONVERSIONS: Email and phone are SHA-256 hashed before pushing
+ * to the dataLayer to ensure privacy-safe Enhanced Conversion matching.
+ * 
+ * @param params.eventName - The GTM event name (e.g., 'cv_tool_completed')
+ * @param params.value - Conversion value (clamped to 0-500)
+ * @param params.email - Raw email (will be hashed)
+ * @param params.phone - Raw phone (will be normalized to E.164 and hashed)
+ * @param params.leadId - Lead ID for attribution
+ * @param params.sourceTool - Source tool identifier
+ * @param params.metadata - Additional event metadata
  */
-export const trackConversionValue = (params: {
+export const trackConversionValue = async (params: {
   eventName: string;
   value: number;
+  email?: string;
+  phone?: string;
   leadId?: string;
   sourceTool?: string;
   metadata?: Record<string, unknown>;
+}): Promise<void> => {
+  try {
+    // Clamp value to [0, 500] as per tracking architecture
+    const clampedValue = Math.max(0, Math.min(500, params.value));
+    
+    // Async PII hashing for Enhanced Conversions (EMQ ≥ 8.0 requirement)
+    const [hashedEmail, hashedPhone] = await Promise.all([
+      params.email ? safeHash(params.email) : Promise.resolve(undefined),
+      params.phone ? hashPhone(params.phone) : Promise.resolve(undefined),
+    ]);
+    
+    // Build user_data object only if we have hashed values
+    const userData = (hashedEmail || hashedPhone) ? {
+      external_id: params.leadId,
+      em: hashedEmail,
+      ph: hashedPhone,
+    } : undefined;
+    
+    trackEvent(params.eventName, {
+      value: clampedValue,
+      lead_id: params.leadId,
+      source_tool: params.sourceTool,
+      ...(userData && { user_data: userData }),
+      ...params.metadata,
+    });
+    
+    if (import.meta.env.DEV) {
+      console.log(`[GTM] ${params.eventName} pushed with value ${clampedValue}`, {
+        hasEmail: !!hashedEmail,
+        hasPhone: !!hashedPhone,
+        leadId: params.leadId?.slice(0, 8),
+      });
+    }
+  } catch (error) {
+    // Fallback: fire event without PII hashing to avoid losing conversion data
+    console.warn('[GTM] PII hashing failed, firing fallback event:', error);
+    trackEvent(`${params.eventName}_fallback`, {
+      value: Math.max(0, Math.min(500, params.value)),
+      lead_id: params.leadId,
+      source_tool: params.sourceTool,
+      hash_error: true,
+      ...params.metadata,
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// High-Value Signal Exports (for secondary signal tracking)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Track scanner upload completed (high-value signal)
+ */
+export const trackScannerUploadCompleted = (params: {
+  fileId?: string;
+  fileSize?: number;
+  uploadDuration?: number;
+  sourceTool?: string;
 }) => {
-  // Clamp value to [0, 500] as per tracking architecture
-  const clampedValue = Math.max(0, Math.min(500, params.value));
-  
-  trackEvent(params.eventName, {
-    value: clampedValue,
-    lead_id: params.leadId,
-    source_tool: params.sourceTool,
-    ...params.metadata,
+  trackEvent('scanner_upload_completed', {
+    file_id: params.fileId,
+    file_size: params.fileSize,
+    upload_duration: params.uploadDuration,
+    source_tool: params.sourceTool ?? 'quote-scanner',
   });
 };
