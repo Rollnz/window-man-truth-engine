@@ -869,6 +869,7 @@ export type Database = {
           campaign_id: string | null
           client_id: string | null
           created_at: string
+          email_sha256: string | null
           event_id: string
           event_name: string
           event_time: string
@@ -886,6 +887,7 @@ export type Database = {
           lead_score: number | null
           metadata: Json
           page_path: string | null
+          phone_sha256: string | null
           session_id: string | null
           source_system: string
           source_tool: string | null
@@ -897,6 +899,7 @@ export type Database = {
           campaign_id?: string | null
           client_id?: string | null
           created_at?: string
+          email_sha256?: string | null
           event_id: string
           event_name: string
           event_time?: string
@@ -914,6 +917,7 @@ export type Database = {
           lead_score?: number | null
           metadata?: Json
           page_path?: string | null
+          phone_sha256?: string | null
           session_id?: string | null
           source_system?: string
           source_tool?: string | null
@@ -925,6 +929,7 @@ export type Database = {
           campaign_id?: string | null
           client_id?: string | null
           created_at?: string
+          email_sha256?: string | null
           event_id?: string
           event_name?: string
           event_time?: string
@@ -942,6 +947,7 @@ export type Database = {
           lead_score?: number | null
           metadata?: Json
           page_path?: string | null
+          phone_sha256?: string | null
           session_id?: string | null
           source_system?: string
           source_tool?: string | null
