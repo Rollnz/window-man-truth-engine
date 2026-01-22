@@ -12,6 +12,7 @@ import {
   trackLeadSubmissionSuccess,
   trackConsultationBooked,
   trackPhoneLead,
+  trackBookingConfirmed,
   sha256,
   hashPhone,
 } from '../gtm';
@@ -434,6 +435,168 @@ describe('EMQ 9.5+ Compliance - trackPhoneLead', () => {
     expect(event.user_data.ph).toMatch(/^[a-f0-9]{64}$/);
     expect(event.user_data.sha256_email_address).toBeUndefined();
     expect(event.user_data.em).toBeUndefined();
+  });
+});
+
+describe('EMQ 9.5+ Compliance - trackBookingConfirmed', () => {
+  it('should include unique event_id for Meta CAPI deduplication', async () => {
+    await trackBookingConfirmed({
+      leadId: 'booking-emq-1',
+      email: 'booking-emq@test.com',
+      phone: '555-123-4567',
+      sourceTool: 'consultation-modal',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
+    expect(event.event_id).toBeDefined();
+    expect(event.event_id).toMatch(/^[a-f0-9-]{36}$/); // UUID format
+  });
+
+  it('should include external_id matching leadId for user matching', async () => {
+    const testLeadId = 'booking-confirmed-external-id';
+    await trackBookingConfirmed({
+      leadId: testLeadId,
+      email: 'booking-ext@test.com',
+      phone: '555-999-8888',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
+    expect(event.external_id).toBe(testLeadId);
+  });
+
+  it('should include both Meta CAPI (em/ph) and Google (sha256_*) identifiers', async () => {
+    await trackBookingConfirmed({
+      leadId: 'booking-confirmed-dual-id',
+      email: 'booking-dual@test.com',
+      phone: '555-777-6666',
+      sourceTool: 'modal',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
+    const userData = event.user_data;
+
+    // Google Enhanced Conversions format
+    expect(userData.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
+    expect(userData.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
+
+    // Meta CAPI format (same hashes, aliased)
+    expect(userData.em).toBe(userData.sha256_email_address);
+    expect(userData.ph).toBe(userData.sha256_phone_number);
+  });
+
+  it('should normalize email (lowercase, trim) before hashing', async () => {
+    await trackBookingConfirmed({
+      leadId: 'booking-confirmed-email-norm-1',
+      email: '  BOOKINGCONFIRMED@EXAMPLE.COM  ',
+      phone: '555-111-0000',
+    });
+
+    await trackBookingConfirmed({
+      leadId: 'booking-confirmed-email-norm-2',
+      email: 'bookingconfirmed@example.com',
+      phone: '555-111-0001',
+    });
+
+    const events = mockDataLayer.filter(e => e.event === 'booking_confirmed');
+    const hash1 = events[0].user_data.sha256_email_address;
+    const hash2 = events[1].user_data.sha256_email_address;
+
+    expect(hash1).toBe(hash2); // Same hash despite different casing/whitespace
+  });
+
+  it('should normalize phone to E.164 before hashing', async () => {
+    await trackBookingConfirmed({
+      leadId: 'booking-confirmed-phone-norm-1',
+      email: 'phone1@booking-confirmed.com',
+      phone: '(555) 444-5555',
+    });
+
+    await trackBookingConfirmed({
+      leadId: 'booking-confirmed-phone-norm-2',
+      email: 'phone2@booking-confirmed.com',
+      phone: '555-444-5555',
+    });
+
+    await trackBookingConfirmed({
+      leadId: 'booking-confirmed-phone-norm-3',
+      email: 'phone3@booking-confirmed.com',
+      phone: '5554445555',
+    });
+
+    const events = mockDataLayer.filter(e => e.event === 'booking_confirmed');
+    const hashes = events.map(e => e.user_data.sha256_phone_number);
+
+    // All phone formats should produce identical hash
+    expect(hashes[0]).toBe(hashes[1]);
+    expect(hashes[1]).toBe(hashes[2]);
+  });
+
+  it('should include $75 value for highest-tier value-based bidding', async () => {
+    await trackBookingConfirmed({
+      leadId: 'booking-confirmed-value-test',
+      email: 'value@booking-confirmed.com',
+      phone: '555-666-7777',
+      sourceTool: 'consultation-modal',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
+    expect(event.value).toBe(75); // Highest conversion value tier
+    expect(event.currency).toBe('USD');
+  });
+
+  it('should include source_tool for attribution', async () => {
+    await trackBookingConfirmed({
+      leadId: 'booking-confirmed-source-test',
+      email: 'source@booking-confirmed.com',
+      phone: '555-888-9999',
+      sourceTool: 'exit-intent-modal',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
+    expect(event.source_tool).toBe('exit-intent-modal');
+  });
+
+  it('should include conversion_metadata with project details', async () => {
+    await trackBookingConfirmed({
+      leadId: 'booking-confirmed-meta-test',
+      email: 'meta@booking-confirmed.com',
+      phone: '555-000-1111',
+      windowCount: 12,
+      estimatedProjectValue: 15000,
+      urgencyLevel: 'high',
+      preferredTime: '2pm-4pm',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
+    expect(event.conversion_metadata).toBeDefined();
+    expect(event.conversion_metadata.window_count).toBe(12);
+    expect(event.conversion_metadata.estimated_project_value).toBe(15000);
+    expect(event.conversion_metadata.urgency_level).toBe('high');
+    expect(event.conversion_metadata.preferred_callback_time).toBe('2pm-4pm');
+  });
+
+  it('should handle email-only submissions (no phone)', async () => {
+    await trackBookingConfirmed({
+      leadId: 'booking-confirmed-email-only',
+      email: 'emailonly@booking-confirmed.com',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
+    expect(event.user_data.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
+    expect(event.user_data.em).toMatch(/^[a-f0-9]{64}$/);
+    expect(event.user_data.sha256_phone_number).toBeUndefined();
+    expect(event.user_data.ph).toBeUndefined();
+  });
+
+  it('should include has_name flag for data quality tracking', async () => {
+    await trackBookingConfirmed({
+      leadId: 'booking-confirmed-name-test',
+      email: 'name@booking-confirmed.com',
+      name: 'John Smith',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
+    expect(event.has_name).toBe(true);
   });
 });
 
