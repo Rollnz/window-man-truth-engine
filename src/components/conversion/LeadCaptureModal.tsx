@@ -160,14 +160,13 @@ export function LeadCaptureModal({
           }
         );
 
-        // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
-        trackLeadSubmissionSuccess({
+        // Push Enhanced Conversion event to dataLayer with SHA-256 PII hashing (value: 15 USD)
+        await trackLeadSubmissionSuccess({
           leadId: data.leadId,
           email: values.email.trim(),
           phone: phone.trim() || undefined,
           name: name.trim() || undefined,
           sourceTool,
-          hasPhone: !!phone.trim(),
         });
 
         toast({
