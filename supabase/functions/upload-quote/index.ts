@@ -314,6 +314,12 @@ Deno.serve(async (req: Request) => {
     // Uses service role client (already initialized above)
     // Non-blocking: failures do not affect upload success
     // ============================================
+    console.log("[upload-quote] === STARTING wm_event_log INSERT ===");
+    console.log("[upload-quote] File uploaded successfully, now logging to ledger");
+    console.log("[upload-quote] quote_file_id:", insertData.id);
+    console.log("[upload-quote] sessionId:", sessionId);
+    console.log("[upload-quote] clientIdFromPayload:", clientIdFromPayload || "(none)");
+    console.log("[upload-quote] leadIdFromPayload:", leadIdFromPayload || "(none)");
     try {
       // Priority: payload > session lookup > fallback
       // 1. Use identity from request payload if provided (Task A/C)
@@ -368,19 +374,26 @@ Deno.serve(async (req: Request) => {
         },
       };
 
+      console.log("[upload-quote] Event payload prepared:", JSON.stringify(eventPayload, null, 2));
+      console.log("[upload-quote] Executing INSERT into wm_event_log...");
+
       // Insert using service role client (bypasses RLS)
-      const { error: ledgerError } = await supabase
+      const { data: ledgerData, error: ledgerError } = await supabase
         .from("wm_event_log")
-        .insert(eventPayload);
+        .insert(eventPayload)
+        .select();
 
       if (ledgerError) {
-        console.error("[upload-quote] wm_event_log insert failed (non-fatal):", ledgerError.message);
-      } else {
-        console.log(`[upload-quote] Logged scanner_upload_completed to wm_event_log: ${eventId}`, {
-          client_id: resolvedClientId,
-          lead_id: resolvedLeadId,
-          session_id: resolvedSessionId,
+        console.error("[upload-quote] wm_event_log INSERT FAILED:", {
+          code: ledgerError.code,
+          message: ledgerError.message,
+          details: ledgerError.details,
+          hint: ledgerError.hint,
         });
+      } else {
+        console.log("[upload-quote] === wm_event_log INSERT SUCCESS ===");
+        console.log(`[upload-quote] event_id: ${eventId}`);
+        console.log("[upload-quote] ledgerData:", JSON.stringify(ledgerData, null, 2));
       }
     } catch (ledgerErr) {
       console.error("[upload-quote] wm_event_log logging exception (non-fatal):", ledgerErr);
