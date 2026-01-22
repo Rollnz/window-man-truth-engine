@@ -765,10 +765,10 @@ Deno.serve(async (req) => {
     let timelineWritten = false;
 
     if (existingLog.lead_id && !existingLog.outcome_timeline_written) {
-      // Find wm_lead to get wm_lead.id and original_session_id
+      // Find wm_lead to get wm_lead.id, original_session_id, and PII for Enhanced Conversions
       const { data: wmLead } = await supabase
         .from("wm_leads")
-        .select("id, original_session_id")
+        .select("id, original_session_id, email, phone")
         .eq("lead_id", existingLog.lead_id)
         .maybeSingle();
 
@@ -828,6 +828,35 @@ Deno.serve(async (req) => {
         const shouldLogSignal = sentiment === "positive" || sentiment === "neutral" || !sentiment;
         
         if (shouldLogSignal) {
+          // Build user_data for server-side Enhanced Conversions
+          const userDataPayload: Record<string, string | null> = {
+            external_id: existingLog.lead_id,
+          };
+          
+          // Add email hash if available from wm_leads
+          if (wmLead?.email) {
+            const emailHash = await crypto.subtle.digest(
+              'SHA-256',
+              new TextEncoder().encode(wmLead.email.toLowerCase().trim())
+            ).then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''));
+            userDataPayload.sha256_email_address = emailHash;
+            userDataPayload.em = emailHash;
+          }
+          
+          // Add phone hash if available
+          if (wmLead?.phone) {
+            const cleanPhone = wmLead.phone.replace(/\D/g, '');
+            const e164Phone = cleanPhone.length === 10 ? `+1${cleanPhone}` : cleanPhone.length === 11 && cleanPhone.startsWith('1') ? `+${cleanPhone}` : null;
+            if (e164Phone) {
+              const phoneHash = await crypto.subtle.digest(
+                'SHA-256',
+                new TextEncoder().encode(e164Phone)
+              ).then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''));
+              userDataPayload.sha256_phone_number = phoneHash;
+              userDataPayload.ph = phoneHash;
+            }
+          }
+
           const { error: signalError } = await supabase.from("wm_event_log").insert({
             event_id: crypto.randomUUID(),
             event_name: "voice_estimate_confirmed",
@@ -846,6 +875,7 @@ Deno.serve(async (req) => {
               has_recording: !!recordingUrl,
               agent_id: existingLog.agent_id,
             },
+            user_data: userDataPayload,
             source_system: "webhook",
             ingested_by: "phone-call-outcome",
           });
