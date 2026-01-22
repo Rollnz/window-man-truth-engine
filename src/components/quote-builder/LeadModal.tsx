@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
+import { trackLeadSubmissionSuccess } from "@/lib/gtm";
 import type { LeadModalProps, LeadFormData } from "@/types/quote-builder";
 
 export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModalProps) => {
@@ -22,7 +23,7 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateAll()) {
@@ -30,11 +31,25 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
       return;
     }
 
-    onSubmit({
+    const formData: LeadFormData = {
       name: values.name,
       email: values.email,
       phone: values.phone
-    });
+    };
+
+    // Call parent submit handler and get leadId
+    const leadId = await onSubmit(formData);
+
+    // Track with SHA-256 PII hashing (value: 15 USD)
+    if (leadId) {
+      await trackLeadSubmissionSuccess({
+        leadId,
+        email: values.email,
+        phone: values.phone || undefined,
+        name: values.name || undefined,
+        sourceTool: 'quote-builder',
+      });
+    }
   };
 
   if (!isOpen) return null;

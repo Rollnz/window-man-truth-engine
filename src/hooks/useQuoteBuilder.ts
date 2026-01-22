@@ -278,15 +278,16 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
           }
         );
 
-        // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
-        trackLeadSubmissionSuccess({
+        // Push Enhanced Conversion event with SHA-256 PII hashing (value: 15 USD)
+        await trackLeadSubmissionSuccess({
           leadId: result.leadId,
           email: data.email.trim(),
           phone: data.phone?.trim(),
           name: data.name?.trim(),
           sourceTool: 'quote-builder',
-          hasPhone: !!data.phone?.trim(),
         });
+
+        return result.leadId;
 
         setShowModal(false);
         setState(prev => ({ ...prev, isUnlocked: true, isLeadSubmitted: true }));

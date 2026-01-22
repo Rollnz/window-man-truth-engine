@@ -101,7 +101,7 @@ export interface TheaterModeProps {
 export interface LeadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: LeadFormData) => void;
+  onSubmit: (data: LeadFormData) => Promise<string | void>; // Returns leadId on success
   isSubmitting: boolean;
 }
 
