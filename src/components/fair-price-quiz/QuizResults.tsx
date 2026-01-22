@@ -9,7 +9,7 @@ import { gradeConfig } from '@/data/fairPriceQuizData';
 import { VaultSyncButton } from './VaultSyncButton';
 import { WhyVaultFAQ } from './WhyVaultFAQ';
 import { DownsellStickyFooter } from './DownsellStickyFooter';
-import { trackEvent } from '@/lib/gtm';
+import { trackEvent, trackPhoneLead } from '@/lib/gtm';
 import { NextStepCard } from '@/components/seo/NextStepCard';
 import { MethodologyBadge } from '@/components/authority/MethodologyBadge';
 
@@ -19,6 +19,7 @@ interface QuizResultsProps {
   userName: string;
   userEmail: string;
   onPhoneSubmit: (phone: string) => void;
+  leadId?: string;
 }
 
 export function QuizResults({
@@ -27,6 +28,7 @@ export function QuizResults({
   userName,
   userEmail,
   onPhoneSubmit,
+  leadId,
 }: QuizResultsProps) {
   const [phone, setPhone] = useState('');
   const [phoneError, setPhoneError] = useState('');
@@ -74,10 +76,12 @@ export function QuizResults({
 
     setIsSubmitting(true);
     
-    // Track phone lead capture with quote value for FB optimization
-    trackEvent('phone_lead', {
-      source_tool: 'fair-price-quiz',
-      has_email: true,
+    // Track phone lead with Enhanced Conversions (SHA-256 hashed PII)
+    await trackPhoneLead({
+      leadId: leadId || '',
+      phone: digits,
+      email: userEmail,
+      sourceTool: 'fair-price-quiz',
     });
     
     await onPhoneSubmit(digits);
