@@ -146,6 +146,141 @@ describe('trackConsultationBooked', () => {
   });
 });
 
+describe('EMQ 9.5+ Compliance - trackConsultationBooked', () => {
+  it('should include unique event_id for Meta CAPI deduplication', async () => {
+    await trackConsultationBooked({
+      leadId: 'booking-emq-1',
+      email: 'booking-emq@test.com',
+      phone: '555-123-4567',
+      sourceTool: 'consultation-modal',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
+    expect(event.event_id).toBeDefined();
+    expect(event.event_id).toMatch(/^[a-f0-9-]{36}$/); // UUID format
+  });
+
+  it('should include external_id matching leadId for user matching', async () => {
+    const testLeadId = 'booking-external-id-test';
+    await trackConsultationBooked({
+      leadId: testLeadId,
+      email: 'booking-ext@test.com',
+      phone: '555-999-8888',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
+    expect(event.external_id).toBe(testLeadId);
+  });
+
+  it('should include both Meta CAPI (em/ph) and Google (sha256_*) identifiers', async () => {
+    await trackConsultationBooked({
+      leadId: 'booking-dual-id',
+      email: 'booking-dual@test.com',
+      phone: '555-777-6666',
+      sourceTool: 'modal',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
+    const userData = event.user_data;
+
+    // Google Enhanced Conversions format
+    expect(userData.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
+    expect(userData.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
+
+    // Meta CAPI format (same hashes, aliased)
+    expect(userData.em).toBe(userData.sha256_email_address);
+    expect(userData.ph).toBe(userData.sha256_phone_number);
+  });
+
+  it('should normalize email (lowercase, trim) before hashing', async () => {
+    await trackConsultationBooked({
+      leadId: 'booking-email-norm-1',
+      email: '  BOOKING@EXAMPLE.COM  ',
+      phone: '555-111-0000',
+    });
+
+    await trackConsultationBooked({
+      leadId: 'booking-email-norm-2',
+      email: 'booking@example.com',
+      phone: '555-111-0001',
+    });
+
+    const events = mockDataLayer.filter(e => e.event === 'consultation_booked');
+    const hash1 = events[0].user_data.sha256_email_address;
+    const hash2 = events[1].user_data.sha256_email_address;
+
+    expect(hash1).toBe(hash2); // Same hash despite different casing/whitespace
+  });
+
+  it('should normalize phone to E.164 before hashing', async () => {
+    await trackConsultationBooked({
+      leadId: 'booking-phone-norm-1',
+      email: 'phone1@booking.com',
+      phone: '(555) 222-3333',
+    });
+
+    await trackConsultationBooked({
+      leadId: 'booking-phone-norm-2',
+      email: 'phone2@booking.com',
+      phone: '555-222-3333',
+    });
+
+    await trackConsultationBooked({
+      leadId: 'booking-phone-norm-3',
+      email: 'phone3@booking.com',
+      phone: '5552223333',
+    });
+
+    const events = mockDataLayer.filter(e => e.event === 'consultation_booked');
+    const hashes = events.map(e => e.user_data.sha256_phone_number);
+
+    // All phone formats should produce identical hash
+    expect(hashes[0]).toBe(hashes[1]);
+    expect(hashes[1]).toBe(hashes[2]);
+  });
+
+  it('should include $75 value for value-based bidding', async () => {
+    await trackConsultationBooked({
+      leadId: 'booking-value-test',
+      email: 'value@booking.com',
+      phone: '555-444-5555',
+      sourceTool: 'consultation-modal',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
+    expect(event.value).toBe(75);
+    expect(event.currency).toBe('USD');
+  });
+
+  it('should include source_tool for attribution', async () => {
+    await trackConsultationBooked({
+      leadId: 'booking-source-test',
+      email: 'source@booking.com',
+      phone: '555-666-7777',
+      sourceTool: 'exit-intent-modal',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
+    expect(event.source_tool).toBe('exit-intent-modal');
+  });
+
+  it('should handle metadata passthrough', async () => {
+    await trackConsultationBooked({
+      leadId: 'booking-meta-test',
+      email: 'meta@booking.com',
+      phone: '555-888-9999',
+      metadata: {
+        preferred_time: '2pm-4pm',
+        timezone: 'EST',
+      },
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
+    expect(event.preferred_time).toBe('2pm-4pm');
+    expect(event.timezone).toBe('EST');
+  });
+});
+
 describe('trackPhoneLead', () => {
   it('should be async and push correct value', async () => {
     await trackPhoneLead({
