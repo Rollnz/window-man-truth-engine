@@ -313,6 +313,55 @@ Deno.serve(async (req) => {
       console.warn(`[upload-document] Rate limit record failed for ${logSafe(sessionId)}, file retained`);
     }
 
+    // ============================================
+    // LOG TO CANONICAL EVENT LEDGER (wm_event_log)
+    // Non-blocking: failures do not affect upload success
+    // ============================================
+    try {
+      // Lookup session to get anonymous_id (client_id), lead_id, and session UUID
+      // Note: sessionId here is already a UUID (validated above)
+      const { data: sessionData } = await supabase
+        .from('wm_sessions')
+        .select('id, anonymous_id, lead_id')
+        .eq('id', sessionId)
+        .limit(1)
+        .maybeSingle();
+
+      const eventId = crypto.randomUUID();
+      const eventPayload = {
+        event_id: eventId,
+        event_name: 'scanner_document_upload_completed',
+        event_type: 'signal',
+        event_time: new Date().toISOString(),
+        client_id: sessionData?.anonymous_id || sessionId,
+        lead_id: sessionData?.lead_id || null,
+        session_id: sessionData?.id || sessionId, // Use session UUID
+        source_tool: 'ai_scanner',
+        source_system: 'scanner',
+        ingested_by: 'upload-document',
+        page_path: '/ai-scanner',
+        metadata: {
+          storage_path: uploadData.path,
+          original_file_name: file.name,
+          file_size: file.size,
+          document_type: documentType,
+          mime_type: file.type,
+        },
+      };
+
+      const { error: ledgerError } = await supabase
+        .from('wm_event_log')
+        .insert(eventPayload);
+
+      if (ledgerError) {
+        console.error(`[upload-document] wm_event_log insert failed (non-fatal):`, ledgerError.message);
+      } else {
+        console.log(`[upload-document] Logged scanner_document_upload_completed to wm_event_log: ${eventId}`);
+      }
+    } catch (ledgerErr) {
+      console.error(`[upload-document] wm_event_log logging exception (non-fatal):`, ledgerErr);
+    }
+
     // ===== Return Success =====
     return successResponse({
       file_path: uploadData.path,

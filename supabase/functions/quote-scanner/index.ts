@@ -991,6 +991,70 @@ Format the output with clear section headers and make it easy to read during a p
       }
       // ═══════════════════════════════════════════════════════════════════════════
 
+      // ═══════════════════════════════════════════════════════════════════════════
+      // CANONICAL LEDGER: Log scanner_analysis_completed to wm_event_log
+      // Non-blocking: failures do not affect analysis response
+      // ═══════════════════════════════════════════════════════════════════════════
+      try {
+        const supabaseForLedger = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        );
+
+        // Lookup session to get anonymous_id (client_id), lead_id, and session UUID
+        let sessionData = null;
+        if (sessionId) {
+          const { data } = await supabaseForLedger
+            .from('wm_sessions')
+            .select('id, anonymous_id, lead_id')
+            .eq('id', sessionId)
+            .limit(1)
+            .maybeSingle();
+          sessionData = data;
+        }
+
+        const eventId = crypto.randomUUID();
+        const eventPayload = {
+          event_id: eventId,
+          event_name: 'scanner_analysis_completed',
+          event_type: 'signal',
+          event_time: new Date().toISOString(),
+          client_id: sessionData?.anonymous_id || sessionId || null,
+          lead_id: sessionData?.lead_id || leadId || null,
+          session_id: sessionData?.id || sessionId || null,
+          source_tool: 'ai_scanner',
+          source_system: 'scanner',
+          ingested_by: 'quote-scanner',
+          page_path: '/ai-scanner',
+          metadata: {
+            analysis_version: '2.0',
+            overall_score: scored.overallScore,
+            safety_score: scored.safetyScore,
+            scope_score: scored.scopeScore,
+            price_score: scored.priceScore,
+            fine_print_score: scored.finePrintScore,
+            warranty_score: scored.warrantyScore,
+            price_per_opening: scored.pricePerOpening,
+            warnings_count: scored.warnings.length,
+            missing_items_count: scored.missingItems.length,
+            detected_vendor: scored.vendorName || null,
+          },
+        };
+
+        const { error: ledgerError } = await supabaseForLedger
+          .from('wm_event_log')
+          .insert(eventPayload);
+
+        if (ledgerError) {
+          console.error('[quote-scanner] wm_event_log insert failed (non-fatal):', ledgerError.message);
+        } else {
+          console.log(`[quote-scanner] Logged scanner_analysis_completed to wm_event_log: ${eventId}`);
+        }
+      } catch (ledgerErr) {
+        console.error('[quote-scanner] wm_event_log logging exception (non-fatal):', ledgerErr);
+      }
+      // ═══════════════════════════════════════════════════════════════════════════
+
       return new Response(JSON.stringify(scored), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

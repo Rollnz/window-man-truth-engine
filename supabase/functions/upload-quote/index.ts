@@ -301,6 +301,58 @@ Deno.serve(async (req: Request) => {
     // Record rate limit hit
     await recordRateLimitHit(supabase, sessionId);
 
+    // ============================================
+    // LOG TO CANONICAL EVENT LEDGER (wm_event_log)
+    // Non-blocking: failures do not affect upload success
+    // ============================================
+    try {
+      // Lookup session to get anonymous_id (client_id), lead_id, and session UUID
+      // Note: wm_sessions uses anonymous_id column, not identifier
+      const { data: sessionData } = await supabase
+        .from("wm_sessions")
+        .select("id, anonymous_id, lead_id")
+        .eq("anonymous_id", sessionId)
+        .limit(1)
+        .maybeSingle();
+
+      const eventId = crypto.randomUUID();
+      const eventPayload = {
+        event_id: eventId,
+        event_name: "scanner_upload_completed",
+        event_type: "signal",
+        event_time: new Date().toISOString(),
+        client_id: sessionData?.anonymous_id || sessionId,
+        lead_id: sessionData?.lead_id || null,
+        session_id: sessionData?.id || null, // Use session UUID, not identifier
+        source_tool: "ai_scanner",
+        source_system: "scanner",
+        ingested_by: "upload-quote",
+        page_path: sourcePage === "beat-your-quote" ? "/beat-your-quote" : "/ai-scanner",
+        metadata: {
+          quote_file_id: insertData.id,
+          storage_path: storagePath,
+          file_name: sanitizedOriginalName,
+          mime_type: file.type,
+          file_size: file.size,
+          utm_source: utmSource,
+          utm_medium: utmMedium,
+          utm_campaign: utmCampaign,
+        },
+      };
+
+      const { error: ledgerError } = await supabase
+        .from("wm_event_log")
+        .insert(eventPayload);
+
+      if (ledgerError) {
+        console.error("[upload-quote] wm_event_log insert failed (non-fatal):", ledgerError.message);
+      } else {
+        console.log(`[upload-quote] Logged scanner_upload_completed to wm_event_log: ${eventId}`);
+      }
+    } catch (ledgerErr) {
+      console.error("[upload-quote] wm_event_log logging exception (non-fatal):", ledgerErr);
+    }
+
     // Success response
     return new Response(
       JSON.stringify({
