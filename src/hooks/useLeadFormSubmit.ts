@@ -205,14 +205,13 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
         lead_id: effectiveLeadId,
       });
 
-      // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
-      trackLeadSubmissionSuccess({
+      // Push Enhanced Conversion event with SHA-256 PII hashing (value: 15 USD)
+      await trackLeadSubmissionSuccess({
         leadId: effectiveLeadId || '',
         email: data.email,
-        phone: data.phone,
-        name: normalizedName,
+        phone: data.phone || undefined,
+        name: normalizedName || undefined,
         sourceTool,
-        hasPhone: !!data.phone,
       });
 
       // Show success toast
