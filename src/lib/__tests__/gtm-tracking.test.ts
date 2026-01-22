@@ -236,6 +236,140 @@ describe('SHA-256 Hashing', () => {
   });
 });
 
+describe('EMQ 9.5+ Compliance - trackLeadSubmissionSuccess', () => {
+  it('should include unique event_id for Meta CAPI deduplication', async () => {
+    await trackLeadSubmissionSuccess({
+      leadId: 'emq-test-1',
+      email: 'emq@test.com',
+      phone: '555-123-4567',
+      sourceTool: 'quote-builder',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    expect(event.event_id).toBeDefined();
+    expect(event.event_id).toMatch(/^[a-f0-9-]{36}$/); // UUID format
+  });
+
+  it('should include external_id matching leadId for user matching', async () => {
+    const testLeadId = 'emq-external-id-test';
+    await trackLeadSubmissionSuccess({
+      leadId: testLeadId,
+      email: 'external@test.com',
+      sourceTool: 'scanner',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    expect(event.external_id).toBe(testLeadId);
+  });
+
+  it('should include both Meta CAPI (em/ph) and Google (sha256_*) identifiers', async () => {
+    await trackLeadSubmissionSuccess({
+      leadId: 'emq-dual-id-test',
+      email: 'dual@test.com',
+      phone: '555-987-6543',
+      sourceTool: 'quiz',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    const userData = event.user_data;
+
+    // Google Enhanced Conversions format
+    expect(userData.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
+    expect(userData.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
+
+    // Meta CAPI format (same hashes, aliased)
+    expect(userData.em).toBe(userData.sha256_email_address);
+    expect(userData.ph).toBe(userData.sha256_phone_number);
+  });
+
+  it('should normalize email (lowercase, trim) before hashing', async () => {
+    await trackLeadSubmissionSuccess({
+      leadId: 'emq-email-norm-1',
+      email: '  TEST@EXAMPLE.COM  ',
+      sourceTool: 'scanner',
+    });
+
+    await trackLeadSubmissionSuccess({
+      leadId: 'emq-email-norm-2',
+      email: 'test@example.com',
+      sourceTool: 'scanner',
+    });
+
+    const events = mockDataLayer.filter(e => e.event === 'lead_submission_success');
+    const hash1 = events[0].user_data.sha256_email_address;
+    const hash2 = events[1].user_data.sha256_email_address;
+
+    expect(hash1).toBe(hash2); // Same hash despite different casing/whitespace
+  });
+
+  it('should normalize phone to E.164 before hashing', async () => {
+    await trackLeadSubmissionSuccess({
+      leadId: 'emq-phone-norm-1',
+      email: 'phone1@test.com',
+      phone: '(555) 123-4567',
+      sourceTool: 'scanner',
+    });
+
+    await trackLeadSubmissionSuccess({
+      leadId: 'emq-phone-norm-2',
+      email: 'phone2@test.com',
+      phone: '555-123-4567',
+      sourceTool: 'scanner',
+    });
+
+    await trackLeadSubmissionSuccess({
+      leadId: 'emq-phone-norm-3',
+      email: 'phone3@test.com',
+      phone: '5551234567',
+      sourceTool: 'scanner',
+    });
+
+    const events = mockDataLayer.filter(e => e.event === 'lead_submission_success');
+    const hashes = events.map(e => e.user_data.sha256_phone_number);
+
+    // All phone formats should produce identical hash
+    expect(hashes[0]).toBe(hashes[1]);
+    expect(hashes[1]).toBe(hashes[2]);
+  });
+
+  it('should include value and currency for value-based bidding', async () => {
+    await trackLeadSubmissionSuccess({
+      leadId: 'emq-value-test',
+      email: 'value@test.com',
+      sourceTool: 'quote-builder',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    expect(event.value).toBe(15);
+    expect(event.currency).toBe('USD');
+  });
+
+  it('should handle email-only submissions (no phone)', async () => {
+    await trackLeadSubmissionSuccess({
+      leadId: 'emq-email-only',
+      email: 'emailonly@test.com',
+      sourceTool: 'guide-download',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    expect(event.user_data.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
+    expect(event.user_data.sha256_phone_number).toBeUndefined();
+    expect(event.user_data.em).toMatch(/^[a-f0-9]{64}$/);
+    expect(event.user_data.ph).toBeUndefined();
+  });
+
+  it('should include source_tool for attribution', async () => {
+    await trackLeadSubmissionSuccess({
+      leadId: 'emq-source-test',
+      email: 'source@test.com',
+      sourceTool: 'beat-your-quote',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    expect(event.source_tool).toBe('beat-your-quote');
+  });
+});
+
 describe('Codebase Compliance Documentation', () => {
   it('documents the correct trackLeadSubmissionSuccess signature', () => {
     /**
