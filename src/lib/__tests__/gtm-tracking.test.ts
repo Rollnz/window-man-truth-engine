@@ -310,6 +310,133 @@ describe('trackPhoneLead', () => {
   });
 });
 
+describe('EMQ 9.5+ Compliance - trackPhoneLead', () => {
+  it('should include unique event_id for Meta CAPI deduplication', async () => {
+    await trackPhoneLead({
+      leadId: 'phone-emq-1',
+      phone: '555-123-4567',
+      email: 'phone-emq@test.com',
+      sourceTool: 'fair-price-quiz',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    expect(event.event_id).toBeDefined();
+    expect(event.event_id).toMatch(/^[a-f0-9-]{36}$/); // UUID format
+  });
+
+  it('should include external_id matching leadId for user matching', async () => {
+    const testLeadId = 'phone-external-id-test';
+    await trackPhoneLead({
+      leadId: testLeadId,
+      phone: '555-999-8888',
+      sourceTool: 'quiz-results',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    expect(event.external_id).toBe(testLeadId);
+  });
+
+  it('should include both Meta CAPI (ph) and Google (sha256_*) phone identifiers', async () => {
+    await trackPhoneLead({
+      leadId: 'phone-dual-id',
+      phone: '555-777-6666',
+      email: 'phone-dual@test.com',
+      sourceTool: 'quiz',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    const userData = event.user_data;
+
+    // Google Enhanced Conversions format
+    expect(userData.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
+
+    // Meta CAPI format (same hash, aliased)
+    expect(userData.ph).toBe(userData.sha256_phone_number);
+  });
+
+  it('should include email hashes when email is provided', async () => {
+    await trackPhoneLead({
+      leadId: 'phone-with-email',
+      phone: '555-111-2222',
+      email: 'phone-email@test.com',
+      sourceTool: 'quiz-results',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    const userData = event.user_data;
+
+    // Google Enhanced Conversions format
+    expect(userData.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
+
+    // Meta CAPI format
+    expect(userData.em).toBe(userData.sha256_email_address);
+  });
+
+  it('should normalize phone to E.164 before hashing', async () => {
+    await trackPhoneLead({
+      leadId: 'phone-norm-1',
+      phone: '(555) 333-4444',
+      sourceTool: 'quiz',
+    });
+
+    await trackPhoneLead({
+      leadId: 'phone-norm-2',
+      phone: '555-333-4444',
+      sourceTool: 'quiz',
+    });
+
+    await trackPhoneLead({
+      leadId: 'phone-norm-3',
+      phone: '5553334444',
+      sourceTool: 'quiz',
+    });
+
+    const events = mockDataLayer.filter(e => e.event === 'phone_lead');
+    const hashes = events.map(e => e.user_data.sha256_phone_number);
+
+    // All phone formats should produce identical hash
+    expect(hashes[0]).toBe(hashes[1]);
+    expect(hashes[1]).toBe(hashes[2]);
+  });
+
+  it('should include $25 value for value-based bidding', async () => {
+    await trackPhoneLead({
+      leadId: 'phone-value-test',
+      phone: '555-444-5555',
+      sourceTool: 'fair-price-quiz',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    expect(event.value).toBe(25);
+    expect(event.currency).toBe('USD');
+  });
+
+  it('should include source_tool for attribution', async () => {
+    await trackPhoneLead({
+      leadId: 'phone-source-test',
+      phone: '555-666-7777',
+      sourceTool: 'cost-calculator',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    expect(event.source_tool).toBe('cost-calculator');
+  });
+
+  it('should handle phone-only submissions (no email)', async () => {
+    await trackPhoneLead({
+      leadId: 'phone-only-test',
+      phone: '555-888-9999',
+      sourceTool: 'quiz-results',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    expect(event.user_data.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
+    expect(event.user_data.ph).toMatch(/^[a-f0-9]{64}$/);
+    expect(event.user_data.sha256_email_address).toBeUndefined();
+    expect(event.user_data.em).toBeUndefined();
+  });
+});
+
 describe('normalizeToE164', () => {
   it('should convert 10-digit US numbers to E.164', () => {
     expect(normalizeToE164('5551234567')).toBe('+15551234567');
