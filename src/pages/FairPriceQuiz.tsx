@@ -162,12 +162,8 @@ export default function FairPriceQuiz() {
         }
       );
 
-      trackEvent('lead_captured', {
-        source_tool: 'fair-price-quiz',
-        lead_id: data?.leadId, // Golden Thread: include in analytics
-        grade: analysis?.grade,
-        lead_score: leadScore,
-      });
+      // NOTE: Duplicate trackEvent('lead_captured') removed - trackLeadCapture above 
+      // already handles EMQ-compliant event with hashed PII and value-based bidding
     } catch (error) {
       console.error('Failed to save lead:', error);
     }

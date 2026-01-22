@@ -386,12 +386,8 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
           leadId: data.leadId,
         });
 
-        trackEvent('lead_captured', {
-          source_tool: 'true-cost-calculator' satisfies SourceTool,
-          lead_id: data.leadId, // Golden Thread: include in analytics
-          project_cost: inputs.projectCost,
-          net_cost: netCost,
-        });
+        // NOTE: Duplicate trackEvent('lead_captured') removed - trackLeadCapture above 
+        // already handles EMQ-compliant event with hashed PII and value-based bidding
 
         setIsFormSubmitted(true);
         
