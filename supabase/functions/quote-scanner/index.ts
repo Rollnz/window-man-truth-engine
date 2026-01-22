@@ -118,9 +118,10 @@ const QuoteScannerRequestSchema = z.object({
   notesFromCalculator: z.string().max(2000).optional(),
   question: z.string().max(2000).optional(),
   analysisContext: AnalysisContextSchema.optional(),
-  // Golden Thread: Attribution tracking
+  // Golden Thread: Attribution tracking (Task A/C)
   sessionId: z.string().uuid('Invalid session ID format').optional(),
   leadId: z.string().uuid('Invalid lead ID format').optional(),
+  clientId: z.string().max(100).optional(), // Browser client_id for ledger identity
 }).superRefine((data, ctx) => {
   if (data.mode === "analyze") {
     if (!data.imageBase64) {
@@ -772,7 +773,7 @@ serve(async (req) => {
       );
     }
 
-    const { mode, imageBase64, mimeType, openingCount, areaName, notesFromCalculator, question, analysisContext, sessionId, leadId } = parseResult.data;
+    const { mode, imageBase64, mimeType, openingCount, areaName, notesFromCalculator, question, analysisContext, sessionId, leadId, clientId } = parseResult.data;
 
     console.log(`[QuoteScanner] Request: mode=${mode}, IP=${clientIP}, sessionId=${sessionId || 'not provided'}`);
 
@@ -993,6 +994,7 @@ Format the output with clear section headers and make it easy to read during a p
 
       // ═══════════════════════════════════════════════════════════════════════════
       // CANONICAL LEDGER: Log scanner_analysis_completed to wm_event_log
+      // Uses service role client (bypasses RLS)
       // Non-blocking: failures do not affect analysis response
       // ═══════════════════════════════════════════════════════════════════════════
       try {
@@ -1001,16 +1003,25 @@ Format the output with clear section headers and make it easy to read during a p
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
         );
 
-        // Lookup session to get anonymous_id (client_id), lead_id, and session UUID
-        let sessionData = null;
-        if (sessionId) {
-          const { data } = await supabaseForLedger
+        // Priority: payload > session lookup > fallback (Task A/C)
+        let resolvedClientId = clientId || null;
+        let resolvedLeadId = leadId || null;
+        let resolvedSessionId = sessionId || null;
+        
+        // Try session lookup for missing identity
+        if (sessionId && (!resolvedClientId || !resolvedLeadId)) {
+          const { data: sessionData } = await supabaseForLedger
             .from('wm_sessions')
             .select('id, anonymous_id, lead_id')
             .eq('id', sessionId)
             .limit(1)
             .maybeSingle();
-          sessionData = data;
+          
+          if (sessionData) {
+            resolvedClientId = resolvedClientId || sessionData.anonymous_id;
+            resolvedLeadId = resolvedLeadId || sessionData.lead_id;
+            resolvedSessionId = resolvedSessionId || sessionData.id;
+          }
         }
 
         const eventId = crypto.randomUUID();
@@ -1019,11 +1030,11 @@ Format the output with clear section headers and make it easy to read during a p
           event_name: 'scanner_analysis_completed',
           event_type: 'signal',
           event_time: new Date().toISOString(),
-          client_id: sessionData?.anonymous_id || sessionId || null,
-          lead_id: sessionData?.lead_id || leadId || null,
-          session_id: sessionData?.id || sessionId || null,
+          client_id: resolvedClientId,
+          lead_id: resolvedLeadId,
+          session_id: resolvedSessionId,
           source_tool: 'ai_scanner',
-          source_system: 'scanner',
+          source_system: 'quote-scanner',
           ingested_by: 'quote-scanner',
           page_path: '/ai-scanner',
           metadata: {
@@ -1041,6 +1052,7 @@ Format the output with clear section headers and make it easy to read during a p
           },
         };
 
+        // Insert using service role client (bypasses RLS)
         const { error: ledgerError } = await supabaseForLedger
           .from('wm_event_log')
           .insert(eventPayload);
@@ -1048,7 +1060,11 @@ Format the output with clear section headers and make it easy to read during a p
         if (ledgerError) {
           console.error('[quote-scanner] wm_event_log insert failed (non-fatal):', ledgerError.message);
         } else {
-          console.log(`[quote-scanner] Logged scanner_analysis_completed to wm_event_log: ${eventId}`);
+          console.log(`[quote-scanner] Logged scanner_analysis_completed to wm_event_log: ${eventId}`, {
+            client_id: resolvedClientId,
+            lead_id: resolvedLeadId,
+            session_id: resolvedSessionId,
+          });
         }
       } catch (ledgerErr) {
         console.error('[quote-scanner] wm_event_log logging exception (non-fatal):', ledgerErr);

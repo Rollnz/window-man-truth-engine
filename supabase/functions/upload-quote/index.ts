@@ -163,6 +163,18 @@ Deno.serve(async (req: Request) => {
     const utmSource = formData.get("utm_source") as string | null;
     const utmMedium = formData.get("utm_medium") as string | null;
     const utmCampaign = formData.get("utm_campaign") as string | null;
+    
+    // Identity fields from request payload (Task A/C requirement)
+    const clientIdFromPayload = formData.get("client_id") as string | null;
+    const leadIdFromPayload = formData.get("lead_id") as string | null;
+    const sessionUuidFromPayload = formData.get("session_uuid") as string | null;
+    
+    // Validate UUID format helper
+    const isValidUUID = (str: string | null): boolean => {
+      if (!str) return false;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(str);
+    };
 
     // Validate required fields
     if (!file) {
@@ -303,17 +315,37 @@ Deno.serve(async (req: Request) => {
 
     // ============================================
     // LOG TO CANONICAL EVENT LEDGER (wm_event_log)
+    // Uses service role client (already initialized above)
     // Non-blocking: failures do not affect upload success
     // ============================================
     try {
-      // Lookup session to get anonymous_id (client_id), lead_id, and session UUID
-      // Note: wm_sessions uses anonymous_id column, not identifier
-      const { data: sessionData } = await supabase
-        .from("wm_sessions")
-        .select("id, anonymous_id, lead_id")
-        .eq("anonymous_id", sessionId)
-        .limit(1)
-        .maybeSingle();
+      // Priority: payload > session lookup > fallback
+      // 1. Use identity from request payload if provided (Task A/C)
+      // 2. Fall back to session lookup if not provided
+      // 3. Use sessionId string as last resort for client_id
+      
+      let resolvedClientId = clientIdFromPayload;
+      let resolvedLeadId = isValidUUID(leadIdFromPayload) ? leadIdFromPayload : null;
+      let resolvedSessionId = isValidUUID(sessionUuidFromPayload) ? sessionUuidFromPayload : null;
+      
+      // If identity not fully provided, try session lookup
+      if (!resolvedClientId || !resolvedLeadId) {
+        const { data: sessionData } = await supabase
+          .from("wm_sessions")
+          .select("id, anonymous_id, lead_id")
+          .eq("anonymous_id", sessionId)
+          .limit(1)
+          .maybeSingle();
+        
+        if (sessionData) {
+          resolvedClientId = resolvedClientId || sessionData.anonymous_id;
+          resolvedLeadId = resolvedLeadId || sessionData.lead_id;
+          resolvedSessionId = resolvedSessionId || sessionData.id;
+        }
+      }
+      
+      // Final fallback for client_id
+      resolvedClientId = resolvedClientId || sessionId;
 
       const eventId = crypto.randomUUID();
       const eventPayload = {
@@ -321,11 +353,11 @@ Deno.serve(async (req: Request) => {
         event_name: "scanner_upload_completed",
         event_type: "signal",
         event_time: new Date().toISOString(),
-        client_id: sessionData?.anonymous_id || sessionId,
-        lead_id: sessionData?.lead_id || null,
-        session_id: sessionData?.id || null, // Use session UUID, not identifier
+        client_id: resolvedClientId,
+        lead_id: resolvedLeadId,
+        session_id: resolvedSessionId,
         source_tool: "ai_scanner",
-        source_system: "scanner",
+        source_system: "upload-quote",
         ingested_by: "upload-quote",
         page_path: sourcePage === "beat-your-quote" ? "/beat-your-quote" : "/ai-scanner",
         metadata: {
@@ -340,6 +372,7 @@ Deno.serve(async (req: Request) => {
         },
       };
 
+      // Insert using service role client (bypasses RLS)
       const { error: ledgerError } = await supabase
         .from("wm_event_log")
         .insert(eventPayload);
@@ -347,7 +380,11 @@ Deno.serve(async (req: Request) => {
       if (ledgerError) {
         console.error("[upload-quote] wm_event_log insert failed (non-fatal):", ledgerError.message);
       } else {
-        console.log(`[upload-quote] Logged scanner_upload_completed to wm_event_log: ${eventId}`);
+        console.log(`[upload-quote] Logged scanner_upload_completed to wm_event_log: ${eventId}`, {
+          client_id: resolvedClientId,
+          lead_id: resolvedLeadId,
+          session_id: resolvedSessionId,
+        });
       }
     } catch (ledgerErr) {
       console.error("[upload-quote] wm_event_log logging exception (non-fatal):", ledgerErr);

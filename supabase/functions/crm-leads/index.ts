@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
 // Admin email whitelist - must be lowercase for comparison
@@ -15,8 +16,27 @@ const ADMIN_EMAILS = [
 ];
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  const method = req.method;
+  const origin = req.headers.get("origin") || "unknown";
+  
+  console.log(`[crm-leads] ${method} request from origin: ${origin}`);
+
+  // Handle CORS preflight - MUST return 200 with proper headers
+  if (method === "OPTIONS") {
+    console.log("[crm-leads] OPTIONS preflight handled");
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
+  }
+
+  // Only allow GET and POST methods
+  if (method !== "GET" && method !== "POST") {
+    console.log(`[crm-leads] Method ${method} not allowed`);
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -52,7 +72,6 @@ Deno.serve(async (req) => {
     }
 
     const url = new URL(req.url);
-    const method = req.method;
 
     // GET - Fetch leads with filters
     if (method === "GET") {
@@ -90,10 +109,6 @@ Deno.serve(async (req) => {
       }
 
       // Get summary stats
-      const { data: stats } = await supabase
-        .from("wm_leads")
-        .select("status, lead_quality", { count: "exact" });
-
       const summary = {
         total: leads?.length || 0,
         byStatus: {} as Record<string, number>,
@@ -111,6 +126,39 @@ Deno.serve(async (req) => {
       });
     }
 
+    // POST - Update lead status or other fields
+    if (method === "POST") {
+      const body = await req.json();
+      const { leadId, updates } = body;
+
+      if (!leadId || !updates) {
+        return new Response(JSON.stringify({ error: "leadId and updates required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data, error } = await supabase
+        .from("wm_leads")
+        .update(updates)
+        .eq("id", leadId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating lead:", error);
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, lead: data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fallback - should not reach here
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

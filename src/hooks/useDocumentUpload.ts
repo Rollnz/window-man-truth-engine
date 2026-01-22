@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useSessionData } from './useSessionData';
+import { getOrCreateClientId } from '@/lib/tracking';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types (exported for consumers)
@@ -295,6 +296,7 @@ export function useDocumentUpload(): {
       formData.append('file', file);
       formData.append('sessionId', sessionId);
       formData.append('documentType', documentType);
+      formData.append('clientId', getOrCreateClientId()); // Task C: Identity pass-through
       if (leadId) formData.append('leadId', leadId);
       if (sourceTool) formData.append('sourceTool', sourceTool);
 

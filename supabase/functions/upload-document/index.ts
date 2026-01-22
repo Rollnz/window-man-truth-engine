@@ -221,6 +221,10 @@ Deno.serve(async (req) => {
     const file = formData.get('file') as File | null;
     const sessionId = formData.get('sessionId') as string | null;
     const documentType = formData.get('documentType') as string | null;
+    
+    // Identity fields from request payload (Task A/C requirement)
+    const clientIdFromPayload = formData.get('client_id') as string | null;
+    const leadIdFromPayload = formData.get('lead_id') as string | null;
 
     // ===== Validate Required Fields =====
     if (!file) {
@@ -315,17 +319,35 @@ Deno.serve(async (req) => {
 
     // ============================================
     // LOG TO CANONICAL EVENT LEDGER (wm_event_log)
+    // Uses service role client (already initialized above)
     // Non-blocking: failures do not affect upload success
     // ============================================
     try {
-      // Lookup session to get anonymous_id (client_id), lead_id, and session UUID
-      // Note: sessionId here is already a UUID (validated above)
-      const { data: sessionData } = await supabase
-        .from('wm_sessions')
-        .select('id, anonymous_id, lead_id')
-        .eq('id', sessionId)
-        .limit(1)
-        .maybeSingle();
+      // Priority: payload > session lookup > fallback
+      // 1. Use identity from request payload if provided (Task A/C)
+      // 2. Fall back to session lookup if not provided
+      // 3. Use sessionId as last resort
+      
+      let resolvedClientId = clientIdFromPayload;
+      let resolvedLeadId = isValidUUIDv4(leadIdFromPayload || '') ? leadIdFromPayload : null;
+      
+      // Try session lookup for missing identity
+      if (!resolvedClientId || !resolvedLeadId) {
+        const { data: sessionData } = await supabase
+          .from('wm_sessions')
+          .select('id, anonymous_id, lead_id')
+          .eq('id', sessionId)
+          .limit(1)
+          .maybeSingle();
+        
+        if (sessionData) {
+          resolvedClientId = resolvedClientId || sessionData.anonymous_id;
+          resolvedLeadId = resolvedLeadId || sessionData.lead_id;
+        }
+      }
+      
+      // Final fallback for client_id
+      resolvedClientId = resolvedClientId || sessionId;
 
       const eventId = crypto.randomUUID();
       const eventPayload = {
@@ -333,11 +355,11 @@ Deno.serve(async (req) => {
         event_name: 'scanner_document_upload_completed',
         event_type: 'signal',
         event_time: new Date().toISOString(),
-        client_id: sessionData?.anonymous_id || sessionId,
-        lead_id: sessionData?.lead_id || null,
-        session_id: sessionData?.id || sessionId, // Use session UUID
+        client_id: resolvedClientId,
+        lead_id: resolvedLeadId,
+        session_id: sessionId, // sessionId is already validated as UUID
         source_tool: 'ai_scanner',
-        source_system: 'scanner',
+        source_system: 'upload-document',
         ingested_by: 'upload-document',
         page_path: '/ai-scanner',
         metadata: {
@@ -349,6 +371,7 @@ Deno.serve(async (req) => {
         },
       };
 
+      // Insert using service role client (bypasses RLS)
       const { error: ledgerError } = await supabase
         .from('wm_event_log')
         .insert(eventPayload);
@@ -356,7 +379,11 @@ Deno.serve(async (req) => {
       if (ledgerError) {
         console.error(`[upload-document] wm_event_log insert failed (non-fatal):`, ledgerError.message);
       } else {
-        console.log(`[upload-document] Logged scanner_document_upload_completed to wm_event_log: ${eventId}`);
+        console.log(`[upload-document] Logged scanner_document_upload_completed to wm_event_log: ${eventId}`, {
+          client_id: resolvedClientId,
+          lead_id: resolvedLeadId,
+          session_id: sessionId,
+        });
       }
     } catch (ledgerErr) {
       console.error(`[upload-document] wm_event_log logging exception (non-fatal):`, ledgerErr);

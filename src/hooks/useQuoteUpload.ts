@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useSessionData } from './useSessionData';
+import { useLeadIdentity } from './useLeadIdentity';
 import { getAttributionData } from '@/lib/attribution';
 import { trackEvent } from '@/lib/gtm';
+import { getOrCreateClientId } from '@/lib/tracking';
 
 // Error codes returned by the upload-quote Edge Function
 export type UploadErrorCode =
@@ -63,6 +65,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export function useQuoteUpload() {
   const { sessionId } = useSessionData();
+  const { leadId } = useLeadIdentity();
   const [state, setState] = useState<UploadState>({
     isUploading: false,
     progress: 0,
@@ -149,12 +152,17 @@ export function useQuoteUpload() {
       return result;
     }
 
-    // Build form data with attribution
+    // Build form data with attribution and identity (Task C)
     const attribution = getAttributionData();
+    const clientId = getOrCreateClientId();
     const formData = new FormData();
     formData.append('file', file);
     formData.append('session_id', sessionId);
     formData.append('source_page', sourcePage);
+    
+    // Identity pass-through for ledger logging (Task C requirement)
+    formData.append('client_id', clientId);
+    if (leadId) formData.append('lead_id', leadId);
     
     if (attribution.utm_source) formData.append('utm_source', attribution.utm_source);
     if (attribution.utm_medium) formData.append('utm_medium', attribution.utm_medium);
