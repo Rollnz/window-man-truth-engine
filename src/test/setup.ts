@@ -22,10 +22,21 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 });
 
-// Mock crypto.randomUUID
+// Mock crypto.randomUUID and crypto.subtle for SHA-256 hashing
 Object.defineProperty(globalThis, 'crypto', {
   value: {
     randomUUID: vi.fn(() => 'mock-uuid-1234-5678-9abc-def012345678'),
+    subtle: {
+      digest: async (_algo: string, data: ArrayBuffer) => {
+        // Consistent mock hash - returns 32-byte buffer producing 64-char hex string
+        const bytes = new Uint8Array(32);
+        const input = new TextDecoder().decode(data);
+        for (let i = 0; i < 32; i++) {
+          bytes[i] = (input.charCodeAt(i % input.length) + i) % 256;
+        }
+        return bytes.buffer;
+      },
+    },
   },
 });
 
