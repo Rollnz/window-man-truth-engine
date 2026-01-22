@@ -11,7 +11,7 @@ import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { useFormAbandonment } from "@/hooks/useFormAbandonment";
 import { Calendar, Check, Loader2 } from "lucide-react";
-import { trackEvent, trackModalOpen, trackConsultationBooked, trackFormStart } from "@/lib/gtm";
+import { trackEvent, trackModalOpen, trackBookingConfirmed, trackFormStart } from "@/lib/gtm";
 import { getAttributionData, buildAIContextFromSession } from "@/lib/attribution";
 import { setLeadAnchor } from "@/lib/leadAnchor";
 import { logBookingConfirmed } from "@/lib/highValueSignals";
@@ -152,18 +152,17 @@ export function ConsultationBookingModal({
           setLeadAnchor(data.leadId);
         }
 
-        // Track Enhanced Consultation Booking (Phase 2)
-        await trackConsultationBooked({
+        // Track Enhanced Consultation Booking with async PII hashing (Phase 2)
+        await trackBookingConfirmed({
           leadId: data.leadId,
           email: values.email,
           phone: values.phone,
-          metadata: {
-            name: values.name,
-            preferredTime: values.preferredTime,
-            windowCount: sessionData.windowCount,
-            projectValue: sessionData.fairPriceQuizResults?.quoteAmount,
-            urgencyLevel: sessionData.urgencyLevel,
-          },
+          name: values.name,
+          preferredTime: values.preferredTime,
+          sourceTool,
+          windowCount: sessionData.windowCount,
+          estimatedProjectValue: sessionData.fairPriceQuizResults?.quoteAmount,
+          urgencyLevel: sessionData.urgencyLevel,
         });
         
         // PHASE 4: Log high-value booking_confirmed signal to wm_event_log
