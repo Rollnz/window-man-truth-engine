@@ -3,10 +3,16 @@
  * 
  * Simplified signal tracking functions for high-value events.
  * These supplement lead_captured events.
+ * 
+ * EMQ Compliance: All events include:
+ * - event_id (UUID for deduplication)
+ * - user_data (hashed PII for Enhanced Conversions)
+ * - value + currency (for value-based bidding)
  */
 
 import { buildEventMetadata, buildGTMEvent } from './eventMetadataHelper';
-import { trackEvent } from './gtm';
+import { trackEvent, sha256, hashPhone } from './gtm';
+import { normalizeToE164 } from './phoneFormat';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Scanner Upload Completed
@@ -49,6 +55,7 @@ export async function trackScannerUploadCompleted(params: ScannerUploadCompleted
 
 export interface VoiceEstimateConfirmedParams {
   leadId?: string;
+  email?: string;
   phone_number?: string;
   call_duration: number;
   agent_id?: string;
@@ -60,7 +67,42 @@ export interface VoiceEstimateConfirmedParams {
   next_step?: string;
 }
 
+// Conversion value for voice estimate confirmed (high-intent signal)
+const VOICE_ESTIMATE_VALUE = 30;
+
+/**
+ * Track voice estimate confirmed with EMQ-compliant user_data
+ * 
+ * Includes:
+ * - event_id for Meta CAPI deduplication
+ * - user_data with hashed email (em) and phone (ph) for Enhanced Conversions
+ * - value + currency for value-based bidding
+ */
 export async function trackVoiceEstimateConfirmed(params: VoiceEstimateConfirmedParams): Promise<void> {
+  const event_id = crypto.randomUUID();
+  
+  // Build user_data with hashed PII for EMQ compliance
+  const [hashedEmail, hashedPhone] = await Promise.all([
+    params.email ? sha256(params.email.toLowerCase().trim()) : Promise.resolve(undefined),
+    params.phone_number ? hashPhone(params.phone_number) : Promise.resolve(undefined),
+  ]);
+
+  const user_data: Record<string, string | undefined> = {
+    external_id: params.leadId,
+  };
+
+  // Add hashed email (Google: sha256_email_address, Meta: em)
+  if (hashedEmail) {
+    user_data.sha256_email_address = hashedEmail;
+    user_data.em = hashedEmail;
+  }
+
+  // Add hashed phone (Google: sha256_phone_number, Meta: ph)
+  if (hashedPhone) {
+    user_data.sha256_phone_number = hashedPhone;
+    user_data.ph = hashedPhone;
+  }
+
   const metadata = buildEventMetadata({
     leadId: params.leadId || 'anonymous',
     sourceTool: 'voice-agent',
@@ -68,7 +110,12 @@ export async function trackVoiceEstimateConfirmed(params: VoiceEstimateConfirmed
   });
 
   const gtmEvent = buildGTMEvent('voice_estimate_confirmed', metadata, {
-    phone_number: params.phone_number,
+    event_id,
+    value: VOICE_ESTIMATE_VALUE,
+    currency: 'USD',
+    user_data,
+    // Normalized phone for display (not hashed)
+    phone_e164: params.phone_number ? normalizeToE164(params.phone_number) : undefined,
     call_duration: params.call_duration,
     agent_id: params.agent_id,
     agent_confidence: params.agent_confidence,
@@ -80,6 +127,14 @@ export async function trackVoiceEstimateConfirmed(params: VoiceEstimateConfirmed
   });
 
   trackEvent('voice_estimate_confirmed', gtmEvent);
+
+  if (import.meta.env.DEV) {
+    console.log('[GTM] voice_estimate_confirmed pushed with user_data:', { 
+      event_id, 
+      hasEmail: !!hashedEmail, 
+      hasPhone: !!hashedPhone 
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
