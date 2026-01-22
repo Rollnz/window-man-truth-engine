@@ -76,7 +76,7 @@ export function OutcomeFolders({
     trackEvent('byq_cta_clicked', {
       location: 'outcome_folders'
     });
-    trackModalOpen('beat_your_quote_lead_capture');
+    trackModalOpen({ modalName: 'beat_your_quote_lead_capture', sourceTool: 'beat-your-quote' });
     setIsModalOpen(true);
     setModalOpenTime(Date.now());
   }, []);
@@ -180,12 +180,10 @@ export function OutcomeFolders({
         const timeToComplete = modalOpenTime ? Math.round((Date.now() - modalOpenTime) / 1000) : undefined;
 
         // Track successful submission with funnel data
-        trackFormSubmit('beat_your_quote_lead_capture', {
-          fields_completed: completedFieldsCount,
-          has_project_cost: !!projectCost,
-          has_window_count: !!windowCount,
-          time_to_complete_seconds: timeToComplete,
-          lead_id: data.leadId // Golden Thread: include in analytics
+        trackFormSubmit({
+          formName: 'beat_your_quote_lead_capture',
+          sourceTool: 'beat-your-quote',
+          success: true,
         });
         await trackLeadCapture(
           {

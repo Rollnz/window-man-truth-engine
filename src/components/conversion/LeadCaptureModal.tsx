@@ -71,7 +71,7 @@ export function LeadCaptureModal({
       const now = Date.now();
       setModalOpenTime(now);
 
-      trackModalOpen('lead_capture', { source_tool: sourceTool });
+      trackModalOpen({ modalName: 'lead_capture', sourceTool });
     }
   }, [isOpen, sourceTool]); // ONLY these dependencies - NO form values!
 
@@ -161,18 +161,13 @@ export function LeadCaptureModal({
         );
 
         // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
-        const leadQuality = getLeadQuality(sessionData);
-        await trackLeadSubmissionSuccess({
+        trackLeadSubmissionSuccess({
           leadId: data.leadId,
           email: values.email.trim(),
           phone: phone.trim() || undefined,
+          name: name.trim() || undefined,
           sourceTool,
-          leadQuality,
-          metadata: {
-            windowCount: sessionData.windowCount,
-            urgencyLevel: sessionData.urgencyLevel,
-            quoteAmount: sessionData.fairPriceQuizResults?.quoteAmount,
-          },
+          hasPhone: !!phone.trim(),
         });
 
         toast({
@@ -218,7 +213,7 @@ export function LeadCaptureModal({
 
   // Track form start on first field focus
   const handleFirstFieldFocus = () => {
-    trackFormStart({ formId: 'lead_capture', sourceTool });
+    trackFormStart({ formName: 'lead_capture', sourceTool });
   };
 
   // Dynamic content based on source tool

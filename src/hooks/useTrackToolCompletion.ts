@@ -25,7 +25,7 @@
 
 import { useCallback } from 'react';
 import { useSessionData } from './useSessionData';
-import { trackConversionValue } from '@/lib/gtm';
+import { trackEvent } from '@/lib/gtm';
 import { getToolDeltaConfig } from '@/config/toolDeltaValues';
 import { getEngagementScore } from '@/services/analytics';
 import { createToolEventId, isToolEventTracked, markToolEventTracked } from '@/lib/eventDeduplication';
@@ -95,21 +95,16 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
     const eventId = createToolEventId(toolId, 'completed');
     
     // Fire the conversion value event with full context
-    trackConversionValue({
-      eventName: config.eventName,
-      value: config.deltaValue,
-      email,
-      phone,
-      cumulativeScore,
-      eventId, // Deterministic ID for deduplication
-      metadata: {
-        tool_id: toolId,
-        tool_version: '1.0', // For future versioning
-        session_id: sessionData.leadId || 'anonymous',
-        tracking_step: trackingStep,
-        score_snapshot: cumulativeScore,
-        ...metadata,
-      },
+    trackEvent(config.eventName, {
+      value: Math.max(0, Math.min(500, config.deltaValue)),
+      lead_id: sessionData.leadId,
+      source_tool: toolId,
+      event_id: eventId,
+      tool_id: toolId,
+      tool_version: '1.0',
+      tracking_step: trackingStep,
+      score_snapshot: cumulativeScore,
+      ...metadata,
     });
     
     // Mark as tracked in deduplication system
@@ -169,18 +164,13 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
     const eventId = createToolEventId(toolId, 'enhanced_match');
     
     // Fire identity linking event (no additional delta value)
-    trackConversionValue({
-      eventName: 'enhanced_match',
-      value: 0, // No additional delta, just linking identity
-      email,
-      phone,
-      cumulativeScore,
-      eventId,
-      metadata: {
-        tool_id: toolId,
-        session_id: sessionData.leadId,
-        tracking_step: 'enhanced_match',
-      },
+    trackEvent('enhanced_match', {
+      value: 0,
+      lead_id: sessionData.leadId,
+      source_tool: toolId,
+      event_id: eventId,
+      tool_id: toolId,
+      tracking_step: 'enhanced_match',
     });
     
     // Mark as tracked

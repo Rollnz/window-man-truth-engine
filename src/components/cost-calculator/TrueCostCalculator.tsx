@@ -253,10 +253,9 @@ export function TrueCostCalculator({ defaults = DEFAULT_INPUTS }: TrueCostCalcul
   // Track modal open
   useEffect(() => {
     if (isModalOpen) {
-      trackModalOpen('true-cost-quote-modal', {
-        project_cost: inputs.projectCost,
-        estimated_payment: monthlyPayment,
-        net_cost: netCost,
+      trackModalOpen({
+        modalName: 'true-cost-quote-modal',
+        sourceTool: 'true-cost-calculator',
       });
     }
   }, [isModalOpen, inputs.projectCost, monthlyPayment, netCost]);

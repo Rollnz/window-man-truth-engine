@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useSessionData } from '@/hooks/useSessionData';
-import { trackVaultSyncClicked, trackVaultActivation } from '@/lib/gtm';
+import { trackEvent } from '@/lib/gtm';
 import { PriceAnalysis } from '@/lib/fairPriceCalculations';
 import { 
   Vault, 
@@ -55,9 +55,9 @@ export function VaultSyncButton({
       });
 
       // 2. Track the click
-      trackVaultSyncClicked({ 
-        source: variant, 
-        grade: analysis.grade,
+      trackEvent('vault_sync_clicked', { 
+        source_tool: 'fair-price-quiz',
+        analysis_grade: analysis.grade,
       });
 
       // 3. Send magic link
@@ -71,9 +71,9 @@ export function VaultSyncButton({
       }
 
       // 4. Track successful activation
-      trackVaultActivation({
-        source: 'fair-price-quiz',
-        emailDomain: userEmail.split('@')[1],
+      trackEvent('vault_activation', {
+        source_tool: 'fair-price-quiz',
+        method: 'magic_link',
       });
 
       // 5. Show success state

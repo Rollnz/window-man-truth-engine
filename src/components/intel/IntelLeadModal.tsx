@@ -53,9 +53,9 @@ export function IntelLeadModal({
       const now = Date.now();
       setModalOpenTime(now);
 
-      trackModalOpen('intel_lead', {
-        resource_id: resource.id,
-        resource_title: resource.title,
+      trackModalOpen({ 
+        modalName: 'intel_lead', 
+        sourceTool: 'intel-library',
       });
     }
   }, [isOpen, resource?.id]); // resource.id is stable, safe dependency

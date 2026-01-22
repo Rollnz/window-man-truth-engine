@@ -69,10 +69,10 @@ export function useFormAbandonment({
       : 0;
     
     trackFormAbandonment({
-      formId,
+      formName: formId,
       sourceTool,
-      fieldsEntered: enteredFields,
-      timeOnFormMs: timeOnForm,
+      fieldsCompleted: enteredFields.length,
+      timeSpentMs: timeOnForm,
     });
     
     hasFiredAbandonment.current = true;
