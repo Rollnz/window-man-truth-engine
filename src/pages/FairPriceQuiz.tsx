@@ -302,6 +302,7 @@ export default function FairPriceQuiz() {
             userName={userName}
             userEmail={userEmail}
             onPhoneSubmit={handlePhoneSubmit}
+            leadId={hookLeadId}
           />
         )}
       </div>
