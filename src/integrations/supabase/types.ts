@@ -1284,6 +1284,7 @@ export type Database = {
         Returns: Json
       }
       cleanup_rate_limits: { Args: never; Returns: undefined }
+      cleanup_test_data: { Args: never; Returns: Json }
       cleanup_webhook_receipts: { Args: never; Returns: Json }
       delete_search_index: {
         Args: { p_entity_id: string; p_entity_type: string }
