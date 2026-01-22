@@ -64,8 +64,8 @@ export function WelcomeToast() {
       {/* Gradient Border Wrapper - the "Journey" pill with shimmer */}
       <div
         className={cn(
-          // Pill shape with gradient background (acts as border)
-          "rounded-full p-[2px]",
+          // Rectangular shape with gradient background (acts as border)
+          "rounded-2xl p-[2px]",
           // Shimmer gradient: cream → blue → cream for animation sweep
           "bg-gradient-to-r from-[#fef8d5] via-[#094cee] to-[#fef8d5]",
           "bg-[length:200%_100%]",
@@ -76,8 +76,8 @@ export function WelcomeToast() {
         {/* Inner Glass Container */}
         <div
           className={cn(
-            // Glassmorphism effect inside the pill
-            "relative overflow-hidden rounded-full",
+            // Glassmorphism effect inside the card
+            "relative overflow-hidden rounded-2xl",
             "bg-background/90 backdrop-blur-xl",
             // Padding - more horizontal for pill shape
             "px-5 py-4 sm:px-6 sm:py-5"
