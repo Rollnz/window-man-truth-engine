@@ -120,6 +120,7 @@ export const trackLeadCapture = async (
     hasAddress?: boolean;
     hasProjectDetails?: boolean;
     hasName?: boolean;
+    hasPhone?: boolean;
   }
 ) => {
   try {
@@ -241,5 +242,238 @@ export const trackScanResult = (params: {
     scan_status: params.status,
     quote_amount: params.quoteAmount,
     error_reason: params.errorReason,
+  });
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Legacy Tracking Functions (for backward compatibility)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Track modal open event
+ * Supports both string (legacy) and object signatures
+ */
+export const trackModalOpen = (
+  paramsOrModalName: string | { modalName: string; sourceTool?: string; triggerAction?: string },
+  sourceTool?: string
+) => {
+  const params = typeof paramsOrModalName === 'string'
+    ? { modalName: paramsOrModalName, sourceTool }
+    : paramsOrModalName;
+  
+  trackEvent('modal_open', {
+    modal_name: params.modalName,
+    source_tool: params.sourceTool,
+    trigger_action: params.triggerAction,
+  });
+};
+
+/**
+ * Track form submission
+ * Supports both string (legacy) and object signatures
+ */
+export const trackFormSubmit = (
+  paramsOrFormName: string | { formName: string; formId?: string; sourceTool?: string; success?: boolean },
+  sourceTool?: string
+) => {
+  const params = typeof paramsOrFormName === 'string'
+    ? { formName: paramsOrFormName, sourceTool }
+    : paramsOrFormName;
+  
+  trackEvent('form_submit', {
+    form_name: params.formName,
+    form_id: params.formId,
+    source_tool: params.sourceTool,
+    success: params.success ?? true,
+  });
+};
+
+/**
+ * Track form start (user begins filling form)
+ * Supports both string (legacy) and object signatures
+ */
+export const trackFormStart = (
+  paramsOrFormName: string | { formName: string; formId?: string; sourceTool?: string },
+  sourceTool?: string
+) => {
+  const params = typeof paramsOrFormName === 'string'
+    ? { formName: paramsOrFormName, sourceTool }
+    : paramsOrFormName;
+  
+  trackEvent('form_start', {
+    form_name: params.formName,
+    form_id: params.formId,
+    source_tool: params.sourceTool,
+  });
+};
+
+/**
+ * Track lead submission success
+ */
+export const trackLeadSubmissionSuccess = (params: {
+  leadId: string;
+  sourceTool?: string;
+  email?: string;
+  phone?: string;
+  hasPhone?: boolean;
+  name?: string;
+}) => {
+  trackEvent('lead_submission_success', {
+    lead_id: params.leadId,
+    source_tool: params.sourceTool,
+    email_domain: params.email?.split('@')[1] || 'unknown',
+    has_phone: params.hasPhone ?? !!params.phone,
+    has_name: !!params.name,
+  });
+};
+
+/**
+ * Track consultation booking/request
+ */
+export const trackConsultation = (params: {
+  consultationType?: string;
+  preferredTime?: string;
+  sourceTool?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+}) => {
+  trackEvent('consultation_requested', {
+    consultation_type: params.consultationType,
+    preferred_time: params.preferredTime,
+    source_tool: params.sourceTool,
+    has_name: !!params.name,
+    has_email: !!params.email,
+    has_phone: !!params.phone,
+  });
+};
+
+/**
+ * Track tool completion
+ */
+export const trackToolCompletion = (params: {
+  toolName: string;
+  score?: number;
+  completionTime?: number;
+  resultType?: string;
+}) => {
+  trackEvent('tool_completion', {
+    tool_name: params.toolName,
+    score: params.score,
+    completion_time: params.completionTime,
+    result_type: params.resultType,
+  });
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Additional Legacy Exports (for backward compatibility with existing code)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Track vault sync clicked
+ */
+export const trackVaultSyncClicked = (params?: {
+  sourceTool?: string;
+  analysisGrade?: string;
+}) => {
+  trackEvent('vault_sync_clicked', {
+    source_tool: params?.sourceTool,
+    analysis_grade: params?.analysisGrade,
+  });
+};
+
+/**
+ * Track vault activation
+ */
+export const trackVaultActivation = (params?: {
+  sourceTool?: string;
+  method?: string;
+}) => {
+  trackEvent('vault_activation', {
+    source_tool: params?.sourceTool,
+    method: params?.method,
+  });
+};
+
+/**
+ * Track offline conversion (CRM status updates)
+ */
+export const trackOfflineConversion = (params: {
+  leadId: string;
+  conversionType: string;
+  value?: number;
+  status?: string;
+}) => {
+  trackEvent('offline_conversion', {
+    lead_id: params.leadId,
+    conversion_type: params.conversionType,
+    conversion_value: params.value,
+    lead_status: params.status,
+  });
+};
+
+/**
+ * Track form abandonment
+ */
+export const trackFormAbandonment = (params: {
+  formName: string;
+  sourceTool?: string;
+  fieldsCompleted?: number;
+  timeSpentMs?: number;
+}) => {
+  trackEvent('form_abandonment', {
+    form_name: params.formName,
+    source_tool: params.sourceTool,
+    fields_completed: params.fieldsCompleted,
+    time_spent_ms: params.timeSpentMs,
+  });
+};
+
+/**
+ * Track price analysis viewed
+ */
+export const trackPriceAnalysisViewed = (params?: {
+  grade?: string;
+  overagePercentage?: number;
+  quoteAmount?: number;
+}) => {
+  trackEvent('price_analysis_viewed', {
+    grade: params?.grade,
+    overage_percentage: params?.overagePercentage,
+    quote_amount: params?.quoteAmount,
+  });
+};
+
+/**
+ * Track phone lead capture
+ */
+export const trackPhoneLead = (params?: {
+  sourceTool?: string;
+  hasEmail?: boolean;
+}) => {
+  trackEvent('phone_lead', {
+    source_tool: params?.sourceTool,
+    has_email: params?.hasEmail,
+  });
+};
+
+/**
+ * Track conversion value (Two-Step Tracking pattern)
+ */
+export const trackConversionValue = (params: {
+  eventName: string;
+  value: number;
+  leadId?: string;
+  sourceTool?: string;
+  metadata?: Record<string, unknown>;
+}) => {
+  // Clamp value to [0, 500] as per tracking architecture
+  const clampedValue = Math.max(0, Math.min(500, params.value));
+  
+  trackEvent(params.eventName, {
+    value: clampedValue,
+    lead_id: params.leadId,
+    source_tool: params.sourceTool,
+    ...params.metadata,
   });
 };

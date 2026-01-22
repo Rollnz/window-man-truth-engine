@@ -1,7 +1,7 @@
 /**
  * Persistent Visitor Identity Hook
  * 
- * Manages the `wm_vid` (Window Man Visitor ID) - a first-party cookie with ~400-day TTL.
+ * Manages the `wm_vid` (Window Man Visitor ID) - stored in localStorage with cookie backup.
  * This enables:
  * - Long-term visitor tracking across sessions
  * - Attribution of leads to specific tools/pages
@@ -15,11 +15,16 @@
 
 import { useEffect, useState } from 'react';
 
+const VISITOR_ID_KEY = 'wm_vid';
+const VISITOR_ID_COOKIE_NAME = 'wm_vid';
+const VISITOR_ID_TTL_DAYS = 400; // ~13 months
+
 /**
  * Generate UUID v4 using native crypto API with fallback for older browsers
  */
 function generateUUID(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+  // Use native crypto.randomUUID if available
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
   // Fallback for older browsers
@@ -30,24 +35,46 @@ function generateUUID(): string {
   });
 }
 
-const VISITOR_ID_COOKIE_NAME = 'wm_vid';
-const VISITOR_ID_TTL_DAYS = 400; // ~13 months
-
 /**
- * Get or create visitor ID from cookie
+ * Get or create visitor ID from localStorage (primary) with cookie fallback
+ * Never generates a new ID per render - always returns stable ID
  */
 function getOrCreateVisitorId(): string {
-  // Check if cookie exists
+  // 1. Try localStorage first (primary storage)
+  try {
+    const storedId = localStorage.getItem(VISITOR_ID_KEY);
+    if (storedId) {
+      // Ensure cookie is also set for backup
+      setVisitorIdCookie(storedId);
+      return storedId;
+    }
+  } catch {
+    // localStorage not available, continue to cookie
+  }
+
+  // 2. Try cookie as fallback
   const cookies = document.cookie.split(';');
   for (const cookie of cookies) {
     const [name, value] = cookie.trim().split('=');
     if (name === VISITOR_ID_COOKIE_NAME && value) {
-      return decodeURIComponent(value);
+      const cookieId = decodeURIComponent(value);
+      // Persist to localStorage for future
+      try {
+        localStorage.setItem(VISITOR_ID_KEY, cookieId);
+      } catch {
+        // Ignore localStorage errors
+      }
+      return cookieId;
     }
   }
 
-  // Create new visitor ID
+  // 3. Generate new ID and persist to both storages
   const newVisitorId = generateUUID();
+  try {
+    localStorage.setItem(VISITOR_ID_KEY, newVisitorId);
+  } catch {
+    // Ignore localStorage errors
+  }
   setVisitorIdCookie(newVisitorId);
   return newVisitorId;
 }

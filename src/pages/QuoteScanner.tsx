@@ -62,9 +62,9 @@ export default function QuoteScanner() {
 
     // Track secondary signal: Scanner Upload Completed (Phase 4)
     trackScannerUploadCompleted({
-      leadId: leadId || 'anonymous',
-      fileSize: file.size,
-      uploadDuration: duration,
+      leadId: leadId || undefined,
+      file_size: file.size,
+      upload_duration: duration * 1000, // convert to milliseconds
     });
 
     // Show lead capture after analysis if user hasn't provided email
