@@ -264,16 +264,24 @@ export async function logBookingConfirmed(params: {
 /**
  * Log voice estimate confirmation signal
  * 
- * Note: This is primarily for server-side use (webhook handlers),
- * but can be called from client if needed.
+ * This function logs to the database ledger AND fires the GTM event
+ * with hashed PII for Enhanced Conversions.
+ * 
+ * @param params.email - Lead's email for Enhanced Conversions matching
+ * @param params.phone - Lead's phone for Enhanced Conversions matching
  */
 export async function logVoiceEstimateConfirmed(params: {
   callDurationSec?: number;
   callSentiment?: string;
   providerCallId?: string;
   leadId?: string;
+  email?: string;
+  phone?: string;
+  agentId?: string;
+  agentConfidence?: number;
 }): Promise<void> {
-  return logHighValueSignal({
+  // Log to database ledger
+  await logHighValueSignal({
     eventName: 'voice_estimate_confirmed',
     sourceTool: 'expert-system', // Voice AI uses expert-system as base
     leadId: params.leadId,
@@ -284,5 +292,18 @@ export async function logVoiceEstimateConfirmed(params: {
       call_sentiment: params.callSentiment,
       provider_call_id: params.providerCallId,
     },
+  });
+
+  // Also fire GTM event with hashed PII for Enhanced Conversions
+  // Import dynamically to avoid circular dependencies
+  const { trackVoiceEstimateConfirmed } = await import('./secondarySignalEvents');
+  await trackVoiceEstimateConfirmed({
+    leadId: params.leadId,
+    email: params.email,
+    phone_number: params.phone,
+    call_duration: params.callDurationSec || 0,
+    agent_id: params.agentId,
+    agent_confidence: params.agentConfidence || 0,
+    sentiment_score: params.callSentiment === 'positive' ? 1 : params.callSentiment === 'negative' ? -1 : 0,
   });
 }
