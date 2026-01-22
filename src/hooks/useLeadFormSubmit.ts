@@ -177,9 +177,10 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       // Track analytics with lead_id
       const effectiveLeadId = newLeadId || existingLeadId;
 
-      trackFormSubmit(formLocation || sourceTool, {
-        form_location: formLocation,
-        lead_id: effectiveLeadId,
+      trackFormSubmit({
+        formName: formLocation || sourceTool,
+        sourceTool,
+        success: true,
       });
 
       await trackLeadCapture(
@@ -205,17 +206,13 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       });
 
       // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
-      const leadQuality = getLeadQuality(sessionData);
-      await trackLeadSubmissionSuccess({
+      trackLeadSubmissionSuccess({
         leadId: effectiveLeadId || '',
         email: data.email,
         phone: data.phone,
+        name: normalizedName,
         sourceTool,
-        leadQuality,
-        metadata: {
-          windowCount: sessionData.windowCount,
-          urgencyLevel: sessionData.urgencyLevel,
-        },
+        hasPhone: !!data.phone,
       });
 
       // Show success toast

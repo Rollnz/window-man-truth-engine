@@ -114,10 +114,10 @@ export function MissionInitiatedModal({
       // Track analytics
       const effectiveLeadId = newLeadId || existingLeadId;
       
-      trackFormSubmit('beat-your-quote-upload', {
-        form_location: 'mission_initiated_modal',
-        lead_id: effectiveLeadId,
-        quote_file_id: quoteFileId,
+      trackFormSubmit({
+        formName: 'beat-your-quote-upload',
+        formId: 'mission_initiated_modal',
+        sourceTool: 'beat-your-quote',
       });
 
       await trackLeadCapture(
@@ -142,17 +142,13 @@ export function MissionInitiatedModal({
       });
 
       // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
-      const leadQuality = getLeadQuality(sessionData);
-      await trackLeadSubmissionSuccess({
+      trackLeadSubmissionSuccess({
         leadId: effectiveLeadId || '',
         email: values.email,
         phone: values.phone,
+        name: values.name,
         sourceTool: 'beat-your-quote',
-        leadQuality,
-        metadata: {
-          windowCount: sessionData.windowCount,
-          urgencyLevel: sessionData.urgencyLevel,
-        },
+        hasPhone: !!values.phone,
       });
 
       toast({

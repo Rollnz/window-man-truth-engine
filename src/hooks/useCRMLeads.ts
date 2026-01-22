@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CRMLead, LeadStatus, DisqualificationReason } from '@/types/crm';
-import { trackOfflineConversion } from '@/lib/gtm';
+import { trackEvent } from '@/lib/gtm';
 
 interface CRMSummary {
   total: number;
@@ -203,24 +203,20 @@ export function useCRMLeads(): UseCRMLeadsReturn {
           
           if (fired) {
             // Only fire the primary conversion if server confirms first-time
-            await trackOfflineConversion({
-              leadId,
-              newStatus: newStatus as 'qualified' | 'mql',
-              gclid: attribution.gclid,
-              fbclid: attribution.fbc?.split('.').pop(),
-              email: attribution.email,
+            trackEvent('offline_conversion', {
+              lead_id: leadId,
+              conversion_type: newStatus,
+              lead_status: newStatus,
             });
           }
           // If not fired, skip - prevents duplicate cv_qualified_lead events
         } else {
           // Other statuses don't need the server gate
-          await trackOfflineConversion({
-            leadId,
-            newStatus: newStatus as 'appointment_set' | 'sat' | 'closed_won' | 'closed_lost' | 'dead',
-            dealValue: extras?.actualDealValue,
-            gclid: attribution.gclid,
-            fbclid: attribution.fbc?.split('.').pop(),
-            email: attribution.email,
+          trackEvent('offline_conversion', {
+            lead_id: leadId,
+            conversion_type: newStatus,
+            conversion_value: extras?.actualDealValue,
+            lead_status: newStatus,
           });
         }
       }

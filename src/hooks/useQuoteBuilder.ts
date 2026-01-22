@@ -279,17 +279,13 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
         );
 
         // Push Enhanced Conversion event to dataLayer for GTM (Phase 1)
-        const leadQuality = getLeadQuality({ windowCount: cart.length });
-        await trackLeadSubmissionSuccess({
+        trackLeadSubmissionSuccess({
           leadId: result.leadId,
           email: data.email.trim(),
           phone: data.phone?.trim(),
+          name: data.name?.trim(),
           sourceTool: 'quote-builder',
-          leadQuality,
-          metadata: {
-            windowCount: cart.length,
-            quoteAmount: grandTotal,
-          },
+          hasPhone: !!data.phone?.trim(),
         });
 
         setShowModal(false);

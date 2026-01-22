@@ -230,10 +230,9 @@ const RealityCheck = () => {
     
     // Track consultation in GTM
     trackConsultation({
-      name: sessionData.name || '',
-      phone: sessionData.phone || '',
-      email: sessionData.email || '',
-      leadScore: score,
+      consultationType: 'reality-check',
+      preferredTime: 'asap',
+      sourceTool: 'reality-check',
     });
   };
 

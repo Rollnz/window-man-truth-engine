@@ -9,7 +9,7 @@ import { gradeConfig } from '@/data/fairPriceQuizData';
 import { VaultSyncButton } from './VaultSyncButton';
 import { WhyVaultFAQ } from './WhyVaultFAQ';
 import { DownsellStickyFooter } from './DownsellStickyFooter';
-import { trackPriceAnalysisViewed, trackPhoneLead } from '@/lib/gtm';
+import { trackEvent } from '@/lib/gtm';
 import { NextStepCard } from '@/components/seo/NextStepCard';
 import { MethodologyBadge } from '@/components/authority/MethodologyBadge';
 
@@ -40,12 +40,12 @@ export function QuizResults({
 
   // Track analysis viewed on mount
   useEffect(() => {
-    trackPriceAnalysisViewed({
+    trackEvent('price_analysis_viewed', {
       grade: analysis.grade,
-      quoteAmount: analysis.quoteAmount,
-      fmvLow: analysis.fairMarketValue.low,
-      fmvHigh: analysis.fairMarketValue.high,
-      overagePct: analysis.overagePercentage,
+      quote_amount: analysis.quoteAmount,
+      fmv_low: analysis.fairMarketValue.low,
+      fmv_high: analysis.fairMarketValue.high,
+      overage_pct: analysis.overagePercentage,
     });
   }, [analysis]);
 
@@ -75,11 +75,9 @@ export function QuizResults({
     setIsSubmitting(true);
     
     // Track phone lead capture with quote value for FB optimization
-    trackPhoneLead({
-      grade: analysis.grade,
-      leadScore: 75, // Base score with phone
-      quoteAmount: analysis.quoteAmount,
-      toolName: 'fair-price-quiz',
+    trackEvent('phone_lead', {
+      source_tool: 'fair-price-quiz',
+      has_email: true,
     });
     
     await onPhoneSubmit(digits);

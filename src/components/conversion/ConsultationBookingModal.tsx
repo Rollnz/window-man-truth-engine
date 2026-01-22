@@ -85,7 +85,7 @@ export function ConsultationBookingModal({
       const now = Date.now();
       setModalOpenTime(now);
 
-      trackModalOpen("consultation_booking");
+      trackModalOpen({ modalName: "consultation_booking", sourceTool });
     }
   }, [isOpen]); // Only isOpen dependency
 
@@ -157,9 +157,9 @@ export function ConsultationBookingModal({
           leadId: data.leadId,
           email: values.email,
           phone: values.phone,
-          name: values.name,
-          preferredTime: values.preferredTime,
           metadata: {
+            name: values.name,
+            preferredTime: values.preferredTime,
             windowCount: sessionData.windowCount,
             projectValue: sessionData.fairPriceQuizResults?.quoteAmount,
             urgencyLevel: sessionData.urgencyLevel,
@@ -226,7 +226,7 @@ export function ConsultationBookingModal({
 
   // Track form start on first field focus
   const handleFirstFieldFocus = () => {
-    trackFormStart({ formId: 'consultation_booking', sourceTool });
+    trackFormStart({ formName: 'consultation_booking', sourceTool });
   };
 
   const nameProps = getFieldProps("name");

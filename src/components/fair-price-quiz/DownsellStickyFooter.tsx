@@ -2,7 +2,7 @@ import { useState, useEffect, RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useSessionData } from '@/hooks/useSessionData';
-import { trackVaultSyncClicked, trackVaultActivation } from '@/lib/gtm';
+import { trackEvent } from '@/lib/gtm';
 import { PriceAnalysis } from '@/lib/fairPriceCalculations';
 import { Vault, X, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 
@@ -65,18 +65,18 @@ export function DownsellStickyFooter({
       });
 
       // Track the click
-      trackVaultSyncClicked({ 
-        source: 'downsell', 
-        grade: analysis.grade,
+      trackEvent('vault_sync_clicked', { 
+        source_tool: 'fair-price-quiz',
+        analysis_grade: analysis.grade,
       });
 
       // Send magic link
       const { error } = await signInWithMagicLink(userEmail);
 
       if (!error) {
-        trackVaultActivation({
-          source: 'fair-price-quiz',
-          emailDomain: userEmail.split('@')[1],
+        trackEvent('vault_activation', {
+          source_tool: 'fair-price-quiz',
+          method: 'magic_link',
         });
         setShowSuccess(true);
         // Auto-dismiss after showing success
