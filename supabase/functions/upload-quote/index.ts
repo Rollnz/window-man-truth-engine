@@ -130,8 +130,19 @@ async function recordRateLimitHit(
 }
 
 Deno.serve(async (req: Request) => {
+  // ============================================
+  // HEALTH CHECK LOG - Backend only (Supabase logs)
+  // This confirms the function is being invoked
+  // ============================================
+  const requestId = crypto.randomUUID().slice(0, 8);
+  console.log(`[upload-quote][${requestId}] === FUNCTION INVOKED ===`);
+  console.log(`[upload-quote][${requestId}] Method: ${req.method}`);
+  console.log(`[upload-quote][${requestId}] URL: ${req.url}`);
+  console.log(`[upload-quote][${requestId}] Timestamp: ${new Date().toISOString()}`);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
+    console.log(`[upload-quote][${requestId}] Handling OPTIONS preflight`);
     return new Response(null, { headers: corsHeaders });
   }
 
