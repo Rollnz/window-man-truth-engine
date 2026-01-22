@@ -12,6 +12,7 @@ import { WelcomeToast } from "@/components/onboarding/WelcomeToast";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { GTMDebugPanel } from "@/components/debug/GTMDebugPanel";
+import { EMQValidatorOverlay } from "@/components/debug/EMQValidatorOverlay";
 
 // Critical path - load immediately
 import Index from "./pages/Index";
@@ -158,8 +159,9 @@ function AppContent() {
         <Route path="/button-audit" element={<ButtonAudit />} />
       </Routes>
       
-      {/* GTM Debug Panel - only renders in development mode */}
+      {/* Debug Panels - only render in development mode */}
       <GTMDebugPanel />
+      <EMQValidatorOverlay />
     </>
   );
 }
