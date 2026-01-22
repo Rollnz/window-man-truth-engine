@@ -33,6 +33,7 @@ export interface SessionData {
   urgencyLevel?: string;
   emotionalState?: string;
   specificDetail?: string;
+  projectType?: string; // e.g., 'replacement', 'new-construction', 'storm-damage'
 
   // ═══════════════════════════════════════════════════════════════════════════
   // TOOL-SPECIFIC RESULTS

@@ -1048,7 +1048,7 @@ Format the output with clear section headers and make it easy to read during a p
             price_per_opening: scored.pricePerOpening,
             warnings_count: scored.warnings.length,
             missing_items_count: scored.missingItems.length,
-            detected_vendor: scored.vendorName || null,
+            detected_vendor: null, // Vendor detection not yet implemented
           },
         };
 
