@@ -6,6 +6,7 @@ export const GTM_ID = 'GTM-NHVFR5QZ';
 declare global {
   interface Window {
     dataLayer: Record<string, unknown>[];
+    truthEngine?: TruthEngine;
   }
 }
 
@@ -14,23 +15,59 @@ declare global {
 // ═══════════════════════════════════════════════════════════════════════════
 
 import type { SourceTool } from '@/types/sourceTool';
-import type { LeadQuality } from '@/lib/leadQuality';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { calculateLeadScore, getRoutingAction, getCRMTags } from '@/lib/leadScoringEngine';
 import { buildEventMetadata, buildGTMEvent, type EventMetadataInput } from './eventMetadataHelper';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * SHA-256 hash detection (64 hex characters)
+ * Used to prevent double-hashing of already-hashed values
+ */
+const HASH_64_HEX_REGEX = /^[a-f0-9]{64}$/i;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HASH-STATE DETECTION
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Check if a value is already a SHA-256 hash (64 hex characters)
+ * CRITICAL: Prevents double-hashing which would break identity matching
+ */
+export function isAlreadyHashed(value: string): boolean {
+  return HASH_64_HEX_REGEX.test(value);
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SHA-256 Hashing for Enhanced Conversions (GA4 + Meta CAPI)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
+ * Normalize email for hashing (lowercase + trim)
+ * Google/Meta requirement for Enhanced Conversions
+ */
+export function normalizeEmail(email: string): string {
+  return email.toLowerCase().trim();
+}
+
+/**
  * SHA-256 hash function for Enhanced Conversions
  * Hashes PII (email, phone) for privacy-safe server matching
  * 
+ * CRITICAL: If input is already hashed (64-char hex), returns as-is
  * NORMALIZATION: Email is lowercased and trimmed before hashing
  */
 export async function sha256(text: string): Promise<string> {
   if (!text) return '';
+  
+  // CRITICAL: Never re-hash already-hashed values
+  if (isAlreadyHashed(text)) {
+    return text;
+  }
+  
   try {
     const encoder = new TextEncoder();
     // Normalize: lowercase and trim (Google requirement)
@@ -46,27 +83,24 @@ export async function sha256(text: string): Promise<string> {
 }
 
 /**
- * Safe hash wrapper that never throws
- * Returns undefined on any failure instead of throwing
+ * Alias for sha256 for explicit naming
  */
-async function safeHash(text: string | undefined | null): Promise<string | undefined> {
-  if (!text) return undefined;
-  try {
-    const hash = await sha256(text);
-    return hash || undefined;
-  } catch {
-    return undefined;
-  }
-}
+export const safeHash = sha256;
 
 /**
  * Hash phone number with E.164 normalization
  * 
+ * CRITICAL: If input is already hashed (64-char hex), returns as-is
  * IMPORTANT: Google expects E.164 format (+1XXXXXXXXXX) for phone hashing
  * Invalid phone numbers return undefined to avoid match quality issues
  */
 export async function hashPhone(phone: string | undefined | null): Promise<string | undefined> {
   if (!phone) return undefined;
+  
+  // CRITICAL: Never re-hash already-hashed values
+  if (isAlreadyHashed(phone)) {
+    return phone;
+  }
   
   // Normalize to E.164 first (returns undefined if invalid)
   const e164 = normalizeToE164(phone);
@@ -78,7 +112,73 @@ export async function hashPhone(phone: string | undefined | null): Promise<strin
   }
   
   // Hash the E.164 formatted number
-  return safeHash(e164);
+  const hash = await sha256(e164);
+  return hash || undefined;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EVENT ID GENERATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Generate a unique event ID for CAPI deduplication
+ * Uses crypto.randomUUID with fallback for older browsers
+ */
+export function generateEventId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older browsers
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ENHANCED USER DATA BUILDER
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface EnhancedUserData {
+  sha256_email_address?: string;
+  sha256_phone_number?: string;
+  em?: string;
+  ph?: string;
+  external_id?: string;
+}
+
+/**
+ * Build Enhanced user_data object for Google Enhanced Conversions & Meta CAPI
+ * 
+ * IMPORTANT: Returns both Google format (sha256_email_address) and Meta format (em/ph)
+ * for cross-platform compatibility.
+ * 
+ * CRITICAL: All hashing uses hash-state detection to prevent double-hashing
+ */
+export async function buildEnhancedUserData(params: {
+  email?: string;
+  phone?: string;
+  leadId?: string;
+}): Promise<EnhancedUserData | undefined> {
+  const [hashedEmail, hashedPhone] = await Promise.all([
+    params.email ? sha256(params.email) : Promise.resolve(undefined),
+    params.phone ? hashPhone(params.phone) : Promise.resolve(undefined),
+  ]);
+
+  if (!hashedEmail && !hashedPhone && !params.leadId) {
+    return undefined;
+  }
+
+  return {
+    // Google Enhanced Conversions format
+    sha256_email_address: hashedEmail || undefined,
+    sha256_phone_number: hashedPhone,
+    // Meta CAPI format (aliased)
+    em: hashedEmail || undefined,
+    ph: hashedPhone,
+    // Cross-platform external ID
+    external_id: params.leadId,
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -86,9 +186,19 @@ export async function hashPhone(phone: string | undefined | null): Promise<strin
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
+ * Initialize dataLayer if not already present
+ */
+function ensureDataLayer(): void {
+  if (typeof window !== 'undefined' && !window.dataLayer) {
+    window.dataLayer = [];
+  }
+}
+
+/**
  * Push an event to the GTM dataLayer
  */
 export const trackEvent = (eventName: string, eventData?: Record<string, unknown>) => {
+  ensureDataLayer();
   if (typeof window !== 'undefined' && window.dataLayer) {
     window.dataLayer.push({
       event: eventName,
@@ -128,7 +238,7 @@ export const trackLeadCapture = async (
     const metadata = buildEventMetadata(input);
 
     // 2. Hash PII for Meta CAPI (Phase 2 requirement - EMQ ≥ 8.0)
-    const hashedEmail = await safeHash(email);
+    const hashedEmail = await sha256(email);
     const hashedPhone = phone ? await hashPhone(phone) : undefined;
 
     // 3. Calculate lead score for internal routing (Phase 3 requirement)
@@ -168,10 +278,12 @@ export const trackLeadCapture = async (
       routing_priority: routingAction.priority,
       crm_tags: crmTags,
 
-      // User Data for EMQ
+      // User Data for EMQ (HASHED ONLY)
       user_data: {
         external_id: metadata.external_id,
-        em: hashedEmail,
+        sha256_email_address: hashedEmail || undefined,
+        sha256_phone_number: hashedPhone,
+        em: hashedEmail || undefined,
         ph: hashedPhone,
       },
 
@@ -186,73 +298,40 @@ export const trackLeadCapture = async (
     // 6. Push to dataLayer
     trackEvent('lead_captured', gtmEvent);
 
-    console.log('[GTM] lead_captured event pushed with full metadata:', {
-      leadId: metadata.external_id,
-      visitorId: metadata.visitor_id,
-      sourceTool: metadata.lead_source,
-      intentTier: metadata.intent_tier,
-      leadScore: leadScoreData.finalScore,
-      routing: routingAction.action
-    });
+    if (import.meta.env.DEV) {
+      console.log('[GTM] lead_captured event pushed with full metadata:', {
+        leadId: metadata.external_id,
+        visitorId: metadata.visitor_id,
+        sourceTool: metadata.lead_source,
+        intentTier: metadata.intent_tier,
+        leadScore: leadScoreData.finalScore,
+        routing: routingAction.action
+      });
+    }
   } catch (error) {
     console.error('[GTM] Error tracking lead capture:', error);
   }
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Legacy & Specialized Tracking
+// HIGH-VALUE CONVERSION TRACKING (EMQ 9.5+ COMPLIANT)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Build Enhanced user_data object for Google Enhanced Conversions & Meta CAPI
+ * Track lead submission success with Enhanced Conversions
  * 
- * IMPORTANT: Returns both Google format (sha256_email_address) and Meta format (em/ph)
- * for cross-platform compatibility.
- */
-async function buildEnhancedUserData(params: {
-  email?: string;
-  phone?: string;
-  leadId?: string;
-}): Promise<{
-  sha256_email_address?: string;
-  sha256_phone_number?: string;
-  em?: string;
-  ph?: string;
-  external_id?: string;
-} | undefined> {
-  const [hashedEmail, hashedPhone] = await Promise.all([
-    params.email ? safeHash(params.email) : Promise.resolve(undefined),
-    params.phone ? hashPhone(params.phone) : Promise.resolve(undefined),
-  ]);
-
-  if (!hashedEmail && !hashedPhone && !params.leadId) {
-    return undefined;
-  }
-
-  return {
-    // Google Enhanced Conversions format
-    sha256_email_address: hashedEmail,
-    sha256_phone_number: hashedPhone,
-    // Meta CAPI format (aliased)
-    em: hashedEmail,
-    ph: hashedPhone,
-    // Cross-platform external ID
-    external_id: params.leadId,
-  };
-}
-
-/**
- * Track consultation booking with Enhanced Conversions
+ * ENHANCED: Async SHA-256 PII hashing for Google Enhanced Conversions & Meta CAPI
+ * Value: $15 (standard lead tier)
  * 
- * ENHANCED: Includes both Google (sha256_*) and Meta (em/ph) formats
- * Value: $75 (highest tier)
+ * CRITICAL: Only hashed PII is pushed to dataLayer - raw PII never appears
  */
-export const trackConsultationBooked = async (params: {
+export const trackLeadSubmissionSuccess = async (params: {
   leadId: string;
   email: string;
-  phone: string;
-  metadata?: Record<string, unknown>;
+  phone?: string;
   sourceTool?: string;
+  name?: string;
+  eventId?: string;
 }): Promise<void> => {
   try {
     const userData = await buildEnhancedUserData({
@@ -261,7 +340,122 @@ export const trackConsultationBooked = async (params: {
       leadId: params.leadId,
     });
 
-    const eventId = crypto.randomUUID();
+    const eventId = params.eventId || params.leadId || generateEventId();
+
+    trackEvent('lead_submission_success', {
+      lead_id: params.leadId,
+      event_id: eventId, // For CAPI deduplication
+      external_id: params.leadId,
+      user_data: userData,
+      value: 15,
+      currency: 'USD',
+      source_tool: params.sourceTool,
+      email_domain: params.email?.split('@')[1] || 'unknown',
+      has_phone: !!params.phone,
+      has_name: !!params.name,
+    });
+
+    if (import.meta.env.DEV) {
+      console.log('[GTM] lead_submission_success pushed with Enhanced Conversions', {
+        leadId: params.leadId.slice(0, 8),
+        eventId: eventId.slice(0, 8),
+        hasEmail: !!userData?.sha256_email_address,
+        hasPhone: !!userData?.sha256_phone_number,
+        value: 15,
+      });
+    }
+  } catch (error) {
+    console.warn('[GTM] lead_submission_success hashing failed, firing fallback:', error);
+    trackEvent('lead_submission_success_fallback', {
+      lead_id: params.leadId,
+      value: 15,
+      currency: 'USD',
+      source_tool: params.sourceTool,
+      hash_error: true,
+    });
+  }
+};
+
+/**
+ * Track phone lead capture with Enhanced Conversions
+ * 
+ * ENHANCED: Async SHA-256 PII hashing with E.164 phone normalization
+ * Value: $25 (higher intent than email-only leads)
+ * 
+ * CRITICAL: Only hashed PII is pushed to dataLayer - raw PII never appears
+ */
+export const trackPhoneLead = async (params: {
+  leadId: string;
+  phone: string;
+  email?: string;
+  sourceTool: string;
+  eventId?: string;
+}): Promise<void> => {
+  try {
+    const userData = await buildEnhancedUserData({
+      email: params.email,
+      phone: params.phone,
+      leadId: params.leadId,
+    });
+
+    const eventId = params.eventId || params.leadId || generateEventId();
+
+    trackEvent('phone_lead', {
+      lead_id: params.leadId,
+      event_id: eventId, // For CAPI deduplication
+      external_id: params.leadId,
+      user_data: userData,
+      value: 25,
+      currency: 'USD',
+      source_tool: params.sourceTool,
+      has_email: !!params.email,
+    });
+
+    if (import.meta.env.DEV) {
+      console.log('[GTM] phone_lead pushed with Enhanced Conversions', {
+        leadId: params.leadId.slice(0, 8),
+        eventId: eventId.slice(0, 8),
+        hasEmail: !!userData?.sha256_email_address,
+        hasPhone: !!userData?.sha256_phone_number,
+        value: 25,
+      });
+    }
+  } catch (error) {
+    console.warn('[GTM] phone_lead hashing failed, firing fallback:', error);
+    trackEvent('phone_lead_fallback', {
+      lead_id: params.leadId,
+      value: 25,
+      currency: 'USD',
+      source_tool: params.sourceTool,
+      hash_error: true,
+    });
+  }
+};
+
+/**
+ * Track consultation booking with Enhanced Conversions
+ * 
+ * ENHANCED: Includes both Google (sha256_*) and Meta (em/ph) formats
+ * Value: $75 (highest tier)
+ * 
+ * CRITICAL: Only hashed PII is pushed to dataLayer - raw PII never appears
+ */
+export const trackConsultationBooked = async (params: {
+  leadId: string;
+  email: string;
+  phone: string;
+  metadata?: Record<string, unknown>;
+  sourceTool?: string;
+  eventId?: string;
+}): Promise<void> => {
+  try {
+    const userData = await buildEnhancedUserData({
+      email: params.email,
+      phone: params.phone,
+      leadId: params.leadId,
+    });
+
+    const eventId = params.eventId || params.leadId || generateEventId();
     
     trackEvent('consultation_booked', {
       lead_id: params.leadId,
@@ -277,6 +471,7 @@ export const trackConsultationBooked = async (params: {
     if (import.meta.env.DEV) {
       console.log('[GTM] consultation_booked pushed with Enhanced Conversions', {
         leadId: params.leadId.slice(0, 8),
+        eventId: eventId.slice(0, 8),
         hasEmail: !!userData?.sha256_email_address,
         hasPhone: !!userData?.sha256_phone_number,
         value: 75,
@@ -295,6 +490,79 @@ export const trackConsultationBooked = async (params: {
 };
 
 /**
+ * Track booking confirmed with async PII hashing (highest-value conversion)
+ * 
+ * ENHANCED: Uses buildEnhancedUserData for both Google (sha256_*) and Meta (em/ph) formats
+ * Value: $75 (highest tier in conversion values reference)
+ * 
+ * CRITICAL: Only hashed PII is pushed to dataLayer - raw PII never appears
+ */
+export const trackBookingConfirmed = async (params: {
+  leadId: string;
+  email: string;
+  phone?: string;
+  name?: string;
+  preferredTime?: string;
+  sourceTool?: string;
+  windowCount?: number;
+  estimatedProjectValue?: number;
+  urgencyLevel?: string;
+  eventId?: string;
+}): Promise<void> => {
+  try {
+    const userData = await buildEnhancedUserData({
+      email: params.email,
+      phone: params.phone,
+      leadId: params.leadId,
+    });
+
+    const eventId = params.eventId || params.leadId || generateEventId();
+    
+    trackEvent('booking_confirmed', {
+      lead_id: params.leadId,
+      event_id: eventId, // For CAPI deduplication
+      external_id: params.leadId,
+      value: 75, // Highest conversion value tier
+      currency: 'USD',
+      user_data: userData,
+      conversion_metadata: {
+        window_count: params.windowCount,
+        estimated_project_value: params.estimatedProjectValue,
+        urgency_level: params.urgencyLevel,
+        preferred_callback_time: params.preferredTime,
+      },
+      source_tool: params.sourceTool,
+      has_name: !!params.name,
+      page_location: typeof window !== 'undefined' ? window.location.href : undefined,
+      page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
+    });
+    
+    if (import.meta.env.DEV) {
+      console.log('[GTM] booking_confirmed pushed with Enhanced Conversions', {
+        leadId: params.leadId.slice(0, 8),
+        eventId: eventId.slice(0, 8),
+        hasEmail: !!userData?.sha256_email_address,
+        hasPhone: !!userData?.sha256_phone_number,
+        value: 75,
+      });
+    }
+  } catch (error) {
+    console.warn('[GTM] booking_confirmed hashing failed, firing fallback:', error);
+    trackEvent('booking_confirmed_fallback', {
+      lead_id: params.leadId,
+      value: 75,
+      currency: 'USD',
+      source_tool: params.sourceTool,
+      hash_error: true,
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Legacy & Specialized Tracking
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
  * Track AI Scan results
  */
 export const trackScanResult = (params: {
@@ -310,10 +578,6 @@ export const trackScanResult = (params: {
     error_reason: params.errorReason,
   });
 };
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Legacy Tracking Functions (for backward compatibility)
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Track modal open event
@@ -374,61 +638,6 @@ export const trackFormStart = (
 };
 
 /**
- * Track lead submission success with Enhanced Conversions
- * 
- * ENHANCED: Async SHA-256 PII hashing for Google Enhanced Conversions & Meta CAPI
- * Value: $15 (standard lead tier)
- */
-export const trackLeadSubmissionSuccess = async (params: {
-  leadId: string;
-  email: string;
-  phone?: string;
-  sourceTool?: string;
-  name?: string;
-}): Promise<void> => {
-  try {
-    const userData = await buildEnhancedUserData({
-      email: params.email,
-      phone: params.phone,
-      leadId: params.leadId,
-    });
-
-    const eventId = crypto.randomUUID();
-
-    trackEvent('lead_submission_success', {
-      lead_id: params.leadId,
-      event_id: eventId, // For CAPI deduplication
-      external_id: params.leadId,
-      user_data: userData,
-      value: 15,
-      currency: 'USD',
-      source_tool: params.sourceTool,
-      email_domain: params.email?.split('@')[1] || 'unknown',
-      has_phone: !!params.phone,
-      has_name: !!params.name,
-    });
-
-    if (import.meta.env.DEV) {
-      console.log('[GTM] lead_submission_success pushed with Enhanced Conversions', {
-        leadId: params.leadId.slice(0, 8),
-        hasEmail: !!userData?.sha256_email_address,
-        hasPhone: !!userData?.sha256_phone_number,
-        value: 15,
-      });
-    }
-  } catch (error) {
-    console.warn('[GTM] lead_submission_success hashing failed, firing fallback:', error);
-    trackEvent('lead_submission_success_fallback', {
-      lead_id: params.leadId,
-      value: 15,
-      currency: 'USD',
-      source_tool: params.sourceTool,
-      hash_error: true,
-    });
-  }
-};
-
-/**
  * Track consultation booking/request
  */
 export const trackConsultation = (params: {
@@ -465,10 +674,6 @@ export const trackToolCompletion = (params: {
     result_type: params.resultType,
   });
 };
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Additional Legacy Exports (for backward compatibility with existing code)
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Track vault sync clicked
@@ -546,75 +751,10 @@ export const trackPriceAnalysisViewed = (params?: {
 };
 
 /**
- * Track phone lead capture with Enhanced Conversions
- * 
- * ENHANCED: Async SHA-256 PII hashing with E.164 phone normalization
- * Value: $25 (higher intent than email-only leads)
- * 
- * @param params.leadId - Required lead ID for attribution
- * @param params.phone - Required raw phone (will be normalized to E.164 and hashed)
- * @param params.email - Optional email for cross-reference
- * @param params.sourceTool - Required source tool identifier
- */
-export const trackPhoneLead = async (params: {
-  leadId: string;
-  phone: string;
-  email?: string;
-  sourceTool: string;
-}): Promise<void> => {
-  try {
-    const userData = await buildEnhancedUserData({
-      email: params.email,
-      phone: params.phone,
-      leadId: params.leadId,
-    });
-
-    const eventId = crypto.randomUUID();
-
-    trackEvent('phone_lead', {
-      lead_id: params.leadId,
-      event_id: eventId, // For CAPI deduplication
-      external_id: params.leadId,
-      user_data: userData,
-      value: 25,
-      currency: 'USD',
-      source_tool: params.sourceTool,
-      has_email: !!params.email,
-    });
-
-    if (import.meta.env.DEV) {
-      console.log('[GTM] phone_lead pushed with Enhanced Conversions', {
-        leadId: params.leadId.slice(0, 8),
-        hasEmail: !!userData?.sha256_email_address,
-        hasPhone: !!userData?.sha256_phone_number,
-        value: 25,
-      });
-    }
-  } catch (error) {
-    console.warn('[GTM] phone_lead hashing failed, firing fallback:', error);
-    trackEvent('phone_lead_fallback', {
-      lead_id: params.leadId,
-      value: 25,
-      currency: 'USD',
-      source_tool: params.sourceTool,
-      hash_error: true,
-    });
-  }
-};
-
-/**
  * Track conversion value with async PII hashing (Two-Step Tracking pattern)
  * 
  * ENHANCED CONVERSIONS: Email and phone are SHA-256 hashed before pushing
  * to the dataLayer to ensure privacy-safe Enhanced Conversion matching.
- * 
- * @param params.eventName - The GTM event name (e.g., 'cv_tool_completed')
- * @param params.value - Conversion value (clamped to 0-500)
- * @param params.email - Raw email (will be hashed)
- * @param params.phone - Raw phone (will be normalized to E.164 and hashed)
- * @param params.leadId - Lead ID for attribution
- * @param params.sourceTool - Source tool identifier
- * @param params.metadata - Additional event metadata
  */
 export const trackConversionValue = async (params: {
   eventName: string;
@@ -631,14 +771,16 @@ export const trackConversionValue = async (params: {
     
     // Async PII hashing for Enhanced Conversions (EMQ ≥ 8.0 requirement)
     const [hashedEmail, hashedPhone] = await Promise.all([
-      params.email ? safeHash(params.email) : Promise.resolve(undefined),
+      params.email ? sha256(params.email) : Promise.resolve(undefined),
       params.phone ? hashPhone(params.phone) : Promise.resolve(undefined),
     ]);
     
     // Build user_data object only if we have hashed values
     const userData = (hashedEmail || hashedPhone) ? {
       external_id: params.leadId,
-      em: hashedEmail,
+      sha256_email_address: hashedEmail || undefined,
+      sha256_phone_number: hashedPhone,
+      em: hashedEmail || undefined,
       ph: hashedPhone,
     } : undefined;
     
@@ -670,10 +812,6 @@ export const trackConversionValue = async (params: {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// High-Value Signal Exports (for secondary signal tracking)
-// ═══════════════════════════════════════════════════════════════════════════
-
 /**
  * Track scanner upload completed (high-value signal)
  */
@@ -691,67 +829,73 @@ export const trackScannerUploadCompleted = (params: {
   });
 };
 
-/**
- * Track booking confirmed with async PII hashing (highest-value conversion)
- * 
- * ENHANCED: Uses buildEnhancedUserData for both Google (sha256_*) and Meta (em/ph) formats
- * Value: $75 (highest tier in conversion values reference)
- */
-export const trackBookingConfirmed = async (params: {
-  leadId: string;
-  email: string;
-  phone?: string;
-  name?: string;
-  preferredTime?: string;
-  sourceTool?: string;
-  windowCount?: number;
-  estimatedProjectValue?: number;
-  urgencyLevel?: string;
-}): Promise<void> => {
-  try {
-    const userData = await buildEnhancedUserData({
-      email: params.email,
-      phone: params.phone,
-      leadId: params.leadId,
-    });
+// ═══════════════════════════════════════════════════════════════════════════
+// TRUTH ENGINE - Global API for Debugging & Cross-Module Access
+// ═══════════════════════════════════════════════════════════════════════════
 
-    const eventId = crypto.randomUUID();
-    
-    trackEvent('booking_confirmed', {
-      lead_id: params.leadId,
-      event_id: eventId, // For CAPI deduplication
-      external_id: params.leadId,
-      value: 75, // Highest conversion value tier
-      currency: 'USD',
-      user_data: userData,
-      conversion_metadata: {
-        window_count: params.windowCount,
-        estimated_project_value: params.estimatedProjectValue,
-        urgency_level: params.urgencyLevel,
-        preferred_callback_time: params.preferredTime,
-      },
-      source_tool: params.sourceTool,
-      has_name: !!params.name,
-      page_location: typeof window !== 'undefined' ? window.location.href : undefined,
-      page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
-    });
-    
-    if (import.meta.env.DEV) {
-      console.log('[GTM] booking_confirmed pushed with Enhanced Conversions', {
-        leadId: params.leadId.slice(0, 8),
-        hasEmail: !!userData?.sha256_email_address,
-        hasPhone: !!userData?.sha256_phone_number,
-        value: 75,
-      });
-    }
-  } catch (error) {
-    console.warn('[GTM] booking_confirmed hashing failed, firing fallback:', error);
-    trackEvent('booking_confirmed_fallback', {
-      lead_id: params.leadId,
-      value: 75,
-      currency: 'USD',
-      source_tool: params.sourceTool,
-      hash_error: true,
+/**
+ * TruthEngine interface - exposed on window for debugging
+ */
+export interface TruthEngine {
+  // Utilities
+  buildEnhancedUserData: typeof buildEnhancedUserData;
+  normalizeEmail: typeof normalizeEmail;
+  normalizeToE164: typeof normalizeToE164;
+  safeHash: typeof safeHash;
+  sha256: typeof sha256;
+  hashPhone: typeof hashPhone;
+  generateEventId: typeof generateEventId;
+  isAlreadyHashed: typeof isAlreadyHashed;
+  
+  // High-value conversion tracking
+  trackLeadSubmissionSuccess: typeof trackLeadSubmissionSuccess;
+  trackPhoneLead: typeof trackPhoneLead;
+  trackConsultationBooked: typeof trackConsultationBooked;
+  trackBookingConfirmed: typeof trackBookingConfirmed;
+  
+  // General tracking
+  trackEvent: typeof trackEvent;
+  trackLeadCapture: typeof trackLeadCapture;
+}
+
+/**
+ * Install the Truth Engine on window for debugging and cross-module access
+ * 
+ * MERGE-SAFE: Does not overwrite existing properties
+ * 
+ * Call this from app entry point (main.tsx)
+ */
+export function installTruthEngine(): void {
+  if (typeof window === 'undefined') return;
+  
+  // Merge-safe: preserve any existing properties
+  window.truthEngine = {
+    ...window.truthEngine,
+    // Utilities
+    buildEnhancedUserData,
+    normalizeEmail,
+    normalizeToE164,
+    safeHash,
+    sha256,
+    hashPhone,
+    generateEventId,
+    isAlreadyHashed,
+    // High-value conversion tracking
+    trackLeadSubmissionSuccess,
+    trackPhoneLead,
+    trackConsultationBooked,
+    trackBookingConfirmed,
+    // General tracking
+    trackEvent,
+    trackLeadCapture,
+  };
+  
+  if (import.meta.env.DEV) {
+    console.log('[TruthEngine] Installed on window.truthEngine', {
+      methods: Object.keys(window.truthEngine),
     });
   }
-};
+}
+
+// Re-export normalizeToE164 from phoneFormat for truthEngine access
+export { normalizeToE164 };
