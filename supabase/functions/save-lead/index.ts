@@ -831,7 +831,7 @@ serve(async (req) => {
     recordRateLimitEntry(supabase, normalizedEmail, 'save-lead-email');
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // GOLDEN THREAD: Log attribution event to wm_events
+    // GOLDEN THREAD: Log attribution event to wm_events (legacy, backward compat)
     // ═══════════════════════════════════════════════════════════════════════════
     if (sessionId) {
       logAttributionEvent({
@@ -853,7 +853,68 @@ serve(async (req) => {
         anonymousIdFallback: `lead-${leadId}`,
       });
     } else {
-      console.warn('Golden Thread: No sessionId provided - attribution event not persisted');
+      console.warn('Golden Thread: No sessionId provided - wm_events event not persisted');
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CANONICAL LEDGER: Write lead_captured to wm_event_log (attribution views source)
+    // This is the server-side source of truth for attribution analytics
+    // ═══════════════════════════════════════════════════════════════════════════
+    try {
+      // Extract client_id from session_data if available
+      const clientId = (sessionData as Record<string, unknown>)?.clientId as string 
+        || (sessionData as Record<string, unknown>)?.client_id as string 
+        || `lead-${leadId}`;
+
+      const eventLogPayload = {
+        event_id: crypto.randomUUID(),
+        event_name: 'lead_captured',
+        event_type: 'conversion',
+        event_time: new Date().toISOString(),
+        lead_id: leadId,
+        session_id: sessionId || null,
+        client_id: clientId,
+        source_tool: sourceTool,
+        page_path: aiContext?.source_form || referer || '/unknown',
+        funnel_stage: 'captured',
+        // Attribution fields at event time
+        traffic_source: attribution?.utm_source || lastNonDirect?.utm_source || null,
+        traffic_medium: attribution?.utm_medium || lastNonDirect?.utm_medium || null,
+        campaign_id: attribution?.utm_campaign || null,
+        gclid: attribution?.gclid || lastNonDirect?.gclid || null,
+        fbclid: lastNonDirect?.fbclid || null,
+        fbp: attribution?.fbp || null,
+        fbc: attribution?.fbc || null,
+        source_system: 'save-lead',
+        ingested_by: 'save-lead',
+        metadata: {
+          email_domain: normalizedEmail.split('@')[1],
+          has_phone: !!phone,
+          has_name: !!name,
+          has_consultation: !!consultationId,
+          has_quote_file: !!quoteFileId,
+          last_non_direct_channel: lastNonDirect?.channel || null,
+          landing_page: lastNonDirect?.landing_page || null,
+        },
+        user_data: {
+          email_sha256: await hashEmail(normalizedEmail),
+          phone_sha256: phone ? await hashPhone(phone) : null,
+        },
+      };
+
+      const { error: eventLogError } = await supabase
+        .from('wm_event_log')
+        .insert(eventLogPayload);
+
+      if (eventLogError) {
+        // Log but don't fail the request - this is for analytics only
+        console.error('[wm_event_log] Failed to write lead_captured:', eventLogError);
+      } else {
+        console.log('[wm_event_log] lead_captured written for lead:', leadId);
+      }
+    } catch (eventLogErr) {
+      // Non-blocking - attribution logging should never fail the lead save
+      console.error('[wm_event_log] Exception during write (non-blocking):', eventLogErr);
     }
     // ═══════════════════════════════════════════════════════════════════════════
 

@@ -106,11 +106,16 @@ async function buildExplanation(
   // Step A: phone_call_logs.provider_call_id == provider_call_id
   let stepAFound = false;
   if (providerCallId) {
-    const { data: logsA } = await supabaseAdmin
+    const { data: logsA, error: logsAError } = await supabaseAdmin
       .from("phone_call_logs")
       .select("id, call_request_id, call_status, source_tool, triggered_at")
       .eq("provider_call_id", providerCallId)
       .limit(3);
+
+    if (logsAError) {
+      console.error("[admin-webhook-receipts] Step A query error:", logsAError);
+      throw new Error("Failed to query phone_call_logs by provider_call_id");
+    }
 
     const logsAData = logsA as Array<{
       id: string;
@@ -146,11 +151,16 @@ async function buildExplanation(
   // Step B: phone_call_logs.call_request_id == call_request_id
   let stepBFound = false;
   if (callRequestId) {
-    const { data: logsB } = await supabaseAdmin
+    const { data: logsB, error: logsBError } = await supabaseAdmin
       .from("phone_call_logs")
       .select("id, provider_call_id, call_status, source_tool, triggered_at")
       .eq("call_request_id", callRequestId)
       .limit(3);
+
+    if (logsBError) {
+      console.error("[admin-webhook-receipts] Step B query error:", logsBError);
+      throw new Error("Failed to query phone_call_logs by call_request_id");
+    }
 
     const logsBData = logsB as Array<{
       id: string;
@@ -186,11 +196,16 @@ async function buildExplanation(
   // Step C: pending_calls.call_request_id == call_request_id
   let stepCFound = false;
   if (callRequestId) {
-    const { data: pendingC } = await supabaseAdmin
+    const { data: pendingC, error: pendingCError } = await supabaseAdmin
       .from("pending_calls")
       .select("id, call_request_id, lead_id, source_tool, status, scheduled_for")
       .eq("call_request_id", callRequestId)
       .limit(3);
+
+    if (pendingCError) {
+      console.error("[admin-webhook-receipts] Step C query error:", pendingCError);
+      throw new Error("Failed to query pending_calls by call_request_id");
+    }
 
     const pendingCData = pendingC as Array<{
       id: string;

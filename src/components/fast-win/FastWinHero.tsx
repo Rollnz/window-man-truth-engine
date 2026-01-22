@@ -20,7 +20,7 @@ export function FastWinHero({ onStart, hasSessionData }: FastWinHeroProps) {
         </div>
 
         {/* Main headline */}
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4">
+        <h1 className="display-h1 text-lift text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4">
           Find Your <span className="text-primary text-glow">#1 Upgrade</span>
         </h1>
 

@@ -2,7 +2,9 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Draggable } from '@hello-pangea/dnd';
 import { formatDistanceToNow } from 'date-fns';
-import { User, Phone, DollarSign, Zap, ExternalLink } from 'lucide-react';
+import { User, Phone, DollarSign, Zap, ExternalLink, TrendingUp } from 'lucide-react';
+import { trackEvent } from '@/lib/gtm';
+import { getLeadRoute } from '@/lib/leadRouting';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -187,19 +189,34 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
               </div>
             )}
 
-            {/* View Profile Button */}
-            <div className="pt-2 border-t border-border/50">
+            {/* Action Buttons */}
+            <div className="pt-2 border-t border-border/50 flex gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full h-7 text-xs gap-1 hover:bg-primary/10 hover:text-primary"
+                className="h-7 text-xs gap-1 hover:bg-primary/10 hover:text-primary"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/admin/leads/${lead.id}`);
+                  trackEvent('admin_view_economics', { wmLeadId: lead.id });
+                  navigate(`/admin/revenue?wm_lead_id=${lead.id}`);
+                }}
+              >
+                <TrendingUp className="h-3 w-3" />
+                $
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1 h-7 text-xs gap-1 hover:bg-primary/10 hover:text-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // lead.id from CRM API is wm_leads.id (canonical)
+                  const route = getLeadRoute({ wm_lead_id: lead.id });
+                  if (route) navigate(route);
                 }}
               >
                 <ExternalLink className="h-3 w-3" />
-                View Full Profile
+                View Profile
               </Button>
             </div>
           </CardContent>

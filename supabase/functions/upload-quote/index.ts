@@ -14,11 +14,11 @@ const ALLOWED_TYPES: Record<string, { mimeTypes: string[]; magicBytes: number[][
   },
   jpeg: {
     mimeTypes: ["image/jpeg", "image/jpg"],
-    magicBytes: [[0xFF, 0xD8, 0xFF]], // JPEG SOI marker
+    magicBytes: [[0xff, 0xd8, 0xff]], // JPEG SOI marker
   },
   png: {
     mimeTypes: ["image/png"],
-    magicBytes: [[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]], // PNG signature
+    magicBytes: [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]], // PNG signature
   },
 };
 
@@ -31,7 +31,7 @@ const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
  */
 function validateMagicBytes(buffer: ArrayBuffer): { valid: boolean; detectedType: string | null } {
   const bytes = new Uint8Array(buffer);
-  
+
   for (const [type, config] of Object.entries(ALLOWED_TYPES)) {
     for (const magic of config.magicBytes) {
       if (magic.every((byte, index) => bytes[index] === byte)) {
@@ -39,7 +39,7 @@ function validateMagicBytes(buffer: ArrayBuffer): { valid: boolean; detectedType
       }
     }
   }
-  
+
   return { valid: false, detectedType: null };
 }
 
@@ -48,9 +48,7 @@ function validateMagicBytes(buffer: ArrayBuffer): { valid: boolean; detectedType
  */
 function validateMimeType(mimeType: string): boolean {
   const normalizedMime = mimeType.toLowerCase().split(";")[0].trim();
-  return Object.values(ALLOWED_TYPES).some(config => 
-    config.mimeTypes.includes(normalizedMime)
-  );
+  return Object.values(ALLOWED_TYPES).some((config) => config.mimeTypes.includes(normalizedMime));
 }
 
 /**
@@ -59,18 +57,18 @@ function validateMimeType(mimeType: string): boolean {
 function sanitizeFilename(filename: string): string {
   // Remove path components
   let sanitized = filename.replace(/^.*[\\\/]/, "");
-  
+
   // Remove null bytes and control characters
   sanitized = sanitized.replace(/[\x00-\x1f\x80-\x9f]/g, "");
-  
+
   // Replace dangerous characters
   sanitized = sanitized.replace(/[<>:"\/\\|?*]/g, "_");
-  
+
   // Limit length (keep extension)
   const ext = sanitized.split(".").pop() || "";
   const name = sanitized.slice(0, -(ext.length + 1));
   const truncatedName = name.slice(0, 50);
-  
+
   return `${truncatedName}.${ext}`.toLowerCase();
 }
 
@@ -92,10 +90,10 @@ function getExtension(detectedType: string): string {
 async function checkRateLimit(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
-  sessionId: string
+  sessionId: string,
 ): Promise<{ allowed: boolean; remaining: number }> {
   const cutoff = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
-  
+
   // Count recent uploads for this session
   const { count, error } = await supabase
     .from("rate_limits")
@@ -103,13 +101,13 @@ async function checkRateLimit(
     .eq("identifier", sessionId)
     .eq("endpoint", "upload-quote")
     .gte("created_at", cutoff);
-  
+
   if (error) {
     console.error("Rate limit check error:", error);
     // Fail open but log the issue
     return { allowed: true, remaining: RATE_LIMIT_MAX };
   }
-  
+
   const currentCount = count || 0;
   return {
     allowed: currentCount < RATE_LIMIT_MAX,
@@ -123,7 +121,7 @@ async function checkRateLimit(
 async function recordRateLimitHit(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
-  sessionId: string
+  sessionId: string,
 ): Promise<void> {
   await supabase.from("rate_limits").insert({
     identifier: sessionId,
@@ -140,7 +138,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return new Response(
       JSON.stringify({ success: false, error_code: "METHOD_NOT_ALLOWED", message: "Only POST allowed" }),
-      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 
@@ -148,11 +146,11 @@ Deno.serve(async (req: Request) => {
     // Initialize Supabase Admin client
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    
+
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error("Missing Supabase configuration");
     }
-    
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse multipart form data
@@ -178,16 +176,16 @@ Deno.serve(async (req: Request) => {
 
     // Validate required fields
     if (!file) {
-      return new Response(
-        JSON.stringify({ success: false, error_code: "NO_FILE", message: "No file provided" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: false, error_code: "NO_FILE", message: "No file provided" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (!sessionId || sessionId.length < 10) {
       return new Response(
         JSON.stringify({ success: false, error_code: "INVALID_SESSION", message: "Valid session_id required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -195,59 +193,59 @@ Deno.serve(async (req: Request) => {
     const rateLimit = await checkRateLimit(supabase, sessionId);
     if (!rateLimit.allowed) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error_code: "RATE_LIMITED", 
+        JSON.stringify({
+          success: false,
+          error_code: "RATE_LIMITED",
           message: "Too many uploads. Please try again later.",
-          remaining: 0 
+          remaining: 0,
         }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error_code: "FILE_TOO_LARGE", 
-          message: `File exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit` 
+        JSON.stringify({
+          success: false,
+          error_code: "FILE_TOO_LARGE",
+          message: `File exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`,
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     if (file.size === 0) {
-      return new Response(
-        JSON.stringify({ success: false, error_code: "EMPTY_FILE", message: "File is empty" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: false, error_code: "EMPTY_FILE", message: "File is empty" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Validate MIME type from header
     if (!validateMimeType(file.type)) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error_code: "INVALID_MIME", 
-          message: "Only PDF, JPEG, and PNG files are allowed" 
+        JSON.stringify({
+          success: false,
+          error_code: "INVALID_MIME",
+          message: "Only PDF, JPEG, and PNG files are allowed",
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     // Read file buffer and validate magic bytes
     const arrayBuffer = await file.arrayBuffer();
     const magicValidation = validateMagicBytes(arrayBuffer);
-    
+
     if (!magicValidation.valid || !magicValidation.detectedType) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error_code: "INVALID_FILE_CONTENT", 
-          message: "File content does not match allowed types (PDF, JPEG, PNG)" 
+        JSON.stringify({
+          success: false,
+          error_code: "INVALID_FILE_CONTENT",
+          message: "File content does not match allowed types (PDF, JPEG, PNG)",
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -259,22 +257,20 @@ Deno.serve(async (req: Request) => {
     const storagePath = `${sessionId}/${timestamp}-${uuid}.${extension}`;
 
     // Upload to Storage
-    const { error: uploadError } = await supabase.storage
-      .from("quotes")
-      .upload(storagePath, arrayBuffer, {
-        contentType: file.type,
-        upsert: false,
-      });
+    const { error: uploadError } = await supabase.storage.from("quotes").upload(storagePath, arrayBuffer, {
+      contentType: file.type,
+      upsert: false,
+    });
 
     if (uploadError) {
       console.error("Storage upload error:", uploadError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error_code: "UPLOAD_FAILED", 
-          message: "Failed to store file" 
+        JSON.stringify({
+          success: false,
+          error_code: "UPLOAD_FAILED",
+          message: "Failed to store file",
         }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -299,14 +295,14 @@ Deno.serve(async (req: Request) => {
       console.error("Database insert error:", insertError);
       // Attempt to clean up the uploaded file
       await supabase.storage.from("quotes").remove([storagePath]);
-      
+
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error_code: "DB_INSERT_FAILED", 
-          message: "Failed to record file metadata" 
+        JSON.stringify({
+          success: false,
+          error_code: "DB_INSERT_FAILED",
+          message: "Failed to record file metadata",
         }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -400,18 +396,17 @@ Deno.serve(async (req: Request) => {
         file_size: file.size,
         remaining_uploads: rateLimit.remaining - 1,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-
   } catch (error) {
     console.error("upload-quote error:", error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error_code: "INTERNAL_ERROR", 
-        message: "An unexpected error occurred" 
+      JSON.stringify({
+        success: false,
+        error_code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred",
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });

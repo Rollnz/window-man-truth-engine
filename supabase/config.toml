@@ -95,3 +95,18 @@ verify_jwt = false
 
 [functions.auth-email-hook]
 verify_jwt = false
+
+[functions.admin-revenue]
+verify_jwt = false
+
+[functions.admin-attribution-roas]
+verify_jwt = false
+
+[functions.admin-smoke-test]
+verify_jwt = false
+
+[functions.admin-executive-profit]
+verify_jwt = false
+
+[functions.log-event]
+verify_jwt = false

@@ -13,6 +13,7 @@ import { SessionAnalysisPanel } from "@/components/admin/SessionAnalysisPanel";
 import { ConversionFunnel } from "@/components/admin/ConversionFunnel";
 import { PaginationControls } from "@/components/admin/PaginationControls";
 import { DateRange } from "@/components/admin/DateRangePicker";
+import { ROASOverlaySection } from "@/components/admin/ROASOverlaySection";
 import { generateAttributionPDF } from "@/lib/pdfExport";
 
 interface FunnelData {
@@ -194,6 +195,10 @@ export default function AttributionDashboard() {
           data={data?.funnel || { traffic: 0, engagement: 0, leadGen: 0, conversion: 0 }} 
           isLoading={isLoading} 
         />
+
+        <div className="mb-8">
+          <ROASOverlaySection />
+        </div>
 
         <div className="mb-6">
           <AttributionEventFilter 

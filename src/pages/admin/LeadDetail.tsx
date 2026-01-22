@@ -11,6 +11,7 @@ import { LeadTimeline } from '@/components/lead-detail/LeadTimeline';
 import { NotesWidget } from '@/components/lead-detail/NotesWidget';
 import { FilesWidget } from '@/components/lead-detail/FilesWidget';
 import { DispatchWindowManButton } from '@/components/lead-detail/DispatchWindowManButton';
+import { FinancialsSection } from '@/components/lead-detail/FinancialsSection';
 import { ConversionPathTimeline } from '@/components/lead-detail/ConversionPathTimeline';
 import { ProjectedRevenueCard } from '@/components/lead-detail/ProjectedRevenueCard';
 import { IntentSignalsSummary } from '@/components/lead-detail/IntentSignalsSummary';
@@ -22,9 +23,17 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 function LeadDetailContent() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { lead, events, files, notes, session, calls, pendingCalls, isLoading, error, refetch, updateStatus, addNote, updateSocialUrl } = useLeadDetail(id);
+  const { lead, events, files, notes, session, calls, pendingCalls, isLoading, error, canonical, refetch, updateStatus, addNote, updateSocialUrl } = useLeadDetail(id);
   const { previousLeadId, nextLeadId, currentIndex, totalLeads, goToPrevious, goToNext } = useLeadNavigation(id);
   const { setIsOpen, addToRecent } = useGlobalSearch();
+
+  // Canonicalize URL if the request resolved via fallback (leads.id → wm_leads.id)
+  useEffect(() => {
+    if (canonical?.canonical_path && canonical.canonical_path !== `/admin/leads/${id}`) {
+      console.log(`[LeadDetail] Canonicalizing URL: ${id} → ${canonical.wm_lead_id}`);
+      navigate(canonical.canonical_path, { replace: true });
+    }
+  }, [canonical, id, navigate]);
 
   // Add current lead to recent leads when viewed
   useEffect(() => {
@@ -174,6 +183,7 @@ function LeadDetailContent() {
             <NotesWidget onAddNote={addNote} />
             <FilesWidget files={files} />
             <DispatchWindowManButton lead={lead} pendingCalls={pendingCalls} onSuccess={refetch} />
+            <FinancialsSection wmLeadId={lead.id} />
           </aside>
         </div>
       </main>

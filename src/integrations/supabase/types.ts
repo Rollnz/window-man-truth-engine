@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_spend_daily: {
+        Row: {
+          account_id: string | null
+          adset_id: string | null
+          adset_name: string | null
+          campaign_id: string | null
+          campaign_name: string | null
+          clicks: number
+          created_at: string
+          id: string
+          impressions: number
+          leads_reported: number
+          platform: Database["public"]["Enums"]["platform_type"]
+          spend: number
+          spend_date: string
+        }
+        Insert: {
+          account_id?: string | null
+          adset_id?: string | null
+          adset_name?: string | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          clicks?: number
+          created_at?: string
+          id?: string
+          impressions?: number
+          leads_reported?: number
+          platform: Database["public"]["Enums"]["platform_type"]
+          spend?: number
+          spend_date: string
+        }
+        Update: {
+          account_id?: string | null
+          adset_id?: string | null
+          adset_name?: string | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          clicks?: number
+          created_at?: string
+          id?: string
+          impressions?: number
+          leads_reported?: number
+          platform?: Database["public"]["Enums"]["platform_type"]
+          spend?: number
+          spend_date?: string
+        }
+        Relationships: []
+      }
       call_agents: {
         Row: {
           agent_id: string
@@ -87,6 +135,75 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deals: {
+        Row: {
+          close_date: string | null
+          cogs: number
+          commissions: number
+          created_at: string
+          gross_revenue: number
+          id: string
+          invoice_id: string | null
+          labor_cost: number
+          net_profit: number | null
+          opportunity_id: string | null
+          other_cost: number
+          outcome: Database["public"]["Enums"]["deal_outcome"]
+          payment_status: Database["public"]["Enums"]["deal_payment_status"]
+          updated_at: string
+          wm_lead_id: string
+        }
+        Insert: {
+          close_date?: string | null
+          cogs?: number
+          commissions?: number
+          created_at?: string
+          gross_revenue?: number
+          id?: string
+          invoice_id?: string | null
+          labor_cost?: number
+          net_profit?: number | null
+          opportunity_id?: string | null
+          other_cost?: number
+          outcome?: Database["public"]["Enums"]["deal_outcome"]
+          payment_status?: Database["public"]["Enums"]["deal_payment_status"]
+          updated_at?: string
+          wm_lead_id: string
+        }
+        Update: {
+          close_date?: string | null
+          cogs?: number
+          commissions?: number
+          created_at?: string
+          gross_revenue?: number
+          id?: string
+          invoice_id?: string | null
+          labor_cost?: number
+          net_profit?: number | null
+          opportunity_id?: string | null
+          other_cost?: number
+          outcome?: Database["public"]["Enums"]["deal_outcome"]
+          payment_status?: Database["public"]["Enums"]["deal_payment_status"]
+          updated_at?: string
+          wm_lead_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_wm_lead_id_fkey"
+            columns: ["wm_lead_id"]
+            isOneToOne: false
+            referencedRelation: "wm_leads"
             referencedColumns: ["id"]
           },
         ]
@@ -359,6 +476,50 @@ export type Database = {
           window_count?: number | null
         }
         Relationships: []
+      }
+      opportunities: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          expected_value: number
+          id: string
+          notes: string | null
+          probability: number
+          stage: Database["public"]["Enums"]["opportunity_stage"]
+          updated_at: string
+          wm_lead_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          expected_value?: number
+          id?: string
+          notes?: string | null
+          probability?: number
+          stage?: Database["public"]["Enums"]["opportunity_stage"]
+          updated_at?: string
+          wm_lead_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          expected_value?: number
+          id?: string
+          notes?: string | null
+          probability?: number
+          stage?: Database["public"]["Enums"]["opportunity_stage"]
+          updated_at?: string
+          wm_lead_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_wm_lead_id_fkey"
+            columns: ["wm_lead_id"]
+            isOneToOne: false
+            referencedRelation: "wm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pending_calls: {
         Row: {
@@ -703,6 +864,93 @@ export type Database = {
         }
         Relationships: []
       }
+      wm_event_log: {
+        Row: {
+          campaign_id: string | null
+          client_id: string | null
+          created_at: string
+          event_id: string
+          event_name: string
+          event_time: string
+          event_type: string
+          external_id: string | null
+          fbc: string | null
+          fbclid: string | null
+          fbp: string | null
+          funnel_stage: string | null
+          gclid: string | null
+          id: string
+          ingested_by: string
+          intent_tier: number | null
+          lead_id: string | null
+          lead_score: number | null
+          metadata: Json
+          page_path: string | null
+          session_id: string | null
+          source_system: string
+          source_tool: string | null
+          traffic_medium: string | null
+          traffic_source: string | null
+          user_data: Json | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          event_id: string
+          event_name: string
+          event_time?: string
+          event_type?: string
+          external_id?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
+          funnel_stage?: string | null
+          gclid?: string | null
+          id?: string
+          ingested_by?: string
+          intent_tier?: number | null
+          lead_id?: string | null
+          lead_score?: number | null
+          metadata?: Json
+          page_path?: string | null
+          session_id?: string | null
+          source_system?: string
+          source_tool?: string | null
+          traffic_medium?: string | null
+          traffic_source?: string | null
+          user_data?: Json | null
+        }
+        Update: {
+          campaign_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          event_id?: string
+          event_name?: string
+          event_time?: string
+          event_type?: string
+          external_id?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
+          funnel_stage?: string | null
+          gclid?: string | null
+          id?: string
+          ingested_by?: string
+          intent_tier?: number | null
+          lead_id?: string | null
+          lead_score?: number | null
+          metadata?: Json
+          page_path?: string | null
+          session_id?: string | null
+          source_system?: string
+          source_tool?: string | null
+          traffic_medium?: string | null
+          traffic_source?: string | null
+          user_data?: Json | null
+        }
+        Relationships: []
+      }
       wm_events: {
         Row: {
           created_at: string
@@ -775,6 +1023,7 @@ export type Database = {
           lead_id: string | null
           lead_quality: string | null
           notes: string | null
+          original_client_id: string | null
           original_session_id: string | null
           original_source_tool: string | null
           phone: string | null
@@ -819,6 +1068,7 @@ export type Database = {
           lead_id?: string | null
           lead_quality?: string | null
           notes?: string | null
+          original_client_id?: string | null
           original_session_id?: string | null
           original_source_tool?: string | null
           phone?: string | null
@@ -863,6 +1113,7 @@ export type Database = {
           lead_id?: string | null
           lead_quality?: string | null
           notes?: string | null
+          original_client_id?: string | null
           original_session_id?: string | null
           original_source_tool?: string | null
           phone?: string | null
@@ -955,7 +1206,77 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_attribution_first_last_touch: {
+        Row: {
+          first_touch_time: string | null
+          first_touch_tool: string | null
+          last_touch_time: string | null
+          last_touch_tool: string | null
+          lead_id: string | null
+        }
+        Relationships: []
+      }
+      v_event_log_enriched: {
+        Row: {
+          client_id: string | null
+          event_id: string | null
+          event_name: string | null
+          event_time: string | null
+          event_type: string | null
+          fbc: string | null
+          fbclid: string | null
+          fbp: string | null
+          gclid: string | null
+          ingested_by: string | null
+          landing_page: string | null
+          lead_email: string | null
+          lead_id: string | null
+          metadata: Json | null
+          referrer: string | null
+          row_id: string | null
+          session_id: string | null
+          source_system: string | null
+          source_tool: string | null
+          user_data: Json | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Relationships: []
+      }
+      v_event_log_orphans: {
+        Row: {
+          event_count: number | null
+          lead_id_status: string | null
+          session_id_status: string | null
+          source_system: string | null
+          source_tool: string | null
+        }
+        Relationships: []
+      }
+      v_funnel_journeys: {
+        Row: {
+          client_id: string | null
+          event_id: string | null
+          event_name: string | null
+          event_time: string | null
+          next_event: string | null
+          previous_event: string | null
+          source_tool: string | null
+        }
+        Relationships: []
+      }
+      v_meta_optimization_segments: {
+        Row: {
+          booking_confirmed: number | null
+          lead_id: string | null
+          used_scanner: number | null
+          used_voice: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       backfill_all_lead_scores: {
@@ -1020,6 +1341,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      deal_outcome: "won" | "lost"
+      deal_payment_status:
+        | "unpaid"
+        | "deposit_paid"
+        | "paid_in_full"
+        | "refunded"
       lead_status:
         | "new"
         | "qualifying"
@@ -1030,6 +1357,13 @@ export type Database = {
         | "closed_won"
         | "closed_lost"
         | "dead"
+      opportunity_stage:
+        | "new"
+        | "qualifying"
+        | "quoted"
+        | "negotiating"
+        | "won"
+        | "lost"
       pending_call_status:
         | "pending"
         | "processing"
@@ -1047,6 +1381,7 @@ export type Database = {
         | "no_answer"
         | "failed"
         | "canceled"
+      platform_type: "meta" | "google" | "other"
       webhook_correlation_status:
         | "unprocessed"
         | "matched"
@@ -1182,6 +1517,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      deal_outcome: ["won", "lost"],
+      deal_payment_status: [
+        "unpaid",
+        "deposit_paid",
+        "paid_in_full",
+        "refunded",
+      ],
       lead_status: [
         "new",
         "qualifying",
@@ -1192,6 +1534,14 @@ export const Constants = {
         "closed_won",
         "closed_lost",
         "dead",
+      ],
+      opportunity_stage: [
+        "new",
+        "qualifying",
+        "quoted",
+        "negotiating",
+        "won",
+        "lost",
       ],
       pending_call_status: [
         "pending",
@@ -1212,6 +1562,7 @@ export const Constants = {
         "failed",
         "canceled",
       ],
+      platform_type: ["meta", "google", "other"],
       webhook_correlation_status: [
         "unprocessed",
         "matched",

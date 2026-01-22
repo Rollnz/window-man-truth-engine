@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Users, FileText, BarChart3, Flame, TrendingUp, Phone, RefreshCw } from 'lucide-react';
+import { Users, FileText, BarChart3, Flame, TrendingUp, Phone, RefreshCw, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
@@ -9,6 +9,7 @@ import { ActivityFeed } from '@/components/admin/ActivityFeed';
 import { QuickActionCard } from '@/components/admin/QuickActionCard';
 import { SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
 import { PhoneCallOpsPanel } from '@/components/admin/PhoneCallOpsPanel';
+import { SmokeTestButton } from '@/components/admin/SmokeTestButton';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -29,6 +30,7 @@ function AdminHomeContent() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <SmokeTestButton />
               <SearchKeyboardHint onClick={() => setIsOpen(true)} />
               <Button variant="outline" size="icon" onClick={() => refetch()}>
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -91,6 +93,12 @@ function AdminHomeContent() {
               <div className="lg:col-span-1 space-y-4">
                 <h2 className="text-lg font-semibold">Quick Actions</h2>
                 <div className="space-y-3">
+                  <QuickActionCard
+                    title="Executive"
+                    description="Daily profit command center"
+                    href="/admin/executive"
+                    icon={<DollarSign className="h-5 w-5 text-primary" />}
+                  />
                   <QuickActionCard
                     title="Lead Warehouse"
                     description="Manage leads with drag & drop"

@@ -15,6 +15,7 @@ import { getAttributionData, getFullAttributionData } from '@/lib/attribution';
 import { trackLeadCapture, trackFormSubmit, trackEvent, trackLeadSubmissionSuccess } from '@/lib/gtm';
 import { getLeadQuality } from '@/lib/leadQuality';
 import { setExplicitSubmission } from '@/lib/consent';
+import { setLeadAnchor } from '@/lib/leadAnchor';
 import type { SourceTool } from '@/types/sourceTool';
 
 export interface LeadFormData {
@@ -165,7 +166,12 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
         // PHASE 1A: Set explicit submission flag ONLY after successful POST
         // This is the ONLY place where PII tracking gets enabled
         setExplicitSubmission(newLeadId);
-        console.log('[useLeadFormSubmit] Explicit submission flag set for:', newLeadId.slice(0, 8) + '...');
+        
+        // PHASE 3: Set lead anchor for 400-day persistence
+        // This enables linking subsequent events back to this lead
+        setLeadAnchor(newLeadId);
+        
+        console.log('[useLeadFormSubmit] Lead anchor + explicit submission set for:', newLeadId.slice(0, 8) + '...');
       }
 
       // Track analytics with lead_id

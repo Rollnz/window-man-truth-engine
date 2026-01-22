@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { getLeadRoute } from '@/lib/leadRouting';
 import { CRMLead } from '@/types/crm';
 
 const RECENT_LEADS_KEY = 'admin_recent_leads';
@@ -20,6 +21,9 @@ export interface SearchResultItem {
   entity_type: EntityType;
   entity_type_label: string;
   entity_id: string;
+  /** Canonical admin lead ID (wm_leads.id) - use for routing */
+  wm_lead_id: string | null;
+  /** Public leads.id - for reference, not routing */
   lead_id: string | null;
   title: string;
   subtitle: string;
@@ -242,35 +246,48 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
   }, []);
 
   // Navigate to a specific result based on its entity type
+  // Uses wm_lead_id (canonical admin ID) for all lead routing via getLeadRoute
   const navigateToResult = useCallback((result: SearchResultItem) => {
     setIsOpen(false);
     setSearchQuery('');
 
-    // For leads, navigate directly to lead detail
+    // For leads, navigate directly to lead detail using wm_lead_id
     if (result.entity_type === 'lead') {
-      navigate(`/admin/leads/${result.entity_id}`);
+      // For lead entities, entity_id = wm_leads.id
+      const route = getLeadRoute({ wm_lead_id: result.wm_lead_id || result.entity_id });
+      if (route) {
+        navigate(route);
+      } else {
+        navigate('/admin/crm');
+      }
       return;
     }
 
-    // For entities with a lead_id, navigate to that lead
-    if (result.lead_id) {
-      navigate(`/admin/leads/${result.lead_id}`);
-      return;
+    // For entities with a wm_lead_id, navigate to that lead
+    if (result.wm_lead_id) {
+      const route = getLeadRoute({ wm_lead_id: result.wm_lead_id });
+      if (route) {
+        navigate(route);
+        return;
+      }
     }
 
-    // Fallback: navigate based on entity type
+    // Fallback: use lead_id if available, otherwise navigate to entity's page
     switch (result.entity_type) {
       case 'call':
       case 'pending_call':
-        // Navigate to calls page or lead if available
+        // Navigate to lead if available via fallback
         if (result.lead_id) {
-          navigate(`/admin/leads/${result.lead_id}`);
-        } else {
-          navigate('/admin/crm');
+          const route = getLeadRoute({ lead_id: result.lead_id });
+          if (route) {
+            navigate(route);
+            return;
+          }
         }
+        navigate('/admin/crm');
         break;
       case 'note':
-        // Notes should have lead_id, fallback to CRM
+        // Notes should have wm_lead_id, fallback to CRM
         navigate('/admin/crm');
         break;
       case 'quote_upload':
@@ -288,6 +305,8 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     }
   }, [navigate]);
 
+  // Navigate directly to a lead by ID (used for recent leads)
+  // leadId here is wm_leads.id from the CRM API
   const navigateToLead = useCallback((leadId: string) => {
     // Find in recent or search results
     const recentLead = recentLeads.find((l) => l.id === leadId);
@@ -297,7 +316,10 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     
     setIsOpen(false);
     setSearchQuery('');
-    navigate(`/admin/leads/${leadId}`);
+    const route = getLeadRoute({ wm_lead_id: leadId });
+    if (route) {
+      navigate(route);
+    }
   }, [recentLeads, addToRecent, navigate]);
 
   const viewAllResults = useCallback(() => {

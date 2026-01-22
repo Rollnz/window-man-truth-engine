@@ -111,7 +111,7 @@ function ToolCard({
 
 export function ToolGrid() {
   return (
-    <section className="py-20 md:py-32 relative bg-secondary/30">
+    <section className="py-20 md:py-32 relative section-surface">
       <div className="container px-4">
         {/* Section header */}
         <div className="max-w-3xl mx-auto text-center mb-6">

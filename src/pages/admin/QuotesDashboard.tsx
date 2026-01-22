@@ -29,6 +29,8 @@ interface QuoteFile {
   mime_type: string;
   session_id: string;
   lead_id: string | null;
+  /** Canonical admin lead ID (wm_leads.id) - use for routing */
+  wm_lead_id: string | null;
   source_page: string | null;
   utm_source: string | null;
   utm_medium: string | null;
@@ -105,11 +107,6 @@ export default function QuotesDashboard() {
       }
       params.set('limit', ITEMS_PER_PAGE.toString());
       params.set('offset', offset.toString());
-
-      const response = await supabase.functions.invoke('admin-quotes', {
-        body: null,
-        headers: {},
-      });
 
       // Use fetch directly to pass query params
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-quotes?${params.toString()}`;
@@ -319,11 +316,11 @@ export default function QuotesDashboard() {
                       </div>
                     </div>
 
-                    {/* Lead Info */}
-                    {quote.lead_id && (
+                    {/* Lead Info - Only show if we have a canonical wm_lead_id for routing */}
+                    {quote.wm_lead_id && (
                       <div className="flex-shrink-0 text-right border-l border-border pl-4">
                         <Link 
-                          to={`/admin/leads/${quote.lead_id}`}
+                          to={`/admin/leads/${quote.wm_lead_id}`}
                           className="flex items-center gap-2 text-sm text-primary hover:underline mb-1"
                         >
                           <User className="h-3 w-3" />

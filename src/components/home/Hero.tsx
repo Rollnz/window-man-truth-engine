@@ -19,7 +19,7 @@ export function Hero() {
           </div>
 
           {/* Main headline */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <h1 className="display-h1 text-lift text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             <span className="text-foreground">Cheap Windows Cost You More</span>
             <span className="block mt-2 text-primary text-glow">— Discover the Proof for Yourself</span>
           </h1>
