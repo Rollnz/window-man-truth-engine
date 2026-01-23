@@ -2,12 +2,15 @@
 // Quote Builder - Lead Capture Modal
 // ============================================
 
+import { useEffect } from "react";
 import { X, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
-import { trackLeadSubmissionSuccess } from "@/lib/gtm";
+import { trackLeadSubmissionSuccess, generateEventId } from "@/lib/gtm";
+import { getOrCreateClientId, getOrCreateSessionId } from "@/lib/tracking";
+import { getLeadAnchor } from "@/lib/leadAnchor";
 import type { LeadModalProps, LeadFormData } from "@/types/quote-builder";
 
 export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModalProps) => {
@@ -22,6 +25,24 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
       phone: formatPhoneNumber
     }
   });
+
+  // Enriched dataLayer push on modal open
+  useEffect(() => {
+    if (isOpen) {
+      const externalId = getLeadAnchor() || null;
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'quote_builder_modal_opened',
+        event_id: generateEventId(),
+        client_id: getOrCreateClientId(),
+        session_id: getOrCreateSessionId(),
+        external_id: externalId,
+        source_tool: 'quote-builder',
+        source_system: 'web',
+        modal_name: 'quote_builder_lead',
+      });
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +63,19 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
 
     // Track with SHA-256 PII hashing (value: 15 USD)
     if (leadId) {
+      // Enriched dataLayer push for form completion
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'quote_builder_form_completed',
+        event_id: generateEventId(),
+        client_id: getOrCreateClientId(),
+        session_id: getOrCreateSessionId(),
+        external_id: leadId,
+        source_tool: 'quote-builder',
+        source_system: 'web',
+        form_name: 'quote_builder_lead',
+      });
+
       await trackLeadSubmissionSuccess({
         leadId,
         email: values.email,

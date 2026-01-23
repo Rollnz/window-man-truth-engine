@@ -15,7 +15,9 @@ import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useFormAbandonment } from '@/hooks/useFormAbandonment';
 import { getAttributionData } from '@/lib/attribution';
-import { trackLeadCapture, trackFormSubmit, trackEvent, trackLeadSubmissionSuccess, trackFormStart } from '@/lib/gtm';
+import { trackLeadCapture, trackFormSubmit, trackEvent, trackLeadSubmissionSuccess, trackFormStart, generateEventId } from '@/lib/gtm';
+import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
+import { getLeadAnchor } from '@/lib/leadAnchor';
 import { getLeadQuality } from '@/lib/leadQuality';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -72,9 +74,25 @@ export function MissionInitiatedModal({
     if (isOpen) {
       setShowScanning(true);
       const timer = setTimeout(() => setShowScanning(false), 1500);
+      
+      // Enriched dataLayer push for funnel reconstruction
+      const externalId = existingLeadId || getLeadAnchor() || null;
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'mission_modal_opened',
+        event_id: generateEventId(),
+        client_id: getOrCreateClientId(),
+        session_id: getOrCreateSessionId(),
+        external_id: externalId,
+        source_tool: 'beat-your-quote',
+        source_system: 'web',
+        modal_name: 'mission_initiated',
+        quote_file_id: quoteFileId,
+      });
+      
       return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, existingLeadId, quoteFileId]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,6 +131,20 @@ export function MissionInitiatedModal({
 
       // Track analytics
       const effectiveLeadId = newLeadId || existingLeadId;
+      
+      // Enriched dataLayer push for mission form completion
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'mission_form_completed',
+        event_id: generateEventId(),
+        client_id: getOrCreateClientId(),
+        session_id: getOrCreateSessionId(),
+        external_id: effectiveLeadId || null,
+        source_tool: 'beat-your-quote',
+        source_system: 'web',
+        form_name: 'mission_initiated',
+        quote_file_id: quoteFileId,
+      });
       
       trackFormSubmit({
         formName: 'beat-your-quote-upload',
