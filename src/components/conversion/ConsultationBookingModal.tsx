@@ -11,7 +11,9 @@ import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { useFormAbandonment } from "@/hooks/useFormAbandonment";
 import { Calendar, Check, Loader2 } from "lucide-react";
-import { trackEvent, trackModalOpen, trackBookingConfirmed, trackFormStart, trackLeadSubmissionSuccess } from "@/lib/gtm";
+import { trackEvent, trackModalOpen, trackBookingConfirmed, trackFormStart, trackLeadSubmissionSuccess, generateEventId } from "@/lib/gtm";
+import { getOrCreateClientId, getOrCreateSessionId } from "@/lib/tracking";
+import { getLeadAnchor } from "@/lib/leadAnchor";
 import { getAttributionData, buildAIContextFromSession } from "@/lib/attribution";
 import { setLeadAnchor } from "@/lib/leadAnchor";
 import { logBookingConfirmed } from "@/lib/highValueSignals";
@@ -86,8 +88,22 @@ export function ConsultationBookingModal({
       setModalOpenTime(now);
 
       trackModalOpen({ modalName: "consultation_booking", sourceTool });
+      
+      // Enriched dataLayer push for funnel reconstruction
+      const externalId = effectiveLeadId || getLeadAnchor() || null;
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'consultation_modal_opened',
+        event_id: generateEventId(),
+        client_id: getOrCreateClientId(),
+        session_id: getOrCreateSessionId(),
+        external_id: externalId,
+        source_tool: sourceTool,
+        source_system: 'web',
+        modal_name: 'consultation_booking',
+      });
     }
-  }, [isOpen]); // Only isOpen dependency
+  }, [isOpen, sourceTool, effectiveLeadId]); // Added effectiveLeadId for external_id resolution
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,6 +167,20 @@ export function ConsultationBookingModal({
           // PHASE 3: Set lead anchor for 400-day persistence
           setLeadAnchor(data.leadId);
         }
+        
+        // Enriched dataLayer push for consultation completion
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'consultation_form_completed',
+          event_id: generateEventId(),
+          client_id: getOrCreateClientId(),
+          session_id: getOrCreateSessionId(),
+          external_id: data.leadId || effectiveLeadId || null,
+          source_tool: sourceTool,
+          source_system: 'web',
+          form_name: 'consultation_booking',
+          preferred_time: values.preferredTime,
+        });
 
         // Track primary lead capture with Enhanced Conversions (value: 15 USD)
         await trackLeadSubmissionSuccess({

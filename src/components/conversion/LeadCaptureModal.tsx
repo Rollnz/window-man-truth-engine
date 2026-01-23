@@ -9,7 +9,9 @@ import { SessionData, useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useFormAbandonment } from '@/hooks/useFormAbandonment';
 import { Mail, Check, Loader2 } from 'lucide-react';
-import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess, trackFormStart, trackLeadCapture } from '@/lib/gtm';
+import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess, trackFormStart, trackLeadCapture, generateEventId } from '@/lib/gtm';
+import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
+import { getLeadAnchor } from '@/lib/leadAnchor';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import { getLeadQuality } from '@/lib/leadQuality';
 import { SourceTool } from '@/types/sourceTool';
@@ -72,8 +74,22 @@ export function LeadCaptureModal({
       setModalOpenTime(now);
 
       trackModalOpen({ modalName: 'lead_capture', sourceTool });
+      
+      // Enriched dataLayer push for funnel reconstruction
+      const externalId = effectiveLeadId || getLeadAnchor() || null;
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'lead_capture_modal_opened',
+        event_id: generateEventId(),
+        client_id: getOrCreateClientId(),
+        session_id: getOrCreateSessionId(),
+        external_id: externalId,
+        source_tool: sourceTool,
+        source_system: 'web',
+        modal_name: 'lead_capture',
+      });
     }
-  }, [isOpen, sourceTool]); // ONLY these dependencies - NO form values!
+  }, [isOpen, sourceTool, effectiveLeadId]); // Added effectiveLeadId for external_id resolution
 
   // Update email when sessionData changes
   useEffect(() => {
@@ -143,6 +159,19 @@ export function LeadCaptureModal({
         // Golden Thread: Persist leadId for future interactions
         setLeadId(data.leadId);
         updateFields({ leadId: data.leadId });
+        
+        // Enriched dataLayer push for lead capture completion
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'lead_capture_form_completed',
+          event_id: generateEventId(),
+          client_id: getOrCreateClientId(),
+          session_id: getOrCreateSessionId(),
+          external_id: data.leadId,
+          source_tool: sourceTool,
+          source_system: 'web',
+          form_name: 'lead_capture',
+        });
 
         // Track successful lead capture with full metadata (Phase 4)
         await trackLeadCapture(

@@ -23,7 +23,9 @@ import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/use
 import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
-import { trackEvent } from '@/lib/gtm';
+import { trackEvent, generateEventId } from '@/lib/gtm';
+import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
+import { getLeadAnchor } from '@/lib/leadAnchor';
 import type { SourceTool } from '@/types/sourceTool';
 import { FormSurfaceProvider } from '@/components/forms/FormSurfaceProvider';
 
@@ -396,9 +398,24 @@ export function ExitIntentModal({
     if (isOpen && !prevIsOpenRef.current) {
       // Transition false → true: modal just opened
       sessionIdRef.current = crypto.randomUUID();
+      const externalId = existingLeadId || getLeadAnchor() || null;
 
       try {
         trackEvent('modal_opened', { sessionId: sessionIdRef.current });
+        
+        // Enriched dataLayer push for exit intent modal
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'exit_intent_modal_opened',
+          event_id: generateEventId(),
+          client_id: getOrCreateClientId(),
+          session_id: getOrCreateSessionId(),
+          external_id: externalId,
+          source_tool: sourceTool,
+          source_system: 'web',
+          modal_name: 'exit_intent_gauntlet',
+          starting_step: currentStep,
+        });
       } catch (e) {
         console.error('Analytics error:', e);
       }
@@ -423,22 +440,39 @@ export function ExitIntentModal({
       }
     }
     prevIsOpenRef.current = isOpen;
-  }, [isOpen]);
+  }, [isOpen, sourceTool, currentStep, existingLeadId]);
 
   // Track step_viewed (once per step entry)
   useEffect(() => {
     if (isOpen && currentStep !== prevStepRef.current) {
+      const externalId = existingLeadId || getLeadAnchor() || null;
+      
       try {
         trackEvent('step_viewed', {
           step: currentStep,
           sessionId: sessionIdRef.current,
+        });
+        
+        // Enriched dataLayer push for step views
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'exit_intent_step_viewed',
+          event_id: generateEventId(),
+          client_id: getOrCreateClientId(),
+          session_id: getOrCreateSessionId(),
+          external_id: externalId,
+          source_tool: sourceTool,
+          source_system: 'web',
+          form_name: 'exit_intent_gauntlet',
+          step_name: currentStep,
+          step_index: STEP_CONFIG[currentStep].number,
         });
       } catch (e) {
         console.error('Analytics error:', e);
       }
       prevStepRef.current = currentStep;
     }
-  }, [isOpen, currentStep]);
+  }, [isOpen, currentStep, sourceTool, existingLeadId]);
 
   // Auto-focus first input on step change
   useEffect(() => {
