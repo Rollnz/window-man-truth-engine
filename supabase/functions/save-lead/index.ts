@@ -230,11 +230,36 @@ async function hashEmail(email: string): Promise<string> {
   return sha256Hash(normalized);
 }
 
-// Normalize and hash phone (digits only, then SHA256)
-async function hashPhone(phone: string): Promise<string> {
+/**
+ * Normalize phone to E.164 format (US only)
+ * Returns null if phone cannot be normalized - NO fallback hashing
+ */
+function normalizeToE164(phone: string): string | null {
   const digitsOnly = phone.replace(/\D/g, '');
-  if (!digitsOnly) return '';
-  return sha256Hash(digitsOnly);
+  
+  // 10 digits: US number without country code
+  if (digitsOnly.length === 10) {
+    return `+1${digitsOnly}`;
+  }
+  // 11 digits starting with 1: US number with country code
+  if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+    return `+${digitsOnly}`;
+  }
+  // Invalid phone - return null (do NOT hash)
+  return null;
+}
+
+/**
+ * Hash phone using E.164 normalization
+ * Returns null if phone is invalid - prevents inconsistent identity matching
+ */
+async function hashPhoneE164(phone: string): Promise<string | null> {
+  const e164 = normalizeToE164(phone);
+  if (!e164) {
+    console.log('[hashPhoneE164] Phone not normalizable, skipping hash:', phone.slice(0, 3) + '***');
+    return null;
+  }
+  return sha256Hash(e164);
 }
 
 interface StapeGTMPayload {
@@ -250,10 +275,10 @@ interface StapeGTMPayload {
 // Fire-and-forget Stape GTM server-side event
 async function sendStapeGTMEvent(payload: StapeGTMPayload): Promise<void> {
   try {
-    // Hash sensitive data
+    // Hash sensitive data using E.164 normalization for phones
     const [hashedEmail, hashedPhone] = await Promise.all([
       hashEmail(payload.email),
-      payload.phone ? hashPhone(payload.phone) : Promise.resolve(''),
+      payload.phone ? hashPhoneE164(payload.phone) : Promise.resolve(null),
     ]);
 
     const gtmPayload = {
@@ -866,6 +891,10 @@ serve(async (req) => {
         || (sessionData as Record<string, unknown>)?.client_id as string 
         || `lead-${leadId}`;
 
+      // Pre-compute hashes once using E.164 for phones
+      const hashedEmail = await hashEmail(normalizedEmail);
+      const hashedPhone = phone ? await hashPhoneE164(phone) : null;
+
       const eventLogPayload = {
         event_id: crypto.randomUUID(),
         event_name: 'lead_captured',
@@ -874,9 +903,18 @@ serve(async (req) => {
         lead_id: leadId,
         session_id: sessionId || null,
         client_id: clientId,
+        
+        // ═══ DEDICATED COLUMNS (queryable) ═══
+        external_id: leadId,           // Cross-platform identity key
+        email_sha256: hashedEmail,     // Fast identity lookups
+        phone_sha256: hashedPhone,     // null if invalid (no fallback)
+        
         source_tool: sourceTool,
+        source_system: 'save-lead',
+        ingested_by: 'save-lead',
         page_path: aiContext?.source_form || referer || '/unknown',
         funnel_stage: 'captured',
+        
         // Attribution fields at event time
         traffic_source: attribution?.utm_source || lastNonDirect?.utm_source || null,
         traffic_medium: attribution?.utm_medium || lastNonDirect?.utm_medium || null,
@@ -885,8 +923,7 @@ serve(async (req) => {
         fbclid: lastNonDirect?.fbclid || null,
         fbp: attribution?.fbp || null,
         fbc: attribution?.fbc || null,
-        source_system: 'save-lead',
-        ingested_by: 'save-lead',
+        
         metadata: {
           email_domain: normalizedEmail.split('@')[1],
           has_phone: !!phone,
@@ -896,9 +933,16 @@ serve(async (req) => {
           last_non_direct_channel: lastNonDirect?.channel || null,
           landing_page: lastNonDirect?.landing_page || null,
         },
+        
+        // ═══ JSONB ALIASES (backward compat for Meta CAPI + Google EC) ═══
         user_data: {
-          email_sha256: await hashEmail(normalizedEmail),
-          phone_sha256: phone ? await hashPhone(phone) : null,
+          // Meta CAPI aliases
+          em: hashedEmail,
+          ph: hashedPhone,
+          external_id: leadId,
+          // Google Enhanced Conversions aliases
+          sha256_email_address: hashedEmail,
+          sha256_phone_number: hashedPhone,
         },
       };
 
