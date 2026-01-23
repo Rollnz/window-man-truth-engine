@@ -137,6 +137,13 @@ export type Database = {
             referencedRelation: "leads"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "consultations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "v_conversion_integrity_check"
+            referencedColumns: ["lead_id"]
+          },
         ]
       }
       deals: {
@@ -754,6 +761,13 @@ export type Database = {
             referencedRelation: "leads"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "quote_files_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "v_conversion_integrity_check"
+            referencedColumns: ["lead_id"]
+          },
         ]
       }
       rate_limits: {
@@ -1143,6 +1157,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "wm_leads_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "v_conversion_integrity_check"
+            referencedColumns: ["lead_id"]
+          },
+          {
             foreignKeyName: "wm_leads_original_session_id_fkey"
             columns: ["original_session_id"]
             isOneToOne: false
@@ -1208,6 +1229,13 @@ export type Database = {
             referencedRelation: "leads"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "wm_sessions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "v_conversion_integrity_check"
+            referencedColumns: ["lead_id"]
+          },
         ]
       }
     }
@@ -1219,6 +1247,37 @@ export type Database = {
           last_touch_time: string | null
           last_touch_tool: string | null
           lead_id: string | null
+        }
+        Relationships: []
+      }
+      v_conversion_integrity_check: {
+        Row: {
+          conversion_event_count: number | null
+          email: string | null
+          integrity_status: string | null
+          lead_created_at: string | null
+          lead_id: string | null
+        }
+        Relationships: []
+      }
+      v_duplicate_conversions: {
+        Row: {
+          duplicate_count: number | null
+          event_ids: string[] | null
+          event_name: string | null
+          event_times: string[] | null
+          ingested_by_sources: string[] | null
+          lead_id: string | null
+        }
+        Relationships: []
+      }
+      v_duplicate_event_ids: {
+        Row: {
+          duplicate_count: number | null
+          event_id: string | null
+          event_names: string[] | null
+          ingested_by_sources: string[] | null
+          row_ids: string[] | null
         }
         Relationships: []
       }
@@ -1275,12 +1334,40 @@ export type Database = {
         }
         Relationships: []
       }
+      v_ledger_health_summary: {
+        Row: {
+          conversions: number | null
+          event_date: string | null
+          orphan_events: number | null
+          potential_duplicates: number | null
+          total_events: number | null
+          unique_converted_leads: number | null
+          unique_event_ids: number | null
+          writer_count: number | null
+          writers: string[] | null
+        }
+        Relationships: []
+      }
       v_meta_optimization_segments: {
         Row: {
           booking_confirmed: number | null
           lead_id: string | null
           used_scanner: number | null
           used_voice: number | null
+        }
+        Relationships: []
+      }
+      v_writer_activity: {
+        Row: {
+          conversion_writes: number | null
+          event_count: number | null
+          event_names: string[] | null
+          first_write: string | null
+          ingested_by: string | null
+          last_write: string | null
+          source_system: string | null
+          source_tool: string | null
+          unique_event_types: number | null
         }
         Relationships: []
       }
