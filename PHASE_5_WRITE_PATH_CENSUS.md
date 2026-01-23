@@ -104,3 +104,79 @@ This indicates a UNIQUE constraint on `event_id` already exists: `uix_wm_event_l
 4. **5E**: Verify and lock GTM Server forwarder
 5. **5F**: Implement conversion versioning schema
 6. **5G**: Run ledger integrity acceptance test
+
+
+---
+
+## Phase 5E: GTM Server Forwarder Audit
+
+### Supabase Event Logger Tag (GTM Server Container: GTM-PJZDXKH9)
+
+**Tag Configuration:**
+- **Type**: HTTP Request
+- **Destination URL**: `https://uzulqexlgavggcyizabf.supabase.co/functions/v1/log-event`
+- **Method**: POST
+- **Headers**: 
+  - `Content-Type: application/json`
+  - `x-wm-log-secret: {{wm_log_secret}}`
+- **ingested_by**: `gtm-forwarder`
+- **source_system**: `gtm_server`
+- **event_type**: `signal` (NOT conversion)
+
+**Triggering Status:**
+- **NO TRIGGER ASSIGNED** - Tag shows "Choose a trigger to make this tag fire..."
+- This means the tag is currently DISABLED (will never fire)
+
+### Assessment
+
+| Aspect | Status | Risk Level |
+|--------|--------|------------|
+| Tag exists | YES | ⚠️ Medium |
+| Has trigger | NO | ✅ Safe |
+| Writes conversions | NO (event_type: signal) | ✅ Safe |
+| ingested_by | gtm-forwarder | ⚠️ Trackable |
+
+### Recommendation
+
+The Supabase Event Logger tag is currently **SAFE** because:
+1. No trigger is assigned - it will never fire
+2. It writes `event_type: signal` not `conversion`
+3. It targets `log-event` function (not save-lead)
+
+**Options:**
+1. **DELETE the tag** - Cleanest solution, eliminates future risk
+2. **KEEP disabled** - Current state is safe, but tag could be accidentally enabled
+3. **ADD blocking trigger** - Add a "Never" trigger as explicit documentation
+
+### Forwarder Lock Status
+
+| Writer | Status | Action Required |
+|--------|--------|-----------------|
+| GTM Server → log-event | DISABLED (no trigger) | None (or delete for safety) |
+| GTM Server → save-lead | DOES NOT EXIST | None |
+| GTM Server → wm_event_log direct | DOES NOT EXIST | None |
+
+**Conclusion**: GTM Server forwarder is effectively LOCKED. The Supabase Event Logger tag has no trigger and will never fire.
+
+
+---
+
+## Step 5E: Forwarder Lock COMPLETE
+
+**Action Taken**: Deleted Supabase Event Logger tag from GTM Server container
+
+**GTM Server Container**: GTM-PJZDXKH9 (itswindowman.com)
+**Version Published**: Version 20
+**Published**: 01/23/2026, 8:36 AM
+**Change**: Supabase Event Logger Tag - DELETED
+
+**Forwarder Lock Status**: ✅ PERMANENTLY LOCKED
+
+The GTM Server container can no longer write to wm_event_log. All writes must go through the canonical edge functions (save-lead, log-event, etc.) which have proper idempotency guards.
+
+### Remaining Tags in GTM Server Container:
+1. Facebook CAPI - All Events
+2. Facebook CAPI - Lead
+3. GA4 - Passthrough
+
+None of these tags write to Supabase/wm_event_log.
