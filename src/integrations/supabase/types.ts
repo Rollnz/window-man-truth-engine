@@ -1172,6 +1172,114 @@ export type Database = {
           },
         ]
       }
+      wm_revenue_events: {
+        Row: {
+          attr_campaign_id: string | null
+          attr_fbc: string | null
+          attr_fbclid: string | null
+          attr_fbp: string | null
+          attr_gclid: string | null
+          attr_intent_tier: number | null
+          attr_landing_page: string | null
+          attr_lead_score: number | null
+          attr_referrer: string | null
+          attr_source_tool: string | null
+          attr_traffic_source: string | null
+          attr_utm_campaign: string | null
+          attr_utm_content: string | null
+          attr_utm_medium: string | null
+          attr_utm_source: string | null
+          attr_utm_term: string | null
+          conversion_event_id: string
+          created_at: string
+          currency: string
+          deal_id: string | null
+          deal_name: string | null
+          email_sha256: string | null
+          event_time: string
+          external_id: string | null
+          id: string
+          ingested_by: string
+          lead_id: string
+          metadata: Json
+          phone_sha256: string | null
+          revenue_amount: number | null
+          revenue_event_id: string
+          revenue_stage: string
+          source_system: string
+        }
+        Insert: {
+          attr_campaign_id?: string | null
+          attr_fbc?: string | null
+          attr_fbclid?: string | null
+          attr_fbp?: string | null
+          attr_gclid?: string | null
+          attr_intent_tier?: number | null
+          attr_landing_page?: string | null
+          attr_lead_score?: number | null
+          attr_referrer?: string | null
+          attr_source_tool?: string | null
+          attr_traffic_source?: string | null
+          attr_utm_campaign?: string | null
+          attr_utm_content?: string | null
+          attr_utm_medium?: string | null
+          attr_utm_source?: string | null
+          attr_utm_term?: string | null
+          conversion_event_id: string
+          created_at?: string
+          currency?: string
+          deal_id?: string | null
+          deal_name?: string | null
+          email_sha256?: string | null
+          event_time?: string
+          external_id?: string | null
+          id?: string
+          ingested_by?: string
+          lead_id: string
+          metadata?: Json
+          phone_sha256?: string | null
+          revenue_amount?: number | null
+          revenue_event_id?: string
+          revenue_stage: string
+          source_system?: string
+        }
+        Update: {
+          attr_campaign_id?: string | null
+          attr_fbc?: string | null
+          attr_fbclid?: string | null
+          attr_fbp?: string | null
+          attr_gclid?: string | null
+          attr_intent_tier?: number | null
+          attr_landing_page?: string | null
+          attr_lead_score?: number | null
+          attr_referrer?: string | null
+          attr_source_tool?: string | null
+          attr_traffic_source?: string | null
+          attr_utm_campaign?: string | null
+          attr_utm_content?: string | null
+          attr_utm_medium?: string | null
+          attr_utm_source?: string | null
+          attr_utm_term?: string | null
+          conversion_event_id?: string
+          created_at?: string
+          currency?: string
+          deal_id?: string | null
+          deal_name?: string | null
+          email_sha256?: string | null
+          event_time?: string
+          external_id?: string | null
+          id?: string
+          ingested_by?: string
+          lead_id?: string
+          metadata?: Json
+          phone_sha256?: string | null
+          revenue_amount?: number | null
+          revenue_event_id?: string
+          revenue_stage?: string
+          source_system?: string
+        }
+        Relationships: []
+      }
       wm_sessions: {
         Row: {
           anonymous_id: string
@@ -1250,6 +1358,21 @@ export type Database = {
         }
         Relationships: []
       }
+      v_campaign_roas: {
+        Row: {
+          avg_deal_size: number | null
+          campaign: string | null
+          deals_won: number | null
+          lead_to_deal_pct: number | null
+          medium: string | null
+          opportunities: number | null
+          revenue_per_lead: number | null
+          source: string | null
+          total_leads: number | null
+          total_revenue: number | null
+        }
+        Relationships: []
+      }
       v_conversion_integrity_check: {
         Row: {
           conversion_event_count: number | null
@@ -1257,6 +1380,21 @@ export type Database = {
           integrity_status: string | null
           lead_created_at: string | null
           lead_id: string | null
+        }
+        Relationships: []
+      }
+      v_daily_funnel_performance: {
+        Row: {
+          avg_deal_value: number | null
+          conversions: number | null
+          date: string | null
+          deals_won: number | null
+          lead_to_opportunity_pct: number | null
+          opportunities: number | null
+          opportunity_to_deal_pct: number | null
+          revenue_confirmed: number | null
+          total_confirmed_revenue: number | null
+          total_deal_value: number | null
         }
         Relationships: []
       }
@@ -1334,6 +1472,28 @@ export type Database = {
         }
         Relationships: []
       }
+      v_lead_ltv: {
+        Row: {
+          acquisition_campaign: string | null
+          acquisition_source: string | null
+          acquisition_tool: string | null
+          confirmed_revenue: number | null
+          conversion_date: string | null
+          current_stage: string | null
+          days_to_close: number | null
+          deal_date: string | null
+          deal_id: string | null
+          deal_name: string | null
+          deal_value: number | null
+          external_id: string | null
+          intent_tier: number | null
+          lead_id: string | null
+          lead_score: number | null
+          opportunity_date: string | null
+          revenue_date: string | null
+        }
+        Relationships: []
+      }
       v_ledger_health_summary: {
         Row: {
           conversions: number | null
@@ -1354,6 +1514,41 @@ export type Database = {
           lead_id: string | null
           used_scanner: number | null
           used_voice: number | null
+        }
+        Relationships: []
+      }
+      v_revenue_pipeline: {
+        Row: {
+          avg_value: number | null
+          earliest_event: string | null
+          latest_event: string | null
+          lead_count: number | null
+          revenue_stage: string | null
+          total_value: number | null
+        }
+        Relationships: []
+      }
+      v_source_profitability: {
+        Row: {
+          avg_lead_score: number | null
+          avg_revenue_per_lead: number | null
+          deals_won: number | null
+          lead_to_deal_pct: number | null
+          opportunities: number | null
+          source_tool: string | null
+          total_deal_value: number | null
+          total_leads: number | null
+        }
+        Relationships: []
+      }
+      v_weekly_cohort_analysis: {
+        Row: {
+          cohort_conversion_pct: number | null
+          cohort_size: number | null
+          cohort_week: string | null
+          deals_won: number | null
+          revenue_per_cohort_lead: number | null
+          total_revenue: number | null
         }
         Relationships: []
       }
