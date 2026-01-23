@@ -1,5 +1,6 @@
 // Google Tag Manager utilities with Enhanced Conversion Support
 // Phase 1-4: Professional-grade conversion tracking system with Persistent Identity
+// Updated: January 23, 2026 - Option A: Payload Parity for lead_submission_success
 
 export const GTM_ID = 'GTM-NHVFR5QZ';
 
@@ -29,6 +30,12 @@ import { buildEventMetadata, buildGTMEvent, type EventMetadataInput } from './ev
  */
 const HASH_64_HEX_REGEX = /^[a-f0-9]{64}$/i;
 
+/**
+ * Standard lead conversion value
+ */
+const LEAD_VALUE = 15;
+const LEAD_CURRENCY = 'USD';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // HASH-STATE DETECTION
 // ═══════════════════════════════════════════════════════════════════════════
@@ -51,6 +58,38 @@ export function isAlreadyHashed(value: string): boolean {
  */
 export function normalizeEmail(email: string): string {
   return email.toLowerCase().trim();
+}
+
+/**
+ * Normalize name for hashing (lowercase + trim, remove special chars)
+ * Meta CAPI requirement for fn/ln fields
+ */
+export function normalizeName(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z]/g, '');
+}
+
+/**
+ * Normalize city for hashing (lowercase + trim, remove special chars)
+ * Meta CAPI requirement for ct field
+ */
+export function normalizeCity(city: string): string {
+  return city.toLowerCase().trim().replace(/[^a-z]/g, '');
+}
+
+/**
+ * Normalize state for hashing (lowercase + trim, 2-char code)
+ * Meta CAPI requirement for st field
+ */
+export function normalizeState(state: string): string {
+  return state.toLowerCase().trim().slice(0, 2);
+}
+
+/**
+ * Normalize zip for hashing (digits only, first 5)
+ * Meta CAPI requirement for zp field
+ */
+export function normalizeZip(zip: string): string {
+  return zip.replace(/\D/g, '').slice(0, 5);
 }
 
 /**
@@ -116,6 +155,103 @@ export async function hashPhone(phone: string | undefined | null): Promise<strin
   return hash || undefined;
 }
 
+/**
+ * Hash a name field (first name or last name)
+ */
+export async function hashName(name: string | undefined | null): Promise<string | undefined> {
+  if (!name) return undefined;
+  if (isAlreadyHashed(name)) return name;
+  const normalized = normalizeName(name);
+  if (!normalized) return undefined;
+  const hash = await sha256(normalized);
+  return hash || undefined;
+}
+
+/**
+ * Hash a city field
+ */
+export async function hashCity(city: string | undefined | null): Promise<string | undefined> {
+  if (!city) return undefined;
+  if (isAlreadyHashed(city)) return city;
+  const normalized = normalizeCity(city);
+  if (!normalized) return undefined;
+  const hash = await sha256(normalized);
+  return hash || undefined;
+}
+
+/**
+ * Hash a state field
+ */
+export async function hashState(state: string | undefined | null): Promise<string | undefined> {
+  if (!state) return undefined;
+  if (isAlreadyHashed(state)) return state;
+  const normalized = normalizeState(state);
+  if (!normalized) return undefined;
+  const hash = await sha256(normalized);
+  return hash || undefined;
+}
+
+/**
+ * Hash a zip code field
+ */
+export async function hashZip(zip: string | undefined | null): Promise<string | undefined> {
+  if (!zip) return undefined;
+  if (isAlreadyHashed(zip)) return zip;
+  const normalized = normalizeZip(zip);
+  if (!normalized || normalized.length < 5) return undefined;
+  const hash = await sha256(normalized);
+  return hash || undefined;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COOKIE CAPTURE FUNCTIONS (Facebook Attribution)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get a cookie value by name
+ */
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
+/**
+ * Get Facebook Browser ID (_fbp cookie)
+ * REQUIRED for cross-device attribution
+ */
+export function getFbp(): string | null {
+  return getCookie('_fbp');
+}
+
+/**
+ * Get Facebook Click ID (_fbc cookie or from URL)
+ * REQUIRED for ad click attribution
+ */
+export function getFbc(): string | null {
+  if (typeof window === 'undefined') return null;
+  
+  // First: Check URL for fbclid parameter (most accurate)
+  const urlParams = new URLSearchParams(window.location.search);
+  const fbclid = urlParams.get('fbclid');
+  
+  if (fbclid) {
+    // Format per Meta spec: fb.1.{timestamp}.{fbclid}
+    return `fb.1.${Date.now()}.${fbclid}`;
+  }
+  
+  // Fallback: Check existing cookie
+  return getCookie('_fbc');
+}
+
+/**
+ * Get client user agent
+ */
+export function getClientUserAgent(): string {
+  if (typeof navigator === 'undefined') return '';
+  return navigator.userAgent;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // EVENT ID GENERATION
 // ═══════════════════════════════════════════════════════════════════════════
@@ -136,15 +272,45 @@ export function generateEventId(): string {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ENHANCED USER DATA BUILDER
+// ENHANCED USER DATA BUILDER (Full EMQ Support)
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface EnhancedUserData {
+  // Google Enhanced Conversions format
   sha256_email_address?: string;
   sha256_phone_number?: string;
+  // Meta CAPI format (aliased)
   em?: string;
   ph?: string;
+  // Advanced matching params (Meta CAPI)
+  fn?: string;
+  ln?: string;
+  ct?: string;
+  st?: string;
+  zp?: string;
+  country?: string;
+  // Cross-platform external ID
   external_id?: string;
+  // Facebook attribution cookies
+  fbp?: string | null;
+  fbc?: string | null;
+  // Client info
+  client_user_agent?: string;
+}
+
+/**
+ * Input interface for building enhanced user data
+ * Matches the parameters needed for full EMQ support
+ */
+export interface EnhancedUserDataInput {
+  email?: string;
+  phone?: string;
+  leadId?: string;
+  firstName?: string;
+  lastName?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
 }
 
 /**
@@ -153,19 +319,38 @@ export interface EnhancedUserData {
  * IMPORTANT: Returns both Google format (sha256_email_address) and Meta format (em/ph)
  * for cross-platform compatibility.
  * 
+ * ENHANCED: Now includes full advanced matching params (fn, ln, ct, st, zp, country)
+ * and Facebook attribution cookies (fbp, fbc) for maximum EMQ.
+ * 
  * CRITICAL: All hashing uses hash-state detection to prevent double-hashing
  */
-export async function buildEnhancedUserData(params: {
-  email?: string;
-  phone?: string;
-  leadId?: string;
-}): Promise<EnhancedUserData | undefined> {
-  const [hashedEmail, hashedPhone] = await Promise.all([
+export async function buildEnhancedUserData(params: EnhancedUserDataInput): Promise<EnhancedUserData | undefined> {
+  // Hash all PII fields in parallel for performance
+  const [
+    hashedEmail,
+    hashedPhone,
+    hashedFirstName,
+    hashedLastName,
+    hashedCity,
+    hashedState,
+    hashedZip,
+  ] = await Promise.all([
     params.email ? sha256(params.email) : Promise.resolve(undefined),
     params.phone ? hashPhone(params.phone) : Promise.resolve(undefined),
+    params.firstName ? hashName(params.firstName) : Promise.resolve(undefined),
+    params.lastName ? hashName(params.lastName) : Promise.resolve(undefined),
+    params.city ? hashCity(params.city) : Promise.resolve(undefined),
+    params.state ? hashState(params.state) : Promise.resolve(undefined),
+    params.zipCode ? hashZip(params.zipCode) : Promise.resolve(undefined),
   ]);
 
-  if (!hashedEmail && !hashedPhone && !params.leadId) {
+  // Get Facebook attribution cookies
+  const fbp = getFbp();
+  const fbc = getFbc();
+  const client_user_agent = getClientUserAgent();
+
+  // Return undefined if we have no useful data
+  if (!hashedEmail && !hashedPhone && !params.leadId && !fbp && !fbc) {
     return undefined;
   }
 
@@ -176,8 +361,20 @@ export async function buildEnhancedUserData(params: {
     // Meta CAPI format (aliased)
     em: hashedEmail || undefined,
     ph: hashedPhone,
+    // Advanced matching params (Meta CAPI) - for EMQ 8.5+
+    fn: hashedFirstName,
+    ln: hashedLastName,
+    ct: hashedCity,
+    st: hashedState,
+    zp: hashedZip,
+    country: 'us', // Hardcoded for US-only business
     // Cross-platform external ID
     external_id: params.leadId,
+    // Facebook attribution cookies
+    fbp,
+    fbc,
+    // Client info
+    client_user_agent,
   };
 }
 
@@ -285,6 +482,9 @@ export const trackLeadCapture = async (
         sha256_phone_number: hashedPhone,
         em: hashedEmail || undefined,
         ph: hashedPhone,
+        fbp: getFbp(),
+        fbc: getFbc(),
+        client_user_agent: getClientUserAgent(),
       },
 
       // Legacy fields for backward compatibility
@@ -314,67 +514,150 @@ export const trackLeadCapture = async (
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// HIGH-VALUE CONVERSION TRACKING (EMQ 9.5+ COMPLIANT)
+// CANONICAL LEAD SUBMISSION SUCCESS (Option A: Full Payload Parity)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Track lead submission success with Enhanced Conversions
- * 
- * ENHANCED: Async SHA-256 PII hashing for Google Enhanced Conversions & Meta CAPI
- * Value: $15 (standard lead tier)
- * 
- * CRITICAL: Only hashed PII is pushed to dataLayer - raw PII never appears
+ * Input interface for trackLeadSubmissionSuccess
+ * Accepts the same inputs as trackLeadCapture for payload parity
  */
-export const trackLeadSubmissionSuccess = async (params: {
+export interface LeadSubmissionSuccessInput {
   leadId: string;
-  email: string;
+  email?: string;
   phone?: string;
+  firstName?: string;
+  lastName?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
   sourceTool?: string;
-  name?: string;
   eventId?: string;
-}): Promise<void> => {
+}
+
+/**
+ * Track lead submission success with FULL Enhanced Conversions
+ * 
+ * OPTION A IMPLEMENTATION: Payload Parity with lead_captured
+ * 
+ * This function fires the `lead_submission_success` event which triggers
+ * the Meta - Lead Conversion tag in GTM. It includes ALL parameters needed
+ * for maximum EMQ (Event Match Quality) score.
+ * 
+ * PAYLOAD INCLUDES:
+ * - event_id: Unique UUID for CAPI deduplication
+ * - external_id: Lead ID (top-level AND inside user_data)
+ * - user_data.em: SHA-256 hashed email
+ * - user_data.ph: SHA-256 hashed phone (E.164 normalized)
+ * - user_data.fn: SHA-256 hashed first name
+ * - user_data.ln: SHA-256 hashed last name
+ * - user_data.ct: SHA-256 hashed city
+ * - user_data.st: SHA-256 hashed state
+ * - user_data.zp: SHA-256 hashed zip
+ * - user_data.country: 'us' (hardcoded)
+ * - user_data.fbp: Facebook Browser ID cookie
+ * - user_data.fbc: Facebook Click ID cookie
+ * - user_data.external_id: Lead ID
+ * - value: 15 (standard lead value)
+ * - currency: 'USD'
+ * - source_tool: Origin tool/page
+ * - source_system: 'website'
+ * 
+ * CRITICAL: Only hashed PII is pushed to dataLayer - raw PII NEVER appears
+ */
+export const trackLeadSubmissionSuccess = async (params: LeadSubmissionSuccessInput): Promise<void> => {
   try {
+    // Build full enhanced user data with all advanced matching params
     const userData = await buildEnhancedUserData({
       email: params.email,
       phone: params.phone,
       leadId: params.leadId,
+      firstName: params.firstName,
+      lastName: params.lastName,
+      city: params.city,
+      state: params.state,
+      zipCode: params.zipCode,
     });
 
-    const eventId = params.eventId || params.leadId || generateEventId();
+    // Generate unique event ID for CAPI deduplication
+    const eventId = params.eventId || generateEventId();
 
+    // Get page location for event context
+    const pageLocation = typeof window !== 'undefined' ? window.location.href : undefined;
+    const pagePath = typeof window !== 'undefined' ? window.location.pathname : undefined;
+
+    // Push the canonical lead_submission_success event
     trackEvent('lead_submission_success', {
+      // Event identification (CRITICAL for deduplication)
+      event_id: eventId,
+      
+      // Lead identification (top-level for backward compatibility)
       lead_id: params.leadId,
-      event_id: eventId, // For CAPI deduplication
       external_id: params.leadId,
+      
+      // Full user_data object for EMQ (HASHED ONLY - no raw PII)
       user_data: userData,
-      value: 15,
-      currency: 'USD',
+      
+      // Conversion value (required for Meta CAPI)
+      value: LEAD_VALUE,
+      currency: LEAD_CURRENCY,
+      
+      // Source tracking
       source_tool: params.sourceTool,
-      email_domain: params.email?.split('@')[1] || 'unknown',
-      has_phone: !!params.phone,
-      has_name: !!params.name,
+      source_system: 'website',
+      
+      // Page context
+      page_location: pageLocation,
+      page_path: pagePath,
+      
+      // Data quality flags (for debugging)
+      has_email: !!userData?.em,
+      has_phone: !!userData?.ph,
+      has_fbp: !!userData?.fbp,
+      has_fbc: !!userData?.fbc,
+      has_advanced_matching: !!(userData?.fn || userData?.ln || userData?.ct || userData?.st || userData?.zp),
     });
 
     if (import.meta.env.DEV) {
-      console.log('[GTM] lead_submission_success pushed with Enhanced Conversions', {
-        leadId: params.leadId.slice(0, 8),
+      console.log('[GTM] lead_submission_success pushed with FULL payload parity', {
         eventId: eventId.slice(0, 8),
-        hasEmail: !!userData?.sha256_email_address,
-        hasPhone: !!userData?.sha256_phone_number,
-        value: 15,
+        leadId: params.leadId.slice(0, 8),
+        hasEmail: !!userData?.em,
+        hasPhone: !!userData?.ph,
+        hasFbp: !!userData?.fbp,
+        hasFbc: !!userData?.fbc,
+        hasFirstName: !!userData?.fn,
+        hasLastName: !!userData?.ln,
+        value: LEAD_VALUE,
+        currency: LEAD_CURRENCY,
       });
     }
   } catch (error) {
     console.warn('[GTM] lead_submission_success hashing failed, firing fallback:', error);
-    trackEvent('lead_submission_success_fallback', {
+    
+    // Fallback: fire event with minimal data to avoid losing conversion
+    // Still includes fbp/fbc and event_id for attribution
+    const eventId = params.eventId || generateEventId();
+    trackEvent('lead_submission_success', {
+      event_id: eventId,
       lead_id: params.leadId,
-      value: 15,
-      currency: 'USD',
+      external_id: params.leadId,
+      value: LEAD_VALUE,
+      currency: LEAD_CURRENCY,
       source_tool: params.sourceTool,
+      source_system: 'website',
+      user_data: {
+        external_id: params.leadId,
+        fbp: getFbp(),
+        fbc: getFbc(),
+      },
       hash_error: true,
     });
   }
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// High-Value Conversion Tracking
+// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Track phone lead capture with Enhanced Conversions
@@ -388,6 +671,8 @@ export const trackPhoneLead = async (params: {
   leadId: string;
   phone: string;
   email?: string;
+  firstName?: string;
+  lastName?: string;
   sourceTool: string;
   eventId?: string;
 }): Promise<void> => {
@@ -396,23 +681,27 @@ export const trackPhoneLead = async (params: {
       email: params.email,
       phone: params.phone,
       leadId: params.leadId,
+      firstName: params.firstName,
+      lastName: params.lastName,
     });
 
     const eventId = params.eventId || params.leadId || generateEventId();
 
-    trackEvent('phone_lead', {
+    trackEvent('phone_lead_captured', {
       lead_id: params.leadId,
-      event_id: eventId, // For CAPI deduplication
+      event_id: eventId,
       external_id: params.leadId,
       user_data: userData,
       value: 25,
       currency: 'USD',
       source_tool: params.sourceTool,
-      has_email: !!params.email,
+      source_system: 'website',
+      page_location: typeof window !== 'undefined' ? window.location.href : undefined,
+      page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
     });
 
     if (import.meta.env.DEV) {
-      console.log('[GTM] phone_lead pushed with Enhanced Conversions', {
+      console.log('[GTM] phone_lead_captured pushed with Enhanced Conversions', {
         leadId: params.leadId.slice(0, 8),
         eventId: eventId.slice(0, 8),
         hasEmail: !!userData?.sha256_email_address,
@@ -421,8 +710,8 @@ export const trackPhoneLead = async (params: {
       });
     }
   } catch (error) {
-    console.warn('[GTM] phone_lead hashing failed, firing fallback:', error);
-    trackEvent('phone_lead_fallback', {
+    console.warn('[GTM] phone_lead_captured hashing failed, firing fallback:', error);
+    trackEvent('phone_lead_captured_fallback', {
       lead_id: params.leadId,
       value: 25,
       currency: 'USD',
@@ -433,19 +722,21 @@ export const trackPhoneLead = async (params: {
 };
 
 /**
- * Track consultation booking with Enhanced Conversions
+ * Track consultation booked with Enhanced Conversions
  * 
- * ENHANCED: Includes both Google (sha256_*) and Meta (em/ph) formats
- * Value: $75 (highest tier)
+ * ENHANCED: Async SHA-256 PII hashing
+ * Value: $50 (high-intent conversion)
  * 
  * CRITICAL: Only hashed PII is pushed to dataLayer - raw PII never appears
  */
 export const trackConsultationBooked = async (params: {
   leadId: string;
   email: string;
-  phone: string;
-  metadata?: Record<string, unknown>;
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
   sourceTool?: string;
+  preferredTime?: string;
   eventId?: string;
 }): Promise<void> => {
   try {
@@ -453,19 +744,24 @@ export const trackConsultationBooked = async (params: {
       email: params.email,
       phone: params.phone,
       leadId: params.leadId,
+      firstName: params.firstName,
+      lastName: params.lastName,
     });
 
     const eventId = params.eventId || params.leadId || generateEventId();
-    
+
     trackEvent('consultation_booked', {
       lead_id: params.leadId,
-      event_id: eventId, // For CAPI deduplication
+      event_id: eventId,
       external_id: params.leadId,
       user_data: userData,
-      value: 75,
+      value: 50,
       currency: 'USD',
-      conversion_metadata: params.metadata,
       source_tool: params.sourceTool,
+      source_system: 'website',
+      preferred_time: params.preferredTime,
+      page_location: typeof window !== 'undefined' ? window.location.href : undefined,
+      page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
     });
 
     if (import.meta.env.DEV) {
@@ -474,14 +770,14 @@ export const trackConsultationBooked = async (params: {
         eventId: eventId.slice(0, 8),
         hasEmail: !!userData?.sha256_email_address,
         hasPhone: !!userData?.sha256_phone_number,
-        value: 75,
+        value: 50,
       });
     }
   } catch (error) {
     console.warn('[GTM] consultation_booked hashing failed, firing fallback:', error);
     trackEvent('consultation_booked_fallback', {
       lead_id: params.leadId,
-      value: 75,
+      value: 50,
       currency: 'USD',
       source_tool: params.sourceTool,
       hash_error: true,
@@ -490,10 +786,10 @@ export const trackConsultationBooked = async (params: {
 };
 
 /**
- * Track booking confirmed with async PII hashing (highest-value conversion)
+ * Track booking confirmed with Enhanced Conversions
  * 
- * ENHANCED: Uses buildEnhancedUserData for both Google (sha256_*) and Meta (em/ph) formats
- * Value: $75 (highest tier in conversion values reference)
+ * ENHANCED: Async SHA-256 PII hashing
+ * Value: $75 (highest conversion value tier)
  * 
  * CRITICAL: Only hashed PII is pushed to dataLayer - raw PII never appears
  */
@@ -501,7 +797,8 @@ export const trackBookingConfirmed = async (params: {
   leadId: string;
   email: string;
   phone?: string;
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   preferredTime?: string;
   sourceTool?: string;
   windowCount?: number;
@@ -514,15 +811,17 @@ export const trackBookingConfirmed = async (params: {
       email: params.email,
       phone: params.phone,
       leadId: params.leadId,
+      firstName: params.firstName,
+      lastName: params.lastName,
     });
 
     const eventId = params.eventId || params.leadId || generateEventId();
     
     trackEvent('booking_confirmed', {
       lead_id: params.leadId,
-      event_id: eventId, // For CAPI deduplication
+      event_id: eventId,
       external_id: params.leadId,
-      value: 75, // Highest conversion value tier
+      value: 75,
       currency: 'USD',
       user_data: userData,
       conversion_metadata: {
@@ -532,7 +831,7 @@ export const trackBookingConfirmed = async (params: {
         preferred_callback_time: params.preferredTime,
       },
       source_tool: params.sourceTool,
-      has_name: !!params.name,
+      source_system: 'website',
       page_location: typeof window !== 'undefined' ? window.location.href : undefined,
       page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
     });
@@ -770,32 +1069,27 @@ export const trackConversionValue = async (params: {
     const clampedValue = Math.max(0, Math.min(500, params.value));
     
     // Async PII hashing for Enhanced Conversions (EMQ ≥ 8.0 requirement)
-    const [hashedEmail, hashedPhone] = await Promise.all([
-      params.email ? sha256(params.email) : Promise.resolve(undefined),
-      params.phone ? hashPhone(params.phone) : Promise.resolve(undefined),
-    ]);
-    
-    // Build user_data object only if we have hashed values
-    const userData = (hashedEmail || hashedPhone) ? {
-      external_id: params.leadId,
-      sha256_email_address: hashedEmail || undefined,
-      sha256_phone_number: hashedPhone,
-      em: hashedEmail || undefined,
-      ph: hashedPhone,
-    } : undefined;
+    const userData = await buildEnhancedUserData({
+      email: params.email,
+      phone: params.phone,
+      leadId: params.leadId,
+    });
     
     trackEvent(params.eventName, {
       value: clampedValue,
+      currency: 'USD',
       lead_id: params.leadId,
+      external_id: params.leadId,
       source_tool: params.sourceTool,
+      source_system: 'website',
       ...(userData && { user_data: userData }),
       ...params.metadata,
     });
     
     if (import.meta.env.DEV) {
       console.log(`[GTM] ${params.eventName} pushed with value ${clampedValue}`, {
-        hasEmail: !!hashedEmail,
-        hasPhone: !!hashedPhone,
+        hasEmail: !!userData?.em,
+        hasPhone: !!userData?.ph,
         leadId: params.leadId?.slice(0, 8),
       });
     }
@@ -804,6 +1098,7 @@ export const trackConversionValue = async (params: {
     console.warn('[GTM] PII hashing failed, firing fallback event:', error);
     trackEvent(`${params.eventName}_fallback`, {
       value: Math.max(0, Math.min(500, params.value)),
+      currency: 'USD',
       lead_id: params.leadId,
       source_tool: params.sourceTool,
       hash_error: true,
@@ -846,6 +1141,8 @@ export interface TruthEngine {
   hashPhone: typeof hashPhone;
   generateEventId: typeof generateEventId;
   isAlreadyHashed: typeof isAlreadyHashed;
+  getFbp: typeof getFbp;
+  getFbc: typeof getFbc;
   
   // High-value conversion tracking
   trackLeadSubmissionSuccess: typeof trackLeadSubmissionSuccess;
@@ -880,6 +1177,8 @@ export function installTruthEngine(): void {
     hashPhone,
     generateEventId,
     isAlreadyHashed,
+    getFbp,
+    getFbc,
     // High-value conversion tracking
     trackLeadSubmissionSuccess,
     trackPhoneLead,

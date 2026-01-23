@@ -190,11 +190,21 @@ export function LeadCaptureModal({
         );
 
         // Push Enhanced Conversion event to dataLayer with SHA-256 PII hashing (value: 15 USD)
+        // Option A: Full payload parity with lead_captured - includes all EMQ parameters
+        const nameParts = (name.trim() || '').split(' ');
+        const firstName = nameParts[0] || undefined;
+        const lastName = nameParts.slice(1).join(' ') || undefined;
+        
         await trackLeadSubmissionSuccess({
           leadId: data.leadId,
           email: values.email.trim(),
           phone: phone.trim() || undefined,
-          name: name.trim() || undefined,
+          firstName,
+          lastName,
+          // Location data from sessionData if available
+          city: sessionData.city || undefined,
+          state: sessionData.state || undefined,
+          zipCode: sessionData.zipCode || undefined,
           sourceTool,
         });
 

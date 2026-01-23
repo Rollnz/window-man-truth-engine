@@ -183,11 +183,21 @@ export function ConsultationBookingModal({
         });
 
         // Track primary lead capture with Enhanced Conversions (value: 15 USD)
+        // Option A: Full payload parity with lead_captured - includes all EMQ parameters
+        const nameParts = (values.name || '').split(' ');
+        const firstName = nameParts[0] || undefined;
+        const lastName = nameParts.slice(1).join(' ') || undefined;
+        
         await trackLeadSubmissionSuccess({
           leadId: data.leadId,
           email: values.email,
           phone: values.phone,
-          name: values.name,
+          firstName,
+          lastName,
+          // Location data from sessionData if available
+          city: sessionData.city || undefined,
+          state: sessionData.state || undefined,
+          zipCode: sessionData.zipCode || undefined,
           sourceTool,
         });
 

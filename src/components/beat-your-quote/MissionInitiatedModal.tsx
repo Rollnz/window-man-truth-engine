@@ -174,11 +174,21 @@ export function MissionInitiatedModal({
       });
 
       // Push Enhanced Conversion event with SHA-256 PII hashing (value: 15 USD)
+      // Option A: Full payload parity with lead_captured - includes all EMQ parameters
+      const nameParts = (values.name || '').split(' ');
+      const firstName = nameParts[0] || undefined;
+      const lastName = nameParts.slice(1).join(' ') || undefined;
+      
       await trackLeadSubmissionSuccess({
         leadId: effectiveLeadId || '',
         email: values.email,
         phone: values.phone || undefined,
-        name: values.name || undefined,
+        firstName,
+        lastName,
+        // Location data from sessionData if available
+        city: sessionData?.city || undefined,
+        state: sessionData?.state || undefined,
+        zipCode: sessionData?.zipCode || undefined,
         sourceTool: 'beat-your-quote',
       });
 
