@@ -23,6 +23,8 @@ export interface SessionData {
   name?: string;
   phone?: string;
   notes?: string;
+  city?: string;
+  state?: string;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // AI CONTEXT FIELDS - For lead enrichment and personalization

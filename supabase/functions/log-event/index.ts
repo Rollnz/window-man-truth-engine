@@ -64,17 +64,15 @@ function normalizeToE164(phone: string): string | null {
 }
 
 /**
- * Hash phone with E.164 normalization
- * Returns null if phone is invalid or hashing fails
+ * Normalize phone to E.164 and hash.
+ * CRITICAL: No digits-only fallback - matches save-lead behavior exactly.
+ * If normalization fails, return null to prevent identity mismatches.
  */
 async function hashPhone(phone: string): Promise<string | null> {
   const e164 = normalizeToE164(phone);
   if (!e164) {
-    // Still hash the digits-only version for best-effort matching
-    const digitsOnly = phone.replace(/\D/g, "");
-    if (digitsOnly.length >= 7) {
-      return sha256Hash(digitsOnly);
-    }
+    // Invalid phone - return null (NO digits-only fallback)
+    // This matches save-lead behavior exactly to prevent identity mismatches
     return null;
   }
   return sha256Hash(e164);

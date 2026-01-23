@@ -49,7 +49,8 @@ describe('trackLeadSubmissionSuccess', () => {
       leadId: 'test-lead-123',
       email: 'test@example.com',
       phone: '555-123-4567',
-      name: 'John Doe',
+      firstName: 'John',
+      lastName: 'Doe',
       sourceTool: 'quote-builder',
     });
 
@@ -62,7 +63,8 @@ describe('trackLeadSubmissionSuccess', () => {
       leadId: 'test-lead-456',
       email: 'user@test.com',
       phone: '(555) 987-6543',
-      name: 'Jane Smith',
+      firstName: 'Jane',
+      lastName: 'Smith',
       sourceTool: 'beat-your-quote',
     });
 
@@ -270,15 +272,11 @@ describe('EMQ 9.5+ Compliance - trackConsultationBooked', () => {
       leadId: 'booking-meta-test',
       email: 'meta@booking.com',
       phone: '555-888-9999',
-      metadata: {
-        preferred_time: '2pm-4pm',
-        timezone: 'EST',
-      },
+      preferredTime: '2pm-4pm',
     });
 
     const event = mockDataLayer.find(e => e.event === 'consultation_booked');
     expect(event.preferred_time).toBe('2pm-4pm');
-    expect(event.timezone).toBe('EST');
   });
 });
 
@@ -592,7 +590,8 @@ describe('EMQ 9.5+ Compliance - trackBookingConfirmed', () => {
     await trackBookingConfirmed({
       leadId: 'booking-confirmed-name-test',
       email: 'name@booking-confirmed.com',
-      name: 'John Smith',
+      firstName: 'John',
+      lastName: 'Smith',
     });
 
     const event = mockDataLayer.find(e => e.event === 'booking_confirmed');

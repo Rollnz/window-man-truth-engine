@@ -279,11 +279,17 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
         );
 
         // Push Enhanced Conversion event with SHA-256 PII hashing (value: 15 USD)
+        // Split name into firstName/lastName for LeadSubmissionSuccessInput
+        const nameParts = (data.name || '').trim().split(' ');
+        const firstName = nameParts[0] || undefined;
+        const lastName = nameParts.slice(1).join(' ') || undefined;
+        
         await trackLeadSubmissionSuccess({
           leadId: result.leadId,
           email: data.email.trim(),
           phone: data.phone?.trim(),
-          name: data.name?.trim(),
+          firstName,
+          lastName,
           sourceTool: 'quote-builder',
         });
 

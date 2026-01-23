@@ -206,11 +206,17 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       });
 
       // Push Enhanced Conversion event with SHA-256 PII hashing (value: 15 USD)
+      // Split name into firstName/lastName for LeadSubmissionSuccessInput
+      const nameParts = (normalizedName || '').trim().split(' ');
+      const firstName = nameParts[0] || undefined;
+      const lastName = nameParts.slice(1).join(' ') || undefined;
+      
       await trackLeadSubmissionSuccess({
         leadId: effectiveLeadId || '',
         email: data.email,
         phone: data.phone || undefined,
-        name: normalizedName || undefined,
+        firstName,
+        lastName,
         sourceTool,
       });
 

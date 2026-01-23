@@ -76,11 +76,17 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
         form_name: 'quote_builder_lead',
       });
 
+      // Split name into firstName/lastName for LeadSubmissionSuccessInput
+      const nameParts = (values.name || '').trim().split(' ');
+      const firstName = nameParts[0] || undefined;
+      const lastName = nameParts.slice(1).join(' ') || undefined;
+      
       await trackLeadSubmissionSuccess({
         leadId,
         email: values.email,
         phone: values.phone || undefined,
-        name: values.name || undefined,
+        firstName,
+        lastName,
         sourceTool: 'quote-builder',
       });
     }
