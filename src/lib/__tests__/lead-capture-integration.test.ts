@@ -178,7 +178,8 @@ describe('Lead Capture Integration Flow', () => {
         leadId,
         email,
         phone,
-        name: 'Test User',
+        firstName: 'Test',
+        lastName: 'User',
         sourceTool: 'quote-builder',
       });
       
@@ -216,10 +217,7 @@ describe('Lead Capture Integration Flow', () => {
         email,
         phone,
         sourceTool: 'consultation-modal',
-        metadata: {
-          preferred_time: '2pm-4pm',
-          timezone: 'EST',
-        },
+        preferredTime: '2pm-4pm',
       });
       
       // Verify both events
@@ -243,7 +241,8 @@ describe('Lead Capture Integration Flow', () => {
         leadId,
         email,
         phone,
-        name: 'John Smith',
+        firstName: 'John',
+        lastName: 'Smith',
         preferredTime: '10am-12pm',
         windowCount: 8,
         estimatedProjectValue: 12000,
