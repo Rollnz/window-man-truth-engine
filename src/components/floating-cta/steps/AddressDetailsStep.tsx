@@ -10,6 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { generateEventId } from '@/lib/gtm';
+import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
+import { getLeadAnchor } from '@/lib/leadAnchor';
 import type { EstimateFormData } from '../EstimateSlidePanel';
 
 interface AddressDetailsStepProps {
@@ -73,12 +76,18 @@ export function AddressDetailsStep({
 
   const handleSubmit = () => {
     if (validate()) {
-      // Fire structured GTM dataLayer event after validation succeeds
-      // Note: This fires BEFORE onSubmit to ensure it fires even if submission has issues
-      // The 'lead_form_completed' status indicates validation passed and submission initiated
+      const externalId = getLeadAnchor() || null;
+      
+      // Fire BEFORE onSubmit - ensures event fires even if submission fails
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
         event: 'lead_form_completed',
+        event_id: generateEventId(),
+        client_id: getOrCreateClientId(),
+        session_id: getOrCreateSessionId(),
+        external_id: externalId,
+        source_tool: 'floating_slide_over',
+        source_system: 'web',
         form_name: 'floating_slide_over',
         step_name: 'address_info',
         step_index: 3,

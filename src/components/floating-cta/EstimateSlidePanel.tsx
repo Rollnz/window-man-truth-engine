@@ -15,7 +15,9 @@ import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useEngagementScore } from '@/hooks/useEngagementScore';
 import { supabase } from '@/integrations/supabase/client';
-import { trackEvent, trackLeadCapture } from '@/lib/gtm';
+import { trackEvent, trackLeadCapture, generateEventId } from '@/lib/gtm';
+import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
+import { getLeadAnchor } from '@/lib/leadAnchor';
 import type { SourceTool } from '@/types/sourceTool';
 
 // phonecall.bot number
@@ -116,10 +118,19 @@ export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
       lead_id: leadId,
     });
     
-    // Structured GTM dataLayer event for form open
+    // Resolve external_id: hook leadId > lead anchor > null
+    const externalId = leadId || getLeadAnchor() || null;
+    
+    // Structured GTM dataLayer event for form open with identity enrichment
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
       event: 'lead_form_opened',
+      event_id: generateEventId(),
+      client_id: getOrCreateClientId(),
+      session_id: getOrCreateSessionId(),
+      external_id: externalId,
+      source_tool: 'floating_slide_over',
+      source_system: 'web',
       form_name: 'floating_slide_over',
       trigger_source: 'floating_cta',
     });

@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { generateEventId } from '@/lib/gtm';
+import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
+import { getLeadAnchor } from '@/lib/leadAnchor';
 import type { EstimateFormData } from '../EstimateSlidePanel';
 
 interface ProjectDetailsStepProps {
@@ -48,10 +51,18 @@ export function ProjectDetailsStep({ formData, updateFormData, onNext }: Project
 
   const handleNext = () => {
     if (validate()) {
-      // Fire structured GTM dataLayer event after validation succeeds
+      const externalId = getLeadAnchor() || null;
+      
+      // Fire structured GTM dataLayer event with identity enrichment
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
         event: 'lead_form_step_completed',
+        event_id: generateEventId(),
+        client_id: getOrCreateClientId(),
+        session_id: getOrCreateSessionId(),
+        external_id: externalId,
+        source_tool: 'floating_slide_over',
+        source_system: 'web',
         form_name: 'floating_slide_over',
         step_name: 'project_info',
         step_index: 1,
