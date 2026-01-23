@@ -47,7 +47,7 @@ const QuoteBuilderV2 = () => {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="min-h-screen bg-white font-sans text-slate-900 pb-24">
+      <div className="min-h-screen bg-background font-sans text-foreground pb-24 transition-colors duration-300">
         <TheaterMode isActive={showTheater} message={theaterMessage} subtext={theaterSubtext} />
         <LeadModal isOpen={showModal} onClose={() => setShowModal(false)} onSubmit={handleLeadSubmit} isSubmitting={isSubmitting} />
         <AiResultModal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} title={aiTitle} content={aiContent} isLoading={aiLoading} />
@@ -56,18 +56,18 @@ const QuoteBuilderV2 = () => {
 
         <div id="quote-calculator" className="relative z-20 mt-8 max-w-7xl mx-auto px-4 md:px-6">
           {/* Floating Header Bar */}
-          <div className="bg-blue-600 rounded-xl shadow-lg shadow-blue-900/20 text-white overflow-hidden mb-8 p-4 md:px-6 md:py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="bg-primary rounded-xl shadow-lg shadow-primary/20 text-primary-foreground overflow-hidden mb-8 p-4 md:px-6 md:py-4 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="bg-white/20 text-white px-2 py-1 rounded text-xs font-bold uppercase tracking-wide flex items-center gap-1 border border-white/30">
+              <div className="bg-primary-foreground/20 text-primary-foreground px-2 py-1 rounded text-xs font-bold uppercase tracking-wide flex items-center gap-1 border border-primary-foreground/30">
                 <Shield size={12} />
                 Configurator
               </div>
-              <span className="text-sm text-blue-50 hidden md:inline-block">Build your custom quote</span>
+              <span className="text-sm text-primary-foreground/80 hidden md:inline-block">Build your custom quote</span>
             </div>
             <div className="flex items-center gap-6">
               <div className="flex flex-col items-end">
-                <span className="text-blue-100 text-[10px] uppercase tracking-wider font-bold">Estimated Total</span>
-                <span className={`font-bold text-2xl ${state.isUnlocked ? 'text-white' : 'text-white/50 blur-[6px] select-none hover:blur-[2px] transition-all cursor-not-allowed'}`}>
+                <span className="text-primary-foreground/70 text-[10px] uppercase tracking-wider font-bold">Estimated Total</span>
+                <span className={`font-bold text-2xl ${state.isUnlocked ? 'text-primary-foreground' : 'text-primary-foreground/50 blur-[6px] select-none hover:blur-[2px] transition-all cursor-not-allowed'}`}>
                   {state.isUnlocked ? formatCurrency(grandTotal) : '$14,XXX'}
                 </span>
               </div>
@@ -168,7 +168,7 @@ export default function CalculateEstimate() {
   usePageTracking('free-estimate');
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       <SEO 
         title="Free Window Replacement Cost Calculator"
         description="Build a custom window replacement estimate for free. Configure styles, sizes, and features to get accurate pricing for your project instantly."
