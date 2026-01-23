@@ -1225,6 +1225,7 @@ export type Database = {
       v_event_log_enriched: {
         Row: {
           client_id: string | null
+          email_sha256: string | null
           event_id: string | null
           event_name: string | null
           event_time: string | null
@@ -1235,9 +1236,9 @@ export type Database = {
           gclid: string | null
           ingested_by: string | null
           landing_page: string | null
-          lead_email: string | null
           lead_id: string | null
           metadata: Json | null
+          phone_sha256: string | null
           referrer: string | null
           row_id: string | null
           session_id: string | null
