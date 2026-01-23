@@ -14,17 +14,17 @@ interface ProjectBasicsFormProps {
 
 export const ProjectBasicsForm = ({ state, setState, setStyleValue }: ProjectBasicsFormProps) => {
   return (
-    <section className="bg-gradient-to-br from-orange-50/50 via-white to-blue-50/50 rounded-xl border border-slate-300 p-6 shadow-lg">
+    <section className="bg-card rounded-xl border border-border p-6 shadow-lg transition-colors duration-300">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">1</div>
-        <h2 className="text-lg font-bold text-slate-900">Project Basics</h2>
+        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">1</div>
+        <h2 className="text-lg font-bold text-foreground">Project Basics</h2>
       </div>
       
       <div className="space-y-4">
         <div>
           <FieldLabel label="Product Type" tooltip="Choose the type of opening you are pricing." />
           <select
-            className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 transition-colors outline-none"
+            className="w-full bg-input border border-border text-foreground text-sm rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background block p-3 transition-colors outline-none"
             value={state.productType}
             onChange={e => {
               const nextProduct = e.target.value as ProductType;
@@ -50,7 +50,7 @@ export const ProjectBasicsForm = ({ state, setState, setStyleValue }: ProjectBas
             <FieldLabel label="Zip Code" tooltip="Required for wind-load calculation." />
             <input
               type="tel"
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full bg-input border border-border rounded-lg p-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none transition-colors"
               placeholder="e.g. 33101"
               maxLength={5}
               value={state.zipCode}
@@ -60,7 +60,7 @@ export const ProjectBasicsForm = ({ state, setState, setStyleValue }: ProjectBas
           <div>
             <FieldLabel label="Wall Type" tooltip="Wood frame requires additional structural work." />
             <select
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full bg-input border border-border rounded-lg p-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none transition-colors"
               value={state.wallType}
               onChange={e => setState(prev => ({ ...prev, wallType: Number(e.target.value) }))}
             >

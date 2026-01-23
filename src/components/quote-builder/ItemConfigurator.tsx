@@ -53,10 +53,10 @@ export const ItemConfigurator = ({
   addToCart
 }: ItemConfiguratorProps) => {
   return (
-    <section className={`bg-gradient-to-br from-orange-50/50 via-white to-blue-50/50 rounded-xl border border-slate-300 p-6 h-full shadow-lg transition-opacity duration-300 ${state.basePrice === 0 ? 'opacity-50 pointer-events-none grayscale' : 'opacity-100'}`}>
+    <section className={`bg-card rounded-xl border border-border p-6 h-full shadow-lg transition-all duration-300 ${state.basePrice === 0 ? 'opacity-50 pointer-events-none grayscale' : 'opacity-100'}`}>
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">3</div>
-        <h2 className="text-lg font-bold text-slate-900">Customize Item</h2>
+        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">3</div>
+        <h2 className="text-lg font-bold text-foreground">Customize Item</h2>
       </div>
 
       <div className="space-y-5">
@@ -64,7 +64,7 @@ export const ItemConfigurator = ({
           <div>
             <FieldLabel label="Style" tooltip="Operation type affects price." />
             <select
-              className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-input border border-border text-foreground rounded-lg p-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
               value={styleValue} onChange={e => setStyleValue(Number(e.target.value))}
             >
               {styleOptions.map(opt => <option key={opt.key} value={opt.mult}>{opt.label}</option>)}
@@ -73,7 +73,7 @@ export const ItemConfigurator = ({
           <div>
             <FieldLabel label="Size" tooltip="Larger openings cost more." />
             <select
-              className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-input border border-border text-foreground rounded-lg p-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
               value={sizeValue} onChange={e => setSizeValue(Number(e.target.value))}
             >
               {sizeOptions.map(opt => <option key={opt.val} value={opt.val}>{opt.label}</option>)}
@@ -85,7 +85,7 @@ export const ItemConfigurator = ({
           <div>
             <FieldLabel label="Frame Color" tooltip="Standard white is cheapest." />
             <select
-              className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-input border border-border text-foreground rounded-lg p-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
               value={colorValue} onChange={e => setColorValue(Number(e.target.value))}
             >
               {COLOR_OPTIONS.map(opt => <option key={opt.label} value={opt.value}>{opt.label}</option>)}
@@ -94,7 +94,7 @@ export const ItemConfigurator = ({
           <div>
             <FieldLabel label="Grids" tooltip="Decorative bars between glass." />
             <select
-              className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-input border border-border text-foreground rounded-lg p-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
               value={gridValue} onChange={e => setGridValue(Number(e.target.value))}
             >
               {GRID_OPTIONS.map(opt => <option key={opt.label} value={opt.value}>{opt.label}</option>)}
@@ -102,20 +102,20 @@ export const ItemConfigurator = ({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-100 space-y-3">
-          <label className="flex items-start gap-3 p-3 rounded-lg border border-transparent hover:bg-slate-50 hover:border-slate-200 transition-all cursor-pointer group">
-            <input type="checkbox" className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" checked={finishUpgrade} onChange={e => setFinishUpgrade(e.target.checked)} />
+        <div className="pt-4 border-t border-border space-y-3">
+          <label className="flex items-start gap-3 p-3 rounded-lg border border-transparent hover:bg-muted hover:border-border transition-all cursor-pointer group">
+            <input type="checkbox" className="mt-1 w-4 h-4 text-primary rounded border-border focus:ring-ring" checked={finishUpgrade} onChange={e => setFinishUpgrade(e.target.checked)} />
             <div className="text-sm">
-              <span className="font-semibold text-slate-900 group-hover:text-blue-700 block">Premium Finish (+$450)</span>
-              <span className="text-slate-500 text-xs">Stucco patch, paint & interior trim.</span>
+              <span className="font-semibold text-foreground group-hover:text-primary block transition-colors">Premium Finish (+$450)</span>
+              <span className="text-muted-foreground text-xs">Stucco patch, paint & interior trim.</span>
             </div>
           </label>
 
-          <label className="flex items-start gap-3 p-3 rounded-lg border border-transparent hover:bg-slate-50 hover:border-slate-200 transition-all cursor-pointer group">
-            <input type="checkbox" className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" checked={contingencyFund} onChange={e => setContingencyFund(e.target.checked)} />
+          <label className="flex items-start gap-3 p-3 rounded-lg border border-transparent hover:bg-muted hover:border-border transition-all cursor-pointer group">
+            <input type="checkbox" className="mt-1 w-4 h-4 text-primary rounded border-border focus:ring-ring" checked={contingencyFund} onChange={e => setContingencyFund(e.target.checked)} />
             <div className="text-sm">
-              <span className="font-semibold text-slate-900 group-hover:text-blue-700 block">Wood Rot Fund (+$200)</span>
-              <span className="text-slate-500 text-xs">Refundable if no damage found.</span>
+              <span className="font-semibold text-foreground group-hover:text-primary block transition-colors">Wood Rot Fund (+$200)</span>
+              <span className="text-muted-foreground text-xs">Refundable if no damage found.</span>
             </div>
           </label>
         </div>
@@ -126,7 +126,7 @@ export const ItemConfigurator = ({
             <input
               type="text"
               placeholder="e.g. Living Room"
-              className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-input border border-border text-foreground rounded-lg p-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
               value={roomName} onChange={e => setRoomName(e.target.value)}
             />
           </div>
@@ -135,7 +135,7 @@ export const ItemConfigurator = ({
             <input
               type="number"
               min="1"
-              className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2.5 text-sm text-center outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-input border border-border text-foreground rounded-lg p-2.5 text-sm text-center outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
               value={quantity} onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
             />
           </div>
@@ -143,7 +143,7 @@ export const ItemConfigurator = ({
 
         <button
           onClick={addToCart}
-          className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          className="w-full mt-4 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
         >
           <span>Add to Estimate</span>
           <ArrowRight size={16} />
