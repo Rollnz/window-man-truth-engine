@@ -60,6 +60,15 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
 
   const handleNext = () => {
     if (validate()) {
+      // Fire structured GTM dataLayer event after validation succeeds
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'lead_form_step_completed',
+        form_name: 'floating_slide_over',
+        step_name: 'contact_info',
+        step_index: 2,
+        step_status: 'validated',
+      });
       onNext();
     }
   };

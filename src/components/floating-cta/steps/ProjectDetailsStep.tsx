@@ -48,6 +48,15 @@ export function ProjectDetailsStep({ formData, updateFormData, onNext }: Project
 
   const handleNext = () => {
     if (validate()) {
+      // Fire structured GTM dataLayer event after validation succeeds
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'lead_form_step_completed',
+        form_name: 'floating_slide_over',
+        step_name: 'project_info',
+        step_index: 1,
+        step_status: 'validated',
+      });
       onNext();
     }
   };
