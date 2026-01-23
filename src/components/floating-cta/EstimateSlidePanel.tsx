@@ -109,11 +109,19 @@ export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
     }
   }, [step]);
 
-  // Track panel open
+  // Track panel open with structured dataLayer event
   useEffect(() => {
     trackEvent('floating_cta_opened', {
       engagement_score: engagementScore,
       lead_id: leadId,
+    });
+    
+    // Structured GTM dataLayer event for form open
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'lead_form_opened',
+      form_name: 'floating_slide_over',
+      trigger_source: 'floating_cta',
     });
   }, []);
 
