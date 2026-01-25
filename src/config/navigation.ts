@@ -19,6 +19,7 @@ export const ROUTES = {
   BEAT_YOUR_QUOTE: '/beat-your-quote',
   QUOTE_SCANNER: '/ai-scanner',
   CLAIM_SURVIVAL: '/claim-survival',
+  CONSULTATION: '/consultation',
 
   // Analysis Tools
   REALITY_CHECK: '/reality-check',
