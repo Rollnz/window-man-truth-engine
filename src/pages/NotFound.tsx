@@ -17,8 +17,8 @@ const NotFound = () => {
     const isAdminPath = ADMIN_ONLY_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
 
     if (isAdminPath) {
-      // Redirect to the lead capture funnel so the visitor continues their journey
-      navigate(ROUTES.FREE_ESTIMATE, { replace: true, state: { from: location.pathname } });
+      // Redirect to Admin Home so admin users stay in the admin context
+      navigate('/admin', { replace: true, state: { from: location.pathname } });
     }
   }, [location.pathname, navigate]);
 
