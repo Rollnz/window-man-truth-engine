@@ -1,4 +1,5 @@
-import { ScanSearch, Sparkles } from 'lucide-react';
+import { ScanSearch } from 'lucide-react';
+import { ShimmerBadge } from '@/components/ui/ShimmerBadge';
 
 export function QuoteScannerHero() {
   return (
@@ -9,10 +10,7 @@ export function QuoteScannerHero() {
       <div className="container relative px-4">
         <div className="max-w-3xl mx-auto text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-6 text-xs font-medium border rounded-full bg-primary/10 border-primary/20 text-primary">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Powered by AI</span>
-          </div>
+          <ShimmerBadge className="mb-6" />
           
           {/* Icon */}
           <div className="flex justify-center mb-6">

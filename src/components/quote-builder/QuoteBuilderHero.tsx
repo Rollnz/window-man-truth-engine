@@ -3,6 +3,7 @@
 // ============================================
 
 import { ArrowDown } from "lucide-react";
+import { ShimmerBadge } from "@/components/ui/ShimmerBadge";
 
 export const QuoteBuilderHero = () => {
   const scrollToCalculator = () => {
@@ -20,6 +21,7 @@ export const QuoteBuilderHero = () => {
       
       <div className="relative z-10 container px-4 mx-auto text-center space-y-6">
         <div className="space-y-4">
+          <ShimmerBadge text="AI-Powered Estimator" className="mb-2" />
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground">
             Stop Guessing. <br className="hidden md:block" />
             <span className="text-primary">Start Building.</span>

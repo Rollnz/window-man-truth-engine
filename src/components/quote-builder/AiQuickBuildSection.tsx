@@ -3,6 +3,7 @@
 // ============================================
 
 import { Wand2, Sparkles, Loader2 } from "lucide-react";
+import { ShimmerBadge } from "@/components/ui/ShimmerBadge";
 
 interface AiQuickBuildSectionProps {
   aiInputText: string;
@@ -24,8 +25,7 @@ export const AiQuickBuildSection = ({
       </div>
       <div className="relative z-10">
         <div className="flex items-center gap-2 mb-3">
-          <Wand2 className="w-5 h-5 text-primary" />
-          <h3 className="text-foreground font-bold">Quick Build with AI</h3>
+          <ShimmerBadge text="Quick Build with AI" icon={Wand2} showModelName={false} />
         </div>
         <p className="text-xs text-muted-foreground mb-3">
           Describe your project in plain English (e.g. "3 bedrooms with 2 windows each and a sliding door").

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { SessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
+import { ShimmerBadge } from '@/components/ui/ShimmerBadge';
 
 interface RiskHeroProps {
   sessionData: SessionData;
@@ -32,6 +33,11 @@ export function RiskHero({ sessionData, onStart, hasStarted }: RiskHeroProps) {
           <ChevronLeft className="w-4 h-4 mr-1" />
           Back to Tools
         </Link>
+        
+        {/* AI Badge */}
+        <div className="mb-6">
+          <ShimmerBadge text="AI Protection Analysis" />
+        </div>
 
         {/* Icon */}
         <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-6 relative">

@@ -1,7 +1,8 @@
-import { Shield, FileSearch, Users } from 'lucide-react';
+import { FileSearch, Users, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { proofStats } from '@/data/proof/proofData';
 import { EvidenceStat } from '../EvidenceStat';
+import { ShimmerBadge } from '@/components/ui/ShimmerBadge';
 
 interface ProofHeroProps {
   onWatchVoiceAgent: () => void;
@@ -28,10 +29,11 @@ export function ProofHero({ onWatchVoiceAgent, onViewCaseStudies }: ProofHeroPro
         {/* Header Block */}
         <div className="max-w-4xl mx-auto text-center mb-12">
           {/* Eyebrow */}
-          <div className="wm-reveal wm-stagger-0 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-            <Shield className="w-4 h-4 text-primary" />
-            <span className="text-sm text-primary font-medium">The Evidence Locker</span>
-          </div>
+          <ShimmerBadge 
+            text="The Evidence Locker" 
+            icon={Shield}
+            className="wm-reveal wm-stagger-0 mb-6"
+          />
           
           {/* Main Headline */}
           <h1 className="display-h1 text-lift wm-reveal wm-stagger-1 text-3xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">

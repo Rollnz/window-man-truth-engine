@@ -18,6 +18,7 @@ import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { ErrorBoundary } from "@/components/error";
 import type { SourceTool } from "@/types/sourceTool";
+import { ShimmerBadge } from "@/components/ui/ShimmerBadge";
 import { AIErrorFallback, getAIErrorType } from "@/components/error";
 import { fastAIRequest, AI_TIMEOUTS } from "@/lib/aiRequest";
 import { TimeoutError, getErrorMessage } from "@/lib/errors";
@@ -193,6 +194,7 @@ export default function Expert() {
           <div className="flex-1 flex flex-col container mx-auto max-w-3xl px-4 mt-[70px]">
             {/* Title Section */}
             <div className="p-4 sm:p-6 text-center border-b border-border/50">
+              <ShimmerBadge text="AI Expert System" className="mb-3" />
               <h1 className="text-2xl sm:text-3xl font-bold mb-2">
                 Window Questions <span className="text-primary">Expert</span>
               </h1>
