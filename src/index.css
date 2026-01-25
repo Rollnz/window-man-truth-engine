@@ -672,6 +672,108 @@
   }
 }
 
+  /* ============================================================
+     QUOTE SCANNER - X-Ray & Callout Animations
+     ============================================================ */
+  
+  /* X-Ray scanning sweep animation */
+  @keyframes xray-scan {
+    0% {
+      left: -50%;
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      left: 100%;
+      opacity: 0.6;
+    }
+  }
+
+  .xray-scanner {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .xray-scanner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--primary) / 0.08),
+      hsl(var(--primary) / 0.18),
+      hsl(var(--primary) / 0.08),
+      transparent
+    );
+    animation: xray-scan 2.8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* Staggered callout reveal animations */
+  @keyframes callout-appear {
+    from {
+      opacity: 0;
+      transform: translateX(-16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes callout-appear-right {
+    from {
+      opacity: 0;
+      transform: translateX(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .callout-reveal {
+    opacity: 0;
+    animation: callout-appear 0.5s ease-out forwards;
+  }
+
+  .callout-reveal-right {
+    opacity: 0;
+    animation: callout-appear-right 0.5s ease-out forwards;
+  }
+
+  /* Analysis loading progress steps */
+  @keyframes step-progress {
+    0% { width: 0%; }
+    100% { width: 100%; }
+  }
+
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(0.95);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(0.95);
+      opacity: 1;
+    }
+  }
+
+  .analysis-pulse {
+    animation: pulse-ring 1.5s ease-in-out infinite;
+  }
+
 @layer components {
   /* Card hover effect */
   .card-hover {
