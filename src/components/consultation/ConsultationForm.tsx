@@ -150,8 +150,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
     });
   }, []);
 
-  // Validate all fields
- // 1. UPDATE: Change return type to FormErrors and return the object directly
+  // Validate all fields - returns errors directly
   const validateAll = useCallback((): FormErrors => {
     const requiredFields: (keyof ConsultationFormData)[] = [
       'firstName', 'lastName', 'email', 'phone',
@@ -171,25 +170,8 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
     setErrors(newErrors);
     setTouched(requiredFields.reduce((acc, field) => ({ ...acc, [field]: true }), {}));
 
-    return newErrors; // Return the errors directly!
+    return newErrors;
   }, [formData, validateField]);
-
-  // 2. UPDATE: Use the returned errors immediately instead of waiting for state
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitError(null);
-
-    const validationErrors = validateAll(); // Capture the returned errors
-    
-    if (Object.keys(validationErrors).length > 0) {
-      // Focus first error field using the local variable, not stale state
-      const firstErrorField = Object.keys(validationErrors)[0];
-      if (firstErrorField && formRef.current) {
-        const element = formRef.current.querySelector(`[name="${firstErrorField}"]`);
-        (element as HTMLElement)?.focus();
-      }
-      return;
-    }
 
   // Format phone number as user types
   const formatPhoneNumber = (value: string): string => {
@@ -205,6 +187,37 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
     formData.propertyType && formData.cityZip &&
     formData.windowCount && formData.impactRequired &&
     formData.hasQuote;
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitError(null);
+
+    const validationErrors = validateAll();
+    
+    if (Object.keys(validationErrors).length > 0) {
+      const firstErrorField = Object.keys(validationErrors)[0];
+      if (firstErrorField && formRef.current) {
+        const element = formRef.current.querySelector(`[name="${firstErrorField}"]`);
+        (element as HTMLElement)?.focus();
+      }
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await onSubmit(formData as ConsultationFormData);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error 
+          ? error.message 
+          : 'Something went wrong. Please try again.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <form 
