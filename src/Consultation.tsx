@@ -24,6 +24,15 @@ import {
 } from 'lucide-react';
 import { ConsultationSchema } from '@/components/consultation/ConsultationSchema';
 
+/**
+ * Render the Consultation landing page and manage its booking form lifecycle.
+ *
+ * Displays a multi-section marketing and education layout, mounts the ConsultationForm,
+ * tracks form start and submission events, handles submission state and errors, and
+ * swaps the view to a SubmissionConfirmation after a successful submission.
+ *
+ * @returns The Consultation page as a JSX element
+ */
 export default function Consultation() {
   const navigate = useNavigate();
   const { trackEvent } = usePageTracking('consultation');

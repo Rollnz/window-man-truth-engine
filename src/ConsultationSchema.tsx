@@ -1,15 +1,12 @@
 import { Helmet } from 'react-helmet-async';
 
 /**
- * SEO Schema Markup for Consultation Page
- * 
- * Includes:
- * - WebPage schema
- * - Service schema (quote verification)
- * - FAQPage schema
- * 
- * Does NOT include city-specific LocalBusiness signals
- * as this is a Florida-wide service.
+ * Render head metadata and structured JSON-LD for the Consultation page.
+ *
+ * Injects page title, meta tags (description, robots, canonical), Open Graph and Twitter Card metadata,
+ * and a JSON-LD script containing a WebPage, Service, FAQPage, and BreadcrumbList graph for the consultation offering.
+ *
+ * @returns A Helmet element that inserts the Consultation page metadata and JSON-LD into the document head.
  */
 export function ConsultationSchema() {
   const schemaData = {
