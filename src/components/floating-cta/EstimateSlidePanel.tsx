@@ -181,7 +181,8 @@ export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
       // Build the payload for save-lead
       const payload = {
         email: formData.email.trim().toLowerCase(),
-        name: formData.name.trim(),
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
         phone: formData.phone.trim(),
         leadId: leadId || undefined,
         sessionId: sessionId,
@@ -234,7 +235,7 @@ export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
         formData.email,
         formData.phone || undefined,
         {
-          hasName: !!formData.name,
+          hasName: !!formData.firstName,
           hasAddress: !!(formData.street && formData.city && formData.zip),
           hasProjectDetails: !!(formData.windowCount && formData.projectType),
         }
