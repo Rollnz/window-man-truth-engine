@@ -223,19 +223,19 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
     <form 
       ref={formRef}
       onSubmit={handleSubmit} 
-      className={cn('space-y-8', className)}
+      className={cn('space-y-6', className)}
       noValidate
     >
       {/* Contact Information Section */}
-      <Card className="border-slate-200 bg-white shadow-sm">
+      <Card className="border-border bg-card shadow-sm">
         <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Contact Information</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">Contact Information</h3>
           
           <div className="grid gap-4 sm:grid-cols-2">
             {/* First Name */}
             <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-slate-700">
-                First Name <span className="text-red-500">*</span>
+              <Label htmlFor="firstName" className="text-foreground">
+                First Name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="firstName"
@@ -247,13 +247,13 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                 onBlur={() => handleBlur('firstName')}
                 className={cn(
                   'transition-colors',
-                  errors.firstName && touched.firstName && 'border-red-500 focus-visible:ring-red-500'
+                  errors.firstName && touched.firstName && 'border-destructive focus-visible:ring-destructive'
                 )}
                 aria-invalid={!!(errors.firstName && touched.firstName)}
                 aria-describedby={errors.firstName ? 'firstName-error' : undefined}
               />
               {errors.firstName && touched.firstName && (
-                <p id="firstName-error" className="text-sm text-red-600 flex items-center gap-1">
+                <p id="firstName-error" className="text-sm text-destructive flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
                   {errors.firstName}
                 </p>
@@ -262,8 +262,8 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
 
             {/* Last Name */}
             <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-slate-700">
-                Last Name <span className="text-red-500">*</span>
+              <Label htmlFor="lastName" className="text-foreground">
+                Last Name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="lastName"
@@ -275,13 +275,13 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                 onBlur={() => handleBlur('lastName')}
                 className={cn(
                   'transition-colors',
-                  errors.lastName && touched.lastName && 'border-red-500 focus-visible:ring-red-500'
+                  errors.lastName && touched.lastName && 'border-destructive focus-visible:ring-destructive'
                 )}
                 aria-invalid={!!(errors.lastName && touched.lastName)}
                 aria-describedby={errors.lastName ? 'lastName-error' : undefined}
               />
               {errors.lastName && touched.lastName && (
-                <p id="lastName-error" className="text-sm text-red-600 flex items-center gap-1">
+                <p id="lastName-error" className="text-sm text-destructive flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
                   {errors.lastName}
                 </p>
@@ -290,8 +290,8 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
 
             {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-slate-700">
-                Email Address <span className="text-red-500">*</span>
+              <Label htmlFor="email" className="text-foreground">
+                Email Address <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="email"
@@ -303,13 +303,13 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                 onBlur={() => handleBlur('email')}
                 className={cn(
                   'transition-colors',
-                  errors.email && touched.email && 'border-red-500 focus-visible:ring-red-500'
+                  errors.email && touched.email && 'border-destructive focus-visible:ring-destructive'
                 )}
                 aria-invalid={!!(errors.email && touched.email)}
                 aria-describedby={errors.email ? 'email-error' : undefined}
               />
               {errors.email && touched.email && (
-                <p id="email-error" className="text-sm text-red-600 flex items-center gap-1">
+                <p id="email-error" className="text-sm text-destructive flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
                   {errors.email}
                 </p>
@@ -318,8 +318,8 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
 
             {/* Phone */}
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-slate-700">
-                Phone Number <span className="text-red-500">*</span>
+              <Label htmlFor="phone" className="text-foreground">
+                Phone Number <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="phone"
@@ -332,13 +332,13 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                 placeholder="(555) 123-4567"
                 className={cn(
                   'transition-colors',
-                  errors.phone && touched.phone && 'border-red-500 focus-visible:ring-red-500'
+                  errors.phone && touched.phone && 'border-destructive focus-visible:ring-destructive'
                 )}
                 aria-invalid={!!(errors.phone && touched.phone)}
                 aria-describedby={errors.phone ? 'phone-error' : undefined}
               />
               {errors.phone && touched.phone && (
-                <p id="phone-error" className="text-sm text-red-600 flex items-center gap-1">
+                <p id="phone-error" className="text-sm text-destructive flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
                   {errors.phone}
                 </p>
@@ -349,16 +349,16 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
       </Card>
 
       {/* Project Details Section */}
-      <Card className="border-slate-200 bg-white shadow-sm">
+      <Card className="border-border bg-card shadow-sm">
         <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Project Details</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">Project Details</h3>
           
           <div className="space-y-6">
             {/* Property Type & Location */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="propertyType" className="text-slate-700">
-                  Property Type <span className="text-red-500">*</span>
+                <Label htmlFor="propertyType" className="text-foreground">
+                  Property Type <span className="text-destructive">*</span>
                 </Label>
                 <Select
                   value={formData.propertyType}
@@ -368,7 +368,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                     id="propertyType"
                     className={cn(
                       'transition-colors',
-                      errors.propertyType && touched.propertyType && 'border-red-500'
+                      errors.propertyType && touched.propertyType && 'border-destructive'
                     )}
                     aria-invalid={!!(errors.propertyType && touched.propertyType)}
                   >
@@ -383,7 +383,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                   </SelectContent>
                 </Select>
                 {errors.propertyType && touched.propertyType && (
-                  <p className="text-sm text-red-600 flex items-center gap-1">
+                  <p className="text-sm text-destructive flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.propertyType}
                   </p>
@@ -391,8 +391,8 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="cityZip" className="text-slate-700">
-                  City / ZIP Code <span className="text-red-500">*</span>
+                <Label htmlFor="cityZip" className="text-foreground">
+                  City / ZIP Code <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="cityZip"
@@ -405,13 +405,13 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                   onBlur={() => handleBlur('cityZip')}
                   className={cn(
                     'transition-colors',
-                    errors.cityZip && touched.cityZip && 'border-red-500 focus-visible:ring-red-500'
+                    errors.cityZip && touched.cityZip && 'border-destructive focus-visible:ring-destructive'
                   )}
                   aria-invalid={!!(errors.cityZip && touched.cityZip)}
                   aria-describedby={errors.cityZip ? 'cityZip-error' : undefined}
                 />
                 {errors.cityZip && touched.cityZip && (
-                  <p id="cityZip-error" className="text-sm text-red-600 flex items-center gap-1">
+                  <p id="cityZip-error" className="text-sm text-destructive flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.cityZip}
                   </p>
@@ -421,8 +421,8 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
 
             {/* Window Count */}
             <div className="space-y-2 max-w-xs">
-              <Label htmlFor="windowCount" className="text-slate-700">
-                How many windows are you replacing? <span className="text-red-500">*</span>
+              <Label htmlFor="windowCount" className="text-foreground">
+                How many windows are you replacing? <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="windowCount"
@@ -435,13 +435,13 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                 onBlur={() => handleBlur('windowCount')}
                 className={cn(
                   'transition-colors max-w-[120px]',
-                  errors.windowCount && touched.windowCount && 'border-red-500 focus-visible:ring-red-500'
+                  errors.windowCount && touched.windowCount && 'border-destructive focus-visible:ring-destructive'
                 )}
                 aria-invalid={!!(errors.windowCount && touched.windowCount)}
                 aria-describedby={errors.windowCount ? 'windowCount-error' : undefined}
               />
               {errors.windowCount && touched.windowCount && (
-                <p id="windowCount-error" className="text-sm text-red-600 flex items-center gap-1">
+                <p id="windowCount-error" className="text-sm text-destructive flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
                   {errors.windowCount}
                 </p>
@@ -450,7 +450,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
 
             {/* Window Types */}
             <fieldset className="space-y-3">
-              <legend className="text-sm font-medium text-slate-700">
+              <legend className="text-sm font-medium text-foreground">
                 What types of windows are included?
               </legend>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -463,7 +463,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                     />
                     <Label 
                       htmlFor={`window-${type.value}`}
-                      className="text-sm text-slate-600 cursor-pointer"
+                      className="text-sm text-muted-foreground cursor-pointer"
                     >
                       {type.label}
                     </Label>
@@ -474,8 +474,8 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
 
             {/* Impact Required */}
             <fieldset className="space-y-3">
-              <legend className="text-sm font-medium text-slate-700">
-                Are impact-rated or hurricane-rated windows required? <span className="text-red-500">*</span>
+              <legend className="text-sm font-medium text-foreground">
+                Are impact-rated or hurricane-rated windows required? <span className="text-destructive">*</span>
               </legend>
               <RadioGroup
                 value={formData.impactRequired}
@@ -494,7 +494,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                     />
                     <Label 
                       htmlFor={`impact-${option.value}`}
-                      className="text-sm text-slate-600 cursor-pointer"
+                      className="text-sm text-muted-foreground cursor-pointer"
                     >
                       {option.label}
                     </Label>
@@ -502,7 +502,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                 ))}
               </RadioGroup>
               {errors.impactRequired && touched.impactRequired && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
+                <p className="text-sm text-destructive flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
                   {errors.impactRequired}
                 </p>
@@ -513,15 +513,15 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
       </Card>
 
       {/* Quote Status Section */}
-      <Card className="border-slate-200 bg-white shadow-sm">
+      <Card className="border-border bg-card shadow-sm">
         <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Your Current Quotes</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">Your Current Quotes</h3>
           
           <div className="space-y-6">
             {/* Has Quote */}
             <fieldset className="space-y-3">
-              <legend className="text-sm font-medium text-slate-700">
-                Do you already have a quote? <span className="text-red-500">*</span>
+              <legend className="text-sm font-medium text-foreground">
+                Do you already have a quote? <span className="text-destructive">*</span>
               </legend>
               <RadioGroup
                 value={formData.hasQuote}
@@ -540,7 +540,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                     />
                     <Label 
                       htmlFor={`quote-${option.value}`}
-                      className="text-sm text-slate-600 cursor-pointer"
+                      className="text-sm text-muted-foreground cursor-pointer"
                     >
                       {option.label}
                     </Label>
@@ -548,7 +548,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                 ))}
               </RadioGroup>
               {errors.hasQuote && touched.hasQuote && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
+                <p className="text-sm text-destructive flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
                   {errors.hasQuote}
                 </p>
@@ -558,7 +558,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
             {/* Quote Count - Conditional */}
             {formData.hasQuote === 'yes' && (
               <fieldset className="space-y-3 animate-in slide-in-from-top-2 duration-200">
-                <legend className="text-sm font-medium text-slate-700">
+                <legend className="text-sm font-medium text-foreground">
                   How many quotes have you received?
                 </legend>
                 <RadioGroup
@@ -578,7 +578,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                       />
                       <Label 
                         htmlFor={`quoteCount-${option.value}`}
-                        className="text-sm text-slate-600 cursor-pointer"
+                        className="text-sm text-muted-foreground cursor-pointer"
                       >
                         {option.label}
                       </Label>
@@ -590,8 +590,8 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
 
             {/* Quote Details - Optional */}
             <div className="space-y-2">
-              <Label htmlFor="quoteDetails" className="text-slate-700">
-                Upload or paste quote details <span className="text-slate-400">(optional)</span>
+              <Label htmlFor="quoteDetails" className="text-foreground">
+                Upload or paste quote details <span className="text-muted-foreground">(optional)</span>
               </Label>
               <Textarea
                 id="quoteDetails"
@@ -602,7 +602,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                 placeholder="Paste your quote details here, or describe what you've been quoted..."
                 className="resize-none"
               />
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 The more details you share, the more thorough our review can be.
               </p>
             </div>
@@ -611,12 +611,12 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
       </Card>
 
       {/* Concerns Section - Optional */}
-      <Card className="border-slate-200 bg-white shadow-sm">
+      <Card className="border-border bg-card shadow-sm">
         <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             What concerns you most?
           </h3>
-          <p className="text-sm text-slate-500 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Optional, but helps us focus your call.
           </p>
           
@@ -633,7 +633,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                 />
                 <Label 
                   htmlFor={`concern-${concern.value}`}
-                  className="text-sm text-slate-600 cursor-pointer"
+                  className="text-sm text-muted-foreground cursor-pointer"
                 >
                   {concern.label}
                 </Label>
@@ -643,7 +643,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
 
           {formData.concern === 'other' && (
             <div className="mt-4 animate-in slide-in-from-top-2 duration-200">
-              <Label htmlFor="concernOther" className="text-slate-700 sr-only">
+              <Label htmlFor="concernOther" className="text-foreground sr-only">
                 Describe your concern
               </Label>
               <Textarea
@@ -662,11 +662,11 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
 
       {/* Submission Error */}
       {submitError && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+        <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-4 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-red-800">Unable to submit</p>
-            <p className="text-sm text-red-700 mt-1">{submitError}</p>
+            <p className="text-sm font-medium text-destructive">Unable to submit</p>
+            <p className="text-sm text-destructive/80 mt-1">{submitError}</p>
           </div>
         </div>
       )}
@@ -679,7 +679,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
           disabled={isSubmitting || !isFormValid}
           className={cn(
             'w-full sm:w-auto px-12 py-6 text-lg font-semibold transition-all duration-200',
-            'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg hover:shadow-xl',
+            'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl',
             'disabled:opacity-50 disabled:cursor-not-allowed'
           )}
         >
@@ -693,7 +693,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
           )}
         </Button>
         
-        <p className="text-sm text-slate-500 text-center max-w-md">
+        <p className="text-sm text-muted-foreground text-center max-w-md">
           No preparation needed. Bring your quotes if you have them. 
           If not, just bring your questions.
         </p>
