@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { heavyAIRequest } from '@/lib/aiRequest';
 import { getErrorMessage, isRateLimitError } from '@/lib/errors';
 import { useToast } from '@/hooks/use-toast';
@@ -6,7 +6,7 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
 import { logScannerCompleted } from '@/lib/highValueSignals';
-
+import { trackScannerUpload } from '@/lib/tracking/scannerUpload';
 export interface QuoteAnalysisResult {
   overallScore: number;
   safetyScore: number;
@@ -137,7 +137,14 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
   const [isAskingQuestion, setIsAskingQuestion] = useState(false);
   const [qaAnswer, setQaAnswer] = useState<string | null>(null);
 
+  // Generate a unique scan attempt ID per analyzeQuote call for deduplication
+  const scanAttemptIdRef = useRef<string>('');
+
   const analyzeQuote = useCallback(async (file: File, openingCount?: number, areaName?: string) => {
+    // Generate new scan attempt ID for this analysis run
+    const scanAttemptId = crypto.randomUUID();
+    scanAttemptIdRef.current = scanAttemptId;
+
     setIsAnalyzing(true);
     setError(null);
     setEmailDraft(null);
@@ -149,6 +156,17 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
       const { base64, mimeType: mt } = await compressImage(file);
       setImageBase64(base64);
       setMimeType(mt);
+
+      // 🎯 FIRE ScannerUpload dataLayer event IMMEDIATELY after upload accepted, before AI call
+      trackScannerUpload({
+        scanAttemptId,
+        sourceTool: 'quote-scanner',
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        leadId: leadId || undefined,
+        sessionId,
+      });
       
       const { data, error: requestError } = await heavyAIRequest.sendRequest<QuoteAnalysisResult & { error?: string }>(
         'quote-scanner',
