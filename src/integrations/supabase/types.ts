@@ -364,12 +364,14 @@ export type Database = {
           emotional_state: string | null
           fbc: string | null
           fbp: string | null
+          first_name: string | null
           first_touch: Json | null
           gclid: string | null
           id: string
           insurance_carrier: string | null
           last_activity_at: string | null
           last_evidence: Json | null
+          last_name: string | null
           last_non_direct_channel: string | null
           last_non_direct_fbclid: string | null
           last_non_direct_gclid: string | null
@@ -406,12 +408,14 @@ export type Database = {
           emotional_state?: string | null
           fbc?: string | null
           fbp?: string | null
+          first_name?: string | null
           first_touch?: Json | null
           gclid?: string | null
           id?: string
           insurance_carrier?: string | null
           last_activity_at?: string | null
           last_evidence?: Json | null
+          last_name?: string | null
           last_non_direct_channel?: string | null
           last_non_direct_fbclid?: string | null
           last_non_direct_gclid?: string | null
@@ -448,12 +452,14 @@ export type Database = {
           emotional_state?: string | null
           fbc?: string | null
           fbp?: string | null
+          first_name?: string | null
           first_touch?: Json | null
           gclid?: string | null
           id?: string
           insurance_carrier?: string | null
           last_activity_at?: string | null
           last_evidence?: Json | null
+          last_name?: string | null
           last_non_direct_channel?: string | null
           last_non_direct_fbclid?: string | null
           last_non_direct_gclid?: string | null

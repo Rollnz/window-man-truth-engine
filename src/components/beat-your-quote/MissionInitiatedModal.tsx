@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NameInputPair, normalizeNameFields } from '@/components/ui/NameInputPair';
 import { useFormValidation, formatPhoneNumber, commonSchemas } from '@/hooks/useFormValidation';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useSessionData } from '@/hooks/useSessionData';
@@ -55,14 +56,16 @@ export function MissionInitiatedModal({
 
   const {
     values,
+    setValue,
     getFieldProps,
     validateAll,
     hasError,
     getError,
   } = useFormValidation({
-    initialValues: { name: '', email: '', phone: '' },
+    initialValues: { firstName: '', lastName: '', email: '', phone: '' },
     schemas: {
-      name: commonSchemas.name,
+      firstName: commonSchemas.firstName,
+      lastName: commonSchemas.lastName,
       email: commonSchemas.email,
       phone: commonSchemas.phone,
     },
@@ -103,12 +106,16 @@ export function MissionInitiatedModal({
     
     setIsSubmitting(true);
     
+    // Normalize name fields
+    const { firstName, lastName } = normalizeNameFields(values.firstName, values.lastName);
+    
     try {
       const sessionId = sessionData.claimVaultSessionId || crypto.randomUUID();
       
       const payload = {
         email: values.email.trim(),
-        name: values.name.trim(),
+        firstName,
+        lastName: lastName || null,
         phone: values.phone.trim(),
         sourceTool: 'beat-your-quote' as const,
         attribution: getAttributionData(),
@@ -149,6 +156,10 @@ export function MissionInitiatedModal({
         source_system: 'web',
         form_name: 'mission_initiated',
         quote_file_id: quoteFileId,
+        user_data: {
+          first_name: firstName,
+          last_name: lastName || undefined,
+        },
       });
       
       trackFormSubmit({
@@ -158,7 +169,6 @@ export function MissionInitiatedModal({
       });
 
       // 🔐 CANONICAL SCORING: Award points for lead capture
-      // This replaces the legacy trackLeadCapture call - scoring is now server-side
       if (effectiveLeadId) {
         await awardScore({
           eventType: 'LEAD_CAPTURED',
@@ -167,18 +177,13 @@ export function MissionInitiatedModal({
         });
       }
 
-      // Push Enhanced Conversion event with SHA-256 PII hashing (value: 15 USD)
-      // Option A: Full payload parity with lead_captured - includes all EMQ parameters
-      const nameParts = (values.name || '').split(' ');
-      const firstName = nameParts[0] || undefined;
-      const lastName = nameParts.slice(1).join(' ') || undefined;
-      
+      // Push Enhanced Conversion event with SHA-256 PII hashing (value: 100 USD)
       await trackLeadSubmissionSuccess({
         leadId: effectiveLeadId || '',
         email: values.email,
         phone: values.phone || undefined,
         firstName,
-        lastName,
+        lastName: lastName || undefined,
         // Location data from sessionData if available
         city: sessionData?.city || undefined,
         state: sessionData?.state || undefined,
@@ -195,7 +200,8 @@ export function MissionInitiatedModal({
 
       // Notify parent with leadId and name
       if (onLeadCaptured && effectiveLeadId) {
-        onLeadCaptured(effectiveLeadId, values.name.trim());
+        const fullName = [firstName, lastName].filter(Boolean).join(' ');
+        onLeadCaptured(effectiveLeadId, fullName);
       }
 
       onClose();
@@ -209,7 +215,7 @@ export function MissionInitiatedModal({
     } finally {
       setIsSubmitting(false);
     }
-  }, [values, validateAll, sessionData, existingLeadId, setLeadId, quoteFileId, onLeadCaptured, onClose]);
+  }, [values, validateAll, sessionData, existingLeadId, setLeadId, quoteFileId, onLeadCaptured, onClose, awardScore]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && !isSubmitting && onClose()}>
@@ -239,30 +245,25 @@ export function MissionInitiatedModal({
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-3 mt-4">
-              {/* Name */}
-              <div className="space-y-1">
-                <Label htmlFor="mission-name" className="font-semibold text-slate-900">Name</Label>
-                <Input
-                  id="mission-name"
-                  placeholder="Your name"
-                  className={cn(
-                    "h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm",
-                    hasError('name') && "border-destructive"
-                  )}
-                  {...getFieldProps('name')}
-                  disabled={isSubmitting}
-                />
-                {hasError('name') && (
-                  <p className="text-xs text-destructive">{getError('name')}</p>
-                )}
-              </div>
+              {/* First/Last Name */}
+              <NameInputPair
+                firstName={values.firstName}
+                lastName={values.lastName}
+                onFirstNameChange={(value) => setValue('firstName', value)}
+                onLastNameChange={(value) => setValue('lastName', value)}
+                errors={{ firstName: getError('firstName'), lastName: getError('lastName') }}
+                disabled={isSubmitting}
+                size="compact"
+              />
 
               {/* Email */}
               <div className="space-y-1">
                 <Label htmlFor="mission-email" className="font-semibold text-slate-900">Email</Label>
                 <Input
                   id="mission-email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="your@email.com"
                   className={cn(
                     "h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm",
@@ -281,7 +282,9 @@ export function MissionInitiatedModal({
                 <Label htmlFor="mission-phone" className="font-semibold text-slate-900">Phone</Label>
                 <Input
                   id="mission-phone"
+                  name="phone"
                   type="tel"
+                  autoComplete="tel"
                   placeholder="(555) 123-4567"
                   className={cn(
                     "h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm",

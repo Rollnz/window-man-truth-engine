@@ -152,17 +152,21 @@ export const commonSchemas = {
     .min(1, 'Email is required')
     .email('Please enter a valid email address'),
   
+  // DEPRECATED: Use firstName + lastName for Meta EMQ compliance
   name: z.string()
     .min(1, 'Name is required')
     .max(100, 'Name is too long'),
   
+  // First name - required, min 1 char for EMQ
   firstName: z.string()
-    .min(3, 'First name must be at least 3 characters')
+    .min(1, 'First name is required')
     .max(50, 'First name is too long'),
   
+  // Last name - optional for EMQ
   lastName: z.string()
-    .min(1, 'Last name is required')
-    .max(50, 'Last name is too long'),
+    .max(50, 'Last name is too long')
+    .optional()
+    .or(z.literal('')),
   
   phone: z.string()
     .min(1, 'Phone number is required')

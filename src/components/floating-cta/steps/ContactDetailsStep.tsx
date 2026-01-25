@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ArrowRight, User, Mail, Phone } from 'lucide-react';
+import { ArrowRight, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NameInputPair, normalizeNameFields } from '@/components/ui/NameInputPair';
 import { generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
@@ -38,8 +39,11 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
   const validate = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Please enter your name';
+    // Normalize name before validation
+    const { firstName, lastName } = normalizeNameFields(formData.firstName, formData.lastName);
+    
+    if (!firstName) {
+      newErrors.firstName = 'Please enter your first name';
     }
     
     if (!formData.email.trim()) {
@@ -63,6 +67,10 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
 
   const handleNext = () => {
     if (validate()) {
+      // Normalize before proceeding
+      const { firstName, lastName } = normalizeNameFields(formData.firstName, formData.lastName);
+      updateFormData({ firstName, lastName });
+      
       const externalId = getLeadAnchor() || null;
       
       // Fire structured GTM dataLayer event with identity enrichment
@@ -79,6 +87,10 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
         step_name: 'contact_info',
         step_index: 2,
         step_status: 'validated',
+        user_data: {
+          first_name: firstName,
+          last_name: lastName || undefined,
+        },
       });
       onNext();
     }
@@ -91,25 +103,16 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
 
   return (
     <div className="space-y-6 animate-in slide-in-from-right duration-300">
-      {/* Name */}
-      <div className="space-y-2">
-        <Label htmlFor="name" className="flex items-center gap-2">
-          <User className="h-4 w-4 text-muted-foreground" />
-          Full Name
-        </Label>
-        <Input
-          id="name"
-          type="text"
-          placeholder="John Smith"
-          value={formData.name}
-          onChange={(e) => updateFormData({ name: e.target.value })}
-          className={errors.name ? 'border-destructive' : ''}
-          autoComplete="name"
-        />
-        {errors.name && (
-          <p className="text-sm text-destructive">{errors.name}</p>
-        )}
-      </div>
+      {/* Name (First/Last) */}
+      <NameInputPair
+        firstName={formData.firstName}
+        lastName={formData.lastName}
+        onFirstNameChange={(value) => updateFormData({ firstName: value })}
+        onLastNameChange={(value) => updateFormData({ lastName: value })}
+        errors={{ firstName: errors.firstName, lastName: errors.lastName }}
+        showIcon
+        autoFocus
+      />
 
       {/* Email */}
       <div className="space-y-2">
@@ -119,12 +122,13 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
         </Label>
         <Input
           id="email"
+          name="email"
           type="email"
+          autoComplete="email"
           placeholder="john@example.com"
           value={formData.email}
           onChange={(e) => updateFormData({ email: e.target.value })}
           className={errors.email ? 'border-destructive' : ''}
-          autoComplete="email"
         />
         {errors.email && (
           <p className="text-sm text-destructive">{errors.email}</p>
@@ -139,12 +143,13 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
         </Label>
         <Input
           id="phone"
+          name="phone"
           type="tel"
+          autoComplete="tel"
           placeholder="(555) 123-4567"
           value={formData.phone}
           onChange={handlePhoneChange}
           className={errors.phone ? 'border-destructive' : ''}
-          autoComplete="tel"
         />
         {errors.phone && (
           <p className="text-sm text-destructive">{errors.phone}</p>

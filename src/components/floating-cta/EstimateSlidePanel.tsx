@@ -28,8 +28,9 @@ export interface EstimateFormData {
   windowCount: number | null;
   projectType: string;
   timeline: string;
-  // Step 2: Contact Details
-  name: string;
+  // Step 2: Contact Details (firstName/lastName for Meta EMQ)
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   // Step 3: Address Details
@@ -43,7 +44,8 @@ const initialFormData: EstimateFormData = {
   windowCount: null,
   projectType: '',
   timeline: '',
-  name: '',
+  firstName: '',
+  lastName: '',
   email: '',
   phone: '',
   street: '',

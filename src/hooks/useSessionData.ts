@@ -20,7 +20,9 @@ export interface SessionData {
   // CONTACT INFORMATION - User-provided details
   // ═══════════════════════════════════════════════════════════════════════════
   email?: string;
-  name?: string;
+  name?: string; // DEPRECATED: Use firstName + lastName
+  firstName?: string;
+  lastName?: string;
   phone?: string;
   notes?: string;
   city?: string;

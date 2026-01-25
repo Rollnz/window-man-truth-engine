@@ -75,6 +75,10 @@ const aiContextSchema = z.object({
 // Main lead schema
 const leadSchema = z.object({
   email: z.string().trim().email('Invalid email format').max(255, 'Email too long'),
+  // Split name fields for Meta EMQ optimization
+  firstName: z.string().trim().max(50, 'First name too long').optional().nullable(),
+  lastName: z.string().trim().max(50, 'Last name too long').optional().nullable(),
+  // DEPRECATED: Legacy name field - use firstName/lastName instead
   name: z.string().trim().max(100, 'Name too long').optional().nullable(),
   phone: z.string().regex(phoneRegex, 'Invalid phone format').max(20, 'Phone too long').optional().nullable().or(z.literal('')),
   sourceTool: z.enum(SOURCE_TOOLS).default('expert-system'),
@@ -411,9 +415,15 @@ serve(async (req) => {
     }
 
     const { 
-      email, name, phone, sourceTool, sessionData, chatHistory, consultation,
+      email, firstName, lastName, name, phone, sourceTool, sessionData, chatHistory, consultation,
       attribution, aiContext, lastNonDirect, leadId: providedLeadId, sessionId, quoteFileId 
     } = parseResult.data;
+    
+    // Normalize first/last name: prefer explicit fields, fall back to splitting legacy name
+    const normalizedFirstName = firstName?.trim() || (name?.includes(' ') ? name.split(' ')[0] : name) || null;
+    const normalizedLastName = lastName?.trim() || (name?.includes(' ') ? name.split(' ').slice(1).join(' ') : null) || null;
+    // Concatenate for legacy name column (backwards compatibility)
+    const normalizedFullName = [normalizedFirstName, normalizedLastName].filter(Boolean).join(' ') || null;
 
     // Extract client_id for anonymous identity persistence (Truth Engine ownership validation)
     const clientId = 
@@ -448,7 +458,9 @@ serve(async (req) => {
     // Build the lead record with all fields
     const leadRecord = {
       email: normalizedEmail,
-      name: name || null,
+      name: normalizedFullName,
+      first_name: normalizedFirstName,
+      last_name: normalizedLastName,
       phone: phone || null,
       source_tool: sourceTool,
       session_data: sessionData || {},

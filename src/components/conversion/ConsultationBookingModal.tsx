@@ -21,6 +21,7 @@ import { setLeadAnchor } from "@/lib/leadAnchor";
 import { logBookingConfirmed } from "@/lib/highValueSignals";
 import type { SourceTool } from "@/types/sourceTool";
 import { TrustModal } from "@/components/forms/TrustModal";
+import { NameInputPair, normalizeNameFields } from "@/components/ui/NameInputPair";
 
 interface ConsultationBookingModalProps {
   isOpen: boolean;
@@ -68,13 +69,15 @@ export function ConsultationBookingModal({
   const { values, errors, setValue, setValues, hasError, getError, getFieldProps, validateAll, clearErrors } =
     useFormValidation({
       initialValues: {
-        name: sessionData.name || "",
+        firstName: sessionData.firstName || "",
+        lastName: sessionData.lastName || "",
         email: sessionData.email || "",
         phone: sessionData.phone || "",
         preferredTime: "",
       },
       schemas: {
-        name: commonSchemas.name,
+        firstName: commonSchemas.firstName,
+        lastName: commonSchemas.lastName,
         email: commonSchemas.email,
         phone: commonSchemas.phone,
         preferredTime: commonSchemas.required("Please select a preferred time"),
@@ -106,7 +109,7 @@ export function ConsultationBookingModal({
         modal_name: 'consultation_booking',
       });
     }
-  }, [isOpen, sourceTool, effectiveLeadId]); // Added effectiveLeadId for external_id resolution
+  }, [isOpen, sourceTool, effectiveLeadId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,6 +125,9 @@ export function ConsultationBookingModal({
 
     setIsLoading(true);
 
+    // Normalize name fields
+    const { firstName, lastName } = normalizeNameFields(values.firstName, values.lastName);
+
     try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`, {
         method: "POST",
@@ -131,7 +137,8 @@ export function ConsultationBookingModal({
         },
         body: JSON.stringify({
           email: values.email.trim(),
-          name: values.name.trim(),
+          firstName,
+          lastName: lastName || null,
           phone: values.phone.trim(),
           sourceTool,
           sessionData: {
@@ -139,7 +146,7 @@ export function ConsultationBookingModal({
             clientId: getOrCreateAnonId(),
           },
           consultation: {
-            name: values.name.trim(),
+            name: [firstName, lastName].filter(Boolean).join(' '),
             email: values.email.trim(),
             phone: values.phone.trim(),
             preferredTime: values.preferredTime,
@@ -193,20 +200,19 @@ export function ConsultationBookingModal({
           source_system: 'web',
           form_name: 'consultation_booking',
           preferred_time: values.preferredTime,
+          user_data: {
+            first_name: firstName,
+            last_name: lastName || undefined,
+          },
         });
 
-        // Track primary lead capture with Enhanced Conversions (value: 15 USD)
-        // Option A: Full payload parity with lead_captured - includes all EMQ parameters
-        const nameParts = (values.name || '').split(' ');
-        const firstName = nameParts[0] || undefined;
-        const lastName = nameParts.slice(1).join(' ') || undefined;
-        
+        // Track primary lead capture with Enhanced Conversions (value: 100 USD)
         await trackLeadSubmissionSuccess({
           leadId: data.leadId,
           email: values.email,
           phone: values.phone,
           firstName,
-          lastName,
+          lastName: lastName || undefined,
           // Location data from sessionData if available
           city: sessionData.city || undefined,
           state: sessionData.state || undefined,
@@ -222,7 +228,7 @@ export function ConsultationBookingModal({
           email: values.email,
           phone: values.phone,
           firstName,
-          lastName,
+          lastName: lastName || undefined,
           preferredTime: values.preferredTime,
           sourceTool,
           windowCount: sessionData.windowCount,
@@ -277,7 +283,8 @@ export function ConsultationBookingModal({
       setIsSuccess(false);
       resetTracking(); // Reset abandonment tracking
       setValues({
-        name: sessionData.name || "",
+        firstName: sessionData.firstName || "",
+        lastName: sessionData.lastName || "",
         email: sessionData.email || "",
         phone: sessionData.phone || "",
         preferredTime: "",
@@ -293,7 +300,6 @@ export function ConsultationBookingModal({
     trackFormStart({ formName: 'consultation_booking', sourceTool });
   };
 
-  const nameProps = getFieldProps("name");
   const emailProps = getFieldProps("email");
   const phoneProps = getFieldProps("phone");
 
@@ -318,25 +324,19 @@ export function ConsultationBookingModal({
 
             {/* TrustModal auto-wraps children with FormSurfaceProvider surface="trust" */}
             <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="name" className={`text-sm font-semibold text-slate-900 ${hasError("name") ? "text-destructive" : ""}`}>
-                  Your Name
-                </Label>
-                <Input
-                  id="name"
-                  placeholder="John Smith"
-                  {...nameProps}
-                  disabled={isLoading}
-                  className={`h-9 ${hasError("name") ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                  aria-invalid={hasError("name")}
-                  aria-describedby={hasError("name") ? "name-error" : undefined}
-                />
-                {hasError("name") && (
-                  <p id="name-error" className="text-xs text-destructive">
-                    {getError("name")}
-                  </p>
-                )}
-              </div>
+              {/* First/Last Name */}
+              <NameInputPair
+                firstName={values.firstName}
+                lastName={values.lastName}
+                onFirstNameChange={(value) => setValue("firstName", value)}
+                onLastNameChange={(value) => setValue("lastName", value)}
+                onFirstNameBlur={handleFirstFieldFocus}
+                errors={{ firstName: getError("firstName"), lastName: getError("lastName") }}
+                disabled={isLoading}
+                size="compact"
+                firstNameLabel="First Name"
+                lastNameLabel="Last Name"
+              />
 
               <div className="space-y-1">
                 <Label htmlFor="consult-email" className={`text-sm font-semibold text-slate-900 ${hasError("email") ? "text-destructive" : ""}`}>
@@ -344,7 +344,9 @@ export function ConsultationBookingModal({
                 </Label>
                 <Input
                   id="consult-email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="you@example.com"
                   {...emailProps}
                   disabled={isLoading}
@@ -365,7 +367,9 @@ export function ConsultationBookingModal({
                 </Label>
                 <Input
                   id="phone"
+                  name="phone"
                   type="tel"
+                  autoComplete="tel"
                   placeholder="(555) 123-4567"
                   {...phoneProps}
                   disabled={isLoading}
