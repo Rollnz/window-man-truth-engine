@@ -7,6 +7,7 @@ import { EnhancedFloatingCallout } from './EnhancedFloatingCallout';
 
 interface QuoteUploadZoneProps {
   onFileSelect: (file: File) => void;
+  onUploadClick?: () => void;
   isAnalyzing: boolean;
   hasResult: boolean;
   imagePreview: string | null;
@@ -15,6 +16,7 @@ interface QuoteUploadZoneProps {
 export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
   function QuoteUploadZone({
     onFileSelect,
+    onUploadClick,
     isAnalyzing,
     hasResult,
     imagePreview,
@@ -61,8 +63,14 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
     }, [onFileSelect]);
 
     const handleClick = useCallback(() => {
-      fileInputRef.current?.click();
-    }, []);
+      if (onUploadClick) {
+        // Use modal flow - let parent handle it
+        onUploadClick();
+      } else {
+        // Fallback to direct file picker
+        fileInputRef.current?.click();
+      }
+    }, [onUploadClick]);
 
     // Determine if we should show the "before upload" overlay
     const showBeforeUploadOverlay = !imagePreview && !isAnalyzing;
