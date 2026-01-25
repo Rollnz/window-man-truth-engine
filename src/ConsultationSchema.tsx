@@ -18,19 +18,19 @@ export function ConsultationSchema() {
       // WebPage Schema
       {
         '@type': 'WebPage',
-        '@id': 'https://itswindowguy.com/consultation#webpage',
-        'url': 'https://itswindowguy.com/consultation',
+        '@id': 'https://itswindowman.com/consultation#webpage',
+        'url': 'https://itswindowman.com/consultation',
         'name': 'Window Quote Strategy Session | Window Man Truth Engine',
         'description': 'Get a 15-minute unbiased review of your window project before you sign anything. Verify pricing, scope, and timelines using real installation data.',
         'isPartOf': {
-          '@id': 'https://itswindowguy.com/#website'
+          '@id': 'https://itswindowman.com/#website'
         },
         'about': {
-          '@id': 'https://itswindowguy.com/consultation#service'
+          '@id': 'https://itswindowman.com/consultation#service'
         },
         'primaryImageOfPage': {
           '@type': 'ImageObject',
-          'url': 'https://itswindowguy.com/og-consultation.jpg'
+          'url': 'https://itswindowman.com/og-consultation.jpg'
         },
         'datePublished': '2025-01-01',
         'dateModified': new Date().toISOString().split('T')[0],
@@ -40,15 +40,15 @@ export function ConsultationSchema() {
       // Service Schema
       {
         '@type': 'Service',
-        '@id': 'https://itswindowguy.com/consultation#service',
+        '@id': 'https://itswindowman.com/consultation#service',
         'name': 'Window Quote Verification Service',
         'alternateName': 'Truth Engine Strategy Session',
         'description': 'Independent window quote review and project verification service. Our experts analyze your existing quotes against local permit data and installation pricing to ensure accuracy and fairness.',
         'provider': {
           '@type': 'Organization',
           'name': 'Window Man',
-          'url': 'https://itswindowguy.com',
-          'logo': 'https://itswindowguy.com/logo.png'
+          'url': 'https://itswindowman.com',
+          'logo': 'https://itswindowman.com/logo.png'
         },
         'serviceType': 'Quote Verification',
         'areaServed': {
@@ -102,7 +102,7 @@ export function ConsultationSchema() {
       // FAQ Schema
       {
         '@type': 'FAQPage',
-        '@id': 'https://itswindowguy.com/consultation#faq',
+        '@id': 'https://itswindowman.com/consultation#faq',
         'mainEntity': [
           {
             '@type': 'Question',
@@ -155,13 +155,13 @@ export function ConsultationSchema() {
             '@type': 'ListItem',
             'position': 1,
             'name': 'Home',
-            'item': 'https://itswindowguy.com'
+            'item': 'https://itswindowman.com'
           },
           {
             '@type': 'ListItem',
             'position': 2,
             'name': 'Consultation',
-            'item': 'https://itswindowguy.com/consultation'
+            'item': 'https://itswindowman.com/consultation'
           }
         ]
       }
@@ -176,7 +176,7 @@ export function ConsultationSchema() {
         content="Get a free 15-minute review of your window project. Our experts verify pricing, scope, and timelines using real Florida installation data. No sales pressure." 
       />
       <meta name="robots" content="index, follow" />
-      <link rel="canonical" href="https://itswindowguy.com/consultation" />
+      <link rel="canonical" href="https://itswindowman.com/consultation" />
       
       {/* Open Graph */}
       <meta property="og:type" content="website" />
@@ -185,7 +185,7 @@ export function ConsultationSchema() {
         property="og:description" 
         content="A 15-minute call to verify your window quote is fair. No sales pressure. No obligation. Just truth." 
       />
-      <meta property="og:url" content="https://itswindowguy.com/consultation" />
+      <meta property="og:url" content="https://itswindowman.com/consultation" />
       <meta property="og:site_name" content="Window Man" />
       
       {/* Twitter Card */}
