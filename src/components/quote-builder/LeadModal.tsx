@@ -7,6 +7,7 @@ import { X, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NameInputPair, normalizeNameFields } from "@/components/ui/NameInputPair";
 import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
 import { trackLeadSubmissionSuccess, generateEventId } from "@/lib/gtm";
 import { getOrCreateClientId, getOrCreateSessionId } from "@/lib/tracking";
@@ -14,10 +15,11 @@ import { getLeadAnchor } from "@/lib/leadAnchor";
 import type { LeadModalProps, LeadFormData } from "@/types/quote-builder";
 
 export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModalProps) => {
-  const { values, getFieldProps, hasError, getError, validateAll } = useFormValidation({
-    initialValues: { name: '', email: '', phone: '' },
+  const { values, setValue, getFieldProps, hasError, getError, validateAll } = useFormValidation({
+    initialValues: { firstName: '', lastName: '', email: '', phone: '' },
     schemas: {
-      name: commonSchemas.name,
+      firstName: commonSchemas.firstName,
+      lastName: commonSchemas.lastName,
       email: commonSchemas.email,
       phone: commonSchemas.phone
     },
@@ -52,8 +54,11 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
       return;
     }
 
+    // Normalize name fields before submission
+    const { firstName, lastName } = normalizeNameFields(values.firstName, values.lastName);
+
     const formData: LeadFormData = {
-      name: values.name,
+      name: [firstName, lastName].filter(Boolean).join(' '),
       email: values.email,
       phone: values.phone
     };
@@ -74,19 +79,18 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
         source_tool: 'quote-builder',
         source_system: 'web',
         form_name: 'quote_builder_lead',
+        user_data: {
+          first_name: firstName,
+          last_name: lastName || undefined,
+        },
       });
-
-      // Split name into firstName/lastName for LeadSubmissionSuccessInput
-      const nameParts = (values.name || '').trim().split(' ');
-      const firstName = nameParts[0] || undefined;
-      const lastName = nameParts.slice(1).join(' ') || undefined;
       
       await trackLeadSubmissionSuccess({
         leadId,
         email: values.email,
         phone: values.phone || undefined,
         firstName,
-        lastName,
+        lastName: lastName || undefined,
         sourceTool: 'quote-builder',
         eventId: `lead_captured:${leadId}`,
         value: 100,
@@ -114,25 +118,23 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="lead-name" className="text-foreground font-semibold">Full Name</Label>
-            <Input
-              id="lead-name"
-              type="text"
-              placeholder="John Smith"
-              className={hasError('name') ? 'border-destructive focus-visible:ring-destructive' : ''}
-              {...getFieldProps('name')}
-            />
-            {hasError('name') && (
-              <p className="text-sm text-destructive font-medium">{getError('name')}</p>
-            )}
-          </div>
+          {/* First/Last Name */}
+          <NameInputPair
+            firstName={values.firstName}
+            lastName={values.lastName}
+            onFirstNameChange={(value) => setValue('firstName', value)}
+            onLastNameChange={(value) => setValue('lastName', value)}
+            errors={{ firstName: getError('firstName'), lastName: getError('lastName') }}
+            size="compact"
+          />
 
           <div className="space-y-2">
             <Label htmlFor="lead-email" className="text-foreground font-semibold">Email Address</Label>
             <Input
               id="lead-email"
+              name="email"
               type="email"
+              autoComplete="email"
               placeholder="john@example.com"
               className={hasError('email') ? 'border-destructive focus-visible:ring-destructive' : ''}
               {...getFieldProps('email')}
@@ -146,7 +148,9 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
             <Label htmlFor="lead-phone" className="text-foreground font-semibold">Phone Number</Label>
             <Input
               id="lead-phone"
+              name="phone"
               type="tel"
+              autoComplete="tel"
               placeholder="(555) 123-4567"
               className={hasError('phone') ? 'border-destructive focus-visible:ring-destructive' : ''}
               {...getFieldProps('phone')}
