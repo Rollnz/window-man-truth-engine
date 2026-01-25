@@ -415,6 +415,12 @@ serve(async (req) => {
       attribution, aiContext, lastNonDirect, leadId: providedLeadId, sessionId, quoteFileId 
     } = parseResult.data;
 
+    // Extract client_id for anonymous identity persistence (Truth Engine ownership validation)
+    const clientId = 
+      (sessionData as Record<string, unknown>)?.clientId as string ||
+      (sessionData as Record<string, unknown>)?.client_id as string ||
+      null;
+
     // Check email hourly limit (after validation so we have a valid email)
     const normalizedEmail = email.trim().toLowerCase();
     const emailHourlyCheck = await checkRateLimit(
@@ -447,6 +453,8 @@ serve(async (req) => {
       source_tool: sourceTool,
       session_data: sessionData || {},
       chat_history: chatHistory || [],
+      // Anonymous identity for Truth Engine ownership validation
+      client_id: clientId,
       // Attribution fields (last-touch)
       utm_source: attribution?.utm_source || null,
       utm_medium: attribution?.utm_medium || null,
@@ -485,13 +493,14 @@ serve(async (req) => {
         msclkid: string | null;
         last_non_direct_gclid: string | null;
         last_non_direct_fbclid: string | null;
+        client_id: string | null;
       } | null = null;
 
       // PRIORITY 1: If leadId is provided, use it directly (Golden Thread)
       if (providedLeadId) {
         const { data: leadById, error: leadByIdError } = await supabase
           .from('leads')
-          .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid')
+          .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id')
           .eq('id', providedLeadId)
           .maybeSingle();
 
@@ -510,7 +519,7 @@ serve(async (req) => {
       if (!existingLead) {
         const { data: leadByEmail, error: emailSelectError } = await supabase
           .from('leads')
-          .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid')
+          .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id')
           .eq('email', normalizedEmail)
           .maybeSingle();
 
@@ -578,6 +587,11 @@ serve(async (req) => {
         }
         if (lastNonDirect?.fbclid) {
           updateRecord.last_non_direct_fbclid = lastNonDirect.fbclid;
+        }
+        
+        // Backfill client_id if missing (identity persistence for Truth Engine)
+        if (!existingLead?.client_id && clientId) {
+          updateRecord.client_id = clientId;
         }
 
         const { error: updateError } = await supabase

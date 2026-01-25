@@ -11,6 +11,7 @@ import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { useFormAbandonment } from "@/hooks/useFormAbandonment";
 import { useScore } from "@/contexts/ScoreContext";
+import { getOrCreateAnonId } from "@/hooks/useCanonicalScore";
 import { Calendar, Check, Loader2 } from "lucide-react";
 import { trackEvent, trackModalOpen, trackBookingConfirmed, trackFormStart, trackLeadSubmissionSuccess, generateEventId } from "@/lib/gtm";
 import { getOrCreateClientId, getOrCreateSessionId } from "@/lib/tracking";
@@ -133,7 +134,10 @@ export function ConsultationBookingModal({
           name: values.name.trim(),
           phone: values.phone.trim(),
           sourceTool,
-          sessionData,
+          sessionData: {
+            ...(sessionData || {}),
+            clientId: getOrCreateAnonId(),
+          },
           consultation: {
             name: values.name.trim(),
             email: values.email.trim(),

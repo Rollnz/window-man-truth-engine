@@ -8,7 +8,7 @@ import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { SessionData, useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useFormAbandonment } from '@/hooks/useFormAbandonment';
-import { useCanonicalScore } from '@/hooks/useCanonicalScore';
+import { useCanonicalScore, getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { Mail, Check, Loader2 } from 'lucide-react';
 import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess, trackFormStart, trackLeadCapture, generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
@@ -138,7 +138,10 @@ export function LeadCaptureModal({
             name: name.trim() || sessionData.name || null,
             phone: phone.trim() || sessionData.phone || null,
             sourceTool,
-            sessionData,
+            sessionData: {
+              ...(sessionData || {}),
+              clientId: getOrCreateAnonId(),
+            },
             chatHistory: chatHistory || [],
             attribution: getAttributionData(),
             aiContext: buildAIContextFromSession(sessionData, sourceTool),
