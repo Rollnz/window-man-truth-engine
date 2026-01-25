@@ -56,6 +56,14 @@ const CONCERNS: { value: ConcernType; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
+/**
+ * Render a multi-section consultation form that collects contact details, project information, current quotes, and user concerns, validates inputs, and submits the collected data.
+ *
+ * @param onSubmit - Called with the collected form data when the user submits a valid form.
+ * @param onFormStart - Optional callback invoked once the user begins interacting with any form field.
+ * @param className - Optional CSS class applied to the root form element.
+ * @returns The rendered consultation form element.
+ */
 export function ConsultationForm({ onSubmit, onFormStart, className }: ConsultationFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [hasStarted, setHasStarted] = useState(false);

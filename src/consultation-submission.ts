@@ -13,7 +13,12 @@ import { ConsultationSubmission, ConsultationAnalytics } from '@/types/consultat
  * If step 2 fails, nothing else fires.
  */
 
-// Analytics helper - sanitizes PII
+/**
+ * Build a sanitized analytics payload for a consultation submission, omitting any PII.
+ *
+ * @param data - Consultation submission object; only non-PII fields from this object are included in the payload
+ * @returns An analytics object containing event name, source, property and project details, timestamp, and session identifier
+ */
 function createAnalyticsPayload(data: ConsultationSubmission): ConsultationAnalytics {
   return {
     event: 'form_submit_success',
@@ -27,7 +32,14 @@ function createAnalyticsPayload(data: ConsultationSubmission): ConsultationAnaly
   };
 }
 
-// Push to data layer (no PII)
+/**
+ * Pushes a sanitized analytics payload to the page's global data layer if present.
+ *
+ * No personally identifiable information is included in the payload; if the global
+ * `dataLayer` is not available this function does nothing.
+ *
+ * @param analytics - Consultation analytics payload (sanitized, non-PII) to push to `window.dataLayer`
+ */
 function pushToDataLayer(analytics: ConsultationAnalytics): void {
   if (typeof window !== 'undefined' && window.dataLayer) {
     window.dataLayer.push(analytics);
@@ -70,7 +82,11 @@ function pushToDataLayer(analytics: ConsultationAnalytics): void {
  * }
  */
 
-// Development/mock submission handler
+/**
+ * Simulates submitting a consultation during development by delaying, logging the submission, and pushing a sanitized analytics payload.
+ *
+ * @param data - ConsultationSubmission containing contact and project details used for logging, CRM tagging, and analytics
+ */
 export async function submitConsultation(data: ConsultationSubmission): Promise<void> {
   // Simulate network request
   await new Promise(resolve => setTimeout(resolve, 1500));
@@ -107,10 +123,18 @@ export async function submitConsultation(data: ConsultationSubmission): Promise<
 }
 
 /**
- * CRM Integration Helper
- * 
- * Tag-based approach (tags > pipelines at this stage)
- * Pipelines come later when a human engages.
+ * Generate CRM tag identifiers for a consultation submission.
+ *
+ * Produces a base set of tags for routing and verification and adds conditional tags:
+ * - `lead:<source>` derived from `data.source`
+ * - `intent:window-replacement`
+ * - `stage:verification`
+ * - `product:impact-windows` when `data.impactRequired === 'yes'`
+ * - `behavior:comparison-shopping` when `data.hasQuote === 'yes'` and `data.quoteCount === '3+'`
+ * - `concern:<value>` when `data.concern` is present
+ *
+ * @param data - Consultation submission values used to derive CRM tags
+ * @returns An array of tag strings to attach to the CRM record (see summary for conditional tags)
  */
 export function generateCRMTags(data: ConsultationSubmission): string[] {
   const tags: string[] = [
@@ -165,8 +189,10 @@ P.S. Sometimes the outcome is confirmation that your quote is fair. Either way, 
 };
 
 /**
- * Internal notification (for team)
- * Send to Slack/email for fast human response
+ * Build a plain-text notification summarizing a consultation submission for internal channels.
+ *
+ * @param data - The consultation submission to summarize
+ * @returns A formatted string containing contact details, project attributes, quote status, concern, source, and a locale-formatted submission timestamp
  */
 export function formatInternalNotification(data: ConsultationSubmission): string {
   return `

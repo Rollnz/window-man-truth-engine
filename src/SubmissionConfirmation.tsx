@@ -25,13 +25,22 @@ interface SubmissionConfirmationProps {
 }
 
 /**
- * Reusable Post-Submission Confirmation Component
- * 
- * This component handles four psychological jobs:
- * 1. Certainty – "My action worked."
- * 2. Trust – "A real expert is involved."
- * 3. Time anchoring – "I know what happens next and when."
- * 4. Containment – "I don't need to do anything else right now."
+ * Render a personalized post-submission confirmation card.
+ *
+ * The component displays a success header, an expected next-step/time message,
+ * trust signals, optional action buttons, and a closing reassurance line.
+ * On mount or when `source` changes it pushes a `confirmation_view` event to
+ * `window.dataLayer` when available.
+ *
+ * @param firstName - Recipient's first name used in the greeting
+ * @param source - Submission origin used for analytics and conditional UI (e.g., 'beat-your-quote')
+ * @param nextStep - How the user will be contacted; one of `'text' | 'email' | 'call'` (default: `'text'`)
+ * @param expectedTime - Human-readable time expectation shown to the user (default: `'5 minutes'`)
+ * @param onContinueBrowsing - Callback invoked when the primary "Continue Browsing" action is clicked
+ * @param onUploadAnother - Optional callback shown as "Upload Another Quote" when `source` is `'beat-your-quote'`
+ * @param onChatWithAI - Optional callback shown as "Chat with our AI window expert" when provided
+ * @param className - Optional container className for layout/custom styling
+ * @returns The confirmation UI as a React element
  */
 export function SubmissionConfirmation({
   firstName,

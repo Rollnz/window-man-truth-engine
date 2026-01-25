@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * Page tracking hook for analytics
- * Fires page_view event and tracks time on page
+ * Emits page view and page exit analytics events and returns a helper to push custom events.
+ *
+ * @param pageName - Identifier used as `page_name` in all pushed analytics events
+ * @returns An object with `trackEvent(eventName, params?)` which pushes a custom event to `window.dataLayer` including `event`, `page_name`, any provided `params`, and a `timestamp`
  */
 export function usePageTracking(pageName: string) {
   const startTime = useRef<number>(Date.now());
