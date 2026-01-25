@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
-import { useEngagementScore } from '@/hooks/useEngagementScore';
+import { useScoreSafe } from '@/contexts/ScoreContext';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TOOL_REGISTRY } from '@/config/toolRegistry';
@@ -10,8 +10,45 @@ import { ROUTES } from '@/config/navigation';
 import { cn } from '@/lib/utils';
 import { Circle, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
-const READY_TO_WIN_THRESHOLD = 81;
+
+// Thresholds aligned with canonical scoring system
+const HIGH_INTENT_THRESHOLD = 100;
+const QUALIFIED_THRESHOLD = 150;
 const CONFETTI_FIRED_KEY = 'wte-confetti-fired';
+
+// Map score to status styling
+function getScoreStatus(score: number) {
+  if (score >= QUALIFIED_THRESHOLD) {
+    return {
+      label: 'Qualified',
+      color: 'text-emerald-500',
+      ring: 'text-emerald-500',
+      bgColor: 'bg-emerald-500',
+    };
+  }
+  if (score >= HIGH_INTENT_THRESHOLD) {
+    return {
+      label: 'High Intent',
+      color: 'text-primary',
+      ring: 'text-primary',
+      bgColor: 'bg-primary',
+    };
+  }
+  if (score >= 50) {
+    return {
+      label: 'Warming Up',
+      color: 'text-amber-500',
+      ring: 'text-amber-500',
+      bgColor: 'bg-amber-500',
+    };
+  }
+  return {
+    label: 'Just Starting',
+    color: 'text-muted-foreground',
+    ring: 'text-muted-foreground',
+    bgColor: 'bg-muted-foreground',
+  };
+}
 
 /**
  * Circular progress ring component
@@ -30,60 +67,90 @@ function ProgressRing({
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - progress / 100 * circumference;
-  return <svg width={size} height={size} className={cn('transform -rotate-90', className)}>
+  return (
+    <svg width={size} height={size} className={cn('transform -rotate-90', className)}>
       {/* Background ring */}
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} className="text-muted/30 border-primary-foreground" />
+      <circle 
+        cx={size / 2} 
+        cy={size / 2} 
+        r={radius} 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth={strokeWidth} 
+        className="text-muted/30 border-primary-foreground" 
+      />
       {/* Progress ring */}
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} className={cn('transition-all duration-700 ease-out', className)} />
-    </svg>;
+      <circle 
+        cx={size / 2} 
+        cy={size / 2} 
+        r={radius} 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth={strokeWidth} 
+        strokeLinecap="round" 
+        strokeDasharray={circumference} 
+        strokeDashoffset={offset} 
+        className={cn('transition-all duration-700 ease-out', className)} 
+      />
+    </svg>
+  );
 }
 
 /**
  * Get suggested next tools based on what hasn't been completed
  */
 function getNextSteps() {
-  const suggestions = [{
-    id: 'vulnerability-test',
-    name: 'Vulnerability Test',
-    points: TOOL_REGISTRY['vulnerability-test']?.engagementScore || 25,
-    route: ROUTES.VULNERABILITY_TEST
-  }, {
-    id: 'quote-scanner',
-    name: 'Quote Scanner',
-    points: TOOL_REGISTRY['quote-scanner']?.engagementScore || 50,
-    route: ROUTES.QUOTE_SCANNER
-  }, {
-    id: 'fair-price-quiz',
-    name: 'Fair Price Quiz',
-    points: TOOL_REGISTRY['fair-price-quiz']?.engagementScore || 35,
-    route: ROUTES.FAIR_PRICE_QUIZ
-  }];
+  const suggestions = [
+    {
+      id: 'vulnerability-test',
+      name: 'Vulnerability Test',
+      points: TOOL_REGISTRY['vulnerability-test']?.engagementScore || 25,
+      route: ROUTES.VULNERABILITY_TEST
+    },
+    {
+      id: 'quote-scanner',
+      name: 'Quote Scanner',
+      points: TOOL_REGISTRY['quote-scanner']?.engagementScore || 50,
+      route: ROUTES.QUOTE_SCANNER
+    },
+    {
+      id: 'fair-price-quiz',
+      name: 'Fair Price Quiz',
+      points: TOOL_REGISTRY['fair-price-quiz']?.engagementScore || 35,
+      route: ROUTES.FAIR_PRICE_QUIZ
+    }
+  ];
   return suggestions;
 }
+
 export function ReadinessIndicator() {
   const navigate = useNavigate();
-  const {
-    score,
-    previousScore,
-    hasIncreased,
-    status,
-    maxScore
-  } = useEngagementScore();
-  const progress = Math.min(score / maxScore * 100, 100);
-  const nextSteps = getNextSteps();
+  const scoreContext = useScoreSafe();
   const confettiFiredRef = useRef(false);
+  const prevScoreRef = useRef(0);
 
-  // Celebratory confetti + toast when hitting "Ready to Win" threshold
+  // Use canonical score from context, fallback to 0 if not available
+  const score = scoreContext?.totalScore ?? 0;
+  const maxScore = QUALIFIED_THRESHOLD; // 150 is the Qualified threshold
+  const progress = Math.min((score / maxScore) * 100, 100);
+  const status = useMemo(() => getScoreStatus(score), [score]);
+  const nextSteps = getNextSteps();
+
+  // Celebratory confetti + toast when hitting "High Intent" threshold
   useEffect(() => {
     // Check if already fired this session
     const alreadyFired = sessionStorage.getItem(CONFETTI_FIRED_KEY) === 'true';
     if (alreadyFired) {
       confettiFiredRef.current = true;
+      prevScoreRef.current = score;
       return;
     }
 
     // Detect threshold crossing: was below, now at or above
-    const crossedThreshold = previousScore < READY_TO_WIN_THRESHOLD && score >= READY_TO_WIN_THRESHOLD;
+    const previousScore = prevScoreRef.current;
+    const crossedThreshold = previousScore < HIGH_INTENT_THRESHOLD && score >= HIGH_INTENT_THRESHOLD;
+    prevScoreRef.current = score;
+    
     if (crossedThreshold && !confettiFiredRef.current) {
       confettiFiredRef.current = true;
       sessionStorage.setItem(CONFETTI_FIRED_KEY, 'true');
@@ -122,8 +189,8 @@ export function ReadinessIndicator() {
       }, 150);
 
       // Fire celebratory toast notification
-      toast.success("You're Ready to Win! 🏆", {
-        description: 'You have unlocked the highest readiness tier. Lock in your protection now.',
+      toast.success("You're a High Intent User! 🎯", {
+        description: 'You\'re ready to make an informed decision. Talk to an expert now.',
         duration: 5000,
         action: {
           label: 'Talk to Expert',
@@ -131,15 +198,15 @@ export function ReadinessIndicator() {
         }
       });
     }
-  }, [score, previousScore, navigate]);
+  }, [score, navigate]);
 
   // Don't show if score is 0 (user hasn't engaged yet)
   if (score === 0) return null;
-  return <Tooltip>
+  
+  return (
+    <Tooltip>
       <TooltipTrigger asChild>
-        <div className={cn("flex items-center gap-2 py-1.5 rounded-full cursor-pointer backdrop-blur-md transition-all duration-300 bg-sky-200 border-2 border-zinc-700 shadow-2xl px-[10px] text-slate-950",
-      // Subtle glow when score increases
-      hasIncreased && 'ring-2 ring-primary/30 animate-pulse')}>
+        <div className={cn("flex items-center gap-2 py-1.5 rounded-full cursor-pointer backdrop-blur-md transition-all duration-300 bg-sky-200 border-2 border-zinc-700 shadow-2xl px-[10px] text-slate-950")}>
           {/* Progress Ring with score inside */}
           <div className="relative">
             <ProgressRing progress={progress} size={28} strokeWidth={2.5} className={status.ring} />
@@ -149,7 +216,7 @@ export function ReadinessIndicator() {
           {/* Score display */}
           <div className="flex items-baseline gap-1">
             <AnimatedNumber value={score} className={cn('text-sm font-semibold tabular-nums', status.color)} duration={800} />
-            <span className="text-xs font-normal text-destructive">/150</span>
+            <span className="text-xs font-normal text-muted-foreground">/{maxScore}</span>
           </div>
           
           {/* Status label - hidden on mobile */}
@@ -169,9 +236,10 @@ export function ReadinessIndicator() {
           
           {/* Progress bar */}
           <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div className={cn('h-full rounded-full transition-all duration-500', status.bgColor)} style={{
-            width: `${progress}%`
-          }} />
+            <div 
+              className={cn('h-full rounded-full transition-all duration-500', status.bgColor)} 
+              style={{ width: `${progress}%` }} 
+            />
           </div>
           
           {/* Status explanation */}
@@ -184,15 +252,22 @@ export function ReadinessIndicator() {
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Boost Your Score
             </span>
-            {nextSteps.map(step => <Link key={step.id} to={step.route} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors group">
+            {nextSteps.map(step => (
+              <Link 
+                key={step.id} 
+                to={step.route} 
+                className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors group"
+              >
                 <div className="flex items-center gap-2">
                   <Circle className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   <span className="text-sm group-hover:text-foreground transition-colors">{step.name}</span>
                 </div>
                 <span className="text-xs font-medium text-emerald-500">+{step.points}pts</span>
-              </Link>)}
+              </Link>
+            ))}
           </div>
         </div>
       </TooltipContent>
-    </Tooltip>;
+    </Tooltip>
+  );
 }
