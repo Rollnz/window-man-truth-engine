@@ -14,11 +14,11 @@ import { useFormValidation, formatPhoneNumber, commonSchemas } from '@/hooks/use
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useFormAbandonment } from '@/hooks/useFormAbandonment';
+import { useScore } from '@/contexts/ScoreContext';
 import { getAttributionData } from '@/lib/attribution';
-import { trackLeadCapture, trackFormSubmit, trackEvent, trackLeadSubmissionSuccess, trackFormStart, generateEventId } from '@/lib/gtm';
+import { trackFormSubmit, trackLeadSubmissionSuccess, generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
-import { getLeadQuality } from '@/lib/leadQuality';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -43,6 +43,7 @@ export function MissionInitiatedModal({
   const [formStarted, setFormStarted] = useState(false);
   const { leadId: existingLeadId, setLeadId } = useLeadIdentity();
   const { sessionData } = useSessionData();
+  const { awardScore } = useScore();
 
   // Form abandonment tracking (Phase 7)
   const { trackFieldEntry, resetTracking } = useFormAbandonment({
@@ -152,26 +153,15 @@ export function MissionInitiatedModal({
         sourceTool: 'beat-your-quote',
       });
 
-      await trackLeadCapture(
-        {
-          leadId: effectiveLeadId || '',
-          sourceTool: 'beat_your_quote',
-          conversionAction: 'quote_upload',
-        },
-        values.email,
-        values.phone,
-        {
-          hasName: !!values.name.trim(),
-          hasPhone: !!values.phone.trim(),
-          hasProjectDetails: true,
-        }
-      );
-
-      trackEvent('quote_lead_captured', {
-        quote_file_id: quoteFileId,
-        lead_id: effectiveLeadId,
-        source: 'beat-your-quote',
-      });
+      // 🔐 CANONICAL SCORING: Award points for lead capture
+      // This replaces the legacy trackLeadCapture call - scoring is now server-side
+      if (effectiveLeadId) {
+        await awardScore({
+          eventType: 'LEAD_CAPTURED',
+          sourceEntityType: 'lead',
+          sourceEntityId: effectiveLeadId,
+        });
+      }
 
       // Push Enhanced Conversion event with SHA-256 PII hashing (value: 15 USD)
       // Option A: Full payload parity with lead_captured - includes all EMQ parameters

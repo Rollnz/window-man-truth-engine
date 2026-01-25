@@ -10,6 +10,7 @@ import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/use
 import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { useFormAbandonment } from "@/hooks/useFormAbandonment";
+import { useScore } from "@/contexts/ScoreContext";
 import { Calendar, Check, Loader2 } from "lucide-react";
 import { trackEvent, trackModalOpen, trackBookingConfirmed, trackFormStart, trackLeadSubmissionSuccess, generateEventId } from "@/lib/gtm";
 import { getOrCreateClientId, getOrCreateSessionId } from "@/lib/tracking";
@@ -53,6 +54,7 @@ export function ConsultationBookingModal({
   // Golden Thread: Use hook as fallback if leadId prop not provided
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
   const { updateFields } = useSessionData();
+  const { awardScore } = useScore();
   const effectiveLeadId = leadId || hookLeadId;
 
   // Form abandonment tracking (Phase 7)
@@ -166,6 +168,13 @@ export function ConsultationBookingModal({
           
           // PHASE 3: Set lead anchor for 400-day persistence
           setLeadAnchor(data.leadId);
+          
+          // 🔐 CANONICAL SCORING: Award points for lead capture
+          await awardScore({
+            eventType: 'LEAD_CAPTURED',
+            sourceEntityType: 'lead',
+            sourceEntityId: data.leadId,
+          });
         }
         
         // Enriched dataLayer push for consultation completion
