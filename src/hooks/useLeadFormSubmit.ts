@@ -218,6 +218,8 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
         firstName,
         lastName,
         sourceTool,
+        eventId: `lead_captured:${effectiveLeadId}`,
+        value: 100,
       });
 
       // Show success toast

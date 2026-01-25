@@ -532,6 +532,10 @@ export interface LeadSubmissionSuccessInput {
   zipCode?: string;
   sourceTool?: string;
   eventId?: string;
+  /** Override conversion value (default: 15) - use 100 for LEAD_CAPTURED flows */
+  value?: number;
+  /** Override currency (default: 'USD') */
+  currency?: string;
 }
 
 /**
@@ -598,8 +602,9 @@ export const trackLeadSubmissionSuccess = async (params: LeadSubmissionSuccessIn
       user_data: userData,
       
       // Conversion value (required for Meta CAPI)
-      value: LEAD_VALUE,
-      currency: LEAD_CURRENCY,
+      // Priority: explicit override > default ($15)
+      value: params.value ?? LEAD_VALUE,
+      currency: params.currency ?? LEAD_CURRENCY,
       
       // Source tracking
       source_tool: params.sourceTool,
@@ -627,8 +632,8 @@ export const trackLeadSubmissionSuccess = async (params: LeadSubmissionSuccessIn
         hasFbc: !!userData?.fbc,
         hasFirstName: !!userData?.fn,
         hasLastName: !!userData?.ln,
-        value: LEAD_VALUE,
-        currency: LEAD_CURRENCY,
+        value: params.value ?? LEAD_VALUE,
+        currency: params.currency ?? LEAD_CURRENCY,
       });
     }
   } catch (error) {
@@ -636,13 +641,13 @@ export const trackLeadSubmissionSuccess = async (params: LeadSubmissionSuccessIn
     
     // Fallback: fire event with minimal data to avoid losing conversion
     // Still includes fbp/fbc and event_id for attribution
-    const eventId = params.eventId || generateEventId();
+    const fallbackEventId = params.eventId || generateEventId();
     trackEvent('lead_submission_success', {
-      event_id: eventId,
+      event_id: fallbackEventId,
       lead_id: params.leadId,
       external_id: params.leadId,
-      value: LEAD_VALUE,
-      currency: LEAD_CURRENCY,
+      value: params.value ?? LEAD_VALUE,
+      currency: params.currency ?? LEAD_CURRENCY,
       source_tool: params.sourceTool,
       source_system: 'website',
       user_data: {

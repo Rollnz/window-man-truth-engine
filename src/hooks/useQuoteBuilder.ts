@@ -291,6 +291,8 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
           firstName,
           lastName,
           sourceTool: 'quote-builder',
+          eventId: `lead_captured:${result.leadId}`,
+          value: 100,
         });
 
         return result.leadId;
