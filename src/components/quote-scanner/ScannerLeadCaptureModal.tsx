@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { TrustModal } from '@/components/forms/TrustModal';
 import { ScannerStep1Contact } from './steps/ScannerStep1Contact';
@@ -62,6 +62,20 @@ export function ScannerLeadCaptureModal({
   const { sessionData, updateField } = useSessionData();
   const { setLeadId } = useLeadIdentity();
   const { awardScore } = useScore();
+
+  // Auto-skip to Step 2 if user already has contact info
+  useEffect(() => {
+    if (isOpen && initialSessionData?.email) {
+      // Pre-fill contact data from session
+      setContactData({
+        firstName: initialSessionData.firstName || '',
+        lastName: initialSessionData.lastName || '',
+        email: initialSessionData.email,
+      });
+      // Skip directly to project details step
+      setStep('project');
+    }
+  }, [isOpen, initialSessionData]);
 
   // Reset state when modal opens
   const handleOpenChange = useCallback((open: boolean) => {
