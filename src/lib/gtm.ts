@@ -661,6 +661,127 @@ export const trackLeadSubmissionSuccess = async (params: LeadSubmissionSuccessIn
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Quote Scanner Conversion Tracking ($50 signal)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Input interface for quote upload success tracking
+ * Used for value-based bidding with $50 conversion signal
+ */
+export interface QuoteUploadSuccessInput {
+  /** Required: Unique scan attempt ID for deterministic event_id */
+  scanAttemptId: string;
+  /** Optional: Email for EMQ hashing */
+  email?: string;
+  /** Optional: Phone for EMQ hashing */
+  phone?: string;
+  /** Optional: Lead ID for external_id matching */
+  leadId?: string;
+  /** Optional: Source tool (defaults to 'quote-scanner') */
+  sourceTool?: string;
+}
+
+/**
+ * Track quote upload success with Enhanced Conversions
+ * 
+ * VALUE: $50 (high-intent signal - user uploaded a quote for analysis)
+ * EVENT NAME: quote_upload_success (separate from lead_submission_success)
+ * 
+ * GTM CONFIGURATION REQUIRED:
+ * 1. Create Custom Event Trigger: Event name equals "quote_upload_success"
+ * 2. Create Meta tag firing on this trigger:
+ *    fbq('trackCustom', 'quote_upload_success', { 
+ *      value: {{DLV - value}}, 
+ *      currency: {{DLV - currency}} 
+ *    }, { 
+ *      eventID: '{{DLV - event_id}}' 
+ *    });
+ * 
+ * IMPORTANT: This function does NOT call trackLeadSubmissionSuccess.
+ * It emits a separate quote_upload_success event for distinct conversion tracking.
+ * 
+ * CRITICAL: Only hashed PII is pushed to dataLayer - raw PII never appears
+ */
+export const trackQuoteUploadSuccess = async (params: QuoteUploadSuccessInput): Promise<void> => {
+  try {
+    // Build EMQ user_data using existing helper
+    const userData = await buildEnhancedUserData({
+      email: params.email,
+      phone: params.phone,
+      leadId: params.leadId,
+    });
+
+    // Deterministic event_id: quote_uploaded:<scanAttemptId>
+    const eventId = `quote_uploaded:${params.scanAttemptId}`;
+
+    // Get page context
+    const pageLocation = typeof window !== 'undefined' ? window.location.href : undefined;
+    const pagePath = typeof window !== 'undefined' ? window.location.pathname : undefined;
+
+    // Push the quote_upload_success event (NOT lead_submission_success)
+    trackEvent('quote_upload_success', {
+      // Event identification (CRITICAL for deduplication)
+      event_id: eventId,
+      
+      // External ID only if leadId is provided
+      ...(params.leadId && { external_id: params.leadId }),
+      
+      // Full user_data object for EMQ (HASHED ONLY - no raw PII)
+      user_data: userData,
+      
+      // Fixed value for quote upload: $50
+      value: 50,
+      currency: 'USD',
+      
+      // Source tracking
+      source_tool: params.sourceTool || 'quote-scanner',
+      source_system: 'website',
+      
+      // Page context
+      page_location: pageLocation,
+      page_path: pagePath,
+      
+      // Data quality flags (for debugging)
+      has_email: !!userData?.em,
+      has_phone: !!userData?.ph,
+      has_fbp: !!userData?.fbp,
+      has_fbc: !!userData?.fbc,
+    });
+
+    if (import.meta.env.DEV) {
+      console.log('[GTM] quote_upload_success pushed with EMQ', {
+        eventId,
+        scanAttemptId: params.scanAttemptId.slice(0, 8),
+        leadId: params.leadId?.slice(0, 8) || 'none',
+        hasEmail: !!userData?.em,
+        hasPhone: !!userData?.ph,
+        hasFbp: !!userData?.fbp,
+        value: 50,
+      });
+    }
+  } catch (error) {
+    console.warn('[GTM] quote_upload_success hashing failed, firing fallback:', error);
+    
+    // Fallback: fire event with minimal data to avoid losing conversion
+    const fallbackEventId = `quote_uploaded:${params.scanAttemptId}`;
+    trackEvent('quote_upload_success', {
+      event_id: fallbackEventId,
+      ...(params.leadId && { external_id: params.leadId }),
+      value: 50,
+      currency: 'USD',
+      source_tool: params.sourceTool || 'quote-scanner',
+      source_system: 'website',
+      user_data: {
+        ...(params.leadId && { external_id: params.leadId }),
+        fbp: getFbp(),
+        fbc: getFbc(),
+      },
+      hash_error: true,
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
 // High-Value Conversion Tracking
 // ═══════════════════════════════════════════════════════════════════════════
 
