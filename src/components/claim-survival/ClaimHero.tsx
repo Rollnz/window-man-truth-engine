@@ -1,6 +1,7 @@
 import { Shield, CheckCircle, FileText, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ShimmerBadge } from '@/components/ui/ShimmerBadge';
 
 interface ClaimHeroProps {
   onCreateVaultClick: () => void;
@@ -19,6 +20,9 @@ export function ClaimHero({
     <section className="py-12 md:py-20">
       <div className="container px-4">
         <div className="max-w-4xl mx-auto text-center">
+          {/* AI Badge */}
+          <ShimmerBadge text="AI-Powered Protection" className="mb-6" />
+          
           {/* Icon */}
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
             <Shield className="w-8 h-8 text-primary" />

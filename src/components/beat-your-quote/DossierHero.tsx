@@ -2,9 +2,12 @@ import { Shield, ChevronDown, HelpCircle } from 'lucide-react';
 import { StampBadge } from './StampBadge';
 import { QuoteUploadDropzone } from './QuoteUploadDropzone';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ShimmerBadge } from '@/components/ui/ShimmerBadge';
+
 interface DossierHeroProps {
   onUploadSuccess?: (fileId: string, filePath: string) => void;
 }
+
 export function DossierHero({
   onUploadSuccess
 }: DossierHeroProps) {
@@ -20,6 +23,14 @@ export function DossierHero({
 
       {/* Content - z-10 */}
       <div className="relative z-10 container px-4 text-center max-w-4xl pt-24 pb-16">
+        {/* AI Badge with Dossier Theme */}
+        <div className="mb-4 animate-fade-in">
+          <ShimmerBadge 
+            text="AI Quote Intelligence" 
+            variant="dossier"
+          />
+        </div>
+        
         {/* Classified Stamp */}
         <div className="mb-8 animate-fade-in">
           <StampBadge variant="red">Classified</StampBadge>
