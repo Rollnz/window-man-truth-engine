@@ -7,7 +7,7 @@ import { QuoteAnalysisResults } from '@/components/quote-scanner/QuoteAnalysisRe
 import { NegotiationTools } from '@/components/quote-scanner/NegotiationTools';
 import { QuoteQA } from '@/components/quote-scanner/QuoteQA';
 import { GenerateProposalButton } from '@/components/quote-scanner/GenerateProposalButton';
-import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
+import { ScannerLeadCaptureModal } from '@/components/quote-scanner/ScannerLeadCaptureModal';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
 import { useQuoteScanner } from '@/hooks/useQuoteScanner';
 import type { SourceTool } from '@/types/sourceTool';
@@ -49,11 +49,23 @@ export default function QuoteScanner() {
 
   const { sessionData, updateField } = useSessionData();
   const { leadId } = useLeadIdentity();
-  const [showLeadCapture, setShowLeadCapture] = useState(false);
+  const [showScannerModal, setShowScannerModal] = useState(false);
   const [hasUnlockedResults, setHasUnlockedResults] = useState(!!sessionData.email);
   
   // Ref for scroll-to-upload functionality
   const uploadRef = useRef<HTMLDivElement>(null);
+
+  // Called when user clicks upload button - opens modal first if needed
+  const handleUploadClick = () => {
+    if (sessionData.email) {
+      // User already captured - go straight to file picker
+      const fileInput = uploadRef.current?.querySelector('input[type="file"]') as HTMLInputElement;
+      fileInput?.click();
+    } else {
+      // Open lead capture modal first
+      setShowScannerModal(true);
+    }
+  };
 
   const handleFileSelect = async (file: File) => {
     const startTime = Date.now();
@@ -66,18 +78,14 @@ export default function QuoteScanner() {
       file_size: file.size,
       upload_duration: duration * 1000, // convert to milliseconds
     });
-
-    // Show lead capture after analysis if user hasn't provided email
-    if (!sessionData.email) {
-      setShowLeadCapture(true);
-    }
   };
 
-  const handleLeadCaptureSuccess = (leadId: string) => {
+  // Called when modal analysis completes
+  const handleAnalysisComplete = () => {
     setHasUnlockedResults(true);
-    setShowLeadCapture(false);
-    updateField('leadId', leadId);
+    setShowScannerModal(false);
   };
+
 
   const isUnlocked = hasUnlockedResults || !!sessionData.email;
   const hasImage = !!imageBase64;
@@ -124,6 +132,7 @@ export default function QuoteScanner() {
                   <QuoteUploadZone
                     ref={uploadRef}
                     onFileSelect={handleFileSelect}
+                    onUploadClick={handleUploadClick}
                     isAnalyzing={isAnalyzing}
                     hasResult={!!analysisResult}
                     imagePreview={imageBase64}
@@ -177,7 +186,7 @@ export default function QuoteScanner() {
                   {/* Unlock button when locked with results */}
                   {!isUnlocked && hasImage && analysisResult && (
                     <button
-                      onClick={() => setShowLeadCapture(true)}
+                      onClick={() => setShowScannerModal(true)}
                       className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                     >
                       Unlock Full Report
@@ -214,12 +223,18 @@ export default function QuoteScanner() {
         />
       </main>
 
-      <LeadCaptureModal
-        isOpen={showLeadCapture}
-        onClose={() => setShowLeadCapture(false)}
-        onSuccess={handleLeadCaptureSuccess}
-        sourceTool={'quote-scanner' satisfies SourceTool}
-        sessionData={sessionData}
+      <ScannerLeadCaptureModal
+        isOpen={showScannerModal}
+        onClose={() => setShowScannerModal(false)}
+        onAnalysisComplete={handleAnalysisComplete}
+        onFileSelect={handleFileSelect}
+        isAnalyzing={isAnalyzing}
+        sessionData={{
+          firstName: sessionData.firstName,
+          lastName: sessionData.lastName,
+          email: sessionData.email,
+          phone: sessionData.phone,
+        }}
       />
     </div>
   );
