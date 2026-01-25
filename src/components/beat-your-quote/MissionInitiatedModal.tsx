@@ -15,6 +15,7 @@ import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useFormAbandonment } from '@/hooks/useFormAbandonment';
 import { useScore } from '@/contexts/ScoreContext';
+import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { getAttributionData } from '@/lib/attribution';
 import { trackFormSubmit, trackLeadSubmissionSuccess, generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
@@ -113,6 +114,9 @@ export function MissionInitiatedModal({
         attribution: getAttributionData(),
         sessionId,
         quoteFileId, // Link the uploaded file
+        sessionData: {
+          clientId: getOrCreateAnonId(),
+        },
         aiContext: {
           source_form: 'beat-your-quote-upload',
         },
