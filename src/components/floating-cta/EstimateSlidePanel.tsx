@@ -111,7 +111,7 @@ export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
     }
   }, [step]);
 
-  // Track panel open with structured dataLayer event
+  // Track slide-over OPEN (navigation event, NOT lead intent)
   useEffect(() => {
     trackEvent('floating_cta_opened', {
       engagement_score: engagementScore,
@@ -121,7 +121,23 @@ export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
     // Resolve external_id: hook leadId > lead anchor > null
     const externalId = leadId || getLeadAnchor() || null;
     
-    // Structured GTM dataLayer event for form open with identity enrichment
+    // Structured GTM dataLayer event for SLIDE-OVER open (decoupled from form intent)
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'slide_over_opened',
+      event_id: generateEventId(),
+      client_id: getOrCreateClientId(),
+      session_id: getOrCreateSessionId(),
+      external_id: externalId,
+      source_tool: 'floating_slide_over',
+      source_system: 'web',
+      trigger_source: 'floating_cta',
+    });
+  }, []);
+
+  // Helper to fire lead_form_opened ONLY on explicit form/call intent
+  const fireLeadFormOpened = (intentType: 'form_start' | 'call_intent') => {
+    const externalId = leadId || getLeadAnchor() || null;
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
       event: 'lead_form_opened',
@@ -132,11 +148,14 @@ export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
       source_tool: 'floating_slide_over',
       source_system: 'web',
       form_name: 'floating_slide_over',
-      trigger_source: 'floating_cta',
+      trigger_source: intentType,
     });
-  }, []);
+  };
 
   const handleCallClick = () => {
+    // Fire lead_form_opened on call intent (high-value action)
+    fireLeadFormOpened('call_intent');
+    
     // Track the call initiation event
     trackEvent('call_initiated', {
       source: 'floating_estimate_panel',
@@ -368,7 +387,10 @@ export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
                   Fill out a quick form and we'll get back to you within 24 hours.
                 </p>
                 <Button 
-                  onClick={() => setStep('project')}
+                  onClick={() => {
+                    fireLeadFormOpened('form_start');
+                    setStep('project');
+                  }}
                   variant="outline"
                   className="w-full"
                   size="lg"
