@@ -679,7 +679,9 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
           disabled={isSubmitting || !isFormValid}
           className={cn(
             'w-full sm:w-auto px-12 py-6 text-lg font-semibold transition-all duration-200',
-            'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl',
+            'bg-primary hover:bg-primary/90 text-primary-foreground',
+            'shadow-lg hover:shadow-xl hover:-translate-y-0.5',
+            '[text-shadow:_0_1px_2px_rgb(0_0_0_/_20%)]',
             'disabled:opacity-50 disabled:cursor-not-allowed'
           )}
         >
@@ -689,7 +691,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
               Submitting...
             </>
           ) : (
-            'Request My Strategy Call'
+            'Call Window Man'
           )}
         </Button>
         
