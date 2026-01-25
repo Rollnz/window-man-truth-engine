@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ROUTE_REDIRECTS } from "@/config/navigation";
+import { ScoreProvider } from "@/contexts/ScoreContext";
 import ScrollToTop from "./components/ScrollToTop";
 import { usePageTimer } from "@/hooks/usePageTimer";
 import { WelcomeToast } from "@/components/onboarding/WelcomeToast";
@@ -169,16 +170,18 @@ function AppContent() {
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <ScrollToTop />
-          <Suspense fallback={<PageLoader />}>
-            <AppContent />
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
+      <ScoreProvider>
+        <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <ScrollToTop />
+            <Suspense fallback={<PageLoader />}>
+              <AppContent />
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ScoreProvider>
     </QueryClientProvider>
   </HelmetProvider>
 );
