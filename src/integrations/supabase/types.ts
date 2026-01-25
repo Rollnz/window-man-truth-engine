@@ -1719,6 +1719,33 @@ export type Database = {
         | "failed"
         | "canceled"
       platform_type: "meta" | "google" | "other"
+      source_tool:
+        | "expert-system"
+        | "comparison-tool"
+        | "cost-calculator"
+        | "true-cost-calculator"
+        | "claim-survival-kit"
+        | "fast-win"
+        | "intel-library"
+        | "risk-diagnostic"
+        | "reality-check"
+        | "evidence-locker"
+        | "kitchen-table-guide"
+        | "sales-tactics-guide"
+        | "spec-checklist-guide"
+        | "insurance-savings-guide"
+        | "quote-builder"
+        | "quote-scanner"
+        | "beat-your-quote"
+        | "fair-price-quiz"
+        | "vulnerability-test"
+        | "window-cost-truth"
+        | "window-risk-and-code"
+        | "window-sales-truth"
+        | "window-verification-system"
+        | "floating-estimate-form"
+        | "roleplay"
+        | "consultation"
       webhook_correlation_status:
         | "unprocessed"
         | "matched"
@@ -1900,6 +1927,34 @@ export const Constants = {
         "canceled",
       ],
       platform_type: ["meta", "google", "other"],
+      source_tool: [
+        "expert-system",
+        "comparison-tool",
+        "cost-calculator",
+        "true-cost-calculator",
+        "claim-survival-kit",
+        "fast-win",
+        "intel-library",
+        "risk-diagnostic",
+        "reality-check",
+        "evidence-locker",
+        "kitchen-table-guide",
+        "sales-tactics-guide",
+        "spec-checklist-guide",
+        "insurance-savings-guide",
+        "quote-builder",
+        "quote-scanner",
+        "beat-your-quote",
+        "fair-price-quiz",
+        "vulnerability-test",
+        "window-cost-truth",
+        "window-risk-and-code",
+        "window-sales-truth",
+        "window-verification-system",
+        "floating-estimate-form",
+        "roleplay",
+        "consultation",
+      ],
       webhook_correlation_status: [
         "unprocessed",
         "matched",

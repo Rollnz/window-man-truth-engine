@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { X, Mail, Phone, Calendar, DollarSign, Zap, Copy, Check, ExternalLink } from 'lucide-react';
+import { Mail, Phone, Calendar, DollarSign, Zap, Copy, Check, ExternalLink } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getLeadRoute } from '@/lib/leadRouting';
@@ -35,7 +34,10 @@ interface LeadDetailPanelProps {
   }) => Promise<boolean>;
 }
 
-export function LeadDetailPanel({ lead, isOpen, onClose, onUpdate }: LeadDetailPanelProps) {
+export const LeadDetailPanel = forwardRef<HTMLDivElement, LeadDetailPanelProps>(function LeadDetailPanel(
+  { lead, isOpen, onClose, onUpdate },
+  ref
+) {
   const navigate = useNavigate();
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
@@ -269,4 +271,5 @@ export function LeadDetailPanel({ lead, isOpen, onClose, onUpdate }: LeadDetailP
       </SheetContent>
     </Sheet>
   );
-}
+});
+LeadDetailPanel.displayName = 'LeadDetailPanel';
