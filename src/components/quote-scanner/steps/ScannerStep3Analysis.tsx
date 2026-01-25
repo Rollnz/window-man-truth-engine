@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { trackQuoteUploadSuccess } from '@/lib/gtm';
-import { useSessionData } from '@/hooks/useSessionData';
 
 interface AnalysisStep {
   id: string;
@@ -17,47 +15,41 @@ const analysisSteps: AnalysisStep[] = [
   { id: 'generate', label: 'Generating your gradecard...', duration: 1250 },
 ];
 
+const TOTAL_DURATION = analysisSteps.reduce((sum, step) => sum + step.duration, 0); // 5000ms
+
 interface ScannerStep3AnalysisProps {
-  /** Called when all steps complete (after 5 seconds) */
+  /** Called when 5-second theatrical animation completes */
   onComplete: () => void;
-  /** Whether actual analysis is still loading */
-  isAnalyzing?: boolean;
-  /** Scan attempt ID for tracking */
-  scanAttemptId?: string;
 }
 
 /**
- * Step 3: 5-Second Theatrical Loading State
- * Shows animated progress with value-driven microcopy.
- * Fires quote_upload_success tracking event when complete.
+ * Step 3: 5-Second Theatrical Loading State (PRESENTATION ONLY)
+ * 
+ * This component is purely visual - it runs a 5-second animation sequence
+ * and calls onComplete when finished. It does NOT handle:
+ * - GTM tracking (handled by useQuoteScanner hook)
+ * - Analysis state (handled by parent modal)
+ * - Modal closing (handled by parent's dual-condition logic)
  */
-export function ScannerStep3Analysis({
-  onComplete,
-  isAnalyzing = false,
-  scanAttemptId,
-}: ScannerStep3AnalysisProps) {
-  const { sessionData } = useSessionData();
+export function ScannerStep3Analysis({ onComplete }: ScannerStep3AnalysisProps) {
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [progress, setProgress] = useState(0);
-  const hasFiredTracking = useRef(false);
+  const hasCalledComplete = useRef(false);
 
   useEffect(() => {
-    let stepIndex = 0;
-    let progressInterval: NodeJS.Timeout;
-
-    // Progress bar animation
-    progressInterval = setInterval(() => {
+    // Progress bar animation (0-100 over 5 seconds)
+    const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(progressInterval);
           return 100;
         }
-        return prev + 2;
+        return prev + 2; // 50 steps * 100ms = 5000ms
       });
     }, 100);
 
-    // Step progression
+    // Step progression - each step completes after its duration
     const stepTimeouts: NodeJS.Timeout[] = [];
     let cumulativeDelay = 0;
 
@@ -72,42 +64,21 @@ export function ScannerStep3Analysis({
       stepTimeouts.push(timeout);
     });
 
-    // Note: onComplete is handled by the second useEffect after tracking fires
-    // This prevents duplicate calls
+    // Call onComplete exactly once after all steps finish
+    const completeTimeout = setTimeout(() => {
+      if (!hasCalledComplete.current) {
+        hasCalledComplete.current = true;
+        console.log('[ScannerStep3] Theatrics complete, calling onComplete');
+        onComplete();
+      }
+    }, TOTAL_DURATION + 100); // Small buffer after last step
 
     return () => {
       clearInterval(progressInterval);
       stepTimeouts.forEach(clearTimeout);
+      clearTimeout(completeTimeout);
     };
-  }, []);
-
-  // Fire quote_upload_success and complete when analysis is done
-  useEffect(() => {
-    if (completedSteps.length === analysisSteps.length && !isAnalyzing && !hasFiredTracking.current) {
-      hasFiredTracking.current = true;
-      
-      // Fire quote_upload_success tracking event ($50 value)
-      const fireTrackingAndComplete = async () => {
-        try {
-          await trackQuoteUploadSuccess({
-            scanAttemptId: scanAttemptId || `scan-${Date.now()}`,
-            email: sessionData.email || undefined,
-            phone: sessionData.phone || undefined,
-            leadId: sessionData.leadId || undefined,
-            sourceTool: 'quote-scanner',
-          });
-          console.log('[ScannerStep3] quote_upload_success fired');
-        } catch (e) {
-          console.error('[ScannerStep3] Tracking error:', e);
-        }
-        
-        // Complete after tracking
-        setTimeout(onComplete, 200);
-      };
-      
-      fireTrackingAndComplete();
-    }
-  }, [completedSteps.length, isAnalyzing, onComplete, scanAttemptId, sessionData]);
+  }, [onComplete]);
 
   return (
     <div className="py-6 space-y-6">

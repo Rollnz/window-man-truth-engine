@@ -16,7 +16,15 @@ import { normalizeNameFields } from '@/components/ui/NameInputPair';
 import { toast } from 'sonner';
 import type { SourceTool } from '@/types/sourceTool';
 
-type ModalStep = 'contact' | 'project' | 'analysis';
+/**
+ * State Machine for Scanner Modal
+ * - contact: Step 1 - collecting name/email
+ * - project: Step 2 - collecting phone/project details + file upload
+ * - analyzing: Step 3 - theatrics running, waiting for both animation AND AI to complete
+ * - complete: Ready to close (both theatrics done AND isAnalyzing false)
+ * - error: Something went wrong
+ */
+type ModalStatus = 'contact' | 'project' | 'analyzing' | 'complete' | 'error';
 
 interface ScannerLeadCaptureModalProps {
   isOpen: boolean;
@@ -42,6 +50,9 @@ interface ScannerLeadCaptureModalProps {
  * Step 1: Contact (first name, last name, email)
  * Step 2: Project details (phone, window count, quote price, beat-my-quote checkbox) + upload trigger
  * Step 3: 5-second theatrical analysis loading
+ * 
+ * Uses State Machine pattern - single `status` instead of multiple booleans
+ * Modal only closes when BOTH theatrics complete AND isAnalyzing is false
  */
 export function ScannerLeadCaptureModal({
   isOpen,
@@ -51,9 +62,11 @@ export function ScannerLeadCaptureModal({
   isAnalyzing,
   sessionData: initialSessionData,
 }: ScannerLeadCaptureModalProps) {
-  const [step, setStep] = useState<ModalStep>('contact');
+  // State Machine: single source of truth for modal status
+  const [status, setStatus] = useState<ModalStatus>('contact');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scanAttemptId, setScanAttemptId] = useState<string | null>(null);
+  const [theatricsComplete, setTheatricsComplete] = useState(false);
   const [contactData, setContactData] = useState<{
     firstName: string;
     lastName: string;
@@ -92,22 +105,33 @@ export function ScannerLeadCaptureModal({
         lastName: initialSessionData.lastName!,
         email: initialSessionData.email!,
       });
-      setStep('project');
+      setStatus('project');
     } else {
       // Always start fresh at Step 1 if contact is incomplete
-      setStep('contact');
+      setStatus('contact');
       setContactData(null);
     }
   }, [isOpen, initialSessionData]);
+
+  // DUAL-CONDITION CLOSE: Only complete when BOTH theatrics done AND analysis finished
+  useEffect(() => {
+    if (status === 'analyzing' && theatricsComplete && !isAnalyzing) {
+      console.log('[ScannerModal] Both conditions met - completing modal');
+      setStatus('complete');
+      onAnalysisComplete();
+      onClose();
+    }
+  }, [status, theatricsComplete, isAnalyzing, onAnalysisComplete, onClose]);
 
   // Complete state reset when modal closes
   const handleOpenChange = useCallback((open: boolean) => {
     if (!open) {
       // Immediate reset for clean state on next open
-      setStep('contact');
+      setStatus('contact');
       setContactData(null);
       setIsSubmitting(false);
       setScanAttemptId(null);
+      setTheatricsComplete(false);
       onClose();
     }
   }, [onClose]);
@@ -177,7 +201,7 @@ export function ScannerLeadCaptureModal({
       }
 
       setContactData({ firstName, lastName, email: data.email });
-      setStep('project');
+      setStatus('project');
 
       // Track modal progression
       trackEvent('scanner_step1_complete', {
@@ -251,8 +275,9 @@ export function ScannerLeadCaptureModal({
       const newScanAttemptId = crypto.randomUUID();
       setScanAttemptId(newScanAttemptId);
 
-      // Move to analysis step
-      setStep('analysis');
+      // Move to analysis step - theatrics will run, then we wait for both conditions
+      setStatus('analyzing');
+      setTheatricsComplete(false);
 
       // Trigger actual file analysis
       await onFileSelect(data.file);
@@ -260,22 +285,25 @@ export function ScannerLeadCaptureModal({
     } catch (error) {
       console.error('[ScannerModal] Project submit error:', error);
       toast.error('Upload failed. Please try again.');
-      setStep('project');
+      setStatus('error');
+      // Allow retry by going back to project step
+      setTimeout(() => setStatus('project'), 100);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Step 3: Analysis complete
-  const handleAnalysisComplete = useCallback(() => {
-    onAnalysisComplete();
-    onClose();
-  }, [onAnalysisComplete, onClose]);
+  // Step 3: Theatrics finished (called by presentation-only ScannerStep3Analysis)
+  const handleTheatricsComplete = useCallback(() => {
+    console.log('[ScannerModal] Theatrics animation complete');
+    setTheatricsComplete(true);
+    // The useEffect watching both conditions will handle the actual close
+  }, []);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <TrustModal className="sm:max-w-md">
-        {step === 'contact' && (
+        {status === 'contact' && (
           <ScannerStep1Contact
             initialValues={{
               firstName: initialSessionData?.firstName || sessionData.firstName,
@@ -287,18 +315,16 @@ export function ScannerLeadCaptureModal({
           />
         )}
 
-        {step === 'project' && (
+        {status === 'project' && (
           <ScannerStep2Project
             onSubmit={handleProjectSubmit}
             isLoading={isSubmitting}
           />
         )}
 
-        {step === 'analysis' && (
+        {status === 'analyzing' && (
           <ScannerStep3Analysis
-            onComplete={handleAnalysisComplete}
-            isAnalyzing={isAnalyzing}
-            scanAttemptId={scanAttemptId || undefined}
+            onComplete={handleTheatricsComplete}
           />
         )}
       </TrustModal>
