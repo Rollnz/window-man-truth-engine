@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ConsultationFormProps {
@@ -679,11 +679,11 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
           disabled={isSubmitting || !isFormValid}
           className={cn(
             'w-full sm:w-auto px-12 py-6 text-lg font-semibold transition-all duration-200',
-            'bg-primary hover:bg-primary/90 text-primary-foreground',
+            'bg-primary hover:bg-primary/90',
             'shadow-lg hover:shadow-xl hover:-translate-y-0.5',
-            '[text-shadow:_0_1px_2px_rgb(0_0_0_/_20%)]',
             'disabled:opacity-50 disabled:cursor-not-allowed'
           )}
+          style={{ color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
         >
           {isSubmitting ? (
             <>
@@ -691,7 +691,10 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
               Submitting...
             </>
           ) : (
-            'Call Window Man'
+            <>
+              <Phone className="mr-2 h-5 w-5" />
+              Call Window Man
+            </>
           )}
         </Button>
         
