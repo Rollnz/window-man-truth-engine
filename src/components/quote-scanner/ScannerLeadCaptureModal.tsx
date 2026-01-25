@@ -63,30 +63,38 @@ export function ScannerLeadCaptureModal({
   const { setLeadId } = useLeadIdentity();
   const { awardScore } = useScore();
 
-  // Auto-skip to Step 2 if user already has contact info
+  // Auto-skip to Step 2 ONLY if ALL contact fields are present
   useEffect(() => {
-    if (isOpen && initialSessionData?.email) {
-      // Pre-fill contact data from session
+    if (!isOpen) return;
+    
+    const hasCompleteContact = 
+      initialSessionData?.firstName?.trim() && 
+      initialSessionData?.lastName?.trim() && 
+      initialSessionData?.email?.trim();
+    
+    if (hasCompleteContact) {
+      // Pre-fill contact data and skip to Step 2
       setContactData({
-        firstName: initialSessionData.firstName || '',
-        lastName: initialSessionData.lastName || '',
-        email: initialSessionData.email,
+        firstName: initialSessionData.firstName!,
+        lastName: initialSessionData.lastName!,
+        email: initialSessionData.email!,
       });
-      // Skip directly to project details step
       setStep('project');
+    } else {
+      // Always start fresh at Step 1 if contact is incomplete
+      setStep('contact');
+      setContactData(null);
     }
   }, [isOpen, initialSessionData]);
 
-  // Reset state when modal opens
+  // Complete state reset when modal closes
   const handleOpenChange = useCallback((open: boolean) => {
     if (!open) {
+      // Immediate reset for clean state on next open
+      setStep('contact');
+      setContactData(null);
+      setIsSubmitting(false);
       onClose();
-      // Reset after animation
-      setTimeout(() => {
-        setStep('contact');
-        setContactData(null);
-        setIsSubmitting(false);
-      }, 300);
     }
   }, [onClose]);
 
@@ -187,22 +195,32 @@ export function ScannerLeadCaptureModal({
         updateField('windowCount', parseInt(data.windowCount, 10));
       }
 
-      // Update lead with phone if we have a leadId
+      // Update lead with phone via save-lead (not crm-leads)
+      // This ensures we hit the correct leads table primary key
       const leadId = sessionData.leadId;
-      if (leadId && data.phone) {
+      if (contactData && data.phone) {
         const phoneE164 = normalizeToE164(data.phone);
+        const clientId = getOrCreateClientId();
+        const sessionId = getOrCreateSessionId();
         
-        // Update lead via CRM function
-        await supabase.functions.invoke('crm-leads', {
+        // Use save-lead to update phone - it handles the Golden Thread correctly
+        await supabase.functions.invoke('save-lead', {
           body: {
-            leadId,
-            updates: {
-              phone: data.phone,
+            email: contactData.email,
+            firstName: contactData.firstName,
+            lastName: contactData.lastName,
+            phone: data.phone,
+            sourceTool: 'quote-scanner' satisfies SourceTool,
+            leadId, // Pass existing leadId for update
+            sessionData: {
+              clientId,
+              sessionId,
+              windowCount: data.windowCount ? parseInt(data.windowCount, 10) : undefined,
             },
           },
         });
 
-        // Track with phone hash
+        // Track project details with phone hash
         const phoneHash = phoneE164 ? await hashPhone(phoneE164) : undefined;
         trackEvent('scanner_project_details', {
           source_tool: 'quote-scanner',
