@@ -23,7 +23,7 @@ export function SuccessStep({ formData, onClose, onCallNow }: SuccessStepProps) 
       {/* Success Message */}
       <div className="text-center space-y-2">
         <h3 className="text-xl font-semibold text-foreground">
-          Thank You, {formData.name.split(' ')[0]}!
+          Thank You, {formData.firstName || 'Friend'}!
         </h3>
         <p className="text-muted-foreground">
           Your estimate request has been submitted successfully. 
