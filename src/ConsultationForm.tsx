@@ -151,7 +151,8 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
   }, []);
 
   // Validate all fields
-  const validateAll = useCallback((): boolean => {
+ // 1. UPDATE: Change return type to FormErrors and return the object directly
+  const validateAll = useCallback((): FormErrors => {
     const requiredFields: (keyof ConsultationFormData)[] = [
       'firstName', 'lastName', 'email', 'phone',
       'propertyType', 'cityZip', 'windowCount',
@@ -159,50 +160,36 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
     ];
 
     const newErrors: FormErrors = {};
-    let isValid = true;
 
     requiredFields.forEach(field => {
       const error = validateField(field, formData[field]);
       if (error) {
         newErrors[field as keyof FormErrors] = error;
-        isValid = false;
       }
     });
 
     setErrors(newErrors);
     setTouched(requiredFields.reduce((acc, field) => ({ ...acc, [field]: true }), {}));
 
-    return isValid;
+    return newErrors; // Return the errors directly!
   }, [formData, validateField]);
 
-  // Handle form submission
+  // 2. UPDATE: Use the returned errors immediately instead of waiting for state
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
 
-    if (!validateAll()) {
-      // Focus first error field
-      const firstErrorField = Object.keys(errors)[0];
+    const validationErrors = validateAll(); // Capture the returned errors
+    
+    if (Object.keys(validationErrors).length > 0) {
+      // Focus first error field using the local variable, not stale state
+      const firstErrorField = Object.keys(validationErrors)[0];
       if (firstErrorField && formRef.current) {
         const element = formRef.current.querySelector(`[name="${firstErrorField}"]`);
         (element as HTMLElement)?.focus();
       }
       return;
     }
-
-    setIsSubmitting(true);
-
-    try {
-      await onSubmit(formData as ConsultationFormData);
-    } catch (error) {
-      setSubmitError(
-        error instanceof Error 
-          ? error.message 
-          : 'Something went wrong. Please try again.'
-      );
-      setIsSubmitting(false);
-    }
-  };
 
   // Format phone number as user types
   const formatPhoneNumber = (value: string): string => {
