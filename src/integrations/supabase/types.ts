@@ -682,8 +682,11 @@ export type Database = {
           created_at: string
           email: string
           has_password: boolean
+          high_intent_reached_at: string | null
           id: string
           name: string | null
+          qualified_reached_at: string | null
+          total_score: number
           updated_at: string
           user_id: string
         }
@@ -691,8 +694,11 @@ export type Database = {
           created_at?: string
           email: string
           has_password?: boolean
+          high_intent_reached_at?: string | null
           id?: string
           name?: string | null
+          qualified_reached_at?: string | null
+          total_score?: number
           updated_at?: string
           user_id: string
         }
@@ -700,8 +706,11 @@ export type Database = {
           created_at?: string
           email?: string
           has_password?: boolean
+          high_intent_reached_at?: string | null
           id?: string
           name?: string | null
+          qualified_reached_at?: string | null
+          total_score?: number
           updated_at?: string
           user_id?: string
         }
@@ -1346,6 +1355,42 @@ export type Database = {
           },
         ]
       }
+      wte_score_events: {
+        Row: {
+          anon_id: string | null
+          created_at: string
+          event_id: string
+          event_type: string
+          id: string
+          points: number
+          source_entity_id: string
+          source_entity_type: string
+          user_id: string | null
+        }
+        Insert: {
+          anon_id?: string | null
+          created_at?: string
+          event_id: string
+          event_type: string
+          id?: string
+          points: number
+          source_entity_id: string
+          source_entity_type: string
+          user_id?: string | null
+        }
+        Update: {
+          anon_id?: string | null
+          created_at?: string
+          event_id?: string
+          event_type?: string
+          id?: string
+          points?: number
+          source_entity_id?: string
+          source_entity_type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       v_attribution_first_last_touch: {
@@ -1585,6 +1630,7 @@ export type Database = {
         Returns: number
       }
       get_lead_quality: { Args: { score: number }; Returns: string }
+      get_score_points: { Args: { p_event_type: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1610,6 +1656,7 @@ export type Database = {
         Args: { p_call_request_id: string }
         Returns: Json
       }
+      score_to_level: { Args: { score: number }; Returns: string }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       update_lead_score_from_session: {

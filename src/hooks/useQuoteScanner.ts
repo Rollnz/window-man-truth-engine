@@ -7,6 +7,7 @@ import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
 import { logScannerCompleted } from '@/lib/highValueSignals';
 import { trackScannerUpload } from '@/lib/tracking/scannerUpload';
+import { useCanonicalScore } from '@/hooks/useCanonicalScore';
 export interface QuoteAnalysisResult {
   overallScore: number;
   safetyScore: number;
@@ -111,6 +112,7 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
   const { sessionData, sessionId, updateField } = useSessionData();
   const { leadId } = useLeadIdentity();
   const { trackToolComplete } = useTrackToolCompletion();
+  const { awardScore } = useCanonicalScore();
   
   // Analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -212,6 +214,16 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
         leadId: leadId || undefined,
       });
       
+      // TRUTH ENGINE v2: Award canonical score for quote upload
+      // Uses scanAttemptId as unique entity ID for idempotency
+      if (scanAttemptId) {
+        await awardScore({
+          eventType: 'QUOTE_UPLOADED',
+          sourceEntityType: 'quote',
+          sourceEntityId: scanAttemptId,
+        });
+      }
+      
     } catch (err) {
       console.error('Quote analysis error:', err);
       
@@ -226,7 +238,7 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [sessionData.windowCount, sessionId, leadId, updateField, toast]);
+  }, [sessionData.windowCount, sessionId, leadId, updateField, toast, awardScore]);
 
   const generateEmailDraft = useCallback(async () => {
     if (!analysisResult) return;
