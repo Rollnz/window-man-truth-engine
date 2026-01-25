@@ -31,6 +31,7 @@ export const SOURCE_TOOLS = [
   'window-sales-truth',
   'window-verification-system',
   'floating-estimate-form',
+  'consultation',
 ] as const;
 
 export type SourceTool = typeof SOURCE_TOOLS[number];
