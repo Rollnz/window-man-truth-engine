@@ -72,19 +72,14 @@ export function ScannerStep3Analysis({
       stepTimeouts.push(timeout);
     });
 
-    // Final completion after all steps
-    const completeTimeout = setTimeout(() => {
-      if (!isAnalyzing) {
-        onComplete();
-      }
-    }, cumulativeDelay + 200);
+    // Note: onComplete is handled by the second useEffect after tracking fires
+    // This prevents duplicate calls
 
     return () => {
       clearInterval(progressInterval);
       stepTimeouts.forEach(clearTimeout);
-      clearTimeout(completeTimeout);
     };
-  }, [onComplete, isAnalyzing]);
+  }, []);
 
   // Fire quote_upload_success and complete when analysis is done
   useEffect(() => {
