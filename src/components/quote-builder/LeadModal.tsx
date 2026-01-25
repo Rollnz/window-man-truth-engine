@@ -88,6 +88,8 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
         firstName,
         lastName,
         sourceTool: 'quote-builder',
+        eventId: `lead_captured:${leadId}`,
+        value: 100,
       });
     }
   };

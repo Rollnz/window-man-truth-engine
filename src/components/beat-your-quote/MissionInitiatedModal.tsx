@@ -184,6 +184,8 @@ export function MissionInitiatedModal({
         state: sessionData?.state || undefined,
         zipCode: sessionData?.zipCode || undefined,
         sourceTool: 'beat-your-quote',
+        eventId: `lead_captured:${effectiveLeadId}`,
+        value: 100,
       });
 
       toast({

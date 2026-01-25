@@ -212,6 +212,8 @@ export function ConsultationBookingModal({
           state: sessionData.state || undefined,
           zipCode: sessionData.zipCode || undefined,
           sourceTool,
+          eventId: `lead_captured:${data.leadId}`,
+          value: 100,
         });
 
         // Track Enhanced Consultation Booking with async PII hashing (value: 75 USD)

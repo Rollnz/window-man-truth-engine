@@ -58,7 +58,7 @@ describe('trackLeadSubmissionSuccess', () => {
     expect(mockDataLayer.length).toBeGreaterThan(0);
   });
 
-  it('should push event with correct schema structure', async () => {
+  it('should push event with correct schema structure (default value)', async () => {
     await trackLeadSubmissionSuccess({
       leadId: 'test-lead-456',
       email: 'user@test.com',
@@ -71,7 +71,7 @@ describe('trackLeadSubmissionSuccess', () => {
     const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
     expect(event).toBeDefined();
     
-    // Verify required fields
+    // Verify required fields - default value is 15
     expect(event.event).toBe('lead_submission_success');
     expect(event.event_id).toBeDefined();
     expect(event.value).toBe(15);
@@ -88,6 +88,34 @@ describe('trackLeadSubmissionSuccess', () => {
     // Verify Meta CAPI aliases exist
     expect(event.user_data.em).toBeDefined();
     expect(event.user_data.ph).toBeDefined();
+  });
+
+  it('should accept value override for value-based bidding', async () => {
+    await trackLeadSubmissionSuccess({
+      leadId: 'lead-value-override',
+      email: 'value@test.com',
+      sourceTool: 'quote-builder',
+      value: 100,
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    expect(event).toBeDefined();
+    expect(event.value).toBe(100);
+    expect(event.currency).toBe('USD');
+  });
+
+  it('should accept deterministic eventId for deduplication parity', async () => {
+    const deterministicId = 'lead_captured:test-lead-456';
+    await trackLeadSubmissionSuccess({
+      leadId: 'test-lead-456',
+      email: 'eventid@test.com',
+      sourceTool: 'quote-builder',
+      eventId: deterministicId,
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    expect(event).toBeDefined();
+    expect(event.event_id).toBe(deterministicId);
   });
 
   it('should NOT include hasPhone in the function signature', async () => {
