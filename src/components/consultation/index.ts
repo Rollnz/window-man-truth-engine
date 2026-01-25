@@ -2,6 +2,7 @@
 export { ConsultationForm } from './ConsultationForm';
 export { SubmissionConfirmation } from './SubmissionConfirmation';
 export { ConsultationSchema } from './ConsultationSchema';
+export { CallWindowManButton } from './CallWindowManButton';
 
 // Re-export types
 export type {
