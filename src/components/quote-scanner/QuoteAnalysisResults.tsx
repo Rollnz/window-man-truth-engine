@@ -89,9 +89,9 @@ export function QuoteAnalysisResults({ result, isLocked, hasImage }: QuoteAnalys
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-        <ShieldCheck className="w-4 h-4" />
-        <span>{result ? 'AI Gradecard' : 'After: Your AI Gradecard'}</span>
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wider">
+        <ShieldCheck className="w-4 h-4 text-primary" />
+        <span className="font-bold text-primary">After: Your AI Quote Gradecard</span>
       </div>
 
       {/* Results Card */}
