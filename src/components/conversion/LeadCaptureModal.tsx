@@ -8,6 +8,7 @@ import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { SessionData, useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useFormAbandonment } from '@/hooks/useFormAbandonment';
+import { useCanonicalScore } from '@/hooks/useCanonicalScore';
 import { Mail, Check, Loader2 } from 'lucide-react';
 import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess, trackFormStart, trackLeadCapture, generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
@@ -51,6 +52,7 @@ export function LeadCaptureModal({
   // Golden Thread: Use hook as fallback if leadId prop not provided
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
   const { updateFields } = useSessionData();
+  const { awardScore } = useCanonicalScore();
   const effectiveLeadId = leadId || hookLeadId;
 
   // Form abandonment tracking (Phase 7)
@@ -159,6 +161,13 @@ export function LeadCaptureModal({
         // Golden Thread: Persist leadId for future interactions
         setLeadId(data.leadId);
         updateFields({ leadId: data.leadId });
+        
+        // TRUTH ENGINE v2: Award canonical score for lead capture
+        await awardScore({
+          eventType: 'LEAD_CAPTURED',
+          sourceEntityType: 'lead',
+          sourceEntityId: data.leadId,
+        });
         
         // Enriched dataLayer push for lead capture completion
         window.dataLayer = window.dataLayer || [];

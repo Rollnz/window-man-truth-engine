@@ -110,3 +110,6 @@ verify_jwt = false
 
 [functions.log-event]
 verify_jwt = false
+
+[functions.score-event]
+verify_jwt = false
