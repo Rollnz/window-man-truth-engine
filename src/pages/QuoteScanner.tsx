@@ -55,16 +55,10 @@ export default function QuoteScanner() {
   // Ref for scroll-to-upload functionality
   const uploadRef = useRef<HTMLDivElement>(null);
 
-  // Called when user clicks upload button - opens modal first if needed
+  // Called when user clicks upload button - always opens modal
   const handleUploadClick = () => {
-    if (sessionData.email) {
-      // User already captured - go straight to file picker
-      const fileInput = uploadRef.current?.querySelector('input[type="file"]') as HTMLInputElement;
-      fileInput?.click();
-    } else {
-      // Open lead capture modal first
-      setShowScannerModal(true);
-    }
+    // Always open modal - it will auto-skip Step 1 for returning users
+    setShowScannerModal(true);
   };
 
   const handleFileSelect = async (file: File) => {
