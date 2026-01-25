@@ -146,6 +146,7 @@ function AppContent() {
         {/* Admin Routes - wrapped with AdminLayout for global search */}
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminHome />} />
+          <Route path="/admin/leads" element={<Navigate to="/admin/crm" replace />} />
           <Route path="/admin/analytics" element={<Analytics />} />
           <Route path="/admin/attribution" element={<AttributionDashboard />} />
           <Route path="/admin/attribution-health" element={<AttributionHealthDashboard />} />
