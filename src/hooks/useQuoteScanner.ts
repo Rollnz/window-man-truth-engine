@@ -7,6 +7,7 @@ import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
 import { logScannerCompleted } from '@/lib/highValueSignals';
 import { trackScannerUpload } from '@/lib/tracking/scannerUpload';
+import { trackQuoteUploadSuccess } from '@/lib/gtm';
 import { useCanonicalScore } from '@/hooks/useCanonicalScore';
 export interface QuoteAnalysisResult {
   overallScore: number;
@@ -221,6 +222,17 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
           eventType: 'QUOTE_UPLOADED',
           sourceEntityType: 'quote',
           sourceEntityId: scanAttemptId,
+        });
+
+        // GTM: Fire $50 conversion signal for Meta value-based bidding
+        // Uses deterministic event_id: quote_uploaded:<scanAttemptId>
+        // Must await to ensure GTM dispatch before any navigation/unmount
+        await trackQuoteUploadSuccess({
+          scanAttemptId,
+          email: sessionData.email || undefined,
+          phone: sessionData.phone || undefined,
+          leadId: leadId || undefined,
+          sourceTool: 'quote-scanner',
         });
       }
       

@@ -13,6 +13,7 @@ import {
   trackConsultationBooked,
   trackPhoneLead,
   trackBookingConfirmed,
+  trackQuoteUploadSuccess,
   sha256,
   hashPhone,
 } from '../gtm';
@@ -885,5 +886,107 @@ describe('Codebase Compliance Documentation', () => {
      * });
      */
     expect(true).toBe(true);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// trackQuoteUploadSuccess Tests
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('trackQuoteUploadSuccess', () => {
+  it('should be an async function that returns a Promise', async () => {
+    const result = trackQuoteUploadSuccess({
+      scanAttemptId: 'test-scan-123',
+    });
+
+    expect(result).toBeInstanceOf(Promise);
+    await result;
+  });
+
+  it('should push quote_upload_success event with value: 50', async () => {
+    await trackQuoteUploadSuccess({
+      scanAttemptId: 'scan-abc-123',
+      email: 'quote@test.com',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'quote_upload_success');
+    expect(event).toBeDefined();
+    expect(event.value).toBe(50);
+    expect(event.currency).toBe('USD');
+  });
+
+  it('should generate deterministic event_id as quote_uploaded:<scanAttemptId>', async () => {
+    const scanAttemptId = 'unique-scan-456';
+    await trackQuoteUploadSuccess({
+      scanAttemptId,
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'quote_upload_success');
+    expect(event).toBeDefined();
+    expect(event.event_id).toBe(`quote_uploaded:${scanAttemptId}`);
+  });
+
+  it('should include external_id only when leadId is provided', async () => {
+    // Without leadId
+    await trackQuoteUploadSuccess({
+      scanAttemptId: 'scan-no-lead',
+    });
+    let event = mockDataLayer.find(e => e.event === 'quote_upload_success');
+    expect(event.external_id).toBeUndefined();
+
+    // Clear and test with leadId
+    mockDataLayer.length = 0;
+    await trackQuoteUploadSuccess({
+      scanAttemptId: 'scan-with-lead',
+      leadId: 'lead-xyz-789',
+    });
+    event = mockDataLayer.find(e => e.event === 'quote_upload_success');
+    expect(event.external_id).toBe('lead-xyz-789');
+  });
+
+  it('should include hashed email in user_data when email provided', async () => {
+    await trackQuoteUploadSuccess({
+      scanAttemptId: 'scan-with-email',
+      email: 'hash@test.com',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'quote_upload_success');
+    expect(event).toBeDefined();
+    expect(event.user_data).toBeDefined();
+    expect(event.user_data.em).toBeDefined();
+    expect(event.user_data.em).toMatch(/^[a-f0-9]{64}$/); // 64 hex chars SHA-256
+    expect(event.user_data.sha256_email_address).toBeDefined();
+  });
+
+  it('should NOT push lead_submission_success event', async () => {
+    await trackQuoteUploadSuccess({
+      scanAttemptId: 'scan-separate-event',
+      email: 'separate@test.com',
+    });
+
+    const leadEvent = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    expect(leadEvent).toBeUndefined();
+
+    const quoteEvent = mockDataLayer.find(e => e.event === 'quote_upload_success');
+    expect(quoteEvent).toBeDefined();
+  });
+
+  it('should default source_tool to quote-scanner', async () => {
+    await trackQuoteUploadSuccess({
+      scanAttemptId: 'scan-default-source',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'quote_upload_success');
+    expect(event.source_tool).toBe('quote-scanner');
+  });
+
+  it('should respect custom source_tool', async () => {
+    await trackQuoteUploadSuccess({
+      scanAttemptId: 'scan-custom-source',
+      sourceTool: 'custom-tool',
+    });
+
+    const event = mockDataLayer.find(e => e.event === 'quote_upload_success');
+    expect(event.source_tool).toBe('custom-tool');
   });
 });
