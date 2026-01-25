@@ -66,16 +66,20 @@ export function CallWindowManButton({
   return (
     <Button
       type="button"
-      variant={variant}
       size={size}
       onClick={handleClick}
       className={cn(
-        'transition-all duration-200',
+        'transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5',
         isRevealed && 'font-mono',
         className
       )}
+      style={{ 
+        backgroundColor: '#3E8FDA', 
+        color: '#FFFFFF',
+        textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+      }}
     >
-      <Phone className="mr-2 h-4 w-4" />
+      <Phone className="mr-2 h-5 w-5" style={{ color: '#FFFFFF' }} />
       {isRevealed ? PHONE_NUMBER_DISPLAY : 'Call Window Man'}
     </Button>
   );

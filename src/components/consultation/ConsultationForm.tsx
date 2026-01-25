@@ -23,8 +23,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle, Loader2, Phone } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CallWindowManButton } from './CallWindowManButton';
 
 interface ConsultationFormProps {
   onSubmit: (data: ConsultationFormData) => Promise<void>;
@@ -672,31 +673,38 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
       )}
 
       {/* Submit Button */}
-      <div className="flex flex-col items-center gap-4">
-        <Button
-          type="submit"
-          size="lg"
-          disabled={isSubmitting || !isFormValid}
-          className={cn(
-            'w-full sm:w-auto px-12 py-6 text-lg font-semibold transition-all duration-200',
-            'bg-primary hover:bg-primary/90',
-            'shadow-lg hover:shadow-xl hover:-translate-y-0.5',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
-          )}
-          style={{ color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            <>
-              <Phone className="mr-2 h-5 w-5" />
-              Call Window Man
-            </>
-          )}
-        </Button>
+      <div className="flex flex-col items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <Button
+            type="submit"
+            size="lg"
+            disabled={isSubmitting || !isFormValid}
+            className={cn(
+              'w-full sm:w-auto px-10 py-6 text-lg font-semibold transition-all duration-200',
+              'bg-primary hover:bg-primary/90',
+              'shadow-lg hover:shadow-xl hover:-translate-y-0.5',
+              'disabled:opacity-50 disabled:cursor-not-allowed'
+            )}
+            style={{ color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              'Book Strategy Call'
+            )}
+          </Button>
+          
+          <span className="text-muted-foreground font-medium">or</span>
+          
+          <CallWindowManButton 
+            size="lg" 
+            source="consultation_form"
+            className="w-full sm:w-auto px-10 py-6 text-lg font-semibold"
+          />
+        </div>
         
         <p className="text-sm text-muted-foreground text-center max-w-md">
           No preparation needed. Bring your quotes if you have them. 
