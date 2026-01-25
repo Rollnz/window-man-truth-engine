@@ -79,27 +79,27 @@ export default function Consultation() {
         throw new Error('Failed to create lead');
       }
 
-      // Award score for lead capture (100 points)
-      await awardScore({
-        eventType: 'LEAD_CAPTURED',
-        sourceEntityType: 'lead',
-        sourceEntityId: leadId,
-      });
+      // Best-effort telemetry: fire scoring and tracking in parallel, don't block success
+      await Promise.allSettled([
+        awardScore({
+          eventType: 'LEAD_CAPTURED',
+          sourceEntityType: 'lead',
+          sourceEntityId: leadId,
+        }),
+        trackLeadSubmissionSuccess({
+          leadId,
+          email: data.email,
+          phone: data.phone,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          city: data.cityZip,
+          sourceTool: 'consultation',
+          eventId: `lead_captured:${leadId}`,
+          value: 100,
+        }),
+      ]);
 
-      // Track lead submission success for VBB ($100 value)
-      await trackLeadSubmissionSuccess({
-        leadId,
-        email: data.email,
-        phone: data.phone,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        city: data.cityZip,
-        sourceTool: 'consultation',
-        eventId: `lead_captured:${leadId}`,
-        value: 100,
-      });
-
-      // Track consultation booked event
+      // Track consultation booked event (non-blocking)
       trackEvent('consultation_booked', {
         source: 'consultation',
         propertyType: data.propertyType,

@@ -31,6 +31,7 @@ export const SOURCE_TOOLS = [
   'window-sales-truth',
   'window-verification-system',
   'floating-estimate-form',
+  'roleplay',
   'consultation',
 ] as const;
 

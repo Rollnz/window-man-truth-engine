@@ -199,7 +199,10 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
     if (Object.keys(validationErrors).length > 0) {
       const firstErrorField = Object.keys(validationErrors)[0];
       if (firstErrorField && formRef.current) {
-        const element = formRef.current.querySelector(`[name="${firstErrorField}"]`);
+        // Try ID first (for Select components), then fallback to name attribute
+        const element = 
+          formRef.current.querySelector(`#${firstErrorField}`) ||
+          formRef.current.querySelector(`[name="${firstErrorField}"]`);
         (element as HTMLElement)?.focus();
       }
       return;
