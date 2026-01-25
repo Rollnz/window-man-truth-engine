@@ -53,6 +53,7 @@ export function ScannerLeadCaptureModal({
 }: ScannerLeadCaptureModalProps) {
   const [step, setStep] = useState<ModalStep>('contact');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scanAttemptId, setScanAttemptId] = useState<string | null>(null);
   const [contactData, setContactData] = useState<{
     firstName: string;
     lastName: string;
@@ -63,14 +64,26 @@ export function ScannerLeadCaptureModal({
   const { setLeadId } = useLeadIdentity();
   const { awardScore } = useScore();
 
-  // Auto-skip to Step 2 ONLY if ALL contact fields are present
+  // Track modal opened and handle auto-skip logic
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const hasCompleteContact = 
       initialSessionData?.firstName?.trim() && 
       initialSessionData?.lastName?.trim() && 
       initialSessionData?.email?.trim();
+    
+    const startingStep = hasCompleteContact ? 'project' : 'contact';
+
+    // Fire scanner_modal_opened event on every open
+    const eventId = generateEventId();
+    trackEvent('scanner_modal_opened', {
+      source_tool: 'quote-scanner',
+      event_id: eventId,
+      step: startingStep,
+      timestamp: new Date().toISOString(),
+    });
+    console.log('[ScannerModal] scanner_modal_opened fired, step:', startingStep);
     
     if (hasCompleteContact) {
       // Pre-fill contact data and skip to Step 2
@@ -94,6 +107,7 @@ export function ScannerLeadCaptureModal({
       setStep('contact');
       setContactData(null);
       setIsSubmitting(false);
+      setScanAttemptId(null);
       onClose();
     }
   }, [onClose]);
@@ -138,8 +152,8 @@ export function ScannerLeadCaptureModal({
         updateField('firstName', firstName);
         updateField('lastName', lastName);
 
-        // Track lead capture
-        trackLeadSubmissionSuccess({
+        // Track lead capture - lead_submission_success ($100 value)
+        await trackLeadSubmissionSuccess({
           leadId,
           email: data.email,
           firstName,
@@ -148,6 +162,7 @@ export function ScannerLeadCaptureModal({
           eventId: `lead_captured:${leadId}`,
           value: 100,
         });
+        console.log('[ScannerModal] lead_submission_success fired, leadId:', leadId);
 
         // Award Truth Engine points
         try {
@@ -220,7 +235,7 @@ export function ScannerLeadCaptureModal({
           },
         });
 
-        // Track project details with phone hash
+        // Track project details with phone hash - scanner_project_details
         const phoneHash = phoneE164 ? await hashPhone(phoneE164) : undefined;
         trackEvent('scanner_project_details', {
           source_tool: 'quote-scanner',
@@ -229,7 +244,12 @@ export function ScannerLeadCaptureModal({
           wants_beat_quote: data.wantsBeatQuote,
           phone_sha256: phoneHash,
         });
+        console.log('[ScannerModal] scanner_project_details fired');
       }
+
+      // Generate unique scanAttemptId for this upload
+      const newScanAttemptId = crypto.randomUUID();
+      setScanAttemptId(newScanAttemptId);
 
       // Move to analysis step
       setStep('analysis');
@@ -278,6 +298,7 @@ export function ScannerLeadCaptureModal({
           <ScannerStep3Analysis
             onComplete={handleAnalysisComplete}
             isAnalyzing={isAnalyzing}
+            scanAttemptId={scanAttemptId || undefined}
           />
         )}
       </TrustModal>

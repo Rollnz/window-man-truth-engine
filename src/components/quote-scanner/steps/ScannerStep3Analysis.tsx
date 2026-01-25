@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { trackQuoteUploadSuccess } from '@/lib/gtm';
+import { useSessionData } from '@/hooks/useSessionData';
 
 interface AnalysisStep {
   id: string;
@@ -20,19 +22,25 @@ interface ScannerStep3AnalysisProps {
   onComplete: () => void;
   /** Whether actual analysis is still loading */
   isAnalyzing?: boolean;
+  /** Scan attempt ID for tracking */
+  scanAttemptId?: string;
 }
 
 /**
  * Step 3: 5-Second Theatrical Loading State
  * Shows animated progress with value-driven microcopy.
+ * Fires quote_upload_success tracking event when complete.
  */
 export function ScannerStep3Analysis({
   onComplete,
   isAnalyzing = false,
+  scanAttemptId,
 }: ScannerStep3AnalysisProps) {
+  const { sessionData } = useSessionData();
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+  const hasFiredTracking = useRef(false);
 
   useEffect(() => {
     let stepIndex = 0;
@@ -78,13 +86,33 @@ export function ScannerStep3Analysis({
     };
   }, [onComplete, isAnalyzing]);
 
-  // If still analyzing after theatrics, wait for it
+  // Fire quote_upload_success and complete when analysis is done
   useEffect(() => {
-    if (completedSteps.length === analysisSteps.length && !isAnalyzing) {
-      const finalDelay = setTimeout(onComplete, 200);
-      return () => clearTimeout(finalDelay);
+    if (completedSteps.length === analysisSteps.length && !isAnalyzing && !hasFiredTracking.current) {
+      hasFiredTracking.current = true;
+      
+      // Fire quote_upload_success tracking event ($50 value)
+      const fireTrackingAndComplete = async () => {
+        try {
+          await trackQuoteUploadSuccess({
+            scanAttemptId: scanAttemptId || `scan-${Date.now()}`,
+            email: sessionData.email || undefined,
+            phone: sessionData.phone || undefined,
+            leadId: sessionData.leadId || undefined,
+            sourceTool: 'quote-scanner',
+          });
+          console.log('[ScannerStep3] quote_upload_success fired');
+        } catch (e) {
+          console.error('[ScannerStep3] Tracking error:', e);
+        }
+        
+        // Complete after tracking
+        setTimeout(onComplete, 200);
+      };
+      
+      fireTrackingAndComplete();
     }
-  }, [completedSteps.length, isAnalyzing, onComplete]);
+  }, [completedSteps.length, isAnalyzing, onComplete, scanAttemptId, sessionData]);
 
   return (
     <div className="py-6 space-y-6">
