@@ -1,13 +1,12 @@
-import { useState, useRef, useCallback, forwardRef, useEffect } from 'react';
+import { useState, useRef, useCallback, forwardRef } from 'react';
 import { Upload, FileImage, Loader2, RefreshCw, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { RealisticQuoteDocument } from './RealisticQuoteDocument';
-import { EnhancedFloatingCallout } from './EnhancedFloatingCallout';
+import { SampleQuoteDocument } from './SampleQuoteDocument';
+import { FloatingCallout } from './FloatingCallout';
 
 interface QuoteUploadZoneProps {
   onFileSelect: (file: File) => void;
-  onUploadClick?: () => void;
   isAnalyzing: boolean;
   hasResult: boolean;
   imagePreview: string | null;
@@ -16,24 +15,12 @@ interface QuoteUploadZoneProps {
 export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
   function QuoteUploadZone({
     onFileSelect,
-    onUploadClick,
     isAnalyzing,
     hasResult,
     imagePreview,
   }, ref) {
     const [isDragOver, setIsDragOver] = useState(false);
-    const [calloutsVisible, setCalloutsVisible] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // Stagger callout reveals after mount
-    useEffect(() => {
-      if (!imagePreview && !isAnalyzing) {
-        const timer = setTimeout(() => setCalloutsVisible(true), 800);
-        return () => clearTimeout(timer);
-      } else {
-        setCalloutsVisible(false);
-      }
-    }, [imagePreview, isAnalyzing]);
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
       e.preventDefault();
@@ -63,14 +50,8 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
     }, [onFileSelect]);
 
     const handleClick = useCallback(() => {
-      if (onUploadClick) {
-        // Use modal flow - let parent handle it
-        onUploadClick();
-      } else {
-        // Fallback to direct file picker
-        fileInputRef.current?.click();
-      }
-    }, [onUploadClick]);
+      fileInputRef.current?.click();
+    }, []);
 
     // Determine if we should show the "before upload" overlay
     const showBeforeUploadOverlay = !imagePreview && !isAnalyzing;
@@ -144,50 +125,34 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
             </div>
           )}
 
-          {/* Before Upload Overlay - Realistic Quote + X-Ray Scan + Floating Callouts */}
+          {/* Before Upload Overlay - Sample Quote + Floating Callouts */}
           {showBeforeUploadOverlay && (
             <>
-              {/* Layer 1: Realistic Quote Document with X-ray scan effect */}
-              <div className="absolute inset-0 xray-scan">
-                <RealisticQuoteDocument />
-              </div>
+              {/* Layer 1: Sample Quote Document (background) */}
+              <SampleQuoteDocument />
 
-              {/* Layer 2: Enhanced Floating Callouts (staggered reveal) */}
-              <EnhancedFloatingCallout
+              {/* Layer 2: Floating Callouts (positioned around edges) */}
+              <FloatingCallout
                 type="legal"
-                heading="Hidden Warranty Clause"
-                description="30-day labor warranty buried in fine print"
+                label="Hidden Warranty Clause"
                 className="top-4 left-0 md:top-6"
-                animationDelay={0}
-                isVisible={calloutsVisible}
               />
-              <EnhancedFloatingCallout
+              <FloatingCallout
                 type="price"
-                heading="$2,400 Commission"
-                description="Built into your 'manufacturer direct' price"
-                className="top-20 right-0 md:top-24"
-                fromRight
+                label="$2,400 Commission"
+                className="top-16 right-0 md:top-20 md:right-0 left-auto border-l-0 border-r-2 rounded-l-md rounded-r-none pl-3 pr-3"
                 hideMobile
-                animationDelay={600}
-                isVisible={calloutsVisible}
               />
-              <EnhancedFloatingCallout
+              <FloatingCallout
                 type="missing"
-                heading="Missing Design Pressure"
-                description="No DP rating = no storm protection guarantee"
-                className="bottom-24 left-0 md:bottom-28"
-                animationDelay={1200}
-                isVisible={calloutsVisible}
+                label="Missing Design Pressure"
+                className="bottom-20 left-0 md:bottom-24"
               />
-              <EnhancedFloatingCallout
+              <FloatingCallout
                 type="warning"
-                heading="Vague Installation Terms"
-                description="'Standard installation' undefined"
-                className="bottom-8 right-0 md:bottom-12"
-                fromRight
+                label="Vague Installation Terms"
+                className="bottom-8 right-0 md:bottom-12 left-auto border-l-0 border-r-2 rounded-l-md rounded-r-none pl-3 pr-3"
                 hideMobile
-                animationDelay={1800}
-                isVisible={calloutsVisible}
               />
             </>
           )}

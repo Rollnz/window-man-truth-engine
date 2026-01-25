@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { TrustModal } from '@/components/forms/TrustModal';
 import { ScannerStep1Contact } from './steps/ScannerStep1Contact';
@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useScore } from '@/contexts/ScoreContext';
-import { trackLeadSubmissionSuccess, trackEvent, generateEventId, hashPhone } from '@/lib/gtm';
+import { trackLeadSubmissionSuccess, trackEvent, generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
 import { normalizeToE164 } from '@/lib/phoneFormat';
@@ -16,15 +16,7 @@ import { normalizeNameFields } from '@/components/ui/NameInputPair';
 import { toast } from 'sonner';
 import type { SourceTool } from '@/types/sourceTool';
 
-/**
- * State Machine for Scanner Modal
- * - contact: Step 1 - collecting name/email
- * - project: Step 2 - collecting phone/project details + file upload
- * - analyzing: Step 3 - theatrics running, waiting for both animation AND AI to complete
- * - complete: Ready to close (both theatrics done AND isAnalyzing false)
- * - error: Something went wrong
- */
-type ModalStatus = 'contact' | 'project' | 'analyzing' | 'complete' | 'error';
+type ModalStep = 'contact' | 'project' | 'analysis';
 
 interface ScannerLeadCaptureModalProps {
   isOpen: boolean;
@@ -50,9 +42,6 @@ interface ScannerLeadCaptureModalProps {
  * Step 1: Contact (first name, last name, email)
  * Step 2: Project details (phone, window count, quote price, beat-my-quote checkbox) + upload trigger
  * Step 3: 5-second theatrical analysis loading
- * 
- * Uses State Machine pattern - single `status` instead of multiple booleans
- * Modal only closes when BOTH theatrics complete AND isAnalyzing is false
  */
 export function ScannerLeadCaptureModal({
   isOpen,
@@ -62,11 +51,8 @@ export function ScannerLeadCaptureModal({
   isAnalyzing,
   sessionData: initialSessionData,
 }: ScannerLeadCaptureModalProps) {
-  // State Machine: single source of truth for modal status
-  const [status, setStatus] = useState<ModalStatus>('contact');
+  const [step, setStep] = useState<ModalStep>('contact');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [scanAttemptId, setScanAttemptId] = useState<string | null>(null);
-  const [theatricsComplete, setTheatricsComplete] = useState(false);
   const [contactData, setContactData] = useState<{
     firstName: string;
     lastName: string;
@@ -77,62 +63,16 @@ export function ScannerLeadCaptureModal({
   const { setLeadId } = useLeadIdentity();
   const { awardScore } = useScore();
 
-  // Track modal opened and handle auto-skip logic
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const hasCompleteContact = 
-      initialSessionData?.firstName?.trim() && 
-      initialSessionData?.lastName?.trim() && 
-      initialSessionData?.email?.trim();
-    
-    const startingStep = hasCompleteContact ? 'project' : 'contact';
-
-    // Fire scanner_modal_opened event on every open
-    const eventId = generateEventId();
-    trackEvent('scanner_modal_opened', {
-      source_tool: 'quote-scanner',
-      event_id: eventId,
-      step: startingStep,
-      timestamp: new Date().toISOString(),
-    });
-    console.log('[ScannerModal] scanner_modal_opened fired, step:', startingStep);
-    
-    if (hasCompleteContact) {
-      // Pre-fill contact data and skip to Step 2
-      setContactData({
-        firstName: initialSessionData.firstName!,
-        lastName: initialSessionData.lastName!,
-        email: initialSessionData.email!,
-      });
-      setStatus('project');
-    } else {
-      // Always start fresh at Step 1 if contact is incomplete
-      setStatus('contact');
-      setContactData(null);
-    }
-  }, [isOpen, initialSessionData]);
-
-  // DUAL-CONDITION CLOSE: Only complete when BOTH theatrics done AND analysis finished
-  useEffect(() => {
-    if (status === 'analyzing' && theatricsComplete && !isAnalyzing) {
-      console.log('[ScannerModal] Both conditions met - completing modal');
-      setStatus('complete');
-      onAnalysisComplete();
-      onClose();
-    }
-  }, [status, theatricsComplete, isAnalyzing, onAnalysisComplete, onClose]);
-
-  // Complete state reset when modal closes
+  // Reset state when modal opens
   const handleOpenChange = useCallback((open: boolean) => {
     if (!open) {
-      // Immediate reset for clean state on next open
-      setStatus('contact');
-      setContactData(null);
-      setIsSubmitting(false);
-      setScanAttemptId(null);
-      setTheatricsComplete(false);
       onClose();
+      // Reset after animation
+      setTimeout(() => {
+        setStep('contact');
+        setContactData(null);
+        setIsSubmitting(false);
+      }, 300);
     }
   }, [onClose]);
 
@@ -176,17 +116,17 @@ export function ScannerLeadCaptureModal({
         updateField('firstName', firstName);
         updateField('lastName', lastName);
 
-        // Track lead capture - lead_submission_success ($100 value)
-        await trackLeadSubmissionSuccess({
+        // Track lead capture
+        const hashedEmail = await hashForTracking(data.email);
+        
+        trackLeadSubmissionSuccess({
           leadId,
-          email: data.email,
-          firstName,
-          lastName,
-          sourceTool: 'quote-scanner',
-          eventId: `lead_captured:${leadId}`,
-          value: 100,
+          email_sha256: hashedEmail,
+          first_name: firstName,
+          last_name: lastName,
+          source_tool: 'quote-scanner',
+          event_id: `lead_captured:${leadId}`,
         });
-        console.log('[ScannerModal] lead_submission_success fired, leadId:', leadId);
 
         // Award Truth Engine points
         try {
@@ -201,10 +141,11 @@ export function ScannerLeadCaptureModal({
       }
 
       setContactData({ firstName, lastName, email: data.email });
-      setStatus('project');
+      setStep('project');
 
       // Track modal progression
-      trackEvent('scanner_step1_complete', {
+      trackEvent({
+        event: 'scanner_step1_complete',
         source_tool: 'quote-scanner',
         event_id: eventId,
       });
@@ -234,50 +175,35 @@ export function ScannerLeadCaptureModal({
         updateField('windowCount', parseInt(data.windowCount, 10));
       }
 
-      // Update lead with phone via save-lead (not crm-leads)
-      // This ensures we hit the correct leads table primary key
+      // Update lead with phone if we have a leadId
       const leadId = sessionData.leadId;
-      if (contactData && data.phone) {
+      if (leadId && data.phone) {
         const phoneE164 = normalizeToE164(data.phone);
-        const clientId = getOrCreateClientId();
-        const sessionId = getOrCreateSessionId();
         
-        // Use save-lead to update phone - it handles the Golden Thread correctly
-        await supabase.functions.invoke('save-lead', {
+        // Update lead via CRM function
+        await supabase.functions.invoke('crm-leads', {
           body: {
-            email: contactData.email,
-            firstName: contactData.firstName,
-            lastName: contactData.lastName,
-            phone: data.phone,
-            sourceTool: 'quote-scanner' satisfies SourceTool,
-            leadId, // Pass existing leadId for update
-            sessionData: {
-              clientId,
-              sessionId,
-              windowCount: data.windowCount ? parseInt(data.windowCount, 10) : undefined,
+            leadId,
+            updates: {
+              phone: data.phone,
             },
           },
         });
 
-        // Track project details with phone hash - scanner_project_details
-        const phoneHash = phoneE164 ? await hashPhone(phoneE164) : undefined;
-        trackEvent('scanner_project_details', {
+        // Track with phone hash
+        const phoneHash = phoneE164 ? await hashForTracking(phoneE164) : undefined;
+        trackEvent({
+          event: 'scanner_project_details',
           source_tool: 'quote-scanner',
           window_count: data.windowCount || undefined,
           quote_price: data.quotePrice || undefined,
           wants_beat_quote: data.wantsBeatQuote,
           phone_sha256: phoneHash,
         });
-        console.log('[ScannerModal] scanner_project_details fired');
       }
 
-      // Generate unique scanAttemptId for this upload
-      const newScanAttemptId = crypto.randomUUID();
-      setScanAttemptId(newScanAttemptId);
-
-      // Move to analysis step - theatrics will run, then we wait for both conditions
-      setStatus('analyzing');
-      setTheatricsComplete(false);
+      // Move to analysis step
+      setStep('analysis');
 
       // Trigger actual file analysis
       await onFileSelect(data.file);
@@ -285,25 +211,22 @@ export function ScannerLeadCaptureModal({
     } catch (error) {
       console.error('[ScannerModal] Project submit error:', error);
       toast.error('Upload failed. Please try again.');
-      setStatus('error');
-      // Allow retry by going back to project step
-      setTimeout(() => setStatus('project'), 100);
+      setStep('project');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Step 3: Theatrics finished (called by presentation-only ScannerStep3Analysis)
-  const handleTheatricsComplete = useCallback(() => {
-    console.log('[ScannerModal] Theatrics animation complete');
-    setTheatricsComplete(true);
-    // The useEffect watching both conditions will handle the actual close
-  }, []);
+  // Step 3: Analysis complete
+  const handleAnalysisComplete = useCallback(() => {
+    onAnalysisComplete();
+    onClose();
+  }, [onAnalysisComplete, onClose]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <TrustModal className="sm:max-w-md">
-        {status === 'contact' && (
+        {step === 'contact' && (
           <ScannerStep1Contact
             initialValues={{
               firstName: initialSessionData?.firstName || sessionData.firstName,
@@ -315,16 +238,17 @@ export function ScannerLeadCaptureModal({
           />
         )}
 
-        {status === 'project' && (
+        {step === 'project' && (
           <ScannerStep2Project
             onSubmit={handleProjectSubmit}
             isLoading={isSubmitting}
           />
         )}
 
-        {status === 'analyzing' && (
+        {step === 'analysis' && (
           <ScannerStep3Analysis
-            onComplete={handleTheatricsComplete}
+            onComplete={handleAnalysisComplete}
+            isAnalyzing={isAnalyzing}
           />
         )}
       </TrustModal>

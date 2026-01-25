@@ -7,7 +7,7 @@ import { QuoteAnalysisResults } from '@/components/quote-scanner/QuoteAnalysisRe
 import { NegotiationTools } from '@/components/quote-scanner/NegotiationTools';
 import { QuoteQA } from '@/components/quote-scanner/QuoteQA';
 import { GenerateProposalButton } from '@/components/quote-scanner/GenerateProposalButton';
-import { ScannerLeadCaptureModal } from '@/components/quote-scanner/ScannerLeadCaptureModal';
+import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
 import { useQuoteScanner } from '@/hooks/useQuoteScanner';
 import type { SourceTool } from '@/types/sourceTool';
@@ -49,17 +49,11 @@ export default function QuoteScanner() {
 
   const { sessionData, updateField } = useSessionData();
   const { leadId } = useLeadIdentity();
-  const [showScannerModal, setShowScannerModal] = useState(false);
+  const [showLeadCapture, setShowLeadCapture] = useState(false);
   const [hasUnlockedResults, setHasUnlockedResults] = useState(!!sessionData.email);
   
   // Ref for scroll-to-upload functionality
   const uploadRef = useRef<HTMLDivElement>(null);
-
-  // Called when user clicks upload button - always opens modal
-  const handleUploadClick = () => {
-    // Always open modal - it will auto-skip Step 1 for returning users
-    setShowScannerModal(true);
-  };
 
   const handleFileSelect = async (file: File) => {
     const startTime = Date.now();
@@ -72,14 +66,18 @@ export default function QuoteScanner() {
       file_size: file.size,
       upload_duration: duration * 1000, // convert to milliseconds
     });
+
+    // Show lead capture after analysis if user hasn't provided email
+    if (!sessionData.email) {
+      setShowLeadCapture(true);
+    }
   };
 
-  // Called when modal analysis completes
-  const handleAnalysisComplete = () => {
+  const handleLeadCaptureSuccess = (leadId: string) => {
     setHasUnlockedResults(true);
-    setShowScannerModal(false);
+    setShowLeadCapture(false);
+    updateField('leadId', leadId);
   };
-
 
   const isUnlocked = hasUnlockedResults || !!sessionData.email;
   const hasImage = !!imageBase64;
@@ -126,7 +124,6 @@ export default function QuoteScanner() {
                   <QuoteUploadZone
                     ref={uploadRef}
                     onFileSelect={handleFileSelect}
-                    onUploadClick={handleUploadClick}
                     isAnalyzing={isAnalyzing}
                     hasResult={!!analysisResult}
                     imagePreview={imageBase64}
@@ -180,7 +177,7 @@ export default function QuoteScanner() {
                   {/* Unlock button when locked with results */}
                   {!isUnlocked && hasImage && analysisResult && (
                     <button
-                      onClick={() => setShowScannerModal(true)}
+                      onClick={() => setShowLeadCapture(true)}
                       className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                     >
                       Unlock Full Report
@@ -217,18 +214,12 @@ export default function QuoteScanner() {
         />
       </main>
 
-      <ScannerLeadCaptureModal
-        isOpen={showScannerModal}
-        onClose={() => setShowScannerModal(false)}
-        onAnalysisComplete={handleAnalysisComplete}
-        onFileSelect={handleFileSelect}
-        isAnalyzing={isAnalyzing}
-        sessionData={{
-          firstName: sessionData.firstName,
-          lastName: sessionData.lastName,
-          email: sessionData.email,
-          phone: sessionData.phone,
-        }}
+      <LeadCaptureModal
+        isOpen={showLeadCapture}
+        onClose={() => setShowLeadCapture(false)}
+        onSuccess={handleLeadCaptureSuccess}
+        sourceTool={'quote-scanner' satisfies SourceTool}
+        sessionData={sessionData}
       />
     </div>
   );

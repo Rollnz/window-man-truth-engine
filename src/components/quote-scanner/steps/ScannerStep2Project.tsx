@@ -34,16 +34,9 @@ export function ScannerStep2Project({
 
   const { values, setValue, hasError, getError, validateAll } = useFormValidation({
     initialValues: { phone: '' },
-    schemas: { 
-      // Phone is now required - commonSchemas.phone already validates format
-      phone: commonSchemas.phone,
-    },
+    schemas: { phone: commonSchemas.phone },
     formatters: { phone: formatPhoneNumber },
   });
-
-  // Additional check: phone must have at least 10 digits to be valid
-  const phoneDigits = values.phone.replace(/\D/g, '');
-  const isPhoneValid = phoneDigits.length >= 10;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -181,13 +174,13 @@ export function ScannerStep2Project({
         className="hidden"
       />
 
-      {/* Upload Button - requires valid phone */}
+      {/* Upload Button */}
       <Button
         type="button"
         variant="cta"
         className="w-full min-h-[52px] text-base"
         onClick={handleUploadClick}
-        disabled={isLoading || !isPhoneValid}
+        disabled={isLoading || !values.phone.trim()}
       >
         {isLoading ? (
           <>

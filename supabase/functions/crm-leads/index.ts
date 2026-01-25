@@ -138,31 +138,17 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Use lead_id (FK to leads.id) instead of id (wm_leads PK)
-      // Use maybeSingle() to handle case where CRM record hasn't synced yet
       const { data, error } = await supabase
         .from("wm_leads")
         .update(updates)
-        .eq("lead_id", leadId)
+        .eq("id", leadId)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) {
-        console.error("[crm-leads] Error updating lead:", error);
+        console.error("Error updating lead:", error);
         return new Response(JSON.stringify({ error: error.message }), {
           status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Graceful 404 if no wm_leads record found (trigger may not have synced yet)
-      if (!data) {
-        console.log(`[crm-leads] No wm_leads record found for lead_id: ${leadId}`);
-        return new Response(JSON.stringify({ 
-          success: false, 
-          error: "Lead not found in CRM - record may still be syncing" 
-        }), {
-          status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }

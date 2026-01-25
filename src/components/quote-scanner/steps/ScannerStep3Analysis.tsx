@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -15,41 +15,41 @@ const analysisSteps: AnalysisStep[] = [
   { id: 'generate', label: 'Generating your gradecard...', duration: 1250 },
 ];
 
-const TOTAL_DURATION = analysisSteps.reduce((sum, step) => sum + step.duration, 0); // 5000ms
-
 interface ScannerStep3AnalysisProps {
-  /** Called when 5-second theatrical animation completes */
+  /** Called when all steps complete (after 5 seconds) */
   onComplete: () => void;
+  /** Whether actual analysis is still loading */
+  isAnalyzing?: boolean;
 }
 
 /**
- * Step 3: 5-Second Theatrical Loading State (PRESENTATION ONLY)
- * 
- * This component is purely visual - it runs a 5-second animation sequence
- * and calls onComplete when finished. It does NOT handle:
- * - GTM tracking (handled by useQuoteScanner hook)
- * - Analysis state (handled by parent modal)
- * - Modal closing (handled by parent's dual-condition logic)
+ * Step 3: 5-Second Theatrical Loading State
+ * Shows animated progress with value-driven microcopy.
  */
-export function ScannerStep3Analysis({ onComplete }: ScannerStep3AnalysisProps) {
+export function ScannerStep3Analysis({
+  onComplete,
+  isAnalyzing = false,
+}: ScannerStep3AnalysisProps) {
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [progress, setProgress] = useState(0);
-  const hasCalledComplete = useRef(false);
 
   useEffect(() => {
-    // Progress bar animation (0-100 over 5 seconds)
-    const progressInterval = setInterval(() => {
+    let stepIndex = 0;
+    let progressInterval: NodeJS.Timeout;
+
+    // Progress bar animation
+    progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(progressInterval);
           return 100;
         }
-        return prev + 2; // 50 steps * 100ms = 5000ms
+        return prev + 2;
       });
     }, 100);
 
-    // Step progression - each step completes after its duration
+    // Step progression
     const stepTimeouts: NodeJS.Timeout[] = [];
     let cumulativeDelay = 0;
 
@@ -64,21 +64,27 @@ export function ScannerStep3Analysis({ onComplete }: ScannerStep3AnalysisProps) 
       stepTimeouts.push(timeout);
     });
 
-    // Call onComplete exactly once after all steps finish
+    // Final completion after all steps
     const completeTimeout = setTimeout(() => {
-      if (!hasCalledComplete.current) {
-        hasCalledComplete.current = true;
-        console.log('[ScannerStep3] Theatrics complete, calling onComplete');
+      if (!isAnalyzing) {
         onComplete();
       }
-    }, TOTAL_DURATION + 100); // Small buffer after last step
+    }, cumulativeDelay + 200);
 
     return () => {
       clearInterval(progressInterval);
       stepTimeouts.forEach(clearTimeout);
       clearTimeout(completeTimeout);
     };
-  }, [onComplete]);
+  }, [onComplete, isAnalyzing]);
+
+  // If still analyzing after theatrics, wait for it
+  useEffect(() => {
+    if (completedSteps.length === analysisSteps.length && !isAnalyzing) {
+      const finalDelay = setTimeout(onComplete, 200);
+      return () => clearTimeout(finalDelay);
+    }
+  }, [completedSteps.length, isAnalyzing, onComplete]);
 
   return (
     <div className="py-6 space-y-6">

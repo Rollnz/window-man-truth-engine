@@ -22,12 +22,11 @@ export interface EMQValidationResult {
 
 // Expected conversion values by event type
 export const EXPECTED_VALUES: Record<string, number> = {
-  lead_submission_success: 100, // Scanner high-intent leads
+  lead_submission_success: 15,
   lead_captured: 15,
   phone_lead: 25,
   consultation_booked: 75,
   booking_confirmed: 75,
-  quote_upload_success: 50, // Quote scanner document upload
 };
 
 // Conversion events we track
@@ -37,7 +36,6 @@ export const CONVERSION_EVENTS = [
   'phone_lead',
   'consultation_booked',
   'booking_confirmed',
-  'quote_upload_success',
 ];
 
 // Validate UUID v4 format (36 chars with dashes)
