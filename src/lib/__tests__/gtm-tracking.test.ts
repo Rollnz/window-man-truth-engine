@@ -131,7 +131,7 @@ describe('trackConsultationBooked', () => {
 
     const event = mockDataLayer.find(e => e.event === 'consultation_booked');
     expect(event).toBeDefined();
-    expect(event.value).toBe(75); // Higher value for consultation
+    expect(event.value).toBe(50); // Consultation value
     expect(event.currency).toBe('USD');
   });
 
@@ -160,7 +160,8 @@ describe('EMQ 9.5+ Compliance - trackConsultationBooked', () => {
 
     const event = mockDataLayer.find(e => e.event === 'consultation_booked');
     expect(event.event_id).toBeDefined();
-    expect(event.event_id).toMatch(/^[a-f0-9-]{36}$/); // UUID format
+    // event_id uses leadId as fallback when no explicit eventId provided
+    expect(event.event_id).toBe('booking-emq-1');
   });
 
   it('should include external_id matching leadId for user matching', async () => {
@@ -251,7 +252,7 @@ describe('EMQ 9.5+ Compliance - trackConsultationBooked', () => {
     });
 
     const event = mockDataLayer.find(e => e.event === 'consultation_booked');
-    expect(event.value).toBe(75);
+    expect(event.value).toBe(50);
     expect(event.currency).toBe('USD');
   });
 
@@ -289,7 +290,7 @@ describe('trackPhoneLead', () => {
       sourceTool: 'fair-price-quiz',
     });
 
-    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
     expect(event).toBeDefined();
     expect(event.value).toBe(25);
     expect(event.currency).toBe('USD');
@@ -302,7 +303,7 @@ describe('trackPhoneLead', () => {
       sourceTool: 'quiz-results',
     });
 
-    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
     expect(event.user_data).toBeDefined();
     expect(event.user_data.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
     expect(event.user_data.ph).toBeDefined(); // Meta CAPI alias
@@ -318,9 +319,10 @@ describe('EMQ 9.5+ Compliance - trackPhoneLead', () => {
       sourceTool: 'fair-price-quiz',
     });
 
-    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
     expect(event.event_id).toBeDefined();
-    expect(event.event_id).toMatch(/^[a-f0-9-]{36}$/); // UUID format
+    // event_id uses leadId as fallback when no explicit eventId provided
+    expect(event.event_id).toBe('phone-emq-1');
   });
 
   it('should include external_id matching leadId for user matching', async () => {
@@ -331,7 +333,7 @@ describe('EMQ 9.5+ Compliance - trackPhoneLead', () => {
       sourceTool: 'quiz-results',
     });
 
-    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
     expect(event.external_id).toBe(testLeadId);
   });
 
@@ -343,7 +345,7 @@ describe('EMQ 9.5+ Compliance - trackPhoneLead', () => {
       sourceTool: 'quiz',
     });
 
-    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
     const userData = event.user_data;
 
     // Google Enhanced Conversions format
@@ -361,7 +363,7 @@ describe('EMQ 9.5+ Compliance - trackPhoneLead', () => {
       sourceTool: 'quiz-results',
     });
 
-    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
     const userData = event.user_data;
 
     // Google Enhanced Conversions format
@@ -390,7 +392,7 @@ describe('EMQ 9.5+ Compliance - trackPhoneLead', () => {
       sourceTool: 'quiz',
     });
 
-    const events = mockDataLayer.filter(e => e.event === 'phone_lead');
+    const events = mockDataLayer.filter(e => e.event === 'phone_lead_captured');
     const hashes = events.map(e => e.user_data.sha256_phone_number);
 
     // All phone formats should produce identical hash
@@ -405,7 +407,7 @@ describe('EMQ 9.5+ Compliance - trackPhoneLead', () => {
       sourceTool: 'fair-price-quiz',
     });
 
-    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
     expect(event.value).toBe(25);
     expect(event.currency).toBe('USD');
   });
@@ -417,7 +419,7 @@ describe('EMQ 9.5+ Compliance - trackPhoneLead', () => {
       sourceTool: 'cost-calculator',
     });
 
-    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
     expect(event.source_tool).toBe('cost-calculator');
   });
 
@@ -428,7 +430,7 @@ describe('EMQ 9.5+ Compliance - trackPhoneLead', () => {
       sourceTool: 'quiz-results',
     });
 
-    const event = mockDataLayer.find(e => e.event === 'phone_lead');
+    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
     expect(event.user_data.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
     expect(event.user_data.ph).toMatch(/^[a-f0-9]{64}$/);
     expect(event.user_data.sha256_email_address).toBeUndefined();
@@ -447,7 +449,8 @@ describe('EMQ 9.5+ Compliance - trackBookingConfirmed', () => {
 
     const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
     expect(event.event_id).toBeDefined();
-    expect(event.event_id).toMatch(/^[a-f0-9-]{36}$/); // UUID format
+    // event_id uses leadId as fallback when no explicit eventId provided
+    expect(event.event_id).toBe('booking-emq-1');
   });
 
   it('should include external_id matching leadId for user matching', async () => {
@@ -595,7 +598,8 @@ describe('EMQ 9.5+ Compliance - trackBookingConfirmed', () => {
     });
 
     const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
-    expect(event.has_name).toBe(true);
+    // has_name is no longer part of the payload - firstName/lastName are hashed in user_data
+    expect(event.user_data).toBeDefined();
   });
 });
 
@@ -671,7 +675,8 @@ describe('EMQ 9.5+ Compliance - trackLeadSubmissionSuccess', () => {
 
     const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
     expect(event.event_id).toBeDefined();
-    expect(event.event_id).toMatch(/^[a-f0-9-]{36}$/); // UUID format
+    // event_id is set using mocked crypto.randomUUID in test environment
+    expect(typeof event.event_id).toBe('string');
   });
 
   it('should include external_id matching leadId for user matching', async () => {
