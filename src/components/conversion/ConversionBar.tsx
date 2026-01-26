@@ -22,12 +22,12 @@ export const ConversionBar = ({
   primaryCtaHref = ROUTES.FREE_ESTIMATE,
   helperText = "No spam. We only use your info to prep your tailored inspection plan."
 }: ConversionBarProps) => {
-  return <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border border-border rounded-2xl p-4 sm:p-6 shadow-sm">
+  return <div className="bg-[#EEF5FB] border border-[#EEF5FB] rounded-2xl p-4 sm:p-6 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1 text-black">
-          <p className="text-sm font-medium text-gray-950">{headline}</p>
-          <p className="text-sm text-muted-foreground">{subheadline}</p>
-          <p className="text-xs text-muted-foreground/80">{helperText}</p>
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-gray-900">{headline}</p>
+          <p className="text-sm text-gray-700">{subheadline}</p>
+          <p className="text-xs text-gray-600">{helperText}</p>
         </div>
 
         <Button asChild className="w-full md:w-auto gap-2">
