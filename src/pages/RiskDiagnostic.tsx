@@ -177,6 +177,7 @@ export default function RiskDiagnostic() {
         faqs={getToolFAQs('risk-diagnostic')}
         title="Risk Diagnostic FAQs"
         description="Understanding your protection gaps and insurance savings"
+        variant="gradient"
       />
 
       {/* Related Tools */}
