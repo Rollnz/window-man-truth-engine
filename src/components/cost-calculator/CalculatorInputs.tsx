@@ -81,7 +81,7 @@ export function CalculatorInputs({
               <Grid3X3 className="h-5 w-5 text-primary" />
               <h3 className="font-semibold">Window Age</h3>
             </div>
-            {hasPrefilledAge && <Badge variant="outline" className="border-primary/50 text-primary text-xs">
+            {hasPrefilledAge && <Badge variant="outline" className="border-primary/50 text-primary-foreground text-base">
                 Using your saved info
               </Badge>}
           </div>
@@ -104,7 +104,7 @@ export function CalculatorInputs({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Home className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold py-[10px]">Home Size</h3>
+              <h3 className="font-semibold">Home Size</h3>
             </div>
             {hasPrefilledSize && <Badge variant="outline" className="border-primary/50 text-primary text-xs">
                 Using your saved info
@@ -130,7 +130,7 @@ export function CalculatorInputs({
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 mb-4">
             <Grid3X3 className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Number of Windows</h3>
+            <h3 className="font-semibold">Number of Windows</h3>
           </div>
           
           <div className="space-y-4">
