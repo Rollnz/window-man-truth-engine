@@ -148,7 +148,7 @@
     --sidebar-ring: 209 68% 55%;
 
     /* Accordion */
-    --accordion: 210 52% 92%;
+    --accordion: linear-gradient(to bottom, #cfe7fa 0%, #6393c1 100%);
 
     --accent-orange: 25 95% 55%;
 
