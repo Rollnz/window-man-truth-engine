@@ -116,7 +116,7 @@ export default function Evidence() {
   ], []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen evidence-inverted">
       <SEO 
         title="Evidence Locker - Real Homeowner Case Studies"
         description="Browse real case studies showing how homeowners saved thousands on window replacements. See actual savings, strategies used, and tools that worked."
