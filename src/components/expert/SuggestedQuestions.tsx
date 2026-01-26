@@ -25,7 +25,7 @@ export function SuggestedQuestions({ onSelect, disabled }: SuggestedQuestionsPro
           <Button
             key={index}
             variant="outline"
-            className="h-auto py-4 px-5 text-left text-sm whitespace-normal justify-start min-h-[60px] bg-transparent border-current text-inherit hover:bg-transparent hover:text-inherit hover:border-current cursor-pointer hover:shadow-md transition-shadow duration-200"
+            className="h-auto py-4 px-5 text-left text-sm whitespace-normal justify-start min-h-[60px] bg-transparent border-current text-inherit hover:bg-transparent hover:text-inherit hover:border-current cursor-pointer hover:shadow-lg hover:shadow-black/20 transition-shadow duration-200"
             onClick={() => onSelect(question)}
             disabled={disabled}
           >
