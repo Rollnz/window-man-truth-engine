@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { ShieldCheck, Download, Smartphone, Clock, FileText, AlertTriangle, PauseCircle, CheckCircle2, ArrowRight, ScanSearch, Calculator } from 'lucide-react';
@@ -17,6 +17,7 @@ import { ROUTES } from '@/config/navigation';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { ProTipBox } from '@/components/seo';
 import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
+import { EbookLeadModal, EBOOK_CONFIGS } from '@/components/conversion/EbookLeadModal';
 const KitchenTableGuide = () => {
   usePageTracking('kitchen-table-guide');
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const KitchenTableGuide = () => {
   } = useSessionData();
   const frameControl = getFrameControl('kitchen-table-guide');
   const smartTools = getSmartRelatedTools('kitchen-table-guide', sessionData.toolsCompleted);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Single source of truth for book image
   const defenseKitResource = getResourceById('defense-kit');
@@ -92,7 +94,7 @@ const KitchenTableGuide = () => {
               </p>
 
               <div className="space-y-4">
-                <Button size="lg" className="w-full sm:w-auto gap-2">
+                <Button size="lg" className="w-full sm:w-auto gap-2" onClick={() => setIsModalOpen(true)}>
                   Unlock the Kitchen Table Guide
                   <Download className="w-4 h-4" />
                 </Button>
@@ -411,6 +413,15 @@ const KitchenTableGuide = () => {
 
       {/* Exit Intent Modal for lead capture */}
       <ExitIntentModal sourceTool="kitchen-table-guide" hasConverted={isSubmitting} resultSummary="Kitchen Table Defense Guide" />
+
+      {/* Ebook Lead Modal */}
+      <EbookLeadModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => setIsModalOpen(false)}
+        sourceTool="kitchen-table-guide"
+        config={EBOOK_CONFIGS['kitchen-table-guide']}
+      />
     </div>;
 };
 export default KitchenTableGuide;
