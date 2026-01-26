@@ -15,8 +15,8 @@ export function SuggestedQuestions({ onSelect, disabled }: SuggestedQuestionsPro
   ];
 
   return (
-    <div className="space-y-2">
-      <p className="text-sm text-muted-foreground flex items-center gap-2">
+    <div className="space-y-2 p-4 rounded-lg bg-black text-white dark:bg-white dark:text-black">
+      <p className="text-sm flex items-center gap-2 opacity-80">
         <MessageCircle className="h-4 w-4" />
         Suggested questions based on your situation:
       </p>
@@ -25,7 +25,7 @@ export function SuggestedQuestions({ onSelect, disabled }: SuggestedQuestionsPro
           <Button
             key={index}
             variant="outline"
-            className="h-auto py-4 px-5 text-left text-sm whitespace-normal justify-start min-h-[60px]"
+            className="h-auto py-4 px-5 text-left text-sm whitespace-normal justify-start min-h-[60px] bg-transparent border-current text-inherit hover:bg-white/10 dark:hover:bg-black/10"
             onClick={() => onSelect(question)}
             disabled={disabled}
           >
