@@ -8,10 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useScore } from '@/contexts/ScoreContext';
-import { trackLeadSubmissionSuccess, trackEvent, generateEventId } from '@/lib/gtm';
+import { trackLeadSubmissionSuccess, trackEvent } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
-import { normalizeToE164 } from '@/lib/phoneFormat';
 import { normalizeNameFields } from '@/components/ui/NameInputPair';
 import { toast } from 'sonner';
 import type { SourceTool } from '@/types/sourceTool';
@@ -88,9 +87,6 @@ export function ScannerLeadCaptureModal({
       // Normalize names
       const { firstName, lastName } = normalizeNameFields(data.firstName, data.lastName);
 
-      // Generate deterministic event ID
-      const eventId = generateEventId();
-
       // Save lead via edge function
       const { data: result, error } = await supabase.functions.invoke('save-lead', {
         body: {
@@ -116,16 +112,15 @@ export function ScannerLeadCaptureModal({
         updateField('firstName', firstName);
         updateField('lastName', lastName);
 
-        // Track lead capture
-        const hashedEmail = await hashForTracking(data.email);
-        
-        trackLeadSubmissionSuccess({
+        // Track lead capture - trackLeadSubmissionSuccess handles all hashing internally
+        await trackLeadSubmissionSuccess({
           leadId,
-          email_sha256: hashedEmail,
-          first_name: firstName,
-          last_name: lastName,
-          source_tool: 'quote-scanner',
-          event_id: `lead_captured:${leadId}`,
+          email: data.email,
+          firstName,
+          lastName,
+          sourceTool: 'quote-scanner',
+          eventId: `lead_captured:${leadId}`,
+          value: 100, // High-value scanner lead
         });
 
         // Award Truth Engine points
@@ -144,10 +139,8 @@ export function ScannerLeadCaptureModal({
       setStep('project');
 
       // Track modal progression
-      trackEvent({
-        event: 'scanner_step1_complete',
+      trackEvent('scanner_step1_complete', {
         source_tool: 'quote-scanner',
-        event_id: eventId,
       });
 
     } catch (error) {
@@ -178,8 +171,6 @@ export function ScannerLeadCaptureModal({
       // Update lead with phone if we have a leadId
       const leadId = sessionData.leadId;
       if (leadId && data.phone) {
-        const phoneE164 = normalizeToE164(data.phone);
-        
         // Update lead via CRM function
         await supabase.functions.invoke('crm-leads', {
           body: {
@@ -190,15 +181,12 @@ export function ScannerLeadCaptureModal({
           },
         });
 
-        // Track with phone hash
-        const phoneHash = phoneE164 ? await hashForTracking(phoneE164) : undefined;
-        trackEvent({
-          event: 'scanner_project_details',
+        // Track project details event
+        trackEvent('scanner_project_details', {
           source_tool: 'quote-scanner',
           window_count: data.windowCount || undefined,
           quote_price: data.quotePrice || undefined,
           wants_beat_quote: data.wantsBeatQuote,
-          phone_sha256: phoneHash,
         });
       }
 
