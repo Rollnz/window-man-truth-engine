@@ -203,7 +203,7 @@ export default function Expert() {
               <h1 className="text-2xl mb-2 font-extrabold sm:text-6xl">
                 Window Questions <span className="text-primary">Expert</span>
               </h1>
-              <p className="max-w-lg mx-auto text-primary-foreground text-base">
+              <p className="max-w-lg mx-auto text-black dark:text-white text-base">
                 Windows are a high-stakes investment. Don't rely on a salesperson. Use this Expert System to uncover
                 hidden costs, validate quotes, and get the unbiased truth before you sign.
               </p>
