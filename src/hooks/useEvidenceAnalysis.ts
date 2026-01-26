@@ -31,6 +31,7 @@ export function useEvidenceAnalysis({
   files,
 }: UseEvidenceAnalysisProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const { sessionData, sessionId, updateField } = useSessionData();
   const { leadId } = useLeadIdentity();
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
@@ -48,6 +49,7 @@ export function useEvidenceAnalysis({
   const analyzeEvidence = useCallback(async () => {
     setIsAnalyzing(true);
     setAnalysisResult(null);
+    setAnalysisError(null);
 
     try {
       // Build document status for AI
@@ -95,6 +97,7 @@ export function useEvidenceAnalysis({
       console.error('Analysis error:', error);
       
       const message = getErrorMessage(error);
+      setAnalysisError(message);
       
       toast({
         title: message.includes('timed out') ? 'Request Timed Out' : 'Analysis Failed',
@@ -108,11 +111,13 @@ export function useEvidenceAnalysis({
 
   const resetAnalysis = useCallback(() => {
     setAnalysisResult(null);
+    setAnalysisError(null);
   }, []);
 
   return {
     isAnalyzing,
     analysisResult,
+    analysisError,
     analyzeEvidence,
     resetAnalysis,
   };
