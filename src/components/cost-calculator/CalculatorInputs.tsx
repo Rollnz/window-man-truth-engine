@@ -130,7 +130,7 @@ export function CalculatorInputs({
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 mb-4">
             <Grid3X3 className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold">Number of Windows</h3>
+            <h3 className="font-semibold text-foreground">Number of Windows</h3>
           </div>
           
           <div className="space-y-4">
