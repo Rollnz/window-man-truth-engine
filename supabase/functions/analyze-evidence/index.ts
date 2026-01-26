@@ -23,36 +23,39 @@ serve(async (req) => {
   }
 
   try {
-    // ===== AUTHENTICATION CHECK =====
+    // ===== OPTIONAL AUTHENTICATION CHECK =====
+    // Try to get user ID if authenticated, but allow anonymous access
+    // (matches public-facing nature of Claim Survival page)
+    let userId: string | null = null;
+    
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Authentication required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (authHeader?.startsWith('Bearer ')) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      
+      const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+
+      const token = authHeader.replace('Bearer ', '');
+      const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+      
+      if (!claimsError && claimsData?.claims?.sub) {
+        userId = claimsData.claims.sub;
+        console.log(`Authenticated user: ${userId}`);
+      } else {
+        // Log but don't fail - anonymous access is allowed
+        console.log('[analyze-evidence] Anonymous access (no valid user token)');
+      }
+    } else {
+      console.log('[analyze-evidence] Anonymous access (no auth header)');
     }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    
-    if (claimsError || !claimsData?.claims) {
-      console.error('Auth error:', claimsError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const userId = claimsData.claims.sub;
-    console.log(`Authenticated user: ${userId}`);
-    // ===== END AUTHENTICATION CHECK =====
+    // Get IP for rate limiting fallback
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+               req.headers.get('x-real-ip') || 
+               'unknown';
+    // ===== END OPTIONAL AUTHENTICATION CHECK =====
 
     const { documents, sessionId, leadId } = await req.json() as { 
       documents: DocumentStatus[];
@@ -178,10 +181,10 @@ Use "weak" status for documents that are checked but have no file uploaded.`;
           status: result.status,
           documents_analyzed: documents.length,
           documents_complete: documents.filter(d => d.hasFile).length,
-          user_id: userId,
+          user_id: userId, // May be null for anonymous users
         },
         leadId,
-        anonymousIdFallback: `evidence-${userId}`,
+        anonymousIdFallback: sessionId || `evidence-${ip}`, // Use sessionId or IP for anonymous
       }).catch((err) => console.error('[analyze-evidence] Attribution logging failed:', err));
     }
 
