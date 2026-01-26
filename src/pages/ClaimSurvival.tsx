@@ -96,7 +96,7 @@ export default function ClaimSurvival() {
   }, [vaultProgress, vaultFiles]);
 
   // AI Analysis hook
-  const { isAnalyzing, analysisResult, analyzeEvidence, resetAnalysis } = useEvidenceAnalysis({
+  const { isAnalyzing, analysisResult, analysisError, analyzeEvidence, resetAnalysis } = useEvidenceAnalysis({
     documents: claimDocuments,
     progress: vaultProgress,
     files: vaultFiles,
@@ -440,6 +440,7 @@ export default function ClaimSurvival() {
           files={vaultFiles}
           isAnalyzing={isAnalyzing}
           analysisResult={analysisResult}
+          analysisError={analysisError}
           onAnalyze={analyzeEvidence}
         />
 

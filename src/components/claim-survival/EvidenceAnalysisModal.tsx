@@ -6,18 +6,18 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { 
   Shield, 
   AlertTriangle, 
   CheckCircle, 
   FileSearch, 
-  Loader2,
   Download,
   RefreshCw
 } from 'lucide-react';
 import { ClaimDocument } from '@/data/claimSurvivalData';
 import { ClaimVaultSyncButton } from './ClaimVaultSyncButton';
+import { AnalysisSkeleton } from './AnalysisSkeleton';
+import { AIErrorFallback, getAIErrorType } from '@/components/error/AIErrorFallback';
 import type { AnalysisResult } from '@/hooks/useEvidenceAnalysis';
 
 interface EvidenceAnalysisModalProps {
@@ -28,6 +28,7 @@ interface EvidenceAnalysisModalProps {
   files: Record<string, string>;
   isAnalyzing: boolean;
   analysisResult: AnalysisResult | null;
+  analysisError?: string | null;
   onAnalyze: () => void;
 }
 
@@ -39,6 +40,7 @@ export function EvidenceAnalysisModal({
   files,
   isAnalyzing,
   analysisResult,
+  analysisError,
   onAnalyze,
 }: EvidenceAnalysisModalProps) {
   const completedCount = documents.filter(doc => 
@@ -133,29 +135,17 @@ export function EvidenceAnalysisModal({
             </div>
           )}
 
-          {/* Analyzing state */}
-          {isAnalyzing && (
-            <div className="text-center py-12 space-y-6">
-              <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center animate-pulse">
-                <Loader2 className="w-10 h-10 text-primary animate-spin" />
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-semibold mb-2 font-mono uppercase">
-                  ANALYZING EVIDENCE...
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  Scanning documentation completeness and claim readiness
-                </p>
-              </div>
+          {/* Analyzing state - skeleton UI */}
+          {isAnalyzing && <AnalysisSkeleton />}
 
-              <div className="max-w-xs mx-auto space-y-2">
-                <Progress value={66} className="h-2" />
-                <p className="text-xs text-muted-foreground font-mono">
-                  Processing {completedCount} documents...
-                </p>
-              </div>
-            </div>
+          {/* Error state */}
+          {!isAnalyzing && analysisError && (
+            <AIErrorFallback
+              errorType={getAIErrorType(analysisError)}
+              message={analysisError}
+              onRetry={onAnalyze}
+              canRetry={true}
+            />
           )}
 
           {/* Results state */}
