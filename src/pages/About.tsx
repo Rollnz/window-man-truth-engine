@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   ShieldCheck, 
@@ -20,9 +20,13 @@ import { CommunityImpact } from "@/components/authority/CommunityImpact";
 import { ROUTES } from "@/config/navigation";
 import { getAboutPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 import { REVIEW_BOARD } from "@/config/expertIdentity";
+import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
+import { useSessionData } from "@/hooks/useSessionData";
 
 const About = () => {
   const { hash } = useLocation();
+  const [showConsultationModal, setShowConsultationModal] = useState(false);
+  const { sessionData } = useSessionData();
 
   // Auto-scroll to section if hash is present
   useEffect(() => {
@@ -78,9 +82,7 @@ const About = () => {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Button asChild>
-              <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
-            </Button>
+            <Button onClick={() => setShowConsultationModal(true)}>Book an Inspection</Button>
             <Button asChild variant="outline">
               <Link to={ROUTES.SPEC_CHECKLIST_GUIDE}>Download Spec Checklist</Link>
             </Button>
@@ -298,6 +300,14 @@ const About = () => {
           />
         </section>
       </main>
+
+      <ConsultationBookingModal
+        isOpen={showConsultationModal}
+        onClose={() => setShowConsultationModal(false)}
+        onSuccess={() => setShowConsultationModal(false)}
+        sessionData={sessionData}
+        sourceTool="consultation"
+      />
     </div>
   );
 };

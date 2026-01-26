@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { CheckCircle2, ShieldAlert, Siren } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
@@ -7,6 +8,8 @@ import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { ROUTES } from "@/config/navigation";
 import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
+import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
+import { useSessionData } from "@/hooks/useSessionData";
 
 const redFlags = [
   "Quotes without line-item pricing for glass, frames, and installation.",
@@ -15,6 +18,9 @@ const redFlags = [
 ];
 
 const Defense = () => {
+  const [showConsultationModal, setShowConsultationModal] = useState(false);
+  const { sessionData } = useSessionData();
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SEO
@@ -62,9 +68,7 @@ const Defense = () => {
               Capture your project details so we can pair you with the right specialist and prep your spec checklist.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button asChild>
-                <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
-              </Button>
+              <Button onClick={() => setShowConsultationModal(true)}>Book an Inspection</Button>
               <Button asChild variant="secondary-action">
                 <Link to={ROUTES.SPEC_CHECKLIST_GUIDE}>Download Spec Checklist</Link>
               </Button>
@@ -79,6 +83,14 @@ const Defense = () => {
           />
         </section>
       </main>
+
+      <ConsultationBookingModal
+        isOpen={showConsultationModal}
+        onClose={() => setShowConsultationModal(false)}
+        onSuccess={() => setShowConsultationModal(false)}
+        sessionData={sessionData}
+        sourceTool="consultation"
+      />
     </div>
   );
 };
