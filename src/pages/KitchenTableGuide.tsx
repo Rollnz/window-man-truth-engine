@@ -229,11 +229,7 @@ const KitchenTableGuide = () => {
         style={{ background: 'linear-gradient(135deg, #d0e4f7 0%, #73b1e7 16%, #0a77d5 34%, #539fe1 61%, #539fe1 61%, #87bcea 100%)' }}
       >
         <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-[31px] my-0">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-slate-900">Get the Kitchen Table Guide</h2>
-            <p className="text-slate-700">Free PDF • Instant Access</p>
-          </div>
-
+        <div className="max-w-[500px] mx-auto px-4">
           <div 
             className="rounded-xl p-6 sm:p-8 ring-1 ring-white/30 transition-all duration-300 hover:-translate-y-1"
             style={{ 
@@ -241,30 +237,62 @@ const KitchenTableGuide = () => {
               boxShadow: '0 35px 60px -15px rgba(0, 0, 0, 0.35), 0 20px 25px -10px rgba(0, 0, 0, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.8)'
             }}
           >
+            {/* Form Title */}
+            <div className="text-center mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Kitchen Table Defense Kit</h2>
+              <p className="text-sm text-slate-600 mt-1">Free PDF • Instant Access</p>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Row 1: First Name | Last Name */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-slate-900 font-semibold">First Name</Label>
-                  <Input id="firstName" {...getFieldProps('firstName')} placeholder="First name" className={hasError('firstName') ? 'border-destructive' : ''} disabled={isSubmitting} autoComplete="given-name" />
-                  {hasError('firstName') && <p className="text-xs text-destructive">{getError('firstName')}</p>}
+                <div>
+                  <Input 
+                    id="firstName" 
+                    {...getFieldProps('firstName')} 
+                    placeholder="First name" 
+                    className={`bg-white/70 border-slate-200 focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200 ${hasError('firstName') ? 'border-destructive' : ''}`} 
+                    disabled={isSubmitting} 
+                    autoComplete="given-name" 
+                  />
+                  {hasError('firstName') && <p className="text-xs text-destructive mt-1">{getError('firstName')}</p>}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-slate-900 font-semibold">Last Name</Label>
-                  <Input id="lastName" {...getFieldProps('lastName')} placeholder="Last name" disabled={isSubmitting} autoComplete="family-name" />
+                <div>
+                  <Input 
+                    id="lastName" 
+                    {...getFieldProps('lastName')} 
+                    placeholder="Last name" 
+                    className="bg-white/70 border-slate-200 focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200" 
+                    disabled={isSubmitting} 
+                    autoComplete="family-name" 
+                  />
                 </div>
               </div>
               
               {/* Row 2: Email | Phone */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-slate-900 font-semibold">Email</Label>
-                  <Input id="email" type="email" {...getFieldProps('email')} placeholder="you@example.com" className={hasError('email') ? 'border-destructive' : ''} disabled={isSubmitting} autoComplete="email" />
-                  {hasError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
+                <div>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    {...getFieldProps('email')} 
+                    placeholder="Email address" 
+                    className={`bg-white/70 border-slate-200 focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200 ${hasError('email') ? 'border-destructive' : ''}`} 
+                    disabled={isSubmitting} 
+                    autoComplete="email" 
+                  />
+                  {hasError('email') && <p className="text-xs text-destructive mt-1">{getError('email')}</p>}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-slate-900 font-semibold">Phone</Label>
-                  <Input id="phone" type="tel" {...getFieldProps('phone')} placeholder="(555) 123-4567" disabled={isSubmitting} autoComplete="tel" />
+                <div>
+                  <Input 
+                    id="phone" 
+                    type="tel" 
+                    {...getFieldProps('phone')} 
+                    placeholder="Phone (optional)" 
+                    className="bg-white/70 border-slate-200 focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200" 
+                    disabled={isSubmitting} 
+                    autoComplete="tel" 
+                  />
                 </div>
               </div>
               
@@ -273,12 +301,12 @@ const KitchenTableGuide = () => {
                 {!isSubmitting && <ArrowRight className="w-4 h-4" />}
               </Button>
               
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-xs text-black text-center">
                 We'll also save this to your private Windowman Vault.
               </p>
             </form>
 
-            <div className="flex flex-wrap justify-center gap-4 mt-6 pt-6 border-t border-border text-xs text-muted-foreground">
+            <div className="flex flex-wrap justify-center gap-4 mt-6 pt-6 border-t border-slate-200 text-xs text-black">
               <span className="flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" /> No Spam
               </span>
@@ -290,6 +318,7 @@ const KitchenTableGuide = () => {
               </span>
             </div>
           </div>
+        </div>
 
           <div className="mt-8 text-center">
             <p className="text-sm font-medium text-slate-900 mb-2">Why is this free?</p>
