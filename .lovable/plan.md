@@ -1,99 +1,212 @@
 
-# Post-Submission Success State for KitchenTableGuideModal
+# Kitchen Table Guide Form Enhancement & Multi-Step Upsell Flow
 
 ## Overview
-Transform the modal to show an upsell view after successful form submission, instead of immediately closing. The success view will maintain the exact same styling (blue gradient outer, red/white radial inner card) and offer two clear action paths to higher-intent conversions.
-
-## Current Behavior
-- Form submits via `useLeadFormSubmit`
-- On success: calls `onSuccess?.()`, then `onClose()`
-- Modal closes immediately after toast notification
-
-## Proposed Behavior
-- Form submits successfully
-- Modal **stays open** but content transitions to a Success View
-- User sees upsell options with two buttons
-- Clicking either button opens the appropriate modal (ConsultationBookingModal)
-- Declining closes the modal
+This plan addresses form validation improvements, lead data persistence for prepopulation, the 403 ownership error, and creates a beautiful multi-step project questionnaire flow with a thank you page.
 
 ---
 
-## Implementation Details
+## Part 1: Fix the 403 Ownership Error
 
-### 1. Add Success State to Modal
-Add a `showSuccess` state variable to track whether the form has been submitted.
+### Root Cause
+The `KitchenTableGuideModal` uses `useLeadFormSubmit` which does NOT pass `clientId` in the sessionData payload. The `save-lead` edge function only extracts `clientId` from `sessionData.clientId`, so the lead is created with `client_id = null`. Later, when `score-event` attempts ownership validation, it compares the browser's `anon_id` against the null `client_id` and fails.
+
+### Solution
+The `useLeadFormSubmit` hook needs to automatically include `clientId: getOrCreateAnonId()` in every submission. This ensures the `save-lead` function always has a valid `client_id` to store.
+
+**File:** `src/hooks/useLeadFormSubmit.ts`
 
 ```text
-const [showSuccess, setShowSuccess] = useState(false);
+Changes:
+1. Import getOrCreateAnonId from useCanonicalScore
+2. Add clientId to the sessionData in the payload:
+   sessionData: {
+     clientId: getOrCreateAnonId(),
+   }
 ```
 
-### 2. Modify Form Submission Handler
-Update `handleSubmit` to set `showSuccess = true` on success instead of immediately closing:
+This is a one-line fix that will resolve the 403 error globally for all forms using this hook.
+
+---
+
+## Part 2: Phone Field Validation & Formatting
+
+### Requirements
+- Accept exactly 10 digits
+- Display as `(111) 222-3333` after 10th digit
+- Store as `1XXXXXXXXXX` (with country code, no formatting) for backend/webhooks
+
+### Implementation
+1. **Create a new phone formatter** that limits input to 10 digits maximum
+2. **Update the phone schema** to enforce exactly 10 digits
+3. **Add a utility function** to convert display format to E.164 for storage
+
+**Files:** 
+- `src/hooks/useFormValidation.ts` - Already has `formatPhoneNumber`, but will verify it limits to 10 digits
+- `src/lib/phoneFormat.ts` - Already has `normalizeToE164` for backend formatting
+- `src/components/conversion/KitchenTableGuideModal.tsx` - Add formatter to phone field
+
+---
+
+## Part 3: First Name Minimum 3 Characters
+
+### Implementation
+Update the `commonSchemas.firstName` validation in `useFormValidation.ts` to require minimum 3 characters.
+
+**File:** `src/hooks/useFormValidation.ts`
 
 ```text
-if (success) {
-  setShowSuccess(true);  // Show upsell view
-  onSuccess?.();         // Notify parent (optional callback)
-  // Remove: onClose();  // Don't close yet
-}
+firstName: z.string()
+  .min(3, 'First name must be at least 3 characters')
+  .max(50, 'First name is too long'),
 ```
 
-### 3. Remove Auto-Redirect
-The current `useLeadFormSubmit` configuration includes `redirectTo: ROUTES.QUOTE_SCANNER`. This will be removed so the modal can show the success state instead of navigating away.
+---
 
-### 4. Add ConsultationBookingModal Integration
-Import and add state to control the consultation modal:
+## Part 4: Last Name "Subliminal Nudge" Red Border
 
-```text
-import { ConsultationBookingModal } from './ConsultationBookingModal';
-const [showConsultation, setShowConsultation] = useState(false);
-```
+### Requirements
+- When user skips last name and focuses on email field, turn last name border red
+- This is visual only - does not block submission
 
-### 5. Success View Content
-The inner white card will conditionally render either the form or the success view:
+### Implementation
+Add state tracking in `KitchenTableGuideModal` to detect when:
+1. Email field gains focus
+2. Last name is still empty
 
-**Success View Structure:**
-- Checkmark icon in primary color circle
-- Headline: "Your Guide is on its way to your Vault!"
-- Subtext: "While you wait, would you like to skip the guesswork?"
-- Primary Button: "Book a Free Measurement" (variant="cta")
-- Secondary Button: "Request a 5-Minute Callback" (variant="secondary-action")
-- Text link at bottom: "No thanks, I'll review the guide first" (closes modal)
+Apply a red border class to the last name input conditionally.
 
-### 6. Button Actions
-- **Book a Free Measurement**: Opens `ConsultationBookingModal` with sourceTool passed appropriately
-- **Request a 5-Minute Callback**: Opens same modal (same endpoint, just different framing)
-- **Decline link**: Closes the modal via `onClose()`
-
-### 7. Reset State on Modal Close
-When the modal closes and reopens, the form should reset to its initial state:
+**File:** `src/components/conversion/KitchenTableGuideModal.tsx`
 
 ```text
-useEffect(() => {
-  if (!isOpen) {
-    setShowSuccess(false);
+const [lastNameNudge, setLastNameNudge] = useState(false);
+
+// On email focus, check if lastName is empty
+onFocus={() => {
+  if (!values.lastName.trim()) {
+    setLastNameNudge(true);
   }
-}, [isOpen]);
+}}
+
+// Clear nudge if user fills lastName
+useEffect(() => {
+  if (values.lastName.trim()) {
+    setLastNameNudge(false);
+  }
+}, [values.lastName]);
 ```
 
 ---
 
-## Styling Preservation
+## Part 5: Lead Data Persistence for Prepopulation
 
-All styling remains locked to the established pattern:
-- **Outer container**: Blue gradient background (unchanged)
-- **Inner card**: Red/white radial gradient with heavy box-shadow (unchanged)
-- **Text colors**: `text-slate-900` for headings, `text-slate-600` for descriptions
-- **Button styles**: Primary uses `variant="cta"`, Secondary uses `variant="secondary-action"`
-- **Input fields**: `bg-white border border-black` (form only)
+### Current Issue
+When user fills out the Kitchen Table Guide form and clicks an upsell button, the `ConsultationBookingModal` opens but fields are empty because the sessionData wasn't updated with the captured information.
+
+### Solution
+After successful form submission in `KitchenTableGuideModal`, persist the lead data to sessionData using `updateFields` from `useSessionData`. The `ConsultationBookingModal` already reads from `sessionData.firstName`, `sessionData.lastName`, etc.
+
+**File:** `src/components/conversion/KitchenTableGuideModal.tsx`
+
+```text
+// After successful submit:
+updateFields({
+  firstName: values.firstName,
+  lastName: values.lastName,
+  email: values.email,
+  phone: values.phone,
+});
+```
+
+This ensures the consultation modal auto-populates with the user's data.
 
 ---
 
-## Analytics Tracking
-Add tracking for upsell interactions:
-- `trackEvent('upsell_shown', { sourceTool: 'kitchen-table-guide', upsell_type: 'consultation' })`
-- `trackEvent('upsell_accepted', { ... })` when a button is clicked
-- `trackEvent('upsell_declined', { ... })` when decline link is clicked
+## Part 6: Multi-Step Project Questionnaire
+
+### New User Flow (Alternative to Simple Prepopulation)
+Instead of just prepopulating contact info, create a more detailed 3-step flow:
+
+**Step 1: Success + Upsell Prompt** (already exists)
+- "Your Guide is on its way to your Vault!"
+- Two buttons: Book Measurement / Request Callback
+
+**Step 2: Project Details** (new)
+When user clicks either upsell button, show a project questionnaire:
+- Property type: House, Condo, Townhome, Business, Other (radio buttons)
+- Property status: New to me, Updating older property
+- Reasons for windows (multi-select, up to 5 common reasons):
+  - Hurricane/Storm Protection
+  - Energy Efficiency / Lower Bills
+  - Noise Reduction
+  - Home Security
+  - Increase Home Value
+- Window count: 1-5, 5-10, 10-15, 15+
+- Timeframe: In a hurry, 1-2 months, 2-4 months, Hopefully this year, Just researching
+
+**Step 3: Location & Notes** (new)
+- City (text input)
+- Zip Code (text input)
+- Remark (one-line optional)
+- Complete button
+
+**Step 4: Thank You Page** (new)
+- Success message with company phone number
+- Next steps they can expect
+
+### Implementation Structure
+Transform `KitchenTableGuideModal` to support 4 steps:
+1. `form` - Initial contact form
+2. `success` - Upsell prompt (current)
+3. `project` - Project questionnaire (new)
+4. `location` - City/Zip/Notes (new)
+5. `thankyou` - Final confirmation (new)
+
+**Files:**
+- `src/components/conversion/KitchenTableGuideModal.tsx` - Add step state and all step views
+
+---
+
+## Technical Details
+
+### Step State Management
+
+```text
+type ModalStep = 'form' | 'success' | 'project' | 'location' | 'thankyou';
+const [step, setStep] = useState<ModalStep>('form');
+```
+
+### Project Details Form Fields
+
+```text
+const [projectDetails, setProjectDetails] = useState({
+  propertyType: '',  // house | condo | townhome | business | other
+  propertyStatus: '', // new | updating
+  windowReasons: [] as string[], // multi-select array
+  windowCount: '', // 1-5 | 5-10 | 10-15 | 15+
+  timeframe: '', // hurry | 1-2 | 2-4 | this-year | researching
+});
+```
+
+### Location Form Fields
+
+```text
+const [locationDetails, setLocationDetails] = useState({
+  city: '',
+  zipCode: '',
+  remark: '',
+});
+```
+
+### Styling Consistency
+All steps will maintain the established modal styling:
+- Blue gradient outer border
+- Red/white radial gradient inner card
+- Theme-locked text colors (slate-900, slate-600)
+- Primary Blue CTA buttons
+
+### Data Persistence
+All collected data will be persisted to sessionData and included in the final save-lead call for CRM enrichment.
 
 ---
 
@@ -101,13 +214,40 @@ Add tracking for upsell interactions:
 
 | File | Changes |
 |------|---------|
-| `src/components/conversion/KitchenTableGuideModal.tsx` | Add success state, remove redirect, add conditional rendering, integrate ConsultationBookingModal |
+| `src/hooks/useLeadFormSubmit.ts` | Add clientId to payload for 403 fix |
+| `src/hooks/useFormValidation.ts` | Update firstName min to 3 chars |
+| `src/components/conversion/KitchenTableGuideModal.tsx` | Complete rewrite for multi-step flow, phone formatting, last name nudge |
 
 ---
 
-## Technical Notes
+## Thank You Page Content
 
-1. **No new components needed** - The success view is simple enough to be inline JSX within the modal
-2. **ConsultationBookingModal reuse** - Leverages existing consultation booking infrastructure
-3. **Golden Thread maintained** - The `leadId` captured during guide submission carries through to any consultation booking
-4. **Theme-locked styling** - All colors are hardcoded inline (not using theme tokens) to maintain the established visual consistency
+```text
+Headline: "You're All Set!"
+Subtext: "Here's what happens next:"
+
+Steps:
+1. A window specialist will review your project details
+2. You'll receive a call within 24 hours at your preferred time
+3. We'll schedule your free, no-obligation measurement
+
+Company Phone:
+📞 (561) 468-5571
+"Questions? Call us anytime - we're local and ready to help."
+
+Button: "Return to Guide" (closes modal)
+```
+
+---
+
+## Summary
+
+This plan addresses all 8 requirements:
+1. Phone normalization (10 digits, formatted display, E.164 storage)
+2. First name minimum 3 characters
+3. Last name red border nudge when skipped
+4. Email validation (already in place via commonSchemas.email)
+5. Lead data persistence for prepopulation
+6. Multi-step project questionnaire (Steps 2 & 3)
+7. 403 ownership error fix (clientId in payload)
+8. Thank you page with phone number and next steps
