@@ -5,11 +5,9 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { FolderSearch, CheckCircle, ArrowRight } from 'lucide-react';
+import { FolderSearch, CheckCircle, ChevronRight } from 'lucide-react';
 import { receiptRescueItems } from '@/data/claimSurvivalData';
-import { Link } from 'react-router-dom';
-import { ROUTES } from '@/config/navigation';
+import aiBrainIcon from '@/assets/ai-brain-icon.png';
 
 export function ReceiptRescue() {
   return (
@@ -49,17 +47,21 @@ export function ReceiptRescue() {
         </Accordion>
       </Card>
 
-      {/* CTA */}
+      {/* CTA - Click to Call */}
       <div className="text-center mt-8">
         <p className="text-sm text-muted-foreground mb-3">
           Need help finding your window documentation?
         </p>
-        <Link to={ROUTES.EXPERT}>
-          <Button variant="outline">
-            Ask Windowman AI
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
+        <a href="tel:+15614685571">
+          <button 
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white transition-all hover:opacity-90"
+            style={{ backgroundColor: '#2cbff9' }}
+          >
+            <img src={aiBrainIcon} alt="" className="w-5 h-5" />
+            Ask WindowMan AI
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </a>
       </div>
     </div>
   );
