@@ -109,12 +109,12 @@ export function RelatedToolsGrid({
                   </div>
 
                   {/* Title */}
-                  <h3 className="font-semibold mb-1 text-white drop-shadow-md">
+                  <h3 className="font-semibold mb-1 text-card-foreground drop-shadow-md">
                     {tool.title}
                   </h3>
 
                   {/* Description */}
-                  <p className="text-sm text-white/80 mb-4 flex-grow">
+                  <p className="text-sm text-card-foreground/80 mb-4 flex-grow">
                     {tool.description}
                   </p>
 
