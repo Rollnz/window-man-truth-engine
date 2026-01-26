@@ -363,8 +363,8 @@ const KitchenTableGuide = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-sky-500/10 dark:bg-sky-500/20 rounded-full border border-sky-500/30">
                 <ScanSearch className="w-8 h-8 text-sky-500" />
               </div>
-              <h3 className="font-semibold text-primary-foreground text-sm">2. Sanity-Check It</h3>
-              <p className="text-sm text-black">
+              <h3 className="font-semibold text-white text-sm">2. Sanity-Check It</h3>
+              <p className="text-sm text-white">
                 Upload it to the Quote Scanner and see where pressure or padding may exist.
               </p>
             </div>
@@ -373,8 +373,8 @@ const KitchenTableGuide = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full border border-emerald-500/30">
                 <Calculator className="w-8 h-8 text-emerald-500" />
               </div>
-              <h3 className="font-semibold text-sm text-primary-foreground">3. Get Clarity on Price</h3>
-              <p className="text-sm text-black">
+              <h3 className="font-semibold text-sm text-white">3. Get Clarity on Price</h3>
+              <p className="text-sm text-white">
                 Use the Cost Calculator to understand a fair range before talking to anyone again.
               </p>
             </div>
