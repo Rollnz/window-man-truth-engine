@@ -402,7 +402,7 @@ export function TrueCostCalculator({
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                       <span className="text-sm text-gray-500">$</span>
                     </div>
-                    <input id="projectCost" type="number" inputMode="decimal" value={inputs.projectCost} onChange={event => updateField('projectCost', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 py-2 pl-7 pr-4 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('projectCost') && 'border-emerald-500 bg-emerald-50')} />
+                    <input id="projectCost" type="number" inputMode="decimal" value={inputs.projectCost} onChange={event => updateField('projectCost', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 bg-[#EFF6FF] py-2 pl-7 pr-4 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('projectCost') && 'border-emerald-500 bg-emerald-50')} />
                   </div>
                 </div>
 
@@ -411,14 +411,14 @@ export function TrueCostCalculator({
                     <label htmlFor="termYears" className="block text-sm font-medium text-gray-700">
                       Term (years)
                     </label>
-                    <input id="termYears" type="number" inputMode="numeric" min={1} max={40} value={inputs.termYears} onChange={event => updateField('termYears', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('termYears') && 'border-emerald-500 bg-emerald-50')} />
+                    <input id="termYears" type="number" inputMode="numeric" min={1} max={40} value={inputs.termYears} onChange={event => updateField('termYears', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 bg-[#EFF6FF] px-4 py-2 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('termYears') && 'border-emerald-500 bg-emerald-50')} />
                   </div>
 
                   <div className="space-y-2">
                     <label htmlFor="aprPercent" className="block text-sm font-medium text-gray-700">
                       Estimated APR (%)
                     </label>
-                    <input id="aprPercent" type="number" inputMode="decimal" step="0.01" value={inputs.aprPercent} onChange={event => updateField('aprPercent', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('aprPercent') && 'border-emerald-500 bg-emerald-50')} />
+                    <input id="aprPercent" type="number" inputMode="decimal" step="0.01" value={inputs.aprPercent} onChange={event => updateField('aprPercent', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 bg-[#EFF6FF] px-4 py-2 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('aprPercent') && 'border-emerald-500 bg-emerald-50')} />
                   </div>
                 </div>
 
@@ -430,7 +430,7 @@ export function TrueCostCalculator({
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                       <span className="text-sm text-gray-500">$</span>
                     </div>
-                    <input id="estimatedSavings" type="number" inputMode="decimal" value={inputs.estimatedMonthlySavings} onChange={event => updateField('estimatedMonthlySavings', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 py-2 pl-7 pr-4 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('estimatedMonthlySavings') && 'border-emerald-500 bg-emerald-50')} />
+                    <input id="estimatedSavings" type="number" inputMode="decimal" value={inputs.estimatedMonthlySavings} onChange={event => updateField('estimatedMonthlySavings', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 bg-[#EFF6FF] py-2 pl-7 pr-4 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('estimatedMonthlySavings') && 'border-emerald-500 bg-emerald-50')} />
                   </div>
                   <p className="text-[11px] leading-tight text-gray-500">Conservative guess. Many homeowners land between $80–$200/mo.</p>
                 </div>
