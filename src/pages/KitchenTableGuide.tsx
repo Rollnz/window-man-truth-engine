@@ -29,24 +29,19 @@ const KitchenTableGuide = () => {
   // Single source of truth for book image
   const defenseKitResource = getResourceById('defense-kit');
   const bookImageUrl = defenseKitResource?.bookImageUrl || '/images/defense-kit-book.webp';
-  // Local state for optional fields (not validated)
-  const [lastName, setLastName] = React.useState('');
-  const [phone, setPhone] = React.useState('');
-  
   const {
     values,
     getFieldProps,
     hasError,
     getError,
-    validateAll,
-    setValue
+    validateAll
   } = useFormValidation({
     initialValues: {
-      firstName: '',
+      name: '',
       email: ''
     },
     schemas: {
-      firstName: commonSchemas.firstName,
+      name: commonSchemas.name,
       email: commonSchemas.email
     }
   });
@@ -61,22 +56,12 @@ const KitchenTableGuide = () => {
     successTitle: 'Guide Unlocked!',
     successDescription: 'Check your inbox - the guide is on its way.'
   });
-  // Format phone number as user types
-  const formatPhoneNumber = (value: string): string => {
-    const digits = value.replace(/\D/g, '');
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateAll()) return;
     await submit({
       email: values.email,
-      firstName: values.firstName,
-      name: lastName ? `${values.firstName} ${lastName}`.trim() : values.firstName,
-      phone: phone || undefined,
+      name: values.name
     });
   };
   return <div className="min-h-screen bg-background text-foreground">
@@ -245,60 +230,15 @@ const KitchenTableGuide = () => {
 
           <div className="bg-background rounded-xl p-6 sm:p-8 shadow-2xl">
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Row 1: First Name | Last Name */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-white font-semibold">First Name</Label>
-                  <Input 
-                    id="firstName" 
-                    autoComplete="given-name"
-                    {...getFieldProps('firstName')} 
-                    placeholder="John" 
-                    className={hasError('firstName') ? 'border-destructive' : ''} 
-                    disabled={isSubmitting} 
-                  />
-                  {hasError('firstName') && <p className="text-xs text-destructive">{getError('firstName')}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-white font-semibold">Last Name</Label>
-                  <Input 
-                    id="lastName" 
-                    autoComplete="family-name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Smith" 
-                    disabled={isSubmitting} 
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-slate-900 dark:text-foreground font-semibold">First Name</Label>
+                <Input id="name" {...getFieldProps('name')} placeholder="Your name" className={hasError('name') ? 'border-destructive' : ''} disabled={isSubmitting} />
+                {hasError('name') && <p className="text-xs text-destructive">{getError('name')}</p>}
               </div>
-
-              {/* Row 2: Email | Phone */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white font-semibold">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    autoComplete="email"
-                    {...getFieldProps('email')} 
-                    placeholder="you@email.com" 
-                    className={hasError('email') ? 'border-destructive' : ''} 
-                    disabled={isSubmitting} 
-                  />
-                  {hasError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-white font-semibold">Phone</Label>
-                  <Input 
-                    id="phone" 
-                    type="tel" 
-                    autoComplete="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
-                    placeholder="(555) 123-4567" 
-                    disabled={isSubmitting} 
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-slate-900 dark:text-foreground font-semibold">Email Address</Label>
+                <Input id="email" type="email" {...getFieldProps('email')} placeholder="you@example.com" className={hasError('email') ? 'border-destructive' : ''} disabled={isSubmitting} />
+                {hasError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
               </div>
               
               <Button type="submit" variant="cta" size="lg" className="w-full gap-2" disabled={isSubmitting}>
@@ -345,7 +285,7 @@ const KitchenTableGuide = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-500/10 dark:bg-amber-500/20 rounded-full border border-amber-500/30">
                 <PauseCircle className="w-8 h-8 text-amber-500" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground">1. Do Nothing Yet</h3>
+              <h3 className="font-semibold text-primary-foreground text-sm">1. Do Nothing Yet</h3>
               <p className="text-sm text-muted-foreground">
                 Pause. Re-read your quote. Let the pressure fade. No option pushes you forward.
               </p>
@@ -355,7 +295,7 @@ const KitchenTableGuide = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-sky-500/10 dark:bg-sky-500/20 rounded-full border border-sky-500/30">
                 <ScanSearch className="w-8 h-8 text-sky-500" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground">2. Sanity-Check It</h3>
+              <h3 className="font-semibold text-primary-foreground text-sm">2. Sanity-Check It</h3>
               <p className="text-sm text-black">
                 Upload it to the Quote Scanner and see where pressure or padding may exist.
               </p>
@@ -365,7 +305,7 @@ const KitchenTableGuide = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full border border-emerald-500/30">
                 <Calculator className="w-8 h-8 text-emerald-500" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground">3. Get Clarity on Price</h3>
+              <h3 className="font-semibold text-sm text-primary-foreground">3. Get Clarity on Price</h3>
               <p className="text-sm text-black">
                 Use the Cost Calculator to understand a fair range before talking to anyone again.
               </p>
