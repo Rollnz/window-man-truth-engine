@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,19 +17,8 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { ClaimDocument } from '@/data/claimSurvivalData';
-
-interface AnalysisResult {
-  overallScore: number;
-  status: 'critical' | 'warning' | 'ready';
-  summary: string;
-  documentStatus: {
-    docId: string;
-    status: 'complete' | 'missing' | 'weak';
-    recommendation: string;
-  }[];
-  nextSteps: string[];
-  analyzedAt?: string;
-}
+import { ClaimVaultSyncButton } from './ClaimVaultSyncButton';
+import type { AnalysisResult } from '@/hooks/useEvidenceAnalysis';
 
 interface EvidenceAnalysisModalProps {
   isOpen: boolean;
@@ -64,7 +52,7 @@ export function EvidenceAnalysisModal({
       case 'missing':
         return <AlertTriangle className="w-4 h-4 text-destructive" />;
       case 'weak':
-        return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+        return <AlertTriangle className="w-4 h-4 text-warning" />;
       default:
         return null;
     }
@@ -75,7 +63,7 @@ export function EvidenceAnalysisModal({
       case 'ready':
         return 'border-primary/50 bg-primary/10 text-primary';
       case 'warning':
-        return 'border-yellow-500/50 bg-yellow-500/10 text-yellow-500';
+        return 'border-warning/50 bg-warning/10 text-warning';
       case 'critical':
         return 'border-destructive/50 bg-destructive/10 text-destructive';
       default:
@@ -225,7 +213,7 @@ export function EvidenceAnalysisModal({
                                   ? 'border-primary/50 text-primary' 
                                   : item.status === 'missing'
                                   ? 'border-destructive/50 text-destructive'
-                                  : 'border-yellow-500/50 text-yellow-500'
+                                  : 'border-warning/50 text-warning'
                               }`}
                             >
                               {item.status}
@@ -258,13 +246,16 @@ export function EvidenceAnalysisModal({
                 </div>
               )}
 
+              {/* Save to Vault CTA */}
+              <ClaimVaultSyncButton analysis={analysisResult} variant="primary" />
+
               {/* Actions */}
               <div className="flex gap-3 pt-4 border-t border-border">
                 <Button variant="outline" onClick={onAnalyze} className="flex-1">
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Re-Analyze
                 </Button>
-                <Button onClick={onClose} className="flex-1">
+                <Button variant="outline" onClick={onClose} className="flex-1">
                   <Download className="mr-2 h-4 w-4" />
                   Close Report
                 </Button>
