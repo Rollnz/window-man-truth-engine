@@ -3,35 +3,25 @@ import { MessageSquare, Shield, Lock, BadgeDollarSign, ScanSearch } from 'lucide
 import { ROUTES, FOOTER_NAV } from '@/config/navigation';
 import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/gtm';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 export function UnifiedFooter() {
   const location = useLocation();
   const currentYear = new Date().getFullYear();
-
   const handleCTAClick = (cta: 'beat_your_quote' | 'scan_quote') => {
     trackEvent('footer_cta_click', {
       cta,
       surface: 'full_footer',
-      page: location.pathname,
+      page: location.pathname
     });
   };
-
   const handleNavClick = (link: string) => {
     trackEvent('footer_nav_click', {
       link,
       surface: 'full_footer',
-      page: location.pathname,
+      page: location.pathname
     });
   };
-
-  return (
-    <footer className="bg-white dark:bg-white border-t border-slate-200 py-12 md:py-16">
+  return <footer className="bg-white dark:bg-white border-t border-slate-200 py-12 md:py-16">
       <div className="container px-4">
         <div className="max-w-6xl mx-auto">
           {/* Top section - 3 columns */}
@@ -45,11 +35,7 @@ export function UnifiedFooter() {
                 Helping Florida homeowners make informed decisions about window investments 
                 since 2010.
               </p>
-              <Link 
-                to={ROUTES.EXPERT} 
-                onClick={() => handleNavClick('expert')}
-                className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-              >
+              <Link to={ROUTES.EXPERT} onClick={() => handleNavClick('expert')} className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors">
                 <MessageSquare className="w-4 h-4" aria-hidden="true" />
                 <span>Ask a Question</span>
               </Link>
@@ -62,38 +48,22 @@ export function UnifiedFooter() {
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <Link 
-                    to={ROUTES.REALITY_CHECK} 
-                    onClick={() => handleNavClick('reality_check')}
-                    className="text-sm text-slate-900 hover:text-primary transition-colors"
-                  >
+                  <Link to={ROUTES.REALITY_CHECK} onClick={() => handleNavClick('reality_check')} className="text-sm text-slate-900 hover:text-primary transition-colors">
                     Reality Check Tool
                   </Link>
                 </li>
                 <li>
-                  <Link 
-                    to={ROUTES.COST_CALCULATOR} 
-                    onClick={() => handleNavClick('cost_calculator')}
-                    className="text-sm text-slate-900 hover:text-primary transition-colors"
-                  >
+                  <Link to={ROUTES.COST_CALCULATOR} onClick={() => handleNavClick('cost_calculator')} className="text-sm text-slate-900 hover:text-primary transition-colors">
                     Cost of Inaction Calculator
                   </Link>
                 </li>
                 <li>
-                  <Link 
-                    to={ROUTES.COMPARISON} 
-                    onClick={() => handleNavClick('comparison')}
-                    className="text-sm text-slate-900 hover:text-primary transition-colors"
-                  >
+                  <Link to={ROUTES.COMPARISON} onClick={() => handleNavClick('comparison')} className="text-sm text-slate-900 hover:text-primary transition-colors">
                     Comparison Tool
                   </Link>
                 </li>
                 <li>
-                  <Link 
-                    to={ROUTES.EVIDENCE} 
-                    onClick={() => handleNavClick('evidence')}
-                    className="text-sm text-slate-900 hover:text-primary transition-colors"
-                  >
+                  <Link to={ROUTES.EVIDENCE} onClick={() => handleNavClick('evidence')} className="text-sm text-slate-900 hover:text-primary transition-colors">
                     Evidence Locker
                   </Link>
                 </li>
@@ -136,11 +106,7 @@ export function UnifiedFooter() {
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          asChild
-                          className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
-                          onClick={() => handleCTAClick('beat_your_quote')}
-                        >
+                        <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold" onClick={() => handleCTAClick('beat_your_quote')}>
                           <Link to={FOOTER_NAV.BEAT_YOUR_QUOTE}>
                             <BadgeDollarSign className="w-4 h-4 mr-2" aria-hidden="true" />
                             Beat Your Quote
@@ -153,12 +119,7 @@ export function UnifiedFooter() {
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          asChild
-                          variant="outline"
-                          className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 hover:text-primary font-semibold"
-                          onClick={() => handleCTAClick('scan_quote')}
-                        >
+                        <Button asChild variant="outline" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 hover:text-primary font-semibold" onClick={() => handleCTAClick('scan_quote')}>
                           <Link to={FOOTER_NAV.SCAN_QUOTE}>
                             <ScanSearch className="w-4 h-4 mr-2" aria-hidden="true" />
                             Scan Quote
@@ -170,7 +131,7 @@ export function UnifiedFooter() {
                       </TooltipContent>
                     </Tooltip>
                   </div>
-                  <p className="text-xs text-slate-500 text-center mt-2">
+                  <p className="text-center mt-2 font-semibold text-dossier-modal text-sm">
                     Upload your quote for a free analysis
                   </p>
                 </div>
@@ -178,32 +139,16 @@ export function UnifiedFooter() {
 
               {/* Legal links - Right */}
               <div className="flex items-center justify-center md:justify-end gap-4 md:gap-6 order-2 md:order-3">
-                <Link 
-                  to={FOOTER_NAV.HOME} 
-                  onClick={() => handleNavClick('home')}
-                  className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
-                >
+                <Link to={FOOTER_NAV.HOME} onClick={() => handleNavClick('home')} className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
                   Home
                 </Link>
-                <Link 
-                  to={FOOTER_NAV.ALL_TOOLS} 
-                  onClick={() => handleNavClick('all_tools')}
-                  className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
-                >
+                <Link to={FOOTER_NAV.ALL_TOOLS} onClick={() => handleNavClick('all_tools')} className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
                   All Tools
                 </Link>
-                <Link 
-                  to={FOOTER_NAV.PRIVACY} 
-                  onClick={() => handleNavClick('privacy')}
-                  className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
-                >
+                <Link to={FOOTER_NAV.PRIVACY} onClick={() => handleNavClick('privacy')} className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
                   Privacy
                 </Link>
-                <Link 
-                  to={FOOTER_NAV.TERMS} 
-                  onClick={() => handleNavClick('terms')}
-                  className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
-                >
+                <Link to={FOOTER_NAV.TERMS} onClick={() => handleNavClick('terms')} className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
                   Terms
                 </Link>
               </div>
@@ -211,6 +156,5 @@ export function UnifiedFooter() {
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 }
