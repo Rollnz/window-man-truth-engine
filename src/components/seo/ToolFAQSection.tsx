@@ -28,7 +28,7 @@ interface ToolFAQSectionProps {
   faqs: FAQ[];
   title?: string;
   description?: string;
-  variant?: 'default' | 'dossier';
+  variant?: 'default' | 'dossier' | 'gradient';
 }
 export function ToolFAQSection({
   toolPath,
@@ -39,6 +39,7 @@ export function ToolFAQSection({
 }: ToolFAQSectionProps) {
   const parentPillar = getParentPillar(toolPath);
   const isDossier = variant === 'dossier';
+  const isGradient = variant === 'gradient';
   return <section className={cn("py-12 md:py-16 border-y", isDossier ? "bg-[#0A0F14] border-white/10" : "bg-muted/30 border-border")}>
       <div className="container px-4">
         <div className="max-w-3xl mx-auto">
@@ -53,14 +54,27 @@ export function ToolFAQSection({
 
           {/* FAQ Accordion */}
           <Accordion type="single" collapsible className="space-y-3">
-            {faqs.map((faq, index) => <AccordionItem key={index} value={`faq-${index}`} className={cn("rounded-lg px-4 md:px-6", isDossier ? "bg-white/5 border border-white/10 data-[state=open]:border-[#3E8FDA]/50" : "bg-background border border-border data-[state=open]:border-primary/30")}>
+            {faqs.map((faq, index) => <AccordionItem key={index} value={`faq-${index}`} className={cn(
+              "rounded-lg px-4 md:px-6",
+              isDossier ? "bg-white/5 border border-white/10 data-[state=open]:border-[#3E8FDA]/50" : "",
+              isGradient ? "[background:var(--accordion)] border border-primary/20 data-[state=open]:border-primary/50" : "",
+              !isDossier && !isGradient ? "bg-background border border-border data-[state=open]:border-primary/30" : ""
+            )}>
                 <AccordionTrigger className="text-left hover:no-underline py-4">
-                  <span className={cn("font-medium text-base md:text-lg pr-4", isDossier ? "text-white" : "")}>
+                  <span className={cn(
+                    "font-medium text-base md:text-lg pr-4",
+                    (isDossier || isGradient) ? "text-white" : ""
+                  )}>
                     {faq.question}
                   </span>
                 </AccordionTrigger>
                 <AccordionContent className="pb-4 pt-0">
-                  <div className={cn("space-y-4", isDossier ? "text-white/85" : "text-muted-foreground")}>
+                  <div className={cn(
+                    "space-y-4",
+                    isDossier ? "text-white/85" : "",
+                    isGradient ? "text-white" : "",
+                    !isDossier && !isGradient ? "text-muted-foreground" : ""
+                  )}>
                     {/* Direct Answer + Elaboration */}
                     <p className="leading-relaxed">{faq.answer}</p>
 
@@ -71,7 +85,12 @@ export function ToolFAQSection({
                       </Link>}
 
                     {/* Evidence Link (if provided) */}
-                    {faq.evidenceId && <Link to={`/evidence?case=${faq.evidenceId}`} className={cn("inline-flex items-center gap-1.5 text-xs transition-colors", isDossier ? "text-white/60 hover:text-[#3E8FDA]" : "text-muted-foreground/80 hover:text-primary")}>
+                    {faq.evidenceId && <Link to={`/evidence?case=${faq.evidenceId}`} className={cn(
+                      "inline-flex items-center gap-1.5 text-xs transition-colors",
+                      isDossier ? "text-white/60 hover:text-[#3E8FDA]" : "",
+                      isGradient ? "text-white/80 hover:text-white" : "",
+                      !isDossier && !isGradient ? "text-muted-foreground/80 hover:text-primary" : ""
+                    )}>
                         <ExternalLink className="w-3 h-3" />
                         Verified by Case #{faq.evidenceId}
                       </Link>}
