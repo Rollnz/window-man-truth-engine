@@ -27,8 +27,8 @@ export function WhyUseSection() {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
                 <feature.icon className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-              <p className="text-muted-foreground text-sm">{feature.description}</p>
+              <h3 className="font-semibold text-lg mb-2 text-black">{feature.title}</h3>
+              <p className="text-sm text-black">{feature.description}</p>
             </div>)}
         </div>
       </div>
