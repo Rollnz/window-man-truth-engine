@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEvidenceAnalysis } from "@/hooks/useEvidenceAnalysis";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
+import { supabase } from "@/integrations/supabase/client";
 
 import { ClaimHero } from "@/components/claim-survival/ClaimHero";
 import { ReadinessScore } from "@/components/claim-survival/ReadinessScore";
@@ -234,11 +235,35 @@ export default function ClaimSurvival() {
     });
   };
 
-  // Handle view document
-  const handleViewDocument = (docId: string) => {
-    const url = vaultFiles[docId];
-    if (url) {
-      window.open(url, "_blank", "noopener,noreferrer");
+  // Handle view document - generate signed URL for private storage
+  const handleViewDocument = async (docId: string) => {
+    const storagePath = vaultFiles[docId];
+    if (!storagePath) return;
+    
+    try {
+      // Generate a signed URL for the private file (valid for 1 hour)
+      const { data, error } = await supabase.storage
+        .from('claim-documents')
+        .createSignedUrl(storagePath, 3600);
+      
+      if (error || !data?.signedUrl) {
+        console.error('[ClaimSurvival] Failed to generate signed URL:', error);
+        toast({
+          title: "Unable to view document",
+          description: "There was an error accessing your file. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      console.error('[ClaimSurvival] Error viewing document:', err);
+      toast({
+        title: "Unable to view document",
+        description: "There was an error accessing your file. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
