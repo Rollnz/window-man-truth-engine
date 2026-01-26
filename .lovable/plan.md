@@ -1,58 +1,98 @@
 
+# Plan: Fix Evidence Page Contrast with Inverted Theme
 
-## Plan: Make Accordion Gradient Permanent Across All Themes
+## Summary
+Invert the Evidence page so the background swaps between themes while elements stay locked for proper contrast.
 
-### Overview
-Move the accordion background gradient from the light-theme-only block to the global `:root` block, ensuring it never changes regardless of theme.
+## The Problem
 
-### The Problem
-The `--accordion` CSS variable is currently defined only inside the `.light` block in `src/index.css`. When dark mode is active, this variable is undefined, causing the accordion background to fall back to transparent.
+The Evidence page uses global semantic tokens (`bg-background`, `bg-card`, `text-foreground`, etc.) that all change together when the theme switches:
 
-### The Solution
-Move the variable to the global `:root` block where it will apply to ALL themes.
+- **Dark mode**: Dark background (`#0f1318`) + dark cards → dark on dark = poor contrast
+- **Light mode**: Light background (`#f8fafc`) + light cards → light on light = poor contrast
 
-### File Changes
+## What You Want
 
-#### `src/index.css`
+| Theme | Background | Elements |
+|-------|------------|----------|
+| Dark | White/light | Stay dark-themed (readable on white) |
+| Light | Dark | Stay light-themed (readable on dark) |
 
-**Step 1: Add to `:root` block (around line 13)**
+Only the background inverts. Elements stay locked.
 
-Add after the mobile footer variable:
-```css
-:root {
-  /* Mobile sticky footer height (used by PublicLayout for bottom padding) */
-  --mobile-sticky-footer-h: 104px;
+## Solution
 
-  /* Accordion - PERMANENT, theme-independent */
-  --accordion: linear-gradient(to bottom, #cfe7fa 0%, #6393c1 100%);
+### Step 1: Add wrapper class to Evidence page
 
-  /* ============================================================
-     GLOBAL THEME — Dark (default)
-     ...
+**File: `src/pages/Evidence.tsx`**
+
+Change line 119:
+```tsx
+// Before
+<div className="min-h-screen bg-background">
+
+// After  
+<div className="min-h-screen evidence-inverted">
 ```
 
-**Step 2: Remove from `.light` block (lines 150-151)**
+### Step 2: Add CSS overrides for the Evidence page
 
-Delete these lines:
+**File: `src/index.css`**
+
+Add new rules that override tokens ONLY inside `.evidence-inverted`:
+
 ```css
-/* Accordion */
---accordion: linear-gradient(to bottom, #cfe7fa 0%, #6393c1 100%);
+/* ============================================
+   EVIDENCE PAGE - Inverted Contrast
+   Background swaps, elements stay locked
+   ============================================ */
+
+/* Dark mode: Force WHITE background, elements use LIGHT theme colors */
+:root .evidence-inverted,
+.dark .evidence-inverted {
+  --background: 210 35% 98%;
+  --foreground: 209 80% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 209 80% 12%;
+  --muted: 209 30% 92%;
+  --muted-foreground: 209 25% 42%;
+  --border: 209 35% 86%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 209 80% 12%;
+}
+
+/* Light mode: Force DARK background, elements use DARK theme colors */
+.light .evidence-inverted {
+  --background: 220 20% 6%;
+  --foreground: 210 40% 98%;
+  --card: 220 18% 10%;
+  --card-foreground: 210 40% 98%;
+  --muted: 220 15% 18%;
+  --muted-foreground: 215 20% 68%;
+  --border: 220 12% 22%;
+  --popover: 220 18% 10%;
+  --popover-foreground: 210 40% 98%;
+}
 ```
 
-### Technical Details
+## Technical Details
 
 | Aspect | Before | After |
 |--------|--------|-------|
-| Location | `.light` block only | Global `:root` block |
-| Dark theme | Falls back to transparent | Gradient applies |
-| Light theme | Gradient works | Gradient works (unchanged) |
-| Override protection | None | Top of cascade, applies everywhere |
+| Dark mode background | `#0f1318` (dark) | `#f8fafc` (white) |
+| Dark mode cards | `#181c22` (dark) | `#ffffff` (white) |
+| Light mode background | `#f8fafc` (white) | `#0f1318` (dark) |
+| Light mode cards | `#ffffff` (white) | `#181c22` (dark) |
 
-### Result
-- Accordion gradient is now **permanent** across all themes
-- Combined with the earlier `text-black` class, font remains black
-- No theme or state can override this styling
+## Why This Works
 
-### Files Modified
-1. `src/index.css` - Move variable from `.light` to `:root`
+By scoping the variable overrides to `.evidence-inverted`:
+- The Evidence page gets inverted tokens
+- All other pages remain unaffected
+- Child components automatically pick up the inverted values through CSS custom properties
+- No changes needed to CaseFileCard, FilterBar, or other components
 
+## Files Modified
+
+1. `src/pages/Evidence.tsx` - Add `evidence-inverted` class (1 line)
+2. `src/index.css` - Add scoped CSS variable overrides (~25 lines)
