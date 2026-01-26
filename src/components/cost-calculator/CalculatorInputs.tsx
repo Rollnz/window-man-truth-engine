@@ -117,7 +117,7 @@ export function CalculatorInputs({
               <span className="text-xl font-bold text-primary">{homeSize.toLocaleString()}</span>
             </div>
             <Slider value={[homeSize]} onValueChange={value => setHomeSize(value[0])} min={500} max={5000} step={100} className="py-4" />
-            <div className="flex justify-between text-xs text-muted-foreground">
+            <div className="flex justify-between text-xs text-foreground">
               <span>500 sq ft</span>
               <span>5,000 sq ft</span>
             </div>
@@ -135,11 +135,11 @@ export function CalculatorInputs({
           
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Windows to Replace</span>
+              <span className="text-sm text-foreground">Windows to Replace</span>
               <span className="text-xl font-bold text-primary">{windowCount}</span>
             </div>
             <Slider value={[windowCount]} onValueChange={value => setWindowCount(value[0])} min={1} max={50} step={1} className="py-4" />
-            <div className="flex justify-between text-xs text-muted-foreground">
+            <div className="flex justify-between text-xs text-foreground">
               <span>1 window</span>
               <span>50 windows</span>
             </div>
