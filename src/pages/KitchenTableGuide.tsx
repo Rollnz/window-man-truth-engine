@@ -221,11 +221,14 @@ const KitchenTableGuide = () => {
       </section>
 
       {/* SECTION 4 — THE GATE (PRIMARY CONVERSION) */}
-      <section className="py-16 bg-primary text-primary-foreground text-xl text-center sm:py-0">
+      <section 
+        className="py-16 text-white text-xl text-center sm:py-0"
+        style={{ background: 'linear-gradient(135deg, #d0e4f7 0%, #73b1e7 16%, #0a77d5 34%, #539fe1 61%, #539fe1 61%, #87bcea 100%)' }}
+      >
         <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-[31px] my-0">
           <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-2">Get the Kitchen Table Guide</h2>
-            <p className="text-primary-foreground/80">Free PDF • Instant Access</p>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-slate-900">Get the Kitchen Table Guide</h2>
+            <p className="text-slate-700">Free PDF • Instant Access</p>
           </div>
 
           <div className="bg-background rounded-xl p-6 sm:p-8 shadow-2xl">
@@ -265,8 +268,8 @@ const KitchenTableGuide = () => {
           </div>
 
           <div className="mt-8 text-center">
-            <p className="text-sm font-medium text-primary-foreground mb-2">Why is this free?</p>
-            <p className="text-sm text-primary-foreground/80">
+            <p className="text-sm font-medium text-slate-900 mb-2">Why is this free?</p>
+            <p className="text-sm text-slate-700">
               Because an informed homeowner makes better decisions. When you're ready to verify a quote or slow things down, we hope you'll use our tools after the sale.
             </p>
           </div>
