@@ -353,8 +353,8 @@ const KitchenTableGuide = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-500/10 dark:bg-amber-500/20 rounded-full border border-amber-500/30">
                 <PauseCircle className="w-8 h-8 text-amber-500" />
               </div>
-              <h3 className="font-semibold text-primary-foreground text-sm">1. Do Nothing Yet</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-semibold text-white text-sm">1. Do Nothing Yet</h3>
+              <p className="text-sm text-white">
                 Pause. Re-read your quote. Let the pressure fade. No option pushes you forward.
               </p>
             </div>
