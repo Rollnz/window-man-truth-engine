@@ -16,11 +16,13 @@ const ALLOWED_MIME_TYPES = [
   'image/jpeg',
   'image/png',
   'image/heic',
+  'image/heif',
   'image/webp',
 ] as const;
 
 // Hardcoded allowlist - DO NOT import from frontend
 const ALLOWED_DOCUMENT_TYPES = [
+  // Critical claim documents
   'purchase-invoice',
   'installation-contract',
   'noa-certificate',
@@ -28,6 +30,10 @@ const ALLOWED_DOCUMENT_TYPES = [
   'warranty-document',
   'pre-storm-photos',
   'post-storm-photos',
+  // Photo walkthrough categories (Claim Survival Kit)
+  'photo-exterior',
+  'photo-closeups',
+  'photo-interior',
 ] as const;
 
 const RATE_LIMIT_MAX = 10; // per hour
@@ -55,8 +61,8 @@ function isValidDocumentType(docType: string): docType is typeof ALLOWED_DOCUMEN
 function validateMagicBytes(buffer: Uint8Array, mimeType: string): boolean {
   const signatures = MAGIC_BYTES[mimeType];
   if (!signatures) {
-    // HEIC and WebP: MIME-only validation (no magic byte check)
-    return mimeType === 'image/heic' || mimeType === 'image/webp';
+    // HEIC, HEIF, and WebP: MIME-only validation (no magic byte check)
+    return mimeType === 'image/heic' || mimeType === 'image/heif' || mimeType === 'image/webp';
   }
   
   return signatures.some(signature => 

@@ -52,6 +52,7 @@ const ALLOWED_TYPES = [
   'image/jpg',
   'image/png',
   'image/heic',
+  'image/heif',
   'image/webp',
 ];
 const UPLOAD_TIMEOUT_MS = 25000; // 25 seconds

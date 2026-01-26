@@ -225,7 +225,7 @@ export function DocumentUploadModal({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept={allowedTypes.map(t => t === 'image/jpeg' ? '.jpg,.jpeg' : `.${t.split('/')[1]}`).join(',')}
+                accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp"
                 onChange={handleInputChange}
                 className="hidden"
               />
