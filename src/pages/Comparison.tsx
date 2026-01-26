@@ -11,23 +11,19 @@ import { ViewModeToggle, ViewMode } from "@/components/comparison/ViewModeToggle
 import { ComparisonTable } from "@/components/comparison/ComparisonTable";
 import { ComparisonCards } from "@/components/comparison/ComparisonCards";
 import { SavingsBanner } from "@/components/comparison/SavingsBanner";
-import { FloatingEmailButton } from "@/components/comparison/FloatingEmailButton";
 import { ConsultationCTA } from "@/components/comparison/ConsultationCTA";
 import { GenerateComparisonReportButton } from "@/components/comparison/GenerateComparisonReportButton";
-import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
 import { ToolFAQSection } from "@/components/seo";
 import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
 import { getToolFAQs } from "@/data/toolFAQs";
-import type { SourceTool } from "@/types/sourceTool";
 
 export default function Comparison() {
   usePageTracking("comparison-tool");
   const { sessionData, markToolCompleted, updateField } = useSessionData();
   const [viewMode, setViewMode] = useState<ViewMode>("longterm");
-  const [showLeadModal, setShowLeadModal] = useState(false);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
 
   // Track tool visit
@@ -96,18 +92,6 @@ export default function Comparison() {
 
       {/* Bottom CTA Section */}
       <ConsultationCTA onBookConsultation={() => setShowConsultationModal(true)} />
-
-      {/* Floating Email Button */}
-      <FloatingEmailButton onClick={() => setShowLeadModal(true)} />
-
-      {/* Lead Capture Modal */}
-      <LeadCaptureModal
-        isOpen={showLeadModal}
-        onClose={() => setShowLeadModal(false)}
-        onSuccess={() => setShowLeadModal(false)}
-        sourceTool={"comparison-tool" satisfies SourceTool}
-        sessionData={sessionData}
-      />
 
       {/* Consultation Booking Modal */}
       <ConsultationBookingModal
