@@ -7,24 +7,21 @@ import { getBillRangeOptions, getAgeRangeOptions } from '@/lib/calculations';
 import { SessionData } from '@/hooks/useSessionData';
 import { Calculator, Zap, Home, Grid3X3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
 interface CalculatorInputsProps {
   sessionData: SessionData;
   onCalculate: (inputs: ValidatedInputs) => void;
   isCalculating?: boolean;
 }
-
 export interface ValidatedInputs {
   energyBill: string;
   windowAge: string;
   homeSize: number;
   windowCount: number;
 }
-
 export function CalculatorInputs({
   sessionData,
   onCalculate,
-  isCalculating = false,
+  isCalculating = false
 }: CalculatorInputsProps) {
   // Initialize from session data or empty state
   const [energyBill, setEnergyBill] = useState<string>(sessionData.currentEnergyBill || '');
@@ -39,22 +36,18 @@ export function CalculatorInputs({
 
   // Check if form is valid
   const isValid = energyBill !== '' && windowAge !== '';
-
   const billOptions = getBillRangeOptions();
   const ageOptions = getAgeRangeOptions();
-
   const handleCalculate = () => {
     if (!isValid) return;
     onCalculate({
       energyBill,
       windowAge,
       homeSize,
-      windowCount,
+      windowCount
     });
   };
-
-  return (
-    <div className="space-y-8">
+  return <div className="space-y-8">
       {/* Energy Bill Selection */}
       <Card className="bg-card/50 backdrop-blur border-border/50">
         <CardContent className="pt-6">
@@ -63,35 +56,20 @@ export function CalculatorInputs({
               <Zap className="h-5 w-5 text-primary" />
               <h3 className="font-semibold">Monthly Energy Bill</h3>
             </div>
-            {hasPrefilledBill && (
-              <Badge variant="outline" className="border-primary/50 text-primary text-xs">
+            {hasPrefilledBill && <Badge variant="outline" className="border-primary/50 text-primary text-xs">
                 Using your saved info
-              </Badge>
-            )}
+              </Badge>}
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            {billOptions.map((option) => (
-              <Button
-                key={option}
-                type="button"
-                variant={energyBill === option ? 'default' : 'outline'}
-                className={cn(
-                  'h-12 text-sm transition-all',
-                  energyBill === option && 'shadow-[0_0_15px_hsl(var(--primary)/0.3)]'
-                )}
-                onClick={() => setEnergyBill(option)}
-              >
+            {billOptions.map(option => <Button key={option} type="button" variant={energyBill === option ? 'default' : 'outline'} className={cn('h-12 text-sm transition-all', energyBill === option && 'shadow-[0_0_15px_hsl(var(--primary)/0.3)]')} onClick={() => setEnergyBill(option)}>
                 {option}
-              </Button>
-            ))}
+              </Button>)}
           </div>
           
-          {!hasPrefilledBill && !energyBill && (
-            <p className="text-sm text-muted-foreground mt-2">
+          {!hasPrefilledBill && !energyBill && <p className="text-sm text-muted-foreground mt-2">
               Select your average monthly energy bill
-            </p>
-          )}
+            </p>}
         </CardContent>
       </Card>
 
@@ -103,35 +81,20 @@ export function CalculatorInputs({
               <Grid3X3 className="h-5 w-5 text-primary" />
               <h3 className="font-semibold">Window Age</h3>
             </div>
-            {hasPrefilledAge && (
-              <Badge variant="outline" className="border-primary/50 text-primary text-xs">
+            {hasPrefilledAge && <Badge variant="outline" className="border-primary/50 text-primary text-xs">
                 Using your saved info
-              </Badge>
-            )}
+              </Badge>}
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            {ageOptions.map((option) => (
-              <Button
-                key={option}
-                type="button"
-                variant={windowAge === option ? 'default' : 'outline'}
-                className={cn(
-                  'h-12 text-sm transition-all',
-                  windowAge === option && 'shadow-[0_0_15px_hsl(var(--primary)/0.3)]'
-                )}
-                onClick={() => setWindowAge(option)}
-              >
+            {ageOptions.map(option => <Button key={option} type="button" variant={windowAge === option ? 'default' : 'outline'} className={cn('h-12 text-sm transition-all', windowAge === option && 'shadow-[0_0_15px_hsl(var(--primary)/0.3)]')} onClick={() => setWindowAge(option)}>
                 {option}
-              </Button>
-            ))}
+              </Button>)}
           </div>
           
-          {!hasPrefilledAge && !windowAge && (
-            <p className="text-sm text-muted-foreground mt-2">
+          {!hasPrefilledAge && !windowAge && <p className="text-sm text-muted-foreground mt-2">
               How old are your current windows?
-            </p>
-          )}
+            </p>}
         </CardContent>
       </Card>
 
@@ -141,13 +104,11 @@ export function CalculatorInputs({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Home className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold">Home Size</h3>
+              <h3 className="font-semibold py-[10px]">Home Size</h3>
             </div>
-            {hasPrefilledSize && (
-              <Badge variant="outline" className="border-primary/50 text-primary text-xs">
+            {hasPrefilledSize && <Badge variant="outline" className="border-primary/50 text-primary text-xs">
                 Using your saved info
-              </Badge>
-            )}
+              </Badge>}
           </div>
           
           <div className="space-y-4">
@@ -155,14 +116,7 @@ export function CalculatorInputs({
               <span className="text-sm text-muted-foreground">Square Feet</span>
               <span className="text-xl font-bold text-primary">{homeSize.toLocaleString()}</span>
             </div>
-            <Slider
-              value={[homeSize]}
-              onValueChange={(value) => setHomeSize(value[0])}
-              min={500}
-              max={5000}
-              step={100}
-              className="py-4"
-            />
+            <Slider value={[homeSize]} onValueChange={value => setHomeSize(value[0])} min={500} max={5000} step={100} className="py-4" />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>500 sq ft</span>
               <span>5,000 sq ft</span>
@@ -184,14 +138,7 @@ export function CalculatorInputs({
               <span className="text-sm text-muted-foreground">Windows to Replace</span>
               <span className="text-xl font-bold text-primary">{windowCount}</span>
             </div>
-            <Slider
-              value={[windowCount]}
-              onValueChange={(value) => setWindowCount(value[0])}
-              min={1}
-              max={50}
-              step={1}
-              className="py-4"
-            />
+            <Slider value={[windowCount]} onValueChange={value => setWindowCount(value[0])} min={1} max={50} step={1} className="py-4" />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>1 window</span>
               <span>50 windows</span>
@@ -201,21 +148,13 @@ export function CalculatorInputs({
       </Card>
 
       {/* Calculate Button */}
-      <Button
-        onClick={handleCalculate}
-        disabled={!isValid || isCalculating}
-        className="w-full h-14 text-lg font-semibold shadow-[0_0_30px_hsl(var(--primary)/0.4)] transition-all hover:shadow-[0_0_40px_hsl(var(--primary)/0.5)]"
-        size="lg"
-      >
+      <Button onClick={handleCalculate} disabled={!isValid || isCalculating} className="w-full h-14 text-lg font-semibold shadow-[0_0_30px_hsl(var(--primary)/0.4)] transition-all hover:shadow-[0_0_40px_hsl(var(--primary)/0.5)]" size="lg">
         <Calculator className="mr-2 h-5 w-5" />
         {isCalculating ? 'Calculating...' : 'Calculate My True Cost'}
       </Button>
 
-      {!isValid && (
-        <p className="text-center text-sm text-muted-foreground">
+      {!isValid && <p className="text-center text-sm text-muted-foreground">
           Please select your energy bill and window age to continue
-        </p>
-      )}
-    </div>
-  );
+        </p>}
+    </div>;
 }
