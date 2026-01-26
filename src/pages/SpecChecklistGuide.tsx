@@ -70,7 +70,7 @@ const SpecChecklistGuide = () => {
 
       {/* Page Sections */}
       <div className="pt-14">
-      <SpecChecklistHero onCtaClick={scrollToMainCta} />
+      <SpecChecklistHero onCtaClick={scrollToMainCta} onSuccess={handleConversionSuccess} hasConverted={hasConverted} />
       <ProblemAgitation />
       <PacketCardsGrid />
       <AuthoritySection />
