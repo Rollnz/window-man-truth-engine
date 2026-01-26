@@ -86,7 +86,7 @@ export function RelatedToolsGrid({
             <h2 className={cn("text-xl md:text-2xl font-bold mb-2 text-primary-foreground", variant === 'dossier' ? 'text-white' : 'text-foreground')}>
               {title}
             </h2>
-            {description && <p className={cn('max-w-2xl mx-auto', variant === 'dossier' ? 'text-white/70' : 'text-muted-foreground')}>
+            {description && <p className={cn("max-w-2xl mx-auto text-primary-foreground", variant === 'dossier' ? 'text-white/70' : 'text-muted-foreground')}>
                 {description}
               </p>}
           </div>}
