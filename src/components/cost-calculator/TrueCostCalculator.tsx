@@ -364,7 +364,7 @@ export function TrueCostCalculator({
   return <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-sky-50 via-white to-emerald-50 py-16 lg:py-24 bg-secondary">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-gray-900">
         <FadeInSection className="mx-auto mb-12 max-w-3xl text-center">
-          <h2 className="mb-4 text-3xl font-black tracking-tight text-gray-900 md:text-4xl">
+          <h2 className="mb-4 text-[36px] font-black tracking-tight text-gray-900">
             How Impact Windows Help Pay Their Own Way
           </h2>
           <p className="text-lg text-gray-700">
