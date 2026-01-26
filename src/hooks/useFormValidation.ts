@@ -135,14 +135,17 @@ export function useFormValidation<T extends Record<string, string>>({
 
 // Common formatters
 export const formatPhoneNumber = (value: string): string => {
-  const digits = value.replace(/\D/g, '');
+  // Extract only digits and limit to 10
+  const digits = value.replace(/\D/g, '').slice(0, 10);
   
-  if (digits.length <= 3) {
-    return digits.length > 0 ? `(${digits}` : '';
+  if (digits.length === 0) {
+    return '';
+  } else if (digits.length <= 3) {
+    return `(${digits}`;
   } else if (digits.length <= 6) {
     return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
   } else {
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
 };
 
@@ -157,9 +160,9 @@ export const commonSchemas = {
     .min(1, 'Name is required')
     .max(100, 'Name is too long'),
   
-  // First name - required, min 1 char for EMQ
+  // First name - required, min 3 chars
   firstName: z.string()
-    .min(1, 'First name is required')
+    .min(3, 'First name must be at least 3 characters')
     .max(50, 'First name is too long'),
   
   // Last name - optional for EMQ
