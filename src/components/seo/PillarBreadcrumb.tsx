@@ -56,7 +56,7 @@ export function PillarBreadcrumb({
   }
 
   // Default badge variant
-  return <Link to={parentPillar.url} className={cn("inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 hover:border-primary/40 text-xs font-medium text-primary/80 hover:text-primary transition-all duration-200 bg-sidebar-accent bg-[sidebar-primary-foreground]", className)}>
+  return <Link to={parentPillar.url} className={cn("inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#3E8FDA] text-xs font-medium transition-all duration-200 bg-[#3E8FDA] text-white hover:bg-[#3E8FDA]/90", className)}>
       <BookOpen className="w-3.5 h-3.5" />
       <span>Part of {parentPillar.shortTitle}</span>
       <ChevronRight className="w-3 h-3" />
