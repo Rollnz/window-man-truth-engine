@@ -69,7 +69,20 @@ const aiContextSchema = z.object({
   emotional_state: z.string().max(100).optional().nullable(),
   urgency_level: z.string().max(100).optional().nullable(),
   insurance_carrier: z.string().max(100).optional().nullable(),
-  window_count: z.number().int().min(0).max(500).optional().nullable(),
+  // Accept both numbers and string ranges like "5-10", "15+"
+  window_count: z.union([
+    z.number().int().min(0).max(500),
+    z.string().max(20)
+  ]).optional().nullable(),
+  // Multi-step form fields
+  upsell_type: z.string().max(50).optional().nullable(),
+  property_type: z.string().max(50).optional().nullable(),
+  property_status: z.string().max(50).optional().nullable(),
+  window_reasons: z.array(z.string().max(100)).max(10).optional().nullable(),
+  timeframe: z.string().max(50).optional().nullable(),
+  city: z.string().max(100).optional().nullable(),
+  zip_code: z.string().max(10).optional().nullable(),
+  remark: z.string().max(1000).optional().nullable(),
 }).optional().nullable();
 
 // Main lead schema

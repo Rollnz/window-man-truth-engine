@@ -881,7 +881,7 @@ export const trackConsultationBooked = async (params: {
       event_id: eventId,
       external_id: params.leadId,
       user_data: userData,
-      value: 50,
+      value: 75,
       currency: 'USD',
       source_tool: params.sourceTool,
       source_system: 'website',
@@ -896,7 +896,7 @@ export const trackConsultationBooked = async (params: {
         eventId: eventId.slice(0, 8),
         hasEmail: !!userData?.sha256_email_address,
         hasPhone: !!userData?.sha256_phone_number,
-        value: 50,
+        value: 75,
       });
     }
   } catch (error) {
