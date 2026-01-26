@@ -17,7 +17,7 @@ import { ROUTES } from '@/config/navigation';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { ProTipBox } from '@/components/seo';
 import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
-import { EbookLeadModal, EBOOK_CONFIGS } from '@/components/conversion/EbookLeadModal';
+import { KitchenTableGuideModal } from '@/components/conversion/KitchenTableGuideModal';
 const KitchenTableGuide = () => {
   usePageTracking('kitchen-table-guide');
   const navigate = useNavigate();
@@ -414,13 +414,10 @@ const KitchenTableGuide = () => {
       {/* Exit Intent Modal for lead capture */}
       <ExitIntentModal sourceTool="kitchen-table-guide" hasConverted={isSubmitting} resultSummary="Kitchen Table Defense Guide" />
 
-      {/* Ebook Lead Modal */}
-      <EbookLeadModal
+      {/* Kitchen Table Guide Modal */}
+      <KitchenTableGuideModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={() => setIsModalOpen(false)}
-        sourceTool="kitchen-table-guide"
-        config={EBOOK_CONFIGS['kitchen-table-guide']}
       />
     </div>;
 };
