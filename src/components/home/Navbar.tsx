@@ -53,9 +53,20 @@ export function Navbar() {
           <ReadinessIndicator />
           
           {/* Theme Toggle */}
-          <Button variant="ghost" size="icon" onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="h-9 w-9">
-            {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
+          <button 
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} 
+            className={`h-9 w-9 flex items-center justify-center rounded transition-colors ${
+              resolvedTheme === 'dark' 
+                ? 'bg-amber-50 hover:bg-amber-100' 
+                : 'bg-slate-800 hover:bg-slate-700'
+            }`}
+            aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {resolvedTheme === 'dark' 
+              ? <Sun className="h-4 w-4 text-orange-500" /> 
+              : <Moon className="h-4 w-4 text-white" />
+            }
+          </button>
           
           {/* Auth Button */}
           {!loading && (isAuthenticated ? <Button variant="outline" size="sm" asChild className="relative">
@@ -111,15 +122,22 @@ export function Navbar() {
           </div>
           
           {/* Theme Toggle - Mobile */}
-          <Button variant="ghost" size="sm" onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="w-full justify-start">
-            {resolvedTheme === 'dark' ? <>
-                <Sun className="h-4 w-4 mr-2" />
-                Light Mode
-              </> : <>
-                <Moon className="h-4 w-4 mr-2" />
-                Dark Mode
-              </>}
-          </Button>
+          <button 
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} 
+            className="w-full flex items-center gap-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <span className={`h-8 w-8 flex items-center justify-center rounded transition-colors ${
+              resolvedTheme === 'dark' 
+                ? 'bg-amber-50' 
+                : 'bg-slate-800'
+            }`}>
+              {resolvedTheme === 'dark' 
+                ? <Sun className="h-4 w-4 text-orange-500" /> 
+                : <Moon className="h-4 w-4 text-white" />
+              }
+            </span>
+            {resolvedTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </button>
           
           {!loading && (isAuthenticated ? <Button variant="outline" size="sm" asChild className="w-full relative">
                 <Link to={ROUTES.VAULT} onClick={() => setMobileMenuOpen(false)}>
