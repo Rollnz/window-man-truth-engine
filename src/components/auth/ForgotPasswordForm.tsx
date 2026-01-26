@@ -71,11 +71,11 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
         </div>
         
         <div className="text-center space-y-2">
-          <h3 className="font-semibold">Check your email</h3>
-          <p className="text-muted-foreground text-sm">
-            We've sent a password reset link to <strong>{email}</strong>
+          <h3 className="font-semibold text-white">Check your email</h3>
+          <p className="text-white text-sm">
+            We've sent a password reset link to <strong className="text-white">{email}</strong>
           </p>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-white text-sm">
             Click the link to reset your password.
           </p>
         </div>
