@@ -79,7 +79,7 @@ export function CalculatorInputs({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Grid3X3 className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-foreground">Window Age</h3>
+              <h3 className="font-semibold text-white">Window Age</h3>
             </div>
             {hasPrefilledAge && <Badge variant="outline" className="border-primary/50 text-primary-foreground text-base">
                 Using your saved info
@@ -104,7 +104,7 @@ export function CalculatorInputs({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Home className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold">Home Size</h3>
+              <h3 className="font-semibold text-white">Home Size</h3>
             </div>
             {hasPrefilledSize && <Badge variant="outline" className="border-primary/50 text-primary text-xs">
                 Using your saved info
@@ -113,11 +113,11 @@ export function CalculatorInputs({
           
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-foreground">Square Feet</span>
+              <span className="text-sm text-white">Square Feet</span>
               <span className="text-xl font-bold text-primary">{homeSize.toLocaleString()}</span>
             </div>
             <Slider value={[homeSize]} onValueChange={value => setHomeSize(value[0])} min={500} max={5000} step={100} className="py-4" />
-            <div className="flex justify-between text-xs text-foreground">
+            <div className="flex justify-between text-xs text-white">
               <span>500 sq ft</span>
               <span>5,000 sq ft</span>
             </div>
@@ -130,16 +130,16 @@ export function CalculatorInputs({
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 mb-4">
             <Grid3X3 className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Number of Windows</h3>
+            <h3 className="font-semibold text-white">Number of Windows</h3>
           </div>
           
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-foreground">Windows to Replace</span>
+              <span className="text-sm text-white">Windows to Replace</span>
               <span className="text-xl font-bold text-primary">{windowCount}</span>
             </div>
             <Slider value={[windowCount]} onValueChange={value => setWindowCount(value[0])} min={1} max={50} step={1} className="py-4" />
-            <div className="flex justify-between text-xs text-foreground">
+            <div className="flex justify-between text-xs text-white">
               <span>1 window</span>
               <span>50 windows</span>
             </div>
