@@ -222,7 +222,7 @@ const KitchenTableGuide = () => {
 
       {/* SECTION 4 — THE GATE (PRIMARY CONVERSION) */}
       <section className="py-16 bg-primary text-primary-foreground text-xl text-center sm:py-0">
-        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-[31px] my-0">
           <div className="text-center mb-8">
             <h2 className="text-2xl sm:text-3xl font-bold mb-2">Get the Kitchen Table Guide</h2>
             <p className="text-primary-foreground/80">Free PDF • Instant Access</p>
