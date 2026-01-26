@@ -65,7 +65,7 @@ export function ToolFAQSection({
                     <p className="leading-relaxed">{faq.answer}</p>
 
                     {/* Tool CTA (if provided) */}
-                    {faq.toolCTA && <Link to={faq.toolCTA.href} className={cn("inline-flex items-center gap-2 font-medium transition-colors text-sm text-[#f5e9bc]", isDossier ? "text-[#3E8FDA] hover:text-[#5AA8F0]" : "text-primary hover:text-primary/80")}>
+                    {faq.toolCTA && <Link to={faq.toolCTA.href} className="inline-flex items-center gap-2 font-medium text-sm text-[#f5e9bc] hover:text-[#f5e9bc]">
                         <ArrowRight className="w-4 h-4" />
                         {faq.toolCTA.text}
                       </Link>}
