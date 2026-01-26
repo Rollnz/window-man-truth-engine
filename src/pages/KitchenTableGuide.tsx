@@ -29,19 +29,24 @@ const KitchenTableGuide = () => {
   // Single source of truth for book image
   const defenseKitResource = getResourceById('defense-kit');
   const bookImageUrl = defenseKitResource?.bookImageUrl || '/images/defense-kit-book.webp';
+  // Local state for optional fields (not validated)
+  const [lastName, setLastName] = React.useState('');
+  const [phone, setPhone] = React.useState('');
+  
   const {
     values,
     getFieldProps,
     hasError,
     getError,
-    validateAll
+    validateAll,
+    setValue
   } = useFormValidation({
     initialValues: {
-      name: '',
+      firstName: '',
       email: ''
     },
     schemas: {
-      name: commonSchemas.name,
+      firstName: commonSchemas.firstName,
       email: commonSchemas.email
     }
   });
@@ -56,12 +61,22 @@ const KitchenTableGuide = () => {
     successTitle: 'Guide Unlocked!',
     successDescription: 'Check your inbox - the guide is on its way.'
   });
+  // Format phone number as user types
+  const formatPhoneNumber = (value: string): string => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateAll()) return;
     await submit({
       email: values.email,
-      name: values.name
+      firstName: values.firstName,
+      name: lastName ? `${values.firstName} ${lastName}`.trim() : values.firstName,
+      phone: phone || undefined,
     });
   };
   return <div className="min-h-screen bg-background text-foreground">
@@ -230,15 +245,60 @@ const KitchenTableGuide = () => {
 
           <div className="bg-background rounded-xl p-6 sm:p-8 shadow-2xl">
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-slate-900 dark:text-foreground font-semibold">First Name</Label>
-                <Input id="name" {...getFieldProps('name')} placeholder="Your name" className={hasError('name') ? 'border-destructive' : ''} disabled={isSubmitting} />
-                {hasError('name') && <p className="text-xs text-destructive">{getError('name')}</p>}
+              {/* Row 1: First Name | Last Name */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-white font-semibold">First Name</Label>
+                  <Input 
+                    id="firstName" 
+                    autoComplete="given-name"
+                    {...getFieldProps('firstName')} 
+                    placeholder="John" 
+                    className={hasError('firstName') ? 'border-destructive' : ''} 
+                    disabled={isSubmitting} 
+                  />
+                  {hasError('firstName') && <p className="text-xs text-destructive">{getError('firstName')}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-white font-semibold">Last Name</Label>
+                  <Input 
+                    id="lastName" 
+                    autoComplete="family-name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Smith" 
+                    disabled={isSubmitting} 
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-900 dark:text-foreground font-semibold">Email Address</Label>
-                <Input id="email" type="email" {...getFieldProps('email')} placeholder="you@example.com" className={hasError('email') ? 'border-destructive' : ''} disabled={isSubmitting} />
-                {hasError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
+
+              {/* Row 2: Email | Phone */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-white font-semibold">Email</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    autoComplete="email"
+                    {...getFieldProps('email')} 
+                    placeholder="you@email.com" 
+                    className={hasError('email') ? 'border-destructive' : ''} 
+                    disabled={isSubmitting} 
+                  />
+                  {hasError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-white font-semibold">Phone</Label>
+                  <Input 
+                    id="phone" 
+                    type="tel" 
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
+                    placeholder="(555) 123-4567" 
+                    disabled={isSubmitting} 
+                  />
+                </div>
               </div>
               
               <Button type="submit" variant="cta" size="lg" className="w-full gap-2" disabled={isSubmitting}>
