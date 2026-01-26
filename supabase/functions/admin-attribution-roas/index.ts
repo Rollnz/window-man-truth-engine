@@ -4,19 +4,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const ADMIN_EMAILS = [
-  'admin@windowman.com',
-  'support@windowman.com',
-  'vansiclenp@gmail.com',
-  'mongoloyd@protonmail.com',
-].map(e => e.toLowerCase());
+import { validateAdminRequest, corsHeaders } from "../_shared/adminAuth.ts";
 
 // Helper: Derive platform from lead attribution fields
 function derivePlatform(lead: {
@@ -27,16 +15,11 @@ function derivePlatform(lead: {
   last_non_direct_utm_source?: string | null;
   utm_source?: string | null;
 }): 'google' | 'meta' | 'other' {
-  // Priority 1: last_non_direct_gclid => google
   if (lead.last_non_direct_gclid) return 'google';
-  // Priority 2: last_non_direct_fbclid => meta
   if (lead.last_non_direct_fbclid) return 'meta';
-  // Priority 3: direct gclid => google
   if (lead.gclid) return 'google';
-  // Priority 4: direct fbclid => meta
   if (lead.fbclid) return 'meta';
   
-  // Priority 5: utm_source heuristics
   const utmSource = (lead.last_non_direct_utm_source || lead.utm_source || '').toLowerCase();
   if (utmSource.includes('google')) return 'google';
   if (utmSource.includes('facebook') || utmSource.includes('instagram') || utmSource.includes('meta')) return 'meta';
@@ -44,22 +27,15 @@ function derivePlatform(lead: {
   return 'other';
 }
 
-
-// Helper: Derive campaign key from lead
-// NOTE: wm_leads does NOT have last_non_direct_utm_campaign column - use utm_campaign only
-function deriveCampaign(lead: {
-  utm_campaign?: string | null;
-}): string | null {
+function deriveCampaign(lead: { utm_campaign?: string | null }): string | null {
   return lead.utm_campaign || null;
 }
 
-// Helper: Normalize campaign string for matching
 function normalizeCampaign(campaign: string | null): string {
   if (!campaign) return '';
   return campaign.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
-// Helper: Safe division
 function safeDivide(numerator: number, denominator: number): number | null {
   if (denominator === 0 || !isFinite(denominator)) return null;
   const result = numerator / denominator;
@@ -72,35 +48,11 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Authentication required' }), 
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const validation = await validateAdminRequest(req);
+    if (!validation.ok) {
+      return validation.response;
     }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    
-    if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: 'Invalid authentication' }), 
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const userEmail = claimsData.claims.email as string;
-    if (!ADMIN_EMAILS.includes(userEmail?.toLowerCase())) {
-      return new Response(JSON.stringify({ error: 'Admin access required' }), 
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const { supabaseAdmin } = validation;
 
     // Parse query parameters
     const url = new URL(req.url);
