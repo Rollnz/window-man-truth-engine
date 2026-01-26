@@ -37,11 +37,13 @@ const KitchenTableGuide = () => {
     validateAll
   } = useFormValidation({
     initialValues: {
-      name: '',
-      email: ''
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: ''
     },
     schemas: {
-      name: commonSchemas.name,
+      firstName: commonSchemas.firstName,
       email: commonSchemas.email
     }
   });
@@ -61,7 +63,8 @@ const KitchenTableGuide = () => {
     if (!validateAll()) return;
     await submit({
       email: values.email,
-      name: values.name
+      name: `${values.firstName}${values.lastName ? ' ' + values.lastName : ''}`,
+      phone: values.phone || undefined
     });
   };
   return <div className="min-h-screen bg-background text-foreground">
@@ -231,17 +234,38 @@ const KitchenTableGuide = () => {
             <p className="text-slate-700">Free PDF • Instant Access</p>
           </div>
 
-          <div className="bg-background rounded-xl p-6 sm:p-8 shadow-2xl ring-1 ring-white/20" style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)' }}>
+          <div 
+            className="rounded-xl p-6 sm:p-8 ring-1 ring-white/30 transition-all duration-300 hover:-translate-y-1"
+            style={{ 
+              background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%)',
+              boxShadow: '0 35px 60px -15px rgba(0, 0, 0, 0.35), 0 20px 25px -10px rgba(0, 0, 0, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.8)'
+            }}
+          >
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-slate-900 dark:text-foreground font-semibold">First Name</Label>
-                <Input id="name" {...getFieldProps('name')} placeholder="Your name" className={hasError('name') ? 'border-destructive' : ''} disabled={isSubmitting} />
-                {hasError('name') && <p className="text-xs text-destructive">{getError('name')}</p>}
+              {/* Row 1: First Name | Last Name */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-slate-900 font-semibold">First Name</Label>
+                  <Input id="firstName" {...getFieldProps('firstName')} placeholder="First name" className={hasError('firstName') ? 'border-destructive' : ''} disabled={isSubmitting} autoComplete="given-name" />
+                  {hasError('firstName') && <p className="text-xs text-destructive">{getError('firstName')}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-slate-900 font-semibold">Last Name</Label>
+                  <Input id="lastName" {...getFieldProps('lastName')} placeholder="Last name" disabled={isSubmitting} autoComplete="family-name" />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-900 dark:text-foreground font-semibold">Email Address</Label>
-                <Input id="email" type="email" {...getFieldProps('email')} placeholder="you@example.com" className={hasError('email') ? 'border-destructive' : ''} disabled={isSubmitting} />
-                {hasError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
+              
+              {/* Row 2: Email | Phone */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-slate-900 font-semibold">Email</Label>
+                  <Input id="email" type="email" {...getFieldProps('email')} placeholder="you@example.com" className={hasError('email') ? 'border-destructive' : ''} disabled={isSubmitting} autoComplete="email" />
+                  {hasError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-slate-900 font-semibold">Phone</Label>
+                  <Input id="phone" type="tel" {...getFieldProps('phone')} placeholder="(555) 123-4567" disabled={isSubmitting} autoComplete="tel" />
+                </div>
               </div>
               
               <Button type="submit" variant="cta" size="lg" className="w-full gap-2" disabled={isSubmitting}>
