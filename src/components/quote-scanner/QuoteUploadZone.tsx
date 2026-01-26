@@ -177,7 +177,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*,application/pdf"
+              accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp"
               onChange={handleFileChange}
               className="hidden"
             />
