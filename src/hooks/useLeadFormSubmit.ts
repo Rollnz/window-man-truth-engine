@@ -14,6 +14,7 @@ import { useSessionData } from './useSessionData';
 import { getAttributionData, getFullAttributionData } from '@/lib/attribution';
 import { trackLeadCapture, trackFormSubmit, trackEvent, trackLeadSubmissionSuccess } from '@/lib/gtm';
 import { getLeadQuality } from '@/lib/leadQuality';
+import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { setExplicitSubmission } from '@/lib/consent';
 import { setLeadAnchor } from '@/lib/leadAnchor';
 import type { SourceTool } from '@/types/sourceTool';
@@ -121,7 +122,9 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       // Get full attribution data (Phase 1B: three-tier attribution)
       const fullAttribution = getFullAttributionData();
 
-      // Build payload
+      // Build payload with clientId for ownership validation
+      const clientId = getOrCreateAnonId();
+      
       const payload: Record<string, unknown> = {
         email: data.email.trim(),
         sourceTool,
@@ -135,6 +138,10 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
         },
         // Golden Thread: Pass sessionId for attribution tracking
         sessionId,
+        // Pass clientId in sessionData for ownership validation (fixes 403 error)
+        sessionData: {
+          clientId,
+        },
       };
 
       // Add optional fields
