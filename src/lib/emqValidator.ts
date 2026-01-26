@@ -38,10 +38,14 @@ export const CONVERSION_EVENTS = [
   'booking_confirmed',
 ];
 
-// Validate UUID v4 format (36 chars with dashes)
-const isValidUUID = (id: string | undefined | null): boolean => {
+// Validate event_id format: either UUID v4 OR deterministic format like "event_type:uuid"
+const isValidEventId = (id: string | undefined | null): boolean => {
   if (!id || typeof id !== 'string') return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+  // Standard UUID v4
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  // Deterministic format: event_type:uuid (e.g., "lead_captured:uuid", "consultation_booked:uuid")
+  const deterministicPattern = /^[a-z_]+:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidPattern.test(id) || deterministicPattern.test(id);
 };
 
 // Validate SHA-256 hash (64 hex chars)
@@ -65,12 +69,12 @@ export function validateEMQEvent(event: Record<string, unknown>): EMQValidationR
   const eventName = event.event as string;
   const userData = getUserData(event);
   
-  // 1. Event ID validation
+  // 1. Event ID validation (accepts UUID or deterministic format like "event_type:uuid")
   const eventId = event.event_id as string | undefined;
   const eventIdCheck: EMQCheckResult = {
-    passed: isValidUUID(eventId),
+    passed: isValidEventId(eventId),
     value: eventId ? `${eventId.substring(0, 8)}...` : undefined,
-    reason: !eventId ? 'Missing event_id' : !isValidUUID(eventId) ? 'Invalid UUID format' : undefined,
+    reason: !eventId ? 'Missing event_id' : !isValidEventId(eventId) ? 'Invalid event_id format' : undefined,
   };
 
   // 2. Email Hash validation

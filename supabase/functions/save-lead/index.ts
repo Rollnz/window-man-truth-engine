@@ -503,7 +503,21 @@ serve(async (req) => {
       emotional_state: aiContext?.emotional_state || null,
       urgency_level: aiContext?.urgency_level || null,
       insurance_carrier: aiContext?.insurance_carrier || null,
-      window_count: aiContext?.window_count || null,
+      // Convert string window_count ranges to midpoint numbers for INTEGER column
+      window_count: (() => {
+        const wc = aiContext?.window_count;
+        if (wc === null || wc === undefined) return null;
+        if (typeof wc === 'number') return wc;
+        // Handle string ranges: "1-5" -> 3, "5-10" -> 7, "10-15" -> 12, "15+" -> 20
+        if (typeof wc === 'string') {
+          if (wc === '15+' || wc === '15-plus') return 20;
+          const match = wc.match(/^(\d+)-(\d+)$/);
+          if (match) return Math.floor((parseInt(match[1]) + parseInt(match[2])) / 2);
+          const num = parseInt(wc, 10);
+          return isNaN(num) ? null : num;
+        }
+        return null;
+      })(),
     };
 
     // ═══════════════════════════════════════════════════════════════════════════
