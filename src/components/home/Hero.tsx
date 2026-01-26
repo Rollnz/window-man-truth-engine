@@ -18,8 +18,8 @@ export function Hero() {
             <span className="text-sm text-muted-foreground">Trusted by 10,000+ Florida Homeowners</span>
           </div>
 
-          {/* Main headline */}
-          <h1 className="display-h1 text-lift text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          {/* Main headline - No animation delay for faster LCP */}
+          <h1 className="display-h1 text-lift text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
             <span className="text-foreground">Cheap Windows Cost You More</span>
             <span className="block mt-2 text-primary text-glow">— Discover the Proof for Yourself</span>
           </h1>
