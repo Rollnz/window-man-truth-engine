@@ -54,7 +54,7 @@ export function CalculatorInputs({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold">Monthly Energy Bill</h3>
+              <h3 className="font-semibold text-white">Monthly Energy Bill</h3>
             </div>
             {hasPrefilledBill && <Badge variant="outline" className="border-primary/50 text-primary text-xs">
                 Using your saved info
