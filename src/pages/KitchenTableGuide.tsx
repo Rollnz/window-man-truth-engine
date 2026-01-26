@@ -251,7 +251,7 @@ const KitchenTableGuide = () => {
                     id="firstName" 
                     {...getFieldProps('firstName')} 
                     placeholder="First name" 
-                    className={`bg-white/70 border-slate-200 focus:border-primary focus:outline-none transition-all duration-300 ${hasError('firstName') ? 'border-destructive' : ''}`}
+                    className={`bg-white border border-black focus:border-primary focus:outline-none transition-all duration-300 ${hasError('firstName') ? 'border-destructive' : ''}`}
                     style={{ boxShadow: 'none' }}
                     onFocus={(e) => e.target.style.boxShadow = '0 0 0 3px rgba(57, 147, 221, 0.25), 0 0 20px rgba(57, 147, 221, 0.15)'}
                     onBlur={(e) => e.target.style.boxShadow = 'none'}
@@ -265,7 +265,7 @@ const KitchenTableGuide = () => {
                     id="lastName" 
                     {...getFieldProps('lastName')} 
                     placeholder="Last name" 
-                    className="bg-white/70 border-slate-200 focus:border-primary focus:outline-none transition-all duration-300"
+                    className="bg-white border border-black focus:border-primary focus:outline-none transition-all duration-300"
                     style={{ boxShadow: 'none' }}
                     onFocus={(e) => e.target.style.boxShadow = '0 0 0 3px rgba(57, 147, 221, 0.25), 0 0 20px rgba(57, 147, 221, 0.15)'}
                     onBlur={(e) => e.target.style.boxShadow = 'none'}
@@ -283,7 +283,7 @@ const KitchenTableGuide = () => {
                     type="email" 
                     {...getFieldProps('email')} 
                     placeholder="Email address" 
-                    className={`bg-white/70 border-slate-200 focus:border-primary focus:outline-none transition-all duration-300 ${hasError('email') ? 'border-destructive' : ''}`}
+                    className={`bg-white border border-black focus:border-primary focus:outline-none transition-all duration-300 ${hasError('email') ? 'border-destructive' : ''}`}
                     style={{ boxShadow: 'none' }}
                     onFocus={(e) => e.target.style.boxShadow = '0 0 0 3px rgba(57, 147, 221, 0.25), 0 0 20px rgba(57, 147, 221, 0.15)'}
                     onBlur={(e) => e.target.style.boxShadow = 'none'}
@@ -298,7 +298,7 @@ const KitchenTableGuide = () => {
                     type="tel" 
                     {...getFieldProps('phone')} 
                     placeholder="Phone" 
-                    className="bg-white/70 border-slate-200 placeholder:text-slate-500 focus:border-primary focus:outline-none transition-all duration-300"
+                    className="bg-white border border-black placeholder:text-slate-500 focus:border-primary focus:outline-none transition-all duration-300"
                     style={{ boxShadow: 'none' }}
                     onFocus={(e) => e.target.style.boxShadow = '0 0 0 3px rgba(57, 147, 221, 0.25), 0 0 20px rgba(57, 147, 221, 0.15)'}
                     onBlur={(e) => e.target.style.boxShadow = 'none'}
