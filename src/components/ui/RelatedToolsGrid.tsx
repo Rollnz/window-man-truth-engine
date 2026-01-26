@@ -83,7 +83,7 @@ export function RelatedToolsGrid({
       <div className="container px-4 mx-auto">
         {/* Header */}
         {showHeader && <div className="text-center mb-8">
-            <h2 className={cn("text-xl md:text-2xl font-bold mb-2", variant === 'dossier' ? 'text-white' : 'text-foreground')}>
+            <h2 className={cn("text-xl md:text-2xl font-bold mb-2 text-primary-foreground", variant === 'dossier' ? 'text-white' : 'text-foreground')}>
               {title}
             </h2>
             {description && <p className={cn('max-w-2xl mx-auto', variant === 'dossier' ? 'text-white/70' : 'text-muted-foreground')}>
