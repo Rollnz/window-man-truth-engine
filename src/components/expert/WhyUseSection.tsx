@@ -18,7 +18,7 @@ export function WhyUseSection() {
         <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4">
           Don't Walk Into a Negotiation <span className="text-primary bg-[#3e8fda]/30">Unarmed</span>
         </h2>
-        <p className="text-center mb-10 max-w-2xl mx-auto text-primary-foreground font-bold text-2xl">
+        <p className="text-center mb-10 max-w-2xl mx-auto text-black dark:text-white font-bold text-2xl">
           This Expert System gives you the leverage you need before, during, and after the sales pitch.
         </p>
 
