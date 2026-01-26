@@ -9,7 +9,7 @@ import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/use
 import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ArrowRight, CheckCircle2, Calendar, Phone, Home, Building2, MapPin, Clock, ChevronLeft } from 'lucide-react';
-import { trackModalOpen, trackEvent } from '@/lib/gtm';
+import { trackModalOpen, trackEvent, trackConsultationBooked } from '@/lib/gtm';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -101,7 +101,10 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
     formLocation: 'modal',
     leadScore: 40,
     successTitle: 'Guide Unlocked!',
-    successDescription: 'Check your inbox - the guide is on its way.'
+    successDescription: 'Check your inbox - the guide is on its way.',
+    onSuccess: (leadId) => {
+      setCapturedLeadId(leadId);
+    },
   });
 
   // Track modal open
@@ -229,7 +232,7 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
             property_type: projectDetails.propertyType,
             property_status: projectDetails.propertyStatus,
             window_reasons: projectDetails.windowReasons,
-            window_count: projectDetails.windowCount,
+            window_count: projectDetails.windowCount, // Now accepts string ranges
             timeframe: projectDetails.timeframe,
             city: locationDetails.city,
             zip_code: locationDetails.zipCode,
@@ -238,10 +241,16 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
         }
       });
 
-      trackEvent('consultation_booked', {
+      // Track with proper EMQ data (event_id, user_data, value/currency)
+      const effectiveLeadId = capturedLeadId || crypto.randomUUID();
+      await trackConsultationBooked({
+        leadId: effectiveLeadId,
+        email: values.email,
+        phone: values.phone || undefined,
+        firstName: values.firstName,
+        lastName: values.lastName,
         sourceTool: 'kitchen-table-guide',
-        upsell_type: upsellType,
-        property_type: projectDetails.propertyType,
+        eventId: `consultation_booked:${effectiveLeadId}`,
       });
     } catch (error) {
       console.error('Failed to save consultation:', error);
@@ -697,6 +706,9 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
         style={{ 
           background: 'linear-gradient(135deg, #d0e4f7 0%, #73b1e7 16%, #0a77d5 34%, #539fe1 61%, #539fe1 61%, #87bcea 100%)'
         }}
+        onInteractOutside={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <div className="p-6">
           <div 

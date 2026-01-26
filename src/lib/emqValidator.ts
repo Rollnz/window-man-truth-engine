@@ -22,10 +22,10 @@ export interface EMQValidationResult {
 
 // Expected conversion values by event type
 export const EXPECTED_VALUES: Record<string, number> = {
-  lead_submission_success: 15,
-  lead_captured: 15,
+  lead_submission_success: 100,  // Full contact lead (name + email + phone)
+  lead_captured: 15,             // Email-only leads
   phone_lead: 25,
-  consultation_booked: 75,
+  consultation_booked: 75,       // High-intent consultation
   booking_confirmed: 75,
 };
 
