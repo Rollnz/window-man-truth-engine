@@ -113,7 +113,7 @@ export function CalculatorInputs({
           
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Square Feet</span>
+              <span className="text-sm text-foreground">Square Feet</span>
               <span className="text-xl font-bold text-primary">{homeSize.toLocaleString()}</span>
             </div>
             <Slider value={[homeSize]} onValueChange={value => setHomeSize(value[0])} min={500} max={5000} step={100} className="py-4" />
