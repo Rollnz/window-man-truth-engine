@@ -231,7 +231,7 @@ const KitchenTableGuide = () => {
             <p className="text-slate-700">Free PDF • Instant Access</p>
           </div>
 
-          <div className="bg-background rounded-xl p-6 sm:p-8 shadow-2xl">
+          <div className="bg-background rounded-xl p-6 sm:p-8 shadow-2xl ring-1 ring-white/20" style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)' }}>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-slate-900 dark:text-foreground font-semibold">First Name</Label>
