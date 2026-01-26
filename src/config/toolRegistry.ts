@@ -605,7 +605,7 @@ interface FrameControl {
 
 const FRAME_CONTROL_MAP: Record<FunnelPhase, FrameControl> = {
   awareness: {
-    title: "⚡ Fix This Problem Now",
+    title: "⚡ Fix This Problem Now ⚡",
     description: "Stop the bleeding with these tools"
   },
   evaluation: {
