@@ -15,7 +15,7 @@ export function TrustSection() {
         <h2 className="text-2xl font-bold text-center mb-4 sm:text-4xl">
           What Powers This <span className="text-primary">Engine?</span>
         </h2>
-        <p className="text-muted-foreground text-center mb-10 max-w-2xl mx-auto">
+        <p className="text-foreground text-lg text-center mb-10 max-w-2xl mx-auto">
           This isn't a basic support bot. Our Expert System is trained on Florida Building Codes, 
           real-time market pricing data, and thousands of actual contractor contracts to give you 
           answers that matter.
