@@ -1,15 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Admin email whitelist (same as other admin functions)
-const ADMIN_EMAILS = [
-  'vansiclenp@gmail.com',
-  'mongoloyd@protonmail.com',
-];
+import { validateAdminRequest, corsHeaders } from "../_shared/adminAuth.ts";
 
 /**
  * ============================================================================
@@ -22,15 +11,8 @@ const ADMIN_EMAILS = [
  * - Uses btree index on (entity_type, updated_at) for grouped pagination
  * - Single table query instead of N-table UNION
  * - Target: <300ms at 10k-100k rows
- * 
- * MONITORS:
- * - Edge function execution time (should be <500ms)
- * - Index usage (EXPLAIN ANALYZE on queries)
- * - global_search_index row count vs source tables
- * ============================================================================
  */
 
-// Entity type labels for display
 const ENTITY_TYPE_LABELS: Record<string, string> = {
   lead: 'Lead',
   call: 'Call',
@@ -42,13 +24,11 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
 };
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Only allow GET
     if (req.method !== 'GET') {
       return new Response(
         JSON.stringify({ error: 'Method not allowed' }),
@@ -56,40 +36,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Initialize Supabase clients
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-
-    // Auth check using anon client
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const validation = await validateAdminRequest(req);
+    if (!validation.ok) {
+      return validation.response;
     }
-
-    const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check admin whitelist
-    const userEmail = user.email?.toLowerCase();
-    if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
-      return new Response(
-        JSON.stringify({ error: 'Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const { supabaseAdmin } = validation;
 
     // Parse query params
     const url = new URL(req.url);
@@ -115,8 +66,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Service role client for actual queries (bypasses RLS on global_search_index)
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const startTime = Date.now();
     const digitsOnly = query.replace(/\D/g, '');
