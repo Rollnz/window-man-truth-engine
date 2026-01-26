@@ -43,7 +43,7 @@ export function ReviewedByBadge({
   // Default variant - full badge with credentials
   return (
     <div className={cn(
-      "bg-gradient-to-br from-primary/5 via-background to-primary/10 border border-primary/20 rounded-xl p-6",
+      "bg-gradient-to-br from-primary/[0.02] via-primary/15 to-primary/[0.02] border border-primary/20 rounded-xl p-6",
       className
     )}>
       <div className="flex items-start gap-4">
