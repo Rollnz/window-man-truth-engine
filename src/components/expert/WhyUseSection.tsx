@@ -53,7 +53,7 @@ export function WhyUseSection() {
           {features.map((feature, index) => (
             <div 
               key={feature.title} 
-              className={`bg-card border border-border rounded-lg p-6 text-center cursor-pointer hover:shadow-lg hover:shadow-black/20 transition-all duration-500 ease-out ${
+              className={`bg-card border border-border rounded-lg p-6 text-center hover:shadow-lg hover:shadow-black/20 transition-all duration-500 ease-out ${
                 isVisible 
                   ? 'translate-x-0 translate-y-0 opacity-100' 
                   : feature.animation
