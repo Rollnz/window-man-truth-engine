@@ -5,17 +5,17 @@ import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { HOMEPAGE_TOOLS, getDifficultyConfig, type ToolDefinition } from '@/config/toolRegistry';
 import { trackEngagement } from '@/services/analytics';
-
-function DifficultyBadge({ difficulty }: { difficulty?: 'easy' | 'medium' | 'advanced' }) {
+function DifficultyBadge({
+  difficulty
+}: {
+  difficulty?: 'easy' | 'medium' | 'advanced';
+}) {
   if (!difficulty) return null;
   const config = getDifficultyConfig(difficulty);
-  return (
-    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${config.color}`}>
+  return <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${config.color}`}>
       {config.label}
-    </span>
-  );
+    </span>;
 }
-
 function ToolCard({
   tool,
   index
@@ -24,31 +24,20 @@ function ToolCard({
   index: number;
 }) {
   const Icon = tool.icon;
-  
   const handleClick = () => {
     // Track engagement with tool's score
     trackEngagement('tool_click', tool.engagementScore, tool.id);
   };
-  
-  const cardContent = (
-    <ImpactWindowCard className="h-full">
-      <Link 
-        to={tool.path} 
-        className="group relative flex flex-col h-full p-6"
-        onClick={handleClick}
-      >
+  const cardContent = <ImpactWindowCard className="h-full">
+      <Link to={tool.path} className="group relative flex flex-col h-full p-6" onClick={handleClick}>
           {/* Top badges row */}
           <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-            {tool.badge && (
-              <div className="text-xs px-2 py-1 rounded font-medium text-primary bg-white/90 border border-primary/30">
+            {tool.badge && <div className="text-xs px-2 py-1 rounded font-medium text-primary bg-white/90 border border-primary/30">
                 {tool.badge}
-              </div>
-            )}
-            {tool.gated && (
-              <div className="text-xs px-2 py-1 rounded text-white/70 bg-black/30">
+              </div>}
+            {tool.gated && <div className="text-xs px-2 py-1 rounded text-white/70 bg-black/30">
                 Email to save
-              </div>
-            )}
+              </div>}
           </div>
 
           {/* Icon with themed background */}
@@ -62,17 +51,13 @@ function ToolCard({
           </h3>
 
           {/* Metadata row: time + difficulty */}
-          {(tool.estimatedTime || tool.difficulty) && (
-            <div className="flex items-center gap-3 mb-3">
-              {tool.estimatedTime && (
-                <span className="flex items-center gap-1 text-[11px] text-white/70">
+          {(tool.estimatedTime || tool.difficulty) && <div className="flex items-center gap-3 mb-3">
+              {tool.estimatedTime && <span className="flex items-center gap-1 text-[11px] text-white/70">
                   <Clock className="w-3 h-3" />
                   {tool.estimatedTime}
-                </span>
-              )}
+                </span>}
               <DifficultyBadge difficulty={tool.difficulty} />
-            </div>
-          )}
+            </div>}
 
           {/* Description */}
           <p className="text-sm mb-4 flex-grow text-white/80">
@@ -85,33 +70,20 @@ function ToolCard({
             <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
           </div>
         </Link>
-      </ImpactWindowCard>
-  );
-
-  return (
-    <AnimateOnScroll delay={index * 80}>
-      {tool.tooltip ? (
-        <Tooltip delayDuration={0}>
+      </ImpactWindowCard>;
+  return <AnimateOnScroll delay={index * 80}>
+      {tool.tooltip ? <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
             {cardContent}
           </TooltipTrigger>
-          <TooltipContent 
-            side="top" 
-            className="max-w-xs bg-slate-900 text-white border-slate-700 px-4 py-3 text-sm leading-relaxed shadow-xl"
-          >
+          <TooltipContent side="top" className="max-w-xs bg-slate-900 text-white border-slate-700 px-4 py-3 text-sm leading-relaxed shadow-xl">
             {tool.tooltip}
           </TooltipContent>
-        </Tooltip>
-      ) : (
-        cardContent
-      )}
-    </AnimateOnScroll>
-  );
+        </Tooltip> : cardContent}
+    </AnimateOnScroll>;
 }
-
 export function ToolGrid() {
-  return (
-    <section className="py-20 md:py-32 relative section-surface">
+  return <section className="py-20 md:py-32 relative section-surface">
       <div className="container px-4">
         {/* Section header */}
         <div className="max-w-3xl mx-auto text-center mb-6">
@@ -126,7 +98,7 @@ export function ToolGrid() {
 
         {/* Control message */}
         <div className="text-center text-sm mb-12">
-          <span className="inline-flex flex-col items-center gap-1 px-5 py-3 rounded-2xl border-2 border-border bg-background/50 shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.3)]">
+          <span className="inline-flex flex-col items-center gap-1 px-5 py-3 rounded-2xl border-2 border-border shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.3)] bg-[#2473c2]">
             <span className="text-foreground font-bold">✓ You're in control</span>
             <span className="text-foreground font-semibold">Explore any tool in any order</span>
           </span>
@@ -134,11 +106,8 @@ export function ToolGrid() {
 
         {/* Tools grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {HOMEPAGE_TOOLS.map((tool, index) => (
-            <ToolCard key={tool.id} tool={tool} index={index} />
-          ))}
+          {HOMEPAGE_TOOLS.map((tool, index) => <ToolCard key={tool.id} tool={tool} index={index} />)}
         </div>
       </div>
-    </section>
-  );
+    </section>;
 }
