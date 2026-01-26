@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
@@ -6,6 +7,8 @@ import { Link } from "react-router-dom";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { ROUTES } from "@/config/navigation";
 import { getGuidePageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
+import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
+import { useSessionData } from "@/hooks/useSessionData";
 
 const faqs = [
   {
@@ -23,6 +26,9 @@ const faqs = [
 ];
 
 const FAQ = () => {
+  const [showConsultationModal, setShowConsultationModal] = useState(false);
+  const { sessionData } = useSessionData();
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SEO 
@@ -50,9 +56,7 @@ const FAQ = () => {
                 <AccordionContent className="space-y-3 text-muted-foreground">
                   <p>{item.answer}</p>
                   <div className="flex flex-wrap gap-2">
-                    <Button asChild size="sm">
-                      <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
-                    </Button>
+                    <Button size="sm" onClick={() => setShowConsultationModal(true)}>Book an Inspection</Button>
                     <Button asChild size="sm" variant="secondary-action">
                       <Link to={ROUTES.SPEC_CHECKLIST_GUIDE}>Download Spec Checklist</Link>
                     </Button>
@@ -70,6 +74,14 @@ const FAQ = () => {
           />
         </section>
       </main>
+
+      <ConsultationBookingModal
+        isOpen={showConsultationModal}
+        onClose={() => setShowConsultationModal(false)}
+        onSuccess={() => setShowConsultationModal(false)}
+        sessionData={sessionData}
+        sourceTool="consultation"
+      />
     </div>
   );
 };

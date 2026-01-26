@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { usePageTracking } from '@/hooks/usePageTracking';
@@ -5,9 +6,13 @@ import { Navbar } from '@/components/home/Navbar';
 import { SEO } from '@/components/SEO';
 import { getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { ROUTES } from '@/config/navigation';
+import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
+import { useSessionData } from '@/hooks/useSessionData';
 
 export default function Terms() {
   usePageTracking('legal-terms');
+  const [showConsultationModal, setShowConsultationModal] = useState(false);
+  const { sessionData } = useSessionData();
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,9 +70,7 @@ export default function Terms() {
               These terms exist to protect your data and decisions. Ready to act under these rules? Book an inspection or download the Spec Checklist to move forward confidently.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button asChild>
-                <Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link>
-              </Button>
+              <Button onClick={() => setShowConsultationModal(true)}>Book an Inspection</Button>
               <Button asChild variant="secondary-action">
                 <Link to={ROUTES.SPEC_CHECKLIST_GUIDE}>Download Spec Checklist</Link>
               </Button>
@@ -75,6 +78,14 @@ export default function Terms() {
           </section>
         </div>
       </div>
+
+      <ConsultationBookingModal
+        isOpen={showConsultationModal}
+        onClose={() => setShowConsultationModal(false)}
+        onSuccess={() => setShowConsultationModal(false)}
+        sessionData={sessionData}
+        sourceTool="consultation"
+      />
     </div>
   );
 }
