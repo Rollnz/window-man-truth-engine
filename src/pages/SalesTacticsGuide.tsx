@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import {
   Target,
@@ -16,10 +16,6 @@ import {
   Timer
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
-import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
 import { SEO } from '@/components/SEO';
 import { ConversionBar } from '@/components/conversion/ConversionBar';
 import { Navbar } from '@/components/home/Navbar';
@@ -31,6 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { ProTipBox } from '@/components/seo';
 import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
+import { SalesTacticsGuideModal } from '@/components/conversion/SalesTacticsGuideModal';
 
 const SalesTacticsGuide = () => {
   usePageTracking('sales-tactics-guide');
@@ -38,35 +35,7 @@ const SalesTacticsGuide = () => {
   const { sessionData } = useSessionData();
   const frameControl = getFrameControl('sales-tactics-guide');
   const smartTools = getSmartRelatedTools('sales-tactics-guide', sessionData.toolsCompleted);
-
-  const {
-    values,
-    getFieldProps,
-    hasError,
-    getError,
-    validateAll,
-  } = useFormValidation({
-    initialValues: { name: '', email: '' },
-    schemas: {
-      name: commonSchemas.name,
-      email: commonSchemas.email,
-    },
-  });
-
-  const { submit, isSubmitting } = useLeadFormSubmit({
-    sourceTool: 'sales-tactics-guide',
-    formLocation: 'main',
-    leadScore: 40,
-    redirectTo: ROUTES.COMPARISON,
-    successTitle: 'Guide Unlocked!',
-    successDescription: 'Check your inbox - the guide is on its way.',
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateAll()) return;
-    await submit({ email: values.email, name: values.name });
-  };
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -285,63 +254,52 @@ const SalesTacticsGuide = () => {
       </section>
 
       {/* SECTION 4 — THE GATE (PRIMARY CONVERSION) */}
-      <section className="py-16 sm:py-24 bg-primary text-primary-foreground">
+      <section 
+        className="py-16 sm:py-24"
+        style={{ 
+          background: 'linear-gradient(135deg, #d2dfed 0%, #c8d7eb 19%, #a6c0e3 36%, #a6c0e3 36%, #c8d7eb 51%, #bed0ea 51%, #c8d7eb 51%, #afc7e8 62%, #bad0ef 69%, #99b5db 88%, #799bc8 100%)' 
+        }}
+      >
         <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-2">Get the Sales Tactics Guide</h2>
-            <p className="text-primary-foreground/80">Free PDF • Instant Access</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">Get the Sales Tactics Guide</h2>
+            <p className="text-slate-700">Free PDF • Instant Access</p>
           </div>
 
-          <div className="bg-background rounded-xl p-6 sm:p-8 shadow-2xl">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-slate-900 dark:text-foreground font-semibold">First Name</Label>
-                <Input 
-                  id="name"
-                  {...getFieldProps('name')}
-                  placeholder="Your name"
-                  className={hasError('name') ? 'border-destructive' : ''}
-                  disabled={isSubmitting}
-                />
-                {hasError('name') && (
-                  <p className="text-xs text-destructive">{getError('name')}</p>
-                )}
+          <div 
+            className="rounded-xl p-6 sm:p-8 ring-1 ring-white/30"
+            style={{ 
+              background: 'radial-gradient(ellipse at center, #e2bbb7 0%, #f0d5d2 25%, #ffffff 60%, #ffffff 100%)',
+              boxShadow: '0 35px 60px -15px rgba(0, 0, 0, 0.35), 0 20px 25px -10px rgba(0, 0, 0, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.8)'
+            }}
+          >
+            <div className="text-center space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">11 Sales Tactics You Need to Know</h3>
+                <p className="text-sm text-slate-600">Learn to recognize manipulation before you sign.</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-900 dark:text-foreground font-semibold">Email Address</Label>
-                <Input 
-                  id="email"
-                  type="email"
-                  {...getFieldProps('email')}
-                  placeholder="you@example.com"
-                  className={hasError('email') ? 'border-destructive' : ''}
-                  disabled={isSubmitting}
-                />
-                {hasError('email') && (
-                  <p className="text-xs text-destructive">{getError('email')}</p>
-                )}
-              </div>
-              
-              <Button type="submit" variant="cta" size="lg" className="w-full gap-2" disabled={isSubmitting}>
-                {isSubmitting ? 'Sending...' : 'Send Me the Guide'}
-                {!isSubmitting && <ArrowRight className="w-4 h-4" />}
-              </Button>
-              
-              <p className="text-xs text-muted-foreground text-center">
-                We'll also save this to your private Windowman Vault.
-              </p>
-            </form>
 
-            <div className="flex flex-wrap justify-center gap-4 mt-6 pt-6 border-t border-border text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> No Spam
-              </span>
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> No Sales Calls
-              </span>
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> No Contractor Handoff
-              </span>
+              <Button 
+                variant="cta" 
+                size="lg" 
+                className="w-full gap-2"
+                onClick={() => setIsModalOpen(true)}
+              >
+                Unlock the Guide
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+
+              <div className="flex flex-wrap justify-center gap-4 pt-4 border-t border-slate-200 text-xs text-slate-700">
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> No Spam
+                </span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> No Sales Calls
+                </span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> No Contractor Handoff
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -408,8 +366,14 @@ const SalesTacticsGuide = () => {
       {/* Exit Intent Modal for lead capture */}
       <ExitIntentModal
         sourceTool="sales-tactics-guide"
-        hasConverted={isSubmitting}
+        hasConverted={isModalOpen}
         resultSummary="11 Sales Tactics Guide"
+      />
+
+      {/* Sales Tactics Guide Modal */}
+      <SalesTacticsGuideModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
       />
     </div>
   );
