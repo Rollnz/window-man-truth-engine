@@ -1,113 +1,63 @@
 
-
-# Plan: Open ConsultationBookingModal on CTA Button Clicks
+# Plan: Apply Slanted Blue Gradient to Kitchen Table Guide Conversion Section
 
 ## Overview
-Update buttons containing keywords ("Book", "Schedule", "Call", "Measurement") to open the `ConsultationBookingModal` instead of navigating to another page. This provides a better conversion experience by keeping users on-page.
+Replace the current `bg-primary` background on the conversion section with the specified slanted blue gradient using an inline style.
 
 ---
 
-## Component Reference
-**Modal Name:** `ConsultationBookingModal`  
-**Location:** `src/components/conversion/ConsultationBookingModal.tsx`
+## File to Modify
 
-**Current Fields:**
-- First Name* (required)
-- Last Name (optional)
-- Email* (required)  
-- Phone* (required)
-- Best Time to Call* (required dropdown: Morning, Afternoon, Evening, ASAP)
-- Additional Notes (optional textarea)
+### `src/pages/KitchenTableGuide.tsx`
 
----
+**Line 224** - Update the section element:
 
-## Files to Modify
+| Current | New |
+|---------|-----|
+| `className="py-16 bg-primary text-primary-foreground text-xl text-center sm:py-0"` | `style={{ background: 'linear-gradient(135deg, #d0e4f7 0%, #73b1e7 16%, #0a77d5 34%, #539fe1 61%, #539fe1 61%, #87bcea 100%)' }}` + adjusted className |
 
-### 1. Privacy Page (`src/pages/legal/Privacy.tsx`)
-**Current:** "Book an Inspection" button navigates to `/free-estimate`
+**Code change:**
 
-**Change:** 
-- Add state for modal visibility
-- Import `ConsultationBookingModal` and `useSessionData`
-- Replace `<Link>` with a `<Button onClick>` that opens the modal
-- Render the modal at the bottom of the component
+```tsx
+// Line 224 - Before
+<section className="py-16 bg-primary text-primary-foreground text-xl text-center sm:py-0">
 
-### 2. Terms Page (`src/pages/legal/Terms.tsx`)
-**Same changes as Privacy page**
-
-### 3. About Page (`src/pages/About.tsx`)
-**Same changes** - "Book an Inspection" button will open modal
-
-### 4. FAQ Page (`src/pages/FAQ.tsx`)
-**Same changes** - "Book an Inspection" button will open modal
-
-### 5. Defense Page (`src/pages/Defense.tsx`)
-**Same changes** - "Book an Inspection" button will open modal
-
----
-
-## Implementation Pattern
-
-Each page will follow this pattern:
-
-```text
-1. Add imports:
-   - ConsultationBookingModal from @/components/conversion/ConsultationBookingModal
-   - useSessionData from @/hooks/useSessionData
-   - useState from react
-
-2. Add state:
-   const [showConsultationModal, setShowConsultationModal] = useState(false);
-   const { sessionData } = useSessionData();
-
-3. Replace Link with Button:
-   Before: <Button asChild><Link to={ROUTES.FREE_ESTIMATE}>Book an Inspection</Link></Button>
-   After:  <Button onClick={() => setShowConsultationModal(true)}>Book an Inspection</Button>
-
-4. Add modal at component bottom:
-   <ConsultationBookingModal
-     isOpen={showConsultationModal}
-     onClose={() => setShowConsultationModal(false)}
-     onSuccess={() => setShowConsultationModal(false)}
-     sessionData={sessionData}
-     sourceTool="[page-name]"
-   />
+// Line 224 - After
+<section 
+  className="py-16 text-white text-xl text-center sm:py-0"
+  style={{ background: 'linear-gradient(135deg, #d0e4f7 0%, #73b1e7 16%, #0a77d5 34%, #539fe1 61%, #539fe1 61%, #87bcea 100%)' }}
+>
 ```
+
+---
+
+## Additional Text Color Updates
+
+Since the gradient goes from light blue (#d0e4f7) to medium blue (#0a77d5), text colors need adjustment for proper contrast:
+
+| Line | Element | Current | New |
+|------|---------|---------|-----|
+| 227 | H2 heading | (inherits) | `text-slate-900` (dark text on light gradient areas) |
+| 228 | Subtitle | `text-primary-foreground/80` | `text-slate-700` |
+| 268 | "Why is this free?" | `text-primary-foreground` | `text-slate-900` |
+| 269-271 | Explanation text | `text-primary-foreground/80` | `text-slate-700` |
 
 ---
 
 ## Technical Details
 
-### Source Tool Values
-Each page will use a unique `sourceTool` value for analytics tracking:
-- Privacy page: `"privacy-cta"`
-- Terms page: `"terms-cta"`
-- About page: `"about-cta"`
-- FAQ page: `"faq-cta"`
-- Defense page: `"defense-cta"`
-
-### No Database Changes Required
-The `source_tool` enum in the database already supports free-form text values, so no migration is needed.
+- **Gradient Direction**: 135deg (diagonal from top-left to bottom-right)
+- **Color Stops**: Light blue → Medium blue → Deep blue → Lighter blue
+- **Performance Impact**: Negligible - CSS gradients are GPU-accelerated and add minimal file size
 
 ---
 
-## Summary of Changes
+## Summary
 
-| File | Button Text | Current Behavior | New Behavior |
-|------|-------------|------------------|--------------|
-| Privacy.tsx | "Book an Inspection" | Navigates to /free-estimate | Opens modal |
-| Terms.tsx | "Book an Inspection" | Navigates to /free-estimate | Opens modal |
-| About.tsx | "Book an Inspection" | Navigates to /free-estimate | Opens modal |
-| FAQ.tsx | "Book an Inspection" | Navigates to /free-estimate | Opens modal |
-| Defense.tsx | "Book an Inspection" | Navigates to /free-estimate | Opens modal |
+| Change | Description |
+|--------|-------------|
+| Background | `bg-primary` → inline gradient style |
+| Section text | `text-primary-foreground` → `text-slate-900` for contrast |
+| Subtitle text | `text-primary-foreground/80` → `text-slate-700` |
 
----
-
-## Optional Enhancement: Add "How Many Windows" Field
-If you want the modal to also ask "How many windows?", I can add that field to `ConsultationBookingModal` as a second phase. This would require:
-1. Adding a `windowCount` field to the form validation
-2. Adding an input field between Phone and Preferred Time
-3. Passing `windowCount` to the `save-lead` function
-
-Let me know if you'd like this enhancement included.
-
+This creates the slanted blue depth effect while maintaining readable text contrast across the gradient.
