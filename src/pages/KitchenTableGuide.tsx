@@ -297,8 +297,8 @@ const KitchenTableGuide = () => {
                     id="phone" 
                     type="tel" 
                     {...getFieldProps('phone')} 
-                    placeholder="Phone (optional)" 
-                    className="bg-white/70 border-slate-200 focus:border-primary focus:outline-none transition-all duration-300"
+                    placeholder="Phone" 
+                    className="bg-white/70 border-slate-200 placeholder:text-slate-500 focus:border-primary focus:outline-none transition-all duration-300"
                     style={{ boxShadow: 'none' }}
                     onFocus={(e) => e.target.style.boxShadow = '0 0 0 3px rgba(57, 147, 221, 0.25), 0 0 20px rgba(57, 147, 221, 0.15)'}
                     onBlur={(e) => e.target.style.boxShadow = 'none'}
