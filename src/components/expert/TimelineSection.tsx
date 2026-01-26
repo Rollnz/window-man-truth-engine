@@ -18,12 +18,12 @@ const steps = [{
 export function TimelineSection() {
   return <section className="py-16 px-4 bg-background">
       <div className="container mx-auto max-w-4xl">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4">
+        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4 text-black dark:text-white">
           The "Golden Window" <span className="text-primary">Timeline</span>
         </h2>
-        <p className="text-center mb-10 max-w-2xl mx-auto text-2xl text-primary-foreground">
+        <p className="text-center mb-10 max-w-2xl mx-auto text-2xl text-black dark:text-white">
           The most dangerous time is when you're sitting at the kitchen table with a pen. 
-          <span className="font-medium text-foreground"> Get prepared first.</span>
+          <span className="font-medium text-black dark:text-white"> Get prepared first.</span>
         </p>
 
         <div className="relative">
