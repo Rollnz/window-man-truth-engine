@@ -25,9 +25,9 @@ export const ConversionBar = ({
   return <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border border-border rounded-2xl p-4 sm:p-6 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground">{headline}</p>
-          <p className="text-sm text-primary-foreground">{subheadline}</p>
-          <p className="text-xs text-primary-foreground">{helperText}</p>
+          <p className="text-sm font-medium text-gray-950">{headline}</p>
+          <p className="text-sm text-muted-foreground">{subheadline}</p>
+          <p className="text-xs text-muted-foreground/80">{helperText}</p>
         </div>
 
         <Button asChild className="w-full md:w-auto gap-2">
