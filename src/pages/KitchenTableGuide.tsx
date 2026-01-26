@@ -233,7 +233,7 @@ const KitchenTableGuide = () => {
           <div 
             className="rounded-xl p-6 sm:p-8 ring-1 ring-white/30 transition-all duration-300 hover:-translate-y-1"
             style={{ 
-              background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%)',
+              background: 'radial-gradient(ellipse at center, #e2bbb7 0%, #f0d5d2 25%, #ffffff 60%, #ffffff 100%)',
               boxShadow: '0 35px 60px -15px rgba(0, 0, 0, 0.35), 0 20px 25px -10px rgba(0, 0, 0, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.8)'
             }}
           >
