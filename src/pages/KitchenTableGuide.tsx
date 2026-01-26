@@ -1,19 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTracking } from '@/hooks/usePageTracking';
-import {
-  ShieldCheck,
-  Download,
-  Smartphone,
-  Clock,
-  FileText,
-  AlertTriangle,
-  PauseCircle,
-  CheckCircle2,
-  ArrowRight,
-  ScanSearch,
-  Calculator,
-} from 'lucide-react';
+import { ShieldCheck, Download, Smartphone, Clock, FileText, AlertTriangle, PauseCircle, CheckCircle2, ArrowRight, ScanSearch, Calculator } from 'lucide-react';
 import { getResourceById } from '@/data/intelData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,61 +17,55 @@ import { ROUTES } from '@/config/navigation';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { ProTipBox } from '@/components/seo';
 import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
-import { EbookLeadModal, EBOOK_CONFIGS } from '@/components/conversion/EbookLeadModal';
-import { useLeadIdentity } from '@/hooks/useLeadIdentity';
-
 const KitchenTableGuide = () => {
   usePageTracking('kitchen-table-guide');
   const navigate = useNavigate();
-  const { sessionData } = useSessionData();
-  const { leadId } = useLeadIdentity();
+  const {
+    sessionData
+  } = useSessionData();
   const frameControl = getFrameControl('kitchen-table-guide');
   const smartTools = getSmartRelatedTools('kitchen-table-guide', sessionData.toolsCompleted);
-  
-  // Modal state for hero button
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   // Single source of truth for book image
   const defenseKitResource = getResourceById('defense-kit');
   const bookImageUrl = defenseKitResource?.bookImageUrl || '/images/defense-kit-book.webp';
-
   const {
     values,
     getFieldProps,
     hasError,
     getError,
-    validateAll,
+    validateAll
   } = useFormValidation({
-    initialValues: { name: '', email: '' },
+    initialValues: {
+      name: '',
+      email: ''
+    },
     schemas: {
       name: commonSchemas.name,
-      email: commonSchemas.email,
-    },
+      email: commonSchemas.email
+    }
   });
-
-  const { submit, isSubmitting } = useLeadFormSubmit({
+  const {
+    submit,
+    isSubmitting
+  } = useLeadFormSubmit({
     sourceTool: 'kitchen-table-guide',
     formLocation: 'main',
     leadScore: 40,
     redirectTo: ROUTES.QUOTE_SCANNER,
     successTitle: 'Guide Unlocked!',
-    successDescription: 'Check your inbox - the guide is on its way.',
+    successDescription: 'Check your inbox - the guide is on its way.'
   });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateAll()) return;
-    await submit({ email: values.email, name: values.name });
+    await submit({
+      email: values.email,
+      name: values.name
+    });
   };
-
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <SEO
-        title="Kitchen Table Defense Guide"
-        description="A 12-page guide teaching you how to handle in-home window sales presentations. Learn the scripts and strategies to slow down high-pressure tactics."
-        canonicalUrl="https://itswindowman.com/kitchen-table-guide"
-        jsonLd={[...getToolPageSchemas('kitchen-table-guide'), getBreadcrumbSchema('kitchen-table-guide')]}
-      />
+  return <div className="min-h-screen bg-background text-foreground">
+      <SEO title="Kitchen Table Defense Guide" description="A 12-page guide teaching you how to handle in-home window sales presentations. Learn the scripts and strategies to slow down high-pressure tactics." canonicalUrl="https://itswindowman.com/kitchen-table-guide" jsonLd={[...getToolPageSchemas('kitchen-table-guide'), getBreadcrumbSchema('kitchen-table-guide')]} />
       <Navbar />
 
       {/* SECTION 1 — HERO */}
@@ -107,11 +89,7 @@ const KitchenTableGuide = () => {
               </p>
 
               <div className="space-y-4">
-                <Button 
-                  size="lg" 
-                  className="w-full sm:w-auto gap-2"
-                  onClick={() => setIsModalOpen(true)}
-                >
+                <Button size="lg" className="w-full sm:w-auto gap-2">
                   Unlock the Kitchen Table Guide
                   <Download className="w-4 h-4" />
                 </Button>
@@ -131,11 +109,7 @@ const KitchenTableGuide = () => {
 
               <div className="pt-4 border-t border-border">
                 <p className="text-sm text-muted-foreground mb-2">Already have a quote?</p>
-                <Button 
-                  variant="outline" 
-                  className="gap-2"
-                  onClick={() => navigate(ROUTES.QUOTE_SCANNER)}
-                >
+                <Button variant="outline" className="gap-2" onClick={() => navigate(ROUTES.QUOTE_SCANNER)}>
                   Scan it for pressure tactics <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
@@ -147,11 +121,7 @@ const KitchenTableGuide = () => {
               
               <div className="relative">
                 <div className="relative bg-card rounded-xl shadow-2xl p-2 border border-border">
-                  <img 
-                    src={bookImageUrl}
-                    alt="Kitchen Table Defense Kit Preview"
-                    className="w-64 sm:w-80 h-auto rounded-lg"
-                  />
+                  <img src={bookImageUrl} alt="Kitchen Table Defense Kit Preview" className="w-64 sm:w-80 h-auto rounded-lg" />
                   
                   <div className="absolute top-4 right-4 bg-destructive text-destructive-foreground px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-lg">
                     <ShieldCheck className="w-3.5 h-3.5" />
@@ -182,19 +152,12 @@ const KitchenTableGuide = () => {
             </p>
             
             <div className="space-y-3">
-              {[
-                "Anchor you to a large number early",
-                "Create artificial urgency",
-                "Control which comparisons feel 'reasonable'",
-                "Frame hesitation as a mistake"
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3">
+              {["Anchor you to a large number early", "Create artificial urgency", "Control which comparisons feel 'reasonable'", "Frame hesitation as a mistake"].map((item, i) => <div key={i} className="flex items-start gap-3">
                   <div className="w-6 h-6 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
                   </div>
                   <span className="text-foreground">{item}</span>
-                </div>
-              ))}
+                </div>)}
             </div>
 
             <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground">
@@ -227,11 +190,7 @@ const KitchenTableGuide = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="flex justify-center">
               <div className="relative">
-                <img 
-                  src={bookImageUrl}
-                  alt="The Kitchen Table Defense Kit"
-                  className="w-64 sm:w-72 h-auto rounded-lg shadow-2xl"
-                />
+                <img src={bookImageUrl} alt="The Kitchen Table Defense Kit" className="w-64 sm:w-72 h-auto rounded-lg shadow-2xl" />
               </div>
             </div>
             
@@ -242,17 +201,10 @@ const KitchenTableGuide = () => {
               </p>
               
               <div className="space-y-3">
-                {[
-                  "A one-page Red Flag Checklist",
-                  "The exact phrases used to manufacture urgency",
-                  "A simple pause script you can use without confrontation",
-                  'A final "Do Not Sign If…" page'
-                ].map((feature, i) => (
-                  <div key={i} className="flex items-center gap-3">
+                {["A one-page Red Flag Checklist", "The exact phrases used to manufacture urgency", "A simple pause script you can use without confrontation", 'A final "Do Not Sign If…" page'].map((feature, i) => <div key={i} className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
                     <span className="text-foreground">{feature}</span>
-                  </div>
-                ))}
+                  </div>)}
               </div>
               
               <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
@@ -262,13 +214,7 @@ const KitchenTableGuide = () => {
               </div>
 
               {/* Semantic ProTip linking to related tool */}
-              <ProTipBox
-                title="Want to see these tactics in action?"
-                description="The 11 Sales Tactics Guide names and explains the psychological scripts contractors use on every homeowner."
-                linkTo="/sales-tactics-guide"
-                linkText="See the 11 tactics salespeople use"
-                variant="warning"
-              />
+              <ProTipBox title="Want to see these tactics in action?" description="The 11 Sales Tactics Guide names and explains the psychological scripts contractors use on every homeowner." linkTo="/sales-tactics-guide" linkText="See the 11 tactics salespeople use" variant="warning" />
             </div>
           </div>
         </div>
@@ -286,30 +232,13 @@ const KitchenTableGuide = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-slate-900 dark:text-foreground font-semibold">First Name</Label>
-                <Input 
-                  id="name"
-                  {...getFieldProps('name')}
-                  placeholder="Your name"
-                  className={hasError('name') ? 'border-destructive' : ''}
-                  disabled={isSubmitting}
-                />
-                {hasError('name') && (
-                  <p className="text-xs text-destructive">{getError('name')}</p>
-                )}
+                <Input id="name" {...getFieldProps('name')} placeholder="Your name" className={hasError('name') ? 'border-destructive' : ''} disabled={isSubmitting} />
+                {hasError('name') && <p className="text-xs text-destructive">{getError('name')}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-slate-900 dark:text-foreground font-semibold">Email Address</Label>
-                <Input 
-                  id="email"
-                  type="email"
-                  {...getFieldProps('email')}
-                  placeholder="you@example.com"
-                  className={hasError('email') ? 'border-destructive' : ''}
-                  disabled={isSubmitting}
-                />
-                {hasError('email') && (
-                  <p className="text-xs text-destructive">{getError('email')}</p>
-                )}
+                <Input id="email" type="email" {...getFieldProps('email')} placeholder="you@example.com" className={hasError('email') ? 'border-destructive' : ''} disabled={isSubmitting} />
+                {hasError('email') && <p className="text-xs text-destructive">{getError('email')}</p>}
               </div>
               
               <Button type="submit" variant="cta" size="lg" className="w-full gap-2" disabled={isSubmitting}>
@@ -367,7 +296,7 @@ const KitchenTableGuide = () => {
                 <ScanSearch className="w-8 h-8 text-sky-500" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">2. Sanity-Check It</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-black">
                 Upload it to the Quote Scanner and see where pressure or padding may exist.
               </p>
             </div>
@@ -377,7 +306,7 @@ const KitchenTableGuide = () => {
                 <Calculator className="w-8 h-8 text-emerald-500" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">3. Get Clarity on Price</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-black">
                 Use the Cost Calculator to understand a fair range before talking to anyone again.
               </p>
             </div>
@@ -386,12 +315,7 @@ const KitchenTableGuide = () => {
       </section>
 
       {/* SECTION 6 — CROSS-TOOL BRIDGES */}
-      <RelatedToolsGrid
-        title={frameControl.title}
-        description={frameControl.description}
-        tools={smartTools}
-        className="bg-muted/30"
-      />
+      <RelatedToolsGrid title={frameControl.title} description={frameControl.description} tools={smartTools} className="bg-muted/30" />
 
       {/* Reviewed By Badge */}
       <section className="py-12 bg-background border-t border-border">
@@ -418,25 +342,7 @@ const KitchenTableGuide = () => {
       </div>
 
       {/* Exit Intent Modal for lead capture */}
-      <ExitIntentModal
-        sourceTool="kitchen-table-guide"
-        hasConverted={isSubmitting}
-        resultSummary="Kitchen Table Defense Guide"
-      />
-
-      {/* Ebook Lead Modal for hero button */}
-      <EbookLeadModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={() => {
-          setIsModalOpen(false);
-          navigate(ROUTES.QUOTE_SCANNER);
-        }}
-        sourceTool="kitchen-table-guide"
-        config={EBOOK_CONFIGS['kitchen-table-guide']}
-      />
-    </div>
-  );
+      <ExitIntentModal sourceTool="kitchen-table-guide" hasConverted={isSubmitting} resultSummary="Kitchen Table Defense Guide" />
+    </div>;
 };
-
 export default KitchenTableGuide;
