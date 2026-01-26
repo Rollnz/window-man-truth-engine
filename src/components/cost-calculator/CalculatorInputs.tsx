@@ -79,7 +79,7 @@ export function CalculatorInputs({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Grid3X3 className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold">Window Age</h3>
+              <h3 className="font-semibold text-foreground">Window Age</h3>
             </div>
             {hasPrefilledAge && <Badge variant="outline" className="border-primary/50 text-primary-foreground text-base">
                 Using your saved info
