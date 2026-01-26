@@ -279,21 +279,30 @@ async function validateOwnership(
         return false;
       }
 
+      // Enhanced logging for debugging ownership mismatches
+      console.log(`[score-event] Ownership check for lead: entityId=${entityId}`);
+      console.log(`[score-event] Lead data: user_id=${data.user_id}, client_id=${data.client_id}`);
+      console.log(`[score-event] Request identity: userId=${userId}, anonId=${anonId}`);
+
       // Validate ownership
       if (userId && data.user_id === userId) {
+        console.log(`[score-event] ✓ Ownership validated via user_id match`);
         return true;
       }
       
       // For anonymous users, check client_id matches anon_id
       if (anonId && data.client_id === anonId) {
+        console.log(`[score-event] ✓ Ownership validated via client_id match`);
         return true;
       }
 
       // Allow if this lead was just created (no user_id yet) and client matches
       if (!data.user_id && anonId && data.client_id === anonId) {
+        console.log(`[score-event] ✓ Ownership validated via new lead client_id match`);
         return true;
       }
 
+      console.log(`[score-event] ✗ Ownership validation failed: client_id=${data.client_id} !== anon_id=${anonId}`);
       return false;
     }
 

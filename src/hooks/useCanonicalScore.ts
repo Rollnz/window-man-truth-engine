@@ -129,6 +129,19 @@ export function useCanonicalScore(): UseCanonicalScoreReturn {
       });
 
       if (error) {
+        // Check if this is an ownership/403 error - silently fail for these
+        const errorMessage = error.message || '';
+        const isOwnershipError = errorMessage.includes('403') || 
+                                  errorMessage.includes('ownership') ||
+                                  errorMessage.includes('Ownership');
+        
+        if (isOwnershipError) {
+          // Silent fail for ownership mismatches (expected for returning users with different session)
+          console.info('[useCanonicalScore] Ownership mismatch - likely returning user or different session');
+          setState(prev => ({ ...prev, isLoading: false, lastError: null }));
+          return null;
+        }
+        
         console.error('[useCanonicalScore] Award error:', error);
         setState(prev => ({ ...prev, isLoading: false, lastError: error.message }));
         return null;
@@ -136,6 +149,17 @@ export function useCanonicalScore(): UseCanonicalScoreReturn {
 
       if (!data?.ok) {
         const errorMsg = data?.error || 'Unknown error';
+        
+        // Check if this is an ownership validation failure - silently handle
+        const isOwnershipError = errorMsg.includes('ownership') || 
+                                  errorMsg.includes('Ownership');
+        
+        if (isOwnershipError) {
+          console.info('[useCanonicalScore] Ownership validation failed - likely session mismatch, silently continuing');
+          setState(prev => ({ ...prev, isLoading: false, lastError: null }));
+          return null;
+        }
+        
         console.warn('[useCanonicalScore] Award rejected:', errorMsg);
         setState(prev => ({ ...prev, isLoading: false, lastError: errorMsg }));
         return null;
