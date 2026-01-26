@@ -200,7 +200,7 @@ export default function Expert() {
             {/* Title Section */}
             <div className="p-4 sm:p-6 text-center border-b border-border/50">
               <ShimmerBadge text="AI Expert System" className="mb-3" />
-              <h1 className="text-2xl mb-2 font-extrabold sm:text-6xl">
+              <h1 className="text-2xl mb-2 font-extrabold sm:text-6xl text-black dark:text-white">
                 Window Questions <span className="text-primary">Expert</span>
               </h1>
               <p className="max-w-lg mx-auto text-black dark:text-white text-base">
