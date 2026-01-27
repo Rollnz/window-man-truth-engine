@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useSessionData } from '@/hooks/useSessionData';
-import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { trackEvent } from '@/lib/gtm';
 import { AnalysisResult } from '@/hooks/useEvidenceAnalysis';
 import { 
@@ -16,7 +16,8 @@ import {
   Shield, 
   FileCheck,
   ClipboardList,
-  AlertCircle
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react';
 
 interface ClaimVaultSyncButtonProps {
@@ -28,43 +29,93 @@ export function ClaimVaultSyncButton({
   analysis,
   variant = 'primary',
 }: ClaimVaultSyncButtonProps) {
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [hasSynced, setHasSynced] = useState(false);
   
   const { signInWithMagicLink, user } = useAuth();
   const { sessionData, updateFields } = useSessionData();
-  const { hasIdentity } = useLeadIdentity();
 
-  // Pre-fill from session data
-  const prefilledEmail = sessionData.email || '';
-  const prefilledName = sessionData.firstName 
-    ? `${sessionData.firstName} ${sessionData.lastName || ''}`.trim()
-    : sessionData.name || '';
+  // Phase 1: Use useFormValidation for proper controlled inputs
+  const {
+    values,
+    setValues,
+    getFieldProps,
+    validateAll,
+    hasError,
+    getError,
+  } = useFormValidation({
+    initialValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+    },
+    schemas: {
+      firstName: commonSchemas.firstName,
+      lastName: commonSchemas.lastName,
+      email: commonSchemas.email,
+    },
+  });
+
+  // Phase 1: Initialize from session data ONCE on mount (not in render)
+  useEffect(() => {
+    const newValues = { ...values };
+    let hasChanges = false;
+
+    if (sessionData.firstName && !values.firstName) {
+      newValues.firstName = sessionData.firstName;
+      hasChanges = true;
+    }
+    if (sessionData.lastName && !values.lastName) {
+      newValues.lastName = sessionData.lastName;
+      hasChanges = true;
+    }
+    if (sessionData.email && !values.email) {
+      newValues.email = sessionData.email;
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      setValues(newValues);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps = mount only
 
   // Check if user is already logged in
   const isAuthenticated = !!user;
 
-  const handleSync = async () => {
-    const emailToUse = email || prefilledEmail;
-    const nameToUse = name || prefilledName;
-
-    if (!emailToUse) {
-      setError('Please enter your email address.');
-      return;
+  // Phase 4: Auto-sync for authenticated users
+  useEffect(() => {
+    if (isAuthenticated && !hasSynced && analysis && user?.email) {
+      // Auto-save analysis to user's vault
+      updateFields({
+        claimAnalysisResult: {
+          ...analysis,
+          analyzedAt: analysis.analyzedAt || new Date().toISOString(),
+        },
+        vaultSyncPending: false,
+        email: user.email,
+        sourceTool: 'claim-survival-kit',
+      });
+      
+      trackEvent('vault_auto_sync', {
+        source_tool: 'claim-survival-kit',
+        analysis_score: analysis.overallScore,
+        user_authenticated: true,
+      });
+      
+      setHasSynced(true);
     }
+  }, [isAuthenticated, hasSynced, analysis, user, updateFields]);
 
-    // Basic email validation
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToUse)) {
-      setError('Please enter a valid email address.');
+  const handleSync = async () => {
+    // Phase 1: Validate all fields before submission
+    if (!validateAll()) {
       return;
     }
 
     setIsLoading(true);
-    setError(null);
 
     try {
       // 1. Persist analysis results to session for vault sync
@@ -74,26 +125,26 @@ export function ClaimVaultSyncButton({
           analyzedAt: analysis.analyzedAt || new Date().toISOString(),
         },
         vaultSyncPending: true,
-        vaultSyncEmail: emailToUse,
+        vaultSyncEmail: values.email,
         vaultSyncSource: 'other',
-        email: emailToUse,
-        name: nameToUse,
+        email: values.email,
+        firstName: values.firstName,
+        lastName: values.lastName,
         sourceTool: 'claim-survival-kit',
       });
 
       // 2. Track the click
-      trackEvent('vault_sync_clicked', { 
+      trackEvent('vault_sync_clicked', {
         source_tool: 'claim-survival-kit',
         analysis_score: analysis.overallScore,
         analysis_status: analysis.status,
       });
 
       // 3. Send magic link for account creation/access
-      const { error: authError } = await signInWithMagicLink(emailToUse);
+      const { error: authError } = await signInWithMagicLink(values.email);
 
       if (authError) {
         console.error('Magic link error:', authError);
-        setError('Failed to send access link. Please try again.');
         setIsLoading(false);
         return;
       }
@@ -109,26 +160,36 @@ export function ClaimVaultSyncButton({
       setShowSuccess(true);
     } catch (err) {
       console.error('Vault sync error:', err);
-      setError('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Already authenticated - show simpler state
+  // Phase 4: Enhanced authenticated state with auto-sync and vault link
   if (isAuthenticated) {
     return (
       <Card className="p-4 bg-primary/5 border-primary/20">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+          <div 
+            className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0"
+            aria-hidden="true"
+          >
             <CheckCircle className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground text-sm">Analysis Saved to Your Vault</p>
+            <p className="font-medium text-foreground text-sm">
+              {hasSynced ? 'Analysis Synced to Your Vault' : 'Syncing to Vault...'}
+            </p>
             <p className="text-xs text-muted-foreground truncate">
               Logged in as {user.email}
             </p>
           </div>
+          <Button variant="ghost" size="sm" className="shrink-0" asChild>
+            <a href="/vault" aria-label="Manage your evidence vault">
+              <span className="hidden sm:inline">Manage Vault</span>
+              <ExternalLink className="w-4 h-4 sm:ml-1" aria-hidden="true" />
+            </a>
+          </Button>
         </div>
       </Card>
     );
@@ -136,12 +197,15 @@ export function ClaimVaultSyncButton({
 
   // Success state - email sent
   if (showSuccess) {
-    const displayEmail = email || prefilledEmail;
     return (
-      <Card className="p-5 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
+      <Card 
+        className="p-5 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30"
+        role="status"
+        aria-live="polite"
+      >
         <div className="text-center space-y-4">
           <div className="mx-auto w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
-            <Mail className="w-7 h-7 text-primary" />
+            <Mail className="w-7 h-7 text-primary" aria-hidden="true" />
           </div>
           
           <div>
@@ -150,30 +214,30 @@ export function ClaimVaultSyncButton({
             </h3>
             <p className="text-sm text-muted-foreground">
               We sent a secure access link to{' '}
-              <span className="font-medium text-foreground">{displayEmail}</span>
+              <span className="font-medium text-foreground">{values.email}</span>
             </p>
           </div>
 
-          <div className="text-left space-y-2 bg-card/50 rounded-lg p-3">
+          <div className="text-left space-y-2 bg-card/50 rounded-lg p-3" role="list" aria-label="Next steps after clicking the link">
             <p className="text-xs font-medium text-foreground mb-2">
               Click the link to:
             </p>
-            <div className="flex items-start gap-2">
-              <CheckCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2" role="listitem">
+              <CheckCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" aria-hidden="true" />
               <div>
                 <p className="text-sm font-medium text-foreground">Save Your Analysis</p>
                 <p className="text-xs text-muted-foreground">Keep your {analysis.overallScore}% readiness score safe</p>
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <FileCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2" role="listitem">
+              <FileCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" aria-hidden="true" />
               <div>
                 <p className="text-sm font-medium text-foreground">Access Your Documents</p>
                 <p className="text-xs text-muted-foreground">All your uploaded evidence in one place</p>
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <ClipboardList className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2" role="listitem">
+              <ClipboardList className="w-4 h-4 text-primary mt-0.5 shrink-0" aria-hidden="true" />
               <div>
                 <p className="text-sm font-medium text-foreground">Track Your Progress</p>
                 <p className="text-xs text-muted-foreground">Resume your checklist anytime</p>
@@ -183,7 +247,7 @@ export function ClaimVaultSyncButton({
 
           <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-2">
             <p className="flex items-center gap-1.5">
-              <AlertCircle className="w-3 h-3" />
+              <AlertCircle className="w-3 h-3" aria-hidden="true" />
               <span>Check Spam/Promotions if you don't see it</span>
             </p>
           </div>
@@ -200,19 +264,19 @@ export function ClaimVaultSyncButton({
         variant="outline"
         className="w-full border-primary/30 hover:bg-primary/5"
       >
-        <Vault className="w-4 h-4 mr-2" />
+        <Vault className="w-4 h-4 mr-2" aria-hidden="true" />
         Save Analysis to My Vault
       </Button>
     );
   }
 
-  // Form state - collect email
+  // Phase 1 & 3: Form state with proper controlled inputs, validation, and ARIA
   return (
     <Card className="p-5 bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
       <div className="space-y-4">
         <div className="text-center">
           <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-            <Vault className="w-6 h-6 text-primary" />
+            <Vault className="w-6 h-6 text-primary" aria-hidden="true" />
           </div>
           <h3 className="text-lg font-bold text-foreground">
             Save Your Analysis
@@ -222,7 +286,52 @@ export function ClaimVaultSyncButton({
           </p>
         </div>
 
+        {/* Phase 1: 2x2 grid layout matching Kitchen Table pattern */}
         <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="vault-firstName" className="text-xs font-medium">
+                First Name
+              </Label>
+              <Input
+                id="vault-firstName"
+                type="text"
+                placeholder="First name"
+                {...getFieldProps('firstName')}
+                disabled={isLoading}
+                className={`h-9 bg-white border-slate-300 ${hasError('firstName') ? 'border-destructive' : ''}`}
+                aria-required="true"
+                aria-invalid={hasError('firstName')}
+                aria-describedby={hasError('firstName') ? 'vault-firstName-error' : undefined}
+              />
+              {hasError('firstName') && (
+                <p id="vault-firstName-error" className="text-xs text-destructive" role="alert">
+                  {getError('firstName')}
+                </p>
+              )}
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label htmlFor="vault-lastName" className="text-xs font-medium">
+                Last Name <span className="text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="vault-lastName"
+                type="text"
+                placeholder="Last name"
+                {...getFieldProps('lastName')}
+                disabled={isLoading}
+                className="h-9 bg-white border-slate-300"
+                aria-describedby={hasError('lastName') ? 'vault-lastName-error' : undefined}
+              />
+              {hasError('lastName') && (
+                <p id="vault-lastName-error" className="text-xs text-destructive" role="alert">
+                  {getError('lastName')}
+                </p>
+              )}
+            </div>
+          </div>
+          
           <div className="space-y-1.5">
             <Label htmlFor="vault-email" className="text-xs font-medium">
               Email Address
@@ -231,53 +340,41 @@ export function ClaimVaultSyncButton({
               id="vault-email"
               type="email"
               placeholder="you@example.com"
-              value={email || prefilledEmail}
-              onChange={(e) => setEmail(e.target.value)}
+              {...getFieldProps('email')}
               disabled={isLoading}
-              className="h-9"
+              className={`h-9 bg-white border-slate-300 ${hasError('email') ? 'border-destructive' : ''}`}
+              aria-required="true"
+              aria-invalid={hasError('email')}
+              aria-describedby={hasError('email') ? 'vault-email-error' : undefined}
             />
-          </div>
-          
-          <div className="space-y-1.5">
-            <Label htmlFor="vault-name" className="text-xs font-medium">
-              Name <span className="text-muted-foreground">(optional)</span>
-            </Label>
-            <Input
-              id="vault-name"
-              type="text"
-              placeholder="Your name"
-              value={name || prefilledName}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isLoading}
-              className="h-9"
-            />
+            {hasError('email') && (
+              <p id="vault-email-error" className="text-xs text-destructive" role="alert">
+                {getError('email')}
+              </p>
+            )}
           </div>
         </div>
 
         <Button
           onClick={handleSync}
           disabled={isLoading}
-          className="w-full"
+          className="w-full text-white"
         >
           {isLoading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
               Sending Access Link...
             </>
           ) : (
             <>
-              <Vault className="w-4 h-4 mr-2" />
+              <Vault className="w-4 h-4 mr-2" aria-hidden="true" />
               Save to My Vault
             </>
           )}
         </Button>
         
-        {error && (
-          <p className="text-sm text-destructive text-center">{error}</p>
-        )}
-        
         <p className="text-xs text-center text-muted-foreground">
-          <Shield className="w-3 h-3 inline mr-1" />
+          <Shield className="w-3 h-3 inline mr-1" aria-hidden="true" />
           Secure one-click access via email • No password required
         </p>
       </div>
