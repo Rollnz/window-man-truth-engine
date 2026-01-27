@@ -59,8 +59,16 @@ export function ClaimVaultSyncButton({
     },
   });
 
-  // Phase 1: Initialize from session data ONCE on mount (not in render)
+  // Phase 1: Initialize from session data when available (handles async loading)
+  const [hasInitialized, setHasInitialized] = useState(false);
+  
   useEffect(() => {
+    // Only initialize once, and only when we have session data
+    if (hasInitialized) return;
+    
+    const hasSessionData = sessionData.firstName || sessionData.lastName || sessionData.email;
+    if (!hasSessionData) return;
+
     const newValues = { ...values };
     let hasChanges = false;
 
@@ -79,9 +87,9 @@ export function ClaimVaultSyncButton({
 
     if (hasChanges) {
       setValues(newValues);
+      setHasInitialized(true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty deps = mount only
+  }, [sessionData.firstName, sessionData.lastName, sessionData.email, hasInitialized, values, setValues]);
 
   // Check if user is already logged in
   const isAuthenticated = !!user;
@@ -195,7 +203,11 @@ export function ClaimVaultSyncButton({
             className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0"
             aria-hidden="true"
           >
-            <CheckCircle className="w-5 h-5 text-primary" />
+            {hasSynced ? (
+              <CheckCircle className="w-5 h-5 text-primary" />
+            ) : (
+              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-foreground text-sm">
@@ -320,7 +332,7 @@ export function ClaimVaultSyncButton({
                 placeholder="First name"
                 {...getFieldProps('firstName')}
                 disabled={isLoading}
-                className={`h-9 bg-white border-slate-300 ${hasError('firstName') ? 'border-destructive' : ''}`}
+                className={`h-9 focus:ring-2 focus:ring-primary focus:ring-offset-1 ${hasError('firstName') ? 'border-destructive' : ''}`}
                 aria-required="true"
                 aria-invalid={hasError('firstName')}
                 aria-describedby={hasError('firstName') ? 'vault-firstName-error' : undefined}
@@ -342,7 +354,7 @@ export function ClaimVaultSyncButton({
                 placeholder="Last name"
                 {...getFieldProps('lastName')}
                 disabled={isLoading}
-                className="h-9 bg-white border-slate-300"
+                className="h-9 focus:ring-2 focus:ring-primary focus:ring-offset-1"
                 aria-describedby={hasError('lastName') ? 'vault-lastName-error' : undefined}
               />
               {hasError('lastName') && (
@@ -363,7 +375,7 @@ export function ClaimVaultSyncButton({
               placeholder="you@example.com"
               {...getFieldProps('email')}
               disabled={isLoading}
-              className={`h-9 bg-white border-slate-300 ${hasError('email') ? 'border-destructive' : ''}`}
+              className={`h-9 focus:ring-2 focus:ring-primary focus:ring-offset-1 ${hasError('email') ? 'border-destructive' : ''}`}
               aria-required="true"
               aria-invalid={hasError('email')}
               aria-describedby={hasError('email') ? 'vault-email-error' : undefined}
@@ -379,7 +391,8 @@ export function ClaimVaultSyncButton({
         <Button
           onClick={handleSync}
           disabled={isLoading}
-          className="w-full text-white"
+          variant="cta"
+          className="w-full"
         >
           {isLoading ? (
             <>
