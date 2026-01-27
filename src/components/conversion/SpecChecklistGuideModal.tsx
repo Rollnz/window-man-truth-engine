@@ -121,6 +121,7 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
       setLastNameNudge(false);
       setCapturedLeadId(null);
       setUpsellType(null);
+      setFormSubmitted(false);
       setProjectDetails({
         propertyType: '',
         propertyStatus: '',
@@ -153,6 +154,9 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
     }
   }, [values.lastName]);
 
+  // Track if form was submitted (for onClose handling)
+  const [formSubmitted, setFormSubmitted] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateAll()) return;
@@ -176,8 +180,9 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
         phone: values.phone,
       });
       
+      setFormSubmitted(true);
       setStep('success');
-      onSuccess?.();
+      // Don't call onSuccess yet - wait until user finishes or declines upsell
     }
   };
 
@@ -195,6 +200,15 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
       sourceTool: 'spec-checklist-guide', 
       upsell_type: 'consultation' 
     });
+    onSuccess?.(); // Mark as converted before closing
+    onClose();
+  };
+
+  // Handle modal close - trigger onSuccess if form was submitted
+  const handleClose = () => {
+    if (formSubmitted) {
+      onSuccess?.();
+    }
     onClose();
   };
 
@@ -675,7 +689,10 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
         variant="secondary" 
         size="lg" 
         className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900"
-        onClick={onClose}
+        onClick={() => {
+          onSuccess?.();
+          onClose();
+        }}
       >
         Return to Checklist
       </Button>
@@ -700,8 +717,8 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent 
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent
         className="sm:max-w-[500px] p-0 overflow-hidden border-0 max-h-[90vh] overflow-y-auto"
         style={{ 
           background: 'linear-gradient(135deg, #d0e4f7 0%, #73b1e7 16%, #0a77d5 34%, #539fe1 61%, #539fe1 61%, #87bcea 100%)'
