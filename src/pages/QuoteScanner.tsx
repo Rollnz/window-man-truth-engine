@@ -28,6 +28,8 @@ import { ScannerFAQSection } from '@/components/quote-scanner/ScannerFAQSection'
 import { NoQuotePathway } from '@/components/quote-scanner/NoQuotePathway';
 import { WindowCalculatorTeaser } from '@/components/quote-scanner/WindowCalculatorTeaser';
 import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChecklist';
+// Vault Pivot Conversion Engine
+import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
 
 export default function QuoteScanner() {
   usePageTracking('quote-scanner');
@@ -186,6 +188,23 @@ export default function QuoteScanner() {
                 </div>
               </div>
             </ErrorBoundary>
+          </div>
+        </section>
+
+        {/* Vault Pivot Conversion Engine - Primary lead capture for no-quote visitors */}
+        <section className="py-8 md:py-12">
+          <div className="container px-4">
+            <SoftInterceptionAnchor />
+            <NoQuotePivotSection 
+              onGoogleAuth={() => {
+                // TODO: Wire to real Supabase Google OAuth
+                console.log('Google OAuth clicked - will redirect to /vault');
+              }}
+              onEmailSubmit={(data) => {
+                // TODO: Wire to real magic link flow
+                console.log('Email submit:', data);
+              }}
+            />
           </div>
         </section>
 
