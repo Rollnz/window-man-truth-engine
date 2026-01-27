@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
 import { useSessionData } from '@/hooks/useSessionData';
-import { ArrowRight, CheckCircle2, Calendar, Phone, Home, Building2, MapPin, Clock, ChevronLeft } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Calendar, Phone, Home, Building2, MapPin, Clock, ChevronLeft, X } from 'lucide-react';
 import { trackModalOpen, trackEvent, trackConsultationBooked } from '@/lib/gtm';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,6 +52,7 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
   const [lastNameNudge, setLastNameNudge] = useState(false);
   const [capturedLeadId, setCapturedLeadId] = useState<string | null>(null);
   const [upsellType, setUpsellType] = useState<'measurement' | 'callback' | null>(null);
+  const [formSubmitted, setFormSubmitted] = useState(false);
   const { sessionData, updateFields } = useSessionData();
 
   // Project details state
@@ -154,9 +155,6 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
     }
   }, [values.lastName]);
 
-  // Track if form was submitted (for onClose handling)
-  const [formSubmitted, setFormSubmitted] = useState(false);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateAll()) return;
@@ -204,11 +202,28 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
     onClose();
   };
 
-  // Handle modal close - trigger onSuccess if form was submitted
+  // Handle modal close - only trigger onSuccess at explicit exit points
   const handleClose = () => {
-    if (formSubmitted) {
-      onSuccess?.();
+    // If on form step, just close (no conversion happened)
+    if (step === 'form') {
+      onClose();
+      return;
     }
+    
+    // If on success step (upsell shown) or thankyou, fire onSuccess
+    if (step === 'success' || step === 'thankyou') {
+      if (formSubmitted) onSuccess?.();
+      onClose();
+      return;
+    }
+    
+    // If in middle of questionnaire (project/location), keep modal open (locked)
+    // User must use the back button or complete the flow
+  };
+
+  // Explicit close with confirmation (for the X button after form submission)
+  const handleExplicitClose = () => {
+    if (formSubmitted) onSuccess?.();
     onClose();
   };
 
@@ -282,14 +297,8 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
     }));
   };
 
-  const inputBaseClass = "bg-white border focus:border-primary focus:outline-none transition-all duration-300";
-  const inputFocusStyle = { boxShadow: 'none' };
-  const inputFocusHandler = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    e.target.style.boxShadow = '0 0 0 3px rgba(57, 147, 221, 0.25), 0 0 20px rgba(57, 147, 221, 0.15)';
-  };
-  const inputBlurHandler = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    e.target.style.boxShadow = 'none';
-  };
+  // Fix: Use Tailwind focus classes instead of inline style manipulation to prevent tab flashing
+  const inputBaseClass = "bg-white border focus:ring-2 focus:ring-primary/25 focus:ring-offset-0 focus:border-primary focus:outline-none transition-all duration-200";
 
   const renderFormStep = () => (
     <>
@@ -307,9 +316,6 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
               {...getFieldProps('firstName')} 
               placeholder="First name" 
               className={`${inputBaseClass} border-black ${hasError('firstName') ? 'border-destructive' : ''}`}
-              style={inputFocusStyle}
-              onFocus={inputFocusHandler}
-              onBlur={inputBlurHandler}
               disabled={isSubmitting} 
               autoComplete="given-name" 
             />
@@ -321,9 +327,6 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
               {...getFieldProps('lastName')} 
               placeholder="Last name" 
               className={`${inputBaseClass} ${lastNameNudge ? 'border-red-500 border-2' : 'border-black'}`}
-              style={inputFocusStyle}
-              onFocus={inputFocusHandler}
-              onBlur={inputBlurHandler}
               disabled={isSubmitting} 
               autoComplete="family-name" 
             />
@@ -339,15 +342,12 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
               {...getFieldProps('email')} 
               placeholder="Email address" 
               className={`${inputBaseClass} border-black ${hasError('email') ? 'border-destructive' : ''}`}
-              style={inputFocusStyle}
-              onFocus={(e) => {
-                inputFocusHandler(e);
+              onFocus={() => {
                 // Nudge last name if empty
                 if (!values.lastName.trim()) {
                   setLastNameNudge(true);
                 }
               }}
-              onBlur={inputBlurHandler}
               disabled={isSubmitting} 
               autoComplete="email" 
             />
@@ -360,16 +360,13 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
               {...getFieldProps('phone')} 
               placeholder="Phone" 
               className={`${inputBaseClass} border-black placeholder:text-slate-500`}
-              style={inputFocusStyle}
-              onFocus={inputFocusHandler}
-              onBlur={inputBlurHandler}
               disabled={isSubmitting} 
               autoComplete="tel" 
             />
           </div>
         </div>
         
-        <Button type="submit" variant="cta" size="lg" className="w-full gap-2" disabled={isSubmitting}>
+        <Button type="submit" variant="cta" size="lg" className="w-full gap-2 text-white" disabled={isSubmitting}>
           {isSubmitting ? 'Sending...' : 'Send Me the Spec Sheet'}
           {!isSubmitting && <ArrowRight className="w-4 h-4" />}
         </Button>
@@ -411,7 +408,7 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
         <Button 
           variant="cta" 
           size="lg" 
-          className="w-full gap-2"
+          className="w-full gap-2 text-white"
           onClick={() => handleUpsellAccept('measurement')}
         >
           <Calendar className="w-4 h-4" />
@@ -553,7 +550,7 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
       <Button 
         variant="cta" 
         size="lg" 
-        className="w-full gap-2"
+        className="w-full gap-2 text-white"
         onClick={handleProjectNext}
         disabled={!projectDetails.propertyType || !projectDetails.windowCount}
       >
@@ -588,9 +585,6 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
             onChange={(e) => setLocationDetails(prev => ({ ...prev, city: e.target.value }))}
             placeholder="Miami"
             className={`${inputBaseClass} border-black`}
-            style={inputFocusStyle}
-            onFocus={inputFocusHandler}
-            onBlur={inputBlurHandler}
             autoComplete="address-level2"
           />
         </div>
@@ -602,9 +596,6 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
             onChange={(e) => setLocationDetails(prev => ({ ...prev, zipCode: e.target.value.replace(/\D/g, '').slice(0, 5) }))}
             placeholder="33101"
             className={`${inputBaseClass} border-black`}
-            style={inputFocusStyle}
-            onFocus={inputFocusHandler}
-            onBlur={inputBlurHandler}
             autoComplete="postal-code"
           />
         </div>
@@ -620,16 +611,13 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
           onChange={(e) => setLocationDetails(prev => ({ ...prev, remark: e.target.value }))}
           placeholder="e.g., HOA restrictions, specific concerns..."
           className={`${inputBaseClass} border-black`}
-          style={inputFocusStyle}
-          onFocus={inputFocusHandler}
-          onBlur={inputBlurHandler}
         />
       </div>
 
       <Button 
         variant="cta" 
         size="lg" 
-        className="w-full gap-2"
+        className="w-full gap-2 text-white"
         onClick={handleLocationSubmit}
       >
         Complete Request
@@ -727,6 +715,17 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
+        {/* Explicit X close button - only shows after form submission */}
+        {step !== 'form' && (
+          <button 
+            onClick={handleExplicitClose}
+            className="absolute top-4 right-4 z-50 p-1.5 bg-white/90 hover:bg-white rounded-full shadow-md transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5 text-slate-600" />
+          </button>
+        )}
+        
         <div className="p-6">
           <div 
             className="rounded-xl p-6 sm:p-8 ring-1 ring-white/30"

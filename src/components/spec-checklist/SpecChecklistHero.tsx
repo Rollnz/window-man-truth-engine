@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardCheck, Download, Clock, Smartphone, Shield, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ClipboardCheck, Download, Clock, Smartphone, Shield, ArrowRight, CheckCircle2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { heroData } from '@/data/specChecklistData';
 import { ROUTES } from '@/config/navigation';
@@ -16,13 +16,8 @@ const SpecChecklistHero: React.FC<SpecChecklistHeroProps> = ({ onCtaClick, onSuc
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Always open modal regardless of hasConverted state
   const handleCtaClick = () => {
-    // If already converted, just scroll to the section
-    if (hasConverted) {
-      onCtaClick();
-      return;
-    }
-    // Otherwise open the modal
     setIsModalOpen(true);
   };
 
@@ -55,33 +50,44 @@ const SpecChecklistHero: React.FC<SpecChecklistHeroProps> = ({ onCtaClick, onSuc
               </p>
 
               <div className="space-y-4">
-                {hasConverted ? (
+                {/* Show success badge if converted, but still show actionable button */}
+                {hasConverted && (
                   <div className="flex items-center gap-2 text-primary bg-primary/10 px-4 py-3 rounded-lg w-fit">
                     <CheckCircle2 className="w-5 h-5" />
                     <span className="font-medium">Checklist sent to your email!</span>
                   </div>
-                ) : (
-                  <Button 
-                    size="lg" 
-                    className="w-full sm:w-auto gap-2"
-                    onClick={handleCtaClick}
-                  >
-                    Download My Free Audit Checklist
-                    <Download className="w-4 h-4" />
-                  </Button>
                 )}
                 
-              <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 flex-shrink-0" /> 35-page guide
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Smartphone className="w-4 h-4 flex-shrink-0" /> Print or digital
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Shield className="w-4 h-4 flex-shrink-0" /> 4-Packet System
-                </span>
-              </div>
+                {/* Always show button - changes text based on conversion status */}
+                <Button 
+                  size="lg" 
+                  className="w-full sm:w-auto gap-2"
+                  onClick={handleCtaClick}
+                >
+                  {hasConverted ? (
+                    <>
+                      <Calendar className="w-4 h-4" />
+                      Book Your Free Measurement
+                    </>
+                  ) : (
+                    <>
+                      Download My Free Audit Checklist
+                      <Download className="w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+                
+                <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 flex-shrink-0" /> 35-page guide
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Smartphone className="w-4 h-4 flex-shrink-0" /> Print or digital
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Shield className="w-4 h-4 flex-shrink-0" /> 4-Packet System
+                  </span>
+                </div>
               </div>
 
               <div className="pt-4 border-t border-border">
