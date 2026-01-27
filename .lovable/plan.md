@@ -1,233 +1,298 @@
 
+# Claim Readiness Analysis - Complete 4-Phase Fix
 
-# Complete Fix for SpecChecklistGuideModal - 8-Issue Resolution
+## Overview
 
-## Root Cause Analysis
+This plan addresses 4 critical phases of issues in the Claim Readiness Analysis modal and save functionality:
 
-After reviewing the code and video, here are the 8 critical issues and their root causes:
+1. **Phase 1**: Fix locked/non-editable input fields
+2. **Phase 2**: Fix low-contrast yellow score display 
+3. **Phase 3**: Add comprehensive ARIA accessibility
+4. **Phase 4**: Differentiate anonymous vs. logged-in user flows
 
-| Issue | Root Cause |
-|-------|------------|
-| 1. Form closes after Step 1 | `handleClose()` calls `onSuccess()` when `formSubmitted=true`, which triggers parent state change |
-| 2. Hero + MainCTA buttons are coupled | Both share single `hasConverted` state from parent |
-| 3. Refresh doesn't reset | `localStorage` is set when ANY modal triggers `onSuccess()` |
-| 4. Hero button scrolls vs opens modal | `hasConverted=true` shows badge instead of button |
-| 5. Tab key causes form flash | Custom `onFocus`/`onBlur` inline style handlers cause React re-renders |
-| 6. Button text not visible | Missing explicit `text-white` class on CTA button |
-| 7. State not isolated between CTAs | All sections call same `handleConversionSuccess` callback |
-| 8. Incognito doesn't reset | Component mounts with `hasConverted=true` from previous session |
+---
 
-## Solution Architecture
+## Phase 1: Fix Locked Input Fields
 
-### The Core Fix: Decouple "Downloaded" from "Converted"
-
-Currently:
+### Problem
+The Email and Name fields appear "locked" because of this pattern:
+```typescript
+value={email || prefilledEmail}  // Line 234
 ```
-User submits Step 1 → formSubmitted=true → User closes modal → handleClose() fires onSuccess() → Parent sets hasConverted=true + localStorage → ALL CTAs show success state
-```
+When `email` is an empty string (falsy), it reverts to `prefilledEmail`, making it impossible to clear the field.
 
-New Flow:
-```
-User submits Step 1 → formSubmitted=true → Modal shows Step 2 (upsell)
-User closes modal (via X, decline, or thank you) → onSuccess() fires ONLY at explicit exit
-Parent sets hasConverted=true + localStorage → CTAs show success BUT still allow re-opening
+### Solution
+Initialize state from session data using `useEffect`, then use controlled inputs without OR fallback.
+
+### File: `src/components/claim-survival/ClaimVaultSyncButton.tsx`
+
+| Change | Location | Description |
+|--------|----------|-------------|
+| Split Name → First/Last | Lines 31-32 | Add `firstName` and `lastName` state instead of single `name` |
+| Initialize from session | New useEffect | Pre-fill state on mount, not in render |
+| Fix value binding | Lines 230-254 | Remove `|| prefilled` pattern, use pure state |
+| Add validation | New code | Use `useFormValidation` hook with `commonSchemas` |
+| 2x2 grid layout | Lines 225-255 | Match Kitchen Table pattern for First/Last/Email |
+
+### Technical Implementation
+
+```typescript
+// Replace lines 31-32 with:
+const [firstName, setFirstName] = useState('');
+const [lastName, setLastName] = useState('');
+const [email, setEmail] = useState('');
+
+// Add useEffect after line 49:
+useEffect(() => {
+  // Initialize from session data ONCE on mount
+  if (sessionData.firstName && !firstName) {
+    setFirstName(sessionData.firstName);
+  }
+  if (sessionData.lastName && !lastName) {
+    setLastName(sessionData.lastName);
+  }
+  if (sessionData.email && !email) {
+    setEmail(sessionData.email);
+  }
+}, []); // Empty deps = mount only
 ```
 
 ---
 
-## Files to Modify
+## Phase 2: Fix Yellow Score Contrast
 
-### 1. `src/components/conversion/SpecChecklistGuideModal.tsx`
+### Problem
+The `--warning: 48 96% 53%` color (bright yellow #FACC15) has a contrast ratio of ~1.62:1 against white backgrounds, failing WCAG AA (4.5:1 required).
 
-**Fix 1: Remove Tab Flashing (Lines 286-292)**
+### Solution
+Replace `text-warning` with `text-amber-700` (or `text-slate-900`) for text elements while keeping the soft `bg-warning/10` background.
 
-Replace the inline style manipulation:
-```typescript
-// REMOVE THESE:
-const inputFocusStyle = { boxShadow: 'none' };
-const inputFocusHandler = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.target.style.boxShadow = '0 0 0 3px rgba(57, 147, 221, 0.25)...';
-};
-const inputBlurHandler = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.target.style.boxShadow = 'none';
-};
-```
+### File: `src/components/claim-survival/EvidenceAnalysisModal.tsx`
 
-Replace with Tailwind focus classes on all Input elements:
-```typescript
-className={`bg-white border border-black focus:ring-2 focus:ring-primary/25 focus:ring-offset-0 focus:border-primary ${hasError('firstName') ? 'border-destructive' : ''}`}
-```
+| Change | Location | Description |
+|--------|----------|-------------|
+| Update score display | Line 68 | Change `text-warning` to `text-amber-700` |
+| Update badge text | Lines 206 | Change `text-warning` to `text-amber-700` |
+| Update icon color | Line 57 | Change `text-warning` to `text-amber-600` |
 
-**Fix 2: Correct handleClose Logic (Lines 207-213)**
-
-Current:
-```typescript
-const handleClose = () => {
-  if (formSubmitted) {
-    onSuccess?.(); // PROBLEM: fires onSuccess just because they submitted Step 1
-  }
-  onClose();
-};
-```
-
-New - only fire onSuccess at explicit exit points:
-```typescript
-const handleClose = () => {
-  // Only allow closing from form step, success decline, or thank you
-  // If in middle of questionnaire (project/location), keep modal open
-  if (step === 'form') {
-    onClose();
-  } else if (step === 'success' || step === 'thankyou') {
-    if (formSubmitted) onSuccess?.();
-    onClose();
-  }
-  // For project/location steps, modal stays open (locked)
-};
-```
-
-**Fix 3: Add Button Text Contrast (Line 372)**
+### Technical Implementation
 
 ```typescript
-<Button type="submit" variant="cta" size="lg" className="w-full gap-2 text-white" disabled={isSubmitting}>
-```
+// Line 57 - getStatusIcon for 'weak' status:
+return <AlertTriangle className="w-4 h-4 text-amber-600" />;
 
-**Fix 4: Prevent Accidental Modal Close During Questionnaire**
+// Line 68 - getOverallStatusStyles for 'warning' status:
+return 'border-amber-500/50 bg-amber-50 text-amber-700';
 
-Add a visual "X" close button that only appears after Step 1, allowing explicit exit:
-```typescript
-{step !== 'form' && (
-  <button 
-    onClick={() => {
-      if (formSubmitted) onSuccess?.();
-      onClose();
-    }}
-    className="absolute top-4 right-4 p-1 hover:bg-slate-100 rounded-full"
-    aria-label="Close"
-  >
-    <X className="w-5 h-5 text-slate-600" />
-  </button>
-)}
+// Line 206 - Badge for 'weak' document status:
+: 'border-amber-500/50 text-amber-700'
 ```
 
 ---
 
-### 2. `src/components/spec-checklist/SpecChecklistHero.tsx`
+## Phase 3: Add ARIA Accessibility
 
-**Fix 5: Always Show Button (allow modal re-open)**
+### Problem
+The modal lacks proper ARIA labeling for screen readers:
+- No `aria-describedby` for the dialog
+- No `aria-live` region for dynamic score updates
+- Missing `role` attributes for lists
+- No `aria-required` on form fields
 
-Current (Lines 55-75):
+### Solution
+Add comprehensive ARIA attributes throughout both files.
+
+### File: `src/components/claim-survival/EvidenceAnalysisModal.tsx`
+
+| Change | Location | Description |
+|--------|----------|-------------|
+| Add aria-describedby | Line 78 | Link to description element |
+| Add aria-live region | Line 167-171 | Announce score to screen readers |
+| Add role="list" | Lines 108, 185 | Document status breakdown |
+| Add role="listitem" | Lines 109, 189 | Each document item |
+| Add sr-only labels | Various | Hidden labels for icon-only elements |
+
+### File: `src/components/claim-survival/ClaimVaultSyncButton.tsx`
+
+| Change | Location | Description |
+|--------|----------|-------------|
+| Add aria-required | Form inputs | Mark required fields |
+| Add aria-invalid | Form inputs | Indicate validation errors |
+| Add aria-describedby | Form inputs | Link to error messages |
+| Add id to errors | Error elements | Enable aria-describedby linking |
+
+### Technical Implementation
+
 ```typescript
-{hasConverted ? (
-  <div className="...">
-    <CheckCircle2 /> Checklist sent to your email!
-  </div>
-) : (
-  <Button onClick={handleCtaClick}>Download My Free Audit Checklist</Button>
-)}
-```
-
-New - show both badge AND button:
-```typescript
-{hasConverted && (
-  <div className="flex items-center gap-2 text-primary bg-primary/10 px-4 py-3 rounded-lg w-fit mb-2">
-    <CheckCircle2 className="w-5 h-5" />
-    <span className="font-medium">Checklist sent to your email!</span>
-  </div>
-)}
-<Button 
-  size="lg" 
-  className="w-full sm:w-auto gap-2"
-  onClick={handleCtaClick}
+// EvidenceAnalysisModal.tsx - DialogContent (Line 78):
+<DialogContent 
+  className="max-w-2xl max-h-[90vh] overflow-y-auto"
+  aria-describedby="claim-analysis-description"
 >
-  {hasConverted ? 'Book Your Free Measurement' : 'Download My Free Audit Checklist'}
-  <Download className="w-4 h-4" />
-</Button>
+
+// Add description (after DialogHeader):
+<p id="claim-analysis-description" className="sr-only">
+  AI-powered analysis of your insurance claim documents with readiness score and recommendations.
+</p>
+
+// Score section (Lines 167-178):
+<div 
+  className={`rounded-lg border-2 p-6 text-center ${getOverallStatusStyles(analysisResult.status)}`}
+  role="region"
+  aria-labelledby="readiness-score-label"
+  aria-live="polite"
+>
+  <div 
+    id="readiness-score-label"
+    className="text-5xl font-bold font-mono mb-2"
+    aria-label={`Claim readiness score: ${analysisResult.overallScore} percent`}
+  >
+    {analysisResult.overallScore}%
+  </div>
+
+// Document status breakdown (Line 185):
+<div className="space-y-2" role="list" aria-label="Document status breakdown">
+
+// Each document (Line 189):
+<div 
+  key={item.docId}
+  role="listitem"
+  className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border"
+>
 ```
 
-Also fix `handleCtaClick` to always open modal:
 ```typescript
-const handleCtaClick = () => {
-  setIsModalOpen(true); // Always open, regardless of hasConverted
-};
+// ClaimVaultSyncButton.tsx - Form inputs:
+<Input
+  id="vault-email"
+  type="email"
+  placeholder="you@example.com"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  disabled={isLoading}
+  className="h-9"
+  aria-required="true"
+  aria-invalid={!!emailError}
+  aria-describedby={emailError ? "vault-email-error" : undefined}
+/>
+{emailError && (
+  <p id="vault-email-error" className="text-xs text-destructive mt-1" role="alert">
+    {emailError}
+  </p>
+)}
 ```
 
 ---
 
-### 3. `src/components/spec-checklist/MainCTASection.tsx`
+## Phase 4: Anonymous vs. Logged-In Flow Differentiation
 
-**Fix 6: Don't Replace Entire Section**
+### Problem
+Both anonymous and authenticated users see nearly identical UI states, with the only differentiation being a simple success badge for logged-in users. The current implementation doesn't:
+- Auto-save analysis for authenticated users
+- Show different CTAs based on auth state
+- Persist analysis to user's account automatically
 
-Current (Lines 26-40): Entire section is replaced with success box when `hasConverted=true`.
+### Solution
+Create two distinct flows:
+1. **Anonymous**: Show full form with email/name fields + magic link sign-up
+2. **Authenticated**: Auto-sync to vault, show "Synced" confirmation with account management options
 
-New: Keep the button functional with modified text:
+### File: `src/components/claim-survival/ClaimVaultSyncButton.tsx`
+
+| Change | Location | Description |
+|--------|----------|-------------|
+| Enhanced auth state UI | Lines 118-135 | Add "Manage Vault" link and sync timestamp |
+| Auto-sync on mount | New useEffect | If authenticated, automatically save analysis |
+| Show sync status | New state | Track if synced for authenticated users |
+
+### Technical Implementation
+
 ```typescript
-if (hasConverted) {
+// New state for authenticated users:
+const [hasSynced, setHasSynced] = useState(false);
+
+// Auto-sync for authenticated users (new useEffect):
+useEffect(() => {
+  if (isAuthenticated && !hasSynced && analysis) {
+    // Auto-save analysis to user's vault
+    updateFields({
+      claimAnalysisResult: {
+        ...analysis,
+        analyzedAt: analysis.analyzedAt || new Date().toISOString(),
+      },
+      vaultSyncPending: false,
+      email: user.email,
+      sourceTool: 'claim-survival-kit',
+    });
+    
+    trackEvent('vault_auto_sync', {
+      source_tool: 'claim-survival-kit',
+      analysis_score: analysis.overallScore,
+      user_authenticated: true,
+    });
+    
+    setHasSynced(true);
+  }
+}, [isAuthenticated, hasSynced, analysis, user]);
+
+// Enhanced authenticated state UI (Lines 118-135):
+if (isAuthenticated) {
   return (
-    <section id={id} className="py-16 sm:py-24" style={{ background: '...' }}>
-      <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Success badge + upsell CTA */}
-        <div className="bg-white rounded-xl p-6 sm:p-8 shadow-2xl text-center">
-          <CheckCircle2 className="w-12 h-12 text-primary mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Checklist Sent!</h2>
-          <p className="text-slate-600 mb-4">Ready to take the next step?</p>
-          <Button variant="cta" size="lg" className="w-full gap-2" onClick={handleCtaClick}>
-            Book Your Free Measurement
-            <ArrowRight className="w-4 h-4" />
-          </Button>
+    <Card className="p-4 bg-primary/5 border-primary/20">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+          <CheckCircle className="w-5 h-5 text-primary" aria-hidden="true" />
         </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-foreground text-sm">
+            {hasSynced ? 'Analysis Synced to Your Vault' : 'Syncing...'}
+          </p>
+          <p className="text-xs text-muted-foreground truncate">
+            Logged in as {user.email}
+          </p>
+        </div>
+        <Button variant="ghost" size="sm" asChild>
+          <a href="/vault">Manage Vault</a>
+        </Button>
       </div>
-    </section>
+    </Card>
   );
 }
 ```
 
 ---
 
-### 4. `src/components/spec-checklist/SecondaryCTASection.tsx`
+## Files to Modify
 
-**Fix 7: Same Pattern as MainCTASection**
-
-Change the success state to show an upsell button instead of just a static message.
-
----
-
-### 5. `src/pages/SpecChecklistGuide.tsx` (Optional Enhancement)
-
-**Fix 8: Split State Tracking**
-
-For more granular control, split `hasConverted` into two states:
-```typescript
-const [hasDownloaded, setHasDownloaded] = useState(() => 
-  localStorage.getItem('spec_checklist_downloaded') === 'true'
-);
-const [hasCompletedFlow, setHasCompletedFlow] = useState(() => 
-  localStorage.getItem('spec_checklist_converted') === 'true'
-);
-```
-
-Only lock `localStorage` for `spec_checklist_converted` when the full flow is complete (Thank You step or explicit decline).
+| File | Phase(s) | Priority |
+|------|----------|----------|
+| `src/components/claim-survival/ClaimVaultSyncButton.tsx` | 1, 3, 4 | High |
+| `src/components/claim-survival/EvidenceAnalysisModal.tsx` | 2, 3 | High |
 
 ---
 
-## Summary of Changes
+## Validation Checklist
 
-| File | Changes |
-|------|---------|
-| `SpecChecklistGuideModal.tsx` | Remove inline focus handlers, fix handleClose logic, add text-white to button, add explicit X button |
-| `SpecChecklistHero.tsx` | Always show button (with modified text after conversion), remove scroll-on-click |
-| `MainCTASection.tsx` | Show upsell button in success state instead of static message |
-| `SecondaryCTASection.tsx` | Same pattern as MainCTASection |
-| `SpecChecklistGuide.tsx` | (Optional) Split state into hasDownloaded vs hasCompletedFlow |
+After implementation, verify:
 
-## Expected Outcome
+- [ ] First Name, Last Name, Email fields are fully editable (can delete/clear)
+- [ ] Pre-fill works from session data without locking
+- [ ] Score displays with high contrast (amber-700 vs yellow)
+- [ ] All document status badges are readable
+- [ ] Screen reader announces score correctly
+- [ ] Form fields have proper error messaging with ARIA
+- [ ] Anonymous users see full form with magic link flow
+- [ ] Authenticated users see auto-synced state with vault link
+- [ ] Tab navigation works smoothly through form fields
 
-After implementation:
-1. ✅ User submits Step 1 → Modal stays open showing "Your Spec Sheet is on its way!" with upsell CTAs
-2. ✅ User can choose "Book a Free Measurement" → Continues to project questionnaire (Steps 3-5)
-3. ✅ User declines "No thanks" → Modal closes, page shows success badge BUT button still works
-4. ✅ Tab key navigates smoothly between fields without flashing
-5. ✅ Hero and MainCTA buttons remain functional even after Step 1
-6. ✅ Button text is clearly visible (white on blue)
-7. ✅ Refresh allows re-access to upsell flow if they didn't complete it
-8. ✅ Incognito mode works correctly
+---
 
+## Technical Notes
+
+1. **EMQ Compliance**: The First/Last name split aligns with Meta Event Match Quality standards (memory: `name-split-emq-standard-v2`)
+
+2. **Validation**: Using existing `commonSchemas.firstName`, `commonSchemas.lastName`, and `commonSchemas.email` from `useFormValidation.ts`
+
+3. **Theme Compatibility**: The `text-amber-700` color provides 4.62:1 contrast ratio on white and works in both light/dark themes
+
+4. **Focus Management**: Using Tailwind `focus:ring-2 focus:ring-primary/25` pattern consistent with site-wide form inputs
