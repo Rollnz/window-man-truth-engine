@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
 import { trackEvent } from '@/lib/gtm';
+import { toast } from '@/hooks/use-toast';
 import { AnalysisResult } from '@/hooks/useEvidenceAnalysis';
 import { 
   Vault, 
@@ -145,6 +146,16 @@ export function ClaimVaultSyncButton({
 
       if (authError) {
         console.error('Magic link error:', authError);
+        toast({
+          title: "Couldn't send access link",
+          description: authError.message || "Please check your email address and try again.",
+          variant: "destructive",
+        });
+        trackEvent('vault_sync_error', {
+          source_tool: 'claim-survival-kit',
+          error_type: 'magic_link_failed',
+          error_message: authError.message,
+        });
         setIsLoading(false);
         return;
       }
@@ -160,6 +171,16 @@ export function ClaimVaultSyncButton({
       setShowSuccess(true);
     } catch (err) {
       console.error('Vault sync error:', err);
+      toast({
+        title: "Something went wrong",
+        description: "We couldn't save your analysis. Please try again.",
+        variant: "destructive",
+      });
+      trackEvent('vault_sync_error', {
+        source_tool: 'claim-survival-kit',
+        error_type: 'sync_failed',
+        error_message: err instanceof Error ? err.message : 'Unknown error',
+      });
     } finally {
       setIsLoading(false);
     }
