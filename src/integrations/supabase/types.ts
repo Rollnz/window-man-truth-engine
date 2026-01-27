@@ -141,6 +141,13 @@ export type Database = {
             foreignKeyName: "consultations_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "leads_dashboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "v_conversion_integrity_check"
             referencedColumns: ["lead_id"]
           },
@@ -780,6 +787,13 @@ export type Database = {
             foreignKeyName: "quote_files_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "leads_dashboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_files_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "v_conversion_integrity_check"
             referencedColumns: ["lead_id"]
           },
@@ -1175,6 +1189,13 @@ export type Database = {
             foreignKeyName: "wm_leads_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "leads_dashboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wm_leads_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "v_conversion_integrity_check"
             referencedColumns: ["lead_id"]
           },
@@ -1356,6 +1377,13 @@ export type Database = {
             foreignKeyName: "wm_sessions_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "leads_dashboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wm_sessions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "v_conversion_integrity_check"
             referencedColumns: ["lead_id"]
           },
@@ -1399,6 +1427,144 @@ export type Database = {
       }
     }
     Views: {
+      leads_dashboard: {
+        Row: {
+          chat_history: Json | null
+          client_id: string | null
+          created_at: string | null
+          email: string | null
+          emotional_state: string | null
+          fbc: string | null
+          fbp: string | null
+          first_name: string | null
+          first_touch: Json | null
+          gclid: string | null
+          id: string | null
+          insurance_carrier: string | null
+          last_activity_at: string | null
+          last_evidence: Json | null
+          last_name: string | null
+          last_non_direct_channel: string | null
+          last_non_direct_fbclid: string | null
+          last_non_direct_gclid: string | null
+          last_non_direct_landing_page: string | null
+          last_non_direct_utm_medium: string | null
+          last_non_direct_utm_source: string | null
+          last_touch: Json | null
+          lead_score_last_7d: number | null
+          lead_score_total: number | null
+          lead_status: string | null
+          msclkid: string | null
+          name: string | null
+          north_star_time: string | null
+          phone: string | null
+          session_data: Json | null
+          source_form: string | null
+          source_page: string | null
+          source_tool: string | null
+          specific_detail: string | null
+          updated_at: string | null
+          urgency_level: string | null
+          user_id: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          window_count: number | null
+        }
+        Insert: {
+          chat_history?: Json | null
+          client_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          emotional_state?: string | null
+          fbc?: string | null
+          fbp?: string | null
+          first_name?: string | null
+          first_touch?: Json | null
+          gclid?: string | null
+          id?: string | null
+          insurance_carrier?: string | null
+          last_activity_at?: string | null
+          last_evidence?: Json | null
+          last_name?: string | null
+          last_non_direct_channel?: string | null
+          last_non_direct_fbclid?: string | null
+          last_non_direct_gclid?: string | null
+          last_non_direct_landing_page?: string | null
+          last_non_direct_utm_medium?: string | null
+          last_non_direct_utm_source?: string | null
+          last_touch?: Json | null
+          lead_score_last_7d?: number | null
+          lead_score_total?: number | null
+          lead_status?: string | null
+          msclkid?: string | null
+          name?: string | null
+          north_star_time?: never
+          phone?: string | null
+          session_data?: Json | null
+          source_form?: string | null
+          source_page?: string | null
+          source_tool?: string | null
+          specific_detail?: string | null
+          updated_at?: string | null
+          urgency_level?: string | null
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          window_count?: number | null
+        }
+        Update: {
+          chat_history?: Json | null
+          client_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          emotional_state?: string | null
+          fbc?: string | null
+          fbp?: string | null
+          first_name?: string | null
+          first_touch?: Json | null
+          gclid?: string | null
+          id?: string | null
+          insurance_carrier?: string | null
+          last_activity_at?: string | null
+          last_evidence?: Json | null
+          last_name?: string | null
+          last_non_direct_channel?: string | null
+          last_non_direct_fbclid?: string | null
+          last_non_direct_gclid?: string | null
+          last_non_direct_landing_page?: string | null
+          last_non_direct_utm_medium?: string | null
+          last_non_direct_utm_source?: string | null
+          last_touch?: Json | null
+          lead_score_last_7d?: number | null
+          lead_score_total?: number | null
+          lead_status?: string | null
+          msclkid?: string | null
+          name?: string | null
+          north_star_time?: never
+          phone?: string | null
+          session_data?: Json | null
+          source_form?: string | null
+          source_page?: string | null
+          source_tool?: string | null
+          specific_detail?: string | null
+          updated_at?: string | null
+          urgency_level?: string | null
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          window_count?: number | null
+        }
+        Relationships: []
+      }
       v_attribution_first_last_touch: {
         Row: {
           first_touch_time: string | null

@@ -4,7 +4,7 @@ import { ClipboardCheck, Download, Clock, Smartphone, Shield, ArrowRight } from 
 import { Button } from '@/components/ui/button';
 import { heroData } from '@/data/specChecklistData';
 import { ROUTES } from '@/config/navigation';
-import { EbookLeadModal, EBOOK_CONFIGS } from '@/components/conversion/EbookLeadModal';
+import { SpecChecklistGuideModal } from '@/components/conversion/SpecChecklistGuideModal';
 
 interface SpecChecklistHeroProps {
   onCtaClick: () => void;
@@ -26,8 +26,7 @@ const SpecChecklistHero: React.FC<SpecChecklistHeroProps> = ({ onCtaClick, onSuc
     setIsModalOpen(true);
   };
 
-  const handleModalSuccess = (leadId: string) => {
-    setIsModalOpen(false);
+  const handleModalSuccess = () => {
     onSuccess?.();
   };
 
@@ -118,13 +117,11 @@ const SpecChecklistHero: React.FC<SpecChecklistHeroProps> = ({ onCtaClick, onSuc
         </div>
       </section>
 
-      {/* Ebook Lead Modal */}
-      <EbookLeadModal
+      {/* Spec Checklist Guide Modal */}
+      <SpecChecklistGuideModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleModalSuccess}
-        sourceTool="spec-checklist-guide"
-        config={EBOOK_CONFIGS['spec-checklist-guide']}
       />
     </>
   );
