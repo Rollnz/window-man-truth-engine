@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trustSignals } from '@/data/specChecklistData';
 import { SpecChecklistGuideModal } from '@/components/conversion/SpecChecklistGuideModal';
@@ -13,8 +13,8 @@ interface SecondaryCTASectionProps {
 const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess, hasConverted }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Always allow opening the modal - user can book appointment even after converting
   const handleCtaClick = () => {
-    if (hasConverted) return;
     setIsModalOpen(true);
   };
 
@@ -22,20 +22,48 @@ const SecondaryCTASection: React.FC<SecondaryCTASectionProps> = ({ id, onSuccess
     onSuccess?.();
   };
 
-  // Show success state if already converted
+  // Show success state with upsell CTA if already converted
   if (hasConverted) {
     return (
-      <section id={id} className="py-16 sm:py-24 bg-muted/30">
-        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="bg-card rounded-xl p-6 sm:p-8 shadow-lg border border-border">
-            <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-foreground mb-2">Checklist Unlocked!</h2>
-            <p className="text-muted-foreground">
-              Check your email for your Pre-Installation Audit Checklist.
-            </p>
+      <>
+        <section id={id} className="py-16 sm:py-24 bg-muted/30">
+          <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="bg-card rounded-xl p-6 sm:p-8 shadow-lg border border-border">
+              <CheckCircle2 className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h2 className="text-xl font-bold text-foreground mb-2">Checklist Unlocked!</h2>
+              <p className="text-muted-foreground mb-6">
+                Check your email for your Pre-Installation Audit Checklist. Ready for a professional assessment?
+              </p>
+              
+              {/* Upsell CTA - still functional after conversion */}
+              <Button 
+                variant="cta"
+                size="lg" 
+                className="w-full gap-2" 
+                onClick={handleCtaClick}
+              >
+                <Calendar className="w-4 h-4" />
+                Book Your Free Measurement
+              </Button>
+              
+              <div className="flex flex-wrap justify-center gap-4 mt-6 pt-6 border-t border-border text-xs text-muted-foreground">
+                {trustSignals.slice(0, 3).map((signal, i) => (
+                  <span key={i} className="flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-primary" /> {signal}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* Spec Checklist Guide Modal */}
+        <SpecChecklistGuideModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={handleModalSuccess}
+        />
+      </>
     );
   }
 
