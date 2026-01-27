@@ -1,150 +1,91 @@
 
 
-# Fix Skeleton forwardRef Warning + Magic Link Error Handling
+# Fix Plan: save-lead `window_count` Integer Conversion Bug
 
-## Overview
+## Problem Identified
 
-This plan addresses two specific issues:
-1. **React forwardRef warning** in the `Skeleton` component
-2. **Missing user-facing error handling** for magic link authentication failures
+The `save-lead` edge function fails with PostgreSQL error `22P02` (invalid input syntax for type integer: "10-15") when **updating** existing leads because the UPDATE path (line 594) passes raw strings directly to the database, bypassing the conversion logic that exists for INSERT operations.
 
----
+## Technical Root Cause
 
-## Issue 1: Skeleton forwardRef Warning
+| Path | Line | Current Code | Behavior |
+|------|------|--------------|----------|
+| INSERT | 507-520 | Inline IIFE with conversion | Converts `"10-15"` to `12` |
+| UPDATE | 594 | `aiContext?.window_count || undefined` | Passes raw string `"10-15"` |
 
-### Problem
-The `Skeleton` component is a function component that receives refs (likely from the `AnalysisSkeleton` component or other parent components), causing React to emit a warning: "Function components cannot be given refs."
+## Fix Implementation
 
-### Current Code (`src/components/ui/skeleton.tsx`)
+### Step 1: Create Helper Function
+
+Add a reusable helper near the top of the file (after the existing helper functions, around line 230):
+
 ```typescript
-function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("animate-pulse rounded-md bg-muted", className)} {...props} />;
+/**
+ * Convert window_count string ranges to midpoint integers
+ * Handles: "1-5" -> 3, "5-10" -> 7, "10-15" -> 12, "15+" -> 20
+ */
+function convertWindowCount(wc: unknown): number | null {
+  if (wc === null || wc === undefined) return null;
+  if (typeof wc === 'number') return wc;
+  if (typeof wc === 'string') {
+    if (wc === '15+' || wc === '15-plus') return 20;
+    const match = wc.match(/^(\d+)-(\d+)$/);
+    if (match) {
+      return Math.floor((parseInt(match[1], 10) + parseInt(match[2], 10)) / 2);
+    }
+    const num = parseInt(wc, 10);
+    return isNaN(num) ? null : num;
+  }
+  return null;
 }
 ```
 
-### Solution
-Wrap the component with `React.forwardRef` to properly forward refs to the underlying `<div>` element.
+### Step 2: Fix UPDATE Path (Line 594)
 
-### New Code
+Change from:
 ```typescript
-import * as React from "react";
-import { cn } from "@/lib/utils";
-
-const Skeleton = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
-  return (
-    <div
-      ref={ref}
-      className={cn("animate-pulse rounded-md bg-muted", className)}
-      {...props}
-    />
-  );
-});
-Skeleton.displayName = "Skeleton";
-
-export { Skeleton };
+window_count: aiContext?.window_count || undefined,
 ```
 
----
-
-## Issue 2: Magic Link Error Handling
-
-### Problem
-When the magic link fails to send (lines 146-150), the error is only logged to the console. Users see no feedback and may be confused about what happened.
-
-### Current Code (`src/components/claim-survival/ClaimVaultSyncButton.tsx`)
+To:
 ```typescript
-if (authError) {
-  console.error('Magic link error:', authError);
-  setIsLoading(false);
-  return;
-}
+window_count: convertWindowCount(aiContext?.window_count),
 ```
 
-### Solution
-Add proper user-facing error handling using the `toast` function from `@/hooks/use-toast`, with:
-1. Import the `toast` function
-2. Display a toast notification with the error message
-3. Track the error event for analytics
+### Step 3: Simplify INSERT Path (Lines 507-520)
 
-### Changes Required
-
-| Location | Change |
-|----------|--------|
-| Line 1 | Import `toast` from `@/hooks/use-toast` |
-| Lines 146-150 | Add toast notification for auth error |
-| Lines 161-163 | Add toast notification for catch block errors |
-
-### New Code for Error Handling
-
+Replace the inline IIFE with the helper:
 ```typescript
-// Line 1 - Add import:
-import { toast } from '@/hooks/use-toast';
-
-// Lines 146-150 - Replace with:
-if (authError) {
-  console.error('Magic link error:', authError);
-  toast({
-    title: "Couldn't send access link",
-    description: authError.message || "Please check your email address and try again.",
-    variant: "destructive",
-  });
-  trackEvent('vault_sync_error', {
-    source_tool: 'claim-survival-kit',
-    error_type: 'magic_link_failed',
-    error_message: authError.message,
-  });
-  setIsLoading(false);
-  return;
-}
-
-// Lines 161-163 - Replace catch block with:
-} catch (err) {
-  console.error('Vault sync error:', err);
-  toast({
-    title: "Something went wrong",
-    description: "We couldn't save your analysis. Please try again.",
-    variant: "destructive",
-  });
-  trackEvent('vault_sync_error', {
-    source_tool: 'claim-survival-kit',
-    error_type: 'sync_failed',
-    error_message: err instanceof Error ? err.message : 'Unknown error',
-  });
-} finally {
+window_count: convertWindowCount(aiContext?.window_count),
 ```
 
----
+## Files Changed
 
-## Files to Modify
+| File | Change |
+|------|--------|
+| `supabase/functions/save-lead/index.ts` | Add helper function + fix UPDATE path + simplify INSERT path |
 
-| File | Changes |
-|------|---------|
-| `src/components/ui/skeleton.tsx` | Wrap with `React.forwardRef`, add `displayName` |
-| `src/components/claim-survival/ClaimVaultSyncButton.tsx` | Add toast import, add error toasts with analytics |
+## Affected Products
 
----
+All guide modals with multi-step upsell flows that capture window count:
+- Kitchen Table Defense Guide (`/kitchen-table-guide`)
+- Sales Tactics Decoder (`/sales-tactics-guide`)
+- Spec Checklist Guide (`/spec-checklist-guide`)
 
-## Technical Notes
+## Verification Steps
 
-1. **forwardRef Pattern**: This follows the shadcn/ui convention used in other components like `Button`, `Input`, etc.
+1. Open `/kitchen-table-guide`
+2. Submit email form (Step 1: Contact)
+3. Accept upsell to continue questionnaire
+4. Select a window count range like "10-15"
+5. Complete remaining steps (location, etc.)
+6. Confirm no 500 error
+7. Verify in database: `leads.window_count` should be `12` (not `"10-15"`)
 
-2. **Toast Variant**: Using `variant: "destructive"` for error states provides red styling to indicate failure.
+## Risk Assessment
 
-3. **Error Tracking**: Added `vault_sync_error` events to GTM for analytics visibility into failure rates.
-
-4. **Error Messages**: The Supabase auth error object includes a `.message` property that provides user-friendly error descriptions (e.g., "Invalid email format").
-
----
-
-## Expected Outcome
-
-After implementation:
-- ✅ No more React forwardRef console warnings
-- ✅ Users see red toast notification when magic link fails
-- ✅ Users see error toast when sync process fails
-- ✅ Error events tracked in GTM for debugging
-- ✅ Skeleton component can accept refs from parent components
+- **Low Risk**: Single-file backend change
+- **No Database Migration**: No schema changes needed
+- **No Frontend Changes**: Modals remain unchanged
+- **Backwards Compatible**: Numeric values still work correctly
 
