@@ -229,6 +229,25 @@ async function triggerEmailNotification(payload: {
   }
 }
 
+/**
+ * Convert window_count string ranges to midpoint integers
+ * Handles: "1-5" -> 3, "5-10" -> 7, "10-15" -> 12, "15+" -> 20
+ */
+function convertWindowCount(wc: unknown): number | null {
+  if (wc === null || wc === undefined) return null;
+  if (typeof wc === 'number') return wc;
+  if (typeof wc === 'string') {
+    if (wc === '15+' || wc === '15-plus') return 20;
+    const match = wc.match(/^(\d+)-(\d+)$/);
+    if (match) {
+      return Math.floor((parseInt(match[1], 10) + parseInt(match[2], 10)) / 2);
+    }
+    const num = parseInt(wc, 10);
+    return isNaN(num) ? null : num;
+  }
+  return null;
+}
+
 // ============= Stape Server-Side GTM Integration =============
 const STAPE_GTM_ENDPOINT = 'https://lunaa.itswindowman.com';
 
@@ -504,20 +523,7 @@ serve(async (req) => {
       urgency_level: aiContext?.urgency_level || null,
       insurance_carrier: aiContext?.insurance_carrier || null,
       // Convert string window_count ranges to midpoint numbers for INTEGER column
-      window_count: (() => {
-        const wc = aiContext?.window_count;
-        if (wc === null || wc === undefined) return null;
-        if (typeof wc === 'number') return wc;
-        // Handle string ranges: "1-5" -> 3, "5-10" -> 7, "10-15" -> 12, "15+" -> 20
-        if (typeof wc === 'string') {
-          if (wc === '15+' || wc === '15-plus') return 20;
-          const match = wc.match(/^(\d+)-(\d+)$/);
-          if (match) return Math.floor((parseInt(match[1]) + parseInt(match[2])) / 2);
-          const num = parseInt(wc, 10);
-          return isNaN(num) ? null : num;
-        }
-        return null;
-      })(),
+      window_count: convertWindowCount(aiContext?.window_count),
     };
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -591,7 +597,7 @@ serve(async (req) => {
           emotional_state: aiContext?.emotional_state || undefined,
           urgency_level: aiContext?.urgency_level || undefined,
           insurance_carrier: aiContext?.insurance_carrier || undefined,
-          window_count: aiContext?.window_count || undefined,
+          window_count: convertWindowCount(aiContext?.window_count),
         };
         
         // Only set attribution if not already present (first-touch)
