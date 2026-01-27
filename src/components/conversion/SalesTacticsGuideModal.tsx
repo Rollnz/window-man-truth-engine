@@ -268,14 +268,8 @@ export function SalesTacticsGuideModal({ isOpen, onClose, onSuccess }: SalesTact
     }));
   };
 
-  const inputBaseClass = "bg-white border focus:border-primary focus:outline-none transition-all duration-300";
-  const inputFocusStyle = { boxShadow: 'none' };
-  const inputFocusHandler = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    e.target.style.boxShadow = '0 0 0 3px rgba(57, 147, 221, 0.25), 0 0 20px rgba(57, 147, 221, 0.15)';
-  };
-  const inputBlurHandler = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    e.target.style.boxShadow = 'none';
-  };
+  // Fix: Use Tailwind focus classes instead of inline style manipulation to prevent tab navigation issues
+  const inputBaseClass = "bg-white border focus:ring-2 focus:ring-primary/25 focus:ring-offset-0 focus:border-primary focus:outline-none transition-all duration-200";
 
   const renderFormStep = () => (
     <>
@@ -293,9 +287,6 @@ export function SalesTacticsGuideModal({ isOpen, onClose, onSuccess }: SalesTact
               {...getFieldProps('firstName')} 
               placeholder="First name" 
               className={`${inputBaseClass} border-black ${hasError('firstName') ? 'border-destructive' : ''}`}
-              style={inputFocusStyle}
-              onFocus={inputFocusHandler}
-              onBlur={inputBlurHandler}
               disabled={isSubmitting} 
               autoComplete="given-name" 
             />
@@ -307,9 +298,6 @@ export function SalesTacticsGuideModal({ isOpen, onClose, onSuccess }: SalesTact
               {...getFieldProps('lastName')} 
               placeholder="Last name" 
               className={`${inputBaseClass} ${lastNameNudge ? 'border-red-500 border-2' : 'border-black'}`}
-              style={inputFocusStyle}
-              onFocus={inputFocusHandler}
-              onBlur={inputBlurHandler}
               disabled={isSubmitting} 
               autoComplete="family-name" 
             />
@@ -325,15 +313,12 @@ export function SalesTacticsGuideModal({ isOpen, onClose, onSuccess }: SalesTact
               {...getFieldProps('email')} 
               placeholder="Email address" 
               className={`${inputBaseClass} border-black ${hasError('email') ? 'border-destructive' : ''}`}
-              style={inputFocusStyle}
-              onFocus={(e) => {
-                inputFocusHandler(e);
+              onFocus={() => {
                 // Nudge last name if empty
                 if (!values.lastName.trim()) {
                   setLastNameNudge(true);
                 }
               }}
-              onBlur={inputBlurHandler}
               disabled={isSubmitting} 
               autoComplete="email" 
             />
@@ -346,9 +331,6 @@ export function SalesTacticsGuideModal({ isOpen, onClose, onSuccess }: SalesTact
               {...getFieldProps('phone')} 
               placeholder="Phone" 
               className={`${inputBaseClass} border-black placeholder:text-slate-500`}
-              style={inputFocusStyle}
-              onFocus={inputFocusHandler}
-              onBlur={inputBlurHandler}
               disabled={isSubmitting} 
               autoComplete="tel" 
             />
@@ -574,9 +556,6 @@ export function SalesTacticsGuideModal({ isOpen, onClose, onSuccess }: SalesTact
             onChange={(e) => setLocationDetails(prev => ({ ...prev, city: e.target.value }))}
             placeholder="Miami"
             className={`${inputBaseClass} border-black`}
-            style={inputFocusStyle}
-            onFocus={inputFocusHandler}
-            onBlur={inputBlurHandler}
             autoComplete="address-level2"
           />
         </div>
@@ -588,9 +567,6 @@ export function SalesTacticsGuideModal({ isOpen, onClose, onSuccess }: SalesTact
             onChange={(e) => setLocationDetails(prev => ({ ...prev, zipCode: e.target.value.replace(/\D/g, '').slice(0, 5) }))}
             placeholder="33101"
             className={`${inputBaseClass} border-black`}
-            style={inputFocusStyle}
-            onFocus={inputFocusHandler}
-            onBlur={inputBlurHandler}
             autoComplete="postal-code"
           />
         </div>
@@ -606,9 +582,6 @@ export function SalesTacticsGuideModal({ isOpen, onClose, onSuccess }: SalesTact
           onChange={(e) => setLocationDetails(prev => ({ ...prev, remark: e.target.value }))}
           placeholder="e.g., HOA restrictions, specific concerns..."
           className={`${inputBaseClass} border-black`}
-          style={inputFocusStyle}
-          onFocus={inputFocusHandler}
-          onBlur={inputBlurHandler}
         />
       </div>
 
