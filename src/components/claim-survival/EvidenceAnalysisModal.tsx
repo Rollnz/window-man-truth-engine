@@ -50,22 +50,25 @@ export function EvidenceAnalysisModal({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'complete':
-        return <CheckCircle className="w-4 h-4 text-primary" />;
+        return <CheckCircle className="w-4 h-4 text-primary" aria-hidden="true" />;
       case 'missing':
-        return <AlertTriangle className="w-4 h-4 text-destructive" />;
+        return <AlertTriangle className="w-4 h-4 text-destructive" aria-hidden="true" />;
       case 'weak':
-        return <AlertTriangle className="w-4 h-4 text-warning" />;
+        // Phase 2: Changed from text-warning to text-amber-600 for contrast
+        return <AlertTriangle className="w-4 h-4 text-amber-600" aria-hidden="true" />;
       default:
         return null;
     }
   };
 
+  // Phase 2: Updated warning status for high-contrast text
   const getOverallStatusStyles = (status: string) => {
     switch (status) {
       case 'ready':
         return 'border-primary/50 bg-primary/10 text-primary';
       case 'warning':
-        return 'border-warning/50 bg-warning/10 text-warning';
+        // Phase 2: Changed from text-warning to text-amber-700 for WCAG AA compliance
+        return 'border-amber-500/50 bg-amber-50 text-amber-700';
       case 'critical':
         return 'border-destructive/50 bg-destructive/10 text-destructive';
       default:
@@ -73,22 +76,41 @@ export function EvidenceAnalysisModal({
     }
   };
 
+  // Phase 2: Get accessible label for status
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case 'ready': return 'Ready for claim';
+      case 'warning': return 'Needs attention';
+      case 'critical': return 'Critical issues';
+      default: return 'Unknown status';
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      {/* Phase 3: Added aria-describedby for screen readers */}
+      <DialogContent 
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        aria-describedby="claim-analysis-description"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-mono uppercase tracking-wider">
-            <FileSearch className="w-5 h-5 text-primary" />
+            <FileSearch className="w-5 h-5 text-primary" aria-hidden="true" />
             CLAIM READINESS ANALYSIS
           </DialogTitle>
         </DialogHeader>
+
+        {/* Phase 3: Screen reader description */}
+        <p id="claim-analysis-description" className="sr-only">
+          AI-powered analysis of your insurance claim documents with readiness score and recommendations.
+        </p>
 
         <div className="space-y-6">
           {/* Pre-analysis state */}
           {!isAnalyzing && !analysisResult && (
             <div className="text-center py-8 space-y-6">
               <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 border-2 border-dashed border-primary/30 flex items-center justify-center">
-                <Shield className="w-10 h-10 text-primary" />
+                <Shield className="w-10 h-10 text-primary" aria-hidden="true" />
               </div>
               
               <div>
@@ -105,16 +127,18 @@ export function EvidenceAnalysisModal({
                 <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2">
                   DOCUMENTS TO ANALYZE
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                {/* Phase 3: Added role="list" for accessibility */}
+                <div className="grid grid-cols-2 gap-2" role="list" aria-label="Documents to be analyzed">
                   {documents.map(doc => (
                     <div 
                       key={doc.id}
                       className="flex items-center gap-2 text-sm"
+                      role="listitem"
                     >
                       {(progress[doc.id] || files[doc.id]) ? (
-                        <CheckCircle className="w-4 h-4 text-primary" />
+                        <CheckCircle className="w-4 h-4 text-primary" aria-label="Completed" />
                       ) : (
-                        <div className="w-4 h-4 rounded-full border border-muted-foreground/30" />
+                        <div className="w-4 h-4 rounded-full border border-muted-foreground/30" aria-label="Not completed" />
                       )}
                       <span className={
                         (progress[doc.id] || files[doc.id]) 
@@ -128,8 +152,8 @@ export function EvidenceAnalysisModal({
                 </div>
               </div>
 
-              <Button onClick={onAnalyze} size="lg" className="font-mono uppercase">
-                <FileSearch className="mr-2 h-4 w-4" />
+              <Button onClick={onAnalyze} size="lg" className="font-mono uppercase text-white">
+                <FileSearch className="mr-2 h-4 w-4" aria-hidden="true" />
                 Analyze Evidence
               </Button>
             </div>
@@ -164,9 +188,18 @@ export function EvidenceAnalysisModal({
                 </div>
               )}
 
-              {/* Overall Score */}
-              <div className={`rounded-lg border-2 p-6 text-center ${getOverallStatusStyles(analysisResult.status)}`}>
-                <div className="text-5xl font-bold font-mono mb-2">
+              {/* Phase 2 & 3: Overall Score with high contrast and ARIA */}
+              <div 
+                className={`rounded-lg border-2 p-6 text-center ${getOverallStatusStyles(analysisResult.status)}`}
+                role="region"
+                aria-labelledby="readiness-score-heading"
+                aria-live="polite"
+              >
+                <div 
+                  id="readiness-score-heading"
+                  className="text-5xl font-bold font-mono mb-2"
+                  aria-label={`Claim readiness score: ${analysisResult.overallScore} percent, ${getStatusLabel(analysisResult.status)}`}
+                >
                   {analysisResult.overallScore}%
                 </div>
                 <div className="text-sm font-mono uppercase tracking-wider">
@@ -179,16 +212,25 @@ export function EvidenceAnalysisModal({
 
               {/* Document Status */}
               <div>
-                <h4 className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">
+                <h4 
+                  id="document-status-heading" 
+                  className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3"
+                >
                   DOCUMENT STATUS BREAKDOWN
                 </h4>
-                <div className="space-y-2">
+                {/* Phase 3: Added role="list" for accessibility */}
+                <div 
+                  className="space-y-2" 
+                  role="list" 
+                  aria-labelledby="document-status-heading"
+                >
                   {analysisResult.documentStatus.map((item) => {
                     const doc = documents.find(d => d.id === item.docId);
                     return (
                       <div 
                         key={item.docId}
                         className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border"
+                        role="listitem"
                       >
                         {getStatusIcon(item.status)}
                         <div className="flex-1 min-w-0">
@@ -196,6 +238,7 @@ export function EvidenceAnalysisModal({
                             <span className="font-medium text-sm">
                               {doc?.title || item.docId}
                             </span>
+                            {/* Phase 2: Updated badge colors for contrast */}
                             <Badge 
                               variant="outline" 
                               className={`text-[10px] uppercase ${
@@ -203,8 +246,9 @@ export function EvidenceAnalysisModal({
                                   ? 'border-primary/50 text-primary' 
                                   : item.status === 'missing'
                                   ? 'border-destructive/50 text-destructive'
-                                  : 'border-warning/50 text-warning'
+                                  : 'border-amber-500/50 text-amber-700'
                               }`}
+                              aria-label={`Status: ${item.status}`}
                             >
                               {item.status}
                             </Badge>
@@ -222,13 +266,20 @@ export function EvidenceAnalysisModal({
               {/* Next Steps */}
               {analysisResult.nextSteps.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">
+                  <h4 
+                    id="priority-actions-heading"
+                    className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3"
+                  >
                     PRIORITY ACTIONS
                   </h4>
-                  <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-2">
+                  <div 
+                    className="bg-muted/50 border border-border rounded-lg p-4 space-y-2"
+                    role="list"
+                    aria-labelledby="priority-actions-heading"
+                  >
                     {analysisResult.nextSteps.map((step, index) => (
-                      <div key={index} className="flex items-start gap-2 text-sm">
-                        <span className="text-primary font-mono">{index + 1}.</span>
+                      <div key={index} className="flex items-start gap-2 text-sm" role="listitem">
+                        <span className="text-primary font-mono" aria-hidden="true">{index + 1}.</span>
                         <span>{step}</span>
                       </div>
                     ))}
@@ -242,11 +293,11 @@ export function EvidenceAnalysisModal({
               {/* Actions */}
               <div className="flex gap-3 pt-4 border-t border-border">
                 <Button variant="outline" onClick={onAnalyze} className="flex-1">
-                  <RefreshCw className="mr-2 h-4 w-4" />
+                  <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
                   Re-Analyze
                 </Button>
                 <Button variant="outline" onClick={onClose} className="flex-1">
-                  <Download className="mr-2 h-4 w-4" />
+                  <Download className="mr-2 h-4 w-4" aria-hidden="true" />
                   Close Report
                 </Button>
               </div>
