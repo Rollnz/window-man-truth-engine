@@ -2,8 +2,6 @@ import { useState, useRef, useCallback, forwardRef } from 'react';
 import { Upload, FileImage, Loader2, RefreshCw, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { SampleQuoteDocument } from './SampleQuoteDocument';
-import { FloatingCallout } from './FloatingCallout';
 
 interface QuoteUploadZoneProps {
   onFileSelect: (file: File) => void;
@@ -71,14 +69,14 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={cn(
-            "relative rounded-xl border-2 border-dashed transition-all duration-300 overflow-hidden",
-            "min-h-[300px] md:min-h-[400px]",
-            isDragOver 
-              ? "border-primary bg-primary/5 scale-[1.02]" 
-              : "border-border hover:border-primary/50 bg-card/50",
-            isAnalyzing && "pointer-events-none"
-          )}
+        className={cn(
+          "relative rounded-xl border-2 border-dashed transition-all duration-300 overflow-hidden",
+          "min-h-[200px] md:min-h-[240px]",
+          isDragOver 
+            ? "border-primary bg-primary/5 scale-[1.02]" 
+            : "border-border hover:border-primary/50 bg-card/50",
+          isAnalyzing && "pointer-events-none"
+        )}
         >
           {/* Analyzing State */}
           {isAnalyzing && (
@@ -125,36 +123,9 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
             </div>
           )}
 
-          {/* Before Upload Overlay - Sample Quote + Floating Callouts */}
+          {/* Before Upload Overlay - Simplified for compact view */}
           {showBeforeUploadOverlay && (
-            <>
-              {/* Layer 1: Sample Quote Document (background) */}
-              <SampleQuoteDocument />
-
-              {/* Layer 2: Floating Callouts (positioned around edges) */}
-              <FloatingCallout
-                type="legal"
-                label="Hidden Warranty Clause"
-                className="top-4 left-0 md:top-6"
-              />
-              <FloatingCallout
-                type="price"
-                label="$2,400 Commission"
-                className="top-16 right-0 md:top-20 md:right-0 left-auto border-l-0 border-r-2 rounded-l-md rounded-r-none pl-3 pr-3"
-                hideMobile
-              />
-              <FloatingCallout
-                type="missing"
-                label="Missing Design Pressure"
-                className="bottom-20 left-0 md:bottom-24"
-              />
-              <FloatingCallout
-                type="warning"
-                label="Vague Installation Terms"
-                className="bottom-8 right-0 md:bottom-12 left-auto border-l-0 border-r-2 rounded-l-md rounded-r-none pl-3 pr-3"
-                hideMobile
-              />
-            </>
+            <div className="absolute inset-0 bg-gradient-to-b from-muted/20 to-muted/40" />
           )}
 
           {/* Upload CTA Overlay */}
