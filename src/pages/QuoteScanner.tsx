@@ -29,7 +29,7 @@ import { NoQuotePathway } from '@/components/quote-scanner/NoQuotePathway';
 import { WindowCalculatorTeaser } from '@/components/quote-scanner/WindowCalculatorTeaser';
 import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChecklist';
 // Vault Pivot Conversion Engine
-import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
+import { SoftInterceptionAnchor, NoQuotePivotSection, NoQuotePivotCondensed } from '@/components/quote-scanner/vault-pivot';
 
 export default function QuoteScanner() {
   usePageTracking('quote-scanner');
@@ -120,93 +120,83 @@ export default function QuoteScanner() {
               description="We encountered an issue with the quote scanner. Please try uploading your quote again."
               onReset={() => window.location.reload()}
             >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                {/* Left column - Upload */}
-                <div className="space-y-6">
-                  <QuoteUploadZone
-                    ref={uploadRef}
-                    onFileSelect={handleFileSelect}
-                    isAnalyzing={isAnalyzing}
-                    hasResult={!!analysisResult}
-                    imagePreview={imageBase64}
-                  />
-                </div>
+              {/* Row 1: Two parallel CTAs - Upload Zone | No Quote Pivot */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+                {/* Left: Upload Zone */}
+                <QuoteUploadZone
+                  ref={uploadRef}
+                  onFileSelect={handleFileSelect}
+                  isAnalyzing={isAnalyzing}
+                  hasResult={!!analysisResult}
+                  imagePreview={imageBase64}
+                />
 
-                {/* Right column - Results */}
-                <div className="space-y-6">
-                  {/* Show error fallback if there's an error */}
-                  {hookError && !isAnalyzing && (
-                    <AIErrorFallback
-                      errorType={getAIErrorType(hookError)}
-                      message={hookError}
-                      onRetry={() => window.location.reload()}
-                      compact
+                {/* Right: No Quote Pivot (condensed) */}
+                <NoQuotePivotCondensed />
+              </div>
+
+              {/* Row 2: Results (full width, below both) */}
+              <div className="mt-8 space-y-6">
+                {/* Show error fallback if there's an error */}
+                {hookError && !isAnalyzing && (
+                  <AIErrorFallback
+                    errorType={getAIErrorType(hookError)}
+                    message={hookError}
+                    onRetry={() => window.location.reload()}
+                    compact
+                  />
+                )}
+
+                <QuoteAnalysisResults 
+                  result={analysisResult} 
+                  isLocked={!isUnlocked}
+                  hasImage={hasImage}
+                />
+
+                {isUnlocked && analysisResult && (
+                  <>
+                    <GenerateProposalButton 
+                      analysisResult={analysisResult}
+                      homeownerName={sessionData.name}
                     />
-                  )}
 
-                  <QuoteAnalysisResults 
-                    result={analysisResult} 
-                    isLocked={!isUnlocked}
-                    hasImage={hasImage}
-                  />
+                    <NegotiationTools
+                      emailDraft={emailDraft}
+                      phoneScript={phoneScript}
+                      isDraftingEmail={isDraftingEmail}
+                      isDraftingPhoneScript={isDraftingPhoneScript}
+                      onGenerateEmail={generateEmailDraft}
+                      onGeneratePhoneScript={generatePhoneScript}
+                      disabled={!analysisResult}
+                    />
 
-                  {isUnlocked && analysisResult && (
-                    <>
-                      <GenerateProposalButton 
-                        analysisResult={analysisResult}
-                        homeownerName={sessionData.name}
-                      />
+                    <QuoteQA
+                      answer={qaAnswer}
+                      isAsking={isAskingQuestion}
+                      onAsk={askQuestion}
+                      disabled={!analysisResult}
+                    />
+                  </>
+                )}
 
-                      <NegotiationTools
-                        emailDraft={emailDraft}
-                        phoneScript={phoneScript}
-                        isDraftingEmail={isDraftingEmail}
-                        isDraftingPhoneScript={isDraftingPhoneScript}
-                        onGenerateEmail={generateEmailDraft}
-                        onGeneratePhoneScript={generatePhoneScript}
-                        disabled={!analysisResult}
-                      />
-
-                      <QuoteQA
-                        answer={qaAnswer}
-                        isAsking={isAskingQuestion}
-                        onAsk={askQuestion}
-                        disabled={!analysisResult}
-                      />
-                    </>
-                  )}
-
-                  {/* Unlock button when locked with results */}
-                  {!isUnlocked && hasImage && analysisResult && (
-                    <button
-                      onClick={() => setShowLeadCapture(true)}
-                      className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-                    >
-                      Unlock Full Report
-                    </button>
-                  )}
-                </div>
+                {/* Unlock button when locked with results */}
+                {!isUnlocked && hasImage && analysisResult && (
+                  <button
+                    onClick={() => setShowLeadCapture(true)}
+                    className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    Unlock Full Report
+                  </button>
+                )}
               </div>
             </ErrorBoundary>
           </div>
         </section>
 
-        {/* Vault Pivot Conversion Engine - Primary lead capture for no-quote visitors */}
-        <section className="py-8 md:py-12">
-          <div className="container px-4">
-            <SoftInterceptionAnchor />
-            <NoQuotePivotSection 
-              onGoogleAuth={() => {
-                // TODO: Wire to real Supabase Google OAuth
-                console.log('Google OAuth clicked - will redirect to /vault');
-              }}
-              onEmailSubmit={(data) => {
-                // TODO: Wire to real magic link flow
-                console.log('Email submit:', data);
-              }}
-            />
-          </div>
-        </section>
+        {/* Soft Interception Anchor for scroll-based visibility tracking */}
+        <div className="container px-4">
+          <SoftInterceptionAnchor />
+        </div>
 
         {/* Supporting Content Sections */}
         <ScannerSocialProof />

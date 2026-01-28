@@ -151,7 +151,7 @@ export function QuoteAnalysisResults({ result, isLocked, hasImage }: QuoteAnalys
             </div>
           </div>
 
-          {/* Category Scores */}
+          {/* Category Scores - Compact preview when no result, full when result exists */}
           <div className="space-y-5">
             <ScoreRow
               label="Safety"
@@ -160,29 +160,35 @@ export function QuoteAnalysisResults({ result, isLocked, hasImage }: QuoteAnalys
               description="Checks for impact ratings and design pressures."
             />
             <ScoreRow
-              label="Scope"
-              score={result?.scopeScore ?? '?'}
-              icon={<FileSearch className="w-4 h-4 text-primary" />}
-              description={result?.missingItems.length ? `Missing: ${result.missingItems.slice(0, 2).join(', ')}` : "Scope appears comprehensive."}
-            />
-            <ScoreRow
               label="Price"
               score={result?.priceScore ?? '?'}
               icon={<DollarSign className="w-4 h-4 text-primary" />}
               description={`Est. price per opening: ${displayData.pricePerOpening}`}
             />
-            <ScoreRow
-              label="Fine Print"
-              score={result?.finePrintScore ?? '?'}
-              icon={<FileWarning className="w-4 h-4 text-primary" />}
-              description={result?.warnings.length ? `Warning: ${result.warnings[0]}` : "No major red flags found."}
-            />
-            <ScoreRow
-              label="Warranty"
-              score={result?.warrantyScore ?? '?'}
-              icon={<BadgeCheck className="w-4 h-4 text-primary" />}
-              description="Evaluates product vs. labor coverage duration."
-            />
+            
+            {/* Additional scores only shown when result exists */}
+            {result && (
+              <>
+                <ScoreRow
+                  label="Scope"
+                  score={result.scopeScore}
+                  icon={<FileSearch className="w-4 h-4 text-primary" />}
+                  description={result.missingItems.length ? `Missing: ${result.missingItems.slice(0, 2).join(', ')}` : "Scope appears comprehensive."}
+                />
+                <ScoreRow
+                  label="Fine Print"
+                  score={result.finePrintScore}
+                  icon={<FileWarning className="w-4 h-4 text-primary" />}
+                  description={result.warnings.length ? `Warning: ${result.warnings[0]}` : "No major red flags found."}
+                />
+                <ScoreRow
+                  label="Warranty"
+                  score={result.warrantyScore}
+                  icon={<BadgeCheck className="w-4 h-4 text-primary" />}
+                  description="Evaluates product vs. labor coverage duration."
+                />
+              </>
+            )}
           </div>
 
           {/* Warnings & Missing Items */}
