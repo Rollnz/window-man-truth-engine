@@ -365,7 +365,9 @@ export type Database = {
       leads: {
         Row: {
           chat_history: Json | null
+          city: string | null
           client_id: string | null
+          client_user_agent: string | null
           created_at: string | null
           email: string
           emotional_state: string | null
@@ -397,6 +399,7 @@ export type Database = {
           source_page: string | null
           source_tool: string
           specific_detail: string | null
+          state: string | null
           updated_at: string | null
           urgency_level: string | null
           user_id: string | null
@@ -406,10 +409,13 @@ export type Database = {
           utm_source: string | null
           utm_term: string | null
           window_count: number | null
+          zip: string | null
         }
         Insert: {
           chat_history?: Json | null
+          city?: string | null
           client_id?: string | null
+          client_user_agent?: string | null
           created_at?: string | null
           email: string
           emotional_state?: string | null
@@ -441,6 +447,7 @@ export type Database = {
           source_page?: string | null
           source_tool?: string
           specific_detail?: string | null
+          state?: string | null
           updated_at?: string | null
           urgency_level?: string | null
           user_id?: string | null
@@ -450,10 +457,13 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           window_count?: number | null
+          zip?: string | null
         }
         Update: {
           chat_history?: Json | null
+          city?: string | null
           client_id?: string | null
+          client_user_agent?: string | null
           created_at?: string | null
           email?: string
           emotional_state?: string | null
@@ -485,6 +495,7 @@ export type Database = {
           source_page?: string | null
           source_tool?: string
           specific_detail?: string | null
+          state?: string | null
           updated_at?: string | null
           urgency_level?: string | null
           user_id?: string | null
@@ -494,6 +505,7 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           window_count?: number | null
+          zip?: string | null
         }
         Relationships: []
       }
@@ -1078,6 +1090,7 @@ export type Database = {
           phone: string | null
           qualified_at: string | null
           qualified_cv_fired: boolean | null
+          state: string | null
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
           utm_campaign: string | null
@@ -1086,6 +1099,7 @@ export type Database = {
           utm_source: string | null
           utm_term: string | null
           verified_social_url: string | null
+          zip: string | null
         }
         Insert: {
           actual_deal_value?: number | null
@@ -1123,6 +1137,7 @@ export type Database = {
           phone?: string | null
           qualified_at?: string | null
           qualified_cv_fired?: boolean | null
+          state?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
           utm_campaign?: string | null
@@ -1131,6 +1146,7 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           verified_social_url?: string | null
+          zip?: string | null
         }
         Update: {
           actual_deal_value?: number | null
@@ -1168,6 +1184,7 @@ export type Database = {
           phone?: string | null
           qualified_at?: string | null
           qualified_cv_fired?: boolean | null
+          state?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
           utm_campaign?: string | null
@@ -1176,6 +1193,7 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           verified_social_url?: string | null
+          zip?: string | null
         }
         Relationships: [
           {
