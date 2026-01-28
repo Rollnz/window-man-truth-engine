@@ -1,301 +1,184 @@
 
-# Digital Fortress Test Suite: save-lead Edge Function
 
-## Overview
+# State Dropdown Implementation Plan
 
-This plan creates a comprehensive automated test suite for the `save-lead` edge function, verifying the four critical "Digital Fortress" requirements that protect both ad spend efficiency (EMQ 9.5+) and webhook reliability (Phonecall.bot).
+## Summary
 
-## Test Architecture
-
-The tests will be organized into four distinct test groups, each targeting a specific fortress requirement:
-
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│                   DIGITAL FORTRESS TEST SUITE                           │
-├─────────────────────────────────────────────────────────────────────────┤
-│  1. DATA INTEGRITY          │  Full payload → leads → wm_leads sync    │
-│  2. EMQ PRECISION           │  SHA-256 hashing + User-Agent capture    │
-│  3. WEBHOOK RELIABILITY     │  Phone E.164 + Idempotent upserts        │
-│  4. RATE LIMIT SAFETY       │  IP/Email throttling protects webhooks   │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+Add a state dropdown field to the location step of `KitchenTableGuideModal`, `SalesTacticsGuideModal`, and `SpecChecklistGuideModal` to complete EMQ 9.5+ address data collection. Florida will be the default selection with other southeastern US states available.
 
 ---
 
-## Test Groups & Implementation Details
+## Files to Create
 
-### Group 1: Data Integrity Tests
-
-**Purpose**: Verify full payload persistence including new EMQ 9.5+ fields
-
-| Test Case | Input | Expected Outcome |
-|-----------|-------|------------------|
-| Full payload with city/state/zip | Complete aiContext | All fields saved to `leads` table |
-| wm_leads sync trigger | New lead created | Corresponding `wm_leads` record created with city/state/zip |
-| client_user_agent capture | Custom User-Agent header | Field persisted exactly as received |
-
-**Implementation Approach**:
-- Send full payload via API call
-- Use Supabase client to query `leads` table directly
-- Verify each EMQ field matches input
+### 1. `src/constants/states.ts`
+**Purpose:** Centralized source of truth for state options
 
 ```typescript
-// Example test structure
-Deno.test("FORTRESS-D1: should persist city/state/zip to leads table", async () => {
-  const response = await callSaveLead({
-    email: generateTestEmail(),
-    sourceTool: "kitchen-table-guide",
-    firstName: "Jane",
-    lastName: "Doe",
-    phone: "5551234567",
-    aiContext: {
-      city: "Miami",
-      state: "FL",
-      zip_code: "33101"
-    }
-  });
-  
-  const body = await response.json();
-  assertEquals(response.status, 200);
-  
-  // Query database to verify persistence
-  const { data: lead } = await supabase
-    .from('leads')
-    .select('city, state, zip, client_user_agent')
-    .eq('id', body.leadId)
-    .single();
-  
-  assertEquals(lead.city, "Miami");
-  assertEquals(lead.state, "FL");
-  assertEquals(lead.zip, "33101");
-  assertExists(lead.client_user_agent);
-});
+export const SOUTHEAST_STATES = [
+  { value: 'FL', label: 'Florida' },      // Default - Primary market
+  { value: 'GA', label: 'Georgia' },
+  { value: 'AL', label: 'Alabama' },
+  { value: 'SC', label: 'South Carolina' },
+  { value: 'NC', label: 'North Carolina' },
+  { value: 'TN', label: 'Tennessee' },
+  { value: 'LA', label: 'Louisiana' },
+  { value: 'MS', label: 'Mississippi' },
+  { value: 'TX', label: 'Texas' },        // Major hurricane market
+  { value: 'PR', label: 'Puerto Rico' },  // High hurricane demand
+];
+
+export const DEFAULT_STATE = 'FL';
 ```
 
 ---
 
-### Group 2: EMQ Precision Tests
+## Files to Modify
 
-**Purpose**: Verify SHA-256 hashing and Stape GTM payload accuracy
+### 2. `src/components/conversion/KitchenTableGuideModal.tsx`
 
-| Test Case | Verification Method |
-|-----------|---------------------|
-| Email hashing | Compute expected SHA-256 locally, verify against log output |
-| Phone hashing (E.164) | Verify 10-digit → `+1XXXXXXXXXX` normalization before hash |
-| Name hashing | Verify lowercase/trim normalization, then SHA-256 |
-| Stape payload structure | Parse edge function logs for `[Stape GTM] Sending payload` |
+**Changes Required:**
 
-**Testing Strategy for Stape GTM Payload**:
-Since `sendStapeGTMEvent()` is fire-and-forget, we verify via:
-1. **Log inspection**: The function logs the full payload at line 352
-2. **Payload structure validation**: Read logs after test execution
+1. **Add Import:**
+   ```typescript
+   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+   import { SOUTHEAST_STATES, DEFAULT_STATE } from '@/constants/states';
+   ```
+
+2. **Update locationDetails state (line ~67-71):**
+   ```typescript
+   const [locationDetails, setLocationDetails] = useState({
+     city: '',
+     state: DEFAULT_STATE, // NEW: Florida default
+     zipCode: '',
+     remark: '',
+   });
+   ```
+
+3. **Update renderLocationStep() (~line 534-598):**
+   - Restructure grid to 3-column layout: City (full row mobile), State + Zip (split row)
+   - Add Select component for state dropdown
+
+4. **Update handleLocationSubmit() (~line 210-260):**
+   - Add `state: locationDetails.state` to aiContext payload
+   - Update `updateFields()` call to include state
+
+### 3. `src/components/conversion/SalesTacticsGuideModal.tsx`
+
+**Identical changes as KitchenTableGuideModal**
+
+### 4. `src/components/conversion/SpecChecklistGuideModal.tsx`
+
+**Identical changes as KitchenTableGuideModal**
+
+---
+
+## Implementation Details
+
+### Responsive Layout Strategy
+
+**Mobile (< 640px):**
+```
+┌──────────────────────────────────┐
+│  City (full width)               │
+├────────────────┬─────────────────┤
+│  State (50%)   │  Zip Code (50%) │
+└────────────────┴─────────────────┘
+```
+
+**Desktop (≥ 640px):**
+```
+┌───────────────────────────────────────────────────────┐
+│  City (full width)                                    │
+├────────────────────────────┬──────────────────────────┤
+│  State (50%)               │  Zip Code (50%)          │
+└────────────────────────────┴──────────────────────────┘
+```
+
+### State Dropdown Code Snippet
+
+```tsx
+<div>
+  <Label htmlFor="state" className="text-sm font-medium text-slate-700 mb-1 block">
+    State
+  </Label>
+  <Select
+    value={locationDetails.state}
+    onValueChange={(value) => setLocationDetails(prev => ({ ...prev, state: value }))}
+  >
+    <SelectTrigger 
+      id="state"
+      className="bg-white border border-black focus:ring-2 focus:ring-primary/25"
+      aria-label="Select state"
+    >
+      <SelectValue placeholder="Select state" />
+    </SelectTrigger>
+    <SelectContent className="bg-white border border-slate-200 shadow-lg z-50">
+      {SOUTHEAST_STATES.map(({ value, label }) => (
+        <SelectItem key={value} value={value}>
+          {label}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
+```
+
+### Updated aiContext Payload
 
 ```typescript
-Deno.test("FORTRESS-E1: should hash firstName/lastName for server-side matching", async () => {
-  const testData = {
-    firstName: "John",
-    lastName: "Smith",
-    email: generateTestEmail(),
-    phone: "5551234567"
-  };
-  
-  const response = await callSaveLead({
-    ...testData,
-    sourceTool: "quote-builder"
-  });
-  
-  assertEquals(response.status, 200);
-  
-  // Compute expected hashes
-  const expectedFnHash = await computeSHA256("john"); // lowercase
-  const expectedLnHash = await computeSHA256("smith");
-  
-  // Verify via log inspection (or mock endpoint in test environment)
-  // The actual verification would check edge function logs
-});
+aiContext: {
+  // ...existing fields
+  city: locationDetails.city,
+  state: locationDetails.state,  // NEW: 2-letter code (e.g., 'FL')
+  zip_code: locationDetails.zipCode,
+}
 ```
 
-**Static Analysis Test** (inspired by existing patterns):
+### Updated Session Persistence
+
 ```typescript
-Deno.test("FORTRESS-E2: save-lead includes fn/ln in Stape payload", async () => {
-  const sourceCode = await Deno.readTextFile("./supabase/functions/save-lead/index.ts");
-  
-  // Verify fn/ln are included in gtmPayload
-  const hasFnInPayload = sourceCode.includes("fn: hashedFirstName");
-  const hasLnInPayload = sourceCode.includes("ln: hashedLastName");
-  
-  assertEquals(hasFnInPayload, true, "gtmPayload should include fn for first name");
-  assertEquals(hasLnInPayload, true, "gtmPayload should include ln for last name");
+updateFields({
+  city: locationDetails.city,
+  state: locationDetails.state,  // NEW
+  zipCode: locationDetails.zipCode,
+  notes: locationDetails.remark,
 });
 ```
 
 ---
 
-### Group 3: Webhook Reliability Tests (Phonecall.bot Protection)
+## Analytics Events
 
-**Purpose**: Ensure phone data is never null/malformed and upserts prevent duplicate calls
-
-| Test Case | Critical Check |
-|-----------|---------------|
-| E.164 normalization | 10-digit input → `+15551234567` output |
-| Invalid phone rejection | Non-E.164 phones return 400 error |
-| Idempotent upsert | Same email, new phone → UPDATE (not INSERT) |
-| first_name always populated | Never null if provided |
-
-**Idempotent Upsert Test**:
-```typescript
-Deno.test("FORTRESS-W1: should update existing lead without creating duplicate", async () => {
-  const email = generateTestEmail();
-  
-  // Step 1: Create lead
-  const create = await callSaveLead({
-    email,
-    sourceTool: "quote-builder",
-    firstName: "First",
-    phone: "5551111111"
-  });
-  const createBody = await create.json();
-  const originalLeadId = createBody.leadId;
-  
-  // Step 2: Update with same email, different phone
-  const update = await callSaveLead({
-    email,
-    sourceTool: "consultation",
-    firstName: "Updated",
-    phone: "5552222222",
-    leadId: originalLeadId // Golden Thread
-  });
-  const updateBody = await update.json();
-  
-  // CRITICAL: Must return same leadId (no duplicate)
-  assertEquals(updateBody.leadId, originalLeadId);
-  
-  // Verify only one record exists
-  const { count } = await supabase
-    .from('leads')
-    .select('*', { count: 'exact', head: true })
-    .eq('email', email.toLowerCase());
-  
-  assertEquals(count, 1, "Should have exactly one lead record");
-});
-```
-
-**Phone E.164 Validation Test**:
-```typescript
-Deno.test("FORTRESS-W2: phone normalization produces valid E.164", async () => {
-  const testCases = [
-    { input: "5551234567", expected: "+15551234567" },      // 10-digit
-    { input: "15551234567", expected: "+15551234567" },     // 11-digit with 1
-    { input: "(555) 123-4567", expected: "+15551234567" },  // Formatted
-    { input: "555-123-4567", expected: "+15551234567" },    // Dashes
-  ];
-  
-  for (const tc of testCases) {
-    const response = await callSaveLead({
-      email: generateTestEmail(),
-      sourceTool: "consultation",
-      phone: tc.input
-    });
-    assertEquals(response.status, 200);
-  }
-});
-
-Deno.test("FORTRESS-W3: invalid phone formats are rejected", async () => {
-  const invalidPhones = [
-    "abc",           // Letters
-    "123",           // Too short
-    "123456789012345678901", // Too long
-  ];
-  
-  for (const phone of invalidPhones) {
-    const response = await callSaveLead({
-      email: generateTestEmail(),
-      sourceTool: "quote-builder",
-      phone
-    });
-    assertEquals(response.status, 400, `Phone "${phone}" should be rejected`);
-  }
-});
-```
+No new analytics events required. The existing `consultation_booked` event will automatically include the new `state` field in the aiContext payload, which flows through to the `save-lead` edge function and Stape GTM.
 
 ---
 
-### Group 4: Rate Limit Safety Tests
+## Build Order
 
-**Purpose**: Verify IP and email throttling prevents bot traffic from wasting Phonecall.bot credits
-
-| Limit Type | Threshold | Window |
-|------------|-----------|--------|
-| IP Hourly | 10 requests | 1 hour |
-| IP Daily | 50 requests | 24 hours |
-| Email Hourly | 3 requests | 1 hour |
-
-**Rate Limit Test Strategy**:
-```typescript
-Deno.test("FORTRESS-R1: email rate limit triggers after 3 submissions", async () => {
-  const sharedEmail = generateTestEmail();
-  
-  // First 3 should succeed
-  for (let i = 0; i < 3; i++) {
-    const response = await callSaveLead({
-      email: sharedEmail,
-      sourceTool: "quote-builder"
-    });
-    assertEquals(response.status, 200, `Request ${i+1} should succeed`);
-  }
-  
-  // 4th request should be rate limited
-  const blocked = await callSaveLead({
-    email: sharedEmail,
-    sourceTool: "quote-builder"
-  });
-  
-  assertEquals(blocked.status, 429);
-  const body = await blocked.json();
-  assertExists(body.retryAfter);
-});
-```
-
-**Note on IP Rate Limiting**: Since all test requests originate from the same IP (the test runner), we can naturally trigger IP limits by exceeding 10 requests per hour. However, this may conflict with other tests, so we'll structure these tests to run in isolation.
+1. Create `src/constants/states.ts` (shared dependency)
+2. Update `KitchenTableGuideModal.tsx`
+3. Update `SalesTacticsGuideModal.tsx`
+4. Update `SpecChecklistGuideModal.tsx`
+5. Test each modal's location step
 
 ---
 
-## File Structure
+## Technical Notes
 
-```text
-supabase/functions/save-lead/
-├── index.ts                    # Main edge function
-├── index.test.ts               # Existing basic tests (unchanged)
-└── fortress.test.ts            # NEW: Digital Fortress test suite
-```
+- The `useSessionData` hook already supports `state?: string` (line 29), so no hook modifications needed
+- The `save-lead` edge function already handles `aiContext.state` mapping (verified in previous implementation)
+- Select component uses `z-50` to ensure dropdown visibility over modal content
+- Using `bg-white` explicitly on SelectContent to prevent transparency issues per project guidelines
 
 ---
 
-## Test Execution
+## Verification Checklist
 
-```bash
-# Run Digital Fortress tests only
-deno test --allow-net --allow-env --allow-read supabase/functions/save-lead/fortress.test.ts
+After implementation:
+- [ ] State defaults to "Florida" when modal opens
+- [ ] Dropdown shows all 10 southeastern states
+- [ ] State persists to session via `updateFields()`
+- [ ] State is included in `aiContext.state` payload
+- [ ] Mobile layout shows City full-width, State/Zip split
+- [ ] Dropdown has solid white background (not transparent)
 
-# Run all save-lead tests
-deno test --allow-net --allow-env --allow-read supabase/functions/save-lead/
-```
-
----
-
-## Technical Implementation Summary
-
-| Fortress Pillar | Test Count | Key Verification |
-|-----------------|------------|------------------|
-| Data Integrity | 4 tests | city/state/zip + wm_leads sync |
-| EMQ Precision | 4 tests | SHA-256 hashing + fn/ln in Stape payload |
-| Webhook Reliability | 5 tests | E.164 normalization + idempotent upserts |
-| Rate Limit Safety | 2 tests | IP + Email throttling |
-
-**Total: 15 new automated tests**
-
----
-
-## Cleanup Strategy
-
-All test data uses the `test-{timestamp}-{random}@integration-test.com` email pattern, which is already handled by the existing `cleanup_test_data()` database function.
