@@ -1,12 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Shield, Send, Sparkles } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog } from '@/components/ui/dialog';
+import { TrustModal } from '@/components/forms/TrustModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +19,7 @@ import { getLeadAnchor } from '@/lib/leadAnchor';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { emailInputProps, phoneInputProps } from '@/lib/formAccessibility';
 
 interface MissionInitiatedModalProps {
   isOpen: boolean;
@@ -169,12 +165,19 @@ export function MissionInitiatedModal({
       });
 
       // 🔐 CANONICAL SCORING: Award points for lead capture
+      // Wrapped in try/catch to silently handle 403 ownership errors
       if (effectiveLeadId) {
-        await awardScore({
-          eventType: 'LEAD_CAPTURED',
-          sourceEntityType: 'lead',
-          sourceEntityId: effectiveLeadId,
-        });
+        try {
+          await awardScore({
+            eventType: 'LEAD_CAPTURED',
+            sourceEntityType: 'lead',
+            sourceEntityId: effectiveLeadId,
+          });
+        } catch (scoreError) {
+          // Silently handle ownership validation failures (403)
+          // This is expected for returning users with new sessions
+          console.debug('[MissionInitiatedModal] Score award failed (non-blocking):', scoreError);
+        }
       }
 
       // Push Enhanced Conversion event with SHA-256 PII hashing (value: 100 USD)
@@ -219,7 +222,11 @@ export function MissionInitiatedModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && !isSubmitting && onClose()}>
-      <DialogContent className="sm:max-w-md bg-white dark:bg-white border-t-4 border-t-primary shadow-2xl">
+      <TrustModal 
+        className="sm:max-w-md"
+        modalTitle={showScanning ? undefined : "Analysis in Progress..."}
+        modalDescription={showScanning ? undefined : "Where should we send the report?"}
+      >
         {showScanning ? (
           // Scanning animation state - colors adjusted for white background
           <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -234,99 +241,86 @@ export function MissionInitiatedModal({
           </div>
         ) : (
           // Form state - clean white card with high contrast
-          <>
-            <DialogHeader className="space-y-1">
-              <DialogTitle className="text-xl font-bold text-slate-900">
-                Analysis in Progress...
-              </DialogTitle>
-              <DialogDescription className="text-slate-600">
-                Where should we send the report?
-              </DialogDescription>
-            </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-3 mt-4">
+            {/* First/Last Name */}
+            <NameInputPair
+              firstName={values.firstName}
+              lastName={values.lastName}
+              onFirstNameChange={(value) => setValue('firstName', value)}
+              onLastNameChange={(value) => setValue('lastName', value)}
+              errors={{ firstName: getError('firstName'), lastName: getError('lastName') }}
+              disabled={isSubmitting}
+              size="compact"
+            />
 
-            <form onSubmit={handleSubmit} className="space-y-3 mt-4">
-              {/* First/Last Name */}
-              <NameInputPair
-                firstName={values.firstName}
-                lastName={values.lastName}
-                onFirstNameChange={(value) => setValue('firstName', value)}
-                onLastNameChange={(value) => setValue('lastName', value)}
-                errors={{ firstName: getError('firstName'), lastName: getError('lastName') }}
+            {/* Email */}
+            <div className="space-y-1">
+              <Label htmlFor="mission-email" className="font-semibold text-slate-900">Email</Label>
+              <Input
+                id="mission-email"
+                name="email"
+                placeholder="your@email.com"
+                className={cn(
+                  "h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm",
+                  hasError('email') && "border-destructive"
+                )}
+                {...getFieldProps('email')}
+                {...emailInputProps}
                 disabled={isSubmitting}
-                size="compact"
               />
+              {hasError('email') && (
+                <p className="text-xs text-destructive">{getError('email')}</p>
+              )}
+            </div>
 
-              {/* Email */}
-              <div className="space-y-1">
-                <Label htmlFor="mission-email" className="font-semibold text-slate-900">Email</Label>
-                <Input
-                  id="mission-email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="your@email.com"
-                  className={cn(
-                    "h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm",
-                    hasError('email') && "border-destructive"
-                  )}
-                  {...getFieldProps('email')}
-                  disabled={isSubmitting}
-                />
-                {hasError('email') && (
-                  <p className="text-xs text-destructive">{getError('email')}</p>
+            {/* Phone */}
+            <div className="space-y-1">
+              <Label htmlFor="mission-phone" className="font-semibold text-slate-900">Phone</Label>
+              <Input
+                id="mission-phone"
+                name="phone"
+                placeholder="(555) 123-4567"
+                className={cn(
+                  "h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm",
+                  hasError('phone') && "border-destructive"
                 )}
-              </div>
-
-              {/* Phone */}
-              <div className="space-y-1">
-                <Label htmlFor="mission-phone" className="font-semibold text-slate-900">Phone</Label>
-                <Input
-                  id="mission-phone"
-                  name="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  placeholder="(555) 123-4567"
-                  className={cn(
-                    "h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm",
-                    hasError('phone') && "border-destructive"
-                  )}
-                  {...getFieldProps('phone')}
-                  disabled={isSubmitting}
-                />
-                {hasError('phone') && (
-                  <p className="text-xs text-destructive">{getError('phone')}</p>
-                )}
-              </div>
-
-              {/* Submit Button - CTA variant for maximum visibility */}
-              <Button
-                type="submit"
-                variant="cta"
-                className="w-full mt-4"
+                {...getFieldProps('phone')}
+                {...phoneInputProps}
                 disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Send className="mr-2 h-4 w-4" />
-                    Send My Report
-                  </>
-                )}
-              </Button>
+              />
+              {hasError('phone') && (
+                <p className="text-xs text-destructive">{getError('phone')}</p>
+              )}
+            </div>
 
-              {/* Trust indicator - dark text for white background */}
-              <p className="text-xs text-center text-slate-500 pt-2">
-                <Shield className="inline w-3 h-3 mr-1" />
-                Your info is encrypted and never shared with contractors.
-              </p>
-            </form>
-          </>
+            {/* Submit Button - CTA variant for maximum visibility */}
+            <Button
+              type="submit"
+              variant="cta"
+              className="w-full mt-4"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send My Report
+                </>
+              )}
+            </Button>
+
+            {/* Trust indicator - dark text for white background */}
+            <p className="text-xs text-center text-slate-500 pt-2">
+              <Shield className="inline w-3 h-3 mr-1" />
+              Your info is encrypted and never shared with contractors.
+            </p>
+          </form>
         )}
-      </DialogContent>
+      </TrustModal>
     </Dialog>
   );
 }
