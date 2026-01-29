@@ -1,227 +1,184 @@
 
 
-# AI Scanner Layout: Side-by-Side CTAs with Results Below
+# State Dropdown Implementation Plan
 
-## Overview
+## Summary
 
-Restructure the `/ai-scanner` page layout to show two parallel conversion paths:
-- **Before (Upload Zone)**: For users with quotes ready to scan
-- **No Quote Pivot**: For users without quotes who need an alternative path
-
-The "After" (Results) section moves below both, serving as the shared output area.
+Add a state dropdown field to the location step of `KitchenTableGuideModal`, `SalesTacticsGuideModal`, and `SpecChecklistGuideModal` to complete EMQ 9.5+ address data collection. Florida will be the default selection with other southeastern US states available.
 
 ---
 
-## Layout Structure
+## Files to Create
 
-### Desktop (lg breakpoint)
+### 1. `src/constants/states.ts`
+**Purpose:** Centralized source of truth for state options
 
-```text
-┌─────────────────────────┬─────────────────────────┐
-│  Before                 │  No Quote               │
-│  (Upload Zone)          │  (Pivot Section)        │
-│  Compact ~200px         │  Matching height        │
-└─────────────────────────┴─────────────────────────┘
-┌─────────────────────────────────────────────────────┐
-│  After (Full Width - Results)                       │
-│  Compact preview initially, expands on scan         │
-└─────────────────────────────────────────────────────┘
-```
+```typescript
+export const SOUTHEAST_STATES = [
+  { value: 'FL', label: 'Florida' },      // Default - Primary market
+  { value: 'GA', label: 'Georgia' },
+  { value: 'AL', label: 'Alabama' },
+  { value: 'SC', label: 'South Carolina' },
+  { value: 'NC', label: 'North Carolina' },
+  { value: 'TN', label: 'Tennessee' },
+  { value: 'LA', label: 'Louisiana' },
+  { value: 'MS', label: 'Mississippi' },
+  { value: 'TX', label: 'Texas' },        // Major hurricane market
+  { value: 'PR', label: 'Puerto Rico' },  // High hurricane demand
+];
 
-### Mobile (stacked)
-
-```text
-┌─────────────────────────────────────────────────────┐
-│  Before (Upload Zone)                               │
-├─────────────────────────────────────────────────────┤
-│  No Quote Pivot (condensed version)                 │
-├─────────────────────────────────────────────────────┤
-│  After (Results)                                    │
-└─────────────────────────────────────────────────────┘
+export const DEFAULT_STATE = 'FL';
 ```
 
 ---
 
 ## Files to Modify
 
-### 1. `src/pages/QuoteScanner.tsx`
+### 2. `src/components/conversion/KitchenTableGuideModal.tsx`
 
-**Restructure the main grid layout:**
+**Changes Required:**
 
-Current structure (lines 120-191):
-- 2-column grid: Upload | Results
-- NoQuotePivotSection is in a separate section below
+1. **Add Import:**
+   ```typescript
+   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+   import { SOUTHEAST_STATES, DEFAULT_STATE } from '@/constants/states';
+   ```
 
-New structure:
-- Row 1: 2-column grid: Upload | No Quote Pivot
-- Row 2: Full-width Results section
+2. **Update locationDetails state (line ~67-71):**
+   ```typescript
+   const [locationDetails, setLocationDetails] = useState({
+     city: '',
+     state: DEFAULT_STATE, // NEW: Florida default
+     zipCode: '',
+     remark: '',
+   });
+   ```
 
-```tsx
-{/* Row 1: Two parallel CTAs */}
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-  {/* Left: Upload Zone */}
-  <div className="space-y-4">
-    <QuoteUploadZone ... />
-  </div>
+3. **Update renderLocationStep() (~line 534-598):**
+   - Restructure grid to 3-column layout: City (full row mobile), State + Zip (split row)
+   - Add Select component for state dropdown
 
-  {/* Right: No Quote Pivot (condensed) */}
-  <div className="space-y-4">
-    <NoQuotePivotCondensed ... />
-  </div>
-</div>
+4. **Update handleLocationSubmit() (~line 210-260):**
+   - Add `state: locationDetails.state` to aiContext payload
+   - Update `updateFields()` call to include state
 
-{/* Row 2: Results (full width, below both) */}
-<div className="mt-8">
-  <QuoteAnalysisResults ... />
-  {/* Negotiation tools, QA, etc. when unlocked */}
-</div>
-```
+### 3. `src/components/conversion/SalesTacticsGuideModal.tsx`
 
-**Remove the standalone NoQuotePivotSection** from the separate section (lines 198-213) since it's now integrated into the main grid.
+**Identical changes as KitchenTableGuideModal**
 
----
+### 4. `src/components/conversion/SpecChecklistGuideModal.tsx`
 
-### 2. `src/components/quote-scanner/QuoteUploadZone.tsx`
-
-**Compact the height to match No Quote Pivot:**
-
-Line 76 change:
-```tsx
-// FROM:
-"min-h-[300px] md:min-h-[400px]"
-
-// TO:
-"min-h-[200px] md:min-h-[240px]"
-```
-
-**Remove visual storytelling elements** (they won't fit in compact space):
-- Remove `SampleQuoteDocument` component (lines 119-121)
-- Remove `FloatingCallout` components (lines 123-139)
-
-Keep only the core upload CTA:
-- Upload icon
-- "Upload Your Estimate" heading
-- "JPG, PNG, or PDF up to 10MB" subtext
-- "Select File" button
+**Identical changes as KitchenTableGuideModal**
 
 ---
 
-### 3. Create `src/components/quote-scanner/vault-pivot/NoQuotePivotCondensed.tsx`
+## Implementation Details
 
-**New component: Condensed version of the pivot section for side-by-side layout**
+### Responsive Layout Strategy
 
-Purpose: A more compact version of `NoQuotePivotSection` that fits next to the upload zone.
+**Mobile (< 640px):**
+```
+┌──────────────────────────────────┐
+│  City (full width)               │
+├────────────────┬─────────────────┤
+│  State (50%)   │  Zip Code (50%) │
+└────────────────┴─────────────────┘
+```
 
-Content (condensed from the full version):
-- WindowMan voice headline: "Don't have a quote yet?"
-- Brief value prop (2-3 lines max)
-- 1-2 key advantage bullets (not the full 3-card grid)
-- Single CTA button to vault or estimate flow
+**Desktop (≥ 640px):**
+```
+┌───────────────────────────────────────────────────────┐
+│  City (full width)                                    │
+├────────────────────────────┬──────────────────────────┤
+│  State (50%)               │  Zip Code (50%)          │
+└────────────────────────────┴──────────────────────────┘
+```
 
-Height target: Match the Upload Zone (~240px on desktop)
+### State Dropdown Code Snippet
 
 ```tsx
-export function NoQuotePivotCondensed() {
-  return (
-    <div className="p-6 rounded-xl border border-border/40 bg-background h-full flex flex-col justify-between">
-      {/* Header */}
-      <div className="text-sm uppercase tracking-wider text-muted-foreground mb-2">
-        Don't Have a Quote?
-      </div>
-      
-      {/* Headline */}
-      <h3 className="text-xl font-bold text-foreground mb-3">
-        That's actually the best time to find me.
-      </h3>
-      
-      {/* Brief value prop */}
-      <p className="text-sm text-muted-foreground mb-4">
-        I meet homeowners before they get quotes, not after. 
-        That's when I can help you the most.
-      </p>
-      
-      {/* CTA */}
-      <Button className="w-full">
-        Start Without a Quote
-      </Button>
-    </div>
-  );
+<div>
+  <Label htmlFor="state" className="text-sm font-medium text-slate-700 mb-1 block">
+    State
+  </Label>
+  <Select
+    value={locationDetails.state}
+    onValueChange={(value) => setLocationDetails(prev => ({ ...prev, state: value }))}
+  >
+    <SelectTrigger 
+      id="state"
+      className="bg-white border border-black focus:ring-2 focus:ring-primary/25"
+      aria-label="Select state"
+    >
+      <SelectValue placeholder="Select state" />
+    </SelectTrigger>
+    <SelectContent className="bg-white border border-slate-200 shadow-lg z-50">
+      {SOUTHEAST_STATES.map(({ value, label }) => (
+        <SelectItem key={value} value={value}>
+          {label}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
+```
+
+### Updated aiContext Payload
+
+```typescript
+aiContext: {
+  // ...existing fields
+  city: locationDetails.city,
+  state: locationDetails.state,  // NEW: 2-letter code (e.g., 'FL')
+  zip_code: locationDetails.zipCode,
 }
 ```
 
----
+### Updated Session Persistence
 
-### 4. `src/components/quote-scanner/QuoteAnalysisResults.tsx`
-
-**Create compact preview state:**
-
-When `result` is null, show condensed version:
-- Header label ("After: Your AI Quote Gradecard")
-- Overall Score placeholder box
-- 2 preview score rows (Safety, Price) with "?" values
-- "Upload to Reveal" lock overlay
-
-When `result` exists, expand to full version:
-- All 5 score categories
-- Warnings section
-- Missing items section
-- Timestamp
-
-This allows natural height expansion without forcing equal heights.
+```typescript
+updateFields({
+  city: locationDetails.city,
+  state: locationDetails.state,  // NEW
+  zipCode: locationDetails.zipCode,
+  notes: locationDetails.remark,
+});
+```
 
 ---
 
-## Visual Flow
+## Analytics Events
 
-### User WITH a quote:
-1. Lands on page → sees Upload Zone (left) and No Quote option (right)
-2. Clicks "Select File" → uploads quote
-3. Analysis runs → Results section below expands with full gradecard
-4. Can access negotiation tools, email drafts, etc.
-
-### User WITHOUT a quote:
-1. Lands on page → sees Upload Zone (left) and No Quote option (right)
-2. Immediately sees the alternative path on the right
-3. Clicks "Start Without a Quote" → enters vault/estimate flow
-4. Never has to scroll to find their option
-
----
-
-## Mobile Behavior
-
-On mobile (< lg breakpoint):
-1. Before (Upload) - visible immediately
-2. No Quote Pivot - visible right below, no scrolling needed
-3. Results - below both, starts compact
-
-The stacked order ensures users see both options before any output area.
-
----
-
-## Components Summary
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `QuoteUploadZone` | Top-left (desktop) / First (mobile) | Primary CTA for users with quotes |
-| `NoQuotePivotCondensed` | Top-right (desktop) / Second (mobile) | Alternative path for users without quotes |
-| `QuoteAnalysisResults` | Full-width below (desktop) / Third (mobile) | Shared output area, expands on scan |
+No new analytics events required. The existing `consultation_booked` event will automatically include the new `state` field in the aiContext payload, which flows through to the `save-lead` edge function and Stape GTM.
 
 ---
 
 ## Build Order
 
-1. Create `NoQuotePivotCondensed.tsx` - new condensed component
-2. Modify `QuoteUploadZone.tsx` - reduce height, remove storytelling elements
-3. Modify `QuoteAnalysisResults.tsx` - add compact preview state
-4. Modify `QuoteScanner.tsx` - restructure grid layout
-5. Remove standalone `NoQuotePivotSection` from the page (it's now integrated)
+1. Create `src/constants/states.ts` (shared dependency)
+2. Update `KitchenTableGuideModal.tsx`
+3. Update `SalesTacticsGuideModal.tsx`
+4. Update `SpecChecklistGuideModal.tsx`
+5. Test each modal's location step
 
 ---
 
 ## Technical Notes
 
-- Use `items-stretch` on the top row grid to ensure equal heights between Upload and No Quote
-- Results section uses natural height (no forced min-height) so it can expand
-- Mobile uses `flex-col` ordering: Upload → No Quote → Results
-- Existing analytics events remain unchanged (they fire on user actions, not layout)
+- The `useSessionData` hook already supports `state?: string` (line 29), so no hook modifications needed
+- The `save-lead` edge function already handles `aiContext.state` mapping (verified in previous implementation)
+- Select component uses `z-50` to ensure dropdown visibility over modal content
+- Using `bg-white` explicitly on SelectContent to prevent transparency issues per project guidelines
+
+---
+
+## Verification Checklist
+
+After implementation:
+- [ ] State defaults to "Florida" when modal opens
+- [ ] Dropdown shows all 10 southeastern states
+- [ ] State persists to session via `updateFields()`
+- [ ] State is included in `aiContext.state` payload
+- [ ] Mobile layout shows City full-width, State/Zip split
+- [ ] Dropdown has solid white background (not transparent)
 
