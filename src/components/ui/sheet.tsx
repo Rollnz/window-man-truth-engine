@@ -1,4 +1,5 @@
 import * as SheetPrimitive from "@radix-ui/react-dialog";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 import * as React from "react";
@@ -49,18 +50,41 @@ const sheetVariants = cva(
 
 interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
+    VariantProps<typeof sheetVariants> {
+  /** Hide the default close button */
+  hideCloseButton?: boolean;
+}
 
+/**
+ * SheetContent - Accessible slide panel content.
+ * 
+ * ACCESSIBILITY FIX: Always renders a VisuallyHidden SheetTitle
+ * for proper focus trap and screen reader support. Wrap your
+ * content with SheetHeader containing SheetTitle for visible title.
+ */
 const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Content>, SheetContentProps>(
-  ({ side = "right", className, children, ...props }, ref) => (
+  ({ side = "right", className, children, hideCloseButton, ...props }, ref) => (
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
+        {/* 
+          ACCESSIBILITY: Always include a title for focus management.
+          The VisuallyHidden fallback ensures Radix can find an accessible name
+          even if no visible SheetTitle is rendered in children.
+        */}
+        <VisuallyHidden.Root asChild>
+          <SheetPrimitive.Title>Panel</SheetPrimitive.Title>
+        </VisuallyHidden.Root>
+        <VisuallyHidden.Root asChild>
+          <SheetPrimitive.Description>Side panel content</SheetPrimitive.Description>
+        </VisuallyHidden.Root>
         {children}
-        <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity data-[state=open]:bg-secondary hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
+        {!hideCloseButton && (
+          <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity data-[state=open]:bg-secondary hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </SheetPrimitive.Close>
+        )}
       </SheetPrimitive.Content>
     </SheetPortal>
   ),

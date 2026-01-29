@@ -345,6 +345,10 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
             <Input 
               id="modal-email" 
               type="email" 
+              inputMode="email"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
               {...getFieldProps('email')} 
               placeholder="Email address" 
               className={`${inputBaseClass} border-black ${hasError('email') ? 'border-destructive' : ''}`}
@@ -363,6 +367,7 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
             <Input 
               id="modal-phone" 
               type="tel" 
+              inputMode="tel"
               {...getFieldProps('phone')} 
               placeholder="Phone" 
               className={`${inputBaseClass} border-black placeholder:text-slate-500`}

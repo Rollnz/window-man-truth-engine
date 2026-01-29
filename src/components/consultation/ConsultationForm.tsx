@@ -302,6 +302,10 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                 name="email"
                 type="email"
                 autoComplete="email"
+                inputMode="email"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
                 value={formData.email || ''}
                 onChange={(e) => handleChange('email', e.target.value)}
                 onBlur={() => handleBlur('email')}
@@ -330,6 +334,7 @@ export function ConsultationForm({ onSubmit, onFormStart, className }: Consultat
                 name="phone"
                 type="tel"
                 autoComplete="tel"
+                inputMode="tel"
                 value={formData.phone || ''}
                 onChange={(e) => handleChange('phone', formatPhoneNumber(e.target.value))}
                 onBlur={() => handleBlur('phone')}

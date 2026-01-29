@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { Phone, FileText, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -69,8 +70,11 @@ interface EstimateSlidePanelProps {
  * 3. Success confirmation
  * 
  * Integrates with the Golden Thread (useLeadIdentity) for lead tracking.
+ * 
+ * NOTE: Wrapped with forwardRef to satisfy Radix Dialog's ref requirements.
  */
-export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
+export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlidePanelProps>(
+  function EstimateSlidePanel({ onClose }, ref) {
   const [step, setStep] = useState<Step>('choice');
   const [formData, setFormData] = useState<EstimateFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -452,4 +456,6 @@ export function EstimateSlidePanel({ onClose }: EstimateSlidePanelProps) {
       )}
     </SheetContent>
   );
-}
+});
+
+EstimateSlidePanel.displayName = 'EstimateSlidePanel';
