@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
+import { phoneInputProps } from '@/lib/formAccessibility';
+import { formMicroCopy } from '@/components/forms/InlineFieldStatus';
 import { cn } from '@/lib/utils';
 
 interface ScannerStep2ProjectProps {
@@ -87,19 +89,23 @@ export function ScannerStep2Project({
         </Label>
         <Input
           id="scanner-phone"
-          type="tel"
-          autoComplete="tel"
+          {...phoneInputProps}
           placeholder="(555) 123-4567"
           value={values.phone}
           onChange={(e) => setValue('phone', e.target.value)}
           disabled={isLoading}
           className={phoneError ? 'border-destructive focus-visible:ring-destructive' : ''}
           aria-invalid={!!phoneError}
-          aria-describedby={phoneError ? 'scanner-phone-error' : undefined}
+          aria-describedby={phoneError ? 'scanner-phone-error' : 'scanner-phone-hint'}
+          tabIndex={0}
         />
-        {phoneError && (
-          <p id="scanner-phone-error" className="text-xs text-destructive">
+        {phoneError ? (
+          <p id="scanner-phone-error" className="text-xs text-destructive" role="alert">
             {phoneError}
+          </p>
+        ) : (
+          <p id="scanner-phone-hint" className="text-xs text-muted-foreground">
+            {formMicroCopy.phone}
           </p>
         )}
       </div>
