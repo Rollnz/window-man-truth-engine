@@ -1,184 +1,148 @@
 
 
-# State Dropdown Implementation Plan
+# Hero Background Image Implementation
 
 ## Summary
-
-Add a state dropdown field to the location step of `KitchenTableGuideModal`, `SalesTacticsGuideModal`, and `SpecChecklistGuideModal` to complete EMQ 9.5+ address data collection. Florida will be the default selection with other southeastern US states available.
-
----
-
-## Files to Create
-
-### 1. `src/constants/states.ts`
-**Purpose:** Centralized source of truth for state options
-
-```typescript
-export const SOUTHEAST_STATES = [
-  { value: 'FL', label: 'Florida' },      // Default - Primary market
-  { value: 'GA', label: 'Georgia' },
-  { value: 'AL', label: 'Alabama' },
-  { value: 'SC', label: 'South Carolina' },
-  { value: 'NC', label: 'North Carolina' },
-  { value: 'TN', label: 'Tennessee' },
-  { value: 'LA', label: 'Louisiana' },
-  { value: 'MS', label: 'Mississippi' },
-  { value: 'TX', label: 'Texas' },        // Major hurricane market
-  { value: 'PR', label: 'Puerto Rico' },  // High hurricane demand
-];
-
-export const DEFAULT_STATE = 'FL';
-```
+Add the uploaded image (`unmask_your_quote.webp`) as a blurred parallax background to the `QuoteScannerHero` component on `/ai-scanner`, creating a premium glassmorphism effect while maintaining WCAG AA text contrast.
 
 ---
 
-## Files to Modify
+## Files to Modify/Create
 
-### 2. `src/components/conversion/KitchenTableGuideModal.tsx`
+### 1. Copy Image to Public Directory
+**Action**: Copy `user-uploads://unmask_your_quote.webp` → `public/images/quote-scanner/hero-bg.webp`
 
-**Changes Required:**
+Using `public/` because:
+- Background images in CSS `style` props need direct URL access
+- Parallax backgrounds can't use ES6 imports effectively
 
-1. **Add Import:**
-   ```typescript
-   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-   import { SOUTHEAST_STATES, DEFAULT_STATE } from '@/constants/states';
-   ```
+### 2. Update `src/components/quote-scanner/QuoteScannerHero.tsx`
 
-2. **Update locationDetails state (line ~67-71):**
-   ```typescript
-   const [locationDetails, setLocationDetails] = useState({
-     city: '',
-     state: DEFAULT_STATE, // NEW: Florida default
-     zipCode: '',
-     remark: '',
-   });
-   ```
+**Implementation Strategy**: Three-layer glassmorphism stack
 
-3. **Update renderLocationStep() (~line 534-598):**
-   - Restructure grid to 3-column layout: City (full row mobile), State + Zip (split row)
-   - Add Select component for state dropdown
-
-4. **Update handleLocationSubmit() (~line 210-260):**
-   - Add `state: locationDetails.state` to aiContext payload
-   - Update `updateFields()` call to include state
-
-### 3. `src/components/conversion/SalesTacticsGuideModal.tsx`
-
-**Identical changes as KitchenTableGuideModal**
-
-### 4. `src/components/conversion/SpecChecklistGuideModal.tsx`
-
-**Identical changes as KitchenTableGuideModal**
-
----
-
-## Implementation Details
-
-### Responsive Layout Strategy
-
-**Mobile (< 640px):**
-```
-┌──────────────────────────────────┐
-│  City (full width)               │
-├────────────────┬─────────────────┤
-│  State (50%)   │  Zip Code (50%) │
-└────────────────┴─────────────────┘
+```text
+┌────────────────────────────────────────────────┐
+│  Layer 3: Content (z-10)                       │
+│  - Badge, Icon, Headline, Subtext              │
+│  - Text locked to white for contrast           │
+├────────────────────────────────────────────────┤
+│  Layer 2: Dark Overlay (z-[1])                 │
+│  - bg-gradient-to-b from-black/60 to-black/40  │
+│  - Ensures text readability                    │
+├────────────────────────────────────────────────┤
+│  Layer 1: Background Image (z-0)               │
+│  - filter: blur(4px)                           │
+│  - background-attachment: fixed (desktop only) │
+│  - opacity-30 for subtlety                     │
+└────────────────────────────────────────────────┘
 ```
 
-**Desktop (≥ 640px):**
-```
-┌───────────────────────────────────────────────────────┐
-│  City (full width)                                    │
-├────────────────────────────┬──────────────────────────┤
-│  State (50%)               │  Zip Code (50%)          │
-└────────────────────────────┴──────────────────────────┘
-```
-
-### State Dropdown Code Snippet
+**Code Changes**:
 
 ```tsx
-<div>
-  <Label htmlFor="state" className="text-sm font-medium text-slate-700 mb-1 block">
-    State
-  </Label>
-  <Select
-    value={locationDetails.state}
-    onValueChange={(value) => setLocationDetails(prev => ({ ...prev, state: value }))}
-  >
-    <SelectTrigger 
-      id="state"
-      className="bg-white border border-black focus:ring-2 focus:ring-primary/25"
-      aria-label="Select state"
-    >
-      <SelectValue placeholder="Select state" />
-    </SelectTrigger>
-    <SelectContent className="bg-white border border-slate-200 shadow-lg z-50">
-      {SOUTHEAST_STATES.map(({ value, label }) => (
-        <SelectItem key={value} value={value}>
-          {label}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-</div>
-```
-
-### Updated aiContext Payload
-
-```typescript
-aiContext: {
-  // ...existing fields
-  city: locationDetails.city,
-  state: locationDetails.state,  // NEW: 2-letter code (e.g., 'FL')
-  zip_code: locationDetails.zipCode,
+export function QuoteScannerHero() {
+  return (
+    <section className="relative py-16 md:py-24 overflow-hidden min-h-[50vh] flex items-center">
+      {/* Layer 1: Background Image with Parallax */}
+      <div 
+        className="absolute inset-0 z-0 scale-105"
+        style={{
+          backgroundImage: `url('/images/quote-scanner/hero-bg.webp')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'scroll', // Mobile default
+          filter: 'blur(4px)',
+          transform: 'translateZ(0)', // GPU acceleration
+        }}
+        aria-hidden="true"
+      />
+      
+      {/* Parallax for desktop only via media query */}
+      <style>{`
+        @media (min-width: 768px) {
+          .parallax-bg {
+            background-attachment: fixed !important;
+          }
+        }
+      `}</style>
+      
+      {/* Layer 2: Dark Overlay for Contrast */}
+      <div 
+        className="absolute inset-0 z-[1] bg-gradient-to-b from-black/60 via-black/50 to-background"
+        aria-hidden="true"
+      />
+      
+      {/* Layer 3: Content */}
+      <div className="container relative z-10 px-4">
+        <div className="max-w-3xl mx-auto text-center">
+          <ShimmerBadge className="mb-6" />
+          
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+              <ScanSearch className="w-8 h-8 text-primary" />
+            </div>
+          </div>
+          
+          {/* Headline - Locked to white for image overlay */}
+          <h1 className="display-h1 text-lift text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
+            Is Your Window Quote Fair?{' '}
+            <span className="text-primary">AI Analysis in 60 Seconds</span>
+          </h1>
+          
+          {/* Subtext - Slightly muted white */}
+          <p className="text-lg text-white/90 max-w-2xl mx-auto">
+            Stop guessing. Upload a photo of your contractor's quote and let our AI flag hidden risks, 
+            missing scope, and overpricing — in seconds.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
 }
 ```
 
-### Updated Session Persistence
+---
 
-```typescript
-updateFields({
-  city: locationDetails.city,
-  state: locationDetails.state,  // NEW
-  zipCode: locationDetails.zipCode,
-  notes: locationDetails.remark,
-});
-```
+## Technical Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| `filter: blur(4px)` instead of 8px | Preserves more image detail while still creating depth |
+| `scale-105` on background | Prevents blur edges from showing white borders |
+| `backgroundAttachment: scroll` mobile | Avoids iOS Safari parallax bugs |
+| Desktop parallax via CSS | No JS = no jank, better performance |
+| Text locked to `text-white` | Theme-locked since background is fixed tone |
+| Icon container `bg-white/10 backdrop-blur-sm` | Glassmorphism consistency with hero |
+| `min-h-[50vh]` | Ensures hero presence without excessive scroll |
 
 ---
 
-## Analytics Events
+## Performance Considerations
 
-No new analytics events required. The existing `consultation_booked` event will automatically include the new `state` field in the aiContext payload, which flows through to the `save-lead` edge function and Stape GTM.
+1. **Image Optimization**: The `.webp` format is already optimized
+2. **No `fetchPriority="high"`**: Since it's a CSS background, browser handles loading automatically
+3. **GPU Acceleration**: `transform: translateZ(0)` forces GPU rendering
+4. **No JavaScript**: Pure CSS parallax avoids runtime costs
+
+---
+
+## Accessibility
+
+- `aria-hidden="true"` on decorative background layers
+- Text contrast maintained via dark overlay (meets WCAG AA 4.5:1)
+- No flashing or motion that could trigger vestibular disorders
 
 ---
 
 ## Build Order
 
-1. Create `src/constants/states.ts` (shared dependency)
-2. Update `KitchenTableGuideModal.tsx`
-3. Update `SalesTacticsGuideModal.tsx`
-4. Update `SpecChecklistGuideModal.tsx`
-5. Test each modal's location step
+1. Copy image to `public/images/quote-scanner/hero-bg.webp`
+2. Update `QuoteScannerHero.tsx` with three-layer structure
+3. Test on desktop (parallax visible) and mobile (static background)
 
 ---
 
-## Technical Notes
+## Theme Compatibility Note
 
-- The `useSessionData` hook already supports `state?: string` (line 29), so no hook modifications needed
-- The `save-lead` edge function already handles `aiContext.state` mapping (verified in previous implementation)
-- Select component uses `z-50` to ensure dropdown visibility over modal content
-- Using `bg-white` explicitly on SelectContent to prevent transparency issues per project guidelines
-
----
-
-## Verification Checklist
-
-After implementation:
-- [ ] State defaults to "Florida" when modal opens
-- [ ] Dropdown shows all 10 southeastern states
-- [ ] State persists to session via `updateFields()`
-- [ ] State is included in `aiContext.state` payload
-- [ ] Mobile layout shows City full-width, State/Zip split
-- [ ] Dropdown has solid white background (not transparent)
+Per your `color-request-protocol-v2` memory: This hero uses a **theme-locked surface** (the image is fixed-tone), so text is hardcoded to `text-white` rather than adaptive `text-foreground`. This is intentional and correct for this use case.
 
