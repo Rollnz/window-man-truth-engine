@@ -126,10 +126,8 @@ export function UploadZoneXRay({
             <Card className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-visible cursor-pointer group" onDrop={handleDrop} onDragOver={e => e.preventDefault()}>
               {/* AI Scanner Background */}
               <div className="absolute inset-0 rounded-lg overflow-hidden" style={{
-              backgroundImage: 'url(/images/audit/ai-scanner-bg.png)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              opacity: 0.6
+              background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(16, 185, 129, 0.1) 50%, transparent 100%)',
+              opacity: 0.8
             }} />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/40 to-transparent rounded-lg" />
               <div className="absolute inset-0 bg-cyan-500/5 rounded-lg mix-blend-overlay" />

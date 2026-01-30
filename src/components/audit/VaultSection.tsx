@@ -47,10 +47,10 @@ export function VaultSection() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-32 bg-gradient-to-b from-cyan-500/50 to-transparent" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-cyan-500/50 animate-pulse" />
       
-      {/* Vault background image */}
+      {/* Vault background gradient */}
       <div 
-        className="absolute right-0 top-1/2 -translate-y-1/2 w-1/2 h-full opacity-[0.08] pointer-events-none"
-        style={{ backgroundImage: 'url(/images/audit/vault-bg.png)', backgroundSize: 'contain', backgroundPosition: 'center right', backgroundRepeat: 'no-repeat' }}
+        className="absolute right-0 top-1/2 -translate-y-1/2 w-1/2 h-full opacity-[0.15] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at center right, rgba(6, 182, 212, 0.3) 0%, rgba(251, 191, 36, 0.1) 40%, transparent 70%)' }}
       />
 
       <div className="absolute inset-0 opacity-30">

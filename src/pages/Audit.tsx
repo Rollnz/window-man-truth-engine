@@ -1,16 +1,19 @@
-import { useRef } from 'react';
+import { useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 import {
   ScannerHeroWindow,
   AnimatedStatsBar,
-  UploadZoneXRay,
-  HowItWorksXRay,
-  BeatOrValidateSection,
-  RedFlagGallery,
-  NoQuoteEscapeHatch,
-  VaultSection,
 } from '@/components/audit';
+import { LoadingSkeleton } from '@/components/audit/LoadingSkeleton';
+
+// Lazy load below-the-fold components
+const UploadZoneXRay = lazy(() => import('@/components/audit/UploadZoneXRay').then(m => ({ default: m.UploadZoneXRay })));
+const HowItWorksXRay = lazy(() => import('@/components/audit/HowItWorksXRay').then(m => ({ default: m.HowItWorksXRay })));
+const BeatOrValidateSection = lazy(() => import('@/components/audit/BeatOrValidateSection').then(m => ({ default: m.BeatOrValidateSection })));
+const RedFlagGallery = lazy(() => import('@/components/audit/RedFlagGallery').then(m => ({ default: m.RedFlagGallery })));
+const NoQuoteEscapeHatch = lazy(() => import('@/components/audit/NoQuoteEscapeHatch').then(m => ({ default: m.NoQuoteEscapeHatch })));
+const VaultSection = lazy(() => import('@/components/audit/VaultSection').then(m => ({ default: m.VaultSection })));
 
 export default function Audit() {
   const navigate = useNavigate();
@@ -46,16 +49,21 @@ export default function Audit() {
         }}
       />
       
+      {/* Above the fold - loads immediately */}
       <ScannerHeroWindow onScanClick={scrollToUpload} />
       <AnimatedStatsBar />
-      <div ref={uploadRef}>
-        <UploadZoneXRay onFileSelect={handleFileSelect} />
-      </div>
-      <HowItWorksXRay onScanClick={scrollToUpload} />
-      <BeatOrValidateSection />
-      <RedFlagGallery />
-      <NoQuoteEscapeHatch />
-      <VaultSection />
+      
+      {/* Below the fold - lazy loaded */}
+      <Suspense fallback={<LoadingSkeleton />}>
+        <div ref={uploadRef}>
+          <UploadZoneXRay onFileSelect={handleFileSelect} />
+        </div>
+        <HowItWorksXRay onScanClick={scrollToUpload} />
+        <BeatOrValidateSection />
+        <RedFlagGallery />
+        <NoQuoteEscapeHatch />
+        <VaultSection />
+      </Suspense>
     </div>
   );
 }
