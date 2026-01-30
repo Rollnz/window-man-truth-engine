@@ -239,12 +239,12 @@ export function ConsultationForm({
       {/* Contact Information Section */}
       <Card className="border-border bg-card shadow-sm">
         <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold mb-4 text-primary-foreground">Contact Information</h3>
+          <h3 className="text-lg font-semibold mb-4 text-white">Contact Information</h3>
           
           <div className="grid gap-4 sm:grid-cols-2">
             {/* First Name */}
             <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-foreground">
+              <Label htmlFor="firstName" className="text-white">
                 First Name <span className="text-destructive">*</span>
               </Label>
               <Input id="firstName" name="firstName" type="text" autoComplete="given-name" value={formData.firstName || ''} onChange={e => handleChange('firstName', e.target.value)} onBlur={() => handleBlur('firstName')} className={cn('transition-colors', errors.firstName && touched.firstName && 'border-destructive focus-visible:ring-destructive')} aria-invalid={!!(errors.firstName && touched.firstName)} aria-describedby={errors.firstName ? 'firstName-error' : undefined} />
@@ -256,7 +256,7 @@ export function ConsultationForm({
 
             {/* Last Name */}
             <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-foreground">
+              <Label htmlFor="lastName" className="text-white">
                 Last Name <span className="text-destructive">*</span>
               </Label>
               <Input id="lastName" name="lastName" type="text" autoComplete="family-name" value={formData.lastName || ''} onChange={e => handleChange('lastName', e.target.value)} onBlur={() => handleBlur('lastName')} className={cn('transition-colors', errors.lastName && touched.lastName && 'border-destructive focus-visible:ring-destructive')} aria-invalid={!!(errors.lastName && touched.lastName)} aria-describedby={errors.lastName ? 'lastName-error' : undefined} />
@@ -268,7 +268,7 @@ export function ConsultationForm({
 
             {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">
+              <Label htmlFor="email" className="text-white">
                 Email Address <span className="text-destructive">*</span>
               </Label>
               <Input id="email" name="email" type="email" autoComplete="email" inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} value={formData.email || ''} onChange={e => handleChange('email', e.target.value)} onBlur={() => handleBlur('email')} className={cn('transition-colors', errors.email && touched.email && 'border-destructive focus-visible:ring-destructive')} aria-invalid={!!(errors.email && touched.email)} aria-describedby={errors.email ? 'email-error' : undefined} />
@@ -280,7 +280,7 @@ export function ConsultationForm({
 
             {/* Phone */}
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-foreground">
+              <Label htmlFor="phone" className="text-white">
                 Phone Number <span className="text-destructive">*</span>
               </Label>
               <Input id="phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" value={formData.phone || ''} onChange={e => handleChange('phone', formatPhoneNumber(e.target.value))} onBlur={() => handleBlur('phone')} placeholder="(555) 123-4567" className={cn('transition-colors', errors.phone && touched.phone && 'border-destructive focus-visible:ring-destructive')} aria-invalid={!!(errors.phone && touched.phone)} aria-describedby={errors.phone ? 'phone-error' : undefined} />
@@ -296,13 +296,13 @@ export function ConsultationForm({
       {/* Project Details Section */}
       <Card className="border-border bg-card shadow-sm">
         <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Project Details</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">Project Details</h3>
           
           <div className="space-y-6">
             {/* Property Type & Location */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="propertyType" className="text-foreground">
+                <Label htmlFor="propertyType" className="text-white">
                   Property Type <span className="text-destructive">*</span>
                 </Label>
                 <Select value={formData.propertyType} onValueChange={value => handleChange('propertyType', value as PropertyType)}>
@@ -322,7 +322,7 @@ export function ConsultationForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="cityZip" className="text-foreground">
+                <Label htmlFor="cityZip" className="text-white">
                   City / ZIP Code <span className="text-destructive">*</span>
                 </Label>
                 <Input id="cityZip" name="cityZip" type="text" autoComplete="postal-code" placeholder="e.g., Miami or 33101" value={formData.cityZip || ''} onChange={e => handleChange('cityZip', e.target.value)} onBlur={() => handleBlur('cityZip')} className={cn('transition-colors', errors.cityZip && touched.cityZip && 'border-destructive focus-visible:ring-destructive')} aria-invalid={!!(errors.cityZip && touched.cityZip)} aria-describedby={errors.cityZip ? 'cityZip-error' : undefined} />
@@ -335,7 +335,7 @@ export function ConsultationForm({
 
             {/* Window Count */}
             <div className="space-y-2 max-w-xs">
-              <Label htmlFor="windowCount" className="text-foreground">
+              <Label htmlFor="windowCount" className="text-white">
                 How many windows are you replacing? <span className="text-destructive">*</span>
               </Label>
               <Input id="windowCount" name="windowCount" type="number" min={1} max={100} value={formData.windowCount || ''} onChange={e => handleChange('windowCount', parseInt(e.target.value) || 0)} onBlur={() => handleBlur('windowCount')} className={cn('transition-colors max-w-[120px]', errors.windowCount && touched.windowCount && 'border-destructive focus-visible:ring-destructive')} aria-invalid={!!(errors.windowCount && touched.windowCount)} aria-describedby={errors.windowCount ? 'windowCount-error' : undefined} />
@@ -347,7 +347,7 @@ export function ConsultationForm({
 
             {/* Window Types */}
             <fieldset className="space-y-3">
-              <legend className="text-sm font-medium text-foreground">
+              <legend className="text-sm font-medium text-white">
                 What types of windows are included?
               </legend>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -362,7 +362,7 @@ export function ConsultationForm({
 
             {/* Impact Required */}
             <fieldset className="space-y-3">
-              <legend className="text-sm font-medium text-foreground">
+              <legend className="text-sm font-medium text-white">
                 Are impact-rated or hurricane-rated windows required? <span className="text-destructive">*</span>
               </legend>
               <RadioGroup value={formData.impactRequired} onValueChange={value => handleChange('impactRequired', value as ImpactRequired)} className="flex flex-wrap gap-4">
@@ -394,12 +394,12 @@ export function ConsultationForm({
       {/* Quote Status Section */}
       <Card className="border-border bg-card shadow-sm">
         <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Your Current Quotes</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">Your Current Quotes</h3>
           
           <div className="space-y-6">
             {/* Has Quote */}
             <fieldset className="space-y-3">
-              <legend className="text-sm font-medium text-foreground">
+              <legend className="text-sm font-medium text-white">
                 Do you already have a quote? <span className="text-destructive">*</span>
               </legend>
               <RadioGroup value={formData.hasQuote} onValueChange={value => handleChange('hasQuote', value as QuoteStatus)} className="flex flex-wrap gap-4">
@@ -427,7 +427,7 @@ export function ConsultationForm({
 
             {/* Quote Count - Conditional */}
             {formData.hasQuote === 'yes' && <fieldset className="space-y-3 animate-in slide-in-from-top-2 duration-200">
-                <legend className="text-sm font-medium text-foreground">
+                <legend className="text-sm font-medium text-white">
                   How many quotes have you received?
                 </legend>
                 <RadioGroup value={formData.quoteCount} onValueChange={value => handleChange('quoteCount', value as QuoteCount)} className="flex flex-wrap gap-4">
@@ -451,7 +451,7 @@ export function ConsultationForm({
 
             {/* Quote Details - Optional */}
             <div className="space-y-2">
-              <Label htmlFor="quoteDetails" className="text-foreground">
+              <Label htmlFor="quoteDetails" className="text-white">
                 Upload or paste quote details <span className="text-muted-foreground">(optional)</span>
               </Label>
               <Textarea id="quoteDetails" name="quoteDetails" rows={4} value={formData.quoteDetails || ''} onChange={e => handleChange('quoteDetails', e.target.value)} placeholder="Paste your quote details here, or describe what you've been quoted..." className="resize-none" />
@@ -466,7 +466,7 @@ export function ConsultationForm({
       {/* Concerns Section - Optional */}
       <Card className="border-border bg-card shadow-sm">
         <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold text-foreground mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             What concerns you most?
           </h3>
           <p className="text-sm text-muted-foreground mb-4">
@@ -483,7 +483,7 @@ export function ConsultationForm({
           </RadioGroup>
 
           {formData.concern === 'other' && <div className="mt-4 animate-in slide-in-from-top-2 duration-200">
-              <Label htmlFor="concernOther" className="text-foreground sr-only">
+              <Label htmlFor="concernOther" className="text-white sr-only">
                 Describe your concern
               </Label>
               <Textarea id="concernOther" name="concernOther" rows={2} value={formData.concernOther || ''} onChange={e => handleChange('concernOther', e.target.value)} placeholder="Tell us what's on your mind..." className="resize-none" />
