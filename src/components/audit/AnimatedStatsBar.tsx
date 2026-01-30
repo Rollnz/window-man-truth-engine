@@ -25,7 +25,7 @@ const STATS: StatItem[] = [
     value: 12847,
     suffix: '+',
     label: 'Quotes Analyzed',
-    color: 'text-cyan-400',
+    color: 'text-primary',
   },
   {
     icon: <ShieldCheck className="w-5 h-5" />,
@@ -134,7 +134,7 @@ export function AnimatedStatsBar() {
   return (
     <section className="relative bg-slate-900/80 backdrop-blur-sm border-y border-slate-800/50 py-6 overflow-hidden">
       {/* Subtle animated gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 via-cyan-500/5 to-emerald-500/5 animate-pulse" />
+      <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 via-primary/5 to-emerald-500/5 animate-pulse" />
       
       <div className="container relative px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
@@ -146,7 +146,7 @@ export function AnimatedStatsBar() {
 
       {/* Bottom highlight line */}
       <div className="absolute bottom-0 left-0 right-0 h-px">
-        <div className="h-full bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+        <div className="h-full bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
       </div>
     </section>
   );
