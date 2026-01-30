@@ -1,252 +1,129 @@
 
-# Implementation Plan: Standalone `/audit` Landing Page
+
+# Performance Optimization Plan for `/audit` Page
 
 ## Overview
-Create a completely standalone landing page at `/audit` with **zero visual inheritance** from the main site. No navbar, no footer, no global theme variables - a fully isolated dark-themed CRO page that matches the reference design exactly.
+Fix the 9.4s LCP by addressing missing assets and implementing lazy loading for below-the-fold components.
 
-## Architecture Summary
+## Changes
 
-```text
-/audit (Standalone - NOT inside PublicLayout)
-├── ScannerHeroWindow (glass window hero with scan animation)
-├── AnimatedStatsBar (count-up stats on scroll)
-├── UploadZoneXRay (X-ray style upload with floating callouts)
-├── HowItWorksXRay (4-step process cards)
-├── BeatOrValidateSection (win-win value proposition)
-├── RedFlagGallery (carousel of red flag examples)
-├── NoQuoteEscapeHatch (alternative paths: calculator, chat, consultation)
-└── VaultSection (retention engine / digital fortress)
-```
+### 1. Fix Missing Image References (Priority: Critical)
 
-## Style Isolation Strategy
+The `UploadZoneXRay` and `VaultSection` components reference background images that don't exist:
+- `/images/audit/ai-scanner-bg.png`
+- `/images/audit/vault-bg.png`
 
-The uploaded components already use **hardcoded Tailwind classes** (`bg-slate-950`, `text-cyan-400`, `border-slate-700`) instead of CSS variables (`bg-background`, `text-foreground`). This means they are naturally theme-independent.
+**Solution:** Replace image references with CSS gradient fallbacks that match the design aesthetic. This eliminates 404 errors and maintains visual consistency.
 
-To ensure complete isolation:
-
-1. **Route outside PublicLayout** - The `/audit` route will be registered alongside `/auth` and `/vault` (outside the `<Route element={<PublicLayout />}>` wrapper)
-
-2. **No Navbar/Footer** - The page will have its own minimal header or none at all
-
-3. **CSS Reset Wrapper** - A lightweight wrapper class will neutralize any inherited global styles (heading weights, letter-spacing)
+**Files to modify:**
+- `src/components/audit/UploadZoneXRay.tsx`
+- `src/components/audit/VaultSection.tsx`
 
 ---
 
-## Files to Create
+### 2. Implement Lazy Loading (Priority: High)
 
-### 1. Background Images
-```text
-public/images/audit/ai-scanner-bg.png
-public/images/audit/vault-bg.png
-```
+Currently all 8 components load synchronously. Components below the initial viewport should be lazy loaded.
 
-### 2. Components Directory
-```text
-src/components/audit/
-├── ScannerHeroWindow.tsx    - Glass window hero with parallax + scan line
-├── AnimatedStatsBar.tsx     - Intersection Observer count-up stats
-├── UploadZoneXRay.tsx       - X-ray document upload with callouts
-├── HowItWorksXRay.tsx       - 4-step process explanation
-├── BeatOrValidateSection.tsx - Fork-in-the-road value proposition
-├── RedFlagGallery.tsx       - Swipeable red flag carousel
-├── NoQuoteEscapeHatch.tsx   - Alternative conversion paths
-├── VaultSection.tsx         - Retention engine section
-└── index.ts                 - Barrel exports
-```
+**Keep synchronous (above fold):**
+- ScannerHeroWindow
+- AnimatedStatsBar
 
-### 3. Page File
-```text
-src/pages/Audit.tsx
+**Lazy load (below fold):**
+- UploadZoneXRay (user scrolls to this)
+- HowItWorksXRay
+- BeatOrValidateSection
+- RedFlagGallery
+- NoQuoteEscapeHatch
+- VaultSection
+
+**File to modify:**
+- `src/pages/Audit.tsx`
+
+**Implementation:**
+```tsx
+const UploadZoneXRay = lazy(() => import('@/components/audit/UploadZoneXRay'));
+const HowItWorksXRay = lazy(() => import('@/components/audit/HowItWorksXRay'));
+// ... etc
+
+<Suspense fallback={<LoadingSkeleton />}>
+  <UploadZoneXRay ... />
+</Suspense>
 ```
 
 ---
 
-## Technical Changes
+### 3. Create Loading Skeleton (Priority: Medium)
 
-### A. Route Registration (App.tsx)
+Add a simple loading skeleton component to prevent layout shift during lazy loading.
 
-Add the `/audit` route **outside** the `<Route element={<PublicLayout />}>` block, alongside other standalone pages:
+**File to create:**
+- `src/components/audit/LoadingSkeleton.tsx`
+
+This will be a minimal dark-themed placeholder matching the page aesthetic.
+
+---
+
+### 4. Update Component Exports (Priority: Low)
+
+Modify the barrel exports to support both default and named imports for lazy loading compatibility.
+
+**File to modify:**
+- `src/components/audit/index.ts`
+
+---
+
+## Technical Details
+
+### Image Fallback Strategy
+
+Replace the missing image references with CSS gradients that create similar depth:
 
 ```tsx
-{/* Private/Standalone Routes (no footer system) */}
-<Route path="/auth" element={<Auth />} />
-<Route path="/vault" element={...} />
-<Route path="/audit" element={<Audit />} />  {/* NEW - Standalone */}
+// Before (404 error)
+backgroundImage: 'url(/images/audit/ai-scanner-bg.png)'
+
+// After (CSS fallback)
+background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, transparent 50%)'
 ```
 
-### B. CSS Keyframes (index.css)
+### Lazy Loading Pattern
 
-Add the `scanDown` animation for the hero scan line effect:
-
-```css
-@keyframes scanDown {
-  0%, 100% {
-    top: -10%;
-    opacity: 0;
-  }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  95% {
-    top: 110%;
-    opacity: 0;
-  }
-}
-
-.animate-scan-down {
-  animation: scanDown 4s ease-in-out infinite;
-}
-```
-
-### C. Routing Adapter
-
-All uploaded components use `wouter` for routing. They will be adapted to use `react-router-dom`:
+Using React's built-in `lazy()` and `Suspense`:
 
 ```tsx
-// FROM (wouter)
-import { Link } from 'wouter';
+import { lazy, Suspense } from 'react';
 
-// TO (react-router-dom)
-import { Link } from 'react-router-dom';
-```
+const LazyComponent = lazy(() => 
+  import('./components/audit/ComponentName').then(m => ({ default: m.ComponentName }))
+);
 
-### D. Internal Route Updates
-
-Update internal links to match existing project routes:
-- `/calculator` → `/cost-calculator`
-- `/chat` → `/expert`
-- `/consultation` → `/consultation` (unchanged)
-- `/vault` → `/vault` (unchanged)
-
----
-
-## Component Implementation Details
-
-### ScannerHeroWindow
-- Full-viewport height hero with `bg-slate-950` background
-- Glass window frame effect with parallax mouse tracking
-- Animated cyan scan line (`animate-scan-down`)
-- Alert badge: "Florida homeowners overpay by $8,000–$15,000"
-- Primary CTA: "Scan My Quote Free" → scrolls to upload section
-- Trust signals at bottom (stats pills)
-
-### AnimatedStatsBar
-- Intersection Observer triggers count-up animation
-- 4 animated stat cards:
-  - $4.2M+ Overcharges Detected
-  - 12,847+ Quotes Analyzed
-  - 94% Red Flag Detection Rate
-  - 8,400+ Florida Homeowners Protected
-- Subtle gradient pulse background
-
-### UploadZoneXRay
-- Two-column layout: Before (quote with callouts) | After (blurred gradecard)
-- Animated floating callouts (price warning, missing scope, legal alert)
-- Drag-and-drop file upload zone
-- Connects to `onFileSelect` prop for backend integration
-- Background image: `/images/audit/ai-scanner-bg.png`
-
-### HowItWorksXRay
-- 4-step vertical timeline:
-  1. Drop Your Quote
-  2. AI X-Ray Scan (highlighted)
-  3. Red Flags Exposed
-  4. Your Verdict
-- CTA button scrolls back to upload zone
-
-### BeatOrValidateSection
-- Two-path card layout:
-  - Path A: "Your Quote is FAIR" (Validator) - green theme
-  - Path B: "We'll BEAT IT" (Champion) - cyan theme
-- Win-Win Promise badge at bottom
-
-### RedFlagGallery
-- Horizontally scrollable carousel
-- 5 red flag cards with examples:
-  - Hidden Commission
-  - Vague Labor Terms
-  - No Permit Mention
-  - Bait-and-Switch Pricing
-  - Warranty Loopholes
-- Navigation arrows and dot indicators
-
-### NoQuoteEscapeHatch
-- 3 alternative action cards:
-  1. Get an Instant Estimate → `/cost-calculator`
-  2. Talk to Our AI Expert → `/expert`
-  3. Request a Real Quote → `/consultation`
-
-### VaultSection
-- Digital fortress theme with lock iconography
-- Background image: `/images/audit/vault-bg.png`
-- Features list: Store quotes, Access anywhere, Encrypted
-- CTA: "Access My Vault" → `/vault`
-
----
-
-## Page Structure (Audit.tsx)
-
-```tsx
-export default function Audit() {
-  const uploadRef = useRef<HTMLDivElement>(null);
-  
-  const scrollToUpload = () => {
-    uploadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
-  
-  const handleFileSelect = (file: File) => {
-    // Navigate to existing /ai-scanner with file in state
-    navigate('/ai-scanner', { state: { file } });
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <SEO ... />
-      <ScannerHeroWindow onCTAClick={scrollToUpload} />
-      <AnimatedStatsBar />
-      <div ref={uploadRef}>
-        <UploadZoneXRay onFileSelect={handleFileSelect} />
-      </div>
-      <HowItWorksXRay onCTAClick={scrollToUpload} />
-      <BeatOrValidateSection />
-      <RedFlagGallery />
-      <NoQuoteEscapeHatch />
-      <VaultSection />
-    </div>
-  );
-}
+// In render
+<Suspense fallback={<div className="min-h-[400px] bg-slate-900 animate-pulse" />}>
+  <LazyComponent />
+</Suspense>
 ```
 
 ---
 
-## File Upload Integration
+## Expected Results
 
-The page uses a simplified redirect flow:
-1. User drops/selects file in UploadZoneXRay
-2. `handleFileSelect` callback receives the File object
-3. Navigate to existing `/ai-scanner` with file in router state
-4. Existing QuoteScanner page handles the analysis
+| Metric | Before | After (Est.) |
+|--------|--------|--------------|
+| Initial JS Bundle | ~400KB | ~180KB |
+| 404 Errors | 2 | 0 |
+| LCP | 9.4s | ~3-4s |
+| FCP | High | Lower |
 
 ---
 
-## Summary of Changes
+## Files Summary
 
 | File | Action |
 |------|--------|
-| `public/images/audit/ai-scanner-bg.png` | Create (copy uploaded) |
-| `public/images/audit/vault-bg.png` | Create (copy uploaded) |
-| `src/components/audit/*.tsx` | Create (8 components) |
-| `src/components/audit/index.ts` | Create (barrel exports) |
-| `src/pages/Audit.tsx` | Create (page component) |
-| `src/App.tsx` | Modify (add route) |
-| `src/index.css` | Modify (add scanDown keyframes) |
+| `src/pages/Audit.tsx` | Modify - Add lazy loading |
+| `src/components/audit/UploadZoneXRay.tsx` | Modify - Replace image with CSS |
+| `src/components/audit/VaultSection.tsx` | Modify - Replace image with CSS |
+| `src/components/audit/LoadingSkeleton.tsx` | Create - Loading placeholder |
+| `src/components/audit/index.ts` | Modify - Add default exports |
 
----
-
-## Accessibility & Performance
-
-- All images use appropriate alt text
-- Focus management for keyboard navigation
-- Lazy-loaded images for performance
-- CSS animations respect `prefers-reduced-motion`
-- Components use semantic HTML structure
-- No global theme variables = predictable rendering
