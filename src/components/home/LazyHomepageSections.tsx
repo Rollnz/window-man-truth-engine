@@ -12,12 +12,6 @@ const MascotTransition = lazy(() =>
 const UncomfortableTruth = lazy(() => 
   import('@/components/home/UncomfortableTruth').then(m => ({ default: m.UncomfortableTruth }))
 );
-const AccusationLayer = lazy(() => 
-  import('@/components/home/AccusationLayer').then(m => ({ default: m.AccusationLayer }))
-);
-const SystemReframe = lazy(() => 
-  import('@/components/home/SystemReframe').then(m => ({ default: m.SystemReframe }))
-);
 const ToolGrid = lazy(() => 
   import('@/components/home/ToolGrid').then(m => ({ default: m.ToolGrid }))
 );
@@ -82,29 +76,6 @@ export function LazyUncomfortableTruth() {
   return (
     <Suspense fallback={<SectionSkeleton height="h-[400px]" />}>
       <UncomfortableTruth />
-    </Suspense>
-  );
-}
-
-interface LazyAccusationLayerProps {}
-
-export function LazyAccusationLayer(_props: LazyAccusationLayerProps) {
-  return (
-    <Suspense fallback={<SectionSkeleton height="h-[400px]" />}>
-      <AccusationLayer />
-    </Suspense>
-  );
-}
-
-interface LazySystemReframeProps {
-  id?: string;
-  onUploadClick: () => void;
-}
-
-export function LazySystemReframe({ id, onUploadClick }: LazySystemReframeProps) {
-  return (
-    <Suspense fallback={<SectionSkeleton height="h-[400px]" />}>
-      <SystemReframe id={id} onUploadClick={onUploadClick} />
     </Suspense>
   );
 }
