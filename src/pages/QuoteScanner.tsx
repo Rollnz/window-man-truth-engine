@@ -157,15 +157,7 @@ export default function QuoteScanner() {
                         homeownerName={sessionData.name}
                       />
 
-                      <NegotiationTools
-                        emailDraft={emailDraft}
-                        phoneScript={phoneScript}
-                        isDraftingEmail={isDraftingEmail}
-                        isDraftingPhoneScript={isDraftingPhoneScript}
-                        onGenerateEmail={generateEmailDraft}
-                        onGeneratePhoneScript={generatePhoneScript}
-                        disabled={!analysisResult}
-                      />
+                      <NegotiationTools />
 
                       <QuoteQA
                         answer={qaAnswer}
