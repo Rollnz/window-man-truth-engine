@@ -1,270 +1,252 @@
 
-# Comprehensive Form Audit Report & Fix Plan
+# Implementation Plan: Standalone `/audit` Landing Page
 
-## 🔍 EXECUTIVE SUMMARY
+## Overview
+Create a completely standalone landing page at `/audit` with **zero visual inheritance** from the main site. No navbar, no footer, no global theme variables - a fully isolated dark-themed CRO page that matches the reference design exactly.
 
-This audit identifies **5 critical issues** and **12 accessibility/UX improvements** across the Window Truth Engine's form infrastructure. The issues fall into three categories:
+## Architecture Summary
 
-1. **Identity Ownership Mismatch (403 Errors)** - Critical backend issue
-2. **Focus Trap & Tab Order Failures** - Accessibility violations
-3. **Missing Accessibility Attributes** - WCAG compliance gaps
+```text
+/audit (Standalone - NOT inside PublicLayout)
+├── ScannerHeroWindow (glass window hero with scan animation)
+├── AnimatedStatsBar (count-up stats on scroll)
+├── UploadZoneXRay (X-ray style upload with floating callouts)
+├── HowItWorksXRay (4-step process cards)
+├── BeatOrValidateSection (win-win value proposition)
+├── RedFlagGallery (carousel of red flag examples)
+├── NoQuoteEscapeHatch (alternative paths: calculator, chat, consultation)
+└── VaultSection (retention engine / digital fortress)
+```
 
----
+## Style Isolation Strategy
 
-## 🚨 CRITICAL FINDINGS
+The uploaded components already use **hardcoded Tailwind classes** (`bg-slate-950`, `text-cyan-400`, `border-slate-700`) instead of CSS variables (`bg-background`, `text-foreground`). This means they are naturally theme-independent.
 
-### Issue 1: Entity Ownership Validation Failure (403 Error)
+To ensure complete isolation:
 
-**Symptoms:**
-- `score-event` returns 403: `{"ok":false,"error":"Entity ownership validation failed"}`
-- Console: `FunctionsHttpError: Edge Function returned a non-2xx status code`
-- Occurs on MissionInitiatedModal submission
+1. **Route outside PublicLayout** - The `/audit` route will be registered alongside `/auth` and `/vault` (outside the `<Route element={<PublicLayout />}>` wrapper)
 
-**Root Cause:**
-The `save-lead` edge function extracts `clientId` from `sessionData.clientId`, but the frontend sends it inconsistently:
-- `MissionInitiatedModal.tsx:125` sends `sessionData: { clientId: getOrCreateAnonId() }` ✅
-- `ConsultationBookingModal.tsx:146` sends `sessionData: { clientId: getOrCreateAnonId() }` ✅  
-- BUT `Consultation.tsx:56` sends `sessionData: { clientId, ...otherData }` where clientId comes from `getOrCreateAnonId()` at line 39
+2. **No Navbar/Footer** - The page will have its own minimal header or none at all
 
-The **mismatch** happens when:
-1. A lead is created with `client_id = 'abc123'`
-2. User returns with a different browser/session, generating new `anon_id = 'xyz789'`
-3. `score-event` compares `leads.client_id (abc123)` !== `request.anon_id (xyz789)` → 403
-
-**Current Handling:**
-The `useCanonicalScore` hook (lines 132-161) already silently handles ownership errors, but the error propagates to the UI through the `awardScore` promise chain.
-
-**Fix Strategy:**
-Wrap `awardScore` calls in try/catch with silent failure for ownership mismatches (already partially implemented but needs reinforcement in forms that still show toast on failure).
+3. **CSS Reset Wrapper** - A lightweight wrapper class will neutralize any inherited global styles (heading weights, letter-spacing)
 
 ---
 
-### Issue 2: Focus Trap Failures on Firefox
+## Files to Create
 
-**Affected Components:**
-| Page | Component | Issue |
-|------|-----------|-------|
-| /ai-scanner | ScannerLeadCaptureModal | Tab order broken - focus falls behind modal |
-| /beat-your-quote | MissionInitiatedModal | Focus trap partially works but inconsistent |
-| /consultation | ConsultationBookingModal | Missing DialogTitle/Description (console warning) |
-| Site-wide | EstimateSlidePanel | `Function components cannot be given refs` warning |
+### 1. Background Images
+```text
+public/images/audit/ai-scanner-bg.png
+public/images/audit/vault-bg.png
+```
 
-**Root Causes:**
+### 2. Components Directory
+```text
+src/components/audit/
+├── ScannerHeroWindow.tsx    - Glass window hero with parallax + scan line
+├── AnimatedStatsBar.tsx     - Intersection Observer count-up stats
+├── UploadZoneXRay.tsx       - X-ray document upload with callouts
+├── HowItWorksXRay.tsx       - 4-step process explanation
+├── BeatOrValidateSection.tsx - Fork-in-the-road value proposition
+├── RedFlagGallery.tsx       - Swipeable red flag carousel
+├── NoQuoteEscapeHatch.tsx   - Alternative conversion paths
+├── VaultSection.tsx         - Retention engine section
+└── index.ts                 - Barrel exports
+```
 
-1. **Missing Radix DialogTitle/DialogDescription (WCAG violation)**
-   - Console: `DialogContent requires a DialogTitle for accessibility`
-   - Console: `Warning: Missing Description or aria-describedby for {DialogContent}`
-   - TrustModal.tsx:64-80 only renders title/description when props are provided
-   - MissionInitiatedModal.tsx:222 uses bare DialogContent without TrustModal, then conditionally renders DialogHeader
-
-2. **Ref Forwarding Issues**
-   - EstimateSlidePanel uses SheetContent which wraps Radix primitives
-   - Console warning: `Function components cannot be given refs`
-   - EMQValidatorOverlay has same issue
-
-3. **Sheet Component Missing Accessible Title**
-   - SheetContent.tsx doesn't require SheetTitle/SheetDescription
-   - Radix Dialog expects accessible names for focus management
-
----
-
-### Issue 3: Missing Form Accessibility Attributes
-
-**Audit Results:**
-
-| Component | inputMode | autoComplete | autoCapitalize | tabIndex |
-|-----------|-----------|--------------|----------------|----------|
-| ScannerStep1Contact | ✅ (Phase 1) | ✅ | ✅ | ✅ |
-| ScannerStep2Project | ✅ (Phase 1) | ✅ | ✅ | ✅ |
-| ContactDetailsStep | ✅ (Phase 1) | ✅ | ✅ | ✅ |
-| MissionInitiatedModal | ❌ | ✅ | ❌ | ❌ |
-| ConsultationBookingModal | ❌ | ✅ | ❌ | ❌ |
-| ConsultationForm | ❌ | ✅ | ❌ | ❌ |
-| KitchenTableGuideModal | ❌ | ❌ | ❌ | ❌ |
-| SalesTacticsGuideModal | ❌ | ❌ | ❌ | ❌ |
-| SpecChecklistGuideModal | ❌ | ❌ | ❌ | ❌ |
-| ExitIntentModal | ❌ | ❌ | ❌ | ❌ |
+### 3. Page File
+```text
+src/pages/Audit.tsx
+```
 
 ---
 
-## 📋 FORM-BY-FORM INVENTORY
+## Technical Changes
 
-### /ai-scanner (Quote Scanner)
+### A. Route Registration (App.tsx)
 
-**Forms Present:**
-1. `ScannerLeadCaptureModal` → 3-step wizard (Contact → Project → Analysis)
-   - Uses TrustModal ✅
-   - Uses ScannerStep1Contact, ScannerStep2Project (Phase 1 fixes applied) ✅
-   - **Issue:** Focus trap not working on Firefox
-
-### /beat-your-quote
-
-**Forms Present:**
-1. `MissionInitiatedModal` → Lead capture after file upload
-   - Does NOT use TrustModal (custom DialogContent styling)
-   - **Issues:**
-     - Missing accessible DialogTitle during scanning animation state
-     - No inputMode on phone field
-     - No autoCapitalize="off" on email
-     - 403 ownership error on awardScore
-
-2. `QuoteCheckerSection` → Upload/SMS/Call cards
-   - Uses useUnifiedUpload for file handling
-   - Leads to MissionInitiatedModal on success
-
-### /consultation
-
-**Forms Present:**
-1. `ConsultationForm` (page-embedded, not modal)
-   - Standard form with proper structure
-   - **Issues:**
-     - Missing inputMode attributes
-     - No micro-copy/reassurance text
-     - No submit guard for double-click prevention
-
-2. `ConsultationBookingModal` (used elsewhere via CTAs)
-   - Uses TrustModal ✅
-   - **Issues:**
-     - Missing accessible description (console warning)
-     - No inputMode on phone
-
-### Guide Modals (Site-wide)
-
-**Forms Present:**
-1. `KitchenTableGuideModal` - 5-step flow
-2. `SalesTacticsGuideModal` - 5-step flow  
-3. `SpecChecklistGuideModal` - 5-step flow
-
-**Common Issues:**
-- No inputMode/autoCapitalize on inputs
-- No explicit tabIndex management
-- Location step now has state dropdown (just implemented) ✅
-
-### Floating CTA
-
-**Forms Present:**
-1. `EstimateSlidePanel` → 3-step wizard (Project → Contact → Address)
-   - Uses SheetContent (Radix Sheet primitive)
-   - **Issues:**
-     - Ref forwarding warning in console
-     - Sheet doesn't enforce accessible names
-
----
-
-## 🛠️ IMPLEMENTATION PLAN
-
-### Phase 2A: Critical Accessibility Fixes (Focus Traps)
-
-1. **Update TrustModal.tsx**
-   - Always render DialogTitle (use VisuallyHidden when no modalTitle prop)
-   - Always render DialogDescription (use VisuallyHidden when no modalDescription)
-   - This fixes Radix focus management
-
-2. **Update MissionInitiatedModal.tsx**
-   - Wrap with TrustModal instead of bare DialogContent
-   - Add DialogTitle/DialogDescription for scanning state
-   - Apply emailInputProps/phoneInputProps
-
-3. **Update SheetContent in sheet.tsx**
-   - Add SheetTitle with sr-only fallback
-   - Ensure Radix can find accessible name
-
-### Phase 2B: Form Attribute Standardization
-
-4. **ConsultationBookingModal.tsx**
-   - Import emailInputProps, phoneInputProps from formAccessibility
-   - Add inputMode="email", inputMode="tel"
-   - Add autoCapitalize="off" on email
-
-5. **ConsultationForm.tsx**
-   - Apply same attribute pattern
-   - Add useSubmitGuard for double-click prevention
-   - Add micro-copy per formMicroCopy constants
-
-6. **KitchenTableGuideModal.tsx, SalesTacticsGuideModal.tsx, SpecChecklistGuideModal.tsx**
-   - Apply emailInputProps/phoneInputProps to form step
-   - Already use useFormValidation ✅
-
-7. **ExitIntentModal.tsx**
-   - Apply attribute pattern to all form fields
-
-### Phase 2C: 403 Ownership Error Resilience
-
-8. **MissionInitiatedModal.tsx** (lines 171-178)
-   - Wrap awardScore in try/catch
-   - Don't show toast on ownership failure (already silently handled by hook)
-
-9. **Consultation.tsx** (lines 83-88)
-   - Same pattern - Promise.allSettled already used ✅
-   - Just ensure errors don't bubble to user
-
----
-
-## 📁 FILES TO MODIFY
-
-| File | Changes |
-|------|---------|
-| `src/components/forms/TrustModal.tsx` | Add VisuallyHidden fallback title/description |
-| `src/components/ui/sheet.tsx` | Add sr-only SheetTitle fallback |
-| `src/components/beat-your-quote/MissionInitiatedModal.tsx` | Use TrustModal, add input attributes |
-| `src/components/conversion/ConsultationBookingModal.tsx` | Add inputMode/autoCapitalize |
-| `src/components/consultation/ConsultationForm.tsx` | Add input attributes, useSubmitGuard |
-| `src/components/conversion/KitchenTableGuideModal.tsx` | Add input attributes to form step |
-| `src/components/conversion/SalesTacticsGuideModal.tsx` | Add input attributes to form step |
-| `src/components/conversion/SpecChecklistGuideModal.tsx` | Add input attributes to form step |
-| `src/components/authority/ExitIntentModal.tsx` | Add input attributes |
-
----
-
-## 🧪 VERIFICATION CHECKLIST
-
-After implementation:
-- [ ] Tab through ScannerLeadCaptureModal fields on Firefox - focus stays in modal
-- [ ] Tab through MissionInitiatedModal fields - no focus escape
-- [ ] Tab through ConsultationBookingModal - no focus escape
-- [ ] Tab through EstimateSlidePanel - focus stays in sheet
-- [ ] Console shows no "DialogContent requires DialogTitle" warnings
-- [ ] Console shows no "Function components cannot be given refs" warnings
-- [ ] Submit form on /beat-your-quote - no 403 error toast appears
-- [ ] Submit form on /consultation - submission completes even if awardScore fails
-- [ ] Email fields don't auto-capitalize on mobile
-- [ ] Phone fields show numeric keyboard on mobile
-
----
-
-## 💡 TECHNICAL NOTES
-
-### Why Radix Focus Traps Fail Without Accessible Names
-
-Radix Dialog uses the `@radix-ui/react-focus-scope` package to trap focus. When a DialogContent lacks a DialogTitle, the browser's accessibility tree can't properly announce the modal, causing focus to "escape" to elements behind the overlay on certain browsers (especially Firefox).
-
-The fix is to ALWAYS provide an accessible name, even if visually hidden:
+Add the `/audit` route **outside** the `<Route element={<PublicLayout />}>` block, alongside other standalone pages:
 
 ```tsx
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-
-<DialogContent>
-  <VisuallyHidden asChild>
-    <DialogTitle>Modal Form</DialogTitle>
-  </VisuallyHidden>
-  {/* rest of content */}
-</DialogContent>
+{/* Private/Standalone Routes (no footer system) */}
+<Route path="/auth" element={<Auth />} />
+<Route path="/vault" element={...} />
+<Route path="/audit" element={<Audit />} />  {/* NEW - Standalone */}
 ```
 
-### Identity Ownership Chain ("Golden Thread")
+### B. CSS Keyframes (index.css)
 
-```
-getOrCreateAnonId() → localStorage['wte-anon-id'] → UUID
-                      ↓
-           save-lead (sessionData.clientId)
-                      ↓
-           leads.client_id = UUID
-                      ↓
-           score-event compares:
-             request.anon_id === leads.client_id
-                      ↓
-           Match? → 200 OK, points awarded
-           Mismatch? → 403 (silently ignored)
+Add the `scanDown` animation for the hero scan line effect:
+
+```css
+@keyframes scanDown {
+  0%, 100% {
+    top: -10%;
+    opacity: 0;
+  }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  95% {
+    top: 110%;
+    opacity: 0;
+  }
+}
+
+.animate-scan-down {
+  animation: scanDown 4s ease-in-out infinite;
+}
 ```
 
-The 403 is expected for returning users with new sessions. The frontend should never show an error toast for this.
+### C. Routing Adapter
+
+All uploaded components use `wouter` for routing. They will be adapted to use `react-router-dom`:
+
+```tsx
+// FROM (wouter)
+import { Link } from 'wouter';
+
+// TO (react-router-dom)
+import { Link } from 'react-router-dom';
+```
+
+### D. Internal Route Updates
+
+Update internal links to match existing project routes:
+- `/calculator` → `/cost-calculator`
+- `/chat` → `/expert`
+- `/consultation` → `/consultation` (unchanged)
+- `/vault` → `/vault` (unchanged)
+
+---
+
+## Component Implementation Details
+
+### ScannerHeroWindow
+- Full-viewport height hero with `bg-slate-950` background
+- Glass window frame effect with parallax mouse tracking
+- Animated cyan scan line (`animate-scan-down`)
+- Alert badge: "Florida homeowners overpay by $8,000–$15,000"
+- Primary CTA: "Scan My Quote Free" → scrolls to upload section
+- Trust signals at bottom (stats pills)
+
+### AnimatedStatsBar
+- Intersection Observer triggers count-up animation
+- 4 animated stat cards:
+  - $4.2M+ Overcharges Detected
+  - 12,847+ Quotes Analyzed
+  - 94% Red Flag Detection Rate
+  - 8,400+ Florida Homeowners Protected
+- Subtle gradient pulse background
+
+### UploadZoneXRay
+- Two-column layout: Before (quote with callouts) | After (blurred gradecard)
+- Animated floating callouts (price warning, missing scope, legal alert)
+- Drag-and-drop file upload zone
+- Connects to `onFileSelect` prop for backend integration
+- Background image: `/images/audit/ai-scanner-bg.png`
+
+### HowItWorksXRay
+- 4-step vertical timeline:
+  1. Drop Your Quote
+  2. AI X-Ray Scan (highlighted)
+  3. Red Flags Exposed
+  4. Your Verdict
+- CTA button scrolls back to upload zone
+
+### BeatOrValidateSection
+- Two-path card layout:
+  - Path A: "Your Quote is FAIR" (Validator) - green theme
+  - Path B: "We'll BEAT IT" (Champion) - cyan theme
+- Win-Win Promise badge at bottom
+
+### RedFlagGallery
+- Horizontally scrollable carousel
+- 5 red flag cards with examples:
+  - Hidden Commission
+  - Vague Labor Terms
+  - No Permit Mention
+  - Bait-and-Switch Pricing
+  - Warranty Loopholes
+- Navigation arrows and dot indicators
+
+### NoQuoteEscapeHatch
+- 3 alternative action cards:
+  1. Get an Instant Estimate → `/cost-calculator`
+  2. Talk to Our AI Expert → `/expert`
+  3. Request a Real Quote → `/consultation`
+
+### VaultSection
+- Digital fortress theme with lock iconography
+- Background image: `/images/audit/vault-bg.png`
+- Features list: Store quotes, Access anywhere, Encrypted
+- CTA: "Access My Vault" → `/vault`
+
+---
+
+## Page Structure (Audit.tsx)
+
+```tsx
+export default function Audit() {
+  const uploadRef = useRef<HTMLDivElement>(null);
+  
+  const scrollToUpload = () => {
+    uploadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+  
+  const handleFileSelect = (file: File) => {
+    // Navigate to existing /ai-scanner with file in state
+    navigate('/ai-scanner', { state: { file } });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white">
+      <SEO ... />
+      <ScannerHeroWindow onCTAClick={scrollToUpload} />
+      <AnimatedStatsBar />
+      <div ref={uploadRef}>
+        <UploadZoneXRay onFileSelect={handleFileSelect} />
+      </div>
+      <HowItWorksXRay onCTAClick={scrollToUpload} />
+      <BeatOrValidateSection />
+      <RedFlagGallery />
+      <NoQuoteEscapeHatch />
+      <VaultSection />
+    </div>
+  );
+}
+```
+
+---
+
+## File Upload Integration
+
+The page uses a simplified redirect flow:
+1. User drops/selects file in UploadZoneXRay
+2. `handleFileSelect` callback receives the File object
+3. Navigate to existing `/ai-scanner` with file in router state
+4. Existing QuoteScanner page handles the analysis
+
+---
+
+## Summary of Changes
+
+| File | Action |
+|------|--------|
+| `public/images/audit/ai-scanner-bg.png` | Create (copy uploaded) |
+| `public/images/audit/vault-bg.png` | Create (copy uploaded) |
+| `src/components/audit/*.tsx` | Create (8 components) |
+| `src/components/audit/index.ts` | Create (barrel exports) |
+| `src/pages/Audit.tsx` | Create (page component) |
+| `src/App.tsx` | Modify (add route) |
+| `src/index.css` | Modify (add scanDown keyframes) |
+
+---
+
+## Accessibility & Performance
+
+- All images use appropriate alt text
+- Focus management for keyboard navigation
+- Lazy-loaded images for performance
+- CSS animations respect `prefers-reduced-motion`
+- Components use semantic HTML structure
+- No global theme variables = predictable rendering
