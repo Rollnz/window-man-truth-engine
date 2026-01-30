@@ -19,7 +19,7 @@ const faqs = [{
   answer: "You can scan your quote for free. We'll ask for your email only to unlock the full detailed report with negotiation tools and personalized recommendations."
 }, {
   question: "Can the AI read handwritten quotes?",
-  answer: "Our AI works best with typed/printed quotes. Handwritten estimates may have lower accuracy. If possible, request a typed version from your contractor."
+  answer: "Our AI uses the latest Gemini 3 flash which can even read hand writing. Still Handwritten estimates may have lower accuracy. 
 }];
 interface ScannerFAQSectionProps {
   uploadRef?: RefObject<HTMLDivElement>;
