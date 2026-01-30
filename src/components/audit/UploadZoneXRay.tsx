@@ -145,7 +145,7 @@ export function UploadZoneXRay({
                       <AlertTriangle className={cn("w-4 h-4 mt-0.5 flex-shrink-0", callout.textColor)} />
                       <div>
                         <p className={cn("text-xs font-bold", callout.textColor)}>{callout.title}</p>
-                        <p className={cn("text-xs mt-1 leading-tight opacity-90", callout.textColor)}>{callout.text}</p>
+                        <p className={cn("text-xs mt-1 leading-tight opacity-90 text-black", callout.textColor)}>{callout.text}</p>
                       </div>
                     </div>
                     <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-3 bg-amber-200/60 rounded-sm transform rotate-2" />
