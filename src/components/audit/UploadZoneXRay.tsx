@@ -171,7 +171,7 @@ export function UploadZoneXRay({
           <div className="relative">
             <Card className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-hidden" onMouseEnter={() => setIsHoveringPreview(true)} onMouseLeave={() => setIsHoveringPreview(false)}>
               <div className={cn("transition-all duration-300", isHoveringPreview ? "blur-[6px]" : "blur-[8px]")}>
-                <div className="mb-6">
+                <div className="mb-6 text-lg text-slate-400">
                   <p className="text-xs text-cyan-400 uppercase tracking-wider mb-1">Overall Assessment</p>
                   <div className="flex items-center justify-between">
                     <h3 className="text-2xl font-bold text-white">Quote Safety Score</h3>
