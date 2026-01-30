@@ -194,6 +194,17 @@
 }
 
 @layer utilities {
+  /* Audit page scan animation */
+  @keyframes scanDown {
+    0%, 100% { top: -10%; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    95% { top: 110%; opacity: 0; }
+  }
+
+  .animate-scan-down {
+    animation: scanDown 4s ease-in-out infinite;
+  }
   /* Badge shimmer effect for AI-powered badges */
   @keyframes badge-shimmer {
     0% {
