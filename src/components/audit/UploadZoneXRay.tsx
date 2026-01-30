@@ -89,20 +89,20 @@ export function UploadZoneXRay({
   return <section className="relative py-16 md:py-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0" style={{
-        backgroundImage: `linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px)`,
+        backgroundImage: `linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.1) 1px, transparent 1px)`,
         backgroundSize: '50px 50px'
       }} />
       </div>
 
       <div className="container relative px-4 mx-auto max-w-7xl">
         <div className="text-center mb-12">
-          <Badge className="mb-4 bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+          <Badge className="mb-4 bg-primary/10 text-primary border-primary/30">
             <Sparkles className="w-4 h-4 mr-2" />
             AI-Powered Analysis
           </Badge>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-4">
             Unmask the Truth Hiding in{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">Your Quote</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500">Your Quote</span>
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
             Stop guessing. Our AI-assisted quote scanner reads the fine print, flags hidden risks, and shows you where you're overpaying — before you sign.
@@ -114,7 +114,7 @@ export function UploadZoneXRay({
             <FileText className="w-5 h-5 text-slate-500" />
             <span className="text-sm uppercase tracking-wider text-destructive font-semibold">Before: A Confusing Estimate</span>
           </div>
-          <div className="flex items-center gap-2 text-cyan-400">
+          <div className="flex items-center gap-2 text-primary">
             <CheckCircle2 className="w-5 h-5" />
             <span className="text-sm font-medium uppercase tracking-wider">After: Your AI Gradecard</span>
           </div>
@@ -170,12 +170,12 @@ export function UploadZoneXRay({
             <Card className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-hidden" onMouseEnter={() => setIsHoveringPreview(true)} onMouseLeave={() => setIsHoveringPreview(false)}>
               <div className={cn("transition-all duration-300", isHoveringPreview ? "blur-[6px]" : "blur-[8px]")}>
                 <div className="mb-6 text-lg text-slate-400">
-                  <p className="text-xs text-cyan-400 uppercase tracking-wider mb-1">Overall Assessment</p>
+                  <p className="text-xs text-primary uppercase tracking-wider mb-1">Overall Assessment</p>
                   <div className="flex items-center justify-between">
                     <h3 className="text-2xl font-bold text-white">Quote Safety Score</h3>
-                    <div className="w-16 h-16 rounded-xl bg-amber-500/20 border-2 border-amber-500/50 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-black text-amber-400">62</span>
-                      <span className="text-[10px] text-amber-400/70 uppercase">out of 100</span>
+                    <div className="w-16 h-16 rounded-xl bg-orange-500/20 border-2 border-orange-500/50 flex flex-col items-center justify-center">
+                      <span className="text-2xl font-black text-orange-400">62</span>
+                      <span className="text-[10px] text-orange-400/70 uppercase">out of 100</span>
                     </div>
                   </div>
                 </div>
@@ -184,10 +184,10 @@ export function UploadZoneXRay({
                   {SCORE_CATEGORIES.map((category, index) => <div key={index} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <CheckCircle2 className={cn("w-4 h-4", category.score >= 70 ? "text-emerald-400" : category.score >= 50 ? "text-amber-400" : "text-red-400")} />
-                          <span className="text-sm text-cyan-400">{category.label}</span>
+                          <CheckCircle2 className={cn("w-4 h-4", category.score >= 70 ? "text-emerald-400" : category.score >= 50 ? "text-orange-400" : "text-red-400")} />
+                          <span className="text-sm text-primary">{category.label}</span>
                         </div>
-                        <span className={cn("text-sm font-bold", category.score >= 70 ? "text-emerald-400" : category.score >= 50 ? "text-amber-400" : "text-red-400")}>
+                        <span className={cn("text-sm font-bold", category.score >= 70 ? "text-emerald-400" : category.score >= 50 ? "text-orange-400" : "text-red-400")}>
                           {category.score}/100
                         </span>
                       </div>
@@ -202,12 +202,12 @@ export function UploadZoneXRay({
 
               {/* Lock Overlay */}
               <div className={cn("absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-[2px] transition-opacity duration-300", isHoveringPreview ? "opacity-100" : "opacity-90")}>
-                <div className={cn("w-20 h-20 rounded-full bg-slate-800/80 border-2 border-cyan-500/30 flex items-center justify-center mb-4 transition-transform duration-300", isHoveringPreview && "scale-110")}>
-                  <Eye className="w-10 h-10 text-cyan-400" />
+                <div className={cn("w-20 h-20 rounded-full bg-slate-800/80 border-2 border-primary/30 flex items-center justify-center mb-4 transition-transform duration-300", isHoveringPreview && "scale-110")}>
+                  <Eye className="w-10 h-10 text-primary" />
                 </div>
                 <p className="text-white font-semibold text-lg">See Your Gradecard</p>
                 <p className="text-slate-400 text-sm mb-6">Upload your quote to reveal your score</p>
-                <Button className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-slate-900 font-bold rounded-xl shadow-lg shadow-cyan-500/25">
+                <Button className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-900 font-bold rounded-xl shadow-lg shadow-orange-500/25">
                   <Upload className="w-5 h-5 mr-2" />
                   Upload Quote for Free Gradecard
                 </Button>

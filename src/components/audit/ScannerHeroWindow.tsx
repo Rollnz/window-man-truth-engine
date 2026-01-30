@@ -78,7 +78,7 @@ export function ScannerHeroWindow({
 
             {/* Glass Pane */}
             <div className="relative overflow-hidden rounded-lg">
-              <div className="relative bg-gradient-to-br from-cyan-950/90 via-slate-900/95 to-slate-950 min-h-[500px] md:min-h-[550px] p-8 md:p-12">
+              <div className="relative bg-gradient-to-br from-slate-900/90 via-slate-900/95 to-slate-950 min-h-[500px] md:min-h-[550px] p-8 md:p-12">
                 
                 <div className="absolute inset-0 opacity-[0.03]" style={{
                 backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
@@ -93,10 +93,10 @@ export function ScannerHeroWindow({
                   <div className="absolute -top-1/2 -left-1/4 w-3/4 h-full bg-gradient-to-br from-white/[0.07] via-white/[0.02] to-transparent rotate-12 transform" />
                 </div>
 
-                {/* Scan Line Animation */}
+                {/* Scan Line Animation - Blue theme */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent animate-scan-down" style={{
-                  boxShadow: '0 0 30px 10px rgba(6, 182, 212, 0.3)'
+                  <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent animate-scan-down" style={{
+                  boxShadow: '0 0 30px 10px hsl(var(--primary) / 0.3)'
                 }} />
                 </div>
 
@@ -107,16 +107,16 @@ export function ScannerHeroWindow({
                 {/* Content */}
                 <div className="relative z-10 flex flex-col items-center justify-center h-full text-center space-y-6">
                   <div className={cn("relative transition-all duration-700 delay-200", isVisible ? "opacity-100 scale-100" : "opacity-0 scale-50")}>
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/30 flex items-center justify-center backdrop-blur-sm">
-                      <Scan className="w-10 h-10 text-cyan-400" />
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/30 flex items-center justify-center backdrop-blur-sm">
+                      <Scan className="w-10 h-10 text-primary" />
                     </div>
-                    <div className="absolute inset-0 rounded-2xl border border-cyan-400/50 animate-ping" />
+                    <div className="absolute inset-0 rounded-2xl border border-primary/50 animate-ping" />
                   </div>
 
                   <div className={cn("space-y-2 transition-all duration-700 delay-300", isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")}>
                     <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight">
                       <span className="text-white drop-shadow-lg">The</span>
-                      <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-cyan-400 to-emerald-400 drop-shadow-lg">
+                      <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-500 to-amber-500 drop-shadow-lg">
                         Lie Detector
                       </span>
                       <span className="text-white drop-shadow-lg">for Window Quotes</span>
@@ -125,7 +125,7 @@ export function ScannerHeroWindow({
 
                   <p className={cn("text-lg sm:text-xl md:text-2xl text-slate-300/90 max-w-2xl leading-relaxed transition-all duration-700 delay-400", isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")}>
                     Contractors hide fees in the fine print.
-                    <span className="block text-cyan-400 font-semibold mt-1">
+                    <span className="block text-orange-400 font-semibold mt-1">
                       Our AI finds them in 60 seconds.
                     </span>
                   </p>
@@ -133,7 +133,7 @@ export function ScannerHeroWindow({
                   <p className={cn("text-base max-w-xl transition-all duration-700 delay-500 text-destructive-foreground", isVisible ? "opacity-100" : "opacity-0")}>
                     Upload your quote for a free, instant audit: we'll either{' '}
                     <span className="text-emerald-400 font-medium">Validate</span> it's fair or{' '}
-                    <span className="text-cyan-400 font-medium">Beat It</span> with a better offer.
+                    <span className="text-orange-400 font-medium">Beat It</span> with a better offer.
                   </p>
                 </div>
 
@@ -148,7 +148,7 @@ export function ScannerHeroWindow({
                 <div className="absolute top-4 left-6 right-6 h-px bg-gradient-to-r from-transparent via-slate-600 to-transparent" />
                 
                 <div className={cn("flex flex-col items-center space-y-4 transition-all duration-700 delay-600", isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")}>
-                  <Button onClick={onScanClick} size="lg" className="group relative px-10 py-8 text-xl font-bold bg-gradient-to-r from-cyan-500 via-cyan-400 to-emerald-400 hover:from-cyan-400 hover:via-cyan-300 hover:to-emerald-300 text-slate-900 rounded-2xl shadow-2xl shadow-cyan-500/30 hover:shadow-cyan-400/50 transition-all duration-300 hover:scale-105 hover:-translate-y-1">
+                  <Button onClick={onScanClick} size="lg" className="group relative px-10 py-8 text-xl font-bold bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 hover:from-orange-400 hover:via-orange-300 hover:to-amber-400 text-slate-900 rounded-2xl shadow-2xl shadow-orange-500/30 hover:shadow-orange-400/50 transition-all duration-300 hover:scale-105 hover:-translate-y-1">
                     <div className="absolute inset-0 rounded-2xl overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                     </div>
@@ -170,7 +170,7 @@ export function ScannerHeroWindow({
 
           {/* Manufacturer Badge */}
           <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-slate-800/80 backdrop-blur-sm rounded-full border border-slate-700/50 shadow-lg">
-            <Sparkles className="w-4 h-4 text-cyan-400" />
+            <Sparkles className="w-4 h-4 text-primary" />
             <span className="text-xs text-slate-400">Powered by AI • Built for Florida</span>
           </div>
         </div>
