@@ -158,7 +158,7 @@ export function UploadZoneXRay({
                 <div className="w-16 h-16 bg-cyan-500/20 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-cyan-500/50">
                   <Upload className="w-8 h-8 text-cyan-400" />
                 </div>
-                <p className="font-semibold text-black">Drop your quote here</p>
+                <p className="font-semibold text-primary-foreground">Drop your quote here</p>
                 <p className="text-slate-400 text-sm">or click to browse</p>
               </label>
             </Card>
