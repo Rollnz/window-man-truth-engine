@@ -159,7 +159,7 @@ export function UploadZoneXRay({
                   <Upload className="w-8 h-8 text-cyan-400" />
                 </div>
                 <p className="font-semibold text-primary-foreground">Drop your quote here</p>
-                <p className="text-slate-400 text-sm">or click to browse</p>
+                <p className="text-sm text-primary-foreground">PDF, JPEG,PDF up to 10mb </p>
               </label>
             </Card>
             <p className="mt-4 italic text-lg text-[#f0f0f0]">
