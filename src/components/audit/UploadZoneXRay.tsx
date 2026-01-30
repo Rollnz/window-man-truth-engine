@@ -162,7 +162,7 @@ export function UploadZoneXRay({
                 <p className="text-slate-400 text-sm">or click to browse</p>
               </label>
             </Card>
-            <p className="text-slate-500 text-sm mt-4 italic">
+            <p className="mt-4 italic text-lg text-[#f0f0f0]">
               Contractors often hand you numbers, jargon, and tiny fine print. You're expected to just trust it.
             </p>
           </div>
