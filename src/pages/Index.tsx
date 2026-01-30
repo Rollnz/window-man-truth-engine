@@ -1,8 +1,9 @@
+import { useState, useRef, useCallback } from 'react';
 import { Navbar } from '@/components/home/Navbar';
 import { Hero } from '@/components/home/Hero';
 import {
-  LazyMascotTransition,
-  LazyUncomfortableTruth,
+  LazyAccusationLayer,
+  LazySystemReframe,
   LazyToolGrid,
   LazyCommunityImpact,
   LazySocialProof,
@@ -11,9 +12,34 @@ import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
 import { getBreadcrumbSchema, getPillarHasPartReferences, generateLocalBusinessSchema } from '@/lib/seoSchemas/index';
 import { getReviewBoardSchema } from '@/config/expertIdentity';
+import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
+import { useSessionData } from '@/hooks/useSessionData';
+import type { SourceTool } from '@/types/sourceTool';
 
 const Index = () => {
   usePageTracking('homepage');
+  const { sessionData } = useSessionData();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const systemReframeSectionRef = useRef<HTMLDivElement>(null);
+
+  const handleInterrogateClick = useCallback(() => {
+    setIsModalOpen(true);
+  }, []);
+
+  const handleHowItWorksClick = useCallback(() => {
+    systemReframeSectionRef.current?.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
+  }, []);
+
+  const handleUploadClick = useCallback(() => {
+    setIsModalOpen(true);
+  }, []);
+
+  const handleModalSuccess = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
 
   const homepageSchema = [
     // LocalBusiness schema with Florida address (fixes Rich Results error)
@@ -103,13 +129,30 @@ const Index = () => {
       />
       <Navbar />
       <div className="pt-14"> {/* Padding for fixed navbar */}
-        <Hero />
-        <LazyMascotTransition />
-        <LazyUncomfortableTruth />
+        <Hero 
+          onInterrogateClick={handleInterrogateClick}
+          onHowItWorksClick={handleHowItWorksClick}
+        />
+        <LazyAccusationLayer />
+        <div ref={systemReframeSectionRef}>
+          <LazySystemReframe 
+            id="system-reframe"
+            onUploadClick={handleUploadClick}
+          />
+        </div>
         <LazyToolGrid />
         <LazyCommunityImpact />
         <LazySocialProof />
       </div>
+
+      {/* Lead Capture Modal */}
+      <LeadCaptureModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleModalSuccess}
+        sourceTool={'quote-scanner' satisfies SourceTool}
+        sessionData={sessionData}
+      />
     </div>
   );
 };
