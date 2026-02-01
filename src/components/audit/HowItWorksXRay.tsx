@@ -99,7 +99,7 @@ export function HowItWorksXRay({
         <div className="text-center">
           <Button onClick={onScanClick} size="lg" className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-slate-900 rounded-xl shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all">
             <Scan className="w-5 h-5 mr-2" />
-            Try It Free — No Signup Required
+            Try It For Free
           </Button>
           
           <p className="text-sm mt-4 text-accent">
