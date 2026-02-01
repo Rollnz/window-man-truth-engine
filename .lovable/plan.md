@@ -1,267 +1,205 @@
 
-# Multi-Path Audit Scanner Implementation Plan
-## Blue & Orange Theme Conversion + State Machine Architecture
+# Simplified Deterministic Analysis Flow
+## "Explain the Score" Gate Implementation
 
 ---
 
-## Phase 1: Foundation Setup
+## Overview
 
-### 1.1 TypeScript Types (`src/types/audit.ts`)
+This is a **simplification refactor** that replaces the complex Animation Theater with a deterministic flow:
 
-Create comprehensive type definitions for the entire system:
+1. **Upload** → User drops file (unchanged)
+2. **Static Analysis State** → Brief "Analyzing..." with checklist (no timers)
+3. **Partial Results** → Score + bars visible, explanations locked/blurred
+4. **Lead Gate** → "See How This Score Was Calculated" form
+5. **Full Results** → Unlock all explanations
+
+---
+
+## A. Component Architecture
+
+### Components to CREATE
+
+| Component | Props | Responsibilities | Section |
+|-----------|-------|------------------|---------|
+| `AnalyzingState` | `onComplete?: () => void` | Static checklist showing 5 rubric categories with check icons. Renders during API call, transitions automatically when analysis completes. | Step 2 |
+| `PartialResultsPanel` | `result: AuditAnalysisResult`, `onUnlockClick: () => void` | Shows overall score, score label, 5 category bars with numeric values, "Missing from Quote" bullet list. Category explanations are blurred/locked. "Continue to Full Report" CTA at bottom. | Step 3 |
+| `ExplainScoreGate` | `onSubmit: (data) => Promise<void>`, `isLoading: boolean` | Lead capture form with exact copy: "See How This Score Was Calculated". Fields: First Name, Last Name, Email, Phone. Micro-trust copy and "Unlock My Full Report" CTA. | Step 4 |
+| `FullResultsPanel` | `result: AuditAnalysisResult` | Full results with all explanations visible. Expands each rubric section with "What was missing", "Why it matters", real-world implications. Escalation CTAs preserved. | Step 5 |
+| `useDeterministicScanner` | - | Simplified state hook: `{ phase, result, analyzeFile, isLeadCaptured, captureLead, unlockResults }` | Core Hook |
+
+### Components to REMOVE/DEPRECATE
+
+| Component | Reason |
+|-----------|--------|
+| `useAnalysisTheater.ts` | No longer needed - no animation timing |
+| `AnalysisTheater.tsx` | Replaced by `AnalyzingState` |
+| `TheaterProgressBar.tsx` | No progress animation |
+| `TheaterCheckmark.tsx` | Replaced by static checklist |
+| `TeaserPanel.tsx` (planned) | Merged into `PartialResultsPanel` |
+
+### Components to REUSE (unchanged)
+
+| Component | Usage |
+|-----------|-------|
+| `NameInputPair` | First/Last name fields in gate |
+| `useLeadFormSubmit` | Centralized lead submission logic |
+| `useFormValidation` | Field validation |
+| `compressImage()` | From useQuoteScanner for file processing |
+| `QuoteAnalysisResults` | Reference for ScoreRow pattern |
+
+---
+
+## B. File Structure
 
 ```text
-AuditPath         = 'quote' | 'vault'
-AuditStep         = 0-8 (numeric state machine)
-TheaterPhase      = 'running' | 'paused' | 'complete'
-LeadGateVariant   = 'unlock' | 'vault'
-ProjectData       = { windowCount, propertyType, timeline, goals }
-```
-
-**Key Interfaces:**
-- `AuditScannerState` - Full modal state
-- `TheaterStep` - Individual animation checkmark
-- `AnalysisTheaterConfig` - Duration, pause point, steps
-- `LeadCaptureFormData` - First name, email, phone
-
----
-
-### 1.2 Theme Update - Remove Cyan, Apply Blue/Orange
-
-**Files to update:**
-- `ScannerHeroWindow.tsx` - Hero gradient, scan line, CTA button
-- `UploadZoneXRay.tsx` - Grid overlay, badges, callouts
-- `AnimatedStatsBar.tsx` - Badge colors
-
-**Color Mapping:**
-| Old (Cyan) | New (Blue/Orange) |
-|------------|-------------------|
-| `cyan-400/500` | `primary` (Blue #3993DD) |
-| `cyan-500/30` borders | `primary/30` |
-| `emerald-400` accents | Keep for "safe" indicators |
-| CTA buttons | `from-orange-500 to-amber-500` (Safety Orange) |
-| Progress bars | `bg-orange-500` |
-| Red flags | `bg-orange-500` or `destructive` |
-
----
-
-## Phase 2: Core Hooks
-
-### 2.1 `useAnalysisTheater` Hook (`src/hooks/audit/useAnalysisTheater.ts`)
-
-**Purpose:** Timer-based progress animation with 90% pause gate
-
-**Interface:**
-```text
-useAnalysisTheater({
-  duration: number,        // 10-12s for Path A, 6-8s for Path B
-  pauseAt: number,         // 90
-  steps: TheaterStep[],    // Checkmark definitions
-  onPause: () => void,     // Trigger lead gate
-  onComplete: () => void   // Reveal results
-})
-
-Returns:
-- percent: number (0-100)
-- phase: 'running' | 'paused' | 'complete'
-- activeStepIndex: number
-- resume: () => void
-```
-
-**Implementation Details:**
-- Uses `requestAnimationFrame` for smooth 60fps animation
-- CSS `transition-timing-function: ease-out` for natural deceleration near 90%
-- Hard pause at `pauseAt` value until `resume()` called
-
----
-
-### 2.2 `useAuditScanner` Hook (`src/hooks/audit/useAuditScanner.ts`)
-
-**Purpose:** Central state machine for entire modal flow
-
-**State Shape:**
-```text
-{
-  currentStep: number,           // 0-8
-  path: 'quote' | 'vault' | null,
-  file: File | null,
-  fileMetadata: { name, size, type },
-  analysisResult: QuoteAnalysisResult | null,
-  leadData: { firstName, email, phone },
-  projectData: { ... },
-  isLeadCaptured: boolean,
-  theaterPhase: 'idle' | 'running' | 'paused' | 'complete'
-}
-```
-
-**Actions:**
-- `selectPath(path)` - Fork at Step 0
-- `uploadFile(file)` - Path A Step 1
-- `startTheater()` - Begin animation
-- `captureLeadGate(data)` - Submit lead form
-- `resumeTheater()` - Continue past 90%
-- `saveProjectDetails(data)` - Step 6
-- `selectEscalation(type)` - Step 7
-- `reset()` - Clear all state
-
----
-
-## Phase 3: Component Architecture
-
-### 3.1 File Structure
-
-```text
-src/components/audit/scanner-modal/
-├── AuditScannerModal.tsx        # Main container (Dialog)
-├── PathSelector.tsx             # Step 0: "Do you have a quote?"
-├── UploadStep.tsx               # Path A Step 1: File upload
-├── AnalysisTheater.tsx          # Shared: Animated progress
-├── TeaserPanel.tsx              # Path A: Blurred preview
-├── LeadCaptureGate.tsx          # Shared: Form gate
-├── ResultsReveal.tsx            # Path A: Full results
-├── VaultPreview.tsx             # Path B Step 1: Value preview
-├── VaultConfirmation.tsx        # Path B: Unlock success
-├── ProjectIntelligence.tsx      # Shared Step 6: Project details
-├── HumanEscalation.tsx          # Step 7: CTA cards
-├── FinalConfirmation.tsx        # Step 8: Success
-├── theater/
-│   ├── TheaterProgressBar.tsx   # Orange progress bar
-│   └── TheaterCheckmark.tsx     # Individual step indicator
-├── project/
-│   ├── WindowCountSlider.tsx    # Slider with "typical" hint
-│   ├── PropertyTypeCards.tsx    # Icon card selection
-│   ├── TimelineRadio.tsx        # Radio options
-│   └── GoalsCheckbox.tsx        # Multi-select
-└── index.ts                     # Barrel export
+src/
+├── components/
+│   └── audit/
+│       └── scanner-modal/
+│           ├── AnalyzingState.tsx         # NEW: Static checklist during API call
+│           ├── PartialResultsPanel.tsx    # NEW: Score visible, explanations locked
+│           ├── ExplainScoreGate.tsx       # NEW: Lead capture with exact copy
+│           ├── FullResultsPanel.tsx       # NEW: All explanations unlocked
+│           ├── PathSelector.tsx           # KEEP: Step 0 fork
+│           ├── AnalysisTheater.tsx        # DEPRECATE (keep file, mark deprecated)
+│           ├── theater/                   # DEPRECATE (keep files, mark deprecated)
+│           │   ├── TheaterProgressBar.tsx
+│           │   └── TheaterCheckmark.tsx
+│           └── index.ts                   # UPDATE: New exports
+├── hooks/
+│   └── audit/
+│       ├── useDeterministicScanner.ts     # NEW: Simplified state machine
+│       ├── useAnalysisTheater.ts          # DEPRECATE (mark with @deprecated)
+│       └── index.ts                       # UPDATE: New exports
+└── types/
+    └── audit.ts                           # UPDATE: Add new interfaces
 ```
 
 ---
 
-### 3.2 Component Details
-
-#### `AuditScannerModal`
-- Radix Dialog with `onEscapeKeyDown={(e) => e.preventDefault()}`
-- `onInteractOutside={(e) => e.preventDefault()}`
-- Full-screen on mobile (`max-h-[100dvh]`)
-- Dark theme locked (Navy Blue background)
-
-#### `PathSelector` (Step 0)
-Two equal-weight buttons:
-- **"Yes, I have a quote"** → Orange gradient, Upload icon
-- **"No, not yet"** → Blue outline, Vault icon
-- Both buttons same size, horizontal on desktop, stacked on mobile
-
-#### `AnalysisTheater`
-- Orange progress bar (`bg-gradient-to-r from-orange-500 to-amber-500`)
-- Sequential checkmarks with slide-in animation
-- Pulsing "Working..." indicator at 90% pause
-- Soft blue glow on container
-
-#### `LeadCaptureGate`
-Two variants via prop:
-- `variant="unlock"`: "Unlock Your Results" (Path A)
-- `variant="vault"`: "Claim Your Vault Access" (Path B)
-
-Form fields: First Name, Email, Phone (2x2 grid)
-- White inputs with black border
-- Blue focus ring (`ring-primary/25`)
-- Orange submit button
-
-#### `ProjectIntelligence`
-Multi-step sub-form:
-1. Window count slider (1-30+, "typical" marker at 8-12)
-2. Property type cards (House, Condo, Townhome, Business)
-3. Timeline radio (In a hurry → Just researching)
-4. Goals checkbox (Hurricane, Energy, Noise, Security, Value)
-
----
-
-## Phase 4: Analytics Integration
-
-| Event | When | GTM Function | Value |
-|-------|------|--------------|-------|
-| `scanner_modal_opened` | PathSelector mounts | `trackModalOpen` | - |
-| `audit_path_selected` | User clicks Yes/No | `trackEvent` | `path` |
-| `quote_file_uploaded` | File accepted | `trackEvent` | `fileType, fileSize` |
-| `analysis_theater_started` | Animation begins | `trackEvent` | `path` |
-| `analysis_theater_paused` | Hits 90% | `trackEvent` | `path, percent` |
-| `lead_submission_success` | Form submitted | `trackLeadSubmissionSuccess` | `$100` |
-| `analysis_theater_resumed` | Resume called | `trackEvent` | - |
-| `quote_analysis_complete` | Results shown | `trackQuoteUploadSuccess` | `$50, score` |
-| `vault_access_granted` | Vault unlocked | `trackEvent` | `$50` |
-| `project_details_saved` | Step 6 complete | `trackEvent` | `windowCount, timeline` |
-| `consultation_booked` | Schedule selected | `trackConsultationBooked` | `$75` |
-| `audit_funnel_complete` | Step 8 reached | `trackToolCompletion` | `path` |
-
-All events use deterministic `event_id` format per EMQ 9.5+ standards.
-
----
-
-## Phase 5: Implementation Order
+## C. Implementation Order
 
 | # | Task | Files | Rationale |
 |---|------|-------|-----------|
-| 1 | Define types | `src/types/audit.ts` | Type-first development |
-| 2 | Update theme colors | `ScannerHeroWindow.tsx`, `UploadZoneXRay.tsx` | Visual foundation |
-| 3 | Build `useAnalysisTheater` | `src/hooks/audit/useAnalysisTheater.ts` | Core animation logic |
-| 4 | Build theater UI components | `TheaterProgressBar.tsx`, `TheaterCheckmark.tsx` | Visual building blocks |
-| 5 | Build `AnalysisTheater` | `AnalysisTheater.tsx` | Combines hook + UI |
-| 6 | Build `PathSelector` | `PathSelector.tsx` | Entry point (Step 0) |
-| 7 | Build `LeadCaptureGate` | `LeadCaptureGate.tsx` | Shared conversion gate |
-| 8 | Build `UploadStep` | `UploadStep.tsx` | Path A Step 1 |
-| 9 | Build `TeaserPanel` + `ResultsReveal` | Path A Steps 3-4 | Quote flow |
-| 10 | Build `VaultPreview` + `VaultConfirmation` | Path B Steps 1, 4 | Vault flow |
-| 11 | Build project sub-components | `WindowCountSlider.tsx`, etc. | Step 6 building blocks |
-| 12 | Build `ProjectIntelligence` | `ProjectIntelligence.tsx` | Combines project UI |
-| 13 | Build `HumanEscalation` | `HumanEscalation.tsx` | Step 7 CTAs |
-| 14 | Build `FinalConfirmation` | `FinalConfirmation.tsx` | Step 8 success |
-| 15 | Build `useAuditScanner` | `src/hooks/audit/useAuditScanner.ts` | State machine |
-| 16 | Build `AuditScannerModal` | `AuditScannerModal.tsx` | Container orchestration |
-| 17 | Wire to `/audit` page | `src/pages/Audit.tsx` | Integration |
+| **1** | Update types | `src/types/audit.ts` | Add `DeterministicPhase`, `ExplainScoreFormData`, remove theater-specific types from active use |
+| **2** | `AnalyzingState` | `AnalyzingState.tsx` | Simplest component - static UI with no state. Shows during API call. |
+| **3** | `PartialResultsPanel` | `PartialResultsPanel.tsx` | Adapt existing `QuoteAnalysisResults` pattern. Add blur overlay on explanations, keep scores visible. |
+| **4** | `ExplainScoreGate` | `ExplainScoreGate.tsx` | Exact copy from spec. Reuses `NameInputPair`, `useFormValidation`, `useLeadFormSubmit`. |
+| **5** | `FullResultsPanel` | `FullResultsPanel.tsx` | Extends `PartialResultsPanel` with full explanations. Adds "Why this matters" sections. |
+| **6** | `useDeterministicScanner` | `useDeterministicScanner.ts` | Simple reducer: `idle` → `analyzing` → `partial` → `gated` → `unlocked`. Calls existing `heavyAIRequest`. |
+| **7** | Deprecate theater | `useAnalysisTheater.ts`, `AnalysisTheater.tsx` | Add `@deprecated` JSDoc. No breaking changes to existing code. |
+| **8** | Update barrel exports | `index.ts` files | Export new components, keep deprecated ones available |
+| **9** | Wire to `/audit` page | `Audit.tsx` | Replace theater flow with deterministic flow |
 
 ---
 
-## Technical Considerations
+## D. Analytics Integration Points
 
-### Modal Dismissal Strategy
-Per the "Locked-Open" UX pattern:
-- ESC key disabled
-- Outside clicks disabled
-- Only explicit "X" button or "No thanks" link closes modal
-- Confirmation prompt if lead not captured: "Your analysis is 90% complete. Leave anyway?"
+| Event | Component | GTM Function | Parameters |
+|-------|-----------|--------------|------------|
+| `quote_file_uploaded` | `useDeterministicScanner.analyzeFile()` | `trackEvent('quote_file_uploaded', {...})` | `file_type`, `file_size_kb` |
+| `analysis_started` | `AnalyzingState` mount | `trackEvent('analysis_started', {...})` | `source_tool: 'audit-scanner'` |
+| `analysis_complete` | `useDeterministicScanner` result received | `trackEvent('analysis_complete', {...})` | `score`, `warnings_count`, `missing_count` |
+| `partial_results_viewed` | `PartialResultsPanel` mount | `trackEvent('partial_results_viewed', {...})` | `score`, `category_scores` |
+| `explain_gate_opened` | `ExplainScoreGate` mount | `trackModalOpen({ modalName: 'explain_score_gate' })` | - |
+| `lead_submission_success` | `ExplainScoreGate` submit success | `trackLeadSubmissionSuccess({...})` | `leadId`, `email`, `phone`, `value: 100`, deterministic `event_id` |
+| `quote_analysis_complete` | `FullResultsPanel` mount | `trackQuoteUploadSuccess({...})` | `scanAttemptId`, `score`, `value: 50` |
 
-### 90% Pause Implementation
+**Deduplication**: All events use deterministic `event_id` format (e.g., `audit_lead:[uuid]`, `analysis_complete:[scanAttemptId]`) per EMQ 9.5+ standards.
+
+---
+
+## E. Potential Challenges
+
+| Challenge | Technical Approach |
+|-----------|-------------------|
+| **Seamless transition from Analyzing → Partial Results** | `useDeterministicScanner` tracks `phase`. When API returns, set `result` and `phase = 'partial'` atomically. Component switches based on phase. |
+| **Blur effect on explanations only** | Use CSS `filter: blur(4px)` + `opacity: 0.5` on explanation text elements. Keep score values crisp. Add "Lock" icon overlay. |
+| **Exact gate copy preservation** | Gate component uses exact strings from spec. No dynamic text. Copy is hardcoded for precision. |
+| **Backward compatibility** | Keep `useAnalysisTheater` and theater components with `@deprecated` tags. No breaking changes to existing imports. |
+| **Fast mobile experience** | No animation timers = instant feedback. Static checklist renders immediately. Results appear as soon as API returns. |
+| **Race condition elimination** | Single state machine controls flow. No parallel animation + API coordination. `phase` is the single source of truth. |
+
+---
+
+## Technical Details
+
+### State Machine (useDeterministicScanner)
+
 ```text
-CSS: transition: width 10s cubic-bezier(0.4, 0, 0.2, 1);
-JS: When percent >= 90 && !isLeadCaptured → pause animation
-Visual: Progress bar pulses gently, "Finalizing..." text appears
+Phases:
+  'idle'      → Initial state, no file
+  'analyzing' → API call in progress, show AnalyzingState
+  'partial'   → Results received, show PartialResultsPanel
+  'gated'     → User clicked "Continue", show ExplainScoreGate
+  'unlocked'  → Lead captured, show FullResultsPanel
+
+State Shape:
+{
+  phase: DeterministicPhase,
+  file: File | null,
+  result: AuditAnalysisResult | null,
+  leadId: string | null,
+  isLeadCaptured: boolean,
+  isLoading: boolean,
+  error: string | null
+}
+
+Actions:
+  analyzeFile(file) → phase = 'analyzing', call API
+  showGate() → phase = 'gated'
+  captureLead(data) → save lead, phase = 'unlocked'
+  reset() → initial state
 ```
 
-### File Handling
-- Store only `fileMetadata` in state (not full File blob)
-- If modal closes before complete, file must be re-uploaded
-- Reuse existing `compressImage` logic from `useQuoteScanner`
+### ExplainScoreGate - Exact Copy
 
-### Mobile Responsiveness
-- Full-screen modal on mobile (`h-[100dvh]`)
-- Vertical stacking for PathSelector buttons
-- Touch-friendly slider for window count
-- Large tap targets (min 44px)
+**Headline**: "See How This Score Was Calculated"
+
+**Sub-headline**: "We'll break down exactly what was missing, why it matters in Florida, and how it affects your real cost and risk."
+
+**Fields**: First Name, Last Name, Email, Phone (2x2 grid)
+
+**Micro-trust**: "Your report is saved to your WindowMan Vault so you can come back to it anytime. We only use your info to deliver the analysis and offer expert help if you want it."
+
+**CTA**: "Unlock My Full Report" (Orange gradient button)
+
+**Optional**: "No pressure. No obligation. No spam." (very small text)
+
+### PartialResultsPanel - Visibility Rules
+
+**VISIBLE (unlocked)**:
+- Overall Score (e.g., 28/100)
+- Score label (e.g., "Concern")
+- 5 category bars with numeric scores
+- "Missing from Quote (X)" bullet list
+
+**BLURRED (locked)**:
+- Category explanations (description text under each bar)
+- "Why this matters" sections
+- Prescriptive guidance
 
 ---
 
-## Visual Theme Summary
+## Visual Theme (unchanged from Phase 1)
 
 | Element | Color |
 |---------|-------|
-| Modal background | `slate-900` (Navy Blue) |
-| Primary text | `white` |
-| Secondary text | `slate-400` |
+| Background | `slate-900` (Navy Blue) |
 | CTA buttons | `from-orange-500 to-amber-500` gradient |
-| Progress bar | `bg-orange-500` |
+| Score bars | Color-coded: emerald (80+), amber (60-79), rose (<60) |
+| Blur overlay | `bg-slate-900/80 backdrop-blur-sm` |
+| Form inputs | `bg-white text-slate-900 border-slate-300` |
 | Focus rings | `ring-primary/25` (Blue) |
-| "Safe" indicators | `emerald-500` |
-| "Warning" indicators | `orange-500` |
-| "Danger" indicators | `destructive` (Red) |
-| Card borders | `border-primary/30` (Blue) |
-| Glassmorphism glow | `primary/20` (Soft Blue) |
+
+---
+
+## Success Criteria
+
+1. User sees score **immediately** after API returns (no artificial delay)
+2. Curiosity ("how was this calculated?") drives form completion
+3. No animation timing dependencies
+4. No race conditions between analysis + UI
+5. Mobile experience feels fast and confident
+6. Analytics events fire at correct moments with proper deduplication
