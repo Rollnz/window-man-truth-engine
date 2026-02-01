@@ -11,6 +11,8 @@ export function RelatedIntelligence() {
       description={frameControl.description}
       tools={smartTools}
       columns={3}
+      variant="muted"
+      className="border-t border-border mt-8"
     />
   );
 }
