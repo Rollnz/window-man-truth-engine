@@ -13,8 +13,19 @@ export type AuditPath = 'quote' | 'vault';
 /** Step numbers in the state machine (0-8) */
 export type AuditStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
-/** Phase of the analysis theater animation */
+/** Phase of the analysis theater animation (deprecated - use DeterministicPhase) */
 export type TheaterPhase = 'idle' | 'running' | 'paused' | 'complete';
+
+/** Phase of the deterministic analysis flow (simplified, no timers) */
+export type DeterministicPhase = 'idle' | 'analyzing' | 'partial' | 'gated' | 'unlocked';
+
+/** Form data for the "Explain Score" lead gate */
+export interface ExplainScoreFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
 
 /** Variants for the lead capture gate form */
 export type LeadGateVariant = 'unlock' | 'vault';
