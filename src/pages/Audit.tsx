@@ -2,7 +2,7 @@ import { useRef, lazy, Suspense } from 'react';
 import { SEO } from '@/components/SEO';
 import {
   ScannerHeroWindow,
-  AnimatedStatsBar,
+  ScannerIntelligenceBar,
 } from '@/components/audit';
 import { LoadingSkeleton } from '@/components/audit/LoadingSkeleton';
 import { useDeterministicScanner } from '@/hooks/audit';
@@ -53,7 +53,7 @@ export default function Audit() {
       
       {/* Above the fold - loads immediately */}
       <ScannerHeroWindow onScanClick={scrollToUpload} />
-      <AnimatedStatsBar />
+      <ScannerIntelligenceBar />
       
       {/* Below the fold - lazy loaded */}
       <Suspense fallback={<LoadingSkeleton />}>
