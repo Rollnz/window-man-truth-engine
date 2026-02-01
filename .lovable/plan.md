@@ -1,49 +1,55 @@
 
+# Fix FAQ Contrast on /window-verification-system
 
-# Fix Card Component Theme Compatibility
+## Problem Summary
+The FAQ accordion has a permanent blue gradient background, but the answer text uses `text-muted-foreground` which changes with the theme. In dark mode, the text becomes light gray on a blue background = unreadable.
 
-## Summary
-Reset the global `Card` component to use theme-aware CSS variables, fixing contrast issues on `/window-risk-and-code` and other pages.
-
----
-
-## Changes to `src/components/ui/card.tsx`
-
-### Card Component
-**Line 7:**
-```
-Before: className={cn("rounded-lg border text-card-foreground shadow-sm bg-black", className)}
-After:  className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)}
-```
-
-### CardContent Component
-**Line 18:**
-```
-Before: className={cn("p-6 pt-0 bg-gray-700 border-2 border-current shadow-xl rounded-xl py-[10px]", className)}
-After:  className={cn("p-6 pt-0", className)}
-```
+## Solution
+Remove the `text-muted-foreground` override from the AccordionContent usage. The base accordion component already has `text-black` hardcoded specifically because the background is theme-independent.
 
 ---
 
-## What This Fixes
-- `/window-risk-and-code` Related Guides section — cards will have proper contrast in both light and dark modes
-- `/tools` page cards — will adapt to theme
-- Auth pages — will adapt to theme
-- All other standard Card usages site-wide
+## Implementation
 
-## What Stays Protected (No Changes Needed)
-| Component/Page | Protection Method |
-|----------------|-------------------|
-| ImpactWindowCard (12 tool cards) | Uses dedicated `impact-window.css` with hardcoded hex values |
-| `/audit` | Hardcoded `bg-slate-950 text-white` on container |
-| `/beat-your-quote` | Hardcoded `dossier-bg` class and `bg-[#0A0F14]` |
-| `/ai-scanner` | Remains theme-aware (per your request) |
+### File: `src/pages/WindowVerificationSystem.tsx`
+
+**Line 221 - Change:**
+```
+Before: <AccordionContent className="text-muted-foreground">
+After:  <AccordionContent>
+```
+
+This allows the base component's `text-black` class to apply, ensuring black text on the blue background in both light and dark modes.
 
 ---
 
-## File to Modify
+## Visual Result
 
-| File | Action |
-|------|--------|
-| `src/components/ui/card.tsx` | Replace `bg-black` with `bg-card`, reset CardContent to standard padding |
+```text
+BEFORE:
+┌─────────────────────────────────────────────┐
+│  Blue gradient background                    │
+│  "Essential documents include..."            │
+│   ^ Light gray text (dark mode) = BAD        │
+└─────────────────────────────────────────────┘
 
+AFTER:
+┌─────────────────────────────────────────────┐
+│  Blue gradient background                    │
+│  "Essential documents include..."            │
+│   ^ Black text (both modes) = GOOD           │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## Technical Details
+
+| File | Change | Purpose |
+|------|--------|---------|
+| `src/pages/WindowVerificationSystem.tsx` | Remove `className="text-muted-foreground"` from AccordionContent | Let base `text-black` apply for proper contrast |
+
+## Impact
+- Only affects `/window-verification-system` page
+- No changes to base accordion component needed
+- Text will be black in both light and dark modes, matching the permanent blue background
