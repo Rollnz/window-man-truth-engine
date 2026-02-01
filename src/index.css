@@ -1133,14 +1133,14 @@
    Background swaps, elements stay locked
    ============================================ */
 
-/* Dark mode: Force WHITE background, elements use LIGHT theme colors */
+/* Dark mode: Force LIGHT background, elements use LIGHT theme colors */
 :root .evidence-inverted,
 .dark .evidence-inverted {
-  --background: 210 35% 98%;
+  --background: 209 30% 94%;
   --foreground: 209 80% 12%;
   --card: 0 0% 100%;
   --card-foreground: 209 80% 12%;
-  --muted: 209 30% 92%;
+  --muted: 209 28% 90%;
   --muted-foreground: 209 25% 42%;
   --border: 209 35% 86%;
   --popover: 0 0% 100%;
