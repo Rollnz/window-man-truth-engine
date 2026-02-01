@@ -3,17 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import {
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-  DollarSign,
-  FileWarning,
-  ShieldAlert,
-  Clock,
-  Scale,
-} from 'lucide-react';
-
+import { AlertTriangle, ChevronLeft, ChevronRight, DollarSign, FileWarning, ShieldAlert, Clock, Scale } from 'lucide-react';
 interface RedFlag {
   id: string;
   icon: React.ReactNode;
@@ -24,27 +14,71 @@ interface RedFlag {
   color: string;
   bgColor: string;
 }
-
-const RED_FLAGS: RedFlag[] = [
-  { id: '1', icon: <DollarSign className="w-5 h-5" />, category: 'Hidden Fee', title: 'The "Disposal Fee" That Doesn\'t Exist', excerpt: '"Disposal & Haul Away: $850" — This fee is typically included in labor. They\'re charging you twice.', impact: 'Avg. Overcharge: $500–$1,200', color: 'text-red-400', bgColor: 'bg-red-500/10' },
-  { id: '2', icon: <FileWarning className="w-5 h-5" />, category: 'Missing Scope', title: 'No Permit Mentioned Anywhere', excerpt: 'Quote shows no permit line item. In Florida, window replacement requires permits. Who pays when the inspector shows up?', impact: 'Risk: $500–$2,000 + Delays', color: 'text-orange-400', bgColor: 'bg-orange-500/10' },
-  { id: '3', icon: <ShieldAlert className="w-5 h-5" />, category: 'Warranty Trap', title: 'The "Lifetime" Warranty That Expires', excerpt: '"Lifetime Warranty Included" — Read the fine print. This one expires after 5 years and doesn\'t cover labor.', impact: 'Hidden Cost: $3,000+ if issues arise', color: 'text-amber-400', bgColor: 'bg-amber-500/10' },
-  { id: '4', icon: <Scale className="w-5 h-5" />, category: 'Code Violation', title: 'Wrong Impact Rating for Zone', excerpt: 'Quote specifies "Large Missile" rating but property is in HVHZ. This won\'t pass inspection.', impact: 'Risk: Full reinstallation', color: 'text-red-400', bgColor: 'bg-red-500/10' },
-  { id: '5', icon: <Clock className="w-5 h-5" />, category: 'Vague Terms', title: '"Installation" With No Details', excerpt: 'Labor: $4,200 — but what does that include? Interior trim? Exterior caulking? Stucco repair? They\'ll charge extra later.', impact: 'Change Order Risk: $1,500+', color: 'text-orange-400', bgColor: 'bg-orange-500/10' },
-  { id: '6', icon: <DollarSign className="w-5 h-5" />, category: 'Price Inflation', title: '40% Above Market Rate', excerpt: 'Premium vinyl windows quoted at $1,800/unit. Local average for same spec: $1,100–$1,300.', impact: 'Overcharge: $500/window', color: 'text-red-400', bgColor: 'bg-red-500/10' },
-];
-
+const RED_FLAGS: RedFlag[] = [{
+  id: '1',
+  icon: <DollarSign className="w-5 h-5" />,
+  category: 'Hidden Fee',
+  title: 'The "Disposal Fee" That Doesn\'t Exist',
+  excerpt: '"Disposal & Haul Away: $850" — This fee is typically included in labor. They\'re charging you twice.',
+  impact: 'Avg. Overcharge: $500–$1,200',
+  color: 'text-red-400',
+  bgColor: 'bg-red-500/10'
+}, {
+  id: '2',
+  icon: <FileWarning className="w-5 h-5" />,
+  category: 'Missing Scope',
+  title: 'No Permit Mentioned Anywhere',
+  excerpt: 'Quote shows no permit line item. In Florida, window replacement requires permits. Who pays when the inspector shows up?',
+  impact: 'Risk: $500–$2,000 + Delays',
+  color: 'text-orange-400',
+  bgColor: 'bg-orange-500/10'
+}, {
+  id: '3',
+  icon: <ShieldAlert className="w-5 h-5" />,
+  category: 'Warranty Trap',
+  title: 'The "Lifetime" Warranty That Expires',
+  excerpt: '"Lifetime Warranty Included" — Read the fine print. This one expires after 5 years and doesn\'t cover labor.',
+  impact: 'Hidden Cost: $3,000+ if issues arise',
+  color: 'text-amber-400',
+  bgColor: 'bg-amber-500/10'
+}, {
+  id: '4',
+  icon: <Scale className="w-5 h-5" />,
+  category: 'Code Violation',
+  title: 'Wrong Impact Rating for Zone',
+  excerpt: 'Quote specifies "Large Missile" rating but property is in HVHZ. This won\'t pass inspection.',
+  impact: 'Risk: Full reinstallation',
+  color: 'text-red-400',
+  bgColor: 'bg-red-500/10'
+}, {
+  id: '5',
+  icon: <Clock className="w-5 h-5" />,
+  category: 'Vague Terms',
+  title: '"Installation" With No Details',
+  excerpt: 'Labor: $4,200 — but what does that include? Interior trim? Exterior caulking? Stucco repair? They\'ll charge extra later.',
+  impact: 'Change Order Risk: $1,500+',
+  color: 'text-orange-400',
+  bgColor: 'bg-orange-500/10'
+}, {
+  id: '6',
+  icon: <DollarSign className="w-5 h-5" />,
+  category: 'Price Inflation',
+  title: '40% Above Market Rate',
+  excerpt: 'Premium vinyl windows quoted at $1,800/unit. Local average for same spec: $1,100–$1,300.',
+  impact: 'Overcharge: $500/window',
+  color: 'text-red-400',
+  bgColor: 'bg-red-500/10'
+}];
 export function RedFlagGallery() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const visibleCount = 3;
-
-  const nextSlide = () => setCurrentIndex((prev) => prev + 1 >= RED_FLAGS.length - visibleCount + 1 ? 0 : prev + 1);
-  const prevSlide = () => setCurrentIndex((prev) => prev - 1 < 0 ? RED_FLAGS.length - visibleCount : prev - 1);
-
-  return (
-    <section className="relative py-20 md:py-28 bg-slate-950 overflow-hidden">
+  const nextSlide = () => setCurrentIndex(prev => prev + 1 >= RED_FLAGS.length - visibleCount + 1 ? 0 : prev + 1);
+  const prevSlide = () => setCurrentIndex(prev => prev - 1 < 0 ? RED_FLAGS.length - visibleCount : prev - 1);
+  return <section className="relative py-20 md:py-28 bg-slate-950 overflow-hidden">
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{ backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(239, 68, 68, 0.5) 10px, rgba(239, 68, 68, 0.5) 20px)` }} />
+        <div className="absolute inset-0" style={{
+        backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(239, 68, 68, 0.5) 10px, rgba(239, 68, 68, 0.5) 20px)`
+      }} />
       </div>
 
       <div className="container relative px-4">
@@ -54,7 +88,7 @@ export function RedFlagGallery() {
             Real Examples From Our Scanner
           </Badge>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4">
-            We've Saved Homeowners <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400">$4.2M+</span>
+            An Independent Standard Audit      <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400">​</span>
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
             Here's what our AI finds hiding in quotes every single day.
@@ -75,9 +109,10 @@ export function RedFlagGallery() {
           </div>
 
           <div className="overflow-hidden px-2">
-            <div className="flex transition-transform duration-500 ease-out gap-6" style={{ transform: `translateX(-${currentIndex * (100 / visibleCount)}%)` }}>
-              {RED_FLAGS.map((flag) => (
-                <Card key={flag.id} className={cn("flex-shrink-0 w-full md:w-[calc(33.333%-1rem)] bg-slate-900/80 border-slate-800 p-6 backdrop-blur-sm hover:border-red-500/30 transition-all duration-300 group")}>
+            <div className="flex transition-transform duration-500 ease-out gap-6" style={{
+            transform: `translateX(-${currentIndex * (100 / visibleCount)}%)`
+          }}>
+              {RED_FLAGS.map(flag => <Card key={flag.id} className={cn("flex-shrink-0 w-full md:w-[calc(33.333%-1rem)] bg-slate-900/80 border-slate-800 p-6 backdrop-blur-sm hover:border-red-500/30 transition-all duration-300 group")}>
                   <div className="flex items-center justify-between mb-4">
                     <Badge variant="outline" className={cn("px-3 py-1 border-0", flag.bgColor, flag.color)}>
                       {flag.icon}
@@ -93,8 +128,7 @@ export function RedFlagGallery() {
                     <DollarSign className="w-4 h-4" />
                     {flag.impact}
                   </div>
-                </Card>
-              ))}
+                </Card>)}
             </div>
           </div>
         </div>
@@ -106,6 +140,5 @@ export function RedFlagGallery() {
           </p>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 }
