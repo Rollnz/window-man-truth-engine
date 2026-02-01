@@ -1,11 +1,11 @@
 import { useRef, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 import {
   ScannerHeroWindow,
   AnimatedStatsBar,
 } from '@/components/audit';
 import { LoadingSkeleton } from '@/components/audit/LoadingSkeleton';
+import { useDeterministicScanner } from '@/hooks/audit';
 
 // Lazy load below-the-fold components
 const UploadZoneXRay = lazy(() => import('@/components/audit/UploadZoneXRay').then(m => ({ default: m.UploadZoneXRay })));
@@ -16,16 +16,18 @@ const NoQuoteEscapeHatch = lazy(() => import('@/components/audit/NoQuoteEscapeHa
 const VaultSection = lazy(() => import('@/components/audit/VaultSection').then(m => ({ default: m.VaultSection })));
 
 export default function Audit() {
-  const navigate = useNavigate();
   const uploadRef = useRef<HTMLDivElement>(null);
+  
+  // Initialize deterministic scanner for in-page analysis
+  const scanner = useDeterministicScanner();
 
   const scrollToUpload = () => {
     uploadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   const handleFileSelect = (file: File) => {
-    // Navigate to existing /ai-scanner with file in state
-    navigate('/ai-scanner', { state: { file } });
+    // Analyze in-place instead of redirecting to /ai-scanner
+    scanner.analyzeFile(file);
   };
 
   return (
@@ -56,7 +58,16 @@ export default function Audit() {
       {/* Below the fold - lazy loaded */}
       <Suspense fallback={<LoadingSkeleton />}>
         <div ref={uploadRef}>
-          <UploadZoneXRay onFileSelect={handleFileSelect} />
+          <UploadZoneXRay 
+            onFileSelect={handleFileSelect}
+            scannerPhase={scanner.phase}
+            scannerResult={scanner.result}
+            scannerError={scanner.error}
+            isLoading={scanner.isLoading}
+            onShowGate={scanner.showGate}
+            onCaptureLead={scanner.captureLead}
+            onReset={scanner.reset}
+          />
         </div>
         <HowItWorksXRay onScanClick={scrollToUpload} />
         <BeatOrValidateSection />
