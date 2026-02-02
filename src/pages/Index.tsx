@@ -1,12 +1,12 @@
 import { Navbar } from '@/components/home/Navbar';
-import { Hero } from '@/components/home/Hero';
-import {
-  LazyMascotTransition,
-  LazyUncomfortableTruth,
-  LazyToolGrid,
-  LazyCommunityImpact,
-  LazySocialProof,
-} from '@/components/home/LazyHomepageSections';
+import { HeroSection } from '@/components/home/HeroSection';
+import { MarketRealitySection } from '@/components/home/MarketRealitySection';
+import { FailurePointsSection } from '@/components/home/FailurePointsSection';
+import { WhoIsWindowManSection } from '@/components/home/WhoIsWindowManSection';
+import { SecretPlaybookSection } from '@/components/home/SecretPlaybookSection';
+import { SampleReportSection } from '@/components/home/SampleReportSection';
+import { WeaponizeAuditSection } from '@/components/home/WeaponizeAuditSection';
+import { FinalDecisionSection } from '@/components/home/FinalDecisionSection';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
 import { getBreadcrumbSchema, getPillarHasPartReferences, generateLocalBusinessSchema } from '@/lib/seoSchemas/index';
@@ -26,7 +26,7 @@ const Index = () => {
       "name": "Window Man Your Hurricane Hero",
       "url": "https://itswindowman.com/",
       "logo": "https://itswindowman.com/icon-512.webp",
-      "description": "Free tools to help homeowners get fair window replacement quotes and avoid overpaying.",
+      "description": "Free pro-consumer protection service that uses AI to audit window estimates before you sign anything.",
       "sameAs": [
         "https://www.facebook.com/its.windowman",
         "https://twitter.com/itswindowman"
@@ -96,19 +96,21 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO 
-        title="Free Window Replacement Cost Calculator & Quote Analyzer"
-        description="Stop overpaying for windows. Use our free tools to calculate fair prices, analyze quotes, and negotiate with confidence. Trusted by 10,000+ homeowners."
+        title="Window Man - Free AI Quote Audit for Impact Windows | Stop Overpaying"
+        description="Don't sign that window quote. Our free AI audit reveals hidden risks, code-compliance gaps, and pricing issues contractors hope you'll miss. Protect yourself before you sign."
         canonicalUrl="https://itswindowman.com/"
         jsonLd={[...homepageSchema, getBreadcrumbSchema('home')]}
       />
       <Navbar />
       <div className="pt-14"> {/* Padding for fixed navbar */}
-        <Hero />
-        <LazyMascotTransition />
-        <LazyUncomfortableTruth />
-        <LazyToolGrid />
-        <LazyCommunityImpact />
-        <LazySocialProof />
+        <HeroSection />
+        <MarketRealitySection />
+        <FailurePointsSection />
+        <WhoIsWindowManSection />
+        <SecretPlaybookSection />
+        <SampleReportSection />
+        <WeaponizeAuditSection />
+        <FinalDecisionSection />
       </div>
     </div>
   );
