@@ -50,7 +50,8 @@ export default function Consultation() {
         body: {
           email: data.email,
           phone: data.phone,
-          name: `${data.firstName} ${data.lastName}`.trim(),
+          firstName: data.firstName,
+          lastName: data.lastName,
           sourceTool: 'consultation',
           sessionData: {
             clientId,
