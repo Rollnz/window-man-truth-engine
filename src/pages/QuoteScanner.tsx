@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { SEO } from '@/components/SEO';
 import { Navbar } from '@/components/home/Navbar';
 import { QuoteScannerHero } from '@/components/quote-scanner/QuoteScannerHero';
@@ -33,9 +33,11 @@ import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-
 // Attribution & tracking for NoQuotePivotSection handler
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
+import { getOrCreateClientId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
 import { trackLeadCapture, trackLeadSubmissionSuccess } from '@/lib/gtm';
+// Session registration for database FK compliance
+import { getSessionId as getRegisteredSessionId } from '@/lib/windowTruthClient';
 
 export default function QuoteScanner() {
   usePageTracking('quote-scanner');
@@ -61,9 +63,18 @@ export default function QuoteScanner() {
   const [showLeadCapture, setShowLeadCapture] = useState(false);
   const [hasUnlockedResults, setHasUnlockedResults] = useState(!!sessionData.email);
   const [isNoQuoteSubmitting, setIsNoQuoteSubmitting] = useState(false);
+  const [registeredSessionId, setRegisteredSessionId] = useState<string>('');
   
   // Ref for scroll-to-upload functionality
   const uploadRef = useRef<HTMLDivElement>(null);
+
+  // CRITICAL: Register session with wm_sessions table on mount
+  // This ensures the sessionId exists in the database before save-lead is called
+  useEffect(() => {
+    getRegisteredSessionId().then((id) => {
+      if (id) setRegisteredSessionId(id);
+    });
+  }, []);
 
   const handleFileSelect = async (file: File) => {
     const startTime = Date.now();
@@ -204,13 +215,16 @@ export default function QuoteScanner() {
               onEmailSubmit={async (data) => {
                 setIsNoQuoteSubmitting(true);
                 try {
+                  // Use the registered session ID (from wm_sessions table) to avoid FK violations
+                  const sessionId = registeredSessionId || await getRegisteredSessionId();
+                  
                   const { data: result, error } = await supabase.functions.invoke('save-lead', {
                     body: {
                       email: data.email,
                       firstName: data.firstName,
                       lastName: data.lastName,
                       sourceTool: 'quote-scanner',
-                      sessionId: getOrCreateSessionId(),
+                      sessionId,
                       sessionData: {
                         clientId: getOrCreateClientId(),
                       },

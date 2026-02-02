@@ -1,11 +1,15 @@
 /**
  * Lightweight client helper for the Window Truth Engine backend.
  * - Persists/creates a wm_session_id (localStorage first, cookies as backup)
- * - Sends initial session payload with attribution params
+ * - Registers session in wm_sessions table via Supabase
  * - Provides a logEvent helper with graceful failure
  *
  * Defensive coding: network failures never throw; they just log to console.
  */
+
+import { supabase } from '@/integrations/supabase/client';
+
+import type { Json } from '@/integrations/supabase/types';
 
 const STORAGE_KEY = "wm_session_id";
 
@@ -52,34 +56,74 @@ const readSessionId = () => {
   return match?.[1];
 };
 
+/**
+ * Create or refresh session in the database.
+ * Uses Supabase client directly to insert into wm_sessions table.
+ */
 const createOrRefreshSession = async (): Promise<string> => {
   const existing = readSessionId();
-  const payload = {
-    session_id: existing,
-    entry_point: window.location.pathname,
-    device_type: /Mobi|Android/i.test(navigator.userAgent) ? "mobile" : "desktop",
-    user_agent: navigator.userAgent,
-    ...getAttributionParams(),
-  };
+  const attribution = getAttributionParams();
+
+  // If we already have a session ID, verify it exists in DB or create it
+  if (existing) {
+    try {
+      // Check if session exists
+      const { data: existingSession } = await supabase
+        .from('wm_sessions')
+        .select('id')
+        .eq('id', existing)
+        .maybeSingle();
+
+      if (existingSession) {
+        // Session exists, just update timestamp
+        await supabase
+          .from('wm_sessions')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', existing);
+        return existing;
+      }
+    } catch (error) {
+      console.warn("[wm] session verification failed, will create new", error);
+    }
+  }
+
+  // Create new session in database
+  const newSessionId = existing || crypto.randomUUID();
+  const anonymousId = crypto.randomUUID(); // Required field for wm_sessions
 
   try {
-    const res = await fetch("/api/wm/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(`session http ${res.status}`);
-    const data = (await res.json()) as { session_id?: string };
-    if (data.session_id) {
-      saveSessionId(data.session_id);
-      return data.session_id;
+    const { error } = await supabase
+      .from('wm_sessions')
+      .insert({
+        id: newSessionId,
+        anonymous_id: anonymousId,
+        landing_page: window.location.pathname,
+        user_agent: navigator.userAgent,
+        referrer: attribution.referrer,
+        utm_source: attribution.utm_source,
+        utm_medium: attribution.utm_medium,
+        utm_campaign: attribution.utm_campaign,
+        utm_term: attribution.utm_term,
+        utm_content: attribution.utm_content,
+      });
+
+    if (error) {
+      console.warn("[wm] session insert failed", error);
+      // Fallback: return local UUID anyway so downstream calls work
+      const localId = existing || crypto.randomUUID();
+      saveSessionId(localId);
+      return localId;
     }
+
+    saveSessionId(newSessionId);
+    console.log("[wm] session registered:", newSessionId);
+    return newSessionId;
   } catch (error) {
     console.warn("[wm] session bootstrap failed", error);
   }
-  // Fallback: keep using existing client-side ID or mint a local UUID so downstream calls are not blocked.
-  if (existing) return existing;
-  const localId = crypto.randomUUID();
+
+  // Fallback: keep using existing client-side ID or mint a local UUID
+  const localId = existing || crypto.randomUUID();
   saveSessionId(localId);
   return localId;
 };
@@ -101,17 +145,20 @@ export const logEvent = async ({ event_name, params = {}, tool_name, page_path }
   }
 
   try {
-    await fetch("/api/wm/event", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        session_id,
+    // Insert event directly into wm_events table
+    const { error } = await supabase
+      .from('wm_events')
+      .insert([{
+        session_id: session_id,
         event_name,
-        tool_name,
+        event_category: tool_name,
         page_path: page_path ?? window.location.pathname,
-        params,
-      }),
-    });
+        event_data: (params || null) as Json,
+      }]);
+    
+    if (error) {
+      console.warn("[wm] logEvent insert error", error);
+    }
   } catch (error) {
     console.warn("[wm] logEvent failed", error);
   }
