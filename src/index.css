@@ -273,6 +273,182 @@
     box-shadow: 0 0 30px hsl(var(--glow) / 0.5), 0 0 60px hsl(var(--glow) / 0.25);
   }
 
+  /* ============================================================
+     GLOW BORDERS - Premium card effects
+     ============================================================ */
+
+  /* Glow border - warning/risk theme (Safety Orange) */
+  .glow-border-secondary {
+    border: 1px solid transparent;
+    border-radius: 0.75rem;
+    background: 
+      linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+      linear-gradient(135deg, hsl(var(--secondary) / 0.4) 0%, transparent 50%) border-box;
+    transition: all 0.3s ease;
+  }
+
+  .glow-border-secondary:hover {
+    background: 
+      linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+      linear-gradient(135deg, hsl(var(--secondary) / 0.6) 0%, hsl(var(--secondary) / 0.2) 50%, transparent 80%) border-box;
+  }
+
+  /* Glow border - positive/solution theme (Primary Blue) */
+  .glow-border-primary {
+    border: 1px solid transparent;
+    border-radius: 0.75rem;
+    background: 
+      linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+      linear-gradient(135deg, hsl(var(--primary) / 0.3) 0%, transparent 50%) border-box;
+    transition: all 0.3s ease;
+  }
+
+  .glow-border-primary:hover {
+    background: 
+      linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+      linear-gradient(135deg, hsl(var(--primary) / 0.5) 0%, hsl(var(--primary) / 0.2) 50%, transparent 80%) border-box;
+  }
+
+  /* ============================================================
+     PATTERN OVERLAYS - Technical depth effects
+     ============================================================ */
+
+  /* Technical pattern overlay - diagonal lines (inspection/wear) */
+  .pattern-diagonal {
+    position: relative;
+  }
+  .pattern-diagonal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.04;
+    background: repeating-linear-gradient(
+      45deg,
+      hsl(var(--secondary)),
+      hsl(var(--secondary)) 1px,
+      transparent 1px,
+      transparent 20px
+    );
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Blueprint pattern - grid dots (code compliance) */
+  .pattern-grid {
+    position: relative;
+  }
+  .pattern-grid::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.06;
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      hsl(var(--secondary)) 1px,
+      transparent 1px
+    );
+    background-size: 24px 24px;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Document pattern - horizontal lines (paperwork) */
+  .pattern-lines {
+    position: relative;
+  }
+  .pattern-lines::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 18px,
+      hsl(var(--secondary)) 18px,
+      hsl(var(--secondary)) 19px
+    );
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Stepped pattern - pricing tiers */
+  .pattern-steps {
+    position: relative;
+  }
+  .pattern-steps::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.04;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 10px,
+      hsl(var(--secondary)) 10px,
+      hsl(var(--secondary)) 11px,
+      transparent 11px,
+      transparent 20px
+    );
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* ============================================================
+     CTA BREATHING ANIMATION
+     ============================================================ */
+
+  @keyframes cta-breathe {
+    0%, 100% { 
+      box-shadow: 0 0 20px hsl(var(--secondary) / 0.3); 
+    }
+    50% { 
+      box-shadow: 0 0 35px hsl(var(--secondary) / 0.5); 
+    }
+  }
+
+  .cta-glow {
+    animation: cta-breathe 4s ease-in-out infinite;
+  }
+
+  /* ============================================================
+     MOBILE + ACCESSIBILITY OVERRIDES
+     ============================================================ */
+
+  @media (max-width: 767px) {
+    .pattern-diagonal::before,
+    .pattern-grid::before,
+    .pattern-lines::before,
+    .pattern-steps::before {
+      display: none;
+    }
+    
+    /* Reduce glow intensity on mobile */
+    .glow-border-secondary {
+      background: 
+        linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+        linear-gradient(135deg, hsl(var(--secondary) / 0.2) 0%, transparent 40%) border-box;
+    }
+
+    .glow-border-primary {
+      background: 
+        linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+        linear-gradient(135deg, hsl(var(--primary) / 0.15) 0%, transparent 40%) border-box;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .glow-border-secondary,
+    .glow-border-primary {
+      transition: none !important;
+    }
+    
+    .cta-glow {
+      animation: none;
+      box-shadow: 0 0 20px hsl(var(--secondary) / 0.3);
+    }
+  }
+
   .text-glow {
     text-shadow: 0 0 10px hsl(var(--glow) / 0.5), 0 0 20px hsl(var(--glow) / 0.3);
   }
