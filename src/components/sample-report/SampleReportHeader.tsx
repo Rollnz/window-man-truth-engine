@@ -1,19 +1,23 @@
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Upload, Phone, FileText } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
-import { ROUTES } from '@/config/navigation';
 
-export function SampleReportHeader() {
+interface SampleReportHeaderProps {
+  onOpenLeadModal?: (ctaSource: string) => void;
+}
+
+export function SampleReportHeader({ onOpenLeadModal }: SampleReportHeaderProps) {
   const handleUploadClick = () => {
     trackEvent('sample_report_upload_click', {
       location: 'sticky_header',
     });
+    onOpenLeadModal?.('sticky_header_upload');
   };
 
   const handleTalkClick = () => {
     trackEvent('sample_report_talk_click', {
       location: 'sticky_header',
+      action: 'phone_call',
     });
   };
 
@@ -37,29 +41,26 @@ export function SampleReportHeader() {
 
         {/* Right: CTAs */}
         <div className="flex items-center gap-3">
-          {/* Secondary: Talk to Window Man */}
-          <Link 
-            to={ROUTES.CONSULTATION}
+          {/* Secondary: Talk to Window Man - Direct Phone Call */}
+          <a 
+            href="tel:+15614685571"
             onClick={handleTalkClick}
             className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <Phone className="w-4 h-4" />
             <span>Talk to Window Man</span>
-          </Link>
+          </a>
 
-          {/* Primary: Upload My Estimate */}
+          {/* Primary: Upload My Estimate - Opens Lead Modal */}
           <Button 
-            asChild 
             variant="cta" 
             size="sm"
             className="group"
             onClick={handleUploadClick}
           >
-            <Link to={`${ROUTES.QUOTE_SCANNER}#upload`}>
-              <Upload className="w-4 h-4 mr-1.5" />
-              <span className="hidden sm:inline">Upload My Estimate</span>
-              <span className="sm:hidden">Upload</span>
-            </Link>
+            <Upload className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">Upload My Estimate</span>
+            <span className="sm:hidden">Upload</span>
           </Button>
         </div>
       </div>

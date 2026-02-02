@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/home/Navbar';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
@@ -6,9 +7,8 @@ import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { getLeadAnchor } from '@/lib/leadAnchor';
 import { trackEvent } from '@/lib/gtm';
 import { Loader2 } from 'lucide-react';
+import { ROUTES } from '@/config/navigation';
 
-import { ScrollLockWrapper } from '@/components/sample-report/ScrollLockWrapper';
-import { SampleReportAccessGate } from '@/components/sample-report/SampleReportAccessGate';
 import { SampleReportHeader } from '@/components/sample-report/SampleReportHeader';
 import { HeroSection } from '@/components/sample-report/HeroSection';
 import { ComparisonSection } from '@/components/sample-report/ComparisonSection';
@@ -18,32 +18,29 @@ import { HowItWorksSection } from '@/components/sample-report/HowItWorksSection'
 import { LeverageOptionsSection } from '@/components/sample-report/LeverageOptionsSection';
 import { CloserSection } from '@/components/sample-report/CloserSection';
 import { FAQSection } from '@/components/sample-report/FAQSection';
+import { SampleReportLeadModal } from '@/components/sample-report/SampleReportLeadModal';
 
 const SampleReport = () => {
   usePageTracking('sample-report');
+  const navigate = useNavigate();
   
   const { leadId, hasIdentity } = useLeadIdentity();
   const anchorId = getLeadAnchor();
   const hasLead = hasIdentity || !!anchorId;
 
-  // Prevent content flash on initial load
+  // Lead capture modal state
+  const [showLeadModal, setShowLeadModal] = useState(false);
+  const [modalCtaSource, setModalCtaSource] = useState('');
+  const [preCheckPartnerConsent, setPreCheckPartnerConsent] = useState(false);
+
+  // Loading state check
   const [isCheckingLead, setIsCheckingLead] = useState(true);
-  const [showAccessGate, setShowAccessGate] = useState(false);
-  const [gateCompleted, setGateCompleted] = useState(false);
 
   // Check lead status after mount
   useEffect(() => {
-    const checkLeadStatus = () => {
-      const hasExistingLead = hasIdentity || !!anchorId;
-      setGateCompleted(hasExistingLead);
-      setShowAccessGate(!hasExistingLead);
-      setIsCheckingLead(false);
-    };
-
-    // Small delay to prevent flash
-    const timer = setTimeout(checkLeadStatus, 100);
+    const timer = setTimeout(() => setIsCheckingLead(false), 100);
     return () => clearTimeout(timer);
-  }, [hasIdentity, anchorId]);
+  }, []);
 
   // Track page view once lead check completes
   useEffect(() => {
@@ -57,32 +54,30 @@ const SampleReport = () => {
     }
   }, [isCheckingLead, hasLead, leadId, anchorId]);
 
-  // Prevent navigation away with unsaved state (soft warning)
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (showAccessGate && !gateCompleted) {
-        e.preventDefault();
-        e.returnValue = ''; // Triggers browser warning
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [showAccessGate, gateCompleted]);
-
-  const handleGateComplete = (newLeadId: string) => {
-    setShowAccessGate(false);
-    setGateCompleted(true);
-    trackEvent('sample_report_gate_complete', { lead_id: newLeadId });
+  // Handler for opening lead modal (passed to child components)
+  const handleOpenLeadModal = (ctaSource: string, preCheckConsent = false) => {
+    const existingLead = getLeadAnchor();
+    
+    if (existingLead) {
+      // Already captured - skip modal, go straight to scanner
+      trackEvent('sample_report_cta_click', {
+        cta_source: ctaSource,
+        lead_id: existingLead,
+        skipped_modal: true,
+      });
+      navigate(`${ROUTES.QUOTE_SCANNER}?lead=${existingLead}#upload`);
+    } else {
+      // Need to capture - show modal
+      setModalCtaSource(ctaSource);
+      setPreCheckPartnerConsent(preCheckConsent);
+      setShowLeadModal(true);
+    }
   };
 
-  const handleGateClose = () => {
-    // Only allow close if they already have a lead
-    if (hasLead) {
-      setShowAccessGate(false);
-      setGateCompleted(true);
-    }
-    // Otherwise, progressive gate logic handles it (stays open)
+  // Handle modal success (navigation happens in modal Step 2)
+  const handleLeadModalSuccess = (newLeadId: string) => {
+    setShowLeadModal(false);
+    navigate(`${ROUTES.QUOTE_SCANNER}?lead=${newLeadId}#upload`);
   };
 
   // Loading state (prevents content flash)
@@ -102,37 +97,26 @@ const SampleReport = () => {
     <div className="min-h-screen bg-background">
       <SEO title="Sample AI Report - See What Your Audit Looks Like | Window Man" description="View a real example of our AI window quote audit. See the scorecard, risk flags, and plain-English findings before you upload your own estimate. 100% free, no obligation." canonicalUrl="https://itswindowman.com/sample-report" />
       <Navbar />
-      <SampleReportHeader />
+      <SampleReportHeader onOpenLeadModal={handleOpenLeadModal} />
 
-      {/* Scroll Lock Wrapper (battle-tested iOS solution) */}
-      <ScrollLockWrapper enabled={showAccessGate}>
-        <SampleReportAccessGate 
-          isOpen={showAccessGate} 
-          onClose={handleGateClose} 
-          onSuccess={handleGateComplete} 
-        />
-      </ScrollLockWrapper>
+      {/* Lead Capture Modal (2-step flow) */}
+      <SampleReportLeadModal
+        isOpen={showLeadModal}
+        onClose={() => setShowLeadModal(false)}
+        onSuccess={handleLeadModalSuccess}
+        ctaSource={modalCtaSource}
+        preCheckPartnerConsent={preCheckPartnerConsent}
+      />
 
-      {/* Background Overlay (performance-optimized blur alternative) */}
-      {!gateCompleted && (
-        <div 
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm pointer-events-none" 
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Main Content (with inert for accessibility when gate is open) */}
-      <main 
-        className="pt-28"
-        {...(!gateCompleted && { inert: '' })}
-      >
-        <HeroSection />
+      {/* Main Content */}
+      <main className="pt-28">
+        <HeroSection onOpenLeadModal={handleOpenLeadModal} />
         <ComparisonSection />
         <ScoreboardSection />
         <PillarAccordionSection />
         <HowItWorksSection />
-        <LeverageOptionsSection />
-        <CloserSection />
+        <LeverageOptionsSection onOpenLeadModal={handleOpenLeadModal} />
+        <CloserSection onOpenLeadModal={handleOpenLeadModal} />
         <FAQSection />
       </main>
     </div>
