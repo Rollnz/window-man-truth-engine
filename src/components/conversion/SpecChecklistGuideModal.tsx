@@ -13,6 +13,8 @@ import { ArrowRight, CheckCircle2, Calendar, Phone, Home, Building2, MapPin, Clo
 import { trackModalOpen, trackEvent, trackConsultationBooked } from '@/lib/gtm';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { supabase } from '@/integrations/supabase/client';
+import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
+import { getFullAttributionData } from '@/lib/attribution';
 import { SOUTHEAST_STATES, DEFAULT_STATE } from '@/constants/states';
 
 interface SpecChecklistGuideModalProps {
@@ -55,7 +57,7 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
   const [capturedLeadId, setCapturedLeadId] = useState<string | null>(null);
   const [upsellType, setUpsellType] = useState<'measurement' | 'callback' | null>(null);
   const [formSubmitted, setFormSubmitted] = useState(false);
-  const { sessionData, updateFields } = useSessionData();
+  const { sessionData, updateFields, sessionId } = useSessionData();
 
   // Project details state
   const [projectDetails, setProjectDetails] = useState({
@@ -260,6 +262,13 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
           lastName: values.lastName,
           phone: phoneE164 || values.phone,
           sourceTool: 'consultation',
+          // Golden Thread fields for attribution tracking
+          leadId: capturedLeadId,
+          sessionId,
+          sessionData: {
+            clientId: getOrCreateAnonId(),
+          },
+          ...getFullAttributionData(),
           aiContext: {
             source_form: 'spec-checklist-guide-upsell',
             upsell_type: upsellType,
