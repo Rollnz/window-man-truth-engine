@@ -1,144 +1,308 @@
 
 
-# Add Section Tracking to Sample Report Components
+# Homepage Visual Enhancement Plan
 
 ## Overview
 
-Add `useSectionTracking` refs to all 8 sample-report section components to enable scroll-depth analytics. This is a **minimal, surgical update** - only adding the tracking hook and ref attachment, without modifying any existing logic, event names, or component behavior.
+Add premium visual polish to the FailurePointsSection with staggered scroll animations, gradient glow borders, and optional blueprint overlays. Two implementation paths provided.
 
-## Changes by Component
+---
 
-### 1. HeroSection.tsx
-**Lines affected:** 1, 34, 44
+## Option A: With Images (Higher Visual Impact)
 
-- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
-- Add hook call: `const sectionRef = useSectionTracking('hero');`
-- Add ref to section: `<section ref={sectionRef} className="relative py-16...">`
+Requires 4 custom images uploaded to `/public/images/homepage/`
 
-### 2. ComparisonSection.tsx
-**Lines affected:** 1, 24, 26
+### Image Specifications
 
-- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
-- Add hook call: `const sectionRef = useSectionTracking('comparison');`
-- Add ref to section: `<section ref={sectionRef} className="py-16...">`
+You would need to upload these 4 images:
 
-### 3. ScoreboardSection.tsx (Special Case)
-**Lines affected:** 4, 50
+**1. `wear-tear-diagram.svg` or `.png`**
+- Content: Window cross-section cutaway showing glass layers, spacer, and frame seal
+- Style: Technical drawing with thin lines (1-2px)
+- Color: Single color, works with CSS filter or native orange `#F97316`
+- Size: 500x400px, < 30KB
+- Transparency: Yes (PNG-24 or SVG)
 
-This component already has its own `IntersectionObserver` for animation. Instead of adding a second observer, we'll add the tracking call inside the existing observer:
+**2. `code-blueprint.svg` or `.png`**
+- Content: Architectural blueprint fragment with:
+  - "DP-50" annotation in a callout box
+  - Dimension lines with arrows
+  - Grid lines at ~45 degree angle
+  - "HVHZ" zone indicator
+- Style: Blueprint/technical drawing
+- Color: Monochrome (will be tinted via CSS)
+- Size: 600x400px, < 35KB
 
-- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';` at line 1
-- Add tracking ref alongside animation ref at line 48
-- Fire tracking event inside existing observer callback at line 50
+**3. `denied-document.svg` or `.png`**
+- Content: Faded insurance form/permit with:
+  - Horizontal lines suggesting text
+  - A checkbox area
+  - "CLAIM DENIED" or just "DENIED" stamp rotated -12deg
+- Style: Ghosted paperwork aesthetic
+- Color: Red tones for stamp, grey for document
+- Size: 500x600px, < 40KB
 
-**Alternative approach (cleaner):** Create a separate tracking ref and merge both refs on the section element using a callback ref pattern. However, the simplest approach is to just add the `trackEvent` call directly inside the existing observer when `isIntersecting` is true.
+**4. `estimate-invoice.svg` or `.png`**
+- Content: Itemized estimate/invoice showing:
+  - Line items with prices
+  - Subtotal, fees, total structure
+  - One line highlighted: "Hurricane Deductible: 2%"
+- Style: Clean receipt/invoice format
+- Color: Monochrome with one orange highlight
+- Size: 400x500px, < 35KB
 
-### 4. PillarAccordionSection.tsx
-**Lines affected:** 1, 42, 47
+### Implementation Changes
 
-- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
-- Add hook call: `const sectionRef = useSectionTracking('pillar_accordion');`
-- Add ref to section: `<section ref={sectionRef} className="py-16...">`
+#### 1. Update FailurePointsSection.tsx
 
-### 5. HowItWorksSection.tsx
-**Lines affected:** 1, 11, 13
-
-- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
-- Add hook call: `const sectionRef = useSectionTracking('how_it_works');`
-- Add ref to section: `<section ref={sectionRef} className="py-16...">`
-
-### 6. LeverageOptionsSection.tsx
-**Lines affected:** 1, 11, 28
-
-- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
-- Add hook call: `const sectionRef = useSectionTracking('leverage_options');`
-- Add ref to section: `<section ref={sectionRef} className="py-16...">`
-
-### 7. CloserSection.tsx
-**Lines affected:** 1, 7, 12
-
-- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
-- Add hook call: `const sectionRef = useSectionTracking('closer');`
-- Add ref to section: `<section ref={sectionRef} className="py-20...">`
-
-### 8. FAQSection.tsx
-**Lines affected:** 1, 44, 47
-
-- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
-- Add hook call: `const sectionRef = useSectionTracking('faq');`
-- Add ref to section: `<section ref={sectionRef} className="py-16...">`
-
-## Technical Details
-
-### ScoreboardSection Special Handling
-
-The existing observer fires when 30% visible (`threshold: 0.3`). The `useSectionTracking` hook fires at 50%. Two options:
-
-**Option A (Recommended):** Add tracking inside existing observer
-```typescript
-const observer = new IntersectionObserver(([entry]) => { 
-  if (entry.isIntersecting) { 
-    setIsVisible(true); 
-    // Add tracking here (one-time)
-    if (!hasTrackedSection.current) {
-      hasTrackedSection.current = true;
-      trackEvent('sample_report_section_view', {
-        section: 'scoreboard',
-        lead_id: getLeadAnchor(),
-        visibility_ratio: entry.intersectionRatio,
-        timestamp: Date.now()
-      });
-    }
-    observer.disconnect(); 
-  } 
-}, { threshold: 0.3 });
+```text
+Changes:
+- Import AnimateOnScroll component
+- Wrap each FailurePoint in AnimateOnScroll with staggered delays
+- Add relative positioning and overflow-hidden for overlay support
+- Add ghosted image as absolute-positioned background
+- Apply glow border gradient
 ```
 
-**Option B:** Use callback ref to merge two refs
-```typescript
-const trackingRef = useSectionTracking('scoreboard');
-const animationRef = useRef<HTMLElement>(null);
-
-const mergedRef = useCallback((node: HTMLElement | null) => {
-  animationRef.current = node;
-  (trackingRef as React.MutableRefObject<HTMLElement | null>).current = node;
-}, []);
+Structure per card:
+```
+<AnimateOnScroll delay={index * 100}>
+  <div class="relative overflow-hidden glow-border-secondary">
+    {/* Ghosted image overlay */}
+    <div class="absolute inset-0 opacity-[0.08] pointer-events-none hidden md:block">
+      <img src={backgroundImage} class="absolute right-[-10%] top-[-10%] w-[80%] h-auto" />
+    </div>
+    
+    {/* Existing card content */}
+    <FailurePoint ... />
+  </div>
+</AnimateOnScroll>
 ```
 
-I recommend **Option A** for simplicity - fewer moving parts.
+#### 2. Add CSS Utilities to index.css
 
-## What This Does NOT Change
+```css
+/* Glow border - warning/risk theme (Safety Orange) */
+.glow-border-secondary {
+  border: 1px solid transparent;
+  background: 
+    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+    linear-gradient(135deg, hsl(var(--secondary) / 0.4) 0%, transparent 50%) border-box;
+  transition: all 0.3s ease;
+}
 
-- Existing `trackEvent` calls (e.g., `sample_report_upload_click`, `partner_share_opt_in`)
-- Component logic, props, or state
-- Styling or layout
-- Any other event names
+.glow-border-secondary:hover {
+  background: 
+    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+    linear-gradient(135deg, hsl(var(--secondary) / 0.6) 0%, hsl(var(--secondary) / 0.2) 50%, transparent 80%) border-box;
+}
 
-## Analytics Events After Implementation
+/* Glow border - positive/solution theme (Primary Blue) */
+.glow-border-primary {
+  border: 1px solid transparent;
+  background: 
+    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+    linear-gradient(135deg, hsl(var(--primary) / 0.3) 0%, transparent 50%) border-box;
+}
 
-When users scroll through the sample report, these events will fire to GTM:
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .glow-border-secondary,
+  .glow-border-primary {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+```
 
-| Section | Event Name | Section Value |
-|---------|------------|---------------|
-| Hero | `sample_report_section_view` | `hero` |
-| Comparison | `sample_report_section_view` | `comparison` |
-| Scoreboard | `sample_report_section_view` | `scoreboard` |
-| Pillar Accordion | `sample_report_section_view` | `pillar_accordion` |
-| How It Works | `sample_report_section_view` | `how_it_works` |
-| Leverage Options | `sample_report_section_view` | `leverage_options` |
-| Closer | `sample_report_section_view` | `closer` |
-| FAQ | `sample_report_section_view` | `faq` |
+#### 3. File Structure
+
+```
+public/
+  images/
+    homepage/
+      wear-tear-diagram.svg
+      code-blueprint.svg  
+      denied-document.svg
+      estimate-invoice.svg
+```
+
+---
+
+## Option B: Without Images (Pure CSS, Faster Implementation)
+
+No image assets required. Uses geometric patterns and CSS gradients.
+
+### Implementation Changes
+
+#### 1. Update FailurePointsSection.tsx
+
+Same stagger animation approach, but replace image overlays with CSS patterns:
+
+```text
+Changes:
+- Import AnimateOnScroll component
+- Wrap each FailurePoint in AnimateOnScroll with staggered delays
+- Add glow border gradient
+- Add subtle geometric pattern overlay via CSS (no images)
+```
+
+Pattern approach per card type:
+```
+Card 1: Diagonal lines pattern (suggests inspection)
+Card 2: Grid/dot pattern (suggests blueprints)  
+Card 3: Horizontal lines (suggests document)
+Card 4: Stepped lines (suggests pricing tiers)
+```
+
+#### 2. CSS Pattern Overlays
+
+```css
+/* Technical pattern overlay - diagonal lines */
+.pattern-diagonal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background: repeating-linear-gradient(
+    45deg,
+    hsl(var(--secondary)),
+    hsl(var(--secondary)) 1px,
+    transparent 1px,
+    transparent 20px
+  );
+  pointer-events: none;
+}
+
+/* Blueprint pattern - grid dots */
+.pattern-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    hsl(var(--secondary)) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+  pointer-events: none;
+}
+
+/* Document pattern - horizontal lines */
+.pattern-lines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 18px,
+    hsl(var(--secondary)) 18px,
+    hsl(var(--secondary)) 19px
+  );
+  pointer-events: none;
+}
+```
+
+---
+
+## Shared Implementation (Both Options)
+
+### CTA Button Enhancement
+
+Add subtle "breathing" glow to primary CTAs:
+
+```css
+@keyframes cta-breathe {
+  0%, 100% { 
+    box-shadow: 0 0 20px hsl(var(--secondary) / 0.3); 
+  }
+  50% { 
+    box-shadow: 0 0 35px hsl(var(--secondary) / 0.5); 
+  }
+}
+
+.cta-glow {
+  animation: cta-breathe 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-glow {
+    animation: none;
+    box-shadow: 0 0 20px hsl(var(--secondary) / 0.3);
+  }
+}
+```
+
+### Mobile Considerations
+
+```css
+/* Mobile: faster stagger, no overlays */
+@media (max-width: 767px) {
+  .pattern-diagonal::before,
+  .pattern-grid::before,
+  .pattern-lines::before {
+    display: none;
+  }
+  
+  /* Reduce glow intensity on mobile */
+  .glow-border-secondary {
+    background: 
+      linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+      linear-gradient(135deg, hsl(var(--secondary) / 0.2) 0%, transparent 40%) border-box;
+  }
+}
+```
+
+---
+
+## Technical Implementation Details
+
+### Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/components/home/FailurePointsSection.tsx` | Add AnimateOnScroll wrapper with stagger, add overlay divs, add glow-border class |
+| `src/index.css` | Add `.glow-border-secondary`, `.glow-border-primary`, pattern classes, CTA animation |
+| `src/components/home/HeroSection.tsx` | Add `.cta-glow` class to primary Button |
+
+### Performance Guardrails
+
+- All animations use `transform` and `opacity` only (GPU-accelerated)
+- IntersectionObserver with `threshold: 0.3` (not 0 - prevents edge triggering)
+- Images lazy-loaded with `loading="lazy"` attribute
+- CSS patterns use `pointer-events: none` to avoid hit-test overhead
+- `will-change: transform, opacity` on animated elements
+
+### Accessibility
+
+- `prefers-reduced-motion` checks in AnimateOnScroll (already implemented)
+- CSS fallback for reduced motion users
+- No auto-playing animations that can't be stopped
+- Color contrast maintained (overlays at 3-8% opacity don't affect readability)
+
+---
+
+## Recommendation
+
+**Start with Option B (no images)** - it delivers 80% of the visual impact with:
+- Zero asset dependencies
+- Faster implementation
+- No image optimization needed
+- Easier to adjust/iterate
+
+**Add images later** if you want more brand-specific visuals. When ready, I can help specify exact image requirements for a designer or AI image generator.
+
+---
 
 ## Implementation Order
 
-1. HeroSection, ComparisonSection, HowItWorksSection, CloserSection, FAQSection (simple additions)
-2. PillarAccordionSection, LeverageOptionsSection (already have state, but no observer)
-3. ScoreboardSection (has existing observer - requires merge)
-
-## Validation
-
-After implementation, verify in browser console (dev mode):
-- Navigate to `/sample-report`
-- Scroll through page
-- Confirm `📊 GTM Event: sample_report_section_view` logs for each section (8 total)
+1. Add glow border CSS utilities
+2. Wrap FailurePoints in AnimateOnScroll with stagger delays
+3. Add pattern overlays (Option B) or image overlays (Option A)
+4. Add CTA breathing animation
+5. Test on mobile and with reduced-motion preference
+6. Verify performance in Chrome DevTools throttling
 
