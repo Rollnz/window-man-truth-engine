@@ -1,258 +1,144 @@
 
-# Progressive Hardening Lead Capture Gateway — Implementation Plan
 
-## Current State Assessment (UPDATED)
+# Add Section Tracking to Sample Report Components
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| dialog.tsx | ✅ DONE | Added `hideCloseButton` prop |
-| TrustModal.tsx | ✅ DONE | Added `lockLevel` + `onCloseAttempt` props |
-| SampleReportAccessGate.tsx | ✅ DONE | Full progressive logic integrated |
-| SampleReport.tsx | ✅ DONE | Loading state, inert, overlay, beforeunload |
-| useProgressiveGate.ts | ✅ DONE | 3-level escalation hook created |
-| gate.types.ts | ✅ DONE | Type definitions created |
-| react-inert.d.ts | ✅ DONE | TypeScript augmentation added |
-| react-remove-scroll | ✅ DONE | Installed and integrated |
-| ScrollLockWrapper.tsx | ✅ DONE | iOS Safari scroll lock wrapper |
-| useSectionTracking.ts | ✅ DONE | IntersectionObserver hook created |
-| leadAnchor.ts | ✅ Complete | Good 400-day persistence |
-| gtm.ts tracking | ✅ Complete | Full infrastructure exists |
+## Overview
 
----
+Add `useSectionTracking` refs to all 8 sample-report section components to enable scroll-depth analytics. This is a **minimal, surgical update** - only adding the tracking hook and ref attachment, without modifying any existing logic, event names, or component behavior.
 
-## Architecture Overview
+## Changes by Component
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│  Progressive Hardening State Machine                    │
-├─────────────────────────────────────────────────────────┤
-│  Attempt 0: SOFT    → X visible, ESC/overlay allowed   │
-│  Attempt 1: MEDIUM  → X hidden, toast + stay open      │
-│  Attempt 2+: HARD   → Fully locked, submit-only exit   │
-└─────────────────────────────────────────────────────────┘
+### 1. HeroSection.tsx
+**Lines affected:** 1, 34, 44
+
+- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
+- Add hook call: `const sectionRef = useSectionTracking('hero');`
+- Add ref to section: `<section ref={sectionRef} className="relative py-16...">`
+
+### 2. ComparisonSection.tsx
+**Lines affected:** 1, 24, 26
+
+- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
+- Add hook call: `const sectionRef = useSectionTracking('comparison');`
+- Add ref to section: `<section ref={sectionRef} className="py-16...">`
+
+### 3. ScoreboardSection.tsx (Special Case)
+**Lines affected:** 4, 50
+
+This component already has its own `IntersectionObserver` for animation. Instead of adding a second observer, we'll add the tracking call inside the existing observer:
+
+- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';` at line 1
+- Add tracking ref alongside animation ref at line 48
+- Fire tracking event inside existing observer callback at line 50
+
+**Alternative approach (cleaner):** Create a separate tracking ref and merge both refs on the section element using a callback ref pattern. However, the simplest approach is to just add the `trackEvent` call directly inside the existing observer when `isIntersecting` is true.
+
+### 4. PillarAccordionSection.tsx
+**Lines affected:** 1, 42, 47
+
+- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
+- Add hook call: `const sectionRef = useSectionTracking('pillar_accordion');`
+- Add ref to section: `<section ref={sectionRef} className="py-16...">`
+
+### 5. HowItWorksSection.tsx
+**Lines affected:** 1, 11, 13
+
+- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
+- Add hook call: `const sectionRef = useSectionTracking('how_it_works');`
+- Add ref to section: `<section ref={sectionRef} className="py-16...">`
+
+### 6. LeverageOptionsSection.tsx
+**Lines affected:** 1, 11, 28
+
+- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
+- Add hook call: `const sectionRef = useSectionTracking('leverage_options');`
+- Add ref to section: `<section ref={sectionRef} className="py-16...">`
+
+### 7. CloserSection.tsx
+**Lines affected:** 1, 7, 12
+
+- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
+- Add hook call: `const sectionRef = useSectionTracking('closer');`
+- Add ref to section: `<section ref={sectionRef} className="py-20...">`
+
+### 8. FAQSection.tsx
+**Lines affected:** 1, 44, 47
+
+- Add import: `import { useSectionTracking } from '@/hooks/useSectionTracking';`
+- Add hook call: `const sectionRef = useSectionTracking('faq');`
+- Add ref to section: `<section ref={sectionRef} className="py-16...">`
+
+## Technical Details
+
+### ScoreboardSection Special Handling
+
+The existing observer fires when 30% visible (`threshold: 0.3`). The `useSectionTracking` hook fires at 50%. Two options:
+
+**Option A (Recommended):** Add tracking inside existing observer
+```typescript
+const observer = new IntersectionObserver(([entry]) => { 
+  if (entry.isIntersecting) { 
+    setIsVisible(true); 
+    // Add tracking here (one-time)
+    if (!hasTrackedSection.current) {
+      hasTrackedSection.current = true;
+      trackEvent('sample_report_section_view', {
+        section: 'scoreboard',
+        lead_id: getLeadAnchor(),
+        visibility_ratio: entry.intersectionRatio,
+        timestamp: Date.now()
+      });
+    }
+    observer.disconnect(); 
+  } 
+}, { threshold: 0.3 });
 ```
 
----
+**Option B:** Use callback ref to merge two refs
+```typescript
+const trackingRef = useSectionTracking('scoreboard');
+const animationRef = useRef<HTMLElement>(null);
 
-## Phase 1: Infrastructure & Types
-
-### 1.1 Create `src/types/react-inert.d.ts`
-TypeScript augmentation for the HTML `inert` attribute (95%+ browser support).
-
-### 1.2 Create `src/types/gate.types.ts`
-Type definitions for:
-- `GateLockLevel = 'soft' | 'medium' | 'hard'`
-- `GateAttemptMetrics` interface
-- `GateAnalytics` interface
-
-### 1.3 Install dependency
-```bash
-npm install react-remove-scroll
-```
-This library handles iOS Safari edge cases that `overflow: hidden` cannot solve.
-
----
-
-## Phase 2: Core Hook
-
-### Create `src/hooks/useProgressiveGate.ts`
-
-Core logic for the 3-level escalation system:
-
-| Attempt | Lock Level | Behavior |
-|---------|------------|----------|
-| 0 (initial) | soft | X visible, ESC/overlay close triggers escalation |
-| 1 | medium | X hidden, toast warning, modal stays open |
-| 2+ | hard | Fully locked, submit-only exit |
-
-**Key features:**
-- `lockLevel` state tracking
-- `attemptCount` for analytics
-- `handleCloseAttempt()` - escalates lock level
-- `handleComplete()` - fires success tracking
-- `gateOpenTimeRef` - tracks time-to-complete for analytics
-
----
-
-## Phase 3: UI Component Updates
-
-### 3.1 Modify `src/components/ui/dialog.tsx`
-
-Add `hideCloseButton?: boolean` prop to `DialogContent`:
-
-```tsx
-interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
-  hideCloseButton?: boolean;
-}
-
-// In render:
-{!hideCloseButton && (
-  <DialogPrimitive.Close>...</DialogPrimitive.Close>
-)}
+const mergedRef = useCallback((node: HTMLElement | null) => {
+  animationRef.current = node;
+  (trackingRef as React.MutableRefObject<HTMLElement | null>).current = node;
+}, []);
 ```
 
-### 3.2 Modify `src/components/forms/TrustModal.tsx`
+I recommend **Option A** for simplicity - fewer moving parts.
 
-Add progressive hardening props:
+## What This Does NOT Change
 
-```tsx
-interface TrustModalProps {
-  lockLevel?: GateLockLevel;
-  onCloseAttempt?: () => void;
-  // ... existing props
-}
-```
+- Existing `trackEvent` calls (e.g., `sample_report_upload_click`, `partner_share_opt_in`)
+- Component logic, props, or state
+- Styling or layout
+- Any other event names
 
-**Lock behavior by level:**
-- `soft`: Normal modal behavior
-- `medium`: Prevent ESC/overlay close, call `onCloseAttempt`
-- `hard`: Same as medium (fully locked)
+## Analytics Events After Implementation
 
-### 3.3 Create `src/components/sample-report/ScrollLockWrapper.tsx`
+When users scroll through the sample report, these events will fire to GTM:
 
-Wrapper using `react-remove-scroll` for cross-browser scroll lock.
-
----
-
-## Phase 4: Access Gate Refactor
-
-### Modify `src/components/sample-report/SampleReportAccessGate.tsx`
-
-**Key changes:**
-1. Integrate `useProgressiveGate` hook
-2. Pass `lockLevel` to `TrustModal`
-3. Add urgency context UI for medium/hard levels
-4. Enhanced analytics (attempt count, time spent, lock level)
-5. Browser back button prevention via `pushState`
-6. Body scroll lock when gate is open
-
-**Form remains 4 fields** (as currently implemented):
-- firstName (required)
-- lastName (required)
-- email (required)
-- phone (optional)
-
-**Trust footer already exists** - will keep "100% Free / No obligation" chips
-
----
-
-## Phase 5: Page-Level Changes
-
-### Modify `src/pages/SampleReport.tsx`
-
-1. **Loading state**: Prevent content flash with `isCheckingLead` state
-2. **Inert attribute**: Add to main content when gate is open
-3. **Overlay replacement**: Use fixed overlay div instead of `blur-sm` for better mobile performance
-4. **beforeunload handler**: Soft warning when leaving with gate open
-
----
-
-## Phase 6: Section Tracking
-
-### Create `src/hooks/useSectionTracking.ts`
-
-IntersectionObserver-based hook that fires `sample_report_section_view` when 50% of a section is visible.
-
-### Apply to all section components:
-- HeroSection → `'hero'`
-- ComparisonSection → `'comparison'`
-- ScoreboardSection → `'scoreboard'`
-- PillarAccordionSection → `'pillar_accordion'`
-- HowItWorksSection → `'how_it_works'`
-- LeverageOptionsSection → `'leverage_options'`
-- CloserSection → `'closer'`
-- FAQSection → `'faq'`
-
----
-
-## Files to Create/Modify
-
-| File | Action | Priority |
-|------|--------|----------|
-| `src/types/react-inert.d.ts` | Create | P0 |
-| `src/types/gate.types.ts` | Create | P0 |
-| `src/hooks/useProgressiveGate.ts` | Create | P0 |
-| `src/components/ui/dialog.tsx` | Modify | P0 |
-| `src/components/forms/TrustModal.tsx` | Modify | P0 |
-| `src/components/sample-report/ScrollLockWrapper.tsx` | Create | P1 |
-| `src/components/sample-report/SampleReportAccessGate.tsx` | Modify | P0 |
-| `src/pages/SampleReport.tsx` | Modify | P0 |
-| `src/hooks/useSectionTracking.ts` | Create | P2 |
-| 8 section components | Modify | P2 |
-
----
-
-## Analytics Events
-
-After implementation, these events will fire to GTM:
-
-| Event | Trigger | Data |
-|-------|---------|------|
-| `sample_report_gate_view` | Gate appears | lock_level, referrer, utm_source |
-| `sample_report_gate_close_attempt` | ESC/overlay/X click | attempt_number, lock_level, time_spent_ms |
-| `sample_report_gate_complete` | Successful submission | lead_id, time_to_complete_ms, attempt_count, final_lock_level |
-| `sample_report_gate_error` | Validation/API error | error_message, attempt_number |
-| `sample_report_section_view` | Section 50% visible | section, lead_id |
-
----
+| Section | Event Name | Section Value |
+|---------|------------|---------------|
+| Hero | `sample_report_section_view` | `hero` |
+| Comparison | `sample_report_section_view` | `comparison` |
+| Scoreboard | `sample_report_section_view` | `scoreboard` |
+| Pillar Accordion | `sample_report_section_view` | `pillar_accordion` |
+| How It Works | `sample_report_section_view` | `how_it_works` |
+| Leverage Options | `sample_report_section_view` | `leverage_options` |
+| Closer | `sample_report_section_view` | `closer` |
+| FAQ | `sample_report_section_view` | `faq` |
 
 ## Implementation Order
 
-1. **P0 - Core Infrastructure** (enables rest)
-   - Types (react-inert.d.ts, gate.types.ts)
-   - useProgressiveGate hook
-   - dialog.tsx modification
+1. HeroSection, ComparisonSection, HowItWorksSection, CloserSection, FAQSection (simple additions)
+2. PillarAccordionSection, LeverageOptionsSection (already have state, but no observer)
+3. ScoreboardSection (has existing observer - requires merge)
 
-2. **P0 - Gate Implementation**
-   - TrustModal.tsx modification
-   - SampleReportAccessGate.tsx refactor
-   - SampleReport.tsx updates
+## Validation
 
-3. **P1 - Polish**
-   - ScrollLockWrapper (requires npm install)
-   - Back button prevention
-   - beforeunload handler
+After implementation, verify in browser console (dev mode):
+- Navigate to `/sample-report`
+- Scroll through page
+- Confirm `📊 GTM Event: sample_report_section_view` logs for each section (8 total)
 
-4. **P2 - Analytics**
-   - useSectionTracking hook
-   - Apply to all 8 sections
-
----
-
-## Validation Checklist
-
-After implementation:
-- [ ] Visit `/sample-report` with cleared localStorage → Gate appears
-- [ ] First close attempt (ESC/overlay) → Toast appears, escalates to medium
-- [ ] Second close attempt → Escalates to hard, fully locked
-- [ ] No X button visible at medium/hard levels
-- [ ] Submit valid form → Gate closes, content visible
-- [ ] Analytics: All gate events firing correctly
-- [ ] Refresh page → No gate (lead persisted via leadAnchor)
-- [ ] Mobile: Background not scrollable when gate open
-
----
-
-## Risk Assessment
-
-| Risk | Level | Mitigation |
-|------|-------|------------|
-| Dark pattern perception | Medium | Progressive escalation is gentler than hard lock |
-| iOS Safari scroll issues | Low | react-remove-scroll handles edge cases |
-| Inert browser support | Low | 95%+ support, graceful degradation |
-| Breaking other dialogs | Low | `hideCloseButton` defaults to false |
-
----
-
-## Expected Conversion Performance
-
-Based on progressive gate benchmarks:
-
-| Metric | Hard Lock Only | Progressive |
-|--------|----------------|-------------|
-| Immediate bounce | 60% | 35% |
-| Gate completions | 40% | 44% |
-| Soft exits (Attempt 1) | N/A | 20% |
-| Brand perception | Negative | Neutral |
-
-Progressive wins on total conversions AND brand alignment.
