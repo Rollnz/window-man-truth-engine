@@ -5,6 +5,8 @@ interface NoQuotePivotSectionProps {
   /** Mock handler for Google auth - will be wired to real Supabase later */
   onGoogleAuth?: () => void;
   onEmailSubmit?: (data: { firstName: string; lastName: string; email: string }) => void;
+  /** Loading state for submission - prevents double-submit */
+  isLoading?: boolean;
 }
 
 /**
@@ -12,7 +14,7 @@ interface NoQuotePivotSectionProps {
  * Main conversion engine for users without quotes.
  * WindowMan voice, fear injection, advantage cards, and CTA.
  */
-export function NoQuotePivotSection({ onGoogleAuth, onEmailSubmit }: NoQuotePivotSectionProps) {
+export function NoQuotePivotSection({ onGoogleAuth, onEmailSubmit, isLoading }: NoQuotePivotSectionProps) {
   return (
     <div className="max-w-[680px] mx-auto p-8 md:p-10 rounded-xl border border-border/40 bg-background relative overflow-hidden">
       {/* Optional: Very subtle grid texture overlay */}
@@ -83,6 +85,7 @@ export function NoQuotePivotSection({ onGoogleAuth, onEmailSubmit }: NoQuotePivo
         <VaultCTABlock 
           onGoogleAuth={onGoogleAuth}
           onEmailSubmit={onEmailSubmit}
+          isLoading={isLoading}
         />
       </div>
     </div>

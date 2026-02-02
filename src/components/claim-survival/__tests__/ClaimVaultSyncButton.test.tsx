@@ -146,11 +146,11 @@ describe('ClaimVaultSyncButton', () => {
       render(<ClaimVaultSyncButton analysis={mockAnalysis} />);
       
       const firstNameInput = screen.getByLabelText(/first name/i);
-      await user.type(firstNameInput, 'Jo');
+      await user.type(firstNameInput, 'A');
       fireEvent.blur(firstNameInput);
       
       await waitFor(() => {
-        expect(screen.getByText(/first name must be at least 3 characters/i)).toBeInTheDocument();
+        expect(screen.getByText(/first name must be at least 2 characters/i)).toBeInTheDocument();
       });
     });
 
@@ -213,7 +213,7 @@ describe('ClaimVaultSyncButton', () => {
       await user.click(screen.getByRole('button', { name: /save to my vault/i }));
       
       await waitFor(() => {
-        expect(screen.getByText(/first name must be at least 3 characters/i)).toBeInTheDocument();
+        expect(screen.getByText(/first name must be at least 2 characters/i)).toBeInTheDocument();
         expect(screen.getByText(/email is required/i)).toBeInTheDocument();
       });
     });
