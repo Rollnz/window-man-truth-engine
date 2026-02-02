@@ -7,6 +7,8 @@ import { NameInputPair, normalizeNameFields } from '@/components/ui/NameInputPai
 import { generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
+import { emailInputProps, phoneInputProps } from '@/lib/formAccessibility';
+import { formMicroCopy } from '@/components/forms/InlineFieldStatus';
 import type { EstimateFormData } from '../EstimateSlidePanel';
 
 interface ContactDetailsStepProps {
@@ -123,15 +125,19 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
         <Input
           id="email"
           name="email"
-          type="email"
-          autoComplete="email"
+          {...emailInputProps}
           placeholder="john@example.com"
           value={formData.email}
           onChange={(e) => updateFormData({ email: e.target.value })}
           className={errors.email ? 'border-destructive' : ''}
+          aria-invalid={!!errors.email}
+          aria-describedby={errors.email ? 'email-error' : 'email-hint'}
+          tabIndex={0}
         />
-        {errors.email && (
-          <p className="text-sm text-destructive">{errors.email}</p>
+        {errors.email ? (
+          <p id="email-error" className="text-sm text-destructive" role="alert">{errors.email}</p>
+        ) : (
+          <p id="email-hint" className="text-xs text-muted-foreground">{formMicroCopy.email}</p>
         )}
       </div>
 
@@ -144,19 +150,20 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
         <Input
           id="phone"
           name="phone"
-          type="tel"
-          autoComplete="tel"
+          {...phoneInputProps}
           placeholder="(555) 123-4567"
           value={formData.phone}
           onChange={handlePhoneChange}
           className={errors.phone ? 'border-destructive' : ''}
+          aria-invalid={!!errors.phone}
+          aria-describedby={errors.phone ? 'phone-error' : 'phone-hint'}
+          tabIndex={0}
         />
-        {errors.phone && (
-          <p className="text-sm text-destructive">{errors.phone}</p>
+        {errors.phone ? (
+          <p id="phone-error" className="text-sm text-destructive" role="alert">{errors.phone}</p>
+        ) : (
+          <p id="phone-hint" className="text-xs text-muted-foreground">{formMicroCopy.phone}</p>
         )}
-        <p className="text-xs text-muted-foreground">
-          We'll only call if you request it. No spam, ever.
-        </p>
       </div>
 
       {/* Next Button */}

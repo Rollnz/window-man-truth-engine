@@ -61,6 +61,7 @@ const FairPriceQuiz = lazy(() => import("./pages/FairPriceQuiz"));
 const ButtonAudit = lazy(() => import("./pages/ButtonAudit"));
 const Proof = lazy(() => import("./pages/Proof"));
 const Consultation = lazy(() => import("./pages/Consultation"));
+const Audit = lazy(() => import("./pages/Audit"));
 
 // Semantic Pillar Pages
 const WindowCostTruth = lazy(() => import("./pages/WindowCostTruth"));
@@ -142,6 +143,7 @@ function AppContent() {
         ============================================ */}
         <Route path="/auth" element={<Auth />} />
         <Route path="/vault" element={<Suspense fallback={<PageLoader />}><AuthGuard><Vault /></AuthGuard></Suspense>} />
+        <Route path="/audit" element={<Audit />} />
         
         {/* Admin Routes - wrapped with AdminLayout for global search */}
         <Route element={<AdminLayout />}>

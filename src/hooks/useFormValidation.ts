@@ -160,9 +160,9 @@ export const commonSchemas = {
     .min(1, 'Name is required')
     .max(100, 'Name is too long'),
   
-  // First name - required, min 3 chars
+  // First name - required, min 2 chars (allows valid short names like Al, Bo, Jo)
   firstName: z.string()
-    .min(3, 'First name must be at least 3 characters')
+    .min(2, 'First name must be at least 2 characters')
     .max(50, 'First name is too long'),
   
   // Last name - optional for EMQ

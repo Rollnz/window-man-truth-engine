@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
 import { useSessionData } from '@/hooks/useSessionData';
@@ -12,6 +13,9 @@ import { ArrowRight, CheckCircle2, Calendar, Phone, Home, Building2, MapPin, Clo
 import { trackModalOpen, trackEvent, trackConsultationBooked } from '@/lib/gtm';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { supabase } from '@/integrations/supabase/client';
+import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
+import { getFullAttributionData } from '@/lib/attribution';
+import { SOUTHEAST_STATES, DEFAULT_STATE } from '@/constants/states';
 
 interface KitchenTableGuideModalProps {
   isOpen: boolean;
@@ -52,7 +56,7 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
   const [lastNameNudge, setLastNameNudge] = useState(false);
   const [capturedLeadId, setCapturedLeadId] = useState<string | null>(null);
   const [upsellType, setUpsellType] = useState<'measurement' | 'callback' | null>(null);
-  const { sessionData, updateFields } = useSessionData();
+  const { sessionData, updateFields, sessionId } = useSessionData();
 
   // Project details state
   const [projectDetails, setProjectDetails] = useState({
@@ -66,6 +70,7 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
   // Location details state
   const [locationDetails, setLocationDetails] = useState({
     city: '',
+    state: DEFAULT_STATE,
     zipCode: '',
     remark: '',
   });
@@ -130,6 +135,7 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
       });
       setLocationDetails({
         city: '',
+        state: DEFAULT_STATE,
         zipCode: '',
         remark: '',
       });
@@ -211,6 +217,7 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
     // Persist location to session
     updateFields({
       city: locationDetails.city,
+      state: locationDetails.state,
       zipCode: locationDetails.zipCode,
       notes: locationDetails.remark,
     });
@@ -226,15 +233,23 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
           lastName: values.lastName,
           phone: phoneE164 || values.phone,
           sourceTool: 'consultation',
+          // Golden Thread fields for attribution tracking
+          leadId: capturedLeadId,
+          sessionId,
+          sessionData: {
+            clientId: getOrCreateAnonId(),
+          },
+          ...getFullAttributionData(),
           aiContext: {
             source_form: 'kitchen-table-guide-upsell',
             upsell_type: upsellType,
             property_type: projectDetails.propertyType,
             property_status: projectDetails.propertyStatus,
             window_reasons: projectDetails.windowReasons,
-            window_count: projectDetails.windowCount, // Now accepts string ranges
+            window_count: projectDetails.windowCount,
             timeframe: projectDetails.timeframe,
             city: locationDetails.city,
+            state: locationDetails.state,
             zip_code: locationDetails.zipCode,
             remark: locationDetails.remark,
           },
@@ -310,6 +325,10 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
             <Input 
               id="modal-email" 
               type="email" 
+              inputMode="email"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
               {...getFieldProps('email')} 
               placeholder="Email address" 
               className={`${inputBaseClass} border-black ${hasError('email') ? 'border-destructive' : ''}`}
@@ -328,6 +347,7 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
             <Input 
               id="modal-phone" 
               type="tel" 
+              inputMode="tel"
               {...getFieldProps('phone')} 
               placeholder="Phone" 
               className={`${inputBaseClass} border-black placeholder:text-slate-500`}
@@ -545,19 +565,44 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
         </h2>
       </div>
 
+      {/* City - Full Width */}
+      <div>
+        <Label htmlFor="city" className="text-sm font-medium text-slate-700 mb-1 block flex items-center gap-1">
+          <MapPin className="w-4 h-4" /> City
+        </Label>
+        <Input
+          id="city"
+          value={locationDetails.city}
+          onChange={(e) => setLocationDetails(prev => ({ ...prev, city: e.target.value }))}
+          placeholder="Miami"
+          className={`${inputBaseClass} border-black`}
+          autoComplete="address-level2"
+        />
+      </div>
+
+      {/* State + Zip Code - Split Row */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label htmlFor="city" className="text-sm font-medium text-slate-700 mb-1 block flex items-center gap-1">
-            <MapPin className="w-4 h-4" /> City
-          </Label>
-          <Input
-            id="city"
-            value={locationDetails.city}
-            onChange={(e) => setLocationDetails(prev => ({ ...prev, city: e.target.value }))}
-            placeholder="Miami"
-            className={`${inputBaseClass} border-black`}
-            autoComplete="address-level2"
-          />
+          <Label htmlFor="state" className="text-sm font-medium text-slate-700 mb-1 block">State</Label>
+          <Select
+            value={locationDetails.state}
+            onValueChange={(value) => setLocationDetails(prev => ({ ...prev, state: value }))}
+          >
+            <SelectTrigger 
+              id="state"
+              className="bg-white border border-black focus:ring-2 focus:ring-primary/25"
+              aria-label="Select state"
+            >
+              <SelectValue placeholder="Select state" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border border-slate-200 shadow-lg z-50">
+              {SOUTHEAST_STATES.map(({ value, label }) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Label htmlFor="zipCode" className="text-sm font-medium text-slate-700 mb-1 block">Zip Code</Label>

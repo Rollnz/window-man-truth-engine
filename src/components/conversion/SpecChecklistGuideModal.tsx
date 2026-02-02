@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
 import { useSessionData } from '@/hooks/useSessionData';
@@ -12,6 +13,9 @@ import { ArrowRight, CheckCircle2, Calendar, Phone, Home, Building2, MapPin, Clo
 import { trackModalOpen, trackEvent, trackConsultationBooked } from '@/lib/gtm';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { supabase } from '@/integrations/supabase/client';
+import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
+import { getFullAttributionData } from '@/lib/attribution';
+import { SOUTHEAST_STATES, DEFAULT_STATE } from '@/constants/states';
 
 interface SpecChecklistGuideModalProps {
   isOpen: boolean;
@@ -53,7 +57,7 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
   const [capturedLeadId, setCapturedLeadId] = useState<string | null>(null);
   const [upsellType, setUpsellType] = useState<'measurement' | 'callback' | null>(null);
   const [formSubmitted, setFormSubmitted] = useState(false);
-  const { sessionData, updateFields } = useSessionData();
+  const { sessionData, updateFields, sessionId } = useSessionData();
 
   // Project details state
   const [projectDetails, setProjectDetails] = useState({
@@ -67,6 +71,7 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
   // Location details state
   const [locationDetails, setLocationDetails] = useState({
     city: '',
+    state: DEFAULT_STATE,
     zipCode: '',
     remark: '',
   });
@@ -132,6 +137,7 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
       });
       setLocationDetails({
         city: '',
+        state: DEFAULT_STATE,
         zipCode: '',
         remark: '',
       });
@@ -240,6 +246,7 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
     // Persist location to session
     updateFields({
       city: locationDetails.city,
+      state: locationDetails.state,
       zipCode: locationDetails.zipCode,
       notes: locationDetails.remark,
     });
@@ -255,6 +262,13 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
           lastName: values.lastName,
           phone: phoneE164 || values.phone,
           sourceTool: 'consultation',
+          // Golden Thread fields for attribution tracking
+          leadId: capturedLeadId,
+          sessionId,
+          sessionData: {
+            clientId: getOrCreateAnonId(),
+          },
+          ...getFullAttributionData(),
           aiContext: {
             source_form: 'spec-checklist-guide-upsell',
             upsell_type: upsellType,
@@ -264,6 +278,7 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
             window_count: projectDetails.windowCount,
             timeframe: projectDetails.timeframe,
             city: locationDetails.city,
+            state: locationDetails.state,
             zip_code: locationDetails.zipCode,
             remark: locationDetails.remark,
           },
@@ -339,6 +354,10 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
             <Input 
               id="modal-email" 
               type="email" 
+              inputMode="email"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
               {...getFieldProps('email')} 
               placeholder="Email address" 
               className={`${inputBaseClass} border-black ${hasError('email') ? 'border-destructive' : ''}`}
@@ -357,6 +376,7 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
             <Input 
               id="modal-phone" 
               type="tel" 
+              inputMode="tel"
               {...getFieldProps('phone')} 
               placeholder="Phone" 
               className={`${inputBaseClass} border-black placeholder:text-slate-500`}
@@ -574,19 +594,44 @@ export function SpecChecklistGuideModal({ isOpen, onClose, onSuccess }: SpecChec
         </h2>
       </div>
 
+      {/* City - Full Width */}
+      <div>
+        <Label htmlFor="spec-city" className="text-sm font-medium text-slate-700 mb-1 block flex items-center gap-1">
+          <MapPin className="w-4 h-4" /> City
+        </Label>
+        <Input
+          id="spec-city"
+          value={locationDetails.city}
+          onChange={(e) => setLocationDetails(prev => ({ ...prev, city: e.target.value }))}
+          placeholder="Miami"
+          className={`${inputBaseClass} border-black`}
+          autoComplete="address-level2"
+        />
+      </div>
+
+      {/* State + Zip Code - Split Row */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label htmlFor="spec-city" className="text-sm font-medium text-slate-700 mb-1 block flex items-center gap-1">
-            <MapPin className="w-4 h-4" /> City
-          </Label>
-          <Input
-            id="spec-city"
-            value={locationDetails.city}
-            onChange={(e) => setLocationDetails(prev => ({ ...prev, city: e.target.value }))}
-            placeholder="Miami"
-            className={`${inputBaseClass} border-black`}
-            autoComplete="address-level2"
-          />
+          <Label htmlFor="spec-state" className="text-sm font-medium text-slate-700 mb-1 block">State</Label>
+          <Select
+            value={locationDetails.state}
+            onValueChange={(value) => setLocationDetails(prev => ({ ...prev, state: value }))}
+          >
+            <SelectTrigger 
+              id="spec-state"
+              className="bg-white border border-black focus:ring-2 focus:ring-primary/25"
+              aria-label="Select state"
+            >
+              <SelectValue placeholder="Select state" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border border-slate-200 shadow-lg z-50">
+              {SOUTHEAST_STATES.map(({ value, label }) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Label htmlFor="spec-zipCode" className="text-sm font-medium text-slate-700 mb-1 block">Zip Code</Label>

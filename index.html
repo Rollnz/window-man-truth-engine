@@ -14,10 +14,13 @@
 
     <!-- Resource Hints for Critical Third-Party Domains -->
     <link rel="preconnect" href="https://uzulqexlgavggcyizabf.supabase.co" crossorigin />
-    <link rel="dns-prefetch" href="https://lunaa.itswindowman.com" />
+    <link rel="preconnect" href="https://lunaa.itswindowman.com" crossorigin />
+    <link rel="preconnect" href="https://connect.facebook.net" crossorigin />
+    <link rel="preconnect" href="https://scripts.clarity.ms" crossorigin />
+    <link rel="dns-prefetch" href="https://www.facebook.com" />
     
-    <!-- Preload LCP Candidate (Navbar Logo) -->
-    <link rel="preload" href="/icon-512.webp" as="image" type="image/webp" />
+    <!-- Preload LCP Candidate (Navbar Logo) with high priority -->
+    <link rel="preload" href="/icon-512.webp" as="image" type="image/webp" fetchpriority="high" />
 
     <!-- Google Tag Manager -->
     <script>

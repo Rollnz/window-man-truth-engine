@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import {
   DialogContent,
   DialogDescription,
@@ -14,6 +15,10 @@ import { cn } from "@/lib/utils";
  * All conversion modals should use TrustModal; do NOT reintroduce
  * per-input dark-mode overrides. The FormSurfaceProvider inside
  * ensures all Input/Textarea/Select components auto-style correctly.
+ * 
+ * ACCESSIBILITY FIX: Always renders DialogTitle and DialogDescription
+ * (using VisuallyHidden fallbacks when no props provided) to ensure
+ * Radix focus trap works correctly on all browsers (especially Firefox).
  * 
  * @example
  * <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -60,24 +65,46 @@ export function TrustModal({
       )}
       {...props}
     >
-      {/* Header with title/description if provided */}
-      {(modalTitle || modalDescription) && (
+      {/* 
+        ACCESSIBILITY: Always render DialogTitle and DialogDescription 
+        for proper focus trap and screen reader support.
+        Use VisuallyHidden when no visible title/description is provided.
+      */}
+      {modalTitle || modalDescription ? (
         <DialogHeader
           className={cn(
             headerAlign === 'center' && "text-center items-center",
           )}
         >
-          {modalTitle && (
+          {modalTitle ? (
             <DialogTitle className="text-slate-900 dark:text-slate-900">
               {modalTitle}
             </DialogTitle>
+          ) : (
+            <VisuallyHidden.Root asChild>
+              <DialogTitle>Form Modal</DialogTitle>
+            </VisuallyHidden.Root>
           )}
-          {modalDescription && (
+          {modalDescription ? (
             <DialogDescription className="text-slate-600 dark:text-slate-600">
               {modalDescription}
             </DialogDescription>
+          ) : (
+            <VisuallyHidden.Root asChild>
+              <DialogDescription>Complete the form below</DialogDescription>
+            </VisuallyHidden.Root>
           )}
         </DialogHeader>
+      ) : (
+        /* No visible header - still need accessible names for focus trap */
+        <>
+          <VisuallyHidden.Root asChild>
+            <DialogTitle>Form Modal</DialogTitle>
+          </VisuallyHidden.Root>
+          <VisuallyHidden.Root asChild>
+            <DialogDescription>Complete the form below</DialogDescription>
+          </VisuallyHidden.Root>
+        </>
       )}
 
       {/* 

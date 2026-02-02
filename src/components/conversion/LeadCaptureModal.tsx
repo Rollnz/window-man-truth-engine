@@ -46,9 +46,6 @@ export function LeadCaptureModal({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [firstName, setFirstName] = useState(sessionData.firstName || '');
-  const [lastName, setLastName] = useState(sessionData.lastName || '');
-  const [phone, setPhone] = useState(sessionData.phone || '');
   const [modalOpenTime, setModalOpenTime] = useState<number>(0);
 
   // Golden Thread: Use hook as fallback if leadId prop not provided
@@ -66,18 +63,27 @@ export function LeadCaptureModal({
 
   const requiresFullContact = sourceTool === 'quote-scanner';
 
+  // Unified form state - single source of truth for all fields
   const { values, hasError, getError, getFieldProps, validateAll, setValue } = useFormValidation({
     initialValues: { 
       email: sessionData.email || '',
       firstName: sessionData.firstName || '',
       lastName: sessionData.lastName || '',
+      phone: sessionData.phone || '',
     },
     schemas: { 
       email: commonSchemas.email,
       firstName: requiresFullContact ? commonSchemas.firstName : commonSchemas.firstName.optional(),
       lastName: commonSchemas.lastName,
+      phone: requiresFullContact ? commonSchemas.phone : commonSchemas.phone.optional(),
     },
   });
+
+  // Strict validation for UX - button only enables when form will actually pass validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const hasValidEmail = values.email.trim() && emailRegex.test(values.email);
+  const hasValidPhone = !requiresFullContact || (values.phone.replace(/\D/g, '').length === 10);
+  const isFormValid = hasValidEmail && (!requiresFullContact || (values.firstName.trim() && hasValidPhone));
 
   // Track modal open - fires ONLY when modal opens, not on form changes
   useEffect(() => {
@@ -115,11 +121,11 @@ export function LeadCaptureModal({
       return;
     }
 
-    // For quote-scanner, require name and phone
-    if (requiresFullContact && (!firstName.trim() || !phone.trim())) {
+    // For quote-scanner, require name and phone (already checked via isFormValid)
+    if (requiresFullContact && !isFormValid) {
       toast({
         title: 'Missing Information',
-        description: 'Please enter your name and phone number.',
+        description: 'Please complete all required fields.',
         variant: 'destructive',
       });
       return;
@@ -127,8 +133,8 @@ export function LeadCaptureModal({
 
     setIsLoading(true);
 
-    // Normalize name fields
-    const normalizedNames = normalizeNameFields(firstName || values.firstName, lastName || values.lastName);
+    // Normalize name fields - single source of truth from validation hook
+    const normalizedNames = normalizeNameFields(values.firstName, values.lastName);
 
     try {
       const response = await fetch(
@@ -143,7 +149,7 @@ export function LeadCaptureModal({
             email: values.email.trim(),
             firstName: normalizedNames.firstName || null,
             lastName: normalizedNames.lastName || null,
-            phone: phone.trim() || sessionData.phone || null,
+            phone: values.phone.trim() || sessionData.phone || null,
             sourceTool,
             sessionData: {
               ...(sessionData || {}),
@@ -204,10 +210,10 @@ export function LeadCaptureModal({
             conversionAction: 'form_submit',
           },
           values.email.trim(),
-          phone.trim() || undefined,
+          values.phone.trim() || undefined,
           {
             hasName: !!normalizedNames.firstName,
-            hasPhone: !!phone.trim(),
+            hasPhone: !!values.phone.trim(),
             hasProjectDetails: !!sessionData.windowCount,
           }
         );
@@ -216,7 +222,7 @@ export function LeadCaptureModal({
         await trackLeadSubmissionSuccess({
           leadId: data.leadId,
           email: values.email.trim(),
-          phone: phone.trim() || undefined,
+          phone: values.phone.trim() || undefined,
           firstName: normalizedNames.firstName,
           lastName: normalizedNames.lastName || undefined,
           // Location data from sessionData if available
@@ -375,10 +381,10 @@ export function LeadCaptureModal({
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               {requiresFullContact && (
                 <NameInputPair
-                  firstName={firstName}
-                  lastName={lastName}
-                  onFirstNameChange={setFirstName}
-                  onLastNameChange={setLastName}
+                  firstName={values.firstName}
+                  lastName={values.lastName}
+                  onFirstNameChange={(v) => setValue('firstName', v)}
+                  onLastNameChange={(v) => setValue('lastName', v)}
                   errors={{ firstName: hasError('firstName') ? getError('firstName') : undefined }}
                   disabled={isLoading}
                   autoFocus
@@ -420,9 +426,9 @@ export function LeadCaptureModal({
                     type="tel"
                     autoComplete="tel"
                     placeholder="(555) 123-4567"
-                    value={phone}
-                    onBlur={() => phone && trackFieldEntry('phone')}
-                    onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
+                    value={values.phone}
+                    onBlur={() => values.phone && trackFieldEntry('phone')}
+                    onChange={(e) => setValue('phone', formatPhoneNumber(e.target.value))}
                     disabled={isLoading}
                   />
                 </div>
@@ -432,7 +438,7 @@ export function LeadCaptureModal({
                 type="submit"
                 variant="cta"
                 className="w-full"
-                disabled={isLoading || !values.email.trim() || (requiresFullContact && (!firstName.trim() || !phone.trim()))}
+                disabled={isLoading || !isFormValid}
               >
                 {isLoading ? (
                   <>

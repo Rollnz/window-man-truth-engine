@@ -22,6 +22,7 @@ import { logBookingConfirmed } from "@/lib/highValueSignals";
 import type { SourceTool } from "@/types/sourceTool";
 import { TrustModal } from "@/components/forms/TrustModal";
 import { NameInputPair, normalizeNameFields } from "@/components/ui/NameInputPair";
+import { emailInputProps, phoneInputProps } from "@/lib/formAccessibility";
 
 interface ConsultationBookingModalProps {
   isOpen: boolean;
@@ -181,11 +182,17 @@ export function ConsultationBookingModal({
           setLeadAnchor(data.leadId);
           
           // 🔐 CANONICAL SCORING: Award points for lead capture
-          await awardScore({
-            eventType: 'LEAD_CAPTURED',
-            sourceEntityType: 'lead',
-            sourceEntityId: data.leadId,
-          });
+          // Wrapped in try/catch to silently handle 403 ownership errors
+          try {
+            await awardScore({
+              eventType: 'LEAD_CAPTURED',
+              sourceEntityType: 'lead',
+              sourceEntityId: data.leadId,
+            });
+          } catch (scoreError) {
+            // Silently handle ownership validation failures (403)
+            console.debug('[ConsultationBookingModal] Score award failed (non-blocking):', scoreError);
+          }
         }
         
         // Enriched dataLayer push for consultation completion
@@ -345,10 +352,9 @@ export function ConsultationBookingModal({
                 <Input
                   id="consult-email"
                   name="email"
-                  type="email"
-                  autoComplete="email"
                   placeholder="you@example.com"
                   {...emailProps}
+                  {...emailInputProps}
                   disabled={isLoading}
                   className={`h-9 ${hasError("email") ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   aria-invalid={hasError("email")}
@@ -368,10 +374,9 @@ export function ConsultationBookingModal({
                 <Input
                   id="phone"
                   name="phone"
-                  type="tel"
-                  autoComplete="tel"
                   placeholder="(555) 123-4567"
                   {...phoneProps}
+                  {...phoneInputProps}
                   disabled={isLoading}
                   className={`h-9 ${hasError("phone") ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   aria-invalid={hasError("phone")}

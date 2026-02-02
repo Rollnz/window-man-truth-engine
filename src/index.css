@@ -194,6 +194,17 @@
 }
 
 @layer utilities {
+  /* Audit page scan animation */
+  @keyframes scanDown {
+    0%, 100% { top: -10%; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    95% { top: 110%; opacity: 0; }
+  }
+
+  .animate-scan-down {
+    animation: scanDown 4s ease-in-out infinite;
+  }
   /* Badge shimmer effect for AI-powered badges */
   @keyframes badge-shimmer {
     0% {
@@ -429,6 +440,22 @@
     100% {
       left: 100%;
     }
+  }
+
+  /* Vault Conversion Engine - Emerald pulse animation for "Memory Protection Active" status */
+  @keyframes pulse-emerald {
+    0%, 100% {
+      opacity: 0.75;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(1.5);
+    }
+  }
+
+  .animate-pulse-emerald {
+    animation: pulse-emerald 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   .glow-cyan {
@@ -1106,14 +1133,14 @@
    Background swaps, elements stay locked
    ============================================ */
 
-/* Dark mode: Force WHITE background, elements use LIGHT theme colors */
+/* Dark mode: Force LIGHT background, elements use LIGHT theme colors */
 :root .evidence-inverted,
 .dark .evidence-inverted {
-  --background: 210 35% 98%;
+  --background: 209 30% 94%;
   --foreground: 209 80% 12%;
   --card: 0 0% 100%;
   --card-foreground: 209 80% 12%;
-  --muted: 209 30% 92%;
+  --muted: 209 28% 90%;
   --muted-foreground: 209 25% 42%;
   --border: 209 35% 86%;
   --popover: 0 0% 100%;

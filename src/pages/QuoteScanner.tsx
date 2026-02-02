@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { SEO } from '@/components/SEO';
 import { Navbar } from '@/components/home/Navbar';
 import { QuoteScannerHero } from '@/components/quote-scanner/QuoteScannerHero';
@@ -28,9 +28,20 @@ import { ScannerFAQSection } from '@/components/quote-scanner/ScannerFAQSection'
 import { NoQuotePathway } from '@/components/quote-scanner/NoQuotePathway';
 import { WindowCalculatorTeaser } from '@/components/quote-scanner/WindowCalculatorTeaser';
 import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChecklist';
+// Vault Pivot Conversion Engine
+import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
+// Attribution & tracking for NoQuotePivotSection handler
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { getOrCreateClientId } from '@/lib/tracking';
+import { getAttributionData } from '@/lib/attribution';
+import { trackLeadCapture, trackLeadSubmissionSuccess } from '@/lib/gtm';
+// Session registration for database FK compliance
+import { getSessionId as getRegisteredSessionId } from '@/lib/windowTruthClient';
 
 export default function QuoteScanner() {
   usePageTracking('quote-scanner');
+  const { toast } = useToast();
   const {
     isAnalyzing,
     isDraftingEmail,
@@ -48,12 +59,22 @@ export default function QuoteScanner() {
   } = useQuoteScanner();
 
   const { sessionData, updateField } = useSessionData();
-  const { leadId } = useLeadIdentity();
+  const { leadId, setLeadId } = useLeadIdentity();
   const [showLeadCapture, setShowLeadCapture] = useState(false);
   const [hasUnlockedResults, setHasUnlockedResults] = useState(!!sessionData.email);
+  const [isNoQuoteSubmitting, setIsNoQuoteSubmitting] = useState(false);
+  const [registeredSessionId, setRegisteredSessionId] = useState<string>('');
   
   // Ref for scroll-to-upload functionality
   const uploadRef = useRef<HTMLDivElement>(null);
+
+  // CRITICAL: Register session with wm_sessions table on mount
+  // This ensures the sessionId exists in the database before save-lead is called
+  useEffect(() => {
+    getRegisteredSessionId().then((id) => {
+      if (id) setRegisteredSessionId(id);
+    });
+  }, []);
 
   const handleFileSelect = async (file: File) => {
     const startTime = Date.now();
@@ -155,15 +176,7 @@ export default function QuoteScanner() {
                         homeownerName={sessionData.name}
                       />
 
-                      <NegotiationTools
-                        emailDraft={emailDraft}
-                        phoneScript={phoneScript}
-                        isDraftingEmail={isDraftingEmail}
-                        isDraftingPhoneScript={isDraftingPhoneScript}
-                        onGenerateEmail={generateEmailDraft}
-                        onGeneratePhoneScript={generatePhoneScript}
-                        disabled={!analysisResult}
-                      />
+                      <NegotiationTools />
 
                       <QuoteQA
                         answer={qaAnswer}
@@ -186,6 +199,88 @@ export default function QuoteScanner() {
                 </div>
               </div>
             </ErrorBoundary>
+          </div>
+        </section>
+
+        {/* Vault Pivot Conversion Engine - Primary lead capture for no-quote visitors */}
+        <section className="py-8 md:py-12">
+          <div className="container px-4">
+            <SoftInterceptionAnchor />
+            <NoQuotePivotSection 
+              isLoading={isNoQuoteSubmitting}
+              onGoogleAuth={() => {
+                // TODO: Wire to real Supabase Google OAuth
+                console.log('Google OAuth clicked - will redirect to /vault');
+              }}
+              onEmailSubmit={async (data) => {
+                setIsNoQuoteSubmitting(true);
+                try {
+                  // Use the registered session ID (from wm_sessions table) to avoid FK violations
+                  const sessionId = registeredSessionId || await getRegisteredSessionId();
+                  
+                  const { data: result, error } = await supabase.functions.invoke('save-lead', {
+                    body: {
+                      email: data.email,
+                      firstName: data.firstName,
+                      lastName: data.lastName,
+                      sourceTool: 'quote-scanner',
+                      sessionId,
+                      sessionData: {
+                        clientId: getOrCreateClientId(),
+                      },
+                      attribution: getAttributionData(),
+                    },
+                  });
+                  
+                  if (error) throw error;
+                  
+                  if (result?.leadId) {
+                    updateField('leadId', result.leadId);
+                    setLeadId(result.leadId);
+
+                    // CRITICAL: Track lead capture for attribution (EMQ 9.5+)
+                    await trackLeadCapture(
+                      {
+                        leadId: result.leadId,
+                        sourceTool: 'quote_scanner',
+                        conversionAction: 'form_submit',
+                      },
+                      data.email,
+                      undefined, // No phone in NoQuote flow
+                      {
+                        hasName: !!(data.firstName || data.lastName),
+                        hasPhone: false,
+                      }
+                    );
+
+                    // Track enhanced conversion with value-based bidding ($100)
+                    await trackLeadSubmissionSuccess({
+                      leadId: result.leadId,
+                      email: data.email,
+                      firstName: data.firstName,
+                      lastName: data.lastName,
+                      sourceTool: 'quote-scanner',
+                      eventId: `lead_captured:${result.leadId}`,
+                      value: 100,
+                    });
+
+                    toast({
+                      title: "Saved!",
+                      description: "We'll help you prepare for your window project.",
+                    });
+                  }
+                } catch (err) {
+                  console.error('[QuoteScanner] NoQuote submit error:', err);
+                  toast({
+                    title: "Something went wrong",
+                    description: "Please try again.",
+                    variant: "destructive",
+                  });
+                } finally {
+                  setIsNoQuoteSubmitting(false);
+                }
+              }}
+            />
           </div>
         </section>
 

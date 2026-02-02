@@ -81,6 +81,7 @@ const aiContextSchema = z.object({
   window_reasons: z.array(z.string().max(100)).max(10).optional().nullable(),
   timeframe: z.string().max(50).optional().nullable(),
   city: z.string().max(100).optional().nullable(),
+  state: z.string().max(50).optional().nullable(),    // EMQ 9.5+: State for address matching
   zip_code: z.string().max(10).optional().nullable(),
   remark: z.string().max(1000).optional().nullable(),
 }).optional().nullable();
@@ -229,6 +230,25 @@ async function triggerEmailNotification(payload: {
   }
 }
 
+/**
+ * Convert window_count string ranges to midpoint integers
+ * Handles: "1-5" -> 3, "5-10" -> 7, "10-15" -> 12, "15+" -> 20
+ */
+function convertWindowCount(wc: unknown): number | null {
+  if (wc === null || wc === undefined) return null;
+  if (typeof wc === 'number') return wc;
+  if (typeof wc === 'string') {
+    if (wc === '15+' || wc === '15-plus') return 20;
+    const match = wc.match(/^(\d+)-(\d+)$/);
+    if (match) {
+      return Math.floor((parseInt(match[1], 10) + parseInt(match[2], 10)) / 2);
+    }
+    const num = parseInt(wc, 10);
+    return isNaN(num) ? null : num;
+  }
+  return null;
+}
+
 // ============= Stape Server-Side GTM Integration =============
 const STAPE_GTM_ENDPOINT = 'https://lunaa.itswindowman.com';
 
@@ -279,23 +299,38 @@ async function hashPhoneE164(phone: string): Promise<string | null> {
   return sha256Hash(e164);
 }
 
+/**
+ * Normalize and hash name (lowercase, trimmed, then SHA256)
+ */
+async function hashName(name: string | null | undefined): Promise<string | null> {
+  if (!name) return null;
+  const normalized = name.toLowerCase().trim();
+  if (!normalized) return null;
+  return sha256Hash(normalized);
+}
+
 interface StapeGTMPayload {
   leadId: string;
   email: string;
   phone?: string | null;
+  firstName?: string | null;  // NEW: EMQ 9.5+ server-side name hashing
+  lastName?: string | null;   // NEW: EMQ 9.5+ server-side name hashing
   fbp?: string | null;
   fbc?: string | null;
   userAgent: string;
   eventSourceUrl: string;
 }
 
-// Fire-and-forget Stape GTM server-side event
+// Fire-and-forget Stape GTM server-side event (EMQ 9.5+ with fn/ln hashing)
 async function sendStapeGTMEvent(payload: StapeGTMPayload): Promise<void> {
   try {
     // Hash sensitive data using E.164 normalization for phones
-    const [hashedEmail, hashedPhone] = await Promise.all([
+    // EMQ 9.5+: Hash first_name and last_name for server-side matching
+    const [hashedEmail, hashedPhone, hashedFirstName, hashedLastName] = await Promise.all([
       hashEmail(payload.email),
       payload.phone ? hashPhoneE164(payload.phone) : Promise.resolve(null),
+      hashName(payload.firstName),
+      hashName(payload.lastName),
     ]);
 
     const gtmPayload = {
@@ -304,6 +339,8 @@ async function sendStapeGTMEvent(payload: StapeGTMPayload): Promise<void> {
       external_id: payload.leadId,
       email: hashedEmail,                 // SHA256 hashed email (for FB CAPI mapping)
       phone: hashedPhone || undefined,    // SHA256 hashed phone (for FB CAPI mapping)
+      fn: hashedFirstName || undefined,   // SHA256 hashed first_name (EMQ 9.5+)
+      ln: hashedLastName || undefined,    // SHA256 hashed last_name (EMQ 9.5+)
       _fbp: payload.fbp || undefined,
       _fbc: payload.fbc || undefined,
       client_user_agent: payload.userAgent,
@@ -504,20 +541,13 @@ serve(async (req) => {
       urgency_level: aiContext?.urgency_level || null,
       insurance_carrier: aiContext?.insurance_carrier || null,
       // Convert string window_count ranges to midpoint numbers for INTEGER column
-      window_count: (() => {
-        const wc = aiContext?.window_count;
-        if (wc === null || wc === undefined) return null;
-        if (typeof wc === 'number') return wc;
-        // Handle string ranges: "1-5" -> 3, "5-10" -> 7, "10-15" -> 12, "15+" -> 20
-        if (typeof wc === 'string') {
-          if (wc === '15+' || wc === '15-plus') return 20;
-          const match = wc.match(/^(\d+)-(\d+)$/);
-          if (match) return Math.floor((parseInt(match[1]) + parseInt(match[2])) / 2);
-          const num = parseInt(wc, 10);
-          return isNaN(num) ? null : num;
-        }
-        return null;
-      })(),
+      window_count: convertWindowCount(aiContext?.window_count),
+      // EMQ 9.5+: Address fields for improved matching
+      city: aiContext?.city || null,
+      state: aiContext?.state || (sessionData as Record<string, unknown>)?.state as string || null,
+      zip: aiContext?.zip_code || null,
+      // EMQ 9.5+: Device fingerprinting for server-side matching
+      client_user_agent: clientUserAgent,
     };
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -591,7 +621,13 @@ serve(async (req) => {
           emotional_state: aiContext?.emotional_state || undefined,
           urgency_level: aiContext?.urgency_level || undefined,
           insurance_carrier: aiContext?.insurance_carrier || undefined,
-          window_count: aiContext?.window_count || undefined,
+          window_count: convertWindowCount(aiContext?.window_count),
+          // EMQ 9.5+: Update address fields if provided (enrichment)
+          city: aiContext?.city || undefined,
+          state: aiContext?.state || (sessionData as Record<string, unknown>)?.state as string || undefined,
+          zip: aiContext?.zip_code || undefined,
+          // EMQ 9.5+: Update user agent on each interaction
+          client_user_agent: clientUserAgent,
         };
         
         // Only set attribution if not already present (first-touch)
@@ -686,6 +722,8 @@ serve(async (req) => {
           leadId,
           email: normalizedEmail,
           phone: phone || null,
+          firstName: normalizedFirstName,  // EMQ 9.5+: Server-side name hashing
+          lastName: normalizedLastName,    // EMQ 9.5+: Server-side name hashing
           fbp: attribution?.fbp || null,
           fbc: attribution?.fbc || null,
           userAgent: clientUserAgent,

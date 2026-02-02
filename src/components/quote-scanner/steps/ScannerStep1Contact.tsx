@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NameInputPair } from '@/components/ui/NameInputPair';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
+import { emailInputProps } from '@/lib/formAccessibility';
+import { formMicroCopy } from '@/components/forms/InlineFieldStatus';
 import { cn } from '@/lib/utils';
 
 interface ScannerStep1ContactProps {
@@ -93,18 +95,22 @@ export function ScannerStep1Contact({
         </Label>
         <Input
           id="scanner-email"
-          type="email"
-          autoComplete="email"
+          {...emailInputProps}
           placeholder="you@example.com"
           {...getFieldProps('email')}
           disabled={isLoading}
           className={emailError ? 'border-destructive focus-visible:ring-destructive' : ''}
           aria-invalid={!!emailError}
-          aria-describedby={emailError ? 'scanner-email-error' : undefined}
+          aria-describedby={emailError ? 'scanner-email-error' : 'scanner-email-hint'}
+          tabIndex={0}
         />
-        {emailError && (
-          <p id="scanner-email-error" className="text-xs text-destructive">
+        {emailError ? (
+          <p id="scanner-email-error" className="text-xs text-destructive" role="alert">
             {emailError}
+          </p>
+        ) : (
+          <p id="scanner-email-hint" className="text-xs text-muted-foreground">
+            {formMicroCopy.email}
           </p>
         )}
       </div>
