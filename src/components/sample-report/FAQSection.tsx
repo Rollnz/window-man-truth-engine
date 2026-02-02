@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, HelpCircle } from 'lucide-react';
 import { ROUTES } from '@/config/navigation';
+import { useSectionTracking } from '@/hooks/useSectionTracking';
 
 interface FAQ { question: string; answer: string; }
 
@@ -42,9 +43,11 @@ function FAQItem({ faq, isOpen, onToggle, index }: { faq: FAQ; isOpen: boolean; 
 }
 
 export function FAQSection() {
+  const sectionRef = useSectionTracking('faq');
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+
   return (
-    <section className="py-16 md:py-24 bg-background">
+    <section ref={sectionRef} className="py-16 md:py-24 bg-background">
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/30 border border-border/50 mb-4">

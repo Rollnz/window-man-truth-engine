@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ShieldCheck, FileText, DollarSign, ScrollText, Award, ChevronDown, AlertTriangle, MessageSquare } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
+import { useSectionTracking } from '@/hooks/useSectionTracking';
 
 interface PillarData { id: string; name: string; score: number; icon: typeof ShieldCheck; checks: string[]; hiddenRisk: string; financialConsequence: string; whatToAsk: string; }
 
@@ -40,11 +41,12 @@ function PillarAccordion({ pillar, isOpen, onToggle }: { pillar: PillarData; isO
 }
 
 export function PillarAccordionSection() {
+  const sectionRef = useSectionTracking('pillar_accordion');
   const [openPillar, setOpenPillar] = useState<string | null>('safety-code');
   const handleToggle = (pillarId: string) => { const newState = openPillar === pillarId ? null : pillarId; setOpenPillar(newState); if (newState) trackEvent('sample_report_accordion_expand', { pillar_id: pillarId }); };
 
   return (
-    <section className="py-16 md:py-24 bg-[hsl(var(--surface-1))]">
+    <section ref={sectionRef} className="py-16 md:py-24 bg-[hsl(var(--surface-1))]">
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-12"><h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">Deep Dive: The 5 Pillars</h2><p className="text-lg text-muted-foreground">Each pillar represents a critical area where quotes hide risk. Expand to see what we check, the hidden dangers, and exactly what to ask your contractor.</p></div>
         <div className="max-w-3xl mx-auto space-y-4">{pillarData.map((pillar) => (<PillarAccordion key={pillar.id} pillar={pillar} isOpen={openPillar === pillar.id} onToggle={() => handleToggle(pillar.id)} />))}</div>

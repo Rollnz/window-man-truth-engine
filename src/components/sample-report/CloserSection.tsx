@@ -3,13 +3,15 @@ import { Button } from '@/components/ui/button';
 import { Upload, Phone, ArrowRight, Shield, Check } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 import { ROUTES } from '@/config/navigation';
+import { useSectionTracking } from '@/hooks/useSectionTracking';
 
 export function CloserSection() {
+  const sectionRef = useSectionTracking('closer');
   const handleUploadClick = () => { trackEvent('sample_report_upload_click', { location: 'closer_section' }); };
   const handleTalkClick = () => { trackEvent('sample_report_talk_click', { location: 'closer_section' }); };
 
   return (
-    <section className="py-20 md:py-28 bg-[hsl(var(--surface-1))] relative overflow-hidden">
+    <section ref={sectionRef} className="py-20 md:py-28 bg-[hsl(var(--surface-1))] relative overflow-hidden">
       <div className="absolute inset-0"><div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.08)_0%,transparent_70%)]" /><div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,hsl(var(--secondary)/0.05)_0%,transparent_70%)]" /></div>
       <div className="container px-4 relative">
         <div className="max-w-3xl mx-auto text-center">

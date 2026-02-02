@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Shield, ShieldCheck, FileText, DollarSign, ScrollText, Award } from 'lucide-react';
+import { trackEvent } from '@/lib/gtm';
+import { getLeadAnchor } from '@/lib/leadAnchor';
 
 interface Pillar { name: string; score: number; icon: typeof Shield; color: string; }
 
@@ -46,8 +48,24 @@ function SegmentedBar({ score, color, isVisible }: { score: number; color: strin
 export function ScoreboardSection() {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
+  const hasTrackedSection = useRef(false);
+
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setIsVisible(true); observer.disconnect(); } }, { threshold: 0.3 });
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        if (!hasTrackedSection.current) {
+          hasTrackedSection.current = true;
+          trackEvent('sample_report_section_view', {
+            section: 'scoreboard',
+            lead_id: getLeadAnchor(),
+            visibility_ratio: entry.intersectionRatio,
+            timestamp: Date.now()
+          });
+        }
+        observer.disconnect();
+      }
+    }, { threshold: 0.3 });
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);

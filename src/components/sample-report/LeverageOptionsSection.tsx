@@ -7,8 +7,10 @@ import { trackEvent } from '@/lib/gtm';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ROUTES } from '@/config/navigation';
 import { PhoneCaptureModal } from './PhoneCaptureModal';
+import { useSectionTracking } from '@/hooks/useSectionTracking';
 
 export function LeverageOptionsSection() {
+  const sectionRef = useSectionTracking('leverage_options');
   const [partnerConsent, setPartnerConsent] = useState(false);
   const [showPhoneCapture, setShowPhoneCapture] = useState(false);
   const { sessionData } = useSessionData();
@@ -25,7 +27,7 @@ export function LeverageOptionsSection() {
   const handlePhoneCaptureSuccess = () => { setShowPhoneCapture(false); trackEvent('partner_share_opt_in', { location: 'leverage_options', phone_captured: true }); window.location.href = `${ROUTES.QUOTE_SCANNER}?partner=true`; };
 
   return (
-    <section className="py-16 md:py-24 bg-[hsl(var(--surface-1))]">
+    <section ref={sectionRef} className="py-16 md:py-24 bg-[hsl(var(--surface-1))]">
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-12"><h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">How Do You Want to Use This Report?</h2><p className="text-lg text-muted-foreground">Two paths. Same goal: protecting your investment. You choose.</p></div>
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">

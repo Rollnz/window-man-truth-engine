@@ -1,4 +1,5 @@
 import { Upload, Scan, FileCheck, Shield } from 'lucide-react';
+import { useSectionTracking } from '@/hooks/useSectionTracking';
 
 interface Step { number: number; title: string; description: string; icon: typeof Upload; }
 
@@ -9,8 +10,10 @@ const steps: Step[] = [
 ];
 
 export function HowItWorksSection() {
+  const sectionRef = useSectionTracking('how_it_works');
+
   return (
-    <section className="py-16 md:py-24 bg-background">
+    <section ref={sectionRef} className="py-16 md:py-24 bg-background">
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-12"><h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">How the Audit Works</h2><p className="text-lg text-muted-foreground">Three simple steps to protect yourself before signing anything.</p></div>
 
