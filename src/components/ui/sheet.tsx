@@ -72,10 +72,10 @@ const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Con
           The VisuallyHidden fallback ensures Radix can find an accessible name
           even if no visible SheetTitle is rendered in children.
         */}
-        <VisuallyHidden.Root asChild>
+        <VisuallyHidden.Root>
           <SheetPrimitive.Title>Panel</SheetPrimitive.Title>
         </VisuallyHidden.Root>
-        <VisuallyHidden.Root asChild>
+        <VisuallyHidden.Root>
           <SheetPrimitive.Description>Side panel content</SheetPrimitive.Description>
         </VisuallyHidden.Root>
         {children}
