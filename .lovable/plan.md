@@ -1,308 +1,235 @@
 
-
-# Homepage Visual Enhancement Plan
+# Updated Plan: 2-Step Lead Capture Modal Flow
 
 ## Overview
 
-Add premium visual polish to the FailurePointsSection with staggered scroll animations, gradient glow borders, and optional blueprint overlays. Two implementation paths provided.
+The `SampleReportLeadModal` will now be a 2-step modal:
+- **Step 1:** Lead capture (First Name, Last Name, Email, Phone)
+- **Step 2:** Call conversion opportunity before continuing to the scanner
+
+This maximizes phone conversions by presenting a call option at the exact moment of highest intent - right after they've committed to getting an audit.
 
 ---
 
-## Option A: With Images (Higher Visual Impact)
+## Key Changes From Previous Plan
 
-Requires 4 custom images uploaded to `/public/images/homepage/`
+| Aspect | Previous Plan | Updated Plan |
+|--------|---------------|--------------|
+| Post-submission | Immediate redirect to `/ai-scanner` | Show Step 2 with call option |
+| Modal steps | Single step | 2-step flow |
+| Phone conversion | Only "Talk to Window Man" buttons | Additional call prompt in modal |
+| GTM events | Just `sample_report_lead_captured` | + `sample_report_modal_step2_call` and `sample_report_modal_step2_continue` |
 
-### Image Specifications
+---
 
-You would need to upload these 4 images:
+## File to Create
 
-**1. `wear-tear-diagram.svg` or `.png`**
-- Content: Window cross-section cutaway showing glass layers, spacer, and frame seal
-- Style: Technical drawing with thin lines (1-2px)
-- Color: Single color, works with CSS filter or native orange `#F97316`
-- Size: 500x400px, < 30KB
-- Transparency: Yes (PNG-24 or SVG)
+### `src/components/sample-report/SampleReportLeadModal.tsx`
 
-**2. `code-blueprint.svg` or `.png`**
-- Content: Architectural blueprint fragment with:
-  - "DP-50" annotation in a callout box
-  - Dimension lines with arrows
-  - Grid lines at ~45 degree angle
-  - "HVHZ" zone indicator
-- Style: Blueprint/technical drawing
-- Color: Monochrome (will be tinted via CSS)
-- Size: 600x400px, < 35KB
+**State Machine:**
+```typescript
+type ModalStep = 'form' | 'call-offer';
 
-**3. `denied-document.svg` or `.png`**
-- Content: Faded insurance form/permit with:
-  - Horizontal lines suggesting text
-  - A checkbox area
-  - "CLAIM DENIED" or just "DENIED" stamp rotated -12deg
-- Style: Ghosted paperwork aesthetic
-- Color: Red tones for stamp, grey for document
-- Size: 500x600px, < 40KB
+const [step, setStep] = useState<ModalStep>('form');
+const [capturedLeadId, setCapturedLeadId] = useState<string | null>(null);
+```
 
-**4. `estimate-invoice.svg` or `.png`**
-- Content: Itemized estimate/invoice showing:
-  - Line items with prices
-  - Subtotal, fees, total structure
-  - One line highlighted: "Hurricane Deductible: 2%"
-- Style: Clean receipt/invoice format
-- Color: Monochrome with one orange highlight
-- Size: 400x500px, < 35KB
+**Step 1 (Lead Capture):**
+- Form fields: First Name, Last Name, Email, Phone (all required)
+- Partner consent checkbox (optional, pre-checkable via prop)
+- Submit button: "Get My Free Audit"
+- On success: Store `leadId`, transition to `'call-offer'` step (NOT navigate)
 
-### Implementation Changes
+**Step 2 (Call Offer):**
+- Headline: "Great! We've received your info."
+- Subtext: "Want answers now? Call WindowMan directly."
+- **Option A (Primary):** Large, prominent call button
+  - Label: "Call WindowMan to Get Answers or a Better Estimate"
+  - Phone: `(561) 468-5571`
+  - `href="tel:+15614685571"`
+  - On click: Fire `sample_report_modal_step2_call` event, then close modal (user continues to call)
+- **Option B (Secondary):** Text link style
+  - Label: "Continue to My Free Audit"
+  - On click: Fire `sample_report_modal_step2_continue` event, navigate to `/ai-scanner?lead={leadId}#upload`
 
-#### 1. Update FailurePointsSection.tsx
+---
+
+## Step 2 UI Visual
 
 ```text
-Changes:
-- Import AnimateOnScroll component
-- Wrap each FailurePoint in AnimateOnScroll with staggered delays
-- Add relative positioning and overflow-hidden for overlay support
-- Add ghosted image as absolute-positioned background
-- Apply glow border gradient
-```
-
-Structure per card:
-```
-<AnimateOnScroll delay={index * 100}>
-  <div class="relative overflow-hidden glow-border-secondary">
-    {/* Ghosted image overlay */}
-    <div class="absolute inset-0 opacity-[0.08] pointer-events-none hidden md:block">
-      <img src={backgroundImage} class="absolute right-[-10%] top-[-10%] w-[80%] h-auto" />
-    </div>
-    
-    {/* Existing card content */}
-    <FailurePoint ... />
-  </div>
-</AnimateOnScroll>
-```
-
-#### 2. Add CSS Utilities to index.css
-
-```css
-/* Glow border - warning/risk theme (Safety Orange) */
-.glow-border-secondary {
-  border: 1px solid transparent;
-  background: 
-    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
-    linear-gradient(135deg, hsl(var(--secondary) / 0.4) 0%, transparent 50%) border-box;
-  transition: all 0.3s ease;
-}
-
-.glow-border-secondary:hover {
-  background: 
-    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
-    linear-gradient(135deg, hsl(var(--secondary) / 0.6) 0%, hsl(var(--secondary) / 0.2) 50%, transparent 80%) border-box;
-}
-
-/* Glow border - positive/solution theme (Primary Blue) */
-.glow-border-primary {
-  border: 1px solid transparent;
-  background: 
-    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
-    linear-gradient(135deg, hsl(var(--primary) / 0.3) 0%, transparent 50%) border-box;
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .glow-border-secondary,
-  .glow-border-primary {
-    animation: none !important;
-    transition: none !important;
-  }
-}
-```
-
-#### 3. File Structure
-
-```
-public/
-  images/
-    homepage/
-      wear-tear-diagram.svg
-      code-blueprint.svg  
-      denied-document.svg
-      estimate-invoice.svg
+┌─────────────────────────────────────────┐
+│                                    [X]  │
+│                                         │
+│          ✓  Great! We've               │
+│             received your info.         │
+│                                         │
+│     Want answers now? Call WindowMan    │
+│           directly for free.            │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │  📞 Call WindowMan Now          │   │
+│  │     (561) 468-5571              │   │
+│  │     Get Answers or a Better     │   │
+│  │     Estimate                    │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│      Continue to My Free Audit →        │
+│                                         │
+└─────────────────────────────────────────┘
 ```
 
 ---
 
-## Option B: Without Images (Pure CSS, Faster Implementation)
+## GTM Tracking Events
 
-No image assets required. Uses geometric patterns and CSS gradients.
+### Step 1 Events (unchanged)
+```typescript
+// Modal opens
+trackEvent('sample_report_lead_modal_open', {
+  cta_source: ctaSource,
+  has_existing_lead: false
+});
 
-### Implementation Changes
-
-#### 1. Update FailurePointsSection.tsx
-
-Same stagger animation approach, but replace image overlays with CSS patterns:
-
-```text
-Changes:
-- Import AnimateOnScroll component
-- Wrap each FailurePoint in AnimateOnScroll with staggered delays
-- Add glow border gradient
-- Add subtle geometric pattern overlay via CSS (no images)
+// Form submitted successfully
+trackEvent('sample_report_lead_captured', {
+  lead_id: newLeadId,
+  cta_source: ctaSource,
+  partner_consent: partnerConsent
+});
 ```
 
-Pattern approach per card type:
-```
-Card 1: Diagonal lines pattern (suggests inspection)
-Card 2: Grid/dot pattern (suggests blueprints)  
-Card 3: Horizontal lines (suggests document)
-Card 4: Stepped lines (suggests pricing tiers)
-```
+### Step 2 Events (NEW)
+```typescript
+// User clicks call button
+trackEvent('sample_report_modal_step2_call', {
+  lead_id: capturedLeadId,
+  cta_source: ctaSource,
+  phone_number: '+15614685571'
+});
 
-#### 2. CSS Pattern Overlays
-
-```css
-/* Technical pattern overlay - diagonal lines */
-.pattern-diagonal::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.04;
-  background: repeating-linear-gradient(
-    45deg,
-    hsl(var(--secondary)),
-    hsl(var(--secondary)) 1px,
-    transparent 1px,
-    transparent 20px
-  );
-  pointer-events: none;
-}
-
-/* Blueprint pattern - grid dots */
-.pattern-grid::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.06;
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    hsl(var(--secondary)) 1px,
-    transparent 1px
-  );
-  background-size: 24px 24px;
-  pointer-events: none;
-}
-
-/* Document pattern - horizontal lines */
-.pattern-lines::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.03;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 18px,
-    hsl(var(--secondary)) 18px,
-    hsl(var(--secondary)) 19px
-  );
-  pointer-events: none;
-}
+// User clicks continue to audit
+trackEvent('sample_report_modal_step2_continue', {
+  lead_id: capturedLeadId,
+  cta_source: ctaSource
+});
 ```
 
 ---
 
-## Shared Implementation (Both Options)
+## Implementation Details
 
-### CTA Button Enhancement
+### Modal Flow Logic
 
-Add subtle "breathing" glow to primary CTAs:
-
-```css
-@keyframes cta-breathe {
-  0%, 100% { 
-    box-shadow: 0 0 20px hsl(var(--secondary) / 0.3); 
-  }
-  50% { 
-    box-shadow: 0 0 35px hsl(var(--secondary) / 0.5); 
-  }
-}
-
-.cta-glow {
-  animation: cta-breathe 4s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cta-glow {
-    animation: none;
-    box-shadow: 0 0 20px hsl(var(--secondary) / 0.3);
-  }
-}
-```
-
-### Mobile Considerations
-
-```css
-/* Mobile: faster stagger, no overlays */
-@media (max-width: 767px) {
-  .pattern-diagonal::before,
-  .pattern-grid::before,
-  .pattern-lines::before {
-    display: none;
-  }
+```typescript
+// Step 1 submission handler
+const handleFormSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  // ... validation and save-lead call ...
   
-  /* Reduce glow intensity on mobile */
-  .glow-border-secondary {
-    background: 
-      linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
-      linear-gradient(135deg, hsl(var(--secondary) / 0.2) 0%, transparent 40%) border-box;
+  if (data.success && data.leadId) {
+    setCapturedLeadId(data.leadId);
+    setLeadAnchor(data.leadId);
+    
+    // Track lead capture
+    await trackLeadSubmissionSuccess({ ... });
+    
+    // Transition to Step 2 (NOT navigate)
+    setStep('call-offer');
   }
-}
+};
+
+// Step 2 call button handler
+const handleCallClick = () => {
+  trackEvent('sample_report_modal_step2_call', {
+    lead_id: capturedLeadId,
+    cta_source: ctaSource,
+    phone_number: '+15614685571'
+  });
+  // Note: Don't close modal - let user click link naturally
+  // The tel: link will trigger the call
+};
+
+// Step 2 continue handler
+const handleContinueClick = () => {
+  trackEvent('sample_report_modal_step2_continue', {
+    lead_id: capturedLeadId,
+    cta_source: ctaSource
+  });
+  onClose();
+  navigate(`/ai-scanner?lead=${capturedLeadId}#upload`);
+};
 ```
 
----
+### Visual Priority for Step 2
 
-## Technical Implementation Details
+The call button should be the most prominent element:
+- Large size (`size="lg"`)
+- Primary/CTA variant with strong color
+- Phone icon
+- Full width
+- Subtle glow or attention animation (optional)
 
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/home/FailurePointsSection.tsx` | Add AnimateOnScroll wrapper with stagger, add overlay divs, add glow-border class |
-| `src/index.css` | Add `.glow-border-secondary`, `.glow-border-primary`, pattern classes, CTA animation |
-| `src/components/home/HeroSection.tsx` | Add `.cta-glow` class to primary Button |
-
-### Performance Guardrails
-
-- All animations use `transform` and `opacity` only (GPU-accelerated)
-- IntersectionObserver with `threshold: 0.3` (not 0 - prevents edge triggering)
-- Images lazy-loaded with `loading="lazy"` attribute
-- CSS patterns use `pointer-events: none` to avoid hit-test overhead
-- `will-change: transform, opacity` on animated elements
-
-### Accessibility
-
-- `prefers-reduced-motion` checks in AnimateOnScroll (already implemented)
-- CSS fallback for reduced motion users
-- No auto-playing animations that can't be stopped
-- Color contrast maintained (overlays at 3-8% opacity don't affect readability)
+The continue link should be:
+- Text-only or ghost button style
+- Smaller font
+- Below the call button
+- Arrow icon to indicate progression
 
 ---
 
-## Recommendation
+## Files to Modify
 
-**Start with Option B (no images)** - it delivers 80% of the visual impact with:
-- Zero asset dependencies
-- Faster implementation
-- No image optimization needed
-- Easier to adjust/iterate
+### `src/pages/SampleReport.tsx`
 
-**Add images later** if you want more brand-specific visuals. When ready, I can help specify exact image requirements for a designer or AI image generator.
+No changes from previous plan - same state management:
+```typescript
+const [showLeadModal, setShowLeadModal] = useState(false);
+const [modalCtaSource, setModalCtaSource] = useState('');
+const [preCheckPartnerConsent, setPreCheckPartnerConsent] = useState(false);
+
+const handleOpenLeadModal = (ctaSource: string, preCheckConsent = false) => {
+  const existingLead = getLeadAnchor();
+  if (existingLead) {
+    navigate(`/ai-scanner?lead=${existingLead}#upload`);
+  } else {
+    setModalCtaSource(ctaSource);
+    setPreCheckPartnerConsent(preCheckConsent);
+    setShowLeadModal(true);
+  }
+};
+
+const handleLeadModalSuccess = (leadId: string) => {
+  setShowLeadModal(false);
+  navigate(`/ai-scanner?lead=${leadId}#upload`);
+};
+```
+
+### Child Components (unchanged from previous plan)
+
+- `SampleReportHeader.tsx` - Accept `onOpenLeadModal` prop, "Talk to Window Man" → `tel:+15614685571`
+- `HeroSection.tsx` - Accept `onOpenLeadModal` prop
+- `CloserSection.tsx` - Accept `onOpenLeadModal` prop, "Talk to Window Man" → `tel:+15614685571`
+- `LeverageOptionsSection.tsx` - Accept `onOpenLeadModal` prop (Path B pre-checks consent)
+
+---
+
+## Mobile Considerations
+
+- Phone field: `type="tel"` for numeric keyboard
+- Email field: `type="email"` for email keyboard
+- Call button: Large touch target (48px+ height)
+- Step 2 call button: Uses `<a href="tel:...">` which works natively on mobile
+- Continue link: Sufficient tap area
 
 ---
 
 ## Implementation Order
 
-1. Add glow border CSS utilities
-2. Wrap FailurePoints in AnimateOnScroll with stagger delays
-3. Add pattern overlays (Option B) or image overlays (Option A)
-4. Add CTA breathing animation
-5. Test on mobile and with reduced-motion preference
-6. Verify performance in Chrome DevTools throttling
-
+1. Create `SampleReportLeadModal.tsx` with 2-step flow
+2. Update `SampleReport.tsx` with state and modal rendering
+3. Update `SampleReportHeader.tsx` (modal trigger + direct phone link)
+4. Update `HeroSection.tsx` (modal trigger)
+5. Update `CloserSection.tsx` (modal trigger + direct phone link)
+6. Update `LeverageOptionsSection.tsx` (modal trigger with pre-check)
+7. Test full flow: form → step 2 → call/continue
+8. Test skip logic with existing lead anchor
