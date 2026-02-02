@@ -34,7 +34,7 @@ export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleRep
 
   const { values, hasError, getError, getFieldProps, validateAll } = useFormValidation({ initialValues: { email: sessionData.email || '' }, schemas: { email: commonSchemas.email } });
 
-  useEffect(() => { if (isOpen) { trackModalOpen({ modalName: 'sample_report_gate', sourceTool: 'sample-report' }); window.dataLayer = window.dataLayer || []; window.dataLayer.push({ event: 'sample_report_gate_opened', event_id: generateEventId(), client_id: getOrCreateClientId(), session_id: getOrCreateSessionId(), external_id: effectiveLeadId || null, source_tool: 'sample-report', source_system: 'web' }); } }, [isOpen, effectiveLeadId]);
+  useEffect(() => { if (isOpen) { trackModalOpen({ modalName: 'sample_report_gate', sourceTool: 'sample-report' }); trackEvent('sample_report_gate_opened', { event_id: generateEventId(), client_id: getOrCreateClientId(), session_id: getOrCreateSessionId(), external_id: effectiveLeadId || null, source_tool: 'sample-report', source_system: 'web' }); } }, [isOpen, effectiveLeadId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

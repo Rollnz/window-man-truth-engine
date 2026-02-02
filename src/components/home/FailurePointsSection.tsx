@@ -12,7 +12,7 @@ function FailurePoint({ number, title, description, icon, isOpen, onClick }: Fai
         <div className="flex-1"><div className="flex items-center gap-2"><span className="text-sm font-medium text-[hsl(var(--secondary))]">#{number}</span><h3 className="text-lg font-semibold text-foreground">{title}</h3></div></div>
         <ChevronDown className={cn("w-5 h-5 text-muted-foreground transition-transform duration-300", isOpen && "rotate-180")} />
       </button>
-      <div className={cn("overflow-hidden transition-all duration-300", isOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0")}><div className="px-6 pb-6 pl-[88px]"><p className="text-muted-foreground leading-relaxed">{description}</p></div></div>
+      <div className={cn("overflow-hidden transition-all duration-300", isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0")}><div className="px-6 pb-6 pl-[88px]"><p className="text-muted-foreground leading-relaxed">{description}</p></div></div>
     </div>
   );
 }

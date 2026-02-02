@@ -25,7 +25,7 @@ const SampleReport = () => {
   const [showAccessGate, setShowAccessGate] = useState(!hasLead);
   const [gateCompleted, setGateCompleted] = useState(hasLead);
 
-  useEffect(() => { trackEvent('sample_report_view', { has_lead: hasLead, lead_id: leadId || anchorId || undefined }); }, []);
+  useEffect(() => { trackEvent('sample_report_view', { has_lead: hasLead, lead_id: leadId || anchorId || undefined }); }, [hasLead, leadId, anchorId]);
 
   const handleGateComplete = (newLeadId: string) => { setShowAccessGate(false); setGateCompleted(true); trackEvent('sample_report_gate_complete', { lead_id: newLeadId }); };
   const handleGateClose = () => { if (hasLead) { setShowAccessGate(false); setGateCompleted(true); } };

@@ -8,7 +8,7 @@ interface StatCardProps { value: string; label: string; description?: string; ic
 function StatCard({ value, label, description, icon, iconColor, delay = 0 }: StatCardProps) {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => { const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) setIsVisible(true); }, { threshold: 0.3 }); if (ref.current) observer.observe(ref.current); return () => observer.disconnect(); }, []);
+  useEffect(() => { const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setIsVisible(true); observer.disconnect(); } }, { threshold: 0.3 }); if (ref.current) observer.observe(ref.current); return () => observer.disconnect(); }, []);
   return (
     <div ref={ref} className={`relative p-8 rounded-2xl bg-card border border-border/50 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: `${delay}ms` }}>
       <div className={`absolute top-0 left-0 w-full h-1 rounded-t-2xl ${iconColor}`} />

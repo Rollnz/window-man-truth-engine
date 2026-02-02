@@ -70,7 +70,7 @@ export function ComparisonSection() {
               <div className="p-6">
                 <div className="space-y-4">
                   {riskFlags.map((flag, index) => (
-                    <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+                    <div key={flag.text} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
                       {flag.severity === 'high' ? (
                         <AlertTriangle className="w-5 h-5 text-[hsl(var(--secondary))] shrink-0 mt-0.5" />
                       ) : (

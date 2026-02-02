@@ -26,8 +26,8 @@ export function FAQSection() {
     <section className="py-16 md:py-24 bg-background">
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-12"><div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/30 border border-border/50 mb-4"><HelpCircle className="w-4 h-4 text-primary" /><span className="text-sm font-medium text-muted-foreground">Common Questions</span></div><h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">Frequently Asked Questions</h2></div>
-        <div className="max-w-2xl mx-auto"><div className="bg-card border border-border/50 rounded-2xl p-6 md:p-8">{faqs.map((faq, index) => (<FAQItem key={index} faq={faq} isOpen={openIndex === index} onToggle={() => setOpenIndex(openIndex === index ? null : index)} />))}</div></div>
-        <p className="text-center text-sm text-muted-foreground mt-8">Still have questions? <a href="/consultation" className="text-primary hover:underline">Talk to Window Man</a></p>
+        <div className="max-w-2xl mx-auto"><div className="bg-card border border-border/50 rounded-2xl p-6 md:p-8">{faqs.map((faq, index) => (<FAQItem key={faq.question} faq={faq} isOpen={openIndex === index} onToggle={() => setOpenIndex(openIndex === index ? null : index)} />))}</div></div>
+        <p className="text-center text-sm text-muted-foreground mt-8">Still have questions? <Link to={ROUTES.CONSULTATION} className="text-primary hover:underline">Talk to Window Man</Link></p>
       </div>
     </section>
   );
