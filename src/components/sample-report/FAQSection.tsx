@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronDown, HelpCircle } from 'lucide-react';
+import { ROUTES } from '@/config/navigation';
 
 interface FAQ { question: string; answer: string; }
 
@@ -11,11 +13,30 @@ const faqs: FAQ[] = [
   { question: 'What documents work?', answer: 'We accept PDFs, photos, and screenshots of your window quote or estimate. The AI can read standard contractor proposals, itemized quotes, and even handwritten estimates. If it\'s readable, we can analyze it. The upload takes about 60 seconds.' },
 ];
 
-function FAQItem({ faq, isOpen, onToggle }: { faq: FAQ; isOpen: boolean; onToggle: () => void }) {
+function FAQItem({ faq, isOpen, onToggle, index }: { faq: FAQ; isOpen: boolean; onToggle: () => void; index: number }) {
+  const panelId = `faq-panel-${index}`;
+  const buttonId = `faq-button-${index}`;
   return (
     <div className="border-b border-border/50 last:border-0">
-      <button onClick={onToggle} className="w-full flex items-center justify-between py-5 text-left hover:bg-muted/10 transition-colors px-2 -mx-2 rounded"><span className="font-medium text-foreground pr-4">{faq.question}</span><ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} /></button>
-      <div className={`overflow-hidden transition-all duration-200 ${isOpen ? 'max-h-96 pb-5' : 'max-h-0'}`}><p className="text-muted-foreground text-sm leading-relaxed px-2">{faq.answer}</p></div>
+      <button 
+        id={buttonId}
+        onClick={onToggle} 
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        className="w-full flex items-center justify-between py-5 text-left hover:bg-muted/10 transition-colors px-2 -mx-2 rounded"
+      >
+        <span className="font-medium text-foreground pr-4">{faq.question}</span>
+        <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      <div 
+        id={panelId}
+        role="region"
+        aria-labelledby={buttonId}
+        aria-hidden={!isOpen}
+        className={`overflow-hidden transition-all duration-200 ${isOpen ? 'max-h-96 pb-5' : 'max-h-0'}`}
+      >
+        <p className="text-muted-foreground text-sm leading-relaxed px-2">{faq.answer}</p>
+      </div>
     </div>
   );
 }
@@ -25,9 +46,29 @@ export function FAQSection() {
   return (
     <section className="py-16 md:py-24 bg-background">
       <div className="container px-4">
-        <div className="max-w-3xl mx-auto text-center mb-12"><div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/30 border border-border/50 mb-4"><HelpCircle className="w-4 h-4 text-primary" /><span className="text-sm font-medium text-muted-foreground">Common Questions</span></div><h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">Frequently Asked Questions</h2></div>
-        <div className="max-w-2xl mx-auto"><div className="bg-card border border-border/50 rounded-2xl p-6 md:p-8">{faqs.map((faq, index) => (<FAQItem key={faq.question} faq={faq} isOpen={openIndex === index} onToggle={() => setOpenIndex(openIndex === index ? null : index)} />))}</div></div>
-        <p className="text-center text-sm text-muted-foreground mt-8">Still have questions? <Link to={ROUTES.CONSULTATION} className="text-primary hover:underline">Talk to Window Man</Link></p>
+        <div className="max-w-3xl mx-auto text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/30 border border-border/50 mb-4">
+            <HelpCircle className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-muted-foreground">Common Questions</span>
+          </div>
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">Frequently Asked Questions</h2>
+        </div>
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-card border border-border/50 rounded-2xl p-6 md:p-8">
+            {faqs.map((faq, index) => (
+              <FAQItem 
+                key={faq.question} 
+                faq={faq} 
+                isOpen={openIndex === index} 
+                onToggle={() => setOpenIndex(openIndex === index ? null : index)}
+                index={index}
+              />
+            ))}
+          </div>
+        </div>
+        <p className="text-center text-sm text-muted-foreground mt-8">
+          Still have questions? <Link to={ROUTES.CONSULTATION} className="text-primary hover:underline">Talk to Window Man</Link>
+        </p>
       </div>
     </section>
   );

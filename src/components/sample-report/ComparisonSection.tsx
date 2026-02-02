@@ -9,6 +9,9 @@ const riskFlags: RiskFlag[] = [
   { text: 'Labor warranty unclear', severity: 'medium' },
 ];
 
+// Deterministic widths to avoid re-render flicker
+const placeholderWidths = [45, 62, 55, 48, 70, 52];
+
 function SeverityTag({ severity }: { severity: 'high' | 'medium' }) {
   const isHigh = severity === 'high';
   return (
@@ -43,9 +46,9 @@ export function ComparisonSection() {
                       <div className="h-6 w-3/4 bg-muted/60 rounded" />
                       <div className="h-4 w-1/2 bg-muted/40 rounded" />
                       <div className="h-px w-full bg-border/50 my-4" />
-                      {[...Array(6)].map((_, i) => (
+                      {placeholderWidths.map((width, i) => (
                         <div key={i} className="flex justify-between items-center">
-                          <div className="h-3 bg-muted/40 rounded" style={{ width: `${40 + Math.random() * 30}%` }} />
+                          <div className="h-3 bg-muted/40 rounded" style={{ width: `${width}%` }} />
                           <div className="h-3 w-16 bg-muted/40 rounded" />
                         </div>
                       ))}
@@ -69,7 +72,7 @@ export function ComparisonSection() {
               </div>
               <div className="p-6">
                 <div className="space-y-4">
-                  {riskFlags.map((flag, index) => (
+                  {riskFlags.map((flag) => (
                     <div key={flag.text} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
                       {flag.severity === 'high' ? (
                         <AlertTriangle className="w-5 h-5 text-[hsl(var(--secondary))] shrink-0 mt-0.5" />
