@@ -5,6 +5,10 @@ import { trackEvent } from '@/lib/gtm';
 import { ROUTES } from '@/config/navigation';
 import { useSectionTracking } from '@/hooks/useSectionTracking';
 
+interface HeroSectionProps {
+  onOpenLeadModal?: (ctaSource: string) => void;
+}
+
 const PreviewBars = () => {
   const pillars = [
     { name: 'Safety & Code', score: 78, color: 'bg-primary' },
@@ -32,11 +36,12 @@ const PreviewBars = () => {
   );
 };
 
-export function HeroSection() {
+export function HeroSection({ onOpenLeadModal }: HeroSectionProps) {
   const sectionRef = useSectionTracking('hero');
 
   const handleUploadClick = () => {
     trackEvent('sample_report_upload_click', { location: 'hero_section' });
+    onOpenLeadModal?.('hero_upload');
   };
 
   const handleVaultClick = () => {
@@ -75,12 +80,10 @@ export function HeroSection() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button asChild variant="cta" size="lg" className="group" onClick={handleUploadClick}>
-                <Link to={`${ROUTES.QUOTE_SCANNER}#upload`}>
-                  <Upload className="w-5 h-5 mr-2" />
-                  Upload My Estimate for a Free Audit
-                  <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
-                </Link>
+              <Button variant="cta" size="lg" className="group" onClick={handleUploadClick}>
+                <Upload className="w-5 h-5 mr-2" />
+                Upload My Estimate for a Free Audit
+                <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Button>
               <p className="text-sm text-muted-foreground self-center">PDF or photo. Takes about 60 seconds.</p>
             </div>
