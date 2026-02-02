@@ -6,23 +6,19 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Check, Loader2, Phone, ArrowRight } from 'lucide-react';
+import { Check, Loader2, Phone, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { Dialog } from '@/components/ui/dialog';
+import { TrustModal } from '@/components/forms/TrustModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { NameInputPair, normalizeNameFields } from '@/components/ui/NameInputPair';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
-import { trackEvent, trackLeadSubmissionSuccess, generateEventId } from '@/lib/gtm';
+import { emailInputProps, phoneInputProps } from '@/lib/formAccessibility';
+import { trackEvent, trackLeadSubmissionSuccess } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
 import { setLeadAnchor, getLeadAnchor } from '@/lib/leadAnchor';
@@ -223,34 +219,12 @@ export function SampleReportLeadModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleModalClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          {step === 'form' ? (
-            <>
-              <DialogTitle className="text-xl font-bold text-center">
-                Almost There — Let's Personalize Your Audit
-              </DialogTitle>
-              <DialogDescription className="text-center text-muted-foreground">
-                Enter your details to get your free AI-powered quote analysis
-              </DialogDescription>
-            </>
-          ) : (
-            <>
-              <DialogTitle className="text-xl font-bold text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Check className="w-5 h-5 text-primary" />
-                  </div>
-                </div>
-                Great! We've received your info.
-              </DialogTitle>
-              <DialogDescription className="text-center text-muted-foreground">
-                Want answers now? Call WindowMan directly for free.
-              </DialogDescription>
-            </>
-          )}
-        </DialogHeader>
-
+      <TrustModal
+        modalTitle={step === 'form' ? "Almost There — Let's Personalize Your Audit" : undefined}
+        modalDescription={step === 'form' ? "Enter your details to get your free AI-powered quote analysis" : undefined}
+        headerAlign="center"
+        className="sm:max-w-md"
+      >
         {step === 'form' ? (
           <form onSubmit={handleFormSubmit} className="space-y-4">
             {/* Name Fields */}
@@ -268,62 +242,66 @@ export function SampleReportLeadModal({
 
             {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="sr-email" className="text-foreground font-semibold">
+              <Label htmlFor="sr-email" className="text-slate-900 dark:text-slate-900 font-semibold">
                 Email Address
               </Label>
               <Input
                 id="sr-email"
                 name="email"
-                type="email"
-                autoComplete="email"
                 placeholder="you@example.com"
-                className={hasError('email') ? 'border-destructive focus-visible:ring-destructive' : ''}
                 {...getFieldProps('email')}
+                {...emailInputProps}
+                className={hasError('email') ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={hasError('email')}
+                aria-describedby={hasError('email') ? 'sr-email-error' : undefined}
               />
               {hasError('email') && (
-                <p className="text-sm text-destructive font-medium">{getError('email')}</p>
+                <p id="sr-email-error" className="text-sm text-destructive font-medium">{getError('email')}</p>
               )}
             </div>
 
             {/* Phone */}
             <div className="space-y-2">
-              <Label htmlFor="sr-phone" className="text-foreground font-semibold">
+              <Label htmlFor="sr-phone" className="text-slate-900 dark:text-slate-900 font-semibold">
                 Phone Number
               </Label>
               <Input
                 id="sr-phone"
                 name="phone"
-                type="tel"
-                autoComplete="tel"
                 placeholder="(555) 123-4567"
-                className={hasError('phone') ? 'border-destructive focus-visible:ring-destructive' : ''}
                 {...getFieldProps('phone')}
+                {...phoneInputProps}
+                className={hasError('phone') ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={hasError('phone')}
+                aria-describedby={hasError('phone') ? 'sr-phone-error' : 'sr-phone-hint'}
               />
-              <p className="text-xs text-muted-foreground">
+              <p id="sr-phone-hint" className="text-xs text-slate-500 dark:text-slate-500">
                 We'll text your report link and only call if you request it
               </p>
               {hasError('phone') && (
-                <p className="text-sm text-destructive font-medium">{getError('phone')}</p>
+                <p id="sr-phone-error" className="text-sm text-destructive font-medium">{getError('phone')}</p>
               )}
             </div>
 
-            {/* Partner Consent */}
-            <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
-              <label className="flex items-start gap-3 cursor-pointer">
+            {/* Partner Consent - Fixed accessibility with id/htmlFor */}
+            <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-50 border border-slate-200 dark:border-slate-200">
+              <div className="flex items-start gap-3">
                 <Checkbox
+                  id="sr-partner-consent"
                   checked={partnerConsent}
                   onCheckedChange={(checked) => setPartnerConsent(checked === true)}
                   className="mt-1"
+                  aria-describedby="sr-partner-consent-desc"
                 />
-                <div>
-                  <span className="text-sm font-medium text-foreground">
+                <label htmlFor="sr-partner-consent" className="cursor-pointer">
+                  <span className="text-sm font-medium text-slate-900 dark:text-slate-900">
                     Yes — share my project specs with vetted partners to get competing estimates
                   </span>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p id="sr-partner-consent-desc" className="text-xs text-slate-500 dark:text-slate-500 mt-1">
                     Window Man may connect you with pre-screened contractors who can offer better pricing. Your contact info is never sold.
                   </p>
-                </div>
-              </label>
+                </label>
+              </div>
             </div>
 
             {/* Submit Button */}
@@ -345,12 +323,26 @@ export function SampleReportLeadModal({
             </Button>
 
             {/* Trust Footer */}
-            <p className="text-xs text-muted-foreground text-center">
+            <p className="text-xs text-slate-500 dark:text-slate-500 text-center">
               🔒 No spam. No obligation. Your info stays private.
             </p>
           </form>
         ) : (
+          /* Step 2: Call Offer */
           <div className="space-y-6 py-4">
+            {/* Success indicator */}
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                <Check className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-900">
+                Great! We've received your info.
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-600 mt-1">
+                Want answers now? Call WindowMan directly for free.
+              </p>
+            </div>
+
             {/* Primary: Call CTA */}
             <a
               href="tel:+15614685571"
@@ -371,18 +363,18 @@ export function SampleReportLeadModal({
               </Button>
             </a>
 
-            {/* Secondary: Continue to Audit */}
+            {/* Secondary: Continue to Audit - Fixed touch target */}
             <button
               type="button"
               onClick={handleContinueClick}
-              className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+              className="w-full flex items-center justify-center gap-2 text-sm text-slate-600 dark:text-slate-600 hover:text-slate-900 dark:hover:text-slate-900 transition-colors py-3 min-h-[44px]"
             >
               <span>Continue to My Free Audit</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         )}
-      </DialogContent>
+      </TrustModal>
     </Dialog>
   );
 }
