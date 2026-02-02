@@ -1,4 +1,5 @@
 import { Eye, Scan, AlertTriangle, AlertCircle } from 'lucide-react';
+import { useSectionTracking } from '@/hooks/useSectionTracking';
 
 interface RiskFlag { text: string; severity: 'high' | 'medium'; }
 
@@ -22,8 +23,10 @@ function SeverityTag({ severity }: { severity: 'high' | 'medium' }) {
 }
 
 export function ComparisonSection() {
+  const sectionRef = useSectionTracking('comparison');
+
   return (
-    <section className="py-16 md:py-24 bg-[hsl(var(--surface-1))]">
+    <section ref={sectionRef} className="py-16 md:py-24 bg-[hsl(var(--surface-1))]">
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-12">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, Shield, Check, Vault, ArrowRight } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 import { ROUTES } from '@/config/navigation';
+import { useSectionTracking } from '@/hooks/useSectionTracking';
 
 const PreviewBars = () => {
   const pillars = [
@@ -32,6 +33,8 @@ const PreviewBars = () => {
 };
 
 export function HeroSection() {
+  const sectionRef = useSectionTracking('hero');
+
   const handleUploadClick = () => {
     trackEvent('sample_report_upload_click', { location: 'hero_section' });
   };
@@ -41,7 +44,7 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative py-16 md:py-24 overflow-hidden">
+    <section ref={sectionRef} className="relative py-16 md:py-24 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background" />
       <div className="absolute top-1/4 right-0 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.08)_0%,transparent_70%)]" />
 
