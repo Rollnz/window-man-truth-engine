@@ -30,9 +30,15 @@ import { WindowCalculatorTeaser } from '@/components/quote-scanner/WindowCalcula
 import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChecklist';
 // Vault Pivot Conversion Engine
 import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
+// Attribution & tracking for NoQuotePivotSection handler
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
+import { getAttributionData } from '@/lib/attribution';
 
 export default function QuoteScanner() {
   usePageTracking('quote-scanner');
+  const { toast } = useToast();
   const {
     isAnalyzing,
     isDraftingEmail,
@@ -50,9 +56,10 @@ export default function QuoteScanner() {
   } = useQuoteScanner();
 
   const { sessionData, updateField } = useSessionData();
-  const { leadId } = useLeadIdentity();
+  const { leadId, setLeadId } = useLeadIdentity();
   const [showLeadCapture, setShowLeadCapture] = useState(false);
   const [hasUnlockedResults, setHasUnlockedResults] = useState(!!sessionData.email);
+  const [isNoQuoteSubmitting, setIsNoQuoteSubmitting] = useState(false);
   
   // Ref for scroll-to-upload functionality
   const uploadRef = useRef<HTMLDivElement>(null);
@@ -188,13 +195,48 @@ export default function QuoteScanner() {
           <div className="container px-4">
             <SoftInterceptionAnchor />
             <NoQuotePivotSection 
+              isLoading={isNoQuoteSubmitting}
               onGoogleAuth={() => {
                 // TODO: Wire to real Supabase Google OAuth
                 console.log('Google OAuth clicked - will redirect to /vault');
               }}
-              onEmailSubmit={(data) => {
-                // TODO: Wire to real magic link flow
-                console.log('Email submit:', data);
+              onEmailSubmit={async (data) => {
+                setIsNoQuoteSubmitting(true);
+                try {
+                  const { data: result, error } = await supabase.functions.invoke('save-lead', {
+                    body: {
+                      email: data.email,
+                      firstName: data.firstName,
+                      lastName: data.lastName,
+                      sourceTool: 'quote-scanner',
+                      sessionId: getOrCreateSessionId(),
+                      sessionData: {
+                        clientId: getOrCreateClientId(),
+                      },
+                      attribution: getAttributionData(),
+                    },
+                  });
+                  
+                  if (error) throw error;
+                  
+                  if (result?.leadId) {
+                    updateField('leadId', result.leadId);
+                    setLeadId(result.leadId);
+                    toast({
+                      title: "Saved!",
+                      description: "We'll help you prepare for your window project.",
+                    });
+                  }
+                } catch (err) {
+                  console.error('[QuoteScanner] NoQuote submit error:', err);
+                  toast({
+                    title: "Something went wrong",
+                    description: "Please try again.",
+                    variant: "destructive",
+                  });
+                } finally {
+                  setIsNoQuoteSubmitting(false);
+                }
               }}
             />
           </div>

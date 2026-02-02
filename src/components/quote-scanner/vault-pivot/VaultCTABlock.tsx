@@ -1,9 +1,10 @@
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, Mail, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
+import { useState } from 'react';
 
 interface VaultCTABlockProps {
   /** Mock callback for demo - will be replaced with real auth */
@@ -23,16 +24,25 @@ export function VaultCTABlock({
   isLoading = false 
 }: VaultCTABlockProps) {
   const [showEmailForm, setShowEmailForm] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
+
+  // Unified validation with Zod schemas
+  const { values, setValue, validateAll, hasError, getError } = useFormValidation({
+    initialValues: { firstName: '', lastName: '', email: '' },
+    schemas: {
+      firstName: commonSchemas.firstName,
+      lastName: commonSchemas.required('Last name is required'),
+      email: commonSchemas.email,
+    },
   });
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onEmailSubmit?.(formData);
+    if (!validateAll()) return;
+    onEmailSubmit?.(values);
   };
+
+  // Form is valid when all required fields have content
+  const isFormValid = values.firstName.trim() && values.lastName.trim() && values.email.trim();
 
   return (
     <div className="mt-10 text-center">
@@ -96,22 +106,28 @@ export function VaultCTABlock({
               <Input
                 id="firstName"
                 type="text"
-                value={formData.firstName}
-                onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                className="bg-background border-border"
+                value={values.firstName}
+                onChange={(e) => setValue('firstName', e.target.value)}
+                className={cn("bg-background border-border", hasError('firstName') && 'border-destructive')}
                 required
               />
+              {hasError('firstName') && (
+                <p className="text-xs text-destructive">{getError('firstName')}</p>
+              )}
             </div>
             <div className="space-y-2 text-left">
               <Label htmlFor="lastName" className="text-foreground">Last Name</Label>
               <Input
                 id="lastName"
                 type="text"
-                value={formData.lastName}
-                onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                className="bg-background border-border"
+                value={values.lastName}
+                onChange={(e) => setValue('lastName', e.target.value)}
+                className={cn("bg-background border-border", hasError('lastName') && 'border-destructive')}
                 required
               />
+              {hasError('lastName') && (
+                <p className="text-xs text-destructive">{getError('lastName')}</p>
+              )}
             </div>
           </div>
           <div className="space-y-2 text-left">
@@ -119,16 +135,19 @@ export function VaultCTABlock({
             <Input
               id="email"
               type="email"
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="bg-background border-border"
+              value={values.email}
+              onChange={(e) => setValue('email', e.target.value)}
+              className={cn("bg-background border-border", hasError('email') && 'border-destructive')}
               placeholder="you@example.com"
               required
             />
+            {hasError('email') && (
+              <p className="text-xs text-destructive">{getError('email')}</p>
+            )}
           </div>
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !isFormValid}
             className="w-full"
           >
             Continue with Email
