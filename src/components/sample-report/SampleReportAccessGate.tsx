@@ -8,16 +8,31 @@ import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/use
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useCanonicalScore, getOrCreateAnonId } from '@/hooks/useCanonicalScore';
-import { FileText, Check, Loader2, Shield } from 'lucide-react';
+import { useProgressiveGate } from '@/hooks/useProgressiveGate';
+import { FileText, Check, Loader2, Shield, AlertCircle, Lock } from 'lucide-react';
 import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess, trackLeadCapture, generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor, setLeadAnchor } from '@/lib/leadAnchor';
 import { getAttributionData } from '@/lib/attribution';
 import { TrustModal } from '@/components/forms/TrustModal';
 import { NameInputPair, normalizeNameFields } from '@/components/ui/NameInputPair';
+import { cn } from '@/lib/utils';
 
-interface SampleReportAccessGateProps { isOpen: boolean; onClose: () => void; onSuccess: (leadId: string) => void; }
+interface SampleReportAccessGateProps { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onSuccess: (leadId: string) => void; 
+}
 
+/**
+ * Progressive Hardening Lead Capture Gate
+ * 
+ * Implements 3-level escalation to maximize conversions while
+ * maintaining brand alignment with consumer advocacy positioning.
+ * 
+ * Required Fields: firstName, lastName, email
+ * Optional Field: phone (captured separately for high-intent signals)
+ */
 export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleReportAccessGateProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +45,19 @@ export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleRep
   const { awardScore } = useCanonicalScore();
   const effectiveLeadId = hookLeadId || getLeadAnchor();
   const hasFiredTrackingRef = useRef(false);
+
+  // Progressive gate logic
+  const {
+    lockLevel,
+    attemptCount,
+    handleCloseAttempt,
+    handleComplete,
+    resetGate
+  } = useProgressiveGate({
+    onComplete: (leadId) => {
+      onSuccess(leadId);
+    }
+  });
 
   // Sync form fields from sessionData
   useEffect(() => { 
@@ -66,14 +94,45 @@ export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleRep
     }
     if (!isOpen) {
       hasFiredTrackingRef.current = false;
+      // Reset gate when modal closes (for next visit)
+      resetGate();
     }
-  }, [isOpen]);
+  }, [isOpen, effectiveLeadId, resetGate]);
+
+  // Browser back button prevention when gate is locked
+  useEffect(() => {
+    if (isOpen && lockLevel !== 'soft') {
+      window.history.pushState(null, '', window.location.href);
+      const handlePopState = () => {
+        window.history.pushState(null, '', window.location.href);
+        handleCloseAttempt();
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [isOpen, lockLevel, handleCloseAttempt]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationResult = validateAll();
-    if (!validationResult) { toast({ title: 'Invalid Email', description: getError('email') || 'Please enter a valid email', variant: 'destructive' }); return; }
-    if (!firstName.trim() || !lastName.trim()) { toast({ title: 'Missing Information', description: 'Please enter your first and last name.', variant: 'destructive' }); return; }
+    if (!validationResult) { 
+      toast({ title: 'Invalid Email', description: getError('email') || 'Please enter a valid email', variant: 'destructive' }); 
+      trackEvent('sample_report_gate_error', { 
+        error_message: 'validation_email', 
+        attempt_number: attemptCount + 1,
+        lock_level: lockLevel
+      });
+      return; 
+    }
+    if (!firstName.trim() || !lastName.trim()) { 
+      toast({ title: 'Missing Information', description: 'Please enter your first and last name.', variant: 'destructive' }); 
+      trackEvent('sample_report_gate_error', { 
+        error_message: 'validation_name', 
+        attempt_number: attemptCount + 1,
+        lock_level: lockLevel
+      });
+      return; 
+    }
     setIsLoading(true);
     const normalizedNames = normalizeNameFields(firstName, lastName);
     try {
@@ -109,6 +168,9 @@ export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleRep
           phone: phone.trim() || undefined 
         });
         
+        // Fire progressive gate completion tracking
+        handleComplete(data.leadId);
+        
         // Fire-and-forget tracking - don't let tracking failures affect UI
         Promise.allSettled([
           awardScore({ eventType: 'LEAD_CAPTURED', sourceEntityType: 'lead', sourceEntityId: data.leadId }),
@@ -121,9 +183,29 @@ export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleRep
       } else { throw new Error(data.error || 'Failed to save'); }
     } catch (error) { 
       console.error('Sample report gate error:', error); 
+      trackEvent('sample_report_gate_error', { 
+        error_message: error instanceof Error ? error.message : 'unknown',
+        attempt_number: attemptCount + 1,
+        lock_level: lockLevel
+      });
       toast({ title: 'Unable to unlock', description: error instanceof Error ? error.message : 'Please try again', variant: 'destructive' }); 
     } finally { 
       setIsLoading(false); 
+    }
+  };
+
+  // Handle dialog close attempt
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      // User is trying to close
+      if (lockLevel === 'soft') {
+        // First attempt - escalate to medium
+        handleCloseAttempt();
+      } else {
+        // Medium/Hard - just fire the attempt handler (shows toast)
+        handleCloseAttempt();
+      }
+      // Don't actually close the dialog - gate stays open
     }
   };
 
@@ -132,10 +214,77 @@ export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleRep
   const emailError = getError('email');
   const btnDisabled = isLoading || !values.email.trim() || !firstName.trim() || !lastName.trim();
 
+  // Dynamic header content based on lock level
+  const getHeaderContent = () => {
+    switch (lockLevel) {
+      case 'soft':
+        return {
+          icon: FileText,
+          iconColor: 'text-primary',
+          iconBg: 'bg-primary/10',
+          title: 'View the Sample AI Report',
+          description: 'See exactly what the audit looks like before uploading anything.'
+        };
+      case 'medium':
+        return {
+          icon: AlertCircle,
+          iconColor: 'text-orange-600',
+          iconBg: 'bg-orange-100',
+          title: 'Just Need Your Email',
+          description: 'We\'ll send you this report. No spam, ever. Takes 30 seconds.'
+        };
+      case 'hard':
+        return {
+          icon: Lock,
+          iconColor: 'text-red-600',
+          iconBg: 'bg-red-100',
+          title: 'Complete to Access Report',
+          description: 'Required to view the full sample analysis.'
+        };
+    }
+  };
+
+  const headerContent = getHeaderContent();
+  const IconComponent = headerContent.icon;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <TrustModal className="sm:max-w-md" modalTitle={isSuccess ? undefined : "View the Sample AI Report"} modalDescription={isSuccess ? undefined : "See exactly what the audit looks like before uploading anything."} headerAlign="center">
-        {!isSuccess && <div className="flex justify-center mb-2 -mt-2"><div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><FileText className="w-5 h-5 text-primary" /></div></div>}
+    <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
+      <TrustModal 
+        className="sm:max-w-md" 
+        modalTitle={isSuccess ? undefined : headerContent.title} 
+        modalDescription={isSuccess ? undefined : headerContent.description} 
+        headerAlign="center"
+        lockLevel={lockLevel}
+        onCloseAttempt={handleCloseAttempt}
+      >
+        {/* Dynamic Icon */}
+        {!isSuccess && (
+          <div className="flex justify-center mb-2 -mt-2">
+            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", headerContent.iconBg)}>
+              <IconComponent className={cn("w-5 h-5", headerContent.iconColor)} />
+            </div>
+          </div>
+        )}
+
+        {/* Urgency Context (Medium+ Lock Levels) */}
+        {!isSuccess && lockLevel !== 'soft' && (
+          <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+            {lockLevel === 'medium' && (
+              <p className="text-sm text-amber-800">
+                <strong>Why we ask:</strong> This report takes time to create. 
+                Your email lets us send you the full analysis and keep you updated 
+                on how to protect your windows investment.
+              </p>
+            )}
+            {lockLevel === 'hard' && (
+              <p className="text-sm text-amber-900 font-medium">
+                <strong>Final step:</strong> Complete this form to unlock the 
+                sample report and see exactly how our AI audit protects homeowners.
+              </p>
+            )}
+          </div>
+        )}
+
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">

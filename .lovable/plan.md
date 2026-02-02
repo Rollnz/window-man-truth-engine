@@ -1,17 +1,22 @@
 
 # Progressive Hardening Lead Capture Gateway — Implementation Plan
 
-## Current State Assessment
+## Current State Assessment (UPDATED)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| dialog.tsx | Needs `hideCloseButton` prop | X button is hardcoded |
-| TrustModal.tsx | Needs `locked` prop + event handlers | Already uses Dialog properly |
-| SampleReportAccessGate.tsx | 80% complete | Missing progressive logic |
+| dialog.tsx | ✅ DONE | Added `hideCloseButton` prop |
+| TrustModal.tsx | ✅ DONE | Added `lockLevel` + `onCloseAttempt` props |
+| SampleReportAccessGate.tsx | ✅ DONE | Full progressive logic integrated |
+| SampleReport.tsx | ✅ DONE | Loading state, inert, overlay, beforeunload |
+| useProgressiveGate.ts | ✅ DONE | 3-level escalation hook created |
+| gate.types.ts | ✅ DONE | Type definitions created |
+| react-inert.d.ts | ✅ DONE | TypeScript augmentation added |
+| react-remove-scroll | ✅ DONE | Installed and integrated |
+| ScrollLockWrapper.tsx | ✅ DONE | iOS Safari scroll lock wrapper |
+| useSectionTracking.ts | ✅ DONE | IntersectionObserver hook created |
 | leadAnchor.ts | ✅ Complete | Good 400-day persistence |
 | gtm.ts tracking | ✅ Complete | Full infrastructure exists |
-| react-remove-scroll | ❌ Not installed | Need npm install |
-| Type definitions | ❌ Missing | Need gate.types.ts |
 
 ---
 
