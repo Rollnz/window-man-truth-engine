@@ -33,6 +33,7 @@ export const SOURCE_TOOLS = [
   'floating-estimate-form',
   'roleplay', // Sales roleplay simulation
   'consultation', // Strategy call booking
+  'sample-report', // Sample report access gate
 ] as const;
 
 export type SourceTool = typeof SOURCE_TOOLS[number];
