@@ -79,9 +79,11 @@ export function LeadCaptureModal({
     },
   });
 
-  // Strict phone validation for UX - require exactly 10 digits when full contact is needed
+  // Strict validation for UX - button only enables when form will actually pass validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const hasValidEmail = values.email.trim() && emailRegex.test(values.email);
   const hasValidPhone = !requiresFullContact || (values.phone.replace(/\D/g, '').length === 10);
-  const isFormValid = values.email.trim() && (!requiresFullContact || (values.firstName.trim() && hasValidPhone));
+  const isFormValid = hasValidEmail && (!requiresFullContact || (values.firstName.trim() && hasValidPhone));
 
   // Track modal open - fires ONLY when modal opens, not on form changes
   useEffect(() => {
