@@ -17,14 +17,16 @@ function AnimatedScore({ targetScore, isVisible }: { targetScore: number; isVisi
     if (!isVisible) return;
     const duration = 1500;
     const startTime = Date.now();
+    let rafId = 0;
     const animate = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       setScore(Math.round(targetScore * eased));
-      if (progress < 1) requestAnimationFrame(animate);
+      if (progress < 1) rafId = requestAnimationFrame(animate);
     };
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
   }, [targetScore, isVisible]);
   return <span>{score}</span>;
 }
