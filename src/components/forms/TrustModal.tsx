@@ -81,7 +81,7 @@ export function TrustModal({
               {modalTitle}
             </DialogTitle>
           ) : (
-            <VisuallyHidden.Root asChild>
+            <VisuallyHidden.Root>
               <DialogTitle>Form Modal</DialogTitle>
             </VisuallyHidden.Root>
           )}
@@ -90,7 +90,7 @@ export function TrustModal({
               {modalDescription}
             </DialogDescription>
           ) : (
-            <VisuallyHidden.Root asChild>
+            <VisuallyHidden.Root>
               <DialogDescription>Complete the form below</DialogDescription>
             </VisuallyHidden.Root>
           )}
@@ -98,10 +98,10 @@ export function TrustModal({
       ) : (
         /* No visible header - still need accessible names for focus trap */
         <>
-          <VisuallyHidden.Root asChild>
+          <VisuallyHidden.Root>
             <DialogTitle>Form Modal</DialogTitle>
           </VisuallyHidden.Root>
-          <VisuallyHidden.Root asChild>
+          <VisuallyHidden.Root>
             <DialogDescription>Complete the form below</DialogDescription>
           </VisuallyHidden.Root>
         </>
