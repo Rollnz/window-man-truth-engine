@@ -35,6 +35,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
+import { trackLeadCapture, trackLeadSubmissionSuccess } from '@/lib/gtm';
 
 export default function QuoteScanner() {
   usePageTracking('quote-scanner');
@@ -222,6 +223,33 @@ export default function QuoteScanner() {
                   if (result?.leadId) {
                     updateField('leadId', result.leadId);
                     setLeadId(result.leadId);
+
+                    // CRITICAL: Track lead capture for attribution (EMQ 9.5+)
+                    await trackLeadCapture(
+                      {
+                        leadId: result.leadId,
+                        sourceTool: 'quote_scanner',
+                        conversionAction: 'form_submit',
+                      },
+                      data.email,
+                      undefined, // No phone in NoQuote flow
+                      {
+                        hasName: !!(data.firstName || data.lastName),
+                        hasPhone: false,
+                      }
+                    );
+
+                    // Track enhanced conversion with value-based bidding ($100)
+                    await trackLeadSubmissionSuccess({
+                      leadId: result.leadId,
+                      email: data.email,
+                      firstName: data.firstName,
+                      lastName: data.lastName,
+                      sourceTool: 'quote-scanner',
+                      eventId: `lead_captured:${result.leadId}`,
+                      value: 100,
+                    });
+
                     toast({
                       title: "Saved!",
                       description: "We'll help you prepare for your window project.",
