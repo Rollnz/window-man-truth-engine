@@ -103,20 +103,37 @@ export function FailurePointsSection() {
         
         <div className="max-w-3xl mx-auto mb-16">
           <h3 className="text-xl font-semibold text-foreground mb-6 text-center">The Four Failure Points</h3>
-          <div className="space-y-4">
-            {failurePoints.map((point, index) => (
-              <AnimateOnScroll key={index} delay={index * 100} threshold={0.3}>
-                <FailurePoint 
-                  number={index + 1} 
-                  title={point.title} 
-                  description={point.description} 
-                  icon={point.icon} 
-                  isOpen={openIndex === index} 
-                  onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                  patternClass={point.patternClass}
-                />
-              </AnimateOnScroll>
-            ))}
+          <div className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
+            {failurePoints.map((point, index) => {
+              // Desktop 2x2 grid: alternating left/right reveals
+              // Top row: index 0 (left), index 1 (right)
+              // Bottom row: index 2 (left), index 3 (right)
+              const direction = index % 2 === 0 ? 'left' : 'right';
+              // Desktop: 100ms stagger, Mobile: 50ms stagger
+              const staggerDelay = typeof window !== 'undefined' && window.innerWidth >= 768 
+                ? index * 100 
+                : index * 50;
+              
+              return (
+                <AnimateOnScroll 
+                  key={index} 
+                  delay={staggerDelay} 
+                  threshold={0.3}
+                  direction={direction}
+                  desktopDirectionOnly={true}
+                >
+                  <FailurePoint 
+                    number={index + 1} 
+                    title={point.title} 
+                    description={point.description} 
+                    icon={point.icon} 
+                    isOpen={openIndex === index} 
+                    onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                    patternClass={point.patternClass}
+                  />
+                </AnimateOnScroll>
+              );
+            })}
           </div>
         </div>
         
