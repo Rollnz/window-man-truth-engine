@@ -13,6 +13,8 @@ import { ArrowRight, CheckCircle2, Calendar, Phone, Home, Building2, MapPin, Clo
 import { trackModalOpen, trackEvent, trackConsultationBooked } from '@/lib/gtm';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { supabase } from '@/integrations/supabase/client';
+import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
+import { getFullAttributionData } from '@/lib/attribution';
 import { SOUTHEAST_STATES, DEFAULT_STATE } from '@/constants/states';
 
 interface KitchenTableGuideModalProps {
@@ -54,7 +56,7 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
   const [lastNameNudge, setLastNameNudge] = useState(false);
   const [capturedLeadId, setCapturedLeadId] = useState<string | null>(null);
   const [upsellType, setUpsellType] = useState<'measurement' | 'callback' | null>(null);
-  const { sessionData, updateFields } = useSessionData();
+  const { sessionData, updateFields, sessionId } = useSessionData();
 
   // Project details state
   const [projectDetails, setProjectDetails] = useState({
@@ -231,6 +233,13 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
           lastName: values.lastName,
           phone: phoneE164 || values.phone,
           sourceTool: 'consultation',
+          // Golden Thread fields for attribution tracking
+          leadId: capturedLeadId,
+          sessionId,
+          sessionData: {
+            clientId: getOrCreateAnonId(),
+          },
+          ...getFullAttributionData(),
           aiContext: {
             source_form: 'kitchen-table-guide-upsell',
             upsell_type: upsellType,
