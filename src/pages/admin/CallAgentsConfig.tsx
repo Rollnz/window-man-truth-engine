@@ -1,7 +1,9 @@
-import { RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { RefreshCw, Power } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { CallAgentTable } from '@/components/admin/CallAgentTable';
+import { KillSwitchDialog } from '@/components/admin/KillSwitchDialog';
 import { useCallAgents } from '@/hooks/useCallAgents';
 
 function CallAgentsConfigContent() {
@@ -15,7 +17,12 @@ function CallAgentsConfigContent() {
     updateAgentId,
     updateTemplate,
     updateAgentName,
+    killSwitch,
   } = useCallAgents();
+
+  const [isKillSwitchOpen, setIsKillSwitchOpen] = useState(false);
+
+  const enabledCount = agents.filter(a => a.enabled).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -29,14 +36,28 @@ function CallAgentsConfigContent() {
                 Manage PhoneCall.bot voice agent integrations
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={refetch}
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Kill Switch Button - hidden when no agents are enabled */}
+              {enabledCount > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setIsKillSwitchOpen(true)}
+                  className="gap-1.5"
+                >
+                  <Power className="h-4 w-4" />
+                  Kill Switch
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={refetch}
+                disabled={loading}
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -55,6 +76,14 @@ function CallAgentsConfigContent() {
           updateAgentName={updateAgentName}
         />
       </main>
+
+      {/* Kill Switch Dialog */}
+      <KillSwitchDialog
+        isOpen={isKillSwitchOpen}
+        onClose={() => setIsKillSwitchOpen(false)}
+        onConfirm={killSwitch}
+        enabledAgentCount={enabledCount}
+      />
     </div>
   );
 }

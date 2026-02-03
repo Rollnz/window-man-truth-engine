@@ -52,6 +52,8 @@ interface ListAgentsResponse {
     enabled: boolean;
     first_message_template: string;
     updated_at: string;
+    last_dispatch_at: string | null;
+    last_error: { message: string; triggered_at: string } | null;
   }>;
 }
 
@@ -101,7 +103,7 @@ serve(async (req) => {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // GET: List all call agents (for admin UI)
+  // GET: List all call agents (for admin UI) with dispatch enrichment
   // ═══════════════════════════════════════════════════════════════════════════
   if (req.method === "GET") {
     const { data: agents, error: agentsErr } = await supabaseAdmin
@@ -114,21 +116,106 @@ serve(async (req) => {
       return json(500, { error: "Failed to fetch agents" });
     }
 
-    const response: ListAgentsResponse = { agents: agents || [] };
+    // ═══════════════════════════════════════════════════════════════════════
+    // Enrich with dispatch data from pending_calls (last 30 days)
+    // ═══════════════════════════════════════════════════════════════════════
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Query A: Last dispatch per agent
+    const { data: recentCalls } = await supabaseAdmin
+      .from("pending_calls")
+      .select("source_tool, triggered_at")
+      .gte("triggered_at", thirtyDaysAgo)
+      .order("triggered_at", { ascending: false })
+      .limit(200);
+
+    // Build lastDispatchMap - first hit per source_tool is most recent
+    const lastDispatchMap: Record<string, string> = {};
+    for (const call of recentCalls || []) {
+      if (call.source_tool && call.triggered_at && !lastDispatchMap[call.source_tool]) {
+        lastDispatchMap[call.source_tool] = call.triggered_at;
+      }
+    }
+
+    // Query B: Last dead letter error per agent
+    const { data: deadLetters } = await supabaseAdmin
+      .from("pending_calls")
+      .select("source_tool, triggered_at, last_error")
+      .eq("status", "dead_letter")
+      .gte("triggered_at", thirtyDaysAgo)
+      .order("triggered_at", { ascending: false })
+      .limit(50);
+
+    // Build lastErrorMap - first hit per source_tool is most recent
+    const lastErrorMap: Record<string, { message: string; triggered_at: string }> = {};
+    for (const call of deadLetters || []) {
+      if (call.source_tool && call.triggered_at && !lastErrorMap[call.source_tool]) {
+        lastErrorMap[call.source_tool] = {
+          message: call.last_error || "Unknown error",
+          triggered_at: call.triggered_at,
+        };
+      }
+    }
+
+    // Merge enrichment data into agents
+    const enrichedAgents = (agents || []).map(agent => ({
+      ...agent,
+      last_dispatch_at: lastDispatchMap[agent.source_tool] || null,
+      last_error: lastErrorMap[agent.source_tool] || null,
+    }));
+
+    const response: ListAgentsResponse = { agents: enrichedAgents };
     return json(200, response);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // PATCH: Toggle enabled state for an agent
+  // PATCH: Toggle enabled state OR Kill Switch
   // ═══════════════════════════════════════════════════════════════════════════
   if (req.method === "PATCH") {
-    let patchPayload: { source_tool?: string; enabled?: boolean };
+    let patchPayload: { source_tool?: string; enabled?: boolean; kill_switch?: boolean };
     try {
       patchPayload = await req.json();
     } catch {
       return json(400, { error: "Invalid JSON" });
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // Kill Switch Path - checked FIRST, before toggle logic
+    // ═══════════════════════════════════════════════════════════════════════
+    if (patchPayload.kill_switch === true) {
+      try {
+        const { data, error: updateErr } = await supabaseAdmin
+          .from("call_agents")
+          .update({
+            enabled: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("enabled", true)
+          .select("source_tool");
+
+        if (updateErr) {
+          return json(500, { error: updateErr.message });
+        }
+
+        console.log("[admin-update-call-agent] Kill switch activated", {
+          disabled_count: data?.length || 0,
+          requested_by: email,
+        });
+
+        return json(200, {
+          success: true,
+          kill_switch: true,
+          disabled_count: data?.length || 0,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        return json(500, { error: msg });
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Standard Toggle Path - existing logic unchanged
+    // ═══════════════════════════════════════════════════════════════════════
     const { source_tool, enabled } = patchPayload;
 
     // Validation
