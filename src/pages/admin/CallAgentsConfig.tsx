@@ -14,6 +14,7 @@ function CallAgentsConfigContent() {
     toggleEnabled,
     updateAgentId,
     updateTemplate,
+    updateAgentName,
   } = useCallAgents();
 
   return (
@@ -51,6 +52,7 @@ function CallAgentsConfigContent() {
           toggleEnabled={toggleEnabled}
           updateAgentId={updateAgentId}
           updateTemplate={updateTemplate}
+          updateAgentName={updateAgentName}
         />
       </main>
     </div>

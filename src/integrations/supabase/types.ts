@@ -65,6 +65,7 @@ export type Database = {
       call_agents: {
         Row: {
           agent_id: string
+          agent_name: string
           created_at: string
           enabled: boolean
           first_message_template: string
@@ -75,6 +76,7 @@ export type Database = {
         }
         Insert: {
           agent_id: string
+          agent_name?: string
           created_at?: string
           enabled?: boolean
           first_message_template: string
@@ -85,6 +87,7 @@ export type Database = {
         }
         Update: {
           agent_id?: string
+          agent_name?: string
           created_at?: string
           enabled?: boolean
           first_message_template?: string

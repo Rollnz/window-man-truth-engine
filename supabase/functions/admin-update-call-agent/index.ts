@@ -48,6 +48,7 @@ interface ListAgentsResponse {
   agents: Array<{
     source_tool: string;
     agent_id: string;
+    agent_name: string;
     enabled: boolean;
     first_message_template: string;
     updated_at: string;
@@ -105,7 +106,7 @@ serve(async (req) => {
   if (req.method === "GET") {
     const { data: agents, error: agentsErr } = await supabaseAdmin
       .from("call_agents")
-      .select("source_tool, agent_id, enabled, first_message_template, updated_at")
+      .select("source_tool, agent_id, agent_name, enabled, first_message_template, updated_at")
       .order("source_tool");
 
     if (agentsErr) {
@@ -169,44 +170,76 @@ serve(async (req) => {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // PUT: Update first_message_template for an agent
+  // PUT: Update agent_name and/or first_message_template for an agent
   // ═══════════════════════════════════════════════════════════════════════════
   if (req.method === "PUT") {
-    let putPayload: { source_tool?: string; first_message_template?: string };
+    let putPayload: { source_tool?: string; first_message_template?: string; agent_name?: string };
     try {
       putPayload = await req.json();
     } catch {
       return json(400, { error: "Invalid JSON" });
     }
 
-    const { source_tool, first_message_template } = putPayload;
+    const { source_tool, first_message_template, agent_name } = putPayload;
 
-    // Validation
+    // Validation: source_tool is always required
     if (!source_tool || typeof source_tool !== "string" || source_tool.trim() === "") {
       return json(400, { error: "source_tool is required and must be a non-empty string" });
     }
 
-    if (typeof first_message_template !== "string") {
-      return json(400, { error: "first_message_template must be a string" });
+    // Check that at least one optional field is present
+    const hasTemplate = first_message_template !== undefined;
+    const hasAgentName = agent_name !== undefined;
+    
+    if (!hasTemplate && !hasAgentName) {
+      return json(400, { error: "Nothing to update" });
     }
 
-    if (first_message_template.length > 500) {
-      return json(400, { error: "Template must be 500 characters or fewer" });
+    // Validate first_message_template if present
+    if (hasTemplate) {
+      if (typeof first_message_template !== "string") {
+        return json(400, { error: "first_message_template must be a string" });
+      }
+      if (first_message_template.length > 500) {
+        return json(400, { error: "Template must be 500 characters or fewer" });
+      }
     }
 
-    console.log("[admin-update-call-agent] PUT template request", {
+    // Validate agent_name if present
+    if (hasAgentName) {
+      if (typeof agent_name !== "string") {
+        return json(400, { error: "agent_name must be a string" });
+      }
+      if (agent_name.length > 100) {
+        return json(400, { error: "Agent name must be 100 characters or fewer" });
+      }
+    }
+
+    console.log("[admin-update-call-agent] PUT request", {
       source_tool,
-      template_length: first_message_template.length,
+      has_template: hasTemplate,
+      template_length: hasTemplate ? first_message_template!.length : null,
+      has_agent_name: hasAgentName,
+      agent_name_length: hasAgentName ? agent_name!.length : null,
       requested_by: email,
     });
 
     try {
+      // Build dynamic update object
+      const updateData: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+      };
+      
+      if (hasTemplate) {
+        updateData.first_message_template = first_message_template;
+      }
+      if (hasAgentName) {
+        updateData.agent_name = agent_name;
+      }
+
       const { error: updateErr } = await supabaseAdmin
         .from("call_agents")
-        .update({
-          first_message_template,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("source_tool", source_tool);
 
       if (updateErr) {
@@ -214,7 +247,10 @@ serve(async (req) => {
         return json(500, { error: updateErr.message });
       }
 
-      console.log("[admin-update-call-agent] Template update success", { source_tool });
+      console.log("[admin-update-call-agent] PUT update success", { 
+        source_tool,
+        updated_fields: Object.keys(updateData).filter(k => k !== "updated_at"),
+      });
       return json(200, { success: true, source_tool });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
