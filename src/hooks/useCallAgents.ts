@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface CallAgent {
   source_tool: string;
   agent_id: string;
+  agent_name: string;
   enabled: boolean;
   first_message_template: string;
   updated_at: string;
@@ -24,6 +25,7 @@ interface UseCallAgentsReturn {
   toggleEnabled: (source_tool: string, enabled: boolean) => Promise<void>;
   updateAgentId: (source_tool: string, agent_id: string) => Promise<void>;
   updateTemplate: (source_tool: string, first_message_template: string) => Promise<void>;
+  updateAgentName: (source_tool: string, agent_name: string) => Promise<void>;
 }
 
 export function useCallAgents(): UseCallAgentsReturn {
@@ -218,6 +220,53 @@ export function useCallAgents(): UseCallAgentsReturn {
   }, [fetchAgents]);
 
   /**
+   * Update agent_name (server-first, not optimistic)
+   */
+  const updateAgentName = useCallback(async (
+    source_tool: string,
+    agent_name: string
+  ): Promise<void> => {
+    // Validate required parameters before any state changes
+    if (!source_tool) {
+      throw new Error('source_tool is required');
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-call-agent`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ source_tool, agent_name }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    // Update local state after server confirms
+    setAgents(prev => prev.map(agent =>
+      agent.source_tool === source_tool
+        ? { ...agent, agent_name }
+        : agent
+    ));
+
+    // Refetch to sync updated_at
+    await fetchAgents();
+  }, [fetchAgents]);
+
+  /**
    * Dispatch a test call directly to PhoneCall.bot.
    * Bypasses the pending_calls queue - admin testing only.
    */
@@ -271,5 +320,6 @@ export function useCallAgents(): UseCallAgentsReturn {
     toggleEnabled,
     updateAgentId,
     updateTemplate,
+    updateAgentName,
   };
 }

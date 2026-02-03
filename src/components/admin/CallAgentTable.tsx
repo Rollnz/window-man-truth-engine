@@ -8,6 +8,7 @@ import { CallAgent } from '@/hooks/useCallAgents';
 import { getSourceToolLabel } from '@/constants/sourceToolLabels';
 import { TestCallDialog } from './TestCallDialog';
 import { AgentIdEditor } from './AgentIdEditor';
+import { AgentNameEditor } from './AgentNameEditor';
 import { TemplateEditor } from './TemplateEditor';
 import { toast } from '@/hooks/use-toast';
 
@@ -23,6 +24,7 @@ interface CallAgentTableProps {
   toggleEnabled: (source_tool: string, enabled: boolean) => Promise<void>;
   updateAgentId: (source_tool: string, agent_id: string) => Promise<void>;
   updateTemplate: (source_tool: string, template: string) => Promise<void>;
+  updateAgentName: (source_tool: string, agent_name: string) => Promise<void>;
 }
 
 interface AgentCardProps {
@@ -31,6 +33,7 @@ interface AgentCardProps {
   onToggleEnabled: (source_tool: string, enabled: boolean) => Promise<void>;
   onUpdateAgentId: (source_tool: string, agent_id: string) => Promise<void>;
   onUpdateTemplate: (source_tool: string, template: string) => Promise<void>;
+  onUpdateAgentName: (source_tool: string, agent_name: string) => Promise<void>;
 }
 
 function AgentCard({
@@ -39,6 +42,7 @@ function AgentCard({
   onToggleEnabled,
   onUpdateAgentId,
   onUpdateTemplate,
+  onUpdateAgentName,
 }: AgentCardProps) {
   const [isToggling, setIsToggling] = useState(false);
 
@@ -73,7 +77,15 @@ function AgentCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Bot className="h-5 w-5 text-muted-foreground" />
-            <h3 className="text-lg font-semibold">{label}</h3>
+            <div>
+              <h3 className="text-lg font-semibold">{label}</h3>
+              {/* Agent Name Editor - directly below source tool label */}
+              <AgentNameEditor
+                source_tool={agent.source_tool}
+                current_agent_name={agent.agent_name}
+                onSave={onUpdateAgentName}
+              />
+            </div>
           </div>
           <div className="flex items-center gap-3">
             {/* Toggle Switch */}
@@ -206,6 +218,7 @@ export function CallAgentTable({
   toggleEnabled,
   updateAgentId,
   updateTemplate,
+  updateAgentName,
 }: CallAgentTableProps) {
   const [selectedAgent, setSelectedAgent] = useState<CallAgent | null>(null);
 
@@ -232,6 +245,7 @@ export function CallAgentTable({
             onToggleEnabled={toggleEnabled}
             onUpdateAgentId={updateAgentId}
             onUpdateTemplate={updateTemplate}
+            onUpdateAgentName={updateAgentName}
           />
         ))}
       </div>

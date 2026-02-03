@@ -1,0 +1,3 @@
+ALTER TABLE call_agents
+ADD COLUMN IF NOT EXISTS agent_name TEXT
+DEFAULT '' NOT NULL;
