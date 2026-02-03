@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { useGlobalSearch } from '@/hooks/useGlobalSearch';
 import { StatsCard } from '@/components/admin/StatsCard';
-import { ActivityFeed } from '@/components/admin/ActivityFeed';
+import { DashboardActivityWidget } from '@/components/admin/DashboardActivityWidget';
 import { QuickActionCard } from '@/components/admin/QuickActionCard';
 import { SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
 import { PhoneCallOpsPanel } from '@/components/admin/PhoneCallOpsPanel';
@@ -137,7 +137,7 @@ function AdminHomeContent() {
                     View all →
                   </Link>
                 </div>
-                <ActivityFeed events={recentActivity} isLoading={isLoading} />
+                <DashboardActivityWidget events={recentActivity} isLoading={isLoading} />
               </div>
             </div>
           </TabsContent>

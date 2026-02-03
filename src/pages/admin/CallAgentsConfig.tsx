@@ -6,8 +6,12 @@ import { CallAgentTable } from '@/components/admin/CallAgentTable';
 import { KillSwitchDialog } from '@/components/admin/KillSwitchDialog';
 import { StatsCards } from '@/components/admin/StatsCards';
 import { SearchFilterBar, ShowMode } from '@/components/admin/SearchFilterBar';
+import { ActivityFeed } from '@/components/admin/ActivityFeed';
 import { useCallAgents } from '@/hooks/useCallAgents';
+import { useCallActivity } from '@/hooks/useCallActivity';
 import { SOURCE_TOOL_LABELS } from '@/constants/sourceToolLabels';
+
+type ActiveTab = 'agents' | 'activity';
 
 function CallAgentsConfigContent() {
   const { 
@@ -24,6 +28,20 @@ function CallAgentsConfigContent() {
     killSwitch,
   } = useCallAgents();
 
+  // Activity tab hook - called unconditionally (React hooks requirement)
+  const {
+    calls,
+    loading: activityLoading,
+    error: activityError,
+    hasMore,
+    isLoadingMore,
+    filters: activityFilters,
+    setFilters: setActivityFilters,
+    loadMore,
+    refetch: refetchActivity,
+  } = useCallActivity();
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>('agents');
   const [isKillSwitchOpen, setIsKillSwitchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showMode, setShowMode] = useState<ShowMode>('all');
@@ -90,26 +108,67 @@ function CallAgentsConfigContent() {
         {/* Stats Cards - uses FULL agents array */}
         <StatsCards summary={summary} totalAgents={agents.length} />
 
-        {/* Search & Filter Bar */}
-        <SearchFilterBar
-          onFilterChange={({ query, showMode: mode }) => {
-            setSearchQuery(query);
-            setShowMode(mode);
-          }}
-        />
+        {/* Tab Bar */}
+        <div className="flex border-b border-gray-200 mt-4">
+          <button
+            onClick={() => setActiveTab('agents')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              activeTab === 'agents'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Agents
+          </button>
+          <button
+            onClick={() => setActiveTab('activity')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              activeTab === 'activity'
+                ? 'border-purple-500 text-purple-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Activity
+          </button>
+        </div>
 
-        {/* Agent Table - uses FILTERED agents */}
-        <CallAgentTable
-          agents={filteredAgents}
-          loading={loading}
-          error={error}
-          refetch={refetch}
-          testCall={testCall}
-          toggleEnabled={toggleEnabled}
-          updateAgentId={updateAgentId}
-          updateTemplate={updateTemplate}
-          updateAgentName={updateAgentName}
-        />
+        {/* Tab Content */}
+        {activeTab === 'agents' ? (
+          <>
+            {/* Search & Filter Bar */}
+            <SearchFilterBar
+              onFilterChange={({ query, showMode: mode }) => {
+                setSearchQuery(query);
+                setShowMode(mode);
+              }}
+            />
+
+            {/* Agent Table - uses FILTERED agents */}
+            <CallAgentTable
+              agents={filteredAgents}
+              loading={loading}
+              error={error}
+              refetch={refetch}
+              testCall={testCall}
+              toggleEnabled={toggleEnabled}
+              updateAgentId={updateAgentId}
+              updateTemplate={updateTemplate}
+              updateAgentName={updateAgentName}
+            />
+          </>
+        ) : (
+          <ActivityFeed
+            calls={calls}
+            loading={activityLoading}
+            error={activityError}
+            hasMore={hasMore}
+            isLoadingMore={isLoadingMore}
+            onLoadMore={loadMore}
+            onRefresh={refetchActivity}
+            filters={activityFilters}
+            onFilterChange={setActivityFilters}
+          />
+        )}
       </main>
 
       {/* Kill Switch Dialog */}
