@@ -8,7 +8,7 @@ import { NegotiationTools } from '@/components/quote-scanner/NegotiationTools';
 import { QuoteQA } from '@/components/quote-scanner/QuoteQA';
 import { GenerateProposalButton } from '@/components/quote-scanner/GenerateProposalButton';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
-import { ConversionBar } from '@/components/conversion/ConversionBar';
+
 import { useQuoteScanner } from '@/hooks/useQuoteScanner';
 import type { SourceTool } from '@/types/sourceTool';
 import { useSessionData } from '@/hooks/useSessionData';
@@ -124,13 +124,6 @@ export default function QuoteScanner() {
 
         <QuoteScannerHero />
 
-        <div className="container px-4 mt-6">
-          {/* Keep a persistent path to the estimate flow so scanner visitors don't stall */}
-          <ConversionBar
-            headline="Scan your quote, then jump straight into a verified estimate."
-            subheadline="Our team double-checks pricing, red flags, and negotiates the best numbers for you."
-          />
-        </div>
         
         <section className="py-12 md:py-20">
           <div className="container px-4">
