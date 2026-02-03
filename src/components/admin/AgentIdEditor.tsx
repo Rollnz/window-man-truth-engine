@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Check, X, Pencil, Loader2 } from 'lucide-react';
+import { Check, X, Pencil, Loader2, Copy, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { toast } from '@/hooks/use-toast';
 import { getSourceToolLabel } from '@/constants/sourceToolLabels';
+import { copyToClipboard } from '@/utils/clipboard';
 
 type EditorState = 'VIEWING' | 'EDITING' | 'SAVING' | 'ERROR';
 
@@ -43,6 +50,9 @@ export function AgentIdEditor({
   const passesFormat = AGENT_ID_REGEX.test(inputValue);
   const isNotPlaceholder = inputValue !== PLACEHOLDER_ID;
   const isValid = passesFormat && isNotPlaceholder;
+
+  // Deep link eligibility: valid format AND not placeholder
+  const canShowDeepLink = AGENT_ID_REGEX.test(current_agent_id) && current_agent_id !== PLACEHOLDER_ID;
 
   // Determine which error to show (format takes priority)
   let errorMessage: string | null = null;
@@ -87,6 +97,14 @@ export function AgentIdEditor({
     }
   };
 
+  const handleCopyAgentId = async () => {
+    await copyToClipboard(current_agent_id);
+    toast({
+      title: 'Copied',
+      description: 'Agent ID copied',
+    });
+  };
+
   // VIEWING state
   if (state === 'VIEWING') {
     return (
@@ -101,6 +119,33 @@ export function AgentIdEditor({
         >
           <Pencil className="h-3.5 w-3.5" />
         </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          onClick={handleCopyAgentId}
+        >
+          <Copy className="h-3.5 w-3.5" />
+        </Button>
+        {canShowDeepLink && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a
+                  href={`https://phonecall.bot/agents/${current_agent_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center h-6 w-6 rounded-md hover:bg-accent hover:text-accent-foreground"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View on PhoneCall.bot</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
     );
   }

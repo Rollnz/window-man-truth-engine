@@ -9,6 +9,8 @@ export interface CallAgent {
   first_message_template: string;
   updated_at: string;
   webhook_url?: string;
+  last_dispatch_at: string | null;
+  last_error: { message: string; triggered_at: string } | null;
 }
 
 interface TestCallResult {
@@ -26,6 +28,7 @@ interface UseCallAgentsReturn {
   updateAgentId: (source_tool: string, agent_id: string) => Promise<void>;
   updateTemplate: (source_tool: string, first_message_template: string) => Promise<void>;
   updateAgentName: (source_tool: string, agent_name: string) => Promise<void>;
+  killSwitch: () => Promise<{ disabled_count: number }>;
 }
 
 export function useCallAgents(): UseCallAgentsReturn {
@@ -267,6 +270,47 @@ export function useCallAgents(): UseCallAgentsReturn {
   }, [fetchAgents]);
 
   /**
+   * Kill Switch - disable ALL enabled agents (server-first, NOT optimistic)
+   */
+  const killSwitch = useCallback(async (): Promise<{ disabled_count: number }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-call-agent`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ kill_switch: true }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    // Update local state - set all agents to disabled
+    setAgents(prev => prev.map(agent => ({
+      ...agent,
+      enabled: false,
+      updated_at: new Date().toISOString(),
+    })));
+
+    // Refetch to sync everything
+    await fetchAgents();
+
+    return { disabled_count: data.disabled_count || 0 };
+  }, [fetchAgents]);
+
+  /**
    * Dispatch a test call directly to PhoneCall.bot.
    * Bypasses the pending_calls queue - admin testing only.
    */
@@ -321,5 +365,6 @@ export function useCallAgents(): UseCallAgentsReturn {
     updateAgentId,
     updateTemplate,
     updateAgentName,
+    killSwitch,
   };
 }

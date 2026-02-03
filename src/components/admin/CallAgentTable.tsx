@@ -3,7 +3,21 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, Bot, Phone, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
+  AlertCircle,
+  Bot,
+  Phone,
+  Loader2,
+  Copy,
+  TriangleAlert,
+  ChevronDown,
+} from 'lucide-react';
 import { CallAgent } from '@/hooks/useCallAgents';
 import { getSourceToolLabel } from '@/constants/sourceToolLabels';
 import { TestCallDialog } from './TestCallDialog';
@@ -11,6 +25,8 @@ import { AgentIdEditor } from './AgentIdEditor';
 import { AgentNameEditor } from './AgentNameEditor';
 import { TemplateEditor } from './TemplateEditor';
 import { toast } from '@/hooks/use-toast';
+import { formatRelativeTime } from '@/utils/relativeTime';
+import { copyToClipboard } from '@/utils/clipboard';
 
 interface CallAgentTableProps {
   agents: CallAgent[];
@@ -45,6 +61,7 @@ function AgentCard({
   onUpdateAgentName,
 }: AgentCardProps) {
   const [isToggling, setIsToggling] = useState(false);
+  const [isErrorExpanded, setIsErrorExpanded] = useState(false);
 
   const label = getSourceToolLabel(agent.source_tool);
   const truncatedMessage = agent.first_message_template.length > 80
@@ -71,15 +88,34 @@ function AgentCard({
     }
   };
 
+  const handleCopySourceTool = async () => {
+    await copyToClipboard(agent.source_tool);
+    toast({
+      title: 'Copied',
+      description: 'Source tool copied',
+    });
+  };
+
   return (
-    <Card>
+    <Card className="group">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Bot className="h-5 w-5 text-muted-foreground" />
             <div>
-              <h3 className="text-lg font-semibold">{label}</h3>
-              {/* Agent Name Editor - directly below source tool label */}
+              {/* 1. Source Tool label + copy icon (hover-only) */}
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold">{label}</h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={handleCopySourceTool}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              {/* 2. Agent Name Editor */}
               <AgentNameEditor
                 source_tool={agent.source_tool}
                 current_agent_name={agent.agent_name}
@@ -88,7 +124,7 @@ function AgentCard({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {/* Toggle Switch */}
+            {/* 3. Toggle Switch */}
             <div className="flex items-center gap-2">
               <div className={isToggling ? 'opacity-60 pointer-events-none' : ''}>
                 <Switch
@@ -110,7 +146,7 @@ function AgentCard({
               )}
             </div>
 
-            {/* Test Call Button */}
+            {/* 9. Test Call Button */}
             <Button
               variant="outline"
               size="sm"
@@ -124,14 +160,14 @@ function AgentCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Agent ID Editor */}
+        {/* 4. Agent ID Editor */}
         <AgentIdEditor
           source_tool={agent.source_tool}
           current_agent_id={agent.agent_id}
           onSave={onUpdateAgentId}
         />
 
-        {/* First Message Template (truncated preview) */}
+        {/* 5. First Message Template (truncated preview) */}
         <div>
           <span className="text-sm text-muted-foreground">First Message Template:</span>
           <p className="text-sm text-foreground mt-1 bg-muted/50 p-2 rounded">
@@ -139,17 +175,51 @@ function AgentCard({
           </p>
         </div>
 
-        {/* Template Editor (collapsible) */}
+        {/* 6. Template Editor (collapsible) */}
         <TemplateEditor
           source_tool={agent.source_tool}
           current_template={agent.first_message_template}
           onSave={onUpdateTemplate}
         />
 
-        {/* Last Updated */}
-        <div className="text-xs text-muted-foreground">
-          Last Updated: {agent.updated_at}
+        {/* 7. Last Dispatch */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Last Dispatch:</span>
+          {agent.last_dispatch_at ? (
+            <span className="text-sm text-foreground">
+              {formatRelativeTime(agent.last_dispatch_at)}
+            </span>
+          ) : (
+            <Badge variant="secondary" className="text-xs">
+              Never
+            </Badge>
+          )}
         </div>
+
+        {/* 8. Error Indicator (conditional, collapsible) */}
+        {agent.last_error && (
+          <Collapsible open={isErrorExpanded} onOpenChange={setIsErrorExpanded}>
+            <CollapsibleTrigger className="flex items-center gap-2 text-destructive hover:underline cursor-pointer">
+              <TriangleAlert className="h-4 w-4" />
+              <span className="text-sm font-medium">Last Error</span>
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${
+                  isErrorExpanded ? 'rotate-180' : ''
+                }`}
+              />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="mt-2 bg-destructive/10 border border-destructive/30 rounded p-3 space-y-1">
+                <p className="text-sm text-destructive">
+                  {agent.last_error.message}
+                </p>
+                <p className="text-xs text-destructive/70">
+                  {formatRelativeTime(agent.last_error.triggered_at)}
+                </p>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
       </CardContent>
     </Card>
   );
