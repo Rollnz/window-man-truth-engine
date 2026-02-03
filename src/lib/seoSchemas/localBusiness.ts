@@ -1,64 +1,70 @@
 /**
- * LocalBusiness Schema Generator
- * Handles LocalBusiness structured data (fixes Google Rich Results errors)
+ * Service Business Schema Generator
+ * Uses Organization type for online/home-based businesses
+ * (LocalBusiness requires physical storefront address)
  */
 
 const SITE_URL = "https://itswindowman.com";
 
 /**
- * Generate LocalBusiness schema with proper address for Google validation
- * Resolves "Missing Address" error in Rich Results Test
+ * Major Florida metropolitan areas for statewide coverage
  */
-export function generateLocalBusinessSchema(): Record<string, unknown> {
+const FLORIDA_SERVICE_AREAS = [
+  // Statewide
+  { "@type": "State", "name": "Florida", "sameAs": "https://en.wikipedia.org/wiki/Florida" },
+  // Tri-County Focus
+  { "@type": "AdministrativeArea", "name": "Palm Beach County" },
+  { "@type": "AdministrativeArea", "name": "Broward County" },
+  { "@type": "AdministrativeArea", "name": "Miami-Dade County" },
+  // Major Cities (for paid ad coverage)
+  { "@type": "City", "name": "Miami", "sameAs": "https://en.wikipedia.org/wiki/Miami" },
+  { "@type": "City", "name": "Fort Lauderdale" },
+  { "@type": "City", "name": "West Palm Beach" },
+  { "@type": "City", "name": "Tampa", "sameAs": "https://en.wikipedia.org/wiki/Tampa,_Florida" },
+  { "@type": "City", "name": "Orlando", "sameAs": "https://en.wikipedia.org/wiki/Orlando,_Florida" },
+  { "@type": "City", "name": "Jacksonville", "sameAs": "https://en.wikipedia.org/wiki/Jacksonville,_Florida" },
+  { "@type": "City", "name": "Naples" },
+  { "@type": "City", "name": "Sarasota" },
+  { "@type": "City", "name": "Fort Myers" },
+  { "@type": "City", "name": "Boca Raton" },
+  { "@type": "City", "name": "Pompano Beach" },
+  { "@type": "City", "name": "Hollywood" },
+  { "@type": "City", "name": "Coral Springs" },
+  { "@type": "City", "name": "Cape Coral" },
+];
+
+/**
+ * Generate Organization schema for statewide service business
+ * Replaces LocalBusiness to avoid "Missing Address" errors
+ */
+export function generateServiceBusinessSchema(): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "@id": `${SITE_URL}/#localbusiness`,
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#servicebusiness`,
     "name": "Window Man Your Hurricane Hero",
-    "description": "Free tools to help Florida homeowners get fair window replacement quotes and avoid overpaying.",
+    "description": "Free AI-powered tools to help Florida homeowners get fair window replacement quotes and avoid overpaying.",
     "url": SITE_URL,
     "logo": `${SITE_URL}/icon-512.webp`,
     "image": `${SITE_URL}/icon-512.webp`,
     "telephone": "+1-561-468-5571",
     "email": "support@itswindowman.com",
-    "address": {
-      "@type": "PostalAddress",
-      "postalCode": "33069",
-      "addressRegion": "Florida",
-      "addressCountry": "US"
-    },
-    "areaServed": [
-      {
-        "@type": "State",
-        "name": "Florida",
-        "sameAs": "https://en.wikipedia.org/wiki/Florida"
-      },
-      {
-        "@type": "AdministrativeArea",
-        "name": "Miami-Dade County"
-      },
-      {
-        "@type": "AdministrativeArea",
-        "name": "Broward County"
-      },
-      {
-        "@type": "AdministrativeArea",
-        "name": "Palm Beach County"
-      }
-    ],
+    "areaServed": FLORIDA_SERVICE_AREAS,
     "priceRange": "Free",
-    "openingHoursSpecification": {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-      "opens": "00:00",
-      "closes": "23:59"
-    },
+    "serviceType": [
+      "Window Quote Analysis",
+      "Impact Window Cost Calculator",
+      "Hurricane Window Verification"
+    ],
     "sameAs": [
       "https://www.facebook.com/its.windowman",
       "https://twitter.com/itswindowman"
     ]
   };
 }
+
+// Backward compatibility alias
+export const generateLocalBusinessSchema = generateServiceBusinessSchema;
 
 /**
  * Generate Organization schema for homepage

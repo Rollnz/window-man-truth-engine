@@ -16,7 +16,7 @@ const Index = () => {
   usePageTracking('homepage');
 
   const homepageSchema = [
-    // LocalBusiness schema with Florida address (fixes Rich Results error)
+    // Organization schema for statewide service business (not LocalBusiness)
     generateLocalBusinessSchema(),
     // Organization schema for brand identity
     {
