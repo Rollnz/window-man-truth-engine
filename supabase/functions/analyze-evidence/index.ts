@@ -169,7 +169,7 @@ Use "weak" status for documents that are checked but have no file uploaded.`;
     console.log('Analysis complete:', result.overallScore, '% readiness');
 
     // Log attribution event (non-blocking)
-    if (sessionId) {
+    if (sessionId || ip) {
       logAttributionEvent({
         sessionId,
         eventName: 'evidence_analyzed',
@@ -184,7 +184,7 @@ Use "weak" status for documents that are checked but have no file uploaded.`;
           user_id: userId, // May be null for anonymous users
         },
         leadId,
-        anonymousIdFallback: sessionId || `evidence-${ip}`, // Use sessionId or IP for anonymous
+        anonymousIdFallback: sessionId ?? `evidence-${ip}`, // Use sessionId when available, otherwise IP-based anonymous ID
       }).catch((err) => console.error('[analyze-evidence] Attribution logging failed:', err));
     }
 
