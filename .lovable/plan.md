@@ -1,193 +1,64 @@
 
-# Form Accessibility Hardening Plan
+# Stape GTM Endpoint Path Fix
 
-## Overview
-Fix the SampleReportLeadModal to meet all 10 form best practices, focusing on accessibility (ARIA), mobile experience (keyboard types), and consistency (using TrustModal).
+## Problem
+The `save-lead` edge function is POSTing server-side events to the Stape GTM root domain (`https://lunaa.itswindowman.com`) instead of the Data Client endpoint (`https://lunaa.itswindowman.com/data`). This causes a **400 Bad Request** because the Stape container's Data Client expects payloads at the `/data` path.
+
+## Root Cause
+Line 253 in `supabase/functions/save-lead/index.ts`:
+```typescript
+const STAPE_GTM_ENDPOINT = 'https://lunaa.itswindowman.com';  // Missing /data
+```
+
+## Solution
+Update the endpoint constant to include the `/data` path to match the Stape Data Client configuration.
 
 ---
 
-## Files to Modify
+## File to Modify
 
-### 1. `src/components/sample-report/SampleReportLeadModal.tsx`
+### `supabase/functions/save-lead/index.ts`
 
-**Change A: Use TrustModal instead of raw Dialog**
+**Location:** Line 253
 
-Replace:
-```tsx
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+**Before:**
+```typescript
+const STAPE_GTM_ENDPOINT = 'https://lunaa.itswindowman.com';
 ```
 
-With:
-```tsx
-import { Dialog } from '@/components/ui/dialog';
-import { TrustModal } from '@/components/forms/TrustModal';
-```
-
-Update render to use TrustModal pattern:
-```tsx
-<Dialog open={isOpen} onOpenChange={(open) => !open && handleModalClose()}>
-  <TrustModal
-    modalTitle={step === 'form' ? "Almost There — Let's Personalize Your Audit" : undefined}
-    modalDescription={step === 'form' ? "Enter your details to get your free AI-powered quote analysis" : undefined}
-    className="sm:max-w-md"
-  >
-    {/* Step content */}
-  </TrustModal>
-</Dialog>
-```
-
-Benefits:
-- Automatic FormSurfaceProvider for consistent input styling
-- VisuallyHidden accessibility fallbacks for focus trap
-- Consistent with other modals
-
----
-
-**Change B: Add Mobile Keyboard Props**
-
-Import the standardized props:
-```tsx
-import { emailInputProps, phoneInputProps } from '@/lib/formAccessibility';
-```
-
-Update Email input:
-```tsx
-<Input
-  id="sr-email"
-  name="email"
-  placeholder="you@example.com"
-  {...getFieldProps('email')}
-  {...emailInputProps}  // Adds: type, autoComplete, inputMode, autoCapitalize, autoCorrect, spellCheck
-  className={hasError('email') ? 'border-destructive focus-visible:ring-destructive' : ''}
-  aria-invalid={hasError('email')}
-  aria-describedby={hasError('email') ? 'sr-email-error' : undefined}
-/>
-{hasError('email') && (
-  <p id="sr-email-error" className="text-sm text-destructive font-medium">{getError('email')}</p>
-)}
-```
-
-Update Phone input:
-```tsx
-<Input
-  id="sr-phone"
-  name="phone"
-  placeholder="(555) 123-4567"
-  {...getFieldProps('phone')}
-  {...phoneInputProps}  // Adds: type, autoComplete, inputMode
-  className={hasError('phone') ? 'border-destructive focus-visible:ring-destructive' : ''}
-  aria-invalid={hasError('phone')}
-  aria-describedby={hasError('phone') ? 'sr-phone-error' : 'sr-phone-hint'}
-/>
-<p id="sr-phone-hint" className="text-xs text-muted-foreground">
-  We'll text your report link and only call if you request it
-</p>
-{hasError('phone') && (
-  <p id="sr-phone-error" className="text-sm text-destructive font-medium">{getError('phone')}</p>
-)}
+**After:**
+```typescript
+const STAPE_GTM_ENDPOINT = 'https://lunaa.itswindowman.com/data';
 ```
 
 ---
 
-**Change C: Fix Partner Consent Checkbox Accessibility**
+## Technical Details
 
-Add proper `id` and `htmlFor` association:
-```tsx
-<div className="p-4 rounded-lg bg-muted/30 border border-border/50">
-  <div className="flex items-start gap-3">
-    <Checkbox
-      id="sr-partner-consent"
-      checked={partnerConsent}
-      onCheckedChange={(checked) => setPartnerConsent(checked === true)}
-      className="mt-1"
-      aria-describedby="sr-partner-consent-desc"
-    />
-    <label htmlFor="sr-partner-consent" className="cursor-pointer">
-      <span className="text-sm font-medium text-foreground">
-        Yes — share my project specs with vetted partners to get competing estimates
-      </span>
-      <p id="sr-partner-consent-desc" className="text-xs text-muted-foreground mt-1">
-        Window Man may connect you with pre-screened contractors who can offer better pricing. Your contact info is never sold.
-      </p>
-    </label>
-  </div>
-</div>
-```
+The Stape server container uses different paths for different purposes:
+- `/76bwidfqcvb.js` → GTM container JavaScript (browser-side)
+- `/ns.html` → noscript fallback tracking (browser-side)
+- `/data` → Data Client endpoint for server-side events
+
+The `save-lead` function sends server-side CAPI events and must use the `/data` path.
 
 ---
 
-**Change D: Fix Step 2 Touch Target Size**
+## Verification After Deployment
 
-Update "Continue to My Free Audit" button to meet 44px minimum:
-```tsx
-<button
-  type="button"
-  onClick={handleContinueClick}
-  className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-3 min-h-[44px]"
->
-  <span>Continue to My Free Audit</span>
-  <ArrowRight className="w-4 h-4" />
-</button>
-```
+1. Deploy the updated edge function
+2. Test with a sample lead submission
+3. Confirm logs show `[Stape GTM] Success` instead of `400 Bad Request`
+4. Verify the event appears in Stape server container debug view
+5. Confirm Facebook Events Manager shows the Lead event with proper deduplication
 
 ---
 
-**Change E: Update Step 2 Success Header for TrustModal**
+## Summary
 
-Since TrustModal handles the header, update Step 2 to show success state inline:
-```tsx
-{step === 'call-offer' && (
-  <div className="space-y-6 py-4">
-    {/* Success indicator */}
-    <div className="flex flex-col items-center text-center">
-      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-        <Check className="w-6 h-6 text-primary" />
-      </div>
-      <h3 className="text-lg font-semibold text-foreground">
-        Great! We've received your info.
-      </h3>
-      <p className="text-sm text-muted-foreground mt-1">
-        Want answers now? Call WindowMan directly for free.
-      </p>
-    </div>
-    
-    {/* Call CTA */}
-    <a href="tel:+15614685571" onClick={handleCallClick} className="block">
-      <Button variant="cta" size="lg" className="w-full h-auto py-4 ...">
-        ...
-      </Button>
-    </a>
-    
-    {/* Continue link with proper touch target */}
-    <button type="button" onClick={handleContinueClick} className="... min-h-[44px]">
-      ...
-    </button>
-  </div>
-)}
-```
-
----
-
-## Summary of Changes
-
-| Issue | Fix | Impact |
-|-------|-----|--------|
-| Not using TrustModal | Switch to TrustModal | Consistent styling + Firefox focus trap fix |
-| Missing inputMode | Add emailInputProps/phoneInputProps | Correct mobile keyboards |
-| Missing ARIA | Add aria-invalid + aria-describedby | Screen reader error announcements |
-| Checkbox association | Add id/htmlFor | Larger tap target + better accessibility |
-| Touch target < 44px | Add min-h-[44px] | Easier mobile tapping |
-
----
-
-## Implementation Order
-
-1. Update imports (TrustModal, formAccessibility props)
-2. Replace DialogContent with TrustModal wrapper
-3. Add ARIA attributes to email/phone inputs
-4. Add inputMode/autocomplete props to inputs
-5. Fix partner consent checkbox accessibility
-6. Fix Step 2 touch target size
-7. Test keyboard navigation (Tab through all fields)
-8. Test mobile keyboards (email @, phone numpad)
-9. Test screen reader announcements
+| Scope | Details |
+|-------|---------|
+| Files Changed | 1 (`save-lead/index.ts`) |
+| Lines Changed | 1 (line 253) |
+| Risk | Low - simple string constant change |
+| Impact | Fixes 400 errors when sending leads to Stape CAPI |
