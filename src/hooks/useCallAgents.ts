@@ -11,6 +11,15 @@ export interface CallAgent {
   webhook_url?: string;
   last_dispatch_at: string | null;
   last_error: { message: string; triggered_at: string } | null;
+  calls_24h: number;
+  errors_24h: number;
+}
+
+export interface AgentSummary {
+  total_calls_24h: number;
+  errors_24h: number;
+  active_agents: number;
+  success_rate: number | null;
 }
 
 interface TestCallResult {
@@ -23,6 +32,7 @@ interface UseCallAgentsReturn {
   loading: boolean;
   error: string | null;
   refetch: () => void;
+  summary: AgentSummary;
   testCall: (source_tool: string, phone_number: string) => Promise<TestCallResult>;
   toggleEnabled: (source_tool: string, enabled: boolean) => Promise<void>;
   updateAgentId: (source_tool: string, agent_id: string) => Promise<void>;
@@ -35,6 +45,12 @@ export function useCallAgents(): UseCallAgentsReturn {
   const [agents, setAgents] = useState<CallAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<AgentSummary>({
+    total_calls_24h: 0,
+    errors_24h: 0,
+    active_agents: 0,
+    success_rate: null,
+  });
 
   const fetchAgents = useCallback(async () => {
     setLoading(true);
@@ -65,6 +81,12 @@ export function useCallAgents(): UseCallAgentsReturn {
 
       const data = await response.json();
       setAgents(data.agents || []);
+      setSummary(data.summary || {
+        total_calls_24h: 0,
+        errors_24h: 0,
+        active_agents: 0,
+        success_rate: null,
+      });
     } catch (err) {
       console.error('[useCallAgents] Fetch error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch agents');
@@ -360,6 +382,7 @@ export function useCallAgents(): UseCallAgentsReturn {
     loading,
     error,
     refetch: fetchAgents,
+    summary,
     testCall,
     toggleEnabled,
     updateAgentId,
