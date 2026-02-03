@@ -126,3 +126,24 @@ export function createFocusTrap(container: HTMLElement): () => void {
     container.removeEventListener('keydown', handleKeyDown);
   };
 }
+
+/**
+ * Hook-ready utilities for focus restoration when modals close
+ * Radix Dialog handles this by default, but these provide explicit control if needed
+ */
+export const focusRestoreUtils = {
+  /** Save reference to the currently focused element */
+  saveTrigger: (): HTMLElement | null => {
+    return document.activeElement as HTMLElement | null;
+  },
+  
+  /** Restore focus to a saved element */
+  restoreFocus: (element: HTMLElement | null): void => {
+    if (element && typeof element.focus === 'function') {
+      // Small delay to ensure modal has fully closed
+      requestAnimationFrame(() => {
+        element.focus();
+      });
+    }
+  }
+};

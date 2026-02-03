@@ -29,10 +29,30 @@ export function ChatInput({
       handleSend();
     }
   };
-  return <div className="flex gap-2 p-4 border-t border-border bg-background/80 backdrop-blur">
-      <Textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Ask about impact windows, energy savings, or your specific situation..." className="min-h-[60px] max-h-[120px] resize-none" disabled={isLoading || disabled} />
-      <Button onClick={handleSend} disabled={!input.trim() || isLoading || disabled} size="icon" className="h-[60px] w-[60px] shadow-[0_0_20px_hsl(var(--primary)/0.3)]">
+  return (
+    <div className="flex gap-2 p-4 border-t border-border bg-background/80 backdrop-blur">
+      <label htmlFor="expert-chat-input" className="sr-only">
+        Ask a question about impact windows, energy savings, or your specific situation
+      </label>
+      <Textarea 
+        id="expert-chat-input"
+        value={input} 
+        onChange={e => setInput(e.target.value)} 
+        onKeyDown={handleKeyDown} 
+        placeholder="Ask about impact windows, energy savings, or your specific situation..." 
+        className="min-h-[60px] max-h-[120px] resize-none" 
+        disabled={isLoading || disabled}
+        aria-label="Ask a question about impact windows"
+      />
+      <Button 
+        onClick={handleSend} 
+        disabled={!input.trim() || isLoading || disabled} 
+        size="icon" 
+        className="h-[60px] w-[60px] shadow-[0_0_20px_hsl(var(--primary)/0.3)]"
+        aria-label={isLoading ? "Sending message" : "Send message"}
+      >
         {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 text-primary" />}
       </Button>
-    </div>;
+    </div>
+  );
 }

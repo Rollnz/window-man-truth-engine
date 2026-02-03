@@ -89,7 +89,7 @@ function AppContent() {
   usePageTimer();
   
   return (
-    <>
+    <main id="main-content" tabIndex={-1} className="outline-none">
       <WelcomeToast />
       <Routes>
         {/* ============================================
@@ -172,7 +172,7 @@ function AppContent() {
       {/* Debug Panels - only render in development mode */}
       <GTMDebugPanel />
       <EMQValidatorOverlay />
-    </>
+    </main>
   );
 }
 
