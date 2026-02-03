@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Users, FileText, BarChart3, Flame, TrendingUp, Phone, RefreshCw, DollarSign } from 'lucide-react';
+import { Users, FileText, BarChart3, Flame, TrendingUp, Phone, RefreshCw, DollarSign, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
@@ -119,6 +119,12 @@ function AdminHomeContent() {
                     icon={<FileText className="h-5 w-5 text-primary" />}
                     badge={stats.quotesToday > 0 ? stats.quotesToday : undefined}
                     badgeVariant={stats.quotesToday > 0 ? 'success' : 'default'}
+                  />
+                  <QuickActionCard
+                    title="Call Agents"
+                    description="Manage voice agent integrations"
+                    href="/admin/call-agents"
+                    icon={<Bot className="h-5 w-5 text-primary" />}
                   />
                 </div>
               </div>
