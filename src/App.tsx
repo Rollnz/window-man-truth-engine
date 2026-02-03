@@ -50,6 +50,7 @@ const SearchResults = lazy(() => import("./pages/admin/SearchResults"));
 const Revenue = lazy(() => import("./pages/admin/Revenue"));
 const ExecutiveProfit = lazy(() => import("./pages/admin/ExecutiveProfit"));
 const AdminHome = lazy(() => import("./pages/admin/AdminHome"));
+const CallAgentsConfig = lazy(() => import("./pages/admin/CallAgentsConfig"));
 const About = lazy(() => import("./pages/About"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Defense = lazy(() => import("./pages/Defense"));
@@ -161,6 +162,7 @@ function AppContent() {
           <Route path="/admin/leads/:id" element={<LeadDetail />} />
           <Route path="/admin/revenue" element={<Revenue />} />
           <Route path="/admin/executive" element={<ExecutiveProfit />} />
+          <Route path="/admin/call-agents" element={<CallAgentsConfig />} />
         </Route>
         
         {/* Internal dev tools (no footer) */}
