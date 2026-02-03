@@ -70,11 +70,17 @@ export function useCallAgents(): UseCallAgentsReturn {
 
   /**
    * Toggle enabled state with optimistic update
+   * Updates UI instantly, syncs updated_at in background without flash
    */
   const toggleEnabled = useCallback(async (
     source_tool: string,
     enabled: boolean
   ): Promise<void> => {
+    // Validate required parameters before any state changes
+    if (!source_tool) {
+      throw new Error('source_tool is required');
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.access_token) {
@@ -84,15 +90,15 @@ export function useCallAgents(): UseCallAgentsReturn {
     // Step 1: Capture snapshot for rollback
     const snapshot = [...agents];
 
-    // Step 2: Optimistic update
+    // Step 2: Optimistic update - instant UI change
     setAgents(prev => prev.map(agent =>
       agent.source_tool === source_tool
-        ? { ...agent, enabled }
+        ? { ...agent, enabled, updated_at: new Date().toISOString() }
         : agent
     ));
 
     try {
-      // Step 3: Send PATCH request
+      // Step 3: Send PATCH request in background
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-call-agent`,
         {
@@ -111,14 +117,21 @@ export function useCallAgents(): UseCallAgentsReturn {
         throw new Error(data.error || `HTTP ${response.status}`);
       }
 
-      // Step 4a: Success - refetch to get updated_at
-      await fetchAgents();
+      // Step 4a: Success - silently update only the timestamp from server response
+      if (data.agent?.updated_at) {
+        setAgents(prev => prev.map(agent =>
+          agent.source_tool === source_tool
+            ? { ...agent, updated_at: data.agent.updated_at }
+            : agent
+        ));
+      }
+      // No full refetch - prevents flash
     } catch (err) {
-      // Step 4b: Failure - rollback
+      // Step 4b: Failure - rollback to snapshot
       setAgents(snapshot);
       throw err;
     }
-  }, [agents, fetchAgents]);
+  }, [agents]);
 
   /**
    * Update agent_id (server-first, not optimistic)
