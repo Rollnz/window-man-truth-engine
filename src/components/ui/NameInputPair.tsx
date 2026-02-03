@@ -94,7 +94,7 @@ export function NameInputPair({
           aria-describedby={errors.firstName ? firstNameErrorId : undefined}
         />
         {errors.firstName && (
-          <p id={firstNameErrorId} className="text-xs text-destructive">
+          <p id={firstNameErrorId} className="text-xs text-destructive" role="alert">
             {errors.firstName}
           </p>
         )}
@@ -129,7 +129,7 @@ export function NameInputPair({
           aria-describedby={errors.lastName ? lastNameErrorId : undefined}
         />
         {errors.lastName && (
-          <p id={lastNameErrorId} className="text-xs text-destructive">
+          <p id={lastNameErrorId} className="text-xs text-destructive" role="alert">
             {errors.lastName}
           </p>
         )}

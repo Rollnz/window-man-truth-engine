@@ -28,17 +28,23 @@ export function QuoteQA({ answer, isAsking, onAsk, disabled }: QuoteQAProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="flex gap-2">
+        <label htmlFor="quote-qa-input" className="sr-only">
+          Ask the AI Expert about your quote
+        </label>
         <Input
+          id="quote-qa-input"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="e.g. Is the permit included?"
           disabled={disabled || isAsking}
           className="flex-1"
+          aria-label="Ask the AI Expert about your quote"
         />
         <Button
           type="submit"
           size="icon"
           disabled={disabled || isAsking || !question.trim()}
+          aria-label={isAsking ? "Asking question" : "Ask question"}
         >
           {isAsking ? (
             <Loader2 className="w-4 h-4 animate-spin" />

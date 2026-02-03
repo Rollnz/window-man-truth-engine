@@ -40,13 +40,18 @@ export function NotesWidget({ onAddNote }: NotesWidgetProps) {
       </CardHeader>
       <CardContent className="py-2 px-4">
         <div className="space-y-2">
+          <label htmlFor="internal-note" className="sr-only">
+            Add internal note about this lead
+          </label>
           <Textarea
+            id="internal-note"
             placeholder="Add a note about this lead..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={3}
             className="resize-none text-sm"
+            aria-label="Add internal note about this lead"
           />
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
