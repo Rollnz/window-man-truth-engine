@@ -190,7 +190,7 @@ const WindowSalesTruth = () => {
                   <AccordionTrigger className="text-left">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
+                  <AccordionContent className="text-black">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
