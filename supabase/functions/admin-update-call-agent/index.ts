@@ -54,7 +54,15 @@ interface ListAgentsResponse {
     updated_at: string;
     last_dispatch_at: string | null;
     last_error: { message: string; triggered_at: string } | null;
+    calls_24h: number;
+    errors_24h: number;
   }>;
+  summary: {
+    total_calls_24h: number;
+    errors_24h: number;
+    active_agents: number;
+    success_rate: number | null;
+  };
 }
 
 serve(async (req) => {
@@ -157,14 +165,54 @@ serve(async (req) => {
       }
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // Query C: 24-hour stats for summary cards
+    // ═══════════════════════════════════════════════════════════════════════
+    const twentyFourHoursAgo = new Date(
+      Date.now() - 24 * 60 * 60 * 1000
+    ).toISOString();
+
+    const { data: calls24h } = await supabaseAdmin
+      .from("pending_calls")
+      .select("source_tool, status")
+      .gte("triggered_at", twentyFourHoursAgo);
+
+    // Aggregate 24h stats per agent
+    const agentStats24h: Record<string, { total: number; errors: number }> = {};
+    const safeCall24h = calls24h || [];
+    for (const call of safeCall24h) {
+      if (!agentStats24h[call.source_tool]) {
+        agentStats24h[call.source_tool] = { total: 0, errors: 0 };
+      }
+      agentStats24h[call.source_tool].total++;
+      if (call.status === "dead_letter") {
+        agentStats24h[call.source_tool].errors++;
+      }
+    }
+
+    const totalCalls24h = safeCall24h.length;
+    const totalErrors24h = safeCall24h.filter(c => c.status === "dead_letter").length;
+
     // Merge enrichment data into agents
     const enrichedAgents = (agents || []).map(agent => ({
       ...agent,
       last_dispatch_at: lastDispatchMap[agent.source_tool] || null,
       last_error: lastErrorMap[agent.source_tool] || null,
+      calls_24h: agentStats24h[agent.source_tool]?.total || 0,
+      errors_24h: agentStats24h[agent.source_tool]?.errors || 0,
     }));
 
-    const response: ListAgentsResponse = { agents: enrichedAgents };
+    const response: ListAgentsResponse = {
+      agents: enrichedAgents,
+      summary: {
+        total_calls_24h: totalCalls24h,
+        errors_24h: totalErrors24h,
+        active_agents: (agents || []).filter(a => a.enabled).length,
+        success_rate: totalCalls24h > 0
+          ? Math.round(((totalCalls24h - totalErrors24h) / totalCalls24h) * 100)
+          : null,
+      },
+    };
     return json(200, response);
   }
 

@@ -68,6 +68,14 @@ function AgentCard({
     ? `${agent.first_message_template.slice(0, 80)}...`
     : agent.first_message_template;
 
+  // Activity badge styling
+  const activityBadgeClasses = agent.calls_24h > 0
+    ? 'bg-green-500/20 text-green-600'
+    : 'bg-gray-500/10 text-gray-500';
+  const activityBadgeText = agent.calls_24h > 0
+    ? `${agent.calls_24h} calls today`
+    : 'No calls today';
+
   const handleToggle = async () => {
     setIsToggling(true);
     try {
@@ -103,7 +111,7 @@ function AgentCard({
           <div className="flex items-center gap-3">
             <Bot className="h-5 w-5 text-muted-foreground" />
             <div>
-              {/* 1. Source Tool label + copy icon (hover-only) */}
+              {/* 1. Source Tool label + copy icon (hover-only) + Activity Badge */}
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-semibold">{label}</h3>
                 <Button
@@ -114,6 +122,10 @@ function AgentCard({
                 >
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
+                {/* Activity Badge */}
+                <span className={`text-xs px-2 py-0.5 rounded-full ${activityBadgeClasses}`}>
+                  {activityBadgeText}
+                </span>
               </div>
               {/* 2. Agent Name Editor */}
               <AgentNameEditor
