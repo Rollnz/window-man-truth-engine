@@ -113,3 +113,6 @@ verify_jwt = false
 
 [functions.score-event]
 verify_jwt = false
+
+[functions.test-call-agent]
+verify_jwt = false

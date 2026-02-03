@@ -1,18 +1,29 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, Bot } from 'lucide-react';
+import { AlertCircle, Bot, Phone } from 'lucide-react';
 import { CallAgent } from '@/hooks/useCallAgents';
 import { getSourceToolLabel } from '@/constants/sourceToolLabels';
+import { TestCallDialog } from './TestCallDialog';
 
 interface CallAgentTableProps {
   agents: CallAgent[];
   loading: boolean;
   error: string | null;
   refetch: () => void;
+  testCall: (source_tool: string, phone_number: string) => Promise<{
+    test_call_id: string;
+    provider_call_id?: string | null;
+  }>;
 }
 
-function AgentCard({ agent }: { agent: CallAgent }) {
+interface AgentCardProps {
+  agent: CallAgent;
+  onTestCall: () => void;
+}
+
+function AgentCard({ agent, onTestCall }: AgentCardProps) {
   const label = getSourceToolLabel(agent.source_tool);
   const maskedAgentId = agent.agent_id.length > 8 
     ? `${agent.agent_id.slice(0, 8)}...` 
@@ -29,15 +40,26 @@ function AgentCard({ agent }: { agent: CallAgent }) {
             <Bot className="h-5 w-5 text-muted-foreground" />
             <h3 className="text-lg font-semibold">{label}</h3>
           </div>
-          <span
-            className={`px-2 py-1 text-xs font-medium rounded-full ${
-              agent.enabled
-                ? 'bg-green-500/20 text-green-600'
-                : 'bg-red-500/20 text-red-600'
-            }`}
-          >
-            {agent.enabled ? 'Active' : 'Disabled'}
-          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onTestCall}
+              className="gap-1.5"
+            >
+              <Phone className="h-3.5 w-3.5" />
+              Test Call
+            </Button>
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded-full ${
+                agent.enabled
+                  ? 'bg-green-500/20 text-green-600'
+                  : 'bg-red-500/20 text-red-600'
+              }`}
+            >
+              {agent.enabled ? 'Active' : 'Disabled'}
+            </span>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -116,7 +138,15 @@ function EmptyState() {
   );
 }
 
-export function CallAgentTable({ agents, loading, error, refetch }: CallAgentTableProps) {
+export function CallAgentTable({
+  agents,
+  loading,
+  error,
+  refetch,
+  testCall,
+}: CallAgentTableProps) {
+  const [selectedAgent, setSelectedAgent] = useState<CallAgent | null>(null);
+
   if (loading) {
     return <LoadingSkeleton />;
   }
@@ -130,10 +160,24 @@ export function CallAgentTable({ agents, loading, error, refetch }: CallAgentTab
   }
 
   return (
-    <div className="space-y-4">
-      {agents.map((agent) => (
-        <AgentCard key={agent.source_tool} agent={agent} />
-      ))}
-    </div>
+    <>
+      <div className="space-y-4">
+        {agents.map((agent) => (
+          <AgentCard
+            key={agent.source_tool}
+            agent={agent}
+            onTestCall={() => setSelectedAgent(agent)}
+          />
+        ))}
+      </div>
+
+      {/* Single dialog instance for all cards */}
+      <TestCallDialog
+        isOpen={selectedAgent !== null}
+        onClose={() => setSelectedAgent(null)}
+        agent={selectedAgent}
+        onTestCall={testCall}
+      />
+    </>
   );
 }
