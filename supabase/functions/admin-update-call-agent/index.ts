@@ -118,6 +118,112 @@ serve(async (req) => {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // PATCH: Toggle enabled state for an agent
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (req.method === "PATCH") {
+    let patchPayload: { source_tool?: string; enabled?: boolean };
+    try {
+      patchPayload = await req.json();
+    } catch {
+      return json(400, { error: "Invalid JSON" });
+    }
+
+    const { source_tool, enabled } = patchPayload;
+
+    // Validation
+    if (!source_tool || typeof source_tool !== "string" || source_tool.trim() === "") {
+      return json(400, { error: "source_tool is required and must be a non-empty string" });
+    }
+
+    if (typeof enabled !== "boolean") {
+      return json(400, { error: "enabled must be a boolean (true or false)" });
+    }
+
+    console.log("[admin-update-call-agent] PATCH toggle request", {
+      source_tool,
+      enabled,
+      requested_by: email,
+    });
+
+    try {
+      const { error: updateErr } = await supabaseAdmin
+        .from("call_agents")
+        .update({
+          enabled,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("source_tool", source_tool);
+
+      if (updateErr) {
+        console.error("[admin-update-call-agent] PATCH failed:", updateErr.message);
+        return json(500, { error: updateErr.message });
+      }
+
+      console.log("[admin-update-call-agent] Toggle success", { source_tool, enabled });
+      return json(200, { success: true, source_tool, enabled });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      console.error("[admin-update-call-agent] PATCH exception:", errorMessage);
+      return json(500, { error: errorMessage });
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PUT: Update first_message_template for an agent
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (req.method === "PUT") {
+    let putPayload: { source_tool?: string; first_message_template?: string };
+    try {
+      putPayload = await req.json();
+    } catch {
+      return json(400, { error: "Invalid JSON" });
+    }
+
+    const { source_tool, first_message_template } = putPayload;
+
+    // Validation
+    if (!source_tool || typeof source_tool !== "string" || source_tool.trim() === "") {
+      return json(400, { error: "source_tool is required and must be a non-empty string" });
+    }
+
+    if (typeof first_message_template !== "string") {
+      return json(400, { error: "first_message_template must be a string" });
+    }
+
+    if (first_message_template.length > 500) {
+      return json(400, { error: "Template must be 500 characters or fewer" });
+    }
+
+    console.log("[admin-update-call-agent] PUT template request", {
+      source_tool,
+      template_length: first_message_template.length,
+      requested_by: email,
+    });
+
+    try {
+      const { error: updateErr } = await supabaseAdmin
+        .from("call_agents")
+        .update({
+          first_message_template,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("source_tool", source_tool);
+
+      if (updateErr) {
+        console.error("[admin-update-call-agent] PUT failed:", updateErr.message);
+        return json(500, { error: updateErr.message });
+      }
+
+      console.log("[admin-update-call-agent] Template update success", { source_tool });
+      return json(200, { success: true, source_tool });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      console.error("[admin-update-call-agent] PUT exception:", errorMessage);
+      return json(500, { error: errorMessage });
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // POST: Update agent_id for a source_tool
   // ═══════════════════════════════════════════════════════════════════════════
   if (req.method !== "POST") {

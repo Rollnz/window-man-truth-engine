@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, Bot, Phone } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { AlertCircle, Bot, Phone, Loader2 } from 'lucide-react';
 import { CallAgent } from '@/hooks/useCallAgents';
 import { getSourceToolLabel } from '@/constants/sourceToolLabels';
 import { TestCallDialog } from './TestCallDialog';
+import { AgentIdEditor } from './AgentIdEditor';
+import { TemplateEditor } from './TemplateEditor';
+import { toast } from '@/hooks/use-toast';
 
 interface CallAgentTableProps {
   agents: CallAgent[];
@@ -16,21 +20,52 @@ interface CallAgentTableProps {
     test_call_id: string;
     provider_call_id?: string | null;
   }>;
+  toggleEnabled: (source_tool: string, enabled: boolean) => Promise<void>;
+  updateAgentId: (source_tool: string, agent_id: string) => Promise<void>;
+  updateTemplate: (source_tool: string, template: string) => Promise<void>;
 }
 
 interface AgentCardProps {
   agent: CallAgent;
   onTestCall: () => void;
+  onToggleEnabled: (source_tool: string, enabled: boolean) => Promise<void>;
+  onUpdateAgentId: (source_tool: string, agent_id: string) => Promise<void>;
+  onUpdateTemplate: (source_tool: string, template: string) => Promise<void>;
 }
 
-function AgentCard({ agent, onTestCall }: AgentCardProps) {
+function AgentCard({
+  agent,
+  onTestCall,
+  onToggleEnabled,
+  onUpdateAgentId,
+  onUpdateTemplate,
+}: AgentCardProps) {
+  const [isToggling, setIsToggling] = useState(false);
+
   const label = getSourceToolLabel(agent.source_tool);
-  const maskedAgentId = agent.agent_id.length > 8 
-    ? `${agent.agent_id.slice(0, 8)}...` 
-    : agent.agent_id;
   const truncatedMessage = agent.first_message_template.length > 80
     ? `${agent.first_message_template.slice(0, 80)}...`
     : agent.first_message_template;
+
+  const handleToggle = async () => {
+    setIsToggling(true);
+    try {
+      await onToggleEnabled(agent.source_tool, !agent.enabled);
+      toast({
+        title: 'Success',
+        description: `${label} is now ${!agent.enabled ? 'Active' : 'Disabled'}`,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: `Failed to update ${label}: ${message}`,
+      });
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   return (
     <Card>
@@ -40,7 +75,30 @@ function AgentCard({ agent, onTestCall }: AgentCardProps) {
             <Bot className="h-5 w-5 text-muted-foreground" />
             <h3 className="text-lg font-semibold">{label}</h3>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {/* Toggle Switch */}
+            <div className="flex items-center gap-2">
+              <div className={isToggling ? 'opacity-60 pointer-events-none' : ''}>
+                <Switch
+                  checked={agent.enabled}
+                  onCheckedChange={handleToggle}
+                  disabled={isToggling}
+                />
+              </div>
+              {isToggling ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <span
+                  className={`text-sm font-medium ${
+                    agent.enabled ? 'text-primary' : 'text-muted-foreground'
+                  }`}
+                >
+                  {agent.enabled ? 'Active' : 'Disabled'}
+                </span>
+              )}
+            </div>
+
+            {/* Test Call Button */}
             <Button
               variant="outline"
               size="sm"
@@ -50,34 +108,35 @@ function AgentCard({ agent, onTestCall }: AgentCardProps) {
               <Phone className="h-3.5 w-3.5" />
               Test Call
             </Button>
-            <span
-              className={`px-2 py-1 text-xs font-medium rounded-full ${
-                agent.enabled
-                  ? 'bg-green-500/20 text-green-600'
-                  : 'bg-red-500/20 text-red-600'
-              }`}
-            >
-              {agent.enabled ? 'Active' : 'Disabled'}
-            </span>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-muted-foreground">Agent ID:</span>
-            <p className="font-mono text-foreground">{maskedAgentId}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Last Updated:</span>
-            <p className="text-foreground">{agent.updated_at}</p>
-          </div>
-        </div>
+      <CardContent className="space-y-4">
+        {/* Agent ID Editor */}
+        <AgentIdEditor
+          source_tool={agent.source_tool}
+          current_agent_id={agent.agent_id}
+          onSave={onUpdateAgentId}
+        />
+
+        {/* First Message Template (truncated preview) */}
         <div>
           <span className="text-sm text-muted-foreground">First Message Template:</span>
           <p className="text-sm text-foreground mt-1 bg-muted/50 p-2 rounded">
-            {truncatedMessage}
+            {truncatedMessage || <span className="text-muted-foreground italic">No template set</span>}
           </p>
+        </div>
+
+        {/* Template Editor (collapsible) */}
+        <TemplateEditor
+          source_tool={agent.source_tool}
+          current_template={agent.first_message_template}
+          onSave={onUpdateTemplate}
+        />
+
+        {/* Last Updated */}
+        <div className="text-xs text-muted-foreground">
+          Last Updated: {agent.updated_at}
         </div>
       </CardContent>
     </Card>
@@ -144,6 +203,9 @@ export function CallAgentTable({
   error,
   refetch,
   testCall,
+  toggleEnabled,
+  updateAgentId,
+  updateTemplate,
 }: CallAgentTableProps) {
   const [selectedAgent, setSelectedAgent] = useState<CallAgent | null>(null);
 
@@ -167,6 +229,9 @@ export function CallAgentTable({
             key={agent.source_tool}
             agent={agent}
             onTestCall={() => setSelectedAgent(agent)}
+            onToggleEnabled={toggleEnabled}
+            onUpdateAgentId={updateAgentId}
+            onUpdateTemplate={updateTemplate}
           />
         ))}
       </div>
