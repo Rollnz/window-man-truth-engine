@@ -1936,6 +1936,7 @@ export type Database = {
         | "floating-estimate-form"
         | "roleplay"
         | "consultation"
+        | "sample-report"
       webhook_correlation_status:
         | "unprocessed"
         | "matched"
@@ -2144,6 +2145,7 @@ export const Constants = {
         "floating-estimate-form",
         "roleplay",
         "consultation",
+        "sample-report",
       ],
       webhook_correlation_status: [
         "unprocessed",
