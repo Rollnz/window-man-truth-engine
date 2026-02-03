@@ -1,85 +1,108 @@
-import { Link } from 'react-router-dom';
-import { formatDistanceToNow } from 'date-fns';
-import { User, FileText, MessageSquare, ArrowRight } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { getLeadRoute } from '@/lib/leadRouting';
-import { ActivityEvent } from '@/hooks/useAdminDashboard';
+import { Phone, Loader2 } from 'lucide-react';
+import { ActivityFilterBar } from './ActivityFilterBar';
+import { ActivityRow } from './ActivityRow';
+import { ActivityCall, ActivityFilters } from '@/hooks/useCallActivity';
 
 interface ActivityFeedProps {
-  events: ActivityEvent[];
-  isLoading?: boolean;
+  calls: ActivityCall[];
+  loading: boolean;
+  error: string | null;
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  onLoadMore: () => void;
+  onRefresh: () => void;
+  filters: ActivityFilters;
+  onFilterChange: (filters: ActivityFilters) => void;
 }
 
-const EVENT_ICONS = {
-  lead: User,
-  quote: FileText,
-  status_change: ArrowRight,
-  note: MessageSquare,
-};
-
-export function ActivityFeed({ events, isLoading }: ActivityFeedProps) {
-  if (isLoading) {
-    return (
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
-                  <div className="h-3 bg-muted rounded animate-pulse w-1/2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+export function ActivityFeed({
+  calls,
+  loading,
+  error,
+  hasMore,
+  isLoadingMore,
+  onLoadMore,
+  onRefresh,
+  filters,
+  onFilterChange,
+}: ActivityFeedProps) {
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 p-0">
-        <ScrollArea className="h-[320px] px-6">
-          <div className="space-y-4 pb-4">
-            {events.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No recent activity</p>
-            ) : (
-              events.map((event) => {
-                const Icon = EVENT_ICONS[event.type] || User;
-                const timeAgo = formatDistanceToNow(new Date(event.timestamp), { addSuffix: true });
+    <div className="space-y-4">
+      {/* Section 1: Filter Bar */}
+      <ActivityFilterBar
+        filters={filters}
+        onFilterChange={onFilterChange}
+        onRefresh={onRefresh}
+      />
 
-                return (
-                  <Link
-                    key={event.id}
-                    to={event.leadId ? (getLeadRoute({ wm_lead_id: event.leadId }) || '#') : '#'}
-                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors group"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Icon className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-                        {event.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">{event.subtitle}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
-                    </div>
-                  </Link>
-                );
-              })
+      {/* Section 2: Content */}
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-13 bg-gray-100 animate-pulse rounded-lg"
+            />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
+          <p className="text-sm text-red-700">{error}</p>
+          <button
+            onClick={onRefresh}
+            className="text-sm text-red-600 font-medium underline"
+          >
+            Retry
+          </button>
+        </div>
+      ) : calls.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Phone className="w-10 h-10 text-gray-300 mb-3" />
+          {filters.source_tool === "" && filters.status === "" ? (
+            <>
+              <p className="text-gray-600 font-medium">No calls yet</p>
+              <p className="text-gray-400 text-sm mt-1">
+                Test an agent to see activity here
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-gray-600 font-medium">
+                No calls match your filters
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                Try adjusting the filters above
+              </p>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="border border-gray-200 rounded-lg overflow-hidden divide-y divide-gray-100">
+          {calls.map((call) => (
+            <ActivityRow key={call.id} call={call} />
+          ))}
+        </div>
+      )}
+
+      {/* Section 3: Load More */}
+      {calls.length > 0 && hasMore && (
+        <div className="flex justify-center pt-3">
+          <button
+            onClick={onLoadMore}
+            disabled={isLoadingMore}
+            className="px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoadingMore ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Loading...
+              </span>
+            ) : (
+              "Load More"
             )}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
