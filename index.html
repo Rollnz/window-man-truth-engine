@@ -22,9 +22,17 @@
     <!-- Preload LCP Candidate (Navbar Logo) with high priority -->
     <link rel="preload" href="/icon-512.webp" as="image" type="image/webp" fetchpriority="high" />
 
-    <!-- Google Tag Manager -->
+    <!-- Google Tag Manager (Production Only) -->
     <script>
-      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src="https://lunaa.itswindowman.com/76bwidfqcvb.js?"+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','dwjnsf8=CxJeNjIpRDkqICUjUzUzURRLUV9XQg0ZXx8XAhENBxMNAQ4QCEoKGA8%3D');
+      // Only load GTM on production domain
+      var productionDomain = 'itswindowman.com';
+      
+      if (window.location.hostname === productionDomain || window.location.hostname === 'www.' + productionDomain) {
+        // --- Stape Server-Side GTM ---
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src="https://lunaa.itswindowman.com/76bwidfqcvb.js?"+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','dwjnsf8=CxJeNjIpRDkqICUjUzUzURRLUV9XQg0ZXx8XAhENBxMNAQ4QCEoKGA8%3D');
+      } else {
+        console.log('[GTM] Blocked on non-production domain:', window.location.hostname);
+      }
     </script>
     <!-- End Google Tag Manager -->
 
@@ -66,16 +74,6 @@
   </head>
 
   <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript
-      ><iframe
-        src="https://lunaa.itswindowman.com/ns.html?id=GTM-NHVFR5QZ"
-        height="0"
-        width="0"
-        style="display:none;visibility:hidden"
-      ></iframe
-    ></noscript>
-    <!-- End Google Tag Manager (noscript) -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
