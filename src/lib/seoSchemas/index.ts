@@ -11,8 +11,9 @@
 // Breadcrumb utilities
 export { generateBreadcrumbSchema, getBreadcrumbSchema } from './breadcrumb';
 
-// LocalBusiness & Organization utilities
+// Organization & Service Business utilities
 export { 
+  generateServiceBusinessSchema,
   generateLocalBusinessSchema, 
   generateOrganizationSchema, 
   generateWebSiteSchema 
