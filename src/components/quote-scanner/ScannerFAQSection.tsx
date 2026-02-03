@@ -70,7 +70,7 @@ export function ScannerFAQSection({ uploadRef }: ScannerFAQSectionProps) {
               <AccordionTrigger className="text-left hover:no-underline py-4">
                 <span className="text-sm font-semibold md:text-lg text-black">{faq.question}</span>
               </AccordionTrigger>
-              <AccordionContent className="text-sm text-muted-foreground pb-4">{faq.answer}</AccordionContent>
+              <AccordionContent className="text-sm text-black pb-4">{faq.answer}</AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>

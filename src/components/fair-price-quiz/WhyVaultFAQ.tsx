@@ -42,7 +42,7 @@ export function WhyVaultFAQ() {
                 <span className="font-medium text-foreground">{item.title}</span>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="text-muted-foreground pl-8">
+            <AccordionContent className="text-black pl-8">
               {item.content}
             </AccordionContent>
           </AccordionItem>

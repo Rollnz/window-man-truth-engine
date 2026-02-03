@@ -53,7 +53,7 @@ const FAQ = () => {
             {faqs.map((item, index) => (
               <AccordionItem key={item.question} value={`item-${index + 1}`} className="border-b last:border-none">
                 <AccordionTrigger>{item.question}</AccordionTrigger>
-                <AccordionContent className="space-y-3 text-muted-foreground">
+                <AccordionContent className="space-y-3 text-black">
                   <p>{item.answer}</p>
                   <div className="flex flex-wrap gap-2">
                     <Button size="sm" onClick={() => setShowConsultationModal(true)}>Book an Inspection</Button>
