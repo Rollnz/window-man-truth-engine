@@ -21,6 +21,9 @@ interface UseCallAgentsReturn {
   error: string | null;
   refetch: () => void;
   testCall: (source_tool: string, phone_number: string) => Promise<TestCallResult>;
+  toggleEnabled: (source_tool: string, enabled: boolean) => Promise<void>;
+  updateAgentId: (source_tool: string, agent_id: string) => Promise<void>;
+  updateTemplate: (source_tool: string, first_message_template: string) => Promise<void>;
 }
 
 export function useCallAgents(): UseCallAgentsReturn {
@@ -64,6 +67,142 @@ export function useCallAgents(): UseCallAgentsReturn {
       setLoading(false);
     }
   }, []);
+
+  /**
+   * Toggle enabled state with optimistic update
+   */
+  const toggleEnabled = useCallback(async (
+    source_tool: string,
+    enabled: boolean
+  ): Promise<void> => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('Not authenticated');
+    }
+
+    // Step 1: Capture snapshot for rollback
+    const snapshot = [...agents];
+
+    // Step 2: Optimistic update
+    setAgents(prev => prev.map(agent =>
+      agent.source_tool === source_tool
+        ? { ...agent, enabled }
+        : agent
+    ));
+
+    try {
+      // Step 3: Send PATCH request
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-call-agent`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ source_tool, enabled }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
+      // Step 4a: Success - refetch to get updated_at
+      await fetchAgents();
+    } catch (err) {
+      // Step 4b: Failure - rollback
+      setAgents(snapshot);
+      throw err;
+    }
+  }, [agents, fetchAgents]);
+
+  /**
+   * Update agent_id (server-first, not optimistic)
+   */
+  const updateAgentId = useCallback(async (
+    source_tool: string,
+    new_agent_id: string
+  ): Promise<void> => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-call-agent`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ source_tool, new_agent_id }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    // Update local state after server confirms
+    setAgents(prev => prev.map(agent =>
+      agent.source_tool === source_tool
+        ? { ...agent, agent_id: new_agent_id }
+        : agent
+    ));
+
+    // Refetch to sync updated_at
+    await fetchAgents();
+  }, [fetchAgents]);
+
+  /**
+   * Update first_message_template (server-first, not optimistic)
+   */
+  const updateTemplate = useCallback(async (
+    source_tool: string,
+    first_message_template: string
+  ): Promise<void> => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-call-agent`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ source_tool, first_message_template }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    // Update local state after server confirms
+    setAgents(prev => prev.map(agent =>
+      agent.source_tool === source_tool
+        ? { ...agent, first_message_template }
+        : agent
+    ));
+
+    // Refetch to sync updated_at
+    await fetchAgents();
+  }, [fetchAgents]);
 
   /**
    * Dispatch a test call directly to PhoneCall.bot.
@@ -116,5 +255,8 @@ export function useCallAgents(): UseCallAgentsReturn {
     error,
     refetch: fetchAgents,
     testCall,
+    toggleEnabled,
+    updateAgentId,
+    updateTemplate,
   };
 }

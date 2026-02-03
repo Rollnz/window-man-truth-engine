@@ -5,7 +5,16 @@ import { CallAgentTable } from '@/components/admin/CallAgentTable';
 import { useCallAgents } from '@/hooks/useCallAgents';
 
 function CallAgentsConfigContent() {
-  const { agents, loading, error, refetch, testCall } = useCallAgents();
+  const { 
+    agents, 
+    loading, 
+    error, 
+    refetch, 
+    testCall,
+    toggleEnabled,
+    updateAgentId,
+    updateTemplate,
+  } = useCallAgents();
 
   return (
     <div className="min-h-screen bg-background">
@@ -39,6 +48,9 @@ function CallAgentsConfigContent() {
           error={error}
           refetch={refetch}
           testCall={testCall}
+          toggleEnabled={toggleEnabled}
+          updateAgentId={updateAgentId}
+          updateTemplate={updateTemplate}
         />
       </main>
     </div>
