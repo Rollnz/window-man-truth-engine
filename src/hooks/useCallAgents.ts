@@ -10,11 +10,17 @@ export interface CallAgent {
   webhook_url?: string;
 }
 
+interface TestCallResult {
+  test_call_id: string;
+  provider_call_id?: string | null;
+}
+
 interface UseCallAgentsReturn {
   agents: CallAgent[];
   loading: boolean;
   error: string | null;
   refetch: () => void;
+  testCall: (source_tool: string, phone_number: string) => Promise<TestCallResult>;
 }
 
 export function useCallAgents(): UseCallAgentsReturn {
@@ -59,6 +65,47 @@ export function useCallAgents(): UseCallAgentsReturn {
     }
   }, []);
 
+  /**
+   * Dispatch a test call directly to PhoneCall.bot.
+   * Bypasses the pending_calls queue - admin testing only.
+   */
+  const testCall = useCallback(async (
+    source_tool: string,
+    phone_number: string
+  ): Promise<TestCallResult> => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/test-call-agent`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agent_source_tool: source_tool,
+          phone_number: phone_number,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    return {
+      test_call_id: data.test_call_id,
+      provider_call_id: data.provider_call_id,
+    };
+  }, []);
+
   useEffect(() => {
     fetchAgents();
   }, [fetchAgents]);
@@ -68,5 +115,6 @@ export function useCallAgents(): UseCallAgentsReturn {
     loading,
     error,
     refetch: fetchAgents,
+    testCall,
   };
 }
