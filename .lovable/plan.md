@@ -1,83 +1,40 @@
-# Replace GTM with Production-Only Conditional Loading
+
+# Update GTM Documentation with Lovable Domain Examples
 
 ## Summary
-
-Remove unconditional GTM loading and replace with a domain-checking script that only initializes GTM on your production domain, preventing Lovable preview domains from polluting your GTM suggestions.
+Update the "How It Works" table in `.lovable/plan.md` to include specific Lovable domain patterns for better documentation clarity.
 
 ---
 
 ## Changes
 
-### File: `index.html`
+### File: `.lovable/plan.md`
 
-**1. Replace Head GTM Script (lines 25-29)**
+**Update lines 60-67** - Replace the current "How It Works" table with an expanded version:
 
-Replace the current unconditional GTM snippet with:
-
-```html
-<!-- Google Tag Manager (Production Only) -->
-<script>
-  // Only load GTM on production domain
-  var productionDomain = 'itswindowman.com';
-
-  if (window.location.hostname === productionDomain || window.location.hostname === 'www.' + productionDomain) {
-    // --- Stape Server-Side GTM ---
-    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src="https://lunaa.itswindowman.com/76bwidfqcvb.js?"+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','dwjnsf8=CxJeNjIpRDkqICUjUzUzURRLUV9XQg0ZXx8XAhENBxMNAQ4QCEoKGA8%3D');
-  } else {
-    console.log('[GTM] Blocked on non-production domain:', window.location.hostname);
-  }
-</script>
-<!-- End Google Tag Manager -->
-```
-
-**Key differences from your provided script:**
-
-- Preserves your **Stape server-side endpoint** (`lunaa.itswindowman.com`) instead of switching to standard Google
-- Preserves your **obfuscated container ID** for security
-- Adds hostname to console log for easier debugging
-
-**2. Remove Body noscript Tag (lines 69-78)**
-
-Delete entirely:
-
-```html
-<!-- Google Tag Manager (noscript) -->
-<noscript
-  ><iframe
-    src="https://lunaa.itswindowman.com/ns.html?id=GTM-NHVFR5QZ"
-    height="0"
-    width="0"
-    style="display:none;visibility:hidden"
-  ></iframe
-></noscript>
-<!-- End Google Tag Manager (noscript) -->
-```
-
----
-
+```markdown
 ## How It Works
 
-| Domain                                     | GTM Loads? | Result           |
-| ------------------------------------------ | ---------- | ---------------- |
-| `itswindowman.com`                         | Yes        | Full tracking    |
-| `www.itswindowman.com`                     | Yes        | Full tracking    |
-| `*.lovable.app`                            | No         | Console log only |
-| `*-preview--*.lovable.app`                 | No         | Console log only |
-| '\*-window-truth-engine.lovable.app'       | No         | Console log only |
-| 'preview--window-truth-engine.lovable.app' | No         | Console log only |
+| Domain                                                            | GTM Loads? | Result           |
+| ----------------------------------------------------------------- | ---------- | ---------------- |
+| `itswindowman.com`                                                | Yes        | Full tracking    |
+| `www.itswindowman.com`                                            | Yes        | Full tracking    |
+| `window-truth-engine.lovable.app`                                 | No         | Console log only |
+| `preview--window-truth-engine.lovable.app`                        | No         | Console log only |
+| `id-preview-*--faf9d037-b00e-4588-a259-0baf63925ffd.lovable.app`  | No         | Console log only |
+| `*.lovable.app` (any other)                                       | No         | Console log only |
+```
 
----
-
-## Impact
-
-- **GTM will stop seeing preview domains** - Google can't suggest domains where GTM never loads
-- **Production tracking unchanged** - All your existing tags, triggers, and variables work normally
-- **No noscript fallback** - Acceptable tradeoff since <0.5% of users disable JavaScript
+**Key improvements:**
+- Added your specific project domains (`window-truth-engine.lovable.app`)
+- Added the versioned preview pattern (`id-preview-*--[project-id].lovable.app`)
+- Fixed inconsistent quote formatting (now uses backticks consistently)
+- Reordered to show specific domains first, then the catch-all pattern
 
 ---
 
 ## Files Changed
 
-| File         | Action                                            |
-| ------------ | ------------------------------------------------- |
-| `index.html` | Replace GTM head script, remove GTM body noscript |
+| File | Action |
+|------|--------|
+| `.lovable/plan.md` | Update "How It Works" table with specific domain examples |
