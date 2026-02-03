@@ -132,7 +132,7 @@ export function AgentIdEditor({
             <Tooltip>
               <TooltipTrigger asChild>
                 <a
-                  href={`https://phonecall.bot/agents/${current_agent_id}`}
+                  href={`https://app.phonecall.bot/agents/all?id=${current_agent_id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center h-6 w-6 rounded-md hover:bg-accent hover:text-accent-foreground"
