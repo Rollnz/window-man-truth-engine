@@ -116,7 +116,7 @@ export function CalculatorInputs({
               <span className="text-sm text-white">Square Feet</span>
               <span className="text-xl font-bold text-primary">{homeSize.toLocaleString()}</span>
             </div>
-            <Slider value={[homeSize]} onValueChange={value => setHomeSize(value[0])} min={500} max={5000} step={100} className="py-4" />
+            <Slider value={[homeSize]} onValueChange={value => setHomeSize(value[0])} min={500} max={5000} step={100} className="py-4" aria-label="Home Size in square feet" />
             <div className="flex justify-between text-xs text-white">
               <span>500 sq ft</span>
               <span>5,000 sq ft</span>
@@ -138,7 +138,7 @@ export function CalculatorInputs({
               <span className="text-sm text-white">Windows to Replace</span>
               <span className="text-xl font-bold text-primary">{windowCount}</span>
             </div>
-            <Slider value={[windowCount]} onValueChange={value => setWindowCount(value[0])} min={1} max={50} step={1} className="py-4" />
+            <Slider value={[windowCount]} onValueChange={value => setWindowCount(value[0])} min={1} max={50} step={1} className="py-4" aria-label="Number of windows to replace" />
             <div className="flex justify-between text-xs text-white">
               <span>1 window</span>
               <span>50 windows</span>

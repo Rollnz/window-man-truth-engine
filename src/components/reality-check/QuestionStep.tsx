@@ -89,6 +89,7 @@ const QuestionStep = ({
             max={sliderConfig.max}
             step={sliderConfig.step}
             className="w-full"
+            aria-label={`${question} - currently ${value || sliderConfig.min} ${sliderConfig.unit}`}
           />
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>{sliderConfig.min} {sliderConfig.unit}</span>
