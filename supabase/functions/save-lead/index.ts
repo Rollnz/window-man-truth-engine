@@ -250,7 +250,7 @@ function convertWindowCount(wc: unknown): number | null {
 }
 
 // ============= Stape Server-Side GTM Integration =============
-const STAPE_GTM_ENDPOINT = 'https://lunaa.itswindowman.com';
+const STAPE_GTM_ENDPOINT = 'https://lunaa.itswindowman.com/data';
 
 // SHA256 hash helper using Web Crypto API
 async function sha256Hash(text: string): Promise<string> {
