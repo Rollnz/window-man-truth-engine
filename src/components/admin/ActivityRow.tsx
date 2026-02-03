@@ -98,7 +98,7 @@ export function ActivityRow({ call }: ActivityRowProps) {
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                 Recording
               </p>
-              <AudioPlayer src={call.recording_url} autoStart={playOnOpen} />
+              <AudioPlayer src={call.recording_url} autoStart={playOnOpen} playerId={call.id} />
             </div>
           )}
 

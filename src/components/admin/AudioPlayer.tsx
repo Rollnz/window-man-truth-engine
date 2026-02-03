@@ -1,9 +1,11 @@
 import { useRef, useState, useEffect } from 'react';
 import { Play, Pause, Loader2, AlertCircle } from 'lucide-react';
+import { useAudioPlayback } from '@/contexts/AudioPlaybackContext';
 
 interface AudioPlayerProps {
   src: string;
   autoStart?: boolean;
+  playerId: string;
 }
 
 type PlayerState = "idle" | "loading" | "playing" | "paused" | "error";
@@ -15,11 +17,20 @@ function formatTime(secs: number): string {
   return m + ":" + (s < 10 ? "0" : "") + s;
 }
 
-export function AudioPlayer({ src, autoStart = false }: AudioPlayerProps) {
+export function AudioPlayer({ src, autoStart = false, playerId }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playerState, setPlayerState] = useState<PlayerState>("idle");
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  
+  const { activePlayerId, requestPlayback, stopPlayback } = useAudioPlayback();
+
+  // Pause this player when another player takes over
+  useEffect(() => {
+    if (activePlayerId !== playerId && playerState === 'playing') {
+      audioRef.current?.pause();
+    }
+  }, [activePlayerId, playerId, playerState]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -33,6 +44,7 @@ export function AudioPlayer({ src, autoStart = false }: AudioPlayerProps) {
     const handleLoadedMetadata = () => {
       setDuration(audio.duration);
       if (autoStart) {
+        requestPlayback(playerId);
         audio.play().catch(() => setPlayerState("error"));
       }
     };
@@ -43,6 +55,7 @@ export function AudioPlayer({ src, autoStart = false }: AudioPlayerProps) {
     const handleEnded = () => {
       setPlayerState("paused");
       setCurrentTime(0);
+      stopPlayback();
     };
     const handleError = () => setPlayerState("error");
 
@@ -61,7 +74,7 @@ export function AudioPlayer({ src, autoStart = false }: AudioPlayerProps) {
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("error", handleError);
     };
-  }, [src, autoStart]);
+  }, [src, autoStart, playerId, requestPlayback, stopPlayback]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -71,9 +84,11 @@ export function AudioPlayer({ src, autoStart = false }: AudioPlayerProps) {
       audio.pause();
     } else if (playerState === "error") {
       audio.load();
+      requestPlayback(playerId);
       audio.play().catch(() => setPlayerState("error"));
       setPlayerState("loading");
     } else {
+      requestPlayback(playerId);
       audio.play().catch(() => setPlayerState("error"));
       setPlayerState("loading");
     }

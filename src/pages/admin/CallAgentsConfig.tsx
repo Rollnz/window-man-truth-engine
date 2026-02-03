@@ -10,6 +10,7 @@ import { ActivityFeed } from '@/components/admin/ActivityFeed';
 import { useCallAgents } from '@/hooks/useCallAgents';
 import { useCallActivity } from '@/hooks/useCallActivity';
 import { SOURCE_TOOL_LABELS } from '@/constants/sourceToolLabels';
+import { AudioPlaybackProvider } from '@/contexts/AudioPlaybackContext';
 
 type ActiveTab = 'agents' | 'activity';
 
@@ -157,17 +158,19 @@ function CallAgentsConfigContent() {
             />
           </>
         ) : (
-          <ActivityFeed
-            calls={calls}
-            loading={activityLoading}
-            error={activityError}
-            hasMore={hasMore}
-            isLoadingMore={isLoadingMore}
-            onLoadMore={loadMore}
-            onRefresh={refetchActivity}
-            filters={activityFilters}
-            onFilterChange={setActivityFilters}
-          />
+          <AudioPlaybackProvider>
+            <ActivityFeed
+              calls={calls}
+              loading={activityLoading}
+              error={activityError}
+              hasMore={hasMore}
+              isLoadingMore={isLoadingMore}
+              onLoadMore={loadMore}
+              onRefresh={refetchActivity}
+              filters={activityFilters}
+              onFilterChange={setActivityFilters}
+            />
+          </AudioPlaybackProvider>
         )}
       </main>
 
