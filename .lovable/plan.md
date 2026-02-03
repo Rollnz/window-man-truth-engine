@@ -1,253 +1,171 @@
 
-# Implementation Plan: Agent Name Editor Feature
+# Phase 1: Call Agents Command Center - Scaffold Implementation
 
 ## Overview
-Add an `agent_name` field to the Call Agents Command Center, allowing admins to assign friendly names to each agent. This involves database schema changes, edge function updates, hook extensions, and a new UI component.
+Create a read-only admin page to display PhoneCall.bot voice agent configurations. This scaffold establishes the foundation for the full Call Agents Command Center without any mutation logic.
 
 ---
 
-## Build 1: Database Migration
+## Files to Create
 
-**Action**: Add `agent_name` column to `call_agents` table
+### 1. SOURCE_TOOL_LABELS Constant
+**File:** `src/constants/sourceToolLabels.ts`
 
-```sql
-ALTER TABLE call_agents
-ADD COLUMN IF NOT EXISTS agent_name TEXT
-DEFAULT '' NOT NULL;
-```
-
-**Design Decisions**:
-- `DEFAULT ''` ensures existing rows get empty string (not NULL)
-- `NOT NULL` constraint means agent_name is always a string
-- Empty string = "no name set yet" (handled gracefully in UI)
-
----
-
-## Build 2: Edge Function Updates
-
-**File**: `supabase/functions/admin-update-call-agent/index.ts`
-
-### 2a. Update GET Handler (Critical Fix)
-Add `agent_name` to the select query:
-
+Export a reusable constant map for friendly source tool names:
 ```typescript
-// Line 108 - Change from:
-.select("source_tool, agent_id, enabled, first_message_template, updated_at")
-
-// To:
-.select("source_tool, agent_id, agent_name, enabled, first_message_template, updated_at")
-```
-
-Update `ListAgentsResponse` interface to include `agent_name: string`
-
-### 2b. Extend PUT Handler
-Modify to accept optional fields dynamically:
-
-**New Request Body Schema**:
-```typescript
-{
-  source_tool: string,              // REQUIRED
-  first_message_template?: string,  // optional, max 500 chars
-  agent_name?: string               // optional, max 100 chars
-}
-```
-
-**Validation Logic**:
-1. `source_tool` must be present and non-empty string → 400 if missing
-2. If neither `first_message_template` nor `agent_name` present → 400 "Nothing to update"
-3. If `first_message_template` present and > 500 chars → 400 "Template must be 500 characters or fewer"
-4. If `agent_name` present and > 100 chars → 400 "Agent name must be 100 characters or fewer"
-
-**Dynamic UPDATE Construction**:
-- Build update object only with fields that are present
-- Always set `updated_at = now()` when any field updates
-
----
-
-## Build 3: Hook Extension
-
-**File**: `src/hooks/useCallAgents.ts`
-
-### 3a. Update CallAgent Interface
-```typescript
-export interface CallAgent {
-  source_tool: string;
-  agent_id: string;
-  agent_name: string;   // NEW - always string, never null
-  enabled: boolean;
-  first_message_template: string;
-  updated_at: string;
-  webhook_url?: string;
-}
-```
-
-### 3b. Add updateAgentName Function
-**Signature**: `(source_tool: string, agent_name: string) => Promise<void>`
-
-**Pattern**: Server-first (NOT optimistic) - same as `updateTemplate`
-
-```
-Step 1: PUT to admin-update-call-agent
-        Body: { source_tool, agent_name }
-Step 2 (success): Update local state with new agent_name
-        Call refetch() to sync updated_at
-Step 3 (failure): Throw error (no local state change)
-```
-
-### 3c. Update Return Type
-```typescript
-return {
-  agents,
-  loading,
-  error,
-  refetch,
-  testCall,
-  toggleEnabled,
-  updateAgentId,
-  updateTemplate,
-  updateAgentName,  // NEW
+export const SOURCE_TOOL_LABELS: Record<string, string> = {
+  "quote-scanner": "Quote Scanner",
+  "beat-your-quote": "Beat Your Quote",
+  "consultation-booking": "Consultation Booking",
+  "fair-price-quiz": "Fair Price Quiz",
+  "sample-report": "Sample Report",
+  "manual_dispatch": "Manual Dispatch",
 };
 ```
 
 ---
 
-## Build 4: AgentNameEditor Component
+### 2. Data Hook
+**File:** `src/hooks/useCallAgents.ts`
 
-**File**: `src/components/admin/AgentNameEditor.tsx`
+- Fetch agents from `admin-update-call-agent` GET endpoint
+- Return: `{ agents, loading, error, refetch }`
+- Single fetch on mount via `useEffect([], [])`
+- Manual `refetch()` function exposed
 
-### Props Interface
+Expected agent shape:
 ```typescript
-interface AgentNameEditorProps {
+interface CallAgent {
   source_tool: string;
-  current_agent_name: string;
-  onSave: (source_tool: string, agent_name: string) => Promise<void>;
+  agent_id: string;
+  enabled: boolean;
+  first_message_template: string;
+  updated_at: string;
+  webhook_url: string;
 }
 ```
 
-### State Machine
-```
-VIEWING → (click pencil) → EDITING
-EDITING → (click Save) → SAVING
-SAVING → (success) → VIEWING
-SAVING → (failure) → ERROR
-ERROR → (click Save/retry) → SAVING
-ERROR → (click Cancel) → VIEWING
-EDITING → (click Cancel) → VIEWING
-```
-
-### VIEWING State
-| Condition | Display |
-|-----------|---------|
-| `current_agent_name` non-empty | Name in readable font + pencil icon |
-| `current_agent_name` empty | Muted text "Add a name..." + pencil icon |
-
-### EDITING State
-- Text input pre-filled with `current_agent_name`
-- Empty input = no placeholder text (that was display-only)
-- Validation on every keystroke (no debounce):
-
-| Input State | Icon | Error Text |
-|-------------|------|------------|
-| Empty | None | None |
-| Length ≤ 100 | Green checkmark | None |
-| Length > 100 | Red X | "Max 100 characters" |
-
-- **Save button**: Disabled when length > 100 (empty IS valid)
-- **Cancel button**: Always visible, returns to VIEWING
-
-### SAVING State
-- Input disabled
-- Save button shows spinner + "Saving..."
-- Cancel button hidden
-
-### ERROR State
-- Red banner above input with server error message
-- Input re-enabled with failed value
-- Save button acts as retry
-- Cancel button visible
-
-### Toast Messages
-- Success: `"Name updated for {SOURCE_TOOL_LABELS[source_tool]}"`
-- Failure: `"Failed to save name: {error message}"`
+Note: The current edge function doesn't return `webhook_url` in its SELECT. The hook will handle this gracefully (optional field).
 
 ---
 
-## Build 5: Wire Into Cards
+### 3. Agent Table Component  
+**File:** `src/components/admin/CallAgentTable.tsx`
 
-**File**: `src/components/admin/CallAgentTable.tsx`
+Card-based layout (vertical stack) displaying each agent:
 
-### Updated Card Layout Order
+| Field | Display |
+|-------|---------|
+| Source Tool | Large bold label from `SOURCE_TOOL_LABELS` |
+| Agent ID | First 8 chars + "..." (masked) |
+| Enabled | Green "Active" or Red "Disabled" badge |
+| First Message | Truncated to 80 chars with ellipsis |
+| Last Updated | Raw ISO timestamp |
+
+States:
+- **Loading:** Skeleton cards (3 placeholder cards)
+- **Error:** Red banner with message + "Retry" button calling `refetch()`
+- **Empty:** "No agents configured" message
+
+---
+
+### 4. Admin Page
+**File:** `src/pages/admin/CallAgentsConfig.tsx`
+
+- Protected by `AuthGuard` (same pattern as other admin pages)
+- Header with title "Call Agents Command Center" and subtitle
+- Refresh button in header calling `refetch()`
+- Renders `CallAgentTable` component
+
+---
+
+## Files to Modify
+
+### 5. App.tsx Routing
+Add new route under AdminLayout section:
+```tsx
+<Route path="/admin/call-agents" element={<CallAgentsConfig />} />
 ```
-1. Source Tool label (bold) ← unchanged
-2. AgentNameEditor         ← NEW (directly below label)
-3. Enabled toggle          ← unchanged
-4. AgentIdEditor           ← unchanged
-5. First message preview   ← unchanged
-6. Edit Script button      ← unchanged
-7. TemplateEditor panel    ← unchanged
-8. Last Updated            ← unchanged
-9. Test Call button        ← unchanged
+
+Add lazy import at top:
+```tsx
+const CallAgentsConfig = lazy(() => import("./pages/admin/CallAgentsConfig"));
 ```
 
-### Props Updates
+---
 
-**CallAgentTableProps** - add:
-```typescript
-updateAgentName: (source_tool: string, agent_name: string) => Promise<void>;
+### 6. AdminHome.tsx Quick Action
+Add new QuickActionCard in the Quick Actions section:
+```tsx
+<QuickActionCard
+  title="Call Agents"
+  description="Manage voice agent integrations"
+  href="/admin/call-agents"
+  icon={<Bot className="h-5 w-5 text-primary" />}
+/>
 ```
 
-**AgentCardProps** - add:
-```typescript
-onUpdateAgentName: (source_tool: string, agent_name: string) => Promise<void>;
+Import `Bot` icon from lucide-react.
+
+---
+
+## Component Architecture
+
+```text
+CallAgentsConfig (page)
+├── AuthGuard (protection wrapper)
+├── Header
+│   ├── Title: "Call Agents Command Center"
+│   ├── Subtitle: "Manage PhoneCall.bot voice agent integrations"
+│   └── Refresh Button (calls refetch)
+└── CallAgentTable
+    ├── Loading State → Skeleton cards
+    ├── Error State → Red banner + Retry button
+    ├── Empty State → "No agents configured"
+    └── Agent Cards (one per agent)
+        ├── Source Tool Label (bold)
+        ├── Agent ID (masked)
+        ├── Status Badge (Active/Disabled)
+        ├── First Message (truncated)
+        └── Last Updated (ISO string)
 ```
 
-### Integration
-Pass `updateAgentName` from hook → `CallAgentTable` → each `AgentCard` → `AgentNameEditor` as `onSave`
+---
+
+## Visual Style Guide
+
+Following existing admin patterns from `PhoneCallOpsPanel` and `CRMDashboard`:
+
+- **Page background:** `bg-background`
+- **Header:** Sticky with `border-b bg-card`
+- **Cards:** Use `Card`, `CardHeader`, `CardContent` from shadcn/ui
+- **Badges:** 
+  - Active: `bg-green-500/20 text-green-600`
+  - Disabled: `bg-red-500/20 text-red-600`
+- **Skeleton:** Standard `Skeleton` component for loading states
+- **Error banner:** Red-tinted card with error message
+
+---
+
+## Technical Notes
+
+1. **No Mutations:** This scaffold is read-only. Toggle switches, editors, and save buttons come in Phase 2.
+
+2. **Edge Function:** The existing `admin-update-call-agent` GET endpoint returns agents but doesn't include `webhook_url`. The hook will treat this as optional.
+
+3. **Auth Pattern:** Uses the same `AuthGuard` + admin email whitelist pattern as all other admin pages.
+
+4. **Styling:** Pure Tailwind, matching existing admin aesthetic.
 
 ---
 
 ## Implementation Order
 
-| Step | Component | Reason |
-|------|-----------|--------|
-| 1 | Database Migration | Schema must exist before code references it |
-| 2 | Edge Function (GET + PUT) | Backend must serve/accept agent_name |
-| 3 | Hook Interface + Function | Frontend needs type + mutation |
-| 4 | AgentNameEditor Component | Isolated component, can be tested standalone |
-| 5 | CallAgentTable Integration | Wire everything together |
+1. Create `src/constants/sourceToolLabels.ts`
+2. Create `src/hooks/useCallAgents.ts`
+3. Create `src/components/admin/CallAgentTable.tsx`
+4. Create `src/pages/admin/CallAgentsConfig.tsx`
+5. Update `src/App.tsx` (add route + lazy import)
+6. Update `src/pages/admin/AdminHome.tsx` (add Quick Action card)
 
----
-
-## Verification Checklist
-
-After implementation, verify:
-
-1. **Empty state works**: Existing cards (all with empty `agent_name`) show "Add a name..." without errors
-2. **Validation fires on keystroke**: Type 101+ characters → red X + error text appears instantly
-3. **Empty string saves**: Clear an existing name, save → persists as empty string, shows "Add a name..."
-4. **Server validation enforced**: Manually POST >100 chars via curl → 400 error returned
-5. **No regression on template editor**: Edit Script still works with PUT endpoint changes
-6. **Full loop**: Add name → save → refresh page → name persists
-
----
-
-## Files Modified
-
-| File | Change Type |
-|------|-------------|
-| `supabase/functions/admin-update-call-agent/index.ts` | Modify GET select, extend PUT handler |
-| `src/hooks/useCallAgents.ts` | Add `agent_name` to interface, add `updateAgentName` function |
-| `src/components/admin/AgentNameEditor.tsx` | Create new component |
-| `src/components/admin/CallAgentTable.tsx` | Add props, integrate AgentNameEditor |
-| `src/pages/admin/CallAgentsConfig.tsx` | Pass `updateAgentName` prop |
-
----
-
-## Constraints Confirmed
-
-- AgentIdEditor.tsx: NOT modified
-- TemplateEditor.tsx: NOT modified
-- GET, POST, PATCH handlers: NOT modified (only GET select list updated, PUT extended)
-- `agent_name` always string, never null
-- 100-char limit enforced client-side (disable Save) AND server-side (400 response)
-- AgentNameEditor is separate component from AgentIdEditor
+**Estimated time:** ~45 minutes
