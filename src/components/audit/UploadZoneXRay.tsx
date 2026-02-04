@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Sparkles, Upload, CheckCircle2, AlertTriangle, Eye, FileText, Lock } from "lucide-react";
-import type { DeterministicPhase, AuditAnalysisResult, ExplainScoreFormData } from "@/types/audit";
-import { AnalyzingState, PartialResultsPanel, ExplainScoreGate, FullResultsPanel } from "./scanner-modal";
+import { Sparkles, Upload, CheckCircle2, AlertTriangle, Eye, FileText, Lock, Loader2 } from "lucide-react";
+import type { GatedScannerPhase } from "@/hooks/audit";
+import type { AuditAnalysisResult } from "@/types/audit";
+import { AnalyzingState, FullResultsPanel } from "./scanner-modal";
 import { XRayScannerBackground } from "@/components/ui/XRayScannerBackground";
 
 const XRAY_CALLOUTS = [
@@ -46,6 +47,7 @@ const XRAY_CALLOUTS = [
     delay: 1,
   },
 ];
+
 const SCORE_CATEGORIES = [
   {
     label: "Safety & Code Match",
@@ -73,18 +75,22 @@ const SCORE_CATEGORIES = [
     color: "bg-emerald-500",
   },
 ];
+
 interface UploadZoneXRayProps {
   onFileSelect?: (file: File) => void;
   isAnalyzing?: boolean;
-  // Scanner state props for in-page analysis
-  scannerPhase?: DeterministicPhase;
+  // Scanner state props for gated flow
+  scannerPhase?: GatedScannerPhase;
   scannerResult?: AuditAnalysisResult | null;
   scannerError?: string | null;
   isLoading?: boolean;
-  onShowGate?: () => void;
-  onCaptureLead?: (data: ExplainScoreFormData) => Promise<void>;
+  /** URL of uploaded file for blurred preview */
+  filePreviewUrl?: string | null;
+  /** Callback to reopen lead modal */
+  onReopenModal?: () => void;
   onReset?: () => void;
 }
+
 export function UploadZoneXRay({
   onFileSelect,
   isAnalyzing,
@@ -92,12 +98,13 @@ export function UploadZoneXRay({
   scannerResult = null,
   scannerError = null,
   isLoading = false,
-  onShowGate,
-  onCaptureLead,
+  filePreviewUrl = null,
+  onReopenModal,
   onReset,
 }: UploadZoneXRayProps) {
   const [visibleCallouts, setVisibleCallouts] = useState<number[]>([]);
   const [isHoveringPreview, setIsHoveringPreview] = useState(false);
+  
   useEffect(() => {
     // Only animate callouts when in idle phase
     if (scannerPhase !== "idle") return;
@@ -111,45 +118,180 @@ export function UploadZoneXRay({
     });
     return () => timers.forEach(clearTimeout);
   }, [scannerPhase]);
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file && onFileSelect) onFileSelect(file);
   };
+
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && onFileSelect) onFileSelect(file);
   };
 
-  // Render the right panel based on scanner phase
+  // Render the LEFT panel (Before: Confusing Estimate / Blurred Upload)
+  const renderLeftPanel = () => {
+    // If file is uploaded, show blurred preview
+    if (filePreviewUrl && (scannerPhase === 'uploaded' || scannerPhase === 'analyzing' || scannerPhase === 'revealed')) {
+      const isRevealed = scannerPhase === 'revealed';
+      
+      return (
+        <Card
+          className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-visible"
+        >
+          {/* Blurred/Clear uploaded image */}
+          <div className="relative w-full h-full min-h-[450px] rounded-lg overflow-hidden">
+            <img
+              src={filePreviewUrl}
+              alt="Your uploaded quote"
+              className={cn(
+                "w-full h-full object-contain transition-all duration-1000",
+                // Heavy blur until revealed
+                isRevealed ? "blur-none" : "blur-lg"
+              )}
+            />
+            
+            {/* Overlay for uploaded state (before reveal) */}
+            {!isRevealed && (
+              <div className="absolute inset-0 bg-slate-900/60 flex flex-col items-center justify-center">
+                <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mb-4 border-2 border-orange-500/40">
+                  <Lock className="w-8 h-8 text-orange-400" />
+                </div>
+                <p className="text-white font-semibold text-lg">Quote Uploaded</p>
+                <p className="text-slate-400 text-sm mb-4">Enter your details to unlock analysis</p>
+                {onReopenModal && (
+                  <Button
+                    onClick={onReopenModal}
+                    className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold"
+                  >
+                    <Lock className="w-4 h-4 mr-2" />
+                    Unlock My Report
+                  </Button>
+                )}
+              </div>
+            )}
+            
+            {/* Revealed state - no overlay */}
+            {isRevealed && (
+              <div className="absolute bottom-4 left-4 right-4 bg-emerald-500/20 border border-emerald-500/40 rounded-lg p-3 backdrop-blur-sm">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  <span className="text-emerald-400 font-medium text-sm">Your Quote - Analyzed</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </Card>
+      );
+    }
+
+    // Default idle state - upload zone with callouts
+    return (
+      <Card
+        className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-visible cursor-pointer group"
+        onDrop={handleDrop}
+        onDragOver={(e) => e.preventDefault()}
+      >
+        {/* AI Scanner Background */}
+        <div
+          className="absolute inset-0 rounded-lg overflow-hidden"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(16, 185, 129, 0.1) 50%, transparent 100%)",
+            opacity: 0.8,
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/40 to-transparent rounded-lg" />
+        <div className="absolute inset-0 bg-cyan-500/5 rounded-lg mix-blend-overlay" />
+
+        {/* Callouts */}
+        {XRAY_CALLOUTS.map((callout) => (
+          <div
+            key={callout.id}
+            className={cn(
+              "absolute z-20 transform transition-all duration-500",
+              visibleCallouts.includes(callout.id)
+                ? "opacity-100 scale-100 translate-y-0"
+                : "opacity-0 scale-75 translate-y-4",
+            )}
+            style={{
+              ...callout.position,
+              transitionDelay: `${callout.delay}s`,
+            }}
+          >
+            <div
+              className={cn(
+                "relative p-3 rounded-lg shadow-xl max-w-[200px] transform -rotate-2 hover:rotate-0 transition-transform",
+                callout.color,
+              )}
+            >
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-black/10 rounded-bl-lg" />
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-black" />
+                <div>
+                  <p className="font-bold text-sm text-black">{callout.title}</p>
+                  <p className="text-xs mt-1 leading-tight text-slate-900">
+                    {callout.text}
+                  </p>
+                </div>
+              </div>
+              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-3 bg-amber-200/60 rounded-sm transform rotate-2" />
+            </div>
+          </div>
+        ))}
+
+        {/* Upload Overlay */}
+        <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer z-10 bg-slate-900/60 hover:bg-slate-900/80 transition-colors rounded-lg">
+          <input type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileInput} />
+          <div className="w-16 h-16 bg-cyan-500/20 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-cyan-500/50">
+            <Upload className="w-8 h-8 text-cyan-400" />
+          </div>
+          <p className="font-semibold text-primary-foreground">Drop your quote here</p>
+          <p className="text-sm text-primary-foreground">PDF, JPEG, PNG up to 10mb</p>
+        </label>
+      </Card>
+    );
+  };
+
+  // Render the RIGHT panel based on scanner phase
   const renderRightPanel = () => {
     switch (scannerPhase) {
-      case "analyzing":
+      case 'uploaded':
+        // Waiting for lead capture - show locked preview
+        return (
+          <Card className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-hidden flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-orange-500/20 border-2 border-orange-500/30 flex items-center justify-center">
+                <Lock className="w-10 h-10 text-orange-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Your Gradecard is Ready</h3>
+              <p className="text-slate-400 text-sm mb-6">Complete the form to reveal your AI analysis</p>
+              <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Waiting for your details...</span>
+              </div>
+            </div>
+          </Card>
+        );
+
+      case 'analyzing':
+        // Theater mode - AI is processing
         return (
           <Card className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-hidden flex items-center justify-center">
             <AnalyzingState />
           </Card>
         );
-      case "partial":
-        return (
-          <Card className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-hidden">
-            {scannerResult && <PartialResultsPanel result={scannerResult} onUnlockClick={onShowGate || (() => {})} />}
-          </Card>
-        );
-      case "gated":
-        return (
-          <Card className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-hidden">
-            <ExplainScoreGate onSubmit={onCaptureLead || (async () => {})} isLoading={isLoading} />
-          </Card>
-        );
-      case "unlocked":
+
+      case 'revealed':
+        // Full results visible
         return (
           <Card className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-auto">
             {scannerResult && <FullResultsPanel result={scannerResult} />}
           </Card>
         );
 
-      // idle phase - show blurred preview
+      // idle phase - show blurred preview teaser
       default:
         return (
           <Card
@@ -242,6 +384,7 @@ export function UploadZoneXRay({
         );
     }
   };
+
   return (
     <XRayScannerBackground
       className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950"
@@ -289,72 +432,9 @@ export function UploadZoneXRay({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          {/* LEFT: Quote with Callouts / Upload Zone */}
+          {/* LEFT: Quote with Callouts / Blurred Upload */}
           <div className="relative">
-            <Card
-              className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-visible cursor-pointer group"
-              onDrop={handleDrop}
-              onDragOver={(e) => e.preventDefault()}
-            >
-              {/* AI Scanner Background */}
-              <div
-                className="absolute inset-0 rounded-lg overflow-hidden"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(16, 185, 129, 0.1) 50%, transparent 100%)",
-                  opacity: 0.8,
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/40 to-transparent rounded-lg" />
-              <div className="absolute inset-0 bg-cyan-500/5 rounded-lg mix-blend-overlay" />
-
-              {/* Callouts - only show in idle phase */}
-              {scannerPhase === "idle" &&
-                XRAY_CALLOUTS.map((callout) => (
-                  <div
-                    key={callout.id}
-                    className={cn(
-                      "absolute z-20 transform transition-all duration-500",
-                      visibleCallouts.includes(callout.id)
-                        ? "opacity-100 scale-100 translate-y-0"
-                        : "opacity-0 scale-75 translate-y-4",
-                    )}
-                    style={{
-                      ...callout.position,
-                      transitionDelay: `${callout.delay}s`,
-                    }}
-                  >
-                    <div
-                      className={cn(
-                        "relative p-3 rounded-lg shadow-xl max-w-[200px] transform -rotate-2 hover:rotate-0 transition-transform",
-                        callout.color,
-                      )}
-                    >
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-black/10 rounded-bl-lg" />
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-black" />
-                        <div>
-                          <p className="font-bold text-sm text-black">{callout.title}</p>
-                          <p className="text-xs mt-1 leading-tight text-slate-900">
-                            {callout.text}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-3 bg-amber-200/60 rounded-sm transform rotate-2" />
-                    </div>
-                  </div>
-                ))}
-
-              {/* Upload Overlay */}
-              <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer z-10 bg-slate-900/60 hover:bg-slate-900/80 transition-colors rounded-lg">
-                <input type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileInput} />
-                <div className="w-16 h-16 bg-cyan-500/20 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-cyan-500/50">
-                  <Upload className="w-8 h-8 text-cyan-400" />
-                </div>
-                <p className="font-semibold text-primary-foreground">Drop your quote here</p>
-                <p className="text-sm text-primary-foreground">PDF, JPEG, PNG up to 10mb</p>
-              </label>
-            </Card>
+            {renderLeftPanel()}
             <p className="mt-4 italic text-lg text-[#f0f0f0]">
               Contractors often hand you numbers, jargon, and tiny fine print. You're expected to just trust it.
             </p>

@@ -3,9 +3,10 @@ import { SEO } from '@/components/SEO';
 import {
   ScannerHeroWindow,
   ScannerIntelligenceBar,
+  QuoteUploadGateModal,
 } from '@/components/audit';
 import { LoadingSkeleton } from '@/components/audit/LoadingSkeleton';
-import { useDeterministicScanner } from '@/hooks/audit';
+import { useGatedScanner } from '@/hooks/audit';
 import { SampleReportGateModal } from '@/components/audit/SampleReportGateModal';
 
 // Lazy load below-the-fold components
@@ -25,8 +26,8 @@ export default function Audit() {
   const [sampleGateOpen, setSampleGateOpen] = useState(false);
   const sampleGateTriggerRef = useRef<HTMLElement | null>(null);
   
-  // Initialize deterministic scanner for in-page analysis
-  const scanner = useDeterministicScanner();
+  // Initialize gated scanner (CRO-optimized: gate BEFORE analysis)
+  const scanner = useGatedScanner();
 
   const scrollToUpload = () => {
     uploadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -37,11 +38,6 @@ export default function Audit() {
     sampleGateTriggerRef.current = document.activeElement as HTMLElement;
     setSampleGateOpen(true);
   }, []);
-
-  const handleFileSelect = (file: File) => {
-    // Analyze in-place instead of redirecting to /ai-scanner
-    scanner.analyzeFile(file);
-  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -80,13 +76,13 @@ export default function Audit() {
       <Suspense fallback={<LoadingSkeleton />}>
         <div ref={uploadRef}>
           <UploadZoneXRay 
-            onFileSelect={handleFileSelect}
+            onFileSelect={scanner.handleFileSelect}
             scannerPhase={scanner.phase}
             scannerResult={scanner.result}
             scannerError={scanner.error}
             isLoading={scanner.isLoading}
-            onShowGate={scanner.showGate}
-            onCaptureLead={scanner.captureLead}
+            filePreviewUrl={scanner.filePreviewUrl}
+            onReopenModal={scanner.reopenModal}
             onReset={scanner.reset}
           />
         </div>
@@ -98,7 +94,15 @@ export default function Audit() {
         <VaultSection />
       </Suspense>
 
-      {/* Sample Report Gate Modal */}
+      {/* Quote Upload Gate Modal - fires immediately after file upload */}
+      <QuoteUploadGateModal
+        isOpen={scanner.isModalOpen}
+        onClose={scanner.closeModal}
+        onSubmit={scanner.captureLead}
+        isLoading={scanner.isLoading}
+      />
+
+      {/* Sample Report Gate Modal - for users without quotes */}
       <SampleReportGateModal
         isOpen={sampleGateOpen}
         onClose={() => setSampleGateOpen(false)}
