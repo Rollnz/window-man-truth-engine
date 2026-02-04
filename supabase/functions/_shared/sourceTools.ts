@@ -34,6 +34,7 @@ export const SOURCE_TOOLS = [
   'roleplay',
   'consultation',
   'sample-report',
+  'audit-sample-report',
 ] as const;
 
 export type SourceTool = typeof SOURCE_TOOLS[number];

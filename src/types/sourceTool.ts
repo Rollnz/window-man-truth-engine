@@ -34,6 +34,7 @@ export const SOURCE_TOOLS = [
   'roleplay', // Sales roleplay simulation
   'consultation', // Strategy call booking
   'sample-report', // Sample report access gate
+  'audit-sample-report', // Audit page sample report gate
 ] as const;
 
 export type SourceTool = typeof SOURCE_TOOLS[number];

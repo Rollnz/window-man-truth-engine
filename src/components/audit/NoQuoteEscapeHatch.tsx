@@ -9,10 +9,25 @@ import {
   FileQuestion,
   ArrowRight,
   Sparkles,
-  Phone
+  Phone,
+  FileText
 } from 'lucide-react';
+import { AUDIT_CONFIG } from '@/config/auditConfig';
+
+interface NoQuoteEscapeHatchProps {
+  onViewSampleClick?: () => void;
+}
 
 const ALTERNATIVES = [
+  {
+    icon: FileText,
+    title: AUDIT_CONFIG.noQuote.sampleCardTitle,
+    description: AUDIT_CONFIG.noQuote.sampleCardDescription,
+    cta: AUDIT_CONFIG.noQuote.sampleCardCta,
+    action: 'modal' as const,
+    color: 'orange',
+    gradient: 'from-orange-500 to-amber-400',
+  },
   {
     icon: Calculator,
     title: 'Get an Instant Estimate',
@@ -42,7 +57,7 @@ const ALTERNATIVES = [
   },
 ];
 
-export function NoQuoteEscapeHatch() {
+export function NoQuoteEscapeHatch({ onViewSampleClick }: NoQuoteEscapeHatchProps) {
   return (
     <section className="relative py-20 md:py-28 bg-gradient-to-b from-slate-950 to-slate-900 overflow-hidden">
       {/* Background pattern */}
@@ -120,9 +135,10 @@ export function NoQuoteEscapeHatch() {
                 </p>
 
                 {/* CTA */}
-                <Link to={alt.href}>
+                {'action' in alt && alt.action === 'modal' && onViewSampleClick ? (
                   <Button
                     variant="outline"
+                    onClick={onViewSampleClick}
                     className={cn(
                       "w-full border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white transition-all",
                       "group-hover:border-slate-600"
@@ -131,7 +147,20 @@ export function NoQuoteEscapeHatch() {
                     {alt.cta}
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Button>
-                </Link>
+                ) : 'href' in alt ? (
+                  <Link to={alt.href}>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white transition-all",
+                        "group-hover:border-slate-600"
+                      )}
+                    >
+                      {alt.cta}
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                ) : null}
               </div>
 
               {/* Step indicator */}

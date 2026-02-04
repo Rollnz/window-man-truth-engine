@@ -3,10 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Shield, Scan, Lock, Sparkles } from "lucide-react";
+import { AUDIT_CONFIG } from "@/config/auditConfig";
+
 interface ScannerHeroWindowProps {
   onScanClick: () => void;
+  onViewSampleClick?: () => void;
 }
-export function ScannerHeroWindow({ onScanClick }: ScannerHeroWindowProps) {
+export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHeroWindowProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [mousePosition, setMousePosition] = useState({
     x: 50,
@@ -213,6 +216,12 @@ export function ScannerHeroWindow({ onScanClick }: ScannerHeroWindowProps) {
                     isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
                   )}
                 >
+                  {/* Urgency Line */}
+                  <p className="text-slate-400 text-sm text-center max-w-md">
+                    {AUDIT_CONFIG.hero.urgencyLine}
+                  </p>
+
+                  {/* Primary CTA */}
                   <Button
                     onClick={onScanClick}
                     size="lg"
@@ -222,15 +231,36 @@ export function ScannerHeroWindow({ onScanClick }: ScannerHeroWindowProps) {
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                     </div>
                     <Scan className="w-6 h-6 mr-3 group-hover:animate-pulse" />
-                    Scan My Quote Free
+                    {AUDIT_CONFIG.hero.primaryCtaLabel}
                     <span className="absolute -top-3 -right-3 px-3 py-1 bg-emerald-500 text-white text-sm font-bold rounded-full shadow-lg animate-bounce">
                       FREE
                     </span>
                   </Button>
 
+                  {/* Secondary CTA - only if callback provided */}
+                  {onViewSampleClick && (
+                    <div className="flex flex-col items-center space-y-2">
+                      <Button
+                        variant="outline"
+                        onClick={onViewSampleClick}
+                        className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white px-6 py-2"
+                      >
+                        {AUDIT_CONFIG.hero.sampleCtaLabel}
+                      </Button>
+                      
+                      {/* Optional subline */}
+                      {AUDIT_CONFIG.hero.sampleCtaSubline && (
+                        <p className="text-slate-500 text-xs">
+                          {AUDIT_CONFIG.hero.sampleCtaSubline}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Trust Line */}
                   <div className="flex items-center gap-2 text-slate-400 text-sm">
                     <Lock className="w-4 h-4 text-emerald-500" />
-                    <span>100% Private & Secure • No signup required</span>
+                    <span>{AUDIT_CONFIG.hero.trustLine}</span>
                   </div>
                 </div>
               </div>
