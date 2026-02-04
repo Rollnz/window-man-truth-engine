@@ -14,6 +14,7 @@ const BeatOrValidateSection = lazy(() => import('@/components/audit/BeatOrValida
 const RedFlagGallery = lazy(() => import('@/components/audit/RedFlagGallery').then(m => ({ default: m.RedFlagGallery })));
 const NoQuoteEscapeHatch = lazy(() => import('@/components/audit/NoQuoteEscapeHatch').then(m => ({ default: m.NoQuoteEscapeHatch })));
 const VaultSection = lazy(() => import('@/components/audit/VaultSection').then(m => ({ default: m.VaultSection })));
+const TestimonialCards = lazy(() => import('@/components/TestimonialCards').then(m => ({ default: m.TestimonialCards })));
 
 export default function Audit() {
   const uploadRef = useRef<HTMLDivElement>(null);
@@ -73,6 +74,7 @@ export default function Audit() {
         <BeatOrValidateSection />
         <RedFlagGallery />
         <NoQuoteEscapeHatch />
+        <TestimonialCards variant="dark" />
         <VaultSection />
       </Suspense>
     </div>
