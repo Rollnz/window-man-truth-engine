@@ -17,7 +17,7 @@ export const AUDIT_CONFIG = {
 
   // Hero Section CTAs
   hero: {
-    urgencyLine: 'People Lie - AI Hallucinates - WindowMan Educates',
+    urgencyLine: 'Join 12,000+ Florida homeowners who checked their quote before signing.',
     primaryCtaLabel: 'Scan My Quote Free',
     sampleCtaLabel: 'No quote yet? View a sample audit',
     sampleCtaSubline: 'See exactly what we flag before you get a quote.',
