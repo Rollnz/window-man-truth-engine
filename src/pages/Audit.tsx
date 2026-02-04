@@ -16,6 +16,7 @@ const RedFlagGallery = lazy(() => import('@/components/audit/RedFlagGallery').th
 const NoQuoteEscapeHatch = lazy(() => import('@/components/audit/NoQuoteEscapeHatch').then(m => ({ default: m.NoQuoteEscapeHatch })));
 const VaultSection = lazy(() => import('@/components/audit/VaultSection').then(m => ({ default: m.VaultSection })));
 const TestimonialCards = lazy(() => import('@/components/TestimonialCards').then(m => ({ default: m.TestimonialCards })));
+const ProblemAgitationSection = lazy(() => import('@/components/audit/ProblemAgitationSection').then(m => ({ default: m.ProblemAgitationSection })));
 
 export default function Audit() {
   const uploadRef = useRef<HTMLDivElement>(null);
@@ -69,6 +70,11 @@ export default function Audit() {
         onViewSampleClick={openSampleGate}
       />
       <ScannerIntelligenceBar />
+      
+      {/* Problem Agitation - below the fold, lazy loaded */}
+      <Suspense fallback={<div className="h-96 bg-slate-950" />}>
+        <ProblemAgitationSection />
+      </Suspense>
       
       {/* Below the fold - lazy loaded */}
       <Suspense fallback={<LoadingSkeleton />}>
