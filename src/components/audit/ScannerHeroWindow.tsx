@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Shield, Scan, Lock, Sparkles } from "lucide-react";
 import { AUDIT_CONFIG } from "@/config/auditConfig";
+import windowMysteryImage from "@/assets/window-mystery.webp";
 interface ScannerHeroWindowProps {
   onScanClick: () => void;
   onViewSampleClick?: () => void;
@@ -93,6 +94,42 @@ export function ScannerHeroWindow({
 
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                   <div className="absolute -top-1/2 -left-1/4 w-3/4 h-full bg-gradient-to-br from-white/[0.07] via-white/[0.02] to-transparent rotate-12 transform" />
+                </div>
+
+                {/* Mystery Window Image - Revealed by scan line */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <style>{`
+                    @keyframes mystery-reveal {
+                      0%, 100% { 
+                        opacity: 0;
+                        mask-position: 0 -100%;
+                        -webkit-mask-position: 0 -100%;
+                      }
+                      20% { opacity: 0; }
+                      25% { opacity: 0.35; }
+                      50% { 
+                        opacity: 0.35;
+                        mask-position: 0 50%;
+                        -webkit-mask-position: 0 50%;
+                      }
+                      75% { opacity: 0.35; }
+                      80% { opacity: 0; }
+                    }
+                  `}</style>
+                  <div 
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${windowMysteryImage})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      maskImage: 'linear-gradient(to bottom, transparent 0%, black 40%, black 60%, transparent 100%)',
+                      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 40%, black 60%, transparent 100%)',
+                      maskSize: '100% 30%',
+                      WebkitMaskSize: '100% 30%',
+                      filter: 'saturate(0.4) brightness(0.5) contrast(1.1)',
+                      animation: 'mystery-reveal 4s ease-in-out infinite',
+                    }}
+                  />
                 </div>
 
                 {/* Scan Line Animation - Blue theme */}
