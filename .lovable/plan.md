@@ -1,287 +1,69 @@
 
 
-# XRayScannerBackground - Mobile-Optimized Implementation
+# Sticky Note Callout Text Color Fix
 
 ## Summary
-Create a reusable, mobile-optimized `XRayScannerBackground` wrapper component with scroll-driven X-ray scanner visual effects that work across all device sizes with appropriate performance optimizations.
+Update the sticky note callouts on the `/audit` page to use explicit, vibrant text colors instead of dynamic theme-based colors.
 
 ---
 
-## Component Architecture
+## Current State (Lines 335-340)
 
-### Visual Layers (All Devices)
-
-```text
-┌─────────────────────────────────────────────────┐
-│  Layer 1: Scrolling Contract Text               │  ← 3% desktop / 2% mobile opacity
-│  ─────────────────────────────────────────────  │
-│  Layer 2: Green Scan Bar + Glow                 │  ← Scroll-driven, reduced glow on mobile
-│  ─────────────────────────────────────────────  │
-│  Layer 3: Red Flag Badges                       │  ← Scale 0.8 on mobile, safe positioning
-│  ─────────────────────────────────────────────  │
-│  Layer 4: {children}                            │  ← Actual content (z-10)
-└─────────────────────────────────────────────────┘
+```tsx
+<AlertTriangle className={cn("w-4 h-4 mt-0.5 flex-shrink-0", callout.textColor)} />
+<div>
+  <p className={cn("font-bold text-sm", callout.textColor)}>{callout.title}</p>
+  <p className={cn("text-xs mt-1 leading-tight text-black", callout.textColor)}>
+    {callout.text}
+  </p>
+</div>
 ```
+
+**Problem**: The `callout.textColor` (e.g., `text-amber-900`) creates muted, less vibrant text.
 
 ---
 
-## Files to Create/Modify
+## Changes Required
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/components/ui/XRayScannerBackground.tsx` | Create | Reusable scanner effect wrapper |
-| `src/components/audit/UploadZoneXRay.tsx` | Modify | Wrap content with scanner background |
+### File: `src/components/audit/UploadZoneXRay.tsx`
+
+| Element | Current | New |
+|---------|---------|-----|
+| Header (`callout.title`) | `cn("font-bold text-sm", callout.textColor)` | `"font-bold text-sm text-black"` |
+| Body (`callout.text`) | `cn("text-xs mt-1 leading-tight text-black", callout.textColor)` | `"text-xs mt-1 leading-tight text-slate-900"` |
+| Icon (AlertTriangle) | `cn("w-4 h-4 mt-0.5 flex-shrink-0", callout.textColor)` | `"w-4 h-4 mt-0.5 flex-shrink-0 text-black"` |
 
 ---
 
-## File 1: `src/components/ui/XRayScannerBackground.tsx`
-
-### Props Interface
+## Updated Code
 
 ```tsx
-interface XRayScannerBackgroundProps {
-  children: ReactNode;
-  contractLines?: string[];
-  redFlags?: Array<{ top: string; left: string; label: string; delay: number }>;
-  className?: string;
-  padding?: string;
-}
-```
-
-### Key Technical Implementation
-
-**1. Scroll-Driven Animation (NOT timer-based)**
-```tsx
-const progress = Math.max(0, Math.min(1, scrollPosition / scrollRange));
-// Scan bar follows scroll position
-style={{ top: `${scanProgress * 100}%` }}
-```
-
-**2. IntersectionObserver for Performance**
-```tsx
-const [isInView, setIsInView] = useState(false);
-const sectionRef = useRef<HTMLElement>(null);
-
-useEffect(() => {
-  const observer = new IntersectionObserver(
-    ([entry]) => setIsInView(entry.isIntersecting),
-    { threshold: 0.1 }
-  );
-  if (sectionRef.current) observer.observe(sectionRef.current);
-  return () => observer.disconnect();
-}, []);
-```
-
-**3. Reduced Motion Support**
-```tsx
-const prefersReducedMotion = useReducedMotion();
-// Skip all animations when user prefers reduced motion
-```
-
-### Default Contract Lines
-```tsx
-const DEFAULT_CONTRACT_LINES = [
-  "ADMIN FEE – $1,950",
-  "EMERGENCY RUSH – $3,200",
-  "PERMIT PROCESSING – $875",
-  "DISPOSAL FEE – $650",
-  "WEEKEND SURCHARGE – $1,400",
-  "CONSULTATION CHARGE – $550",
-  "MATERIAL HANDLING – $925",
-  "INSPECTION FEE – $780",
-];
-```
-
-### Default Red Flags
-```tsx
-const DEFAULT_RED_FLAGS = [
-  { top: '15%', left: '20%', label: '🚩 Markup 40%', delay: 0 },
-  { top: '35%', left: '60%', label: '🚩 Junk Fee', delay: 0.2 },
-  { top: '55%', left: '30%', label: '🚩 Double Counting', delay: 0.4 },
-  { top: '75%', left: '70%', label: '🚩 Unnecessary', delay: 0.6 },
-];
-```
-
-### Mobile-Optimized CSS (Inline Styles)
-
-```css
-@keyframes scroll-horizontal {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.animate-scroll-horizontal {
-  animation: scroll-horizontal 60s linear infinite;
-  will-change: transform;
-}
-
-.animate-scroll-horizontal-delayed {
-  animation: scroll-horizontal 60s linear infinite;
-  animation-delay: -30s;
-  will-change: transform;
-}
-
-/* Pause animation when not animating (controlled by isInView) */
-.animation-paused {
-  animation-play-state: paused;
-}
-
-/* Mobile red flag optimization */
-@media (max-width: 767px) {
-  .red-flag-badge {
-    transform: scale(0.8);
-    white-space: nowrap;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-scroll-horizontal,
-  .animate-scroll-horizontal-delayed {
-    animation: none;
-  }
-}
-```
-
-### Layer Implementation Details
-
-**Layer 1: Contract Text (Background Texture)**
-```tsx
-<div 
-  className={cn(
-    "absolute inset-0 overflow-hidden pointer-events-none",
-    "opacity-[0.03] md:opacity-[0.03]", // 3% desktop, 2% mobile could be opacity-[0.02]
-    "transform-gpu" // Force GPU acceleration
-  )}
-  aria-hidden="true"
->
-  <div className={cn(
-    "whitespace-nowrap text-xs md:text-sm leading-relaxed",
-    isInView ? "animate-scroll-horizontal" : "animation-paused"
-  )}>
-    {/* Duplicated text for seamless loop */}
-    {[...contractLines, ...contractLines].map((line, i) => (
-      <span key={i} className="inline-block px-8 text-foreground/50">
-        {line}
-      </span>
-    ))}
+<div className="flex items-start gap-2">
+  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-black" />
+  <div>
+    <p className="font-bold text-sm text-black">{callout.title}</p>
+    <p className="text-xs mt-1 leading-tight text-slate-900">
+      {callout.text}
+    </p>
   </div>
 </div>
 ```
 
-**Layer 2: Scan Bar (Scroll-Driven)**
-```tsx
-<div
-  className={cn(
-    "absolute left-0 right-0 h-1 bg-success transform-gpu",
-    "shadow-[0_0_20px_hsl(var(--success))]", // Base glow
-    "md:shadow-[0_0_40px_hsl(var(--success))]" // Enhanced glow on desktop
-  )}
-  style={{ top: `${scanProgress * 100}%` }}
-  aria-hidden="true"
-/>
-```
+---
 
-**Layer 3: Red Flags (Appear as Scan Passes)**
-```tsx
-{redFlags.map((flag, index) => {
-  const flagProgress = scanProgress * 100;
-  const flagPosition = parseFloat(flag.top);
-  const isVisible = flagProgress > flagPosition - 10 && flagProgress < flagPosition + 10;
-  
-  // Safe left positioning for mobile
-  const safeLeft = `clamp(10%, ${flag.left}, 85%)`;
-  
-  return (
-    <div
-      key={index}
-      className={cn(
-        "absolute px-2 py-1 rounded text-xs font-bold",
-        "bg-destructive text-destructive-foreground",
-        "transition-opacity duration-300 pointer-events-none",
-        "red-flag-badge", // For mobile scaling
-        isVisible ? "opacity-100" : "opacity-0"
-      )}
-      style={{ 
-        top: flag.top, 
-        left: safeLeft,
-        transitionDelay: `${flag.delay}s`
-      }}
-      aria-hidden="true"
-    >
-      {flag.label}
-    </div>
-  );
-})}
-```
+## Optional Cleanup
+
+The `textColor` property in `XRAY_CALLOUTS` (lines 17, 29, 41) can be removed since it's no longer used. However, keeping it won't cause any issues if you prefer to retain it for potential future use.
 
 ---
 
-## File 2: `src/components/audit/UploadZoneXRay.tsx`
+## Visual Result
 
-### Changes Required
+| Element | Color | Appearance |
+|---------|-------|------------|
+| Header | `text-black` (#000) | Bold, high contrast |
+| Body | `text-slate-900` (#0f172a) | Clear, slightly softer than pure black |
+| Icon | `text-black` (#000) | Matches header for consistency |
 
-Replace the outer `<section>` wrapper with `<XRayScannerBackground>`:
-
-**Before:**
-```tsx
-<section className="relative py-16 md:py-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
-  {/* Grid background */}
-  <div className="absolute inset-0 opacity-20">...</div>
-  
-  <div className="container relative px-4 mx-auto max-w-7xl">
-    {/* Content */}
-  </div>
-</section>
-```
-
-**After:**
-```tsx
-import { XRayScannerBackground } from '@/components/ui/XRayScannerBackground';
-
-<XRayScannerBackground
-  className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950"
-  padding="py-16 md:py-24"
->
-  {/* Grid background - kept inside */}
-  <div className="absolute inset-0 opacity-20">...</div>
-  
-  <div className="container relative px-4 mx-auto max-w-7xl z-10">
-    {/* Content - add z-10 to ensure it's above scanner layers */}
-  </div>
-</XRayScannerBackground>
-```
-
----
-
-## Performance Optimizations Summary
-
-| Optimization | Implementation | Benefit |
-|--------------|----------------|---------|
-| GPU Acceleration | `transform-gpu` class | Offloads rendering to GPU |
-| Animation Hints | `will-change: transform` | Browser pre-optimizes layers |
-| Viewport Pause | IntersectionObserver | Stops animation when off-screen |
-| Mobile Opacity | `opacity-[0.02]` on mobile | Reduces compositing cost |
-| Reduced Glow | Smaller `shadow` on mobile | Less GPU blur processing |
-| Reduced Motion | `prefers-reduced-motion` check | Respects system settings |
-
----
-
-## Accessibility
-
-- All decorative layers have `aria-hidden="true"`
-- Respects `prefers-reduced-motion` system preference
-- Content remains fully accessible with `z-10` stacking
-- Pointer events disabled on all scanner layers
-
----
-
-## Testing Checklist
-
-After implementation:
-1. Scroll through /audit page on desktop - verify scan bar follows scroll
-2. Test on mobile device - verify smooth animation without jank
-3. Check red flags appear/disappear correctly as scan passes
-4. Enable reduced motion in OS - verify all animations disabled
-5. Test battery usage on mobile (optional) - verify animation pauses when off-screen
-6. Verify content remains clickable above scanner layers
+All colors will be vibrant against the amber/orange/red sticky note backgrounds.
 
