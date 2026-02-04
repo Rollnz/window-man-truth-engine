@@ -83,6 +83,34 @@ export function ScannerHeroWindow({
             {/* Glass Pane */}
             <div className="relative overflow-hidden rounded-lg">
               <div className="relative bg-gradient-to-br from-slate-900/90 via-slate-900/95 to-slate-950 min-h-[500px] md:min-h-[550px] p-8 md:p-12">
+                
+                {/* Frosted Glass Background - Subliminal mystery image */}
+                <div 
+                  className="absolute inset-0 opacity-[0.08] blur-2xl pointer-events-none"
+                  style={{
+                    backgroundImage: `url(${windowMysteryImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                />
+                
+                {/* Scan line reveal - momentary clarity */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <div 
+                    className="absolute w-full h-16 animate-scan-down"
+                    style={{
+                      backgroundImage: `url(${windowMysteryImage})`,
+                      backgroundSize: '100% 800%',
+                      backgroundPosition: 'center',
+                      backgroundAttachment: 'local',
+                      opacity: 0.15,
+                      filter: 'blur(4px) saturate(0.7)',
+                      maskImage: 'linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%)',
+                      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%)',
+                    }}
+                  />
+                </div>
+                
                 <div className="absolute inset-0 opacity-[0.03]" style={{
                 backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
                 backgroundSize: "20px 20px"
