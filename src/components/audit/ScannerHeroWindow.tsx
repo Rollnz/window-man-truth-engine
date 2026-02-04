@@ -149,7 +149,7 @@ export function ScannerHeroWindow({
 
                 <div className={cn("flex flex-col items-center space-y-4 transition-all duration-700 delay-600", isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")}>
                   {/* Urgency Line */}
-                  <p className="text-slate-400 text-sm text-center max-w-md">
+                  <p className="text-sm text-center max-w-md text-destructive-foreground">
                     {AUDIT_CONFIG.hero.urgencyLine}
                   </p>
 
