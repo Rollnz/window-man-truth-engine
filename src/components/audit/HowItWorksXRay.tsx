@@ -102,7 +102,7 @@ export function HowItWorksXRay({
             Try It For Free
           </Button>
           
-          <p className="text-sm mt-4 text-accent">
+          <p className="text-sm mt-4 text-gray-400">
             Stop Guessing. Start Auditing. Use AI to find what your contractor "Missed"
           </p>
         </div>
