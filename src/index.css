@@ -170,6 +170,18 @@
     @apply border-border;
   }
 
+  html {
+    /* Prevent content from hiding under sticky header when using anchor links or focus scroll */
+    scroll-padding-top: 70px;
+  }
+  
+  @media (max-width: 767px) {
+    html {
+      /* Slightly more padding on mobile to account for safe-area-inset-top */
+      scroll-padding-top: 80px;
+    }
+  }
+
   html,
   body {
     @apply overflow-x-hidden;

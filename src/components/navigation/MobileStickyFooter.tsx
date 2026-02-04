@@ -84,17 +84,17 @@ export function MobileStickyFooter() {
         </p>
 
         {/* Secondary Navigation Row */}
-        <div className="flex items-center justify-center gap-6 text-sm">
-          <Link to={FOOTER_NAV.HOME} onClick={() => handleNavClick('home')} className="text-slate-600 hover:text-slate-900 transition-colors py-1">
+        <div className="flex items-center justify-center gap-4 text-sm">
+          <Link to={FOOTER_NAV.HOME} onClick={() => handleNavClick('home')} className="text-slate-600 hover:text-slate-900 transition-colors min-h-[44px] flex items-center px-2">
             Home
           </Link>
-          <Link to={FOOTER_NAV.ALL_TOOLS} onClick={() => handleNavClick('all_tools')} className="text-slate-600 hover:text-slate-900 transition-colors py-1">
+          <Link to={FOOTER_NAV.ALL_TOOLS} onClick={() => handleNavClick('all_tools')} className="text-slate-600 hover:text-slate-900 transition-colors min-h-[44px] flex items-center px-2">
             All Tools
           </Link>
-          <Link to={FOOTER_NAV.PRIVACY} onClick={() => handleNavClick('privacy')} className="text-slate-600 hover:text-slate-900 transition-colors py-1">
+          <Link to={FOOTER_NAV.PRIVACY} onClick={() => handleNavClick('privacy')} className="text-slate-600 hover:text-slate-900 transition-colors min-h-[44px] flex items-center px-2">
             Privacy
           </Link>
-          <Link to={FOOTER_NAV.TERMS} onClick={() => handleNavClick('terms')} className="text-slate-600 hover:text-slate-900 transition-colors py-1">
+          <Link to={FOOTER_NAV.TERMS} onClick={() => handleNavClick('terms')} className="text-slate-600 hover:text-slate-900 transition-colors min-h-[44px] flex items-center px-2">
             Terms
           </Link>
         </div>
