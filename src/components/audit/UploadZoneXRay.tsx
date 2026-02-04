@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { Sparkles, Upload, CheckCircle2, AlertTriangle, Eye, FileText, Lock } from 'lucide-react';
 import type { DeterministicPhase, AuditAnalysisResult, ExplainScoreFormData } from '@/types/audit';
 import { AnalyzingState, PartialResultsPanel, ExplainScoreGate, FullResultsPanel } from './scanner-modal';
+import { XRayScannerBackground } from '@/components/ui/XRayScannerBackground';
+
 const XRAY_CALLOUTS = [{
   id: 1,
   title: 'Price Warning:',
@@ -180,15 +182,18 @@ export function UploadZoneXRay({
           </Card>;
     }
   };
-  return <section className="relative py-16 md:py-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
-      <div className="absolute inset-0 opacity-20">
+  return <XRayScannerBackground
+      className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950"
+      padding="py-16 md:py-24"
+    >
+      <div className="absolute inset-0 opacity-20 z-0">
         <div className="absolute inset-0" style={{
         backgroundImage: `linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.1) 1px, transparent 1px)`,
         backgroundSize: '50px 50px'
       }} />
       </div>
 
-      <div className="container relative px-4 mx-auto max-w-7xl">
+      <div className="container relative px-4 mx-auto max-w-7xl z-10">
         <div className="text-center mb-12">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/30">
             <Sparkles className="w-4 h-4 mr-2" />
@@ -275,5 +280,5 @@ export function UploadZoneXRay({
             </div>
           </div>}
       </div>
-    </section>;
+    </XRayScannerBackground>;
 }
