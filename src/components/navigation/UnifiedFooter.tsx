@@ -139,16 +139,16 @@ export function UnifiedFooter() {
 
               {/* Legal links - Right */}
               <div className="flex items-center justify-center md:justify-end gap-4 md:gap-6 order-2 md:order-3">
-                <Link to={FOOTER_NAV.HOME} onClick={() => handleNavClick('home')} className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
+                <Link to={FOOTER_NAV.HOME} onClick={() => handleNavClick('home')} className="text-sm text-slate-600 hover:text-slate-900 transition-colors min-h-[44px] flex items-center">
                   Home
                 </Link>
-                <Link to={FOOTER_NAV.ALL_TOOLS} onClick={() => handleNavClick('all_tools')} className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
+                <Link to={FOOTER_NAV.ALL_TOOLS} onClick={() => handleNavClick('all_tools')} className="text-sm text-slate-600 hover:text-slate-900 transition-colors min-h-[44px] flex items-center">
                   All Tools
                 </Link>
-                <Link to={FOOTER_NAV.PRIVACY} onClick={() => handleNavClick('privacy')} className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
+                <Link to={FOOTER_NAV.PRIVACY} onClick={() => handleNavClick('privacy')} className="text-sm text-slate-600 hover:text-slate-900 transition-colors min-h-[44px] flex items-center">
                   Privacy
                 </Link>
-                <Link to={FOOTER_NAV.TERMS} onClick={() => handleNavClick('terms')} className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
+                <Link to={FOOTER_NAV.TERMS} onClick={() => handleNavClick('terms')} className="text-sm text-slate-600 hover:text-slate-900 transition-colors min-h-[44px] flex items-center">
                   Terms
                 </Link>
               </div>

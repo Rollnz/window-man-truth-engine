@@ -99,17 +99,17 @@ export function Navbar() {
       </div>
 
       {/* Mobile Menu */}
-      {mobileMenuOpen && <div className="md:hidden border-t border-border bg-background px-4 py-4 space-y-3">
-          <Link to={ROUTES.TOOLS} className="block text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
+      {mobileMenuOpen && <div className="md:hidden border-t border-border bg-background px-4 py-4 space-y-1">
+          <Link to={ROUTES.TOOLS} className="block text-sm text-muted-foreground hover:text-foreground min-h-[44px] flex items-center" onClick={() => setMobileMenuOpen(false)}>
             Tools
           </Link>
-          <Link to={ROUTES.EVIDENCE} className="block text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
+          <Link to={ROUTES.EVIDENCE} className="block text-sm text-muted-foreground hover:text-foreground min-h-[44px] flex items-center" onClick={() => setMobileMenuOpen(false)}>
             Evidence
           </Link>
-          <Link to={ROUTES.INTEL} className="block text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
+          <Link to={ROUTES.INTEL} className="block text-sm text-muted-foreground hover:text-foreground min-h-[44px] flex items-center" onClick={() => setMobileMenuOpen(false)}>
             Intel Library
           </Link>
-          <Link to={ROUTES.BEAT_YOUR_QUOTE} className="block text-sm font-medium text-primary hover:text-primary/80" onClick={() => setMobileMenuOpen(false)}>
+          <Link to={ROUTES.BEAT_YOUR_QUOTE} className="block text-sm font-medium text-primary hover:text-primary/80 min-h-[44px] flex items-center" onClick={() => setMobileMenuOpen(false)}>
             <span className="flex items-center gap-2">
               <img src="/icon-512.webp" alt="" width={16} height={16} className="w-4 h-4 rounded-full object-contain" />
               Beat Your Quote
