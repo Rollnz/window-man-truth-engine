@@ -1,4 +1,4 @@
-import { useRef, lazy, Suspense } from 'react';
+import { useRef, useState, useCallback, lazy, Suspense } from 'react';
 import { SEO } from '@/components/SEO';
 import {
   ScannerHeroWindow,
@@ -6,6 +6,7 @@ import {
 } from '@/components/audit';
 import { LoadingSkeleton } from '@/components/audit/LoadingSkeleton';
 import { useDeterministicScanner } from '@/hooks/audit';
+import { SampleReportGateModal } from '@/components/audit/SampleReportGateModal';
 
 // Lazy load below-the-fold components
 const UploadZoneXRay = lazy(() => import('@/components/audit/UploadZoneXRay').then(m => ({ default: m.UploadZoneXRay })));
@@ -19,12 +20,22 @@ const TestimonialCards = lazy(() => import('@/components/TestimonialCards').then
 export default function Audit() {
   const uploadRef = useRef<HTMLDivElement>(null);
   
+  // Sample gate modal state
+  const [sampleGateOpen, setSampleGateOpen] = useState(false);
+  const sampleGateTriggerRef = useRef<HTMLElement | null>(null);
+  
   // Initialize deterministic scanner for in-page analysis
   const scanner = useDeterministicScanner();
 
   const scrollToUpload = () => {
     uploadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
+
+  // Handler to open sample gate modal with focus tracking
+  const openSampleGate = useCallback(() => {
+    sampleGateTriggerRef.current = document.activeElement as HTMLElement;
+    setSampleGateOpen(true);
+  }, []);
 
   const handleFileSelect = (file: File) => {
     // Analyze in-place instead of redirecting to /ai-scanner
@@ -53,7 +64,10 @@ export default function Audit() {
       />
       
       {/* Above the fold - loads immediately */}
-      <ScannerHeroWindow onScanClick={scrollToUpload} />
+      <ScannerHeroWindow 
+        onScanClick={scrollToUpload} 
+        onViewSampleClick={openSampleGate}
+      />
       <ScannerIntelligenceBar />
       
       {/* Below the fold - lazy loaded */}
@@ -73,10 +87,17 @@ export default function Audit() {
         <HowItWorksXRay onScanClick={scrollToUpload} />
         <BeatOrValidateSection />
         <RedFlagGallery />
-        <NoQuoteEscapeHatch />
+        <NoQuoteEscapeHatch onViewSampleClick={openSampleGate} />
         <TestimonialCards variant="dark" />
         <VaultSection />
       </Suspense>
+
+      {/* Sample Report Gate Modal */}
+      <SampleReportGateModal
+        isOpen={sampleGateOpen}
+        onClose={() => setSampleGateOpen(false)}
+        returnFocusRef={sampleGateTriggerRef}
+      />
     </div>
   );
 }
