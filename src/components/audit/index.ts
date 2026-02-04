@@ -1,5 +1,6 @@
 export { ScannerHeroWindow } from './ScannerHeroWindow';
 export { ScannerIntelligenceBar } from './ScannerIntelligenceBar';
+export { ProblemAgitationSection } from './ProblemAgitationSection';
 export { UploadZoneXRay } from './UploadZoneXRay';
 export { HowItWorksXRay } from './HowItWorksXRay';
 export { BeatOrValidateSection } from './BeatOrValidateSection';
