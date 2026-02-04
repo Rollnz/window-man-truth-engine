@@ -96,22 +96,6 @@ export function ScannerHeroWindow({
                   <div className="absolute -top-1/2 -left-1/4 w-3/4 h-full bg-gradient-to-br from-white/[0.07] via-white/[0.02] to-transparent rotate-12 transform" />
                 </div>
 
-                {/* Mystery Window Image - Revealed by scan line */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  <div 
-                    className="absolute w-full animate-scan-down"
-                    style={{
-                      height: '10%',
-                      backgroundImage: `url(${windowMysteryImage})`,
-                      backgroundSize: '100% 1000%',
-                      backgroundPosition: 'center',
-                      backgroundAttachment: 'fixed',
-                      filter: 'saturate(0.6) brightness(0.55) contrast(1.2)',
-                      maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)',
-                      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)',
-                    }}
-                  />
-                </div>
 
                 {/* Scan Line Animation - Blue theme */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
