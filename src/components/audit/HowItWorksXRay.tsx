@@ -54,7 +54,7 @@ export function HowItWorksXRay({
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-cyan-400 text-sm font-medium mb-6">
             <Zap className="w-4 h-4" />
-            60-Second Analysis
+            Instant Analysis
           </div>
           
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4">
