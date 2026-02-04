@@ -98,34 +98,17 @@ export function ScannerHeroWindow({
 
                 {/* Mystery Window Image - Revealed by scan line */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  <style>{`
-                    @keyframes mystery-reveal {
-                      0% { 
-                        opacity: 0;
-                        mask-position: 0 -15%;
-                        -webkit-mask-position: 0 -15%;
-                      }
-                      5% { opacity: 0.4; }
-                      95% { opacity: 0.4; }
-                      100% { 
-                        opacity: 0;
-                        mask-position: 0 115%;
-                        -webkit-mask-position: 0 115%;
-                      }
-                    }
-                  `}</style>
                   <div 
-                    className="absolute inset-0"
+                    className="absolute w-full animate-scan-down"
                     style={{
+                      height: '10%',
                       backgroundImage: `url(${windowMysteryImage})`,
-                      backgroundSize: 'cover',
+                      backgroundSize: '100% 1000%',
                       backgroundPosition: 'center',
-                      maskImage: 'linear-gradient(to bottom, transparent 0%, transparent 35%, black 45%, black 55%, transparent 65%, transparent 100%)',
-                      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, transparent 35%, black 45%, black 55%, transparent 65%, transparent 100%)',
-                      maskSize: '100% 18%',
-                      WebkitMaskSize: '100% 18%',
+                      backgroundAttachment: 'fixed',
                       filter: 'saturate(0.6) brightness(0.55) contrast(1.2)',
-                      animation: 'mystery-reveal 4s ease-in-out infinite',
+                      maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)',
+                      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)',
                     }}
                   />
                 </div>
