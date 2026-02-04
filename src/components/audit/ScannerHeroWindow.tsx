@@ -100,20 +100,18 @@ export function ScannerHeroWindow({
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                   <style>{`
                     @keyframes mystery-reveal {
-                      0%, 100% { 
+                      0% { 
                         opacity: 0;
-                        mask-position: 0 -100%;
-                        -webkit-mask-position: 0 -100%;
+                        mask-position: 0 -15%;
+                        -webkit-mask-position: 0 -15%;
                       }
-                      20% { opacity: 0; }
-                      25% { opacity: 0.35; }
-                      50% { 
-                        opacity: 0.35;
-                        mask-position: 0 50%;
-                        -webkit-mask-position: 0 50%;
+                      5% { opacity: 0.4; }
+                      95% { opacity: 0.4; }
+                      100% { 
+                        opacity: 0;
+                        mask-position: 0 115%;
+                        -webkit-mask-position: 0 115%;
                       }
-                      75% { opacity: 0.35; }
-                      80% { opacity: 0; }
                     }
                   `}</style>
                   <div 
@@ -122,11 +120,11 @@ export function ScannerHeroWindow({
                       backgroundImage: `url(${windowMysteryImage})`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
-                      maskImage: 'linear-gradient(to bottom, transparent 0%, black 40%, black 60%, transparent 100%)',
-                      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 40%, black 60%, transparent 100%)',
-                      maskSize: '100% 30%',
-                      WebkitMaskSize: '100% 30%',
-                      filter: 'saturate(0.4) brightness(0.5) contrast(1.1)',
+                      maskImage: 'linear-gradient(to bottom, transparent 0%, transparent 35%, black 45%, black 55%, transparent 65%, transparent 100%)',
+                      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, transparent 35%, black 45%, black 55%, transparent 65%, transparent 100%)',
+                      maskSize: '100% 18%',
+                      WebkitMaskSize: '100% 18%',
+                      filter: 'saturate(0.6) brightness(0.55) contrast(1.2)',
                       animation: 'mystery-reveal 4s ease-in-out infinite',
                     }}
                   />
