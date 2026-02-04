@@ -1,9 +1,13 @@
 
-
-# TestimonialCards Component Implementation
+# Audit Page Lead Modal & Secondary CTA Implementation
 
 ## Summary
-Create a reusable testimonial carousel component and integrate it into the `/audit` page with dark theme styling above the VaultSection.
+Implement a comprehensive lead capture system for the `/audit` page with:
+- Sample Report Gate Modal (4-field lead capture → redirect to /sample-report)
+- Hero section dual CTAs (Primary: scan, Secondary: view sample)
+- NoQuoteEscapeHatch integration with modal
+- Centralized config constants
+- Full GTM/dataLayer tracking
 
 ---
 
@@ -11,199 +15,401 @@ Create a reusable testimonial carousel component and integrate it into the `/aud
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/components/TestimonialCards.tsx` | Create | Reusable testimonial carousel component |
-| `src/pages/Audit.tsx` | Modify | Add TestimonialCards above VaultSection |
+| `src/config/auditConfig.ts` | **Create** | Single source of truth for all copy |
+| `src/components/audit/SampleReportGateModal.tsx` | **Create** | Lead capture modal component |
+| `src/pages/Audit.tsx` | **Modify** | State, handlers, modal render |
+| `src/components/audit/ScannerHeroWindow.tsx` | **Modify** | Add secondary CTA + urgency line |
+| `src/components/audit/NoQuoteEscapeHatch.tsx` | **Modify** | Wire first card to modal callback |
+| `src/types/sourceTool.ts` | **Modify** | Add `audit-sample-report` |
+| `supabase/functions/_shared/sourceTools.ts` | **Modify** | Add `audit-sample-report` |
 
 ---
 
-## File 1: `src/components/TestimonialCards.tsx`
+## File 1: `src/config/auditConfig.ts` (Create)
+
+Central config for all audit page copy - single source of truth.
+
+```typescript
+// ═══════════════════════════════════════════════════════════════════════════
+// Audit Page Configuration - Single Source of Truth
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const AUDIT_CONFIG = {
+  // Sample Report Gate Modal
+  sampleGate: {
+    headline: "Don't Risk Your Biggest Asset",
+    subheadline: 'See exactly what a "safe" quote looks like. View a sample report.',
+    cta: 'Get My Sample Report',
+    redirectTo: '/sample-report',
+    redirectDelayMs: 1500,
+    firstFocusId: 'sample-gate-firstName',
+    loadingText: 'Sending...',
+    successText: 'Success! Redirecting to your report…',
+  },
+
+  // Hero Section CTAs
+  hero: {
+    urgencyLine: 'Join 12,000+ Florida homeowners who checked their quote before signing.',
+    primaryCtaLabel: 'Scan My Quote Free',
+    sampleCtaLabel: 'No quote yet? View a sample audit',
+    sampleCtaSubline: 'See exactly what we flag before you get a quote.',
+    trustLine: '100% Private & Secure • No account needed to start',
+  },
+
+  // NoQuote Section
+  noQuote: {
+    sampleCardCta: 'Send Me the Sample',
+  },
+} as const;
+```
+
+---
+
+## File 2: `src/components/audit/SampleReportGateModal.tsx` (Create)
+
+Lead capture modal following existing patterns (SampleReportLeadModal + TrustModal).
 
 ### Props Interface
 
-```tsx
-interface TestimonialCardsProps {
-  variant?: 'default' | 'dark';
-  className?: string;
+```typescript
+interface SampleReportGateModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  returnFocusRef?: React.RefObject<HTMLElement | null>;
 }
 ```
 
-### Reviews Data (Embedded)
+### Key Implementation Details
 
-```tsx
-const REVIEWS = [
-  {
-    id: 1,
-    name: "Maria G.",
-    location: "Miami, FL",
-    platform: "Google Review",
-    platformIcon: "🔍",
-    stars: 5.0,
-    headline: "He told me what to say before I even booked a quote.",
-    body: "Window Man coached me before I talked to any contractors, gave me a checklist of questions, and helped me avoid a $45k upsell.",
-    savings: "Saved $12,400 vs. first quote",
-    avatarUrl: "https://i.pravatar.cc/200?img=47",
-  },
-  // ... 5 more reviews
-];
-```
+**1. Form State & Validation**
+- Uses `useFormValidation` hook with `commonSchemas` (firstName, lastName, email, phone)
+- All 4 fields required via schema validation
+- Phone formatting via `formatPhoneNumber`
 
-### Key Features
+**2. Submission Flow**
+- Validates all fields → calls `save-lead` edge function
+- `sourceTool: 'audit-sample-report'`
+- `formLocation: 'audit_sample_gate'`
+- On success: show success state → redirect after delay
 
-1. **Lazy Loading with IntersectionObserver**
-   - Component renders placeholder until 200px from viewport
-   - Prevents layout shift with matching placeholder height
+**3. Error Handling**
+- Show error inline in modal (not global toast)
+- Uses sonner `toast.error()` suppression pattern
 
-2. **GTM Tracking**
-   - Impression tracking when section becomes visible
-   - Interaction tracking on first carousel scroll/swipe
+**4. Focus Management**
+- `autoFocus` on first input (firstName) via `id={AUDIT_CONFIG.sampleGate.firstFocusId}`
+- On close: restore focus to `returnFocusRef.current`
+- Reset form values and errors when modal closes
 
-3. **Theme Variants**
-   - `variant="default"`: Uses theme tokens (`bg-card`, `text-foreground`)
-   - `variant="dark"`: Uses slate dark colors (`bg-slate-900/80`, `text-white`)
-
-4. **Responsive Carousel**
-   - Mobile: 1 card visible (`basis-full`)
-   - Tablet: 2 cards visible (`md:basis-1/2`)
-   - Desktop: 3 cards visible (`lg:basis-1/3`)
+**5. GTM Tracking Events**
+- `audit_sample_gate_open` - Modal opened
+- `audit_sample_gate_close` - Modal closed without submit
+- `audit_sample_gate_submit` - Form submitted
+- `audit_sample_gate_success` - Lead captured (with lead_id)
+- `audit_sample_gate_error` - Submission failed
+- `lead_submission_success` - Enhanced conversions (via trackLeadSubmissionSuccess)
 
 ### Component Structure
 
 ```tsx
-<section className={sectionClasses}>
-  {/* Header */}
-  <div className="text-center mb-10">
-    <Badge>...</Badge>
-    <h2 className="text-3xl md:text-4xl font-black text-white">
-      Real Savings. Real Homeowners.
-    </h2>
-    <p className="text-slate-400">...</p>
+<Dialog open={isOpen} onOpenChange={handleOpenChange}>
+  <TrustModal
+    modalTitle={undefined} // Custom header inside
+    headerAlign="center"
+    className="sm:max-w-md bg-slate-900 border-t-orange-500"
+  >
+    {step === 'form' ? (
+      <>
+        {/* Lock Icon + Headline + Subheadline */}
+        <div className="text-center mb-6">
+          <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-orange-500/20 flex items-center justify-center">
+            <Lock className="w-7 h-7 text-orange-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white">{AUDIT_CONFIG.sampleGate.headline}</h2>
+          <p className="text-slate-400 text-sm mt-2">{AUDIT_CONFIG.sampleGate.subheadline}</p>
+        </div>
+
+        {/* Form: firstName, lastName, email, phone */}
+        <form onSubmit={handleSubmit}>
+          <NameInputPair ... />
+          <Input id="sample-gate-email" type="email" ... />
+          <Input id="sample-gate-phone" type="tel" ... />
+          
+          {/* Error display (inline) */}
+          {error && <p className="text-destructive text-sm">{error}</p>}
+          
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? loadingText : AUDIT_CONFIG.sampleGate.cta}
+          </Button>
+        </form>
+      </>
+    ) : (
+      /* Success state with spinner */
+      <div className="text-center py-8">
+        <Loader2 className="w-8 h-8 animate-spin text-success mx-auto mb-4" />
+        <p className="text-white font-medium">{AUDIT_CONFIG.sampleGate.successText}</p>
+      </div>
+    )}
+  </TrustModal>
+</Dialog>
+```
+
+### Dark Theme Styling (matching /audit page)
+
+```tsx
+// Override TrustModal white styling for dark theme
+className="sm:max-w-md !bg-slate-900 !border-t-orange-500"
+
+// Form inputs: white bg for legibility
+<Input className="bg-white text-slate-900 border-slate-300" />
+
+// Labels: white text
+<Label className="text-white font-semibold" />
+```
+
+---
+
+## File 3: `src/pages/Audit.tsx` (Modify)
+
+### State & Refs to Add
+
+```typescript
+// Sample gate modal state
+const [sampleGateOpen, setSampleGateOpen] = useState(false);
+const sampleGateTriggerRef = useRef<HTMLElement | null>(null);
+
+// Handler to open modal with focus tracking
+const openSampleGate = useCallback(() => {
+  sampleGateTriggerRef.current = document.activeElement as HTMLElement;
+  setSampleGateOpen(true);
+}, []);
+
+// Close handler
+const closeSampleGate = useCallback(() => {
+  setSampleGateOpen(false);
+  // Focus restoration happens in modal component
+}, []);
+```
+
+### Updated Component Props
+
+```tsx
+<ScannerHeroWindow 
+  onScanClick={scrollToUpload} 
+  onViewSampleClick={openSampleGate}  // NEW
+/>
+
+<NoQuoteEscapeHatch 
+  onViewSampleClick={openSampleGate}  // NEW
+/>
+```
+
+### Modal Render (at bottom of JSX)
+
+```tsx
+{/* Sample Report Gate Modal */}
+<SampleReportGateModal
+  isOpen={sampleGateOpen}
+  onClose={closeSampleGate}
+  returnFocusRef={sampleGateTriggerRef}
+/>
+```
+
+---
+
+## File 4: `src/components/audit/ScannerHeroWindow.tsx` (Modify)
+
+### Props Update
+
+```typescript
+interface ScannerHeroWindowProps {
+  onScanClick: () => void;
+  onViewSampleClick?: () => void;  // NEW - optional for backwards compat
+}
+```
+
+### CTA Block Update (Window Sill Section)
+
+**Order (vertical stack):**
+1. Urgency line (muted)
+2. Primary CTA button ("Scan My Quote Free")
+3. Secondary CTA button (if `onViewSampleClick` provided)
+4. Optional subline under secondary
+5. Trust line with lock icon
+
+```tsx
+<div className="flex flex-col items-center space-y-4">
+  {/* Urgency Line */}
+  <p className="text-slate-400 text-sm text-center max-w-md">
+    {AUDIT_CONFIG.hero.urgencyLine}
+  </p>
+
+  {/* Primary CTA - existing button with minor label update */}
+  <Button onClick={onScanClick} ...>
+    <Scan className="w-6 h-6 mr-3" />
+    {AUDIT_CONFIG.hero.primaryCtaLabel}
+  </Button>
+
+  {/* Secondary CTA - only if callback provided */}
+  {onViewSampleClick && (
+    <div className="flex flex-col items-center space-y-2">
+      <Button
+        variant="outline"
+        onClick={onViewSampleClick}
+        className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
+      >
+        {AUDIT_CONFIG.hero.sampleCtaLabel}
+      </Button>
+      
+      {/* Optional subline */}
+      {AUDIT_CONFIG.hero.sampleCtaSubline && (
+        <p className="text-slate-500 text-xs">
+          {AUDIT_CONFIG.hero.sampleCtaSubline}
+        </p>
+      )}
+    </div>
+  )}
+
+  {/* Trust Line */}
+  <div className="flex items-center gap-2 text-slate-400 text-sm">
+    <Lock className="w-4 h-4 text-emerald-500" />
+    <span>{AUDIT_CONFIG.hero.trustLine}</span>
   </div>
-
-  {/* Carousel */}
-  <Carousel opts={{ align: 'start', loop: true }}>
-    <CarouselContent>
-      {REVIEWS.map(review => (
-        <CarouselItem key={review.id}>
-          <Card className={cardClasses}>
-            {/* Avatar + Name + Location */}
-            {/* Star Rating */}
-            {/* Headline */}
-            {/* Body */}
-            {/* Savings Badge */}
-          </Card>
-        </CarouselItem>
-      ))}
-    </CarouselContent>
-    <CarouselPrevious />
-    <CarouselNext />
-  </Carousel>
-</section>
-```
-
-### Dark Theme Card Styling
-
-```tsx
-// Dark variant classes
-const cardClasses = variant === 'dark' 
-  ? "bg-slate-900/80 border-slate-700/50 hover:border-success/30"
-  : "bg-card border-success/20 hover:border-success/40";
-
-const textClasses = variant === 'dark'
-  ? "text-white"
-  : "text-foreground";
-
-const mutedClasses = variant === 'dark'
-  ? "text-slate-400"
-  : "text-muted-foreground";
-```
-
-### Header Styling (Matching /audit page)
-
-```tsx
-<h2 className={cn(
-  "text-3xl md:text-4xl lg:text-5xl font-black mb-4 leading-tight",
-  variant === 'dark' ? "text-white" : "text-foreground"
-)}>
-  Real Savings.{' '}
-  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-    Real Homeowners.
-  </span>
-</h2>
+</div>
 ```
 
 ---
 
-## File 2: `src/pages/Audit.tsx`
+## File 5: `src/components/audit/NoQuoteEscapeHatch.tsx` (Modify)
 
-### Changes Required
+### Props Update
 
-1. Add lazy import for TestimonialCards
-2. Insert component above VaultSection in JSX
+```typescript
+interface NoQuoteEscapeHatchProps {
+  onViewSampleClick?: () => void;  // NEW
+}
+```
+
+### Add Sample Report Card as First Option
+
+Insert new card at position 0 in the grid (before Calculator):
 
 ```tsx
-// Add to lazy imports (line ~16)
-const TestimonialCards = lazy(() => 
-  import('@/components/TestimonialCards').then(m => ({ default: m.TestimonialCards }))
-);
+const ALTERNATIVES = [
+  // NEW: Sample Report Card (first position)
+  {
+    icon: FileText,
+    title: 'View Sample Report',
+    description: 'See exactly what our AI flags before you get your own quote. No commitment needed.',
+    cta: AUDIT_CONFIG.noQuote.sampleCardCta,
+    action: 'modal', // Special marker for callback vs href
+    color: 'orange',
+    gradient: 'from-orange-500 to-amber-400',
+  },
+  // Existing cards follow...
+  {
+    icon: Calculator,
+    title: 'Get an Instant Estimate',
+    ...
+  },
+];
+```
 
-// Add to JSX (before VaultSection, around line 75)
-<TestimonialCards variant="dark" />
-<VaultSection />
+### Conditional Rendering for Action Type
+
+```tsx
+{alt.action === 'modal' && onViewSampleClick ? (
+  <Button
+    variant="outline"
+    onClick={onViewSampleClick}
+    className="w-full ..."
+  >
+    {alt.cta}
+    <ArrowRight className="w-4 h-4 ml-2" />
+  </Button>
+) : (
+  <Link to={alt.href}>
+    <Button variant="outline" className="w-full ...">
+      {alt.cta}
+      <ArrowRight className="w-4 h-4 ml-2" />
+    </Button>
+  </Link>
+)}
 ```
 
 ---
 
-## Visual Preview
+## File 6 & 7: Source Tools Updates
 
-### Header Style
-- Font: `font-black` (900 weight)
-- Size: `text-3xl md:text-4xl lg:text-5xl`
-- Color: White with gradient accent span
+### `src/types/sourceTool.ts`
 
-### Card Style (Dark Variant)
-- Background: `bg-slate-900/80`
-- Border: `border-slate-700/50` → `hover:border-success/30`
-- Avatar border: `border-success/30`
-- Star rating: Success green (`text-success`)
-- Savings badge: Success green with pulse dot
-
----
-
-## Dependencies Used
-
-| Dependency | Purpose |
-|------------|---------|
-| `embla-carousel-react` | Already installed - powers Carousel |
-| `lucide-react` | Star, TrendingUp icons |
-| `@/components/ui/carousel` | Existing shadcn carousel |
-| `@/components/ui/card` | Existing shadcn card |
-| `@/components/ui/badge` | Existing shadcn badge |
-| `@/lib/gtm` | GTM tracking helper |
-
----
-
-## Reusability
-
-The component can be used on other pages with default styling:
-
-```tsx
-// On /audit page (dark theme)
-<TestimonialCards variant="dark" />
-
-// On other pages (default theme)
-<TestimonialCards />
-<TestimonialCards variant="default" />
+Add to SOURCE_TOOLS array:
+```typescript
+'audit-sample-report', // Audit page sample report gate
 ```
+
+### `supabase/functions/_shared/sourceTools.ts`
+
+Add to SOURCE_TOOLS array (must match frontend):
+```typescript
+'audit-sample-report',
+```
+
+---
+
+## GTM Event Summary
+
+| Event Name | Trigger | Key Properties |
+|------------|---------|----------------|
+| `audit_sample_gate_open` | Modal opens | `trigger_element` |
+| `audit_sample_gate_close` | Modal closes without submit | `time_open_ms` |
+| `audit_sample_gate_submit` | Form submitted | `has_phone` |
+| `audit_sample_gate_success` | Lead captured | `lead_id`, `source_tool` |
+| `audit_sample_gate_error` | API error | `error_message` |
+| `lead_submission_success` | Enhanced conversions | Full EMQ payload |
+
+---
+
+## Focus Management Flow
+
+```text
+User clicks "View Sample" button
+  ↓
+sampleGateTriggerRef.current = document.activeElement (the button)
+setSampleGateOpen(true)
+  ↓
+Modal opens → autoFocus on firstName input
+  ↓
+User submits OR closes
+  ↓
+Modal closes → focus restored to sampleGateTriggerRef.current
+```
+
+---
+
+## Technical Considerations
+
+1. **Dark Theme Override**: The TrustModal defaults to white background. Need to override with `!bg-slate-900` for audit page consistency.
+
+2. **Form Reset on Close**: useEffect watching `isOpen` to reset form state when modal closes.
+
+3. **Redirect vs Navigate**: Use `window.location.href` for redirect (not React Router navigate) to ensure full page load of /sample-report.
+
+4. **Error Toast Suppression**: Don't show global toast on error - only inline error in modal.
+
+5. **Backwards Compatibility**: `onViewSampleClick` is optional in both hero and NoQuote components.
 
 ---
 
 ## Testing Checklist
 
 After implementation:
-1. Navigate to /audit page - verify testimonials appear above Vault section
-2. Test carousel swiping on mobile - verify smooth scroll-snap behavior
-3. Click carousel arrows on desktop - verify navigation works
-4. Check lazy loading - section should only render when approaching viewport
-5. Verify dark theme styling matches surrounding /audit page sections
-6. Test on multiple screen sizes - verify responsive card counts (1/2/3)
-
+1. Click "No quote yet? View a sample audit" in hero → modal opens
+2. Click "Send Me the Sample" in NoQuote section → same modal opens
+3. Tab through form fields → focus stays in modal
+4. Submit with empty fields → validation errors appear
+5. Submit valid form → success state → redirect to /sample-report
+6. Press ESC or click outside → modal closes, focus returns to trigger
+7. Open modal, close without submit → form resets on next open
+8. Check GTM dataLayer for all 6 events
+9. Verify on mobile: buttons are full-width, touch targets ≥44px
