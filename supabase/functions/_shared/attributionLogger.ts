@@ -3,7 +3,7 @@
 // Reusable utility for persisting events to wm_events with session FK handling
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 export interface AttributionEventParams {
   sessionId: string;
