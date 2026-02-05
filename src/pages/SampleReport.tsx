@@ -19,6 +19,7 @@ import { LeverageOptionsSection } from '@/components/sample-report/LeverageOptio
 import { CloserSection } from '@/components/sample-report/CloserSection';
 import { FAQSection } from '@/components/sample-report/FAQSection';
 import { SampleReportLeadModal } from '@/components/sample-report/SampleReportLeadModal';
+import { PreQuoteLeadModal } from '@/components/sample-report/PreQuoteLeadModal';
 
 const SampleReport = () => {
   usePageTracking('sample-report');
@@ -32,6 +33,10 @@ const SampleReport = () => {
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [modalCtaSource, setModalCtaSource] = useState('');
   const [preCheckPartnerConsent, setPreCheckPartnerConsent] = useState(false);
+  
+  // Pre-quote (no quote) modal state
+  const [showPreQuoteModal, setShowPreQuoteModal] = useState(false);
+  const [preQuoteCtaSource, setPreQuoteCtaSource] = useState('');
 
   // Loading state check
   const [isCheckingLead, setIsCheckingLead] = useState(true);
@@ -80,6 +85,19 @@ const SampleReport = () => {
     navigate(`${ROUTES.QUOTE_SCANNER}?lead=${newLeadId}#upload`);
   };
 
+  // Handler for opening pre-quote modal (for users without quotes)
+  const handleOpenPreQuoteModal = (ctaSource: string) => {
+    trackEvent('sample_report_prequote_modal_open', { cta_source: ctaSource });
+    setPreQuoteCtaSource(ctaSource);
+    setShowPreQuoteModal(true);
+  };
+
+  // Handle pre-quote modal success
+  const handlePreQuoteSuccess = (newLeadId: string) => {
+    // Modal handles its own success state, just close after a delay
+    setTimeout(() => setShowPreQuoteModal(false), 5000);
+  };
+
   // Loading state (prevents content flash)
   if (isCheckingLead) {
     return (
@@ -99,7 +117,7 @@ const SampleReport = () => {
       <Navbar />
       <SampleReportHeader onOpenLeadModal={handleOpenLeadModal} />
 
-      {/* Lead Capture Modal (2-step flow) */}
+      {/* Lead Capture Modal (2-step flow) - for users with quotes */}
       <SampleReportLeadModal
         isOpen={showLeadModal}
         onClose={() => setShowLeadModal(false)}
@@ -107,16 +125,24 @@ const SampleReport = () => {
         ctaSource={modalCtaSource}
         preCheckPartnerConsent={preCheckPartnerConsent}
       />
+      
+      {/* Pre-Quote Lead Modal - for users without quotes */}
+      <PreQuoteLeadModal
+        isOpen={showPreQuoteModal}
+        onClose={() => setShowPreQuoteModal(false)}
+        onSuccess={handlePreQuoteSuccess}
+        ctaSource={preQuoteCtaSource}
+      />
 
       {/* Main Content */}
       <main className="pt-28">
-        <HeroSection onOpenLeadModal={handleOpenLeadModal} />
+        <HeroSection onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
         <ComparisonSection />
         <ScoreboardSection />
         <PillarAccordionSection />
         <HowItWorksSection />
-        <LeverageOptionsSection onOpenLeadModal={handleOpenLeadModal} />
-        <CloserSection onOpenLeadModal={handleOpenLeadModal} />
+        <LeverageOptionsSection onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
+        <CloserSection onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
         <FAQSection />
       </main>
     </div>

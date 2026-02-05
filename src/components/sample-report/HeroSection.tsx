@@ -1,12 +1,11 @@
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Upload, Shield, Check, Vault, ArrowRight } from 'lucide-react';
+import { Upload, Shield, Check, ArrowRight } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
-import { ROUTES } from '@/config/navigation';
 import { useSectionTracking } from '@/hooks/useSectionTracking';
 
 interface HeroSectionProps {
   onOpenLeadModal?: (ctaSource: string) => void;
+  onOpenPreQuoteModal?: (ctaSource: string) => void;
 }
 
 const PreviewBars = () => {
@@ -36,7 +35,7 @@ const PreviewBars = () => {
   );
 };
 
-export function HeroSection({ onOpenLeadModal }: HeroSectionProps) {
+export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectionProps) {
   const sectionRef = useSectionTracking('hero');
 
   const handleUploadClick = () => {
@@ -44,8 +43,9 @@ export function HeroSection({ onOpenLeadModal }: HeroSectionProps) {
     onOpenLeadModal?.('hero_upload');
   };
 
-  const handleVaultClick = () => {
-    trackEvent('sample_report_vault_click', { location: 'hero_section' });
+  const handleNoQuoteClick = () => {
+    trackEvent('sample_report_no_quote_click', { location: 'hero_section' });
+    onOpenPreQuoteModal?.('hero_no_quote');
   };
 
   return (
@@ -82,19 +82,18 @@ export function HeroSection({ onOpenLeadModal }: HeroSectionProps) {
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Button variant="cta" size="lg" className="group" onClick={handleUploadClick}>
                 <Upload className="w-5 h-5 mr-2" />
-                Upload My Estimate for a Free Audit
+                Upload My Quote
                 <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Button>
-              <p className="text-sm text-muted-foreground self-center">PDF or photo. Takes about 60 seconds.</p>
+              <Button variant="outline" size="lg" className="group" onClick={handleNoQuoteClick}>
+                Don't Have a Quote Yet? Get Ready
+                <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+              </Button>
             </div>
 
-            <div className="pt-2">
-              <Link to={ROUTES.VAULT} onClick={handleVaultClick} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
-                <Vault className="w-4 h-4" />
-                <span>Don't have your estimate yet?</span>
-                <span className="text-primary group-hover:underline">Create a Free Vault</span>
-              </Link>
-            </div>
+            <p className="text-xs text-muted-foreground pt-2">
+              PDF or photo. Takes about 60 seconds.
+            </p>
           </div>
 
           <div className="lg:col-span-2">

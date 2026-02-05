@@ -231,18 +231,36 @@ B) COMPLIANCE IDENTIFIERS (hasComplianceIdentifier = true if ANY):
 - A number after NOA/FL (ex: "NOA 20-1234", "FL 16824")
 - DP value or +/- value (ex: "DP50", "+55/-65")
 
-C) LAMINATED GLASS (hasLaminatedMention = true if ANY):
+C) NOA NUMBER:
+- hasNOANumber = true if you see a specific NOA number (e.g., "NOA 20-1234")
+- noaNumberValue = the actual number if found, else null
+
+D) LAMINATED GLASS (hasLaminatedMention = true if ANY):
 - laminated, laminated glass, impact laminated, hurricane laminated
 - PVB, interlayer, SGP, SentryGlas, ionoplast
 
-D) GLASS BUILD DETAIL (hasGlassBuildDetail = true if ANY):
+E) GLASS BUILD DETAIL (hasGlassBuildDetail = true if ANY):
 - thickness (5/16, 7/16, 9/16)
 - "laminated insulated", "IGU", "insulated laminated", "argon", "Low-E"
 - "heat strengthened" (only if paired with laminated/impact context)
 
-E) NEGATIVE TRIGGERS:
+F) NEGATIVE TRIGGERS:
 - hasTemperedOnlyRisk = true if "tempered" appears AND NO "laminated/impact" language
 - hasNonImpactLanguage = true if "non-impact", "not impact", "annealed", or "glass-only replacement"
+
+==================================================
+PHASE 2.5 — CONTRACTOR IDENTITY SIGNALS (CRITICAL)
+==================================================
+
+A) LICENSE NUMBER:
+- licenseNumberPresent = true if you see ANY: license, lic, lic#, CGC, CBC, CCC, #CGC, contractor license, followed by a number
+- licenseNumberValue = the actual number if found (e.g., "CGC1507438"), else null
+
+B) OWNER-BUILDER RED FLAG:
+- hasOwnerBuilderLanguage = true if ANY: "owner-builder", "homeowner to pull permits", "customer responsible for permits", "you will be the contractor of record", "owner builder", "owner/builder"
+
+C) CONTRACTOR IDENTITY:
+- contractorNameExtracted = company name if clearly visible, else null
 
 ==================================================
 PHASE 3 — SCOPE SIGNALS
@@ -278,9 +296,13 @@ G) BRAND CLARITY (hasBrandClarity = true if ANY):
 - Brand names (PGT, CGI, ES, WinDoor, Andersen, Marvin, Euro-Wall, etc.)
 - Window types: SH/DH/casement/awning/fixed/slider/French door
 
-H) RED FLAGS:
+H) DETAILED SCOPE:
+- hasDetailedScope = true if quote includes at least 4 of the above scope items
+
+I) RED FLAGS:
 - hasSubjectToChange = true if "subject to remeasure", "subject to change", or "price may change"
 - hasRepairsExcluded = true if "stucco by owner", "drywall not included", or repairs explicitly excluded
+- hasStandardInstallation = true if "standard installation" appears without detailed scope breakdown
 
 ==================================================
 PHASE 4 — FINE PRINT SIGNALS
@@ -293,10 +315,14 @@ A) DEPOSIT:
 B) PAYMENT TRAPS:
 - hasFinalPaymentTrap = true if final payment due BEFORE inspection/permit close/completion
 - hasSafePaymentTerms = true if final payment due AFTER inspection/permit close/walkthrough
+- hasPaymentBeforeCompletion = true if ANY: "payment due before installation", "full payment required before", "balance due prior to", "100% due before work begins", "payment in full before"
 
 C) CONTRACT TRAPS:
 - hasContractTraps = true if ANY: cancellation fee, restocking, "non-refundable", arbitration, venue, attorney fees
 - contractTrapsList = array of specific traps found (strings)
+
+D) PRESSURE TACTICS:
+- hasManagerDiscount = true if ANY: "manager discount", "manager special", "today only", "one day only", "expires today", "special pricing today"
 
 ==================================================
 PHASE 5 — WARRANTY SIGNALS
@@ -335,10 +361,18 @@ const ExtractionSignalsJsonSchema = {
     openingCountEstimate: { type: ["integer", "null"] },
     hasComplianceKeyword: { type: "boolean" },
     hasComplianceIdentifier: { type: "boolean" },
+    hasNOANumber: { type: "boolean" },
+    noaNumberValue: { type: ["string", "null"] },
     hasLaminatedMention: { type: "boolean" },
     hasGlassBuildDetail: { type: "boolean" },
     hasTemperedOnlyRisk: { type: "boolean" },
     hasNonImpactLanguage: { type: "boolean" },
+    // Contractor Identity (HYBRID RUBRIC)
+    licenseNumberPresent: { type: "boolean" },
+    licenseNumberValue: { type: ["string", "null"] },
+    hasOwnerBuilderLanguage: { type: "boolean" },
+    contractorNameExtracted: { type: ["string", "null"] },
+    // Scope signals
     hasPermitMention: { type: "boolean" },
     hasDemoInstallDetail: { type: "boolean" },
     hasSpecificMaterials: { type: "boolean" },
@@ -346,13 +380,19 @@ const ExtractionSignalsJsonSchema = {
     hasFinishDetail: { type: "boolean" },
     hasCleanupMention: { type: "boolean" },
     hasBrandClarity: { type: "boolean" },
+    hasDetailedScope: { type: "boolean" },
     hasSubjectToChange: { type: "boolean" },
     hasRepairsExcluded: { type: "boolean" },
+    hasStandardInstallation: { type: "boolean" },
+    // Fine print signals
     depositPercentage: { type: ["number", "null"] },
     hasFinalPaymentTrap: { type: "boolean" },
     hasSafePaymentTerms: { type: "boolean" },
+    hasPaymentBeforeCompletion: { type: "boolean" },
     hasContractTraps: { type: "boolean" },
     contractTrapsList: { type: "array", items: { type: "string" } },
+    hasManagerDiscount: { type: "boolean" },
+    // Warranty signals
     hasWarrantyMention: { type: "boolean" },
     hasLaborWarranty: { type: "boolean" },
     warrantyDurationYears: { type: ["number", "null"] },
@@ -368,10 +408,13 @@ const ExtractionSignalsJsonSchema = {
     "openingCountEstimate",
     "hasComplianceKeyword",
     "hasComplianceIdentifier",
+    "hasNOANumber",
     "hasLaminatedMention",
     "hasGlassBuildDetail",
     "hasTemperedOnlyRisk",
     "hasNonImpactLanguage",
+    "licenseNumberPresent",
+    "hasOwnerBuilderLanguage",
     "hasPermitMention",
     "hasDemoInstallDetail",
     "hasSpecificMaterials",
@@ -379,13 +422,17 @@ const ExtractionSignalsJsonSchema = {
     "hasFinishDetail",
     "hasCleanupMention",
     "hasBrandClarity",
+    "hasDetailedScope",
     "hasSubjectToChange",
     "hasRepairsExcluded",
+    "hasStandardInstallation",
     "depositPercentage",
     "hasFinalPaymentTrap",
     "hasSafePaymentTerms",
+    "hasPaymentBeforeCompletion",
     "hasContractTraps",
     "contractTrapsList",
+    "hasManagerDiscount",
     "hasWarrantyMention",
     "hasLaborWarranty",
     "warrantyDurationYears",
