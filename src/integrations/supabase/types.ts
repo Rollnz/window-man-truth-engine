@@ -394,6 +394,7 @@ export type Database = {
           lead_score_last_7d: number | null
           lead_score_total: number | null
           lead_status: string | null
+          lead_type: string | null
           msclkid: string | null
           name: string | null
           phone: string | null
@@ -442,6 +443,7 @@ export type Database = {
           lead_score_last_7d?: number | null
           lead_score_total?: number | null
           lead_status?: string | null
+          lead_type?: string | null
           msclkid?: string | null
           name?: string | null
           phone?: string | null
@@ -490,6 +492,7 @@ export type Database = {
           lead_score_last_7d?: number | null
           lead_score_total?: number | null
           lead_status?: string | null
+          lead_type?: string | null
           msclkid?: string | null
           name?: string | null
           phone?: string | null

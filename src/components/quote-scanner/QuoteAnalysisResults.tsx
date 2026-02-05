@@ -223,6 +223,33 @@ export function QuoteAnalysisResults({ result, isLocked, hasImage }: QuoteAnalys
               )}
             </div>
           )}
+          
+          {/* Disclaimer */}
+          {result && (
+            <div className="pt-4 border-t border-border/50">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                ⚖️ <strong>Disclaimer:</strong> This analysis is an educational guide, not legal or professional advice. Always verify contractor license numbers at{' '}
+                <a 
+                  href="https://www.myfloridalicense.com/wl11.asp" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  myfloridalicense.com
+                </a>{' '}
+                and product approvals at{' '}
+                <a 
+                  href="https://floridabuilding.org/pr/pr_app_srch.aspx" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  floridabuilding.org
+                </a>{' '}
+                before signing any contract.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

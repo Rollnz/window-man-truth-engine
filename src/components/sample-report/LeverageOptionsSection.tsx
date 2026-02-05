@@ -7,9 +7,10 @@ import { useSectionTracking } from '@/hooks/useSectionTracking';
 
 interface LeverageOptionsSectionProps {
   onOpenLeadModal?: (ctaSource: string, preCheckConsent?: boolean) => void;
+  onOpenPreQuoteModal?: (ctaSource: string) => void;
 }
 
-export function LeverageOptionsSection({ onOpenLeadModal }: LeverageOptionsSectionProps) {
+export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }: LeverageOptionsSectionProps) {
   const sectionRef = useSectionTracking('leverage_options');
   const [partnerConsent, setPartnerConsent] = useState(false);
 
@@ -23,6 +24,11 @@ export function LeverageOptionsSection({ onOpenLeadModal }: LeverageOptionsSecti
     trackEvent('sample_report_upload_click', { location: 'leverage_options', option: 'improve_deal' });
     // Pre-check partner consent in the modal
     onOpenLeadModal?.('leverage_path_b', true);
+  };
+
+  const handleNoQuoteClick = () => {
+    trackEvent('sample_report_no_quote_click', { location: 'leverage_options' });
+    onOpenPreQuoteModal?.('leverage_no_quote');
   };
 
   return (
@@ -39,6 +45,16 @@ export function LeverageOptionsSection({ onOpenLeadModal }: LeverageOptionsSecti
               Get My Free Audit
               <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
             </Button>
+            
+            <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border/50">
+              <span className="text-xs text-muted-foreground">— or —</span>
+              <button 
+                onClick={handleNoQuoteClick}
+                className="text-sm text-primary hover:underline"
+              >
+                No quote yet? Get set up now →
+              </button>
+            </div>
           </div>
 
           <div className="relative bg-card border-2 border-primary/30 rounded-2xl p-6 md:p-8 flex flex-col">
