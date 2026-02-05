@@ -1,291 +1,474 @@
 
 
-# Problem Agitation Section Implementation
+# Edge Function Modularization with Architectural Safeguards
 
-## Summary
-Create a new emotionally-driven "Problem Agitation" section featuring the frustrated man image with psychologically-crafted bullet points about hidden fees and inflated quotes. This section will be placed between `ScannerIntelligenceBar` and `UploadZoneXRay` to maximize conversion by agitating the problem before presenting the solution.
+## Your 3 Safeguards - How They're Implemented
 
----
+### Safeguard 1: deps.ts for Version Locking (Deno Best Practice)
 
-## Files to Create/Modify
-
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/components/audit/ProblemAgitationSection.tsx` | **Create** | New emotionally-charged section component |
-| `src/components/audit/index.ts` | **Modify** | Export new component |
-| `src/pages/Audit.tsx` | **Modify** | Insert component between IntelligenceBar and UploadZone |
-
----
-
-## File 1: `src/components/audit/ProblemAgitationSection.tsx` (Create)
-
-### Section Structure
+A new `deps.ts` file will be the **single source of truth** for all external dependencies. Every module imports from here, guaranteeing version consistency.
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│                 PROBLEM AGITATION SECTION                     │
-│                     (py-16 md:py-24)                          │
-├──────────────────────────────────────────────────────────────┤
-│  [Mobile: Image ABOVE text - emotion first]                  │
-│                                                               │
-│  ┌─────────────────┐  ┌────────────────────────────────────┐ │
-│  │                 │  │  Headline:                          │ │
-│  │   Frustrated    │  │  "Your Quote is a Minefield        │ │
-│  │   Man Image     │  │   of Hidden Costs."                │ │
-│  │                 │  │                                     │ │
-│  │  (X-ray glow    │  │  Subheadline:                       │ │
-│  │   border)       │  │  "Contractors rely on your          │ │
-│  │                 │  │   confusion to inflate margins."   │ │
-│  │                 │  │                                     │ │
-│  │                 │  │  • The "Padding" Trap               │ │
-│  │                 │  │  • The Discount Illusion            │ │
-│  │                 │  │  • Hidden Disposal Fees             │ │
-│  │                 │  │  • Low-Ball Labor                   │ │
-│  └─────────────────┘  └────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         deps.ts (NEW FILE)                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  // Pinned versions - change here, changes everywhere                   │
+│  export { createClient } from "npm:@supabase/supabase-js@2.39.7";      │
+│  export { z } from "npm:zod@3.22.4";                                   │
+│  export type { SupabaseClient } from "npm:@supabase/supabase-js@2.39.7";│
+│                                                                         │
+│  // Re-export Zod types for schema definitions                         │
+│  export type { ZodSchema } from "npm:zod@3.22.4";                      │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Key Technical Features
-
-**1. Semantic HTML5 + Accessibility**
-```tsx
-<section 
-  aria-labelledby="problem-agitation-heading"
-  className="relative py-16 md:py-24 bg-slate-950 overflow-hidden"
->
+All modules import like this:
+```typescript
+// scoring.ts
+import { z, createClient } from "./deps.ts";  // NOT from npm: directly
 ```
 
-**2. Responsive Two-Column Grid**
-```tsx
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-  {/* Image Column - First on mobile (order-1 lg:order-none) */}
-  {/* Text Column */}
-</div>
+---
+
+### Safeguard 2: Explicit hardCapReason Flow (scoring.ts → forensic.ts)
+
+The `scoring.ts` module will return a **HardCapResult** object that the `forensic.ts` module consumes directly:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    DATA FLOW: hardCapReason                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  scoring.ts                                                             │
+│  └── scoreFromSignals() returns:                                        │
+│      {                                                                  │
+│        ...scores,                                                       │
+│        hardCapApplied: true,                                            │
+│        hardCapCeiling: 25,                                              │
+│        hardCapReason: "No contractor license number visible",           │
+│        hardCapStatute: "F.S. 489.119"                                   │
+│      }                                                                  │
+│           │                                                             │
+│           ▼                                                             │
+│  forensic.ts                                                            │
+│  └── generateForensicSummary(signals, scoredResult)                     │
+│      └── Uses scoredResult.hardCapReason to build:                      │
+│          "Your score was capped at 25 due to: No contractor             │
+│           license number visible (F.S. 489.119)"                        │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**3. Lazy Loading Image with SEO Alt Text**
-```tsx
-<img
-  src="/lovable-uploads/[image-id].webp"
-  alt="Frustrated homeowner reviewing a confusing window replacement quote with hidden fees"
-  loading="lazy"
-  className="w-full h-auto rounded-2xl"
-/>
-```
+---
 
-**4. X-Ray Glow Effect on Image**
-```tsx
-<div className="relative group">
-  {/* Outer glow ring */}
-  <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/30 via-primary/20 to-orange-500/30 rounded-2xl blur-md opacity-75 group-hover:opacity-100 transition-opacity" />
+### Safeguard 3: Frontend Type Sync (src/types/audit.ts)
+
+The frontend types will be updated to match the new backend response structure **exactly**:
+
+```typescript
+// src/types/audit.ts - NEW ADDITIONS
+
+/** Forensic summary from hybrid rubric analysis */
+export interface ForensicSummary {
+  headline: string;
+  riskLevel: 'critical' | 'high' | 'moderate' | 'acceptable';
+  statuteCitations: string[];
+  questionsToAsk: string[];
+  positiveFindings: string[];
+  hardCapApplied: boolean;
+  hardCapReason: string | null;
+  hardCapStatute: string | null;
+}
+
+/** Extracted contractor identity for verification */
+export interface ExtractedIdentity {
+  contractorName: string | null;
+  licenseNumber: string | null;
+  noaNumbers: string[];
+}
+
+/** UPDATED: Result from quote analysis with forensic data */
+export interface AuditAnalysisResult {
+  // Existing fields (unchanged)
+  overallScore: number;
+  safetyScore: number;
+  scopeScore: number;
+  priceScore: number;
+  finePrintScore: number;
+  warrantyScore: number;
+  pricePerOpening: string;
+  warnings: string[];
+  missingItems: string[];
+  summary: string;
+  analyzedAt: string;
   
-  {/* Inner border with scan effect */}
-  <div className="relative border-2 border-orange-500/40 rounded-2xl overflow-hidden">
-    <img ... />
-    
-    {/* Scan line overlay */}
-    <div className="absolute inset-0 pointer-events-none">
-      <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent animate-scan-down" />
-    </div>
-  </div>
-</div>
+  // NEW: Forensic Authority Fields
+  forensic?: ForensicSummary;
+  extractedIdentity?: ExtractedIdentity;
+}
 ```
 
-**5. Typography - Truth Engine Style**
-```tsx
-{/* Headline */}
-<h2 
-  id="problem-agitation-heading"
-  className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight"
->
-  Your Quote is a{' '}
-  <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
-    Minefield
-  </span>{' '}
-  of Hidden Costs.
-</h2>
+---
 
-{/* Subheadline */}
-<p className="text-lg md:text-xl text-slate-400 leading-relaxed">
-  Contractors rely on your confusion to inflate their margins.{' '}
-  <span className="text-orange-400 font-medium">Don't let them.</span>
-</p>
+## File Structure After Modularization
+
+```text
+supabase/functions/quote-scanner/
+├── deps.ts          (~15 lines)  ← SAFEGUARD 1: All pinned versions
+├── index.ts         (~200 lines) ← Clean orchestrator
+├── guards.ts        (~100 lines) ← Rate limit, IP, validation
+├── schema.ts        (~180 lines) ← Zod schemas, JSON schema, types
+├── rubric.ts        (~200 lines) ← EXTRACTION_RUBRIC, prompts
+├── scoring.ts       (~350 lines) ← Hard caps, curve, scoring logic
+└── forensic.ts      (~150 lines) ← Summary generator, citations
+
+src/types/
+└── audit.ts         (MODIFIED)   ← SAFEGUARD 3: Synced with backend
 ```
 
-**6. Agitation Bullet Points with Named Traps**
+---
 
-| Trap Name | Description | Icon |
-|-----------|-------------|------|
-| The "Padding" Trap | Paying for 'miscellaneous' materials that don't exist | AlertTriangle |
-| The Discount Illusion | "Limited Time Offer" is the standard price inflated 20% first | PercentCircle |
-| Hidden Disposal Fees | $500+ cleanup costs buried in fine print | FileWarning |
-| Low-Ball Labor | Low labor costs = uninsured sub-contractors | HardHat |
+## Module Details
 
-```tsx
-<ul className="space-y-4">
-  {AGITATION_POINTS.map((point) => (
-    <li key={point.title} className="flex gap-4 items-start group">
-      {/* Icon container with glow */}
-      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
-        <point.icon className="w-5 h-5 text-orange-400" />
-      </div>
-      
-      <div>
-        <span className="text-white font-semibold block">
-          {point.title}
-        </span>
-        <span className="text-slate-400 text-sm">
-          {point.description}
-        </span>
-      </div>
-    </li>
-  ))}
-</ul>
-```
-
-### Copy Constants (embedded in component)
+### 1. deps.ts (NEW - Safeguard 1)
 
 ```typescript
-const PROBLEM_CONTENT = {
-  headline: 'Your Quote is a Minefield of Hidden Costs.',
-  subheadline: "Contractors rely on your confusion to inflate their margins. Don't let them.",
-  imageAlt: 'Frustrated homeowner reviewing a confusing window replacement quote with hidden fees',
-};
+// Centralized dependency management - standard Deno practice
+// Change versions HERE to update all modules simultaneously
 
-const AGITATION_POINTS = [
-  {
-    icon: AlertTriangle,
-    title: 'The "Padding" Trap',
-    description: "Are you paying for 'miscellaneous' materials that don't exist?",
-  },
-  {
-    icon: PercentCircle,
-    title: 'The Discount Illusion',
-    description: "That 'Limited Time Offer' is usually the standard price—inflated 20% first.",
-  },
-  {
-    icon: FileWarning,
-    title: 'Hidden Disposal Fees',
-    description: "Many quotes hide $500+ in cleanup costs in the fine print.",
-  },
-  {
-    icon: HardHat,
-    title: 'Low-Ball Labor',
-    description: "Unusually low labor costs often mean uninsured sub-contractors on your property.",
-  },
-];
+export { createClient } from "npm:@supabase/supabase-js@2.39.7";
+export type { SupabaseClient } from "npm:@supabase/supabase-js@2.39.7";
+export { z } from "npm:zod@3.22.4";
+export type { ZodSchema, ZodError } from "npm:zod@3.22.4";
 ```
 
----
+### 2. guards.ts (Extracted from index.ts)
 
-## File 2: `src/components/audit/index.ts` (Modify)
+Moves these functions out of the main handler:
+- `getClientIp(req: Request): string`
+- `requireJson(req: Request): Promise<unknown>`
+- `capBodySize(body: unknown, maxBytes: number): void`
+- `checkRateLimit(identifier, endpoint, limit, windowMs)`
+- `handleGuardError(error: unknown): Response`
+- `corsHeaders` constant
 
-Add export:
+### 3. schema.ts (Extracted from index.ts)
+
+Contains all type definitions and validation:
+- `AnalysisContextSchema` (Zod)
+- `QuoteScannerRequestSchema` (Zod)
+- `ExtractionSignalsJsonSchema` (JSON Schema for AI structured output)
+- `ExtractionSignals` interface (TypeScript)
+- `AnalysisData` interface
+- `sanitizeForPrompt()` function
+
+### 4. rubric.ts (Extracted from index.ts)
+
+Contains the large string constants:
+- `EXTRACTION_RUBRIC` (169-line AI prompt)
+- `GRADING_RUBRIC` (question mode context)
+- `USER_PROMPT_TEMPLATE()` function
+
+### 5. scoring.ts (Enhanced - Safeguard 2)
+
+This is where the **Hybrid Rubric** logic lives:
+
 ```typescript
-export { ProblemAgitationSection } from './ProblemAgitationSection';
+// Types returned by scoring module
+export interface HardCapResult {
+  applied: boolean;
+  ceiling: number;
+  reason: string | null;
+  statute: string | null;
+}
+
+export interface ScoredResult {
+  overallScore: number;
+  safetyScore: number;
+  scopeScore: number;
+  priceScore: number;
+  finePrintScore: number;
+  warrantyScore: number;
+  pricePerOpening: string;
+  warnings: string[];
+  missingItems: string[];
+  summary: string;
+  // NEW: Hard cap details for forensic module
+  hardCap: HardCapResult;
+}
+
+// Hard Caps (Florida Statute Alignment)
+function applyHardCaps(signals: ExtractionSignals, warnings: string[]): HardCapResult {
+  let ceiling = 100;
+  let reason: string | null = null;
+  let statute: string | null = null;
+
+  // CAP 1: Missing License = Max 25 (F.S. 489.119)
+  if (!signals.licenseNumberPresent) {
+    ceiling = 25;
+    reason = "No contractor license number visible";
+    statute = "F.S. 489.119";
+    warnings.push("CRITICAL: No license # found. Per F.S. 489.119, all Florida contractors must display their license number.");
+  }
+
+  // CAP 2: Owner-Builder Language = Max 25 (F.S. 489.103)
+  if (signals.hasOwnerBuilderLanguage && ceiling > 25) {
+    ceiling = 25;
+    reason = "Owner-Builder language transfers all liability to homeowner";
+    statute = "F.S. 489.103";
+    warnings.push("CRITICAL: 'Owner-Builder' language transfers ALL liability to you.");
+  }
+
+  // CAP 3: Deposit > 50% = Max 55 (F.S. 501.137)
+  if (signals.depositPercentage !== null && signals.depositPercentage > 50 && ceiling > 55) {
+    ceiling = 55;
+    reason = `Deposit of ${signals.depositPercentage}% exceeds 50%`;
+    statute = "F.S. 501.137";
+    warnings.push(`HIGH RISK: ${signals.depositPercentage}% deposit exceeds safe threshold.`);
+  }
+
+  // CAP 4: Tempered-Only = Max 30
+  if (signals.hasTemperedOnlyRisk && !signals.hasLaminatedMention && ceiling > 30) {
+    ceiling = 30;
+    reason = "Tempered glass without impact/laminated specification";
+    statute = null;
+    warnings.push("CRITICAL: Quote mentions 'tempered' glass but NO impact/laminated language.");
+  }
+
+  // CAP 5: Payment Before Completion = Max 40 (F.S. 489.126)
+  if (signals.hasPaymentBeforeCompletion && ceiling > 40) {
+    ceiling = 40;
+    reason = "Full payment required before work completion";
+    statute = "F.S. 489.126";
+    warnings.push("HIGH RISK: Contract requires full payment before work is complete.");
+  }
+
+  return {
+    applied: ceiling < 100,
+    ceiling,
+    reason,
+    statute,
+  };
+}
+
+// Score Curving (makes 90+ rare)
+function applyCurve(score: number): number {
+  if (score <= 70) return score;
+  const excess = score - 70;
+  return Math.round(70 + (30 * Math.pow(excess / 30, 1.8)));
+}
+```
+
+### 6. forensic.ts (NEW - Safeguard 2 Consumer)
+
+Generates the authority-building forensic summary:
+
+```typescript
+import type { ExtractionSignals } from "./schema.ts";
+import type { ScoredResult, HardCapResult } from "./scoring.ts";
+
+export interface ForensicSummary {
+  headline: string;
+  riskLevel: 'critical' | 'high' | 'moderate' | 'acceptable';
+  statuteCitations: string[];
+  questionsToAsk: string[];
+  positiveFindings: string[];
+  hardCapApplied: boolean;
+  hardCapReason: string | null;
+  hardCapStatute: string | null;
+}
+
+export function generateForensicSummary(
+  signals: ExtractionSignals,
+  scored: ScoredResult
+): ForensicSummary {
+  const { hardCap } = scored;  // SAFEGUARD 2: Explicit pass from scoring
+  
+  const citations: string[] = [];
+  const questions: string[] = [];
+  const positives: string[] = [];
+
+  // Build statute citations from hard cap
+  if (hardCap.statute) {
+    citations.push(`${hardCap.statute} - ${hardCap.reason}`);
+  }
+
+  // Add additional citations based on signals
+  if (!signals.licenseNumberPresent) {
+    questions.push("What is your contractor license number?");
+  }
+  if (signals.depositPercentage && signals.depositPercentage > 40) {
+    citations.push("F.S. 501.137 addresses advance payment regulations");
+    questions.push("Can we restructure the payment schedule?");
+  }
+  if (!signals.hasComplianceIdentifier) {
+    citations.push("FL Building Code Section 1626 requires NOA documentation");
+    questions.push("What are the NOA or Florida Product Approval numbers?");
+  }
+
+  // Positive findings for good quotes (B+ and above)
+  if (scored.overallScore >= 75) {
+    if (signals.licenseNumberPresent) {
+      positives.push("License number visible and verifiable");
+    }
+    if (signals.hasNOANumber) {
+      positives.push("Product approval numbers included");
+    }
+    if (signals.hasDetailedScope) {
+      positives.push("Installation scope is well-documented");
+    }
+    if (signals.hasLaborWarranty) {
+      positives.push("Labor warranty specified");
+    }
+  }
+
+  // Determine risk level
+  let riskLevel: ForensicSummary['riskLevel'];
+  if (scored.overallScore <= 30) riskLevel = 'critical';
+  else if (scored.overallScore <= 50) riskLevel = 'high';
+  else if (scored.overallScore <= 70) riskLevel = 'moderate';
+  else riskLevel = 'acceptable';
+
+  // Generate headline
+  let headline = "";
+  if (hardCap.applied) {
+    headline = `Score capped at ${hardCap.ceiling} due to: ${hardCap.reason}`;
+  } else if (riskLevel === 'critical') {
+    headline = "This quote has serious red flags. Do NOT sign without major revisions.";
+  } else if (riskLevel === 'high') {
+    headline = "This quote needs significant clarification before signing.";
+  } else if (riskLevel === 'moderate') {
+    headline = "This quote is acceptable but has gaps to address.";
+  } else {
+    headline = "This quote appears comprehensive. Verify license and NOA numbers before signing.";
+  }
+
+  return {
+    headline,
+    riskLevel,
+    statuteCitations: citations.slice(0, 3),
+    questionsToAsk: questions.slice(0, 5),
+    positiveFindings: positives,
+    hardCapApplied: hardCap.applied,
+    hardCapReason: hardCap.reason,
+    hardCapStatute: hardCap.statute,
+  };
+}
+```
+
+### 7. index.ts (Refactored Orchestrator)
+
+Clean, focused handler that imports from modules:
+
+```typescript
+// Clean imports from local modules
+import { createClient } from "./deps.ts";
+import { corsHeaders, getClientIp, requireJson, capBodySize, checkRateLimit, handleGuardError } from "./guards.ts";
+import { QuoteScannerRequestSchema, ExtractionSignalsJsonSchema, sanitizeForPrompt } from "./schema.ts";
+import type { ExtractionSignals } from "./schema.ts";
+import { EXTRACTION_RUBRIC, GRADING_RUBRIC, USER_PROMPT_TEMPLATE } from "./rubric.ts";
+import { scoreFromSignals } from "./scoring.ts";
+import { generateForensicSummary } from "./forensic.ts";
+import { logAttributionEvent } from "../_shared/attributionLogger.ts";
+
+Deno.serve(async (req) => {
+  // 1. CORS handling
+  // 2. Guard checks
+  // 3. Zod validation
+  // 4. Route by mode
+  // 5. For analyze: AI call → parse → scoreFromSignals → generateForensicSummary
+  // 6. Return response with forensic data included
+});
 ```
 
 ---
 
-## File 3: `src/pages/Audit.tsx` (Modify)
+## Frontend Type Updates (Safeguard 3)
 
-### Changes Required
+File: `src/types/audit.ts`
 
-1. Add lazy import for ProblemAgitationSection
-2. Insert between ScannerIntelligenceBar and UploadZoneXRay Suspense block
+**New interfaces to add:**
 
-```tsx
-// Add to lazy imports (around line 18)
-const ProblemAgitationSection = lazy(() => 
-  import('@/components/audit/ProblemAgitationSection').then(m => ({ default: m.ProblemAgitationSection }))
-);
+```typescript
+// ═══════════════════════════════════════════════════════════════════════════
+// FORENSIC SUMMARY (Hybrid Rubric Output)
+// ═══════════════════════════════════════════════════════════════════════════
 
-// Insert in JSX structure (around line 72-73)
-<ScannerIntelligenceBar />
+/** Forensic summary from hybrid rubric analysis */
+export interface ForensicSummary {
+  headline: string;
+  riskLevel: 'critical' | 'high' | 'moderate' | 'acceptable';
+  statuteCitations: string[];
+  questionsToAsk: string[];
+  positiveFindings: string[];
+  hardCapApplied: boolean;
+  hardCapReason: string | null;
+  hardCapStatute: string | null;
+}
 
-{/* Problem Agitation - below the fold, lazy loaded */}
-<Suspense fallback={<div className="h-96" />}>
-  <ProblemAgitationSection />
-</Suspense>
+/** Extracted contractor identity for future verification */
+export interface ExtractedIdentity {
+  contractorName: string | null;
+  licenseNumber: string | null;
+  noaNumbers: string[];
+}
+```
 
-{/* Below the fold - lazy loaded */}
-<Suspense fallback={<LoadingSkeleton />}>
-  <div ref={uploadRef}>
-    <UploadZoneXRay ... />
-  </div>
-  ...
+**Update to AuditAnalysisResult:**
+
+```typescript
+/** Result from quote analysis (updated with forensic data) */
+export interface AuditAnalysisResult {
+  // Existing fields (unchanged)
+  overallScore: number;
+  safetyScore: number;
+  scopeScore: number;
+  priceScore: number;
+  finePrintScore: number;
+  warrantyScore: number;
+  pricePerOpening: string;
+  warnings: string[];
+  missingItems: string[];
+  summary: string;
+  analyzedAt: string;
+  
+  // NEW: Forensic Authority Fields (Hybrid Rubric)
+  forensic?: ForensicSummary;
+  extractedIdentity?: ExtractedIdentity;
+}
 ```
 
 ---
 
-## Visual Preview
+## Implementation Sequence
 
-### Desktop (lg+)
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│  ┌──────────────────┐    ┌───────────────────────────────────┐  │
-│  │                  │    │  Your Quote is a MINEFIELD        │  │
-│  │   [Frustrated    │    │  of Hidden Costs.                 │  │
-│  │    Man Image]    │    │                                   │  │
-│  │                  │    │  Contractors rely on your...      │  │
-│  │   (orange glow   │    │                                   │  │
-│  │    border)       │    │  ⚠ The "Padding" Trap             │  │
-│  │                  │    │  % The Discount Illusion          │  │
-│  │                  │    │  📄 Hidden Disposal Fees           │  │
-│  │                  │    │  🏗 Low-Ball Labor                 │  │
-│  └──────────────────┘    └───────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Mobile (< lg)
-```text
-┌─────────────────────┐
-│  ┌───────────────┐  │
-│  │               │  │
-│  │  [Frustrated  │  │
-│  │   Man Image]  │  │
-│  │               │  │
-│  └───────────────┘  │
-│                     │
-│  Your Quote is a    │
-│  MINEFIELD of       │
-│  Hidden Costs.      │
-│                     │
-│  Contractors rely...│
-│                     │
-│  ⚠ The "Padding"    │
-│    Trap             │
-│  ...                │
-└─────────────────────┘
-```
-
----
-
-## Technical Specifications
-
-| Spec | Implementation |
-|------|----------------|
-| **Semantic HTML** | `<section aria-labelledby="...">` |
-| **Lazy Loading** | `loading="lazy"` on image + lazy component import |
-| **SEO Alt Text** | "Frustrated homeowner reviewing a confusing window replacement quote with hidden fees" |
-| **Vertical Padding** | `py-16 md:py-24` (proper breathing room) |
-| **X-Ray Glow** | Orange gradient blur + scan line overlay |
-| **Typography** | Inter, tracking-tight, font-black headers |
-| **Mobile-First** | Image above text on mobile via `order-1 lg:order-none` |
-| **Performance** | GPU-accelerated glow via `transform-gpu` |
-| **Reduced Motion** | Scan animation respects `prefers-reduced-motion` |
+| Phase | Files | Lines Changed | Risk |
+|-------|-------|---------------|------|
+| 1 | `deps.ts` (create) | ~15 | Low |
+| 2 | `guards.ts` (create) | ~100 | Low |
+| 3 | `schema.ts` (create) | ~180 | Low |
+| 4 | `rubric.ts` (create) | ~200 | Low |
+| 5 | `scoring.ts` (create with hard caps) | ~350 | Medium |
+| 6 | `forensic.ts` (create) | ~150 | Low |
+| 7 | `index.ts` (refactor to orchestrator) | ~200 | Medium |
+| 8 | `src/types/audit.ts` (sync types) | ~40 | Low |
+| 9 | Deploy and test | - | - |
 
 ---
 
 ## Testing Checklist
 
 After implementation:
-1. Navigate to /audit page - verify new section appears between Intelligence Bar and Upload Zone
-2. Check image loads lazily (Network tab shows deferred load)
-3. Verify orange X-ray glow effect on image container
-4. Test mobile layout - image should appear above text
-5. Test desktop layout - two-column side-by-side
-6. Verify scan line animation on image (if motion allowed)
-7. Check SEO - inspect `<section>` has `aria-labelledby` pointing to heading
-8. Test reduced motion - animations should be disabled
+
+- [ ] Edge function deploys without timeout (bundle size reduced)
+- [ ] All modules import from `deps.ts` (no direct npm: imports elsewhere)
+- [ ] Quote WITHOUT license shows: "Score capped at 25 due to: No contractor license number visible"
+- [ ] Quote with Owner-Builder language shows: "Score capped at 25 due to: Owner-Builder language"
+- [ ] Quote with 60% deposit shows: "Score capped at 55 due to: Deposit of 60% exceeds 50%"
+- [ ] Quote with "payment before work begins" shows: "Score capped at 40 due to: Full payment required"
+- [ ] Good quotes (B+) display "What This Quote Does Well" with positive findings
+- [ ] Frontend types compile without errors after `audit.ts` update
+- [ ] Cold start latency improved (target: < 2 seconds)
 
