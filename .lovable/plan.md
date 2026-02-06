@@ -1,246 +1,191 @@
 
 
-# Remove Partner Consent Checkbox - Complete Cleanup Plan
+# Phase 1 Only: Backend Session Sync (Zero UI Changes)
 
-## Overview
+## Executive Summary
 
-Remove the "Partner Share" checkbox section entirely and clean up all related code across both files to eliminate TypeScript errors and reduce mobile form friction.
+Implement automatic session data synchronization from localStorage to the database when users authenticate. This is **purely backend infrastructure** with **no changes to any lead capture modals**.
+
+**What we're NOT doing**: No "Create Vault" prompts, no blocking steps, no changes to `LeadCaptureModal`, `SampleReportLeadModal`, or any guide modals.
 
 ---
 
-## Files to Modify
+## Why This Is Safe
 
-| File | Changes |
-|------|---------|
-| `SampleReportLeadModal.tsx` | Delete checkbox UI, remove state/props, clean up imports |
-| `SampleReport.tsx` | Remove `preCheckPartnerConsent` state and prop passing |
+| Concern | Status |
+|---------|--------|
+| Lead capture modals | UNTOUCHED |
+| Upsell flows (Call Offer, Project Details) | UNTOUCHED |
+| `onSuccess` callbacks | UNTOUCHED |
+| Revenue CTAs | UNTOUCHED |
+
+This phase is **purely additive backend code** that runs invisibly in the background.
+
+---
+
+## What This Enables (Future "Passive" Options)
+
+Once Phase 1 is complete, you can add non-blocking "Create Vault" prompts on:
+- Results pages (after analysis complete)
+- Vault dashboard sidebar
+- Email follow-ups ("Secure your results")
+
+These can be added later without touching lead capture flows.
 
 ---
 
 ## Technical Implementation
 
-### 1. SampleReportLeadModal.tsx Changes
+### 1. Database Schema Update
 
-#### A. Remove Checkbox Import (Line 17)
+Add columns to store synced session data:
 
-```tsx
-// DELETE this line:
-import { Checkbox } from '@/components/ui/checkbox';
+```sql
+ALTER TABLE public.profiles
+ADD COLUMN IF NOT EXISTS session_data JSONB DEFAULT '{}';
+
+ALTER TABLE public.profiles
+ADD COLUMN IF NOT EXISTS session_sync_at TIMESTAMPTZ;
 ```
 
-#### B. Remove from Props Interface (Line 39)
+**Risk**: None - purely additive.
 
-```tsx
-// DELETE this line:
-preCheckPartnerConsent?: boolean;
+---
+
+### 2. Edge Function: `sync-session`
+
+**File**: `supabase/functions/sync-session/index.ts`
+
+**Core Logic**: Safe Deep Merge where existing DB data wins over empty incoming data.
+
+```text
+Merge Rules:
+  ┌────────────────────────────────────────────────────────┐
+  │  IF incoming[key] is null/empty → KEEP existing       │
+  │  IF existing[key] is null       → USE incoming        │
+  │  IF both have values (arrays)   → MERGE unique items  │
+  │  DEFAULT: existing wins (conservative)                │
+  └────────────────────────────────────────────────────────┘
 ```
 
-#### C. Remove from Destructuring (Line 51)
-
-```tsx
-// DELETE this line:
-preCheckPartnerConsent = false,
-```
-
-#### D. Remove State (Line 59)
-
-```tsx
-// DELETE this line:
-const [partnerConsent, setPartnerConsent] = useState(preCheckPartnerConsent);
-```
-
-#### E. Update useEffect Reset (Lines 76-88)
-
-```tsx
-// BEFORE
-useEffect(() => {
-  if (isOpen) {
-    setStep('form');
-    setCapturedLeadId(null);
-    setPartnerConsent(preCheckPartnerConsent);  // DELETE
-    
-    trackEvent('sample_report_lead_modal_open', {
-      cta_source: ctaSource,
-      has_existing_lead: !!getLeadAnchor(),
-    });
-  }
-}, [isOpen, ctaSource, preCheckPartnerConsent]);  // Remove from deps
-
-// AFTER
-useEffect(() => {
-  if (isOpen) {
-    setStep('form');
-    setCapturedLeadId(null);
-    
-    trackEvent('sample_report_lead_modal_open', {
-      cta_source: ctaSource,
-      has_existing_lead: !!getLeadAnchor(),
-    });
-  }
-}, [isOpen, ctaSource]);
-```
-
-#### F. Update Payload (Lines 117-121)
-
-```tsx
-// BEFORE
-sessionData: {
-  clientId: getOrCreateClientId(),
-  partnerConsent,
-  ctaSource,
-},
-
-// AFTER
-sessionData: {
-  clientId: getOrCreateClientId(),
-  ctaSource,
-},
-```
-
-#### G. Update Analytics Event (Line 154)
-
-```tsx
-// DELETE this line:
-partner_consent: partnerConsent,
-```
-
-#### H. Delete Partner Consent UI Block (Lines 279-298)
-
-Delete this entire section:
-
-```tsx
-{/* Partner Consent */}
-<div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-50 border border-slate-200 dark:border-slate-200">
-  <div className="flex items-start gap-3">
-    <Checkbox
-      id="sr-partner-consent"
-      checked={partnerConsent}
-      onCheckedChange={(checked) => setPartnerConsent(checked === true)}
-      className="mt-1"
-      aria-describedby="sr-partner-consent-desc"
-    />
-    <label htmlFor="sr-partner-consent" className="cursor-pointer">
-      <span className="text-sm font-medium text-slate-900 dark:text-slate-900">
-        Yes — share my project specs with vetted partners to get competing estimates
-      </span>
-      <p id="sr-partner-consent-desc" className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-        Window Man may connect you with pre-screened contractors who can offer better pricing. Your contact info is never sold.
-      </p>
-    </label>
-  </div>
-</div>
+**Endpoint**:
+```text
+POST /sync-session
+Authorization: Bearer <JWT>
+Body: { sessionData: {...}, syncReason: "auth_login" }
 ```
 
 ---
 
-### 2. SampleReport.tsx Changes
+### 3. Client Hook: `useSessionSync`
 
-#### A. Remove State (Line 35)
+**File**: `src/hooks/useSessionSync.ts`
 
-```tsx
-// DELETE this line:
-const [preCheckPartnerConsent, setPreCheckPartnerConsent] = useState(false);
-```
+Triggers automatically when `isAuthenticated` becomes true:
 
-#### B. Update Handler Signature (Line 63)
-
-```tsx
-// BEFORE
-const handleOpenLeadModal = (ctaSource: string, preCheckConsent = false) => {
-
-// AFTER
-const handleOpenLeadModal = (ctaSource: string) => {
-```
-
-#### C. Remove State Setter (Line 77)
-
-```tsx
-// DELETE this line:
-setPreCheckPartnerConsent(preCheckConsent);
-```
-
-#### D. Remove Prop from Component (Lines 121-127)
-
-```tsx
-// BEFORE
-<SampleReportLeadModal
-  isOpen={showLeadModal}
-  onClose={() => setShowLeadModal(false)}
-  onSuccess={handleLeadModalSuccess}
-  ctaSource={modalCtaSource}
-  preCheckPartnerConsent={preCheckPartnerConsent}
-/>
-
-// AFTER
-<SampleReportLeadModal
-  isOpen={showLeadModal}
-  onClose={() => setShowLeadModal(false)}
-  onSuccess={handleLeadModalSuccess}
-  ctaSource={modalCtaSource}
-/>
+```text
+┌─────────────────────────────────────────────────────────┐
+│              useSessionSync Hook                         │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  On Auth State Change:                                  │
+│  1. Check if user just authenticated                    │
+│  2. Check if localStorage has meaningful data           │
+│  3. If yes to both → call sync-session (fire & forget)  │
+│  4. Mark synced to avoid duplicate calls                │
+│                                                         │
+│  Safety: Errors are logged, never block UI              │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Visual Result
+### 4. Vault Page: Hydrate from DB
 
-### Final Form Layout
+**File**: `src/pages/Vault.tsx`
 
-```
-┌────────────────────────────────────────┐
-│   Let's Personalize Your Audit         │
-├────────────────────────────────────────┤
-│   ┌──────────────┐   ┌──────────────┐  │
-│   │ First Name   │   │ Last Name    │  │
-│   └──────────────┘   └──────────────┘  │
-│                         ↑ 12px gap     │
-│   ┌────────────────────────────────┐   │
-│   │ Email Address                  │   │
-│   └────────────────────────────────┘   │
-│                         ↑ 12px gap     │
-│   ┌────────────────────────────────┐   │
-│   │ (555) 555-5555                 │   │
-│   └────────────────────────────────┘   │
-│                         ↑ 12px gap     │
-│   ┌────────────────────────────────┐   │
-│   │      Get My Free Audit         │   │
-│   └────────────────────────────────┘   │
-│                                        │
-│   🔒 No spam. No obligation...         │
-└────────────────────────────────────────┘
+When user opens Vault on a new device with empty localStorage:
 
-Estimated Height: ~220px (fits all mobile screens)
+```text
+On Mount:
+  1. Check localStorage for session data
+  2. If empty AND user authenticated:
+     → Fetch profiles.session_data from DB
+     → Hydrate localStorage with fetched data
+  3. Display unified data
 ```
 
 ---
 
-## Implementation Checklist
+### 5. Integration Point
 
-| Step | File | Change | Risk |
-|------|------|--------|------|
-| 1 | `SampleReportLeadModal.tsx` | Remove `Checkbox` import | None |
-| 2 | `SampleReportLeadModal.tsx` | Remove `preCheckPartnerConsent` from props interface | None |
-| 3 | `SampleReportLeadModal.tsx` | Remove from destructuring | None |
-| 4 | `SampleReportLeadModal.tsx` | Remove `partnerConsent` state | None |
-| 5 | `SampleReportLeadModal.tsx` | Remove from useEffect reset + deps | None |
-| 6 | `SampleReportLeadModal.tsx` | Remove from payload sessionData | None |
-| 7 | `SampleReportLeadModal.tsx` | Remove from analytics event | None |
-| 8 | `SampleReportLeadModal.tsx` | Delete Partner Consent UI block | None |
-| 9 | `SampleReport.tsx` | Remove `preCheckPartnerConsent` state | None |
-| 10 | `SampleReport.tsx` | Update `handleOpenLeadModal` signature | None |
-| 11 | `SampleReport.tsx` | Remove `setPreCheckPartnerConsent` call | None |
-| 12 | `SampleReport.tsx` | Remove prop from `<SampleReportLeadModal>` | None |
+**File**: `src/App.tsx`
+
+Add hook at app root (runs on every page):
+
+```tsx
+import { useSessionSync } from '@/hooks/useSessionSync';
+
+function App() {
+  useSessionSync(); // Fires in background on auth
+  // ... rest of app
+}
+```
+
+---
+
+## Files to Create/Modify
+
+| File | Action | Risk |
+|------|--------|------|
+| `supabase/migrations/xxx_add_session_sync.sql` | CREATE | None |
+| `supabase/functions/sync-session/index.ts` | CREATE | None |
+| `src/hooks/useSessionSync.ts` | CREATE | None |
+| `src/App.tsx` | MODIFY (add hook) | Very Low |
+| `src/pages/Vault.tsx` | MODIFY (add DB fetch) | Low |
+
+---
+
+## Implementation Order
+
+| Step | Task | Test |
+|------|------|------|
+| 1 | Run migration to add columns | `SELECT session_data FROM profiles LIMIT 1` |
+| 2 | Deploy `sync-session` edge function | Test with curl |
+| 3 | Create `useSessionSync` hook | Console log verification |
+| 4 | Add hook to `App.tsx` | Auth flow test |
+| 5 | Update `Vault.tsx` to fetch from DB | Cross-device test |
 
 ---
 
 ## Testing Checklist
 
-After implementation:
+1. Complete Fair Price Quiz without logging in
+2. Sign up for account (via navbar login)
+3. Check `profiles.session_data` in database - should contain quiz data
+4. Clear localStorage
+5. Open Vault on different browser
+6. Verify quiz results appear (fetched from DB)
 
-- [ ] Form renders without TypeScript errors
-- [ ] Form fits on iPhone SE (375×667) without scrolling
-- [ ] Lead submission still works correctly
-- [ ] Analytics events fire with correct data (no `partner_consent` field)
-- [ ] Modal opens/closes without errors
-- [ ] Navigation to scanner works after submission
+---
+
+## What's NOT in This Plan (Deferred to Later)
+
+| Feature | Status | Why Deferred |
+|---------|--------|--------------|
+| "Create Vault" prompt in lead modals | SKIPPED | Blocks revenue CTAs |
+| Password creation flow | SKIPPED | Adds friction |
+| Modal step changes | SKIPPED | Interferes with upsells |
+
+These can be added as **passive, non-blocking elements** on results pages later.
+
+---
+
+## Rollback Plan
+
+If issues arise:
+1. Comment out `useSessionSync()` in App.tsx
+2. localStorage continues working as before
+3. No data loss - columns remain for future use
 
