@@ -14,7 +14,7 @@ import { TrustModal } from '@/components/forms/TrustModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+
 import { NameInputPair, normalizeNameFields } from '@/components/ui/NameInputPair';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { emailInputProps, phoneInputProps } from '@/lib/formAccessibility';
@@ -36,7 +36,7 @@ interface SampleReportLeadModalProps {
   onClose: () => void;
   onSuccess: (leadId: string) => void;
   ctaSource: string;
-  preCheckPartnerConsent?: boolean;
+  
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -48,7 +48,7 @@ export function SampleReportLeadModal({
   onClose,
   onSuccess,
   ctaSource,
-  preCheckPartnerConsent = false,
+  
 }: SampleReportLeadModalProps) {
   const navigate = useNavigate();
   
@@ -56,7 +56,7 @@ export function SampleReportLeadModal({
   const [step, setStep] = useState<ModalStep>('form');
   const [capturedLeadId, setCapturedLeadId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [partnerConsent, setPartnerConsent] = useState(preCheckPartnerConsent);
+  
 
   // Form validation
   const { values, setValue, getFieldProps, hasError, getError, validateAll } = useFormValidation({
@@ -77,7 +77,6 @@ export function SampleReportLeadModal({
     if (isOpen) {
       setStep('form');
       setCapturedLeadId(null);
-      setPartnerConsent(preCheckPartnerConsent);
       
       // Track modal open
       trackEvent('sample_report_lead_modal_open', {
@@ -85,7 +84,7 @@ export function SampleReportLeadModal({
         has_existing_lead: !!getLeadAnchor(),
       });
     }
-  }, [isOpen, ctaSource, preCheckPartnerConsent]);
+  }, [isOpen, ctaSource]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 1: Form Submission
@@ -116,7 +115,6 @@ export function SampleReportLeadModal({
         sessionId: getOrCreateSessionId(),
         sessionData: {
           clientId: getOrCreateClientId(),
-          partnerConsent,
           ctaSource,
         },
         attribution,
@@ -151,7 +149,6 @@ export function SampleReportLeadModal({
       trackEvent('sample_report_lead_captured', {
         lead_id: newLeadId,
         cta_source: ctaSource,
-        partner_consent: partnerConsent,
       });
 
       // Fire lead submission success for conversion tracking
@@ -276,26 +273,6 @@ export function SampleReportLeadModal({
               )}
             </div>
 
-            {/* Partner Consent */}
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-50 border border-slate-200 dark:border-slate-200">
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="sr-partner-consent"
-                  checked={partnerConsent}
-                  onCheckedChange={(checked) => setPartnerConsent(checked === true)}
-                  className="mt-1"
-                  aria-describedby="sr-partner-consent-desc"
-                />
-                <label htmlFor="sr-partner-consent" className="cursor-pointer">
-                  <span className="text-sm font-medium text-slate-900 dark:text-slate-900">
-                    Yes — share my project specs with vetted partners to get competing estimates
-                  </span>
-                  <p id="sr-partner-consent-desc" className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                    Window Man may connect you with pre-screened contractors who can offer better pricing. Your contact info is never sold.
-                  </p>
-                </label>
-              </div>
-            </div>
 
             {/* Submit Button */}
             <Button
