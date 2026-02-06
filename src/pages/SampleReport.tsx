@@ -32,7 +32,7 @@ const SampleReport = () => {
   // Lead capture modal state
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [modalCtaSource, setModalCtaSource] = useState('');
-  const [preCheckPartnerConsent, setPreCheckPartnerConsent] = useState(false);
+  
   
   // Pre-quote (no quote) modal state
   const [showPreQuoteModal, setShowPreQuoteModal] = useState(false);
@@ -60,7 +60,7 @@ const SampleReport = () => {
   }, [isCheckingLead, hasLead, leadId, anchorId]);
 
   // Handler for opening lead modal (passed to child components)
-  const handleOpenLeadModal = (ctaSource: string, preCheckConsent = false) => {
+  const handleOpenLeadModal = (ctaSource: string) => {
     const existingLead = getLeadAnchor();
     
     if (existingLead) {
@@ -74,7 +74,6 @@ const SampleReport = () => {
     } else {
       // Need to capture - show modal
       setModalCtaSource(ctaSource);
-      setPreCheckPartnerConsent(preCheckConsent);
       setShowLeadModal(true);
     }
   };
@@ -123,7 +122,6 @@ const SampleReport = () => {
         onClose={() => setShowLeadModal(false)}
         onSuccess={handleLeadModalSuccess}
         ctaSource={modalCtaSource}
-        preCheckPartnerConsent={preCheckPartnerConsent}
       />
       
       {/* Pre-Quote Lead Modal - for users without quotes */}
