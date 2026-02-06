@@ -274,9 +274,6 @@ export function SampleReportLeadModal({
                 aria-invalid={hasError('phone')}
                 aria-describedby={hasError('phone') ? 'sr-phone-error' : 'sr-phone-hint'}
               />
-              <p id="sr-phone-hint" className="text-xs text-slate-500 dark:text-slate-500">
-                We'll text your report link and only call if you request it
-              </p>
               {hasError('phone') && (
                 <p id="sr-phone-error" className="text-sm text-destructive font-medium">{getError('phone')}</p>
               )}
