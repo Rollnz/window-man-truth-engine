@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AuditAnalysisResult } from '@/types/audit';
 
 interface PartialResultsPanelProps {
@@ -105,9 +106,21 @@ function ScoreRow({ label, score, icon, description, isLocked = true }: ScoreRow
 
 export function PartialResultsPanel({ result, onUnlockClick }: PartialResultsPanelProps) {
   const missingCount = result.missingItems?.length || 0;
+  const forensic = result.forensic;
   
   return (
     <div className="space-y-6 px-4 py-6">
+      {/* Hard Cap Teaser (NEW) - Creates curiosity to drive conversion */}
+      {forensic?.hardCapApplied && (
+        <Alert className="border-rose-500/30 bg-rose-500/5">
+          <AlertTriangle className="h-4 w-4 text-rose-400" />
+          <AlertDescription className="text-slate-300 text-sm">
+            This quote's score was <span className="text-rose-400 font-semibold">limited</span> due to a critical issue.
+            <span className="text-white font-medium"> Unlock to see why.</span>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Overall Score Card */}
       <div className={cn(
         "rounded-lg border-2 p-6 text-center",

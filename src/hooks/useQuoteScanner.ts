@@ -9,6 +9,8 @@ import { logScannerCompleted } from '@/lib/highValueSignals';
 import { trackScannerUpload } from '@/lib/tracking/scannerUpload';
 import { trackQuoteUploadSuccess } from '@/lib/gtm';
 import { useCanonicalScore } from '@/hooks/useCanonicalScore';
+import { ForensicSummary, ExtractedIdentity } from '@/types/audit';
+
 export interface QuoteAnalysisResult {
   overallScore: number;
   safetyScore: number;
@@ -21,6 +23,9 @@ export interface QuoteAnalysisResult {
   missingItems: string[];
   summary: string;
   analyzedAt?: string;
+  // Forensic Authority Fields (Hybrid Rubric)
+  forensic?: ForensicSummary;
+  extractedIdentity?: ExtractedIdentity;
 }
 
 interface UseQuoteScannerReturn {
