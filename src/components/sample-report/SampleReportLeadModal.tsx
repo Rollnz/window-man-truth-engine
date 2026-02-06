@@ -225,8 +225,8 @@ export function SampleReportLeadModal({
         className="sm:max-w-md"
       >
         {step === 'form' ? (
-          <form onSubmit={handleFormSubmit} className="space-y-4">
-            {/* Name Fields */}
+          <form onSubmit={handleFormSubmit} className="space-y-3">
+            {/* Name Fields - label-free compact mode */}
             <NameInputPair
               firstName={values.firstName}
               lastName={values.lastName}
@@ -236,18 +236,17 @@ export function SampleReportLeadModal({
                 firstName: getError('firstName'),
                 lastName: getError('lastName'),
               }}
+              hideLabels
               size="compact"
             />
 
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="sr-email" className="text-slate-900 dark:text-slate-900 font-semibold">
-                Email Address
-              </Label>
+            {/* Email - label-free with sr-only for accessibility */}
+            <div>
+              <label htmlFor="sr-email" className="sr-only">Email Address</label>
               <Input
                 id="sr-email"
                 name="email"
-                placeholder="you@example.com"
+                placeholder="Email Address"
                 {...getFieldProps('email')}
                 {...emailInputProps}
                 className={hasError('email') ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -255,32 +254,30 @@ export function SampleReportLeadModal({
                 aria-describedby={hasError('email') ? 'sr-email-error' : undefined}
               />
               {hasError('email') && (
-                <p id="sr-email-error" className="text-sm text-destructive font-medium">{getError('email')}</p>
+                <p id="sr-email-error" className="text-sm text-destructive font-medium mt-1">{getError('email')}</p>
               )}
             </div>
 
-            {/* Phone */}
-            <div className="space-y-2">
-              <Label htmlFor="sr-phone" className="text-slate-900 dark:text-slate-900 font-semibold">
-                Phone Number
-              </Label>
+            {/* Phone - label-free with sr-only for accessibility */}
+            <div>
+              <label htmlFor="sr-phone" className="sr-only">Phone Number</label>
               <Input
                 id="sr-phone"
                 name="phone"
-                placeholder="(555) 123-4567"
+                placeholder="(555) 555-5555"
                 {...getFieldProps('phone')}
                 {...phoneInputProps}
                 className={hasError('phone') ? 'border-destructive focus-visible:ring-destructive' : ''}
                 aria-invalid={hasError('phone')}
-                aria-describedby={hasError('phone') ? 'sr-phone-error' : 'sr-phone-hint'}
+                aria-describedby={hasError('phone') ? 'sr-phone-error' : undefined}
               />
               {hasError('phone') && (
-                <p id="sr-phone-error" className="text-sm text-destructive font-medium">{getError('phone')}</p>
+                <p id="sr-phone-error" className="text-sm text-destructive font-medium mt-1">{getError('phone')}</p>
               )}
             </div>
 
-            {/* Partner Consent - Fixed accessibility with id/htmlFor */}
-            <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-50 border border-slate-200 dark:border-slate-200">
+            {/* Partner Consent */}
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-50 border border-slate-200 dark:border-slate-200">
               <div className="flex items-start gap-3">
                 <Checkbox
                   id="sr-partner-consent"

@@ -26,6 +26,8 @@ export interface NameInputPairProps {
   autoFocus?: boolean;
   /** Show icon next to label */
   showIcon?: boolean;
+  /** Hide visible labels (use sr-only for accessibility) */
+  hideLabels?: boolean;
   /** Custom label text */
   firstNameLabel?: string;
   lastNameLabel?: string;
@@ -48,6 +50,7 @@ export function NameInputPair({
   disabled = false,
   autoFocus = false,
   showIcon = false,
+  hideLabels = false,
   firstNameLabel = "First Name",
   lastNameLabel = "Last Name",
   idPrefix = "",
@@ -64,23 +67,27 @@ export function NameInputPair({
   return (
     <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-4", className)}>
       {/* First Name (required) */}
-      <div className="space-y-2">
-        <Label 
-          htmlFor={firstNameId} 
-          className={cn(
-            "flex items-center gap-2 font-semibold",
-            errors.firstName ? "text-destructive" : "text-foreground"
-          )}
-        >
-          {showIcon && <User className="h-4 w-4 text-muted-foreground" />}
-          {firstNameLabel} *
-        </Label>
+      <div className={hideLabels ? "" : "space-y-2"}>
+        {hideLabels ? (
+          <label htmlFor={firstNameId} className="sr-only">{firstNameLabel}</label>
+        ) : (
+          <Label 
+            htmlFor={firstNameId} 
+            className={cn(
+              "flex items-center gap-2 font-semibold",
+              errors.firstName ? "text-destructive" : "text-foreground"
+            )}
+          >
+            {showIcon && <User className="h-4 w-4 text-muted-foreground" />}
+            {firstNameLabel} *
+          </Label>
+        )}
         <Input
           id={firstNameId}
           name="firstName"
           type="text"
           autoComplete="given-name"
-          placeholder="John"
+          placeholder={hideLabels ? firstNameLabel : "John"}
           value={firstName}
           onChange={(e) => onFirstNameChange(e.target.value)}
           onBlur={onFirstNameBlur}
@@ -94,29 +101,33 @@ export function NameInputPair({
           aria-describedby={errors.firstName ? firstNameErrorId : undefined}
         />
         {errors.firstName && (
-          <p id={firstNameErrorId} className="text-xs text-destructive" role="alert">
+          <p id={firstNameErrorId} className={cn("text-xs text-destructive", hideLabels && "mt-1")} role="alert">
             {errors.firstName}
           </p>
         )}
       </div>
 
       {/* Last Name (optional) */}
-      <div className="space-y-2">
-        <Label 
-          htmlFor={lastNameId} 
-          className={cn(
-            "flex items-center gap-2 font-semibold",
-            errors.lastName ? "text-destructive" : "text-foreground"
-          )}
-        >
-          {lastNameLabel}
-        </Label>
+      <div className={hideLabels ? "" : "space-y-2"}>
+        {hideLabels ? (
+          <label htmlFor={lastNameId} className="sr-only">{lastNameLabel}</label>
+        ) : (
+          <Label 
+            htmlFor={lastNameId} 
+            className={cn(
+              "flex items-center gap-2 font-semibold",
+              errors.lastName ? "text-destructive" : "text-foreground"
+            )}
+          >
+            {lastNameLabel}
+          </Label>
+        )}
         <Input
           id={lastNameId}
           name="lastName"
           type="text"
           autoComplete="family-name"
-          placeholder="Smith"
+          placeholder={hideLabels ? lastNameLabel : "Smith"}
           value={lastName}
           onChange={(e) => onLastNameChange(e.target.value)}
           onBlur={onLastNameBlur}
@@ -129,7 +140,7 @@ export function NameInputPair({
           aria-describedby={errors.lastName ? lastNameErrorId : undefined}
         />
         {errors.lastName && (
-          <p id={lastNameErrorId} className="text-xs text-destructive" role="alert">
+          <p id={lastNameErrorId} className={cn("text-xs text-destructive", hideLabels && "mt-1")} role="alert">
             {errors.lastName}
           </p>
         )}
