@@ -717,6 +717,8 @@ export type Database = {
           id: string
           name: string | null
           qualified_reached_at: string | null
+          session_data: Json | null
+          session_sync_at: string | null
           total_score: number
           updated_at: string
           user_id: string
@@ -729,6 +731,8 @@ export type Database = {
           id?: string
           name?: string | null
           qualified_reached_at?: string | null
+          session_data?: Json | null
+          session_sync_at?: string | null
           total_score?: number
           updated_at?: string
           user_id: string
@@ -741,6 +745,8 @@ export type Database = {
           id?: string
           name?: string | null
           qualified_reached_at?: string | null
+          session_data?: Json | null
+          session_sync_at?: string | null
           total_score?: number
           updated_at?: string
           user_id?: string

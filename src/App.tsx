@@ -9,6 +9,7 @@ import { ROUTE_REDIRECTS } from "@/config/navigation";
 import { ScoreProvider } from "@/contexts/ScoreContext";
 import ScrollToTop from "./components/ScrollToTop";
 import { usePageTimer } from "@/hooks/usePageTimer";
+import { useSessionSync } from "@/hooks/useSessionSync";
 import { WelcomeToast } from "@/components/onboarding/WelcomeToast";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { AdminLayout } from "@/layouts/AdminLayout";
@@ -87,6 +88,9 @@ const queryClient = new QueryClient();
 function AppContent() {
   // Awards 10 points after 2 minutes on site (once per session)
   usePageTimer();
+  
+  // Syncs localStorage session data to database on auth (fire-and-forget)
+  useSessionSync();
   
   return (
     <main id="main-content" tabIndex={-1} className="outline-none">
