@@ -221,7 +221,6 @@ export function SampleReportLeadModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleModalClose()}>
       <TrustModal
         modalTitle={step === 'form' ? "Let's Personalize Your Audit" : undefined}
-        modalDescription={step === 'form' ? "Enter your details to get your free AI-powered quote analysis" : undefined}
         headerAlign="center"
         className="sm:max-w-md"
       >
