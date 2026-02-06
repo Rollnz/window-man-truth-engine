@@ -1,97 +1,74 @@
 
+# Wire Up Forensic UI Display - Detailed Implementation Plan
 
-# Edge Function Modularization with Architectural Safeguards
+## Overview
 
-## Your 3 Safeguards - How They're Implemented
+This plan adds four new forensic sections to `FullResultsPanel.tsx` using shadcn `Alert` and `Card` components with Lucide icons. All sections will maintain the existing dark slate modal aesthetic with perfect mobile responsiveness and WCAG AA contrast.
 
-### Safeguard 1: deps.ts for Version Locking (Deno Best Practice)
-
-A new `deps.ts` file will be the **single source of truth** for all external dependencies. Every module imports from here, guaranteeing version consistency.
-
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         deps.ts (NEW FILE)                              │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  // Pinned versions - change here, changes everywhere                   │
-│  export { createClient } from "npm:@supabase/supabase-js@2.39.7";      │
-│  export { z } from "npm:zod@3.22.4";                                   │
-│  export type { SupabaseClient } from "npm:@supabase/supabase-js@2.39.7";│
-│                                                                         │
-│  // Re-export Zod types for schema definitions                         │
-│  export type { ZodSchema } from "npm:zod@3.22.4";                      │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-All modules import like this:
-```typescript
-// scoring.ts
-import { z, createClient } from "./deps.ts";  // NOT from npm: directly
-```
-
----
-
-### Safeguard 2: Explicit hardCapReason Flow (scoring.ts → forensic.ts)
-
-The `scoring.ts` module will return a **HardCapResult** object that the `forensic.ts` module consumes directly:
+## Architecture
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    DATA FLOW: hardCapReason                             │
+│                     COMPONENT HIERARCHY                                  │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  scoring.ts                                                             │
-│  └── scoreFromSignals() returns:                                        │
-│      {                                                                  │
-│        ...scores,                                                       │
-│        hardCapApplied: true,                                            │
-│        hardCapCeiling: 25,                                              │
-│        hardCapReason: "No contractor license number visible",           │
-│        hardCapStatute: "F.S. 489.119"                                   │
-│      }                                                                  │
-│           │                                                             │
-│           ▼                                                             │
-│  forensic.ts                                                            │
-│  └── generateForensicSummary(signals, scoredResult)                     │
-│      └── Uses scoredResult.hardCapReason to build:                      │
-│          "Your score was capped at 25 due to: No contractor             │
-│           license number visible (F.S. 489.119)"                        │
+│  FullResultsPanel.tsx                                                   │
+│  ├── [1] Success Banner (existing)                                      │
+│  ├── [2] HardCapAlert (NEW) ─────────────────────────────────────────┐ │
+│  │       Uses: Alert + AlertTitle + AlertDescription                  │ │
+│  │       Icon: Scale (legal/statute reference)                        │ │
+│  │       Color: Rose/red border with high contrast white text        │ │
+│  │       Condition: result.forensic?.hardCapApplied === true          │ │
+│  ├───────────────────────────────────────────────────────────────────┘ │
+│  ├── [3] Overall Score Card (existing, updated headline)                │
+│  ├── [4] StatuteCitations (NEW) ─────────────────────────────────────┐ │
+│  │       Uses: Card + CardHeader + CardContent                        │ │
+│  │       Icon: BookOpen (legal documentation)                         │ │
+│  │       Color: Slate neutral with amber accent                       │ │
+│  │       Condition: forensic.statuteCitations.length > 0              │ │
+│  ├───────────────────────────────────────────────────────────────────┘ │
+│  ├── [5] QuestionsToAsk (NEW) ───────────────────────────────────────┐ │
+│  │       Uses: Card + CardHeader + CardContent                        │ │
+│  │       Icon: HelpCircle (actionable guidance)                       │ │
+│  │       Color: Primary blue accent                                   │ │
+│  │       Condition: forensic.questionsToAsk.length > 0                │ │
+│  ├───────────────────────────────────────────────────────────────────┘ │
+│  ├── [6] Detailed Category Breakdown (existing)                         │
+│  ├── [7] PositiveFindings (NEW) ─────────────────────────────────────┐ │
+│  │       Uses: Card + CardHeader + CardContent                        │ │
+│  │       Icon: ThumbsUp / Award                                       │ │
+│  │       Color: Emerald green accent                                  │ │
+│  │       Condition: forensic.positiveFindings.length > 0              │ │
+│  ├───────────────────────────────────────────────────────────────────┘ │
+│  ├── [8] Warnings Section (existing)                                    │
+│  ├── [9] Missing Items (existing)                                       │
+│  └── [10] Escalation CTAs (existing)                                    │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Safeguard 3: Frontend Type Sync (src/types/audit.ts)
+## Files to Modify
 
-The frontend types will be updated to match the new backend response structure **exactly**:
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/hooks/useQuoteScanner.ts` | Modify | Sync `QuoteAnalysisResult` interface with forensic fields |
+| `src/components/audit/scanner-modal/FullResultsPanel.tsx` | Modify | Add 4 new forensic sections using Alert/Card |
+| `src/components/audit/scanner-modal/PartialResultsPanel.tsx` | Modify | Add hard cap teaser banner |
+
+---
+
+## Technical Details
+
+### 1. useQuoteScanner.ts - Interface Sync
+
+**Lines 12-24**: Extend `QuoteAnalysisResult` to include forensic fields:
 
 ```typescript
-// src/types/audit.ts - NEW ADDITIONS
+import { ForensicSummary, ExtractedIdentity } from '@/types/audit';
 
-/** Forensic summary from hybrid rubric analysis */
-export interface ForensicSummary {
-  headline: string;
-  riskLevel: 'critical' | 'high' | 'moderate' | 'acceptable';
-  statuteCitations: string[];
-  questionsToAsk: string[];
-  positiveFindings: string[];
-  hardCapApplied: boolean;
-  hardCapReason: string | null;
-  hardCapStatute: string | null;
-}
-
-/** Extracted contractor identity for verification */
-export interface ExtractedIdentity {
-  contractorName: string | null;
-  licenseNumber: string | null;
-  noaNumbers: string[];
-}
-
-/** UPDATED: Result from quote analysis with forensic data */
-export interface AuditAnalysisResult {
-  // Existing fields (unchanged)
+export interface QuoteAnalysisResult {
   overallScore: number;
   safetyScore: number;
   scopeScore: number;
@@ -102,8 +79,7 @@ export interface AuditAnalysisResult {
   warnings: string[];
   missingItems: string[];
   summary: string;
-  analyzedAt: string;
-  
+  analyzedAt?: string;
   // NEW: Forensic Authority Fields
   forensic?: ForensicSummary;
   extractedIdentity?: ExtractedIdentity;
@@ -112,363 +88,308 @@ export interface AuditAnalysisResult {
 
 ---
 
-## File Structure After Modularization
+### 2. FullResultsPanel.tsx - Forensic Sections
+
+#### A. New Imports
+
+```typescript
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  // Existing icons...
+  Scale,        // Hard cap / statute
+  BookOpen,     // Citations
+  HelpCircle,   // Questions
+  Award,        // Positive findings
+} from "lucide-react";
+```
+
+#### B. Hard Cap Alert Banner (Position: After Success Banner)
+
+**Condition**: `result.forensic?.hardCapApplied === true`
+
+**Design Specifications**:
+- Use shadcn `Alert` component with custom rose/red styling
+- Scale icon for legal/statutory authority
+- Full-width, responsive padding
+- High contrast: white text on semi-transparent rose background
+- Mobile: Stack vertically, 16px padding
+- Desktop: Horizontal flex, icon left
+
+```typescript
+{result.forensic?.hardCapApplied && (
+  <Alert className="border-rose-500/50 bg-rose-500/10 [&>svg]:text-rose-400">
+    <Scale className="h-5 w-5" />
+    <AlertTitle className="text-rose-400 font-semibold">
+      Score Limited to {result.overallScore}
+    </AlertTitle>
+    <AlertDescription className="text-white/90 text-sm mt-1">
+      <span className="font-medium">Reason:</span> {result.forensic.hardCapReason}
+      {result.forensic.hardCapStatute && (
+        <span className="block sm:inline sm:ml-1 text-rose-300 font-mono text-xs">
+          ({result.forensic.hardCapStatute})
+        </span>
+      )}
+    </AlertDescription>
+  </Alert>
+)}
+```
+
+**Contrast Notes**:
+- Title: `text-rose-400` on dark bg = excellent contrast
+- Description: `text-white/90` = 90% white for high readability
+- Statute: `text-rose-300` mono font for legal emphasis
+
+#### C. Overall Score Card - Updated Summary
+
+Update the summary text to prefer forensic headline when available:
+
+```typescript
+<p className="text-xs text-slate-400 max-w-sm mx-auto">
+  {result.forensic?.headline || result.summary}
+</p>
+```
+
+#### D. Statute Citations Card (Position: After Overall Score)
+
+**Condition**: `result.forensic?.statuteCitations?.length > 0`
+
+**Design Specifications**:
+- Use shadcn `Card` component
+- BookOpen icon for legal documentation feel
+- Amber/orange accent for warning context
+- Numbered list for clarity
+- Mobile: Full width, stacked items
+- Desktop: Same layout, more breathing room
+
+```typescript
+{result.forensic?.statuteCitations && result.forensic.statuteCitations.length > 0 && (
+  <Card className="border-amber-500/30 bg-amber-500/5">
+    <CardHeader className="pb-3">
+      <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
+        <BookOpen className="w-4 h-4 text-amber-400" />
+        Florida Law References
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="pt-0">
+      <ul className="space-y-2">
+        {result.forensic.statuteCitations.map((citation, idx) => (
+          <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
+            <span className="text-amber-400 font-mono text-xs mt-0.5 shrink-0">
+              {idx + 1}.
+            </span>
+            <span>{citation}</span>
+          </li>
+        ))}
+      </ul>
+    </CardContent>
+  </Card>
+)}
+```
+
+#### E. Questions to Ask Card (Position: After Statute Citations)
+
+**Condition**: `result.forensic?.questionsToAsk?.length > 0`
+
+**Design Specifications**:
+- Use shadcn `Card` component
+- HelpCircle icon for actionable guidance
+- Primary blue accent for positive action
+- Numbered list for checklist feel
+- Mobile: Full width, touch-friendly spacing
+
+```typescript
+{result.forensic?.questionsToAsk && result.forensic.questionsToAsk.length > 0 && (
+  <Card className="border-primary/30 bg-primary/5">
+    <CardHeader className="pb-3">
+      <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
+        <HelpCircle className="w-4 h-4 text-primary" />
+        Questions to Ask Before Signing
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="pt-0">
+      <ol className="space-y-2">
+        {result.forensic.questionsToAsk.map((question, idx) => (
+          <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
+            <span className="text-primary font-semibold min-w-[20px] shrink-0">
+              {idx + 1}.
+            </span>
+            <span>{question}</span>
+          </li>
+        ))}
+      </ol>
+    </CardContent>
+  </Card>
+)}
+```
+
+#### F. Positive Findings Card (Position: After Category Breakdown)
+
+**Condition**: `result.forensic?.positiveFindings?.length > 0`
+
+**Design Specifications**:
+- Use shadcn `Card` component
+- Award icon for achievement/positive feel
+- Emerald green accent for success
+- Checkmark bullets for visual confirmation
+- Mobile: Full width, celebration-worthy spacing
+
+```typescript
+{result.forensic?.positiveFindings && result.forensic.positiveFindings.length > 0 && (
+  <Card className="border-emerald-500/30 bg-emerald-500/5">
+    <CardHeader className="pb-3">
+      <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
+        <Award className="w-4 h-4 text-emerald-400" />
+        What This Quote Does Well
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="pt-0">
+      <ul className="space-y-2">
+        {result.forensic.positiveFindings.map((finding, idx) => (
+          <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+            <span>{finding}</span>
+          </li>
+        ))}
+      </ul>
+    </CardContent>
+  </Card>
+)}
+```
+
+---
+
+### 3. PartialResultsPanel.tsx - Hard Cap Teaser
+
+**Position**: After Overall Score Card, before category scores
+
+**Condition**: `result.forensic?.hardCapApplied === true`
+
+**Purpose**: Create curiosity to drive unlock conversion
+
+```typescript
+{result.forensic?.hardCapApplied && (
+  <Alert className="border-rose-500/30 bg-rose-500/5">
+    <AlertTriangle className="h-4 w-4 text-rose-400" />
+    <AlertDescription className="text-slate-300 text-sm">
+      This quote's score was <span className="text-rose-400 font-semibold">limited</span> due to a critical issue. 
+      <span className="text-white font-medium"> Unlock to see why.</span>
+    </AlertDescription>
+  </Alert>
+)}
+```
+
+---
+
+## Visual Hierarchy (Mobile-First)
 
 ```text
-supabase/functions/quote-scanner/
-├── deps.ts          (~15 lines)  ← SAFEGUARD 1: All pinned versions
-├── index.ts         (~200 lines) ← Clean orchestrator
-├── guards.ts        (~100 lines) ← Rate limit, IP, validation
-├── schema.ts        (~180 lines) ← Zod schemas, JSON schema, types
-├── rubric.ts        (~200 lines) ← EXTRACTION_RUBRIC, prompts
-├── scoring.ts       (~350 lines) ← Hard caps, curve, scoring logic
-└── forensic.ts      (~150 lines) ← Summary generator, citations
-
-src/types/
-└── audit.ts         (MODIFIED)   ← SAFEGUARD 3: Synced with backend
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     FULL RESULTS PANEL (MOBILE)                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ ✓ Full Report Unlocked                                (emerald)  │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│                                                                         │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ ⚖️ Score Limited to 25                                   (rose)   │  │
+│  │ Reason: No contractor license number visible                      │  │
+│  │ (F.S. 489.119)                                                    │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│                                                                         │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │              Quote Safety Score                                    │  │
+│  │                    25                                              │  │
+│  │                  Critical                                          │  │
+│  │      Score capped at 25 due to: Missing license                   │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│                                                                         │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ 📖 Florida Law References                             (amber)     │  │
+│  │ 1. F.S. 489.119 - No contractor license visible                   │  │
+│  │ 2. FL Building Code Section 1626 requires NOA                     │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│                                                                         │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ ❓ Questions to Ask Before Signing                    (primary)   │  │
+│  │ 1. What is your contractor license number?                        │  │
+│  │ 2. What are the NOA or Florida Product Approval numbers?          │  │
+│  │ 3. Can we restructure the payment schedule?                       │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│                                                                         │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ 🏆 Detailed Breakdown                                              │  │
+│  │ [Safety Score Row]                                                 │  │
+│  │ [Scope Score Row]                                                  │  │
+│  │ [Price Score Row]                                                  │  │
+│  │ [Fine Print Score Row]                                             │  │
+│  │ [Warranty Score Row]                                               │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│                                                                         │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ ✓ What This Quote Does Well                          (emerald)    │  │
+│  │ ✓ License number visible and verifiable                           │  │
+│  │ ✓ Product approval numbers included                               │  │
+│  │ ✓ Installation scope is well-documented                           │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│                                                                         │
+│  [Warnings Section - if any]                                            │
+│  [Missing Items - if any]                                               │
+│  [Escalation CTAs]                                                      │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Module Details
+## Contrast & Accessibility
 
-### 1. deps.ts (NEW - Safeguard 1)
+| Element | Background | Text Color | Contrast Ratio |
+|---------|------------|------------|----------------|
+| Hard Cap Title | `bg-rose-500/10` | `text-rose-400` | ~7:1 |
+| Hard Cap Description | `bg-rose-500/10` | `text-white/90` | ~12:1 |
+| Statute Citations | `bg-amber-500/5` | `text-slate-300` | ~8:1 |
+| Questions Header | `bg-primary/5` | `text-white` | ~14:1 |
+| Positive Findings | `bg-emerald-500/5` | `text-slate-300` | ~8:1 |
+| Card Titles | (any card bg) | `text-white` | ~14:1 |
 
-```typescript
-// Centralized dependency management - standard Deno practice
-// Change versions HERE to update all modules simultaneously
-
-export { createClient } from "npm:@supabase/supabase-js@2.39.7";
-export type { SupabaseClient } from "npm:@supabase/supabase-js@2.39.7";
-export { z } from "npm:zod@3.22.4";
-export type { ZodSchema, ZodError } from "npm:zod@3.22.4";
-```
-
-### 2. guards.ts (Extracted from index.ts)
-
-Moves these functions out of the main handler:
-- `getClientIp(req: Request): string`
-- `requireJson(req: Request): Promise<unknown>`
-- `capBodySize(body: unknown, maxBytes: number): void`
-- `checkRateLimit(identifier, endpoint, limit, windowMs)`
-- `handleGuardError(error: unknown): Response`
-- `corsHeaders` constant
-
-### 3. schema.ts (Extracted from index.ts)
-
-Contains all type definitions and validation:
-- `AnalysisContextSchema` (Zod)
-- `QuoteScannerRequestSchema` (Zod)
-- `ExtractionSignalsJsonSchema` (JSON Schema for AI structured output)
-- `ExtractionSignals` interface (TypeScript)
-- `AnalysisData` interface
-- `sanitizeForPrompt()` function
-
-### 4. rubric.ts (Extracted from index.ts)
-
-Contains the large string constants:
-- `EXTRACTION_RUBRIC` (169-line AI prompt)
-- `GRADING_RUBRIC` (question mode context)
-- `USER_PROMPT_TEMPLATE()` function
-
-### 5. scoring.ts (Enhanced - Safeguard 2)
-
-This is where the **Hybrid Rubric** logic lives:
-
-```typescript
-// Types returned by scoring module
-export interface HardCapResult {
-  applied: boolean;
-  ceiling: number;
-  reason: string | null;
-  statute: string | null;
-}
-
-export interface ScoredResult {
-  overallScore: number;
-  safetyScore: number;
-  scopeScore: number;
-  priceScore: number;
-  finePrintScore: number;
-  warrantyScore: number;
-  pricePerOpening: string;
-  warnings: string[];
-  missingItems: string[];
-  summary: string;
-  // NEW: Hard cap details for forensic module
-  hardCap: HardCapResult;
-}
-
-// Hard Caps (Florida Statute Alignment)
-function applyHardCaps(signals: ExtractionSignals, warnings: string[]): HardCapResult {
-  let ceiling = 100;
-  let reason: string | null = null;
-  let statute: string | null = null;
-
-  // CAP 1: Missing License = Max 25 (F.S. 489.119)
-  if (!signals.licenseNumberPresent) {
-    ceiling = 25;
-    reason = "No contractor license number visible";
-    statute = "F.S. 489.119";
-    warnings.push("CRITICAL: No license # found. Per F.S. 489.119, all Florida contractors must display their license number.");
-  }
-
-  // CAP 2: Owner-Builder Language = Max 25 (F.S. 489.103)
-  if (signals.hasOwnerBuilderLanguage && ceiling > 25) {
-    ceiling = 25;
-    reason = "Owner-Builder language transfers all liability to homeowner";
-    statute = "F.S. 489.103";
-    warnings.push("CRITICAL: 'Owner-Builder' language transfers ALL liability to you.");
-  }
-
-  // CAP 3: Deposit > 50% = Max 55 (F.S. 501.137)
-  if (signals.depositPercentage !== null && signals.depositPercentage > 50 && ceiling > 55) {
-    ceiling = 55;
-    reason = `Deposit of ${signals.depositPercentage}% exceeds 50%`;
-    statute = "F.S. 501.137";
-    warnings.push(`HIGH RISK: ${signals.depositPercentage}% deposit exceeds safe threshold.`);
-  }
-
-  // CAP 4: Tempered-Only = Max 30
-  if (signals.hasTemperedOnlyRisk && !signals.hasLaminatedMention && ceiling > 30) {
-    ceiling = 30;
-    reason = "Tempered glass without impact/laminated specification";
-    statute = null;
-    warnings.push("CRITICAL: Quote mentions 'tempered' glass but NO impact/laminated language.");
-  }
-
-  // CAP 5: Payment Before Completion = Max 40 (F.S. 489.126)
-  if (signals.hasPaymentBeforeCompletion && ceiling > 40) {
-    ceiling = 40;
-    reason = "Full payment required before work completion";
-    statute = "F.S. 489.126";
-    warnings.push("HIGH RISK: Contract requires full payment before work is complete.");
-  }
-
-  return {
-    applied: ceiling < 100,
-    ceiling,
-    reason,
-    statute,
-  };
-}
-
-// Score Curving (makes 90+ rare)
-function applyCurve(score: number): number {
-  if (score <= 70) return score;
-  const excess = score - 70;
-  return Math.round(70 + (30 * Math.pow(excess / 30, 1.8)));
-}
-```
-
-### 6. forensic.ts (NEW - Safeguard 2 Consumer)
-
-Generates the authority-building forensic summary:
-
-```typescript
-import type { ExtractionSignals } from "./schema.ts";
-import type { ScoredResult, HardCapResult } from "./scoring.ts";
-
-export interface ForensicSummary {
-  headline: string;
-  riskLevel: 'critical' | 'high' | 'moderate' | 'acceptable';
-  statuteCitations: string[];
-  questionsToAsk: string[];
-  positiveFindings: string[];
-  hardCapApplied: boolean;
-  hardCapReason: string | null;
-  hardCapStatute: string | null;
-}
-
-export function generateForensicSummary(
-  signals: ExtractionSignals,
-  scored: ScoredResult
-): ForensicSummary {
-  const { hardCap } = scored;  // SAFEGUARD 2: Explicit pass from scoring
-  
-  const citations: string[] = [];
-  const questions: string[] = [];
-  const positives: string[] = [];
-
-  // Build statute citations from hard cap
-  if (hardCap.statute) {
-    citations.push(`${hardCap.statute} - ${hardCap.reason}`);
-  }
-
-  // Add additional citations based on signals
-  if (!signals.licenseNumberPresent) {
-    questions.push("What is your contractor license number?");
-  }
-  if (signals.depositPercentage && signals.depositPercentage > 40) {
-    citations.push("F.S. 501.137 addresses advance payment regulations");
-    questions.push("Can we restructure the payment schedule?");
-  }
-  if (!signals.hasComplianceIdentifier) {
-    citations.push("FL Building Code Section 1626 requires NOA documentation");
-    questions.push("What are the NOA or Florida Product Approval numbers?");
-  }
-
-  // Positive findings for good quotes (B+ and above)
-  if (scored.overallScore >= 75) {
-    if (signals.licenseNumberPresent) {
-      positives.push("License number visible and verifiable");
-    }
-    if (signals.hasNOANumber) {
-      positives.push("Product approval numbers included");
-    }
-    if (signals.hasDetailedScope) {
-      positives.push("Installation scope is well-documented");
-    }
-    if (signals.hasLaborWarranty) {
-      positives.push("Labor warranty specified");
-    }
-  }
-
-  // Determine risk level
-  let riskLevel: ForensicSummary['riskLevel'];
-  if (scored.overallScore <= 30) riskLevel = 'critical';
-  else if (scored.overallScore <= 50) riskLevel = 'high';
-  else if (scored.overallScore <= 70) riskLevel = 'moderate';
-  else riskLevel = 'acceptable';
-
-  // Generate headline
-  let headline = "";
-  if (hardCap.applied) {
-    headline = `Score capped at ${hardCap.ceiling} due to: ${hardCap.reason}`;
-  } else if (riskLevel === 'critical') {
-    headline = "This quote has serious red flags. Do NOT sign without major revisions.";
-  } else if (riskLevel === 'high') {
-    headline = "This quote needs significant clarification before signing.";
-  } else if (riskLevel === 'moderate') {
-    headline = "This quote is acceptable but has gaps to address.";
-  } else {
-    headline = "This quote appears comprehensive. Verify license and NOA numbers before signing.";
-  }
-
-  return {
-    headline,
-    riskLevel,
-    statuteCitations: citations.slice(0, 3),
-    questionsToAsk: questions.slice(0, 5),
-    positiveFindings: positives,
-    hardCapApplied: hardCap.applied,
-    hardCapReason: hardCap.reason,
-    hardCapStatute: hardCap.statute,
-  };
-}
-```
-
-### 7. index.ts (Refactored Orchestrator)
-
-Clean, focused handler that imports from modules:
-
-```typescript
-// Clean imports from local modules
-import { createClient } from "./deps.ts";
-import { corsHeaders, getClientIp, requireJson, capBodySize, checkRateLimit, handleGuardError } from "./guards.ts";
-import { QuoteScannerRequestSchema, ExtractionSignalsJsonSchema, sanitizeForPrompt } from "./schema.ts";
-import type { ExtractionSignals } from "./schema.ts";
-import { EXTRACTION_RUBRIC, GRADING_RUBRIC, USER_PROMPT_TEMPLATE } from "./rubric.ts";
-import { scoreFromSignals } from "./scoring.ts";
-import { generateForensicSummary } from "./forensic.ts";
-import { logAttributionEvent } from "../_shared/attributionLogger.ts";
-
-Deno.serve(async (req) => {
-  // 1. CORS handling
-  // 2. Guard checks
-  // 3. Zod validation
-  // 4. Route by mode
-  // 5. For analyze: AI call → parse → scoreFromSignals → generateForensicSummary
-  // 6. Return response with forensic data included
-});
-```
+All combinations exceed WCAG AA minimum (4.5:1).
 
 ---
 
-## Frontend Type Updates (Safeguard 3)
+## Mobile Responsiveness
 
-File: `src/types/audit.ts`
+All new sections follow these mobile-first principles:
 
-**New interfaces to add:**
-
-```typescript
-// ═══════════════════════════════════════════════════════════════════════════
-// FORENSIC SUMMARY (Hybrid Rubric Output)
-// ═══════════════════════════════════════════════════════════════════════════
-
-/** Forensic summary from hybrid rubric analysis */
-export interface ForensicSummary {
-  headline: string;
-  riskLevel: 'critical' | 'high' | 'moderate' | 'acceptable';
-  statuteCitations: string[];
-  questionsToAsk: string[];
-  positiveFindings: string[];
-  hardCapApplied: boolean;
-  hardCapReason: string | null;
-  hardCapStatute: string | null;
-}
-
-/** Extracted contractor identity for future verification */
-export interface ExtractedIdentity {
-  contractorName: string | null;
-  licenseNumber: string | null;
-  noaNumbers: string[];
-}
-```
-
-**Update to AuditAnalysisResult:**
-
-```typescript
-/** Result from quote analysis (updated with forensic data) */
-export interface AuditAnalysisResult {
-  // Existing fields (unchanged)
-  overallScore: number;
-  safetyScore: number;
-  scopeScore: number;
-  priceScore: number;
-  finePrintScore: number;
-  warrantyScore: number;
-  pricePerOpening: string;
-  warnings: string[];
-  missingItems: string[];
-  summary: string;
-  analyzedAt: string;
-  
-  // NEW: Forensic Authority Fields (Hybrid Rubric)
-  forensic?: ForensicSummary;
-  extractedIdentity?: ExtractedIdentity;
-}
-```
+1. **Full Width**: All cards use `w-full` by default
+2. **Touch Targets**: List items have `py-2` minimum for 44px tap zones
+3. **Text Scaling**: Base text is `text-sm` (14px) which scales well
+4. **Padding**: Cards use `p-4` (16px) for comfortable mobile reading
+5. **Flex Wrap**: Inline elements wrap naturally on narrow screens
+6. **No Horizontal Scroll**: All content constrained to container width
 
 ---
 
 ## Implementation Sequence
 
-| Phase | Files | Lines Changed | Risk |
-|-------|-------|---------------|------|
-| 1 | `deps.ts` (create) | ~15 | Low |
-| 2 | `guards.ts` (create) | ~100 | Low |
-| 3 | `schema.ts` (create) | ~180 | Low |
-| 4 | `rubric.ts` (create) | ~200 | Low |
-| 5 | `scoring.ts` (create with hard caps) | ~350 | Medium |
-| 6 | `forensic.ts` (create) | ~150 | Low |
-| 7 | `index.ts` (refactor to orchestrator) | ~200 | Medium |
-| 8 | `src/types/audit.ts` (sync types) | ~40 | Low |
-| 9 | Deploy and test | - | - |
+| Step | File | Changes | Risk |
+|------|------|---------|------|
+| 1 | `useQuoteScanner.ts` | Add imports + extend interface | Low |
+| 2 | `FullResultsPanel.tsx` | Add Alert/Card imports + 4 sections | Medium |
+| 3 | `PartialResultsPanel.tsx` | Add hard cap teaser Alert | Low |
 
 ---
 
 ## Testing Checklist
 
-After implementation:
+After implementation, verify:
 
-- [ ] Edge function deploys without timeout (bundle size reduced)
-- [ ] All modules import from `deps.ts` (no direct npm: imports elsewhere)
-- [ ] Quote WITHOUT license shows: "Score capped at 25 due to: No contractor license number visible"
-- [ ] Quote with Owner-Builder language shows: "Score capped at 25 due to: Owner-Builder language"
-- [ ] Quote with 60% deposit shows: "Score capped at 55 due to: Deposit of 60% exceeds 50%"
-- [ ] Quote with "payment before work begins" shows: "Score capped at 40 due to: Full payment required"
-- [ ] Good quotes (B+) display "What This Quote Does Well" with positive findings
-- [ ] Frontend types compile without errors after `audit.ts` update
-- [ ] Cold start latency improved (target: < 2 seconds)
-
+- [ ] Quote WITHOUT license shows Hard Cap Alert with "Score Limited to 25"
+- [ ] Statute citation shows "F.S. 489.119" in amber card
+- [ ] "Questions to Ask" shows numbered list in blue card
+- [ ] Good quotes (B+) show "What This Quote Does Well" in green card
+- [ ] All text is readable on mobile (check in browser devtools)
+- [ ] No horizontal scroll on iPhone SE (320px width)
+- [ ] All forensic sections gracefully hide when data is absent
+- [ ] Hard cap teaser appears in PartialResultsPanel before unlock
+- [ ] TypeScript compiles without errors after interface sync
