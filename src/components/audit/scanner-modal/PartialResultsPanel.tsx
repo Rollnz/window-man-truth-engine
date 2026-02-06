@@ -110,13 +110,23 @@ export function PartialResultsPanel({ result, onUnlockClick }: PartialResultsPan
   
   return (
     <div className="space-y-6 px-4 py-6">
-      {/* Hard Cap Teaser (NEW) - Creates curiosity to drive conversion */}
+      {/* Hard Cap Teaser - Enhanced with statute reference for urgency */}
       {forensic?.hardCapApplied && (
-        <Alert className="border-rose-500/30 bg-rose-500/5">
-          <AlertTriangle className="h-4 w-4 text-rose-400" />
-          <AlertDescription className="text-slate-300 text-sm">
-            This quote's score was <span className="text-rose-400 font-semibold">limited</span> due to a critical issue.
-            <span className="text-white font-medium"> Unlock to see why.</span>
+        <Alert className="border-rose-500/50 bg-rose-500/10">
+          <AlertTriangle className="h-5 w-5 text-rose-400" />
+          <AlertDescription className="text-slate-200 text-sm space-y-1">
+            <span className="block font-semibold text-rose-400 uppercase tracking-wide text-xs">
+              ⚠️ Critical Issue Detected
+            </span>
+            <span className="block">
+              Score capped at <span className="text-rose-400 font-bold">{result.overallScore}</span>.
+              {forensic.hardCapStatute && (
+                <span className="text-rose-300"> This quote may violate {forensic.hardCapStatute}.</span>
+              )}
+            </span>
+            <span className="block text-white font-medium">
+              Unlock to see the specific violation and what to do about it.
+            </span>
           </AlertDescription>
         </Alert>
       )}
