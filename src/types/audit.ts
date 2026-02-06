@@ -127,10 +127,33 @@ export interface FileMetadata {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// FORENSIC SUMMARY (Hybrid Rubric Output)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Forensic summary from hybrid rubric analysis */
+export interface ForensicSummary {
+  headline: string;
+  riskLevel: 'critical' | 'high' | 'moderate' | 'acceptable';
+  statuteCitations: string[];
+  questionsToAsk: string[];
+  positiveFindings: string[];
+  hardCapApplied: boolean;
+  hardCapReason: string | null;
+  hardCapStatute: string | null;
+}
+
+/** Extracted contractor identity for future verification */
+export interface ExtractedIdentity {
+  contractorName: string | null;
+  licenseNumber: string | null;
+  noaNumbers: string[];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // ANALYSIS RESULTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Result from quote analysis (matches existing QuoteAnalysisResult) */
+/** Result from quote analysis (updated with forensic data) */
 export interface AuditAnalysisResult {
   overallScore: number;
   safetyScore: number;
@@ -143,6 +166,10 @@ export interface AuditAnalysisResult {
   missingItems: string[];
   summary: string;
   analyzedAt: string;
+  
+  // NEW: Forensic Authority Fields (Hybrid Rubric)
+  forensic?: ForensicSummary;
+  extractedIdentity?: ExtractedIdentity;
 }
 
 /** Teaser data shown before lead gate (partial results) */
