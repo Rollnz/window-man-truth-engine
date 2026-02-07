@@ -1,267 +1,257 @@
 
 
-# Deferred Third-Party Script Loading — Performance Optimization Plan
+# Attribution Race Condition Audit — Analysis & Fix
 
-## Problem Analysis
+## Executive Summary
 
-### Current State (index.html)
-```html
-<!-- Lines 26-36: GTM loads SYNCHRONOUSLY during HTML parse -->
-<script>
-  var productionDomain = 'itswindowman.com';
-  
-  if (window.location.hostname === productionDomain || ...) {
-    // GTM script injection - BLOCKS CRITICAL RENDERING PATH
-    (function(w,d,s,l,i){...})(window,document,'script','dataLayer','...');
-  }
-</script>
-```
+**STATUS: MODERATE RISK IDENTIFIED** ⚠️
 
-### Why This Is Slow
+The current implementation has a timing vulnerability that could cause attribution loss for very fast bounces or React Router navigation. While React Router doesn't actively strip UTMs, the deferred initialization pattern creates a window where GTM could miss attribution data.
+
+---
+
+## Current Timing Analysis
+
+### Execution Timeline (Current)
 
 ```text
-Browser Parse Timeline (Current)
-────────────────────────────────────────────────────────────────────
-HTML Parse Start
+index.html parses (t=0)
     │
-    ├── <head> processing
-    │   ├── Font preconnects ✓
-    │   ├── Resource hints ✓
-    │   └── GTM INLINE SCRIPT ← BLOCKS PARSE (lines 26-36)
-    │         │
-    │         ├── Evaluates JS synchronously
-    │         ├── Creates script element
-    │         ├── Injects gtm.js (async=true, but damage done)
-    │         └── GTM loads Meta Pixel, Clarity, etc.
+    ├── window.dataLayer = [] (IMMEDIATE) ✓
     │
-    ├── <body> parse begins
-    │   └── React mounts (#root)
-    │
-    └── FCP (First Contentful Paint) ← DELAYED BY GTM PARSE
-```
-
-**Impact on Core Web Vitals:**
-- **FCP (First Contentful Paint)**: GTM inline script blocks HTML parser
-- **LCP (Largest Contentful Paint)**: Delayed by competing network requests
-- **TBT (Total Blocking Time)**: GTM + downstream scripts (Pixel, Clarity) run on main thread
-
-### Verification: No Duplicate Pixel Loading
-
-**Search Results Confirm:**
-- ✅ Meta Pixel is loaded via GTM (no `fbevents.js` in index.html)
-- ✅ Code reads `_fbp` and `_fbc` cookies (set by GTM-loaded Pixel)
-- ✅ No hardcoded Pixel initialization in codebase
-
----
-
-## Solution Options Comparison
-
-| Approach | Complexity | Performance Gain | Risk |
-|----------|------------|-----------------|------|
-| **Partytown (Web Worker)** | High | Maximum | High - can break advanced GTM features |
-| **Delayed Injection (2s)** | Low | Good | Low - simple, predictable |
-| **Window Load Event** | Low | Medium | Low - fires after LCP complete |
-
-### Recommendation: Delayed Window Load Injection
-
-Partytown requires careful configuration and can break GTM triggers that depend on main-thread DOM access. For this project's analytics setup (Meta CAPI, GA4 Enhanced Conversions), a simpler **window load + delay** approach is safer and still highly effective.
-
----
-
-## Implementation Plan
-
-### Phase 1: Move GTM to Deferred Loading
-
-**Current (Synchronous - Blocks Parse):**
-```html
-<script>
-  // Runs immediately during HTML parse
-  (function(w,d,s,l,i){...})(window,document,'script','dataLayer','...');
-</script>
-```
-
-**Refactored (Deferred - After Window Load + 2s):**
-```html
-<script>
-  // GTM configuration - does NOT block parse
-  window.dataLayer = window.dataLayer || [];
-  
-  var productionDomain = 'itswindowman.com';
-  var isProduction = window.location.hostname === productionDomain || 
-                     window.location.hostname === 'www.' + productionDomain;
-  
-  if (!isProduction) {
-    console.log('[GTM] Blocked on non-production domain:', window.location.hostname);
-  }
-  
-  // Defer GTM injection to after page is interactive
-  function loadGTM() {
-    if (!isProduction) return;
+    └── GTM load scheduled for window.load + 2s
     
-    // Standard GTM snippet - now runs post-LCP
-    window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-    var j = document.createElement('script');
-    j.async = true;
-    j.src = 'https://lunaa.itswindowman.com/76bwidfqcvb.js?' + 
-            'dwjnsf8=CxJeNjIpRDkqICUjUzUzURRLUV9XQg0ZXx8XAhENBxMNAQ4QCEoKGA8%3D';
-    document.head.appendChild(j);
-    
-    console.log('[GTM] Loaded (deferred, post-interactive)');
-  }
-  
-  // Strategy: Wait for window load, then add 2s buffer
-  // This ensures:
-  // 1. DOM is complete (DOMContentLoaded)
-  // 2. All critical resources loaded (load event)
-  // 3. React has mounted and painted
-  // 4. 2s buffer for hydration to complete
-  if (document.readyState === 'complete') {
-    setTimeout(loadGTM, 2000);
-  } else {
-    window.addEventListener('load', function() {
-      setTimeout(loadGTM, 2000);
-    }, { once: true });
-  }
-</script>
+main.tsx executes (t=~50ms)
+    │
+    ├── createRoot().render() - React mounts
+    │
+    ├── scheduleWhenIdle(initializeAttribution) - 500ms delay
+    │   └── Captures UTMs → localStorage (t=~550ms)
+    │
+    └── scheduleWhenIdle(reconcileIdentities) - 1000ms delay
+        └── Sets up Golden Thread (t=~1000ms)
+
+window.load fires (t=~1-3s)
+    │
+    └── setTimeout(loadGTM, 2000) scheduled
+
+GTM loads (t=~3-5s)
+    │
+    └── Reads window.location for UTMs
+    └── ❓ URL may still have UTMs OR may have been cleaned
 ```
 
-### Phase 2: Remove Blocking Preconnects for Deferred Resources
+### What's Protected (Already Safe)
 
-Since GTM is now deferred, we can also defer the preconnect hints (they currently compete with critical resources):
+| System | Where | Timing | Safe? |
+|--------|-------|--------|-------|
+| Golden Thread ID | `getGoldenThreadId()` | Lazy getter | ✅ Yes |
+| localStorage persistence | `attribution.ts` | 500ms deferred | ⚠️ Mostly |
+| Cookie capture (_fbc, _fbp) | `attribution.ts` | 500ms deferred | ⚠️ Mostly |
+| Lead form submissions | Various | User-initiated | ✅ Yes |
 
-**Current:**
-```html
-<link rel="preconnect" href="https://connect.facebook.net" crossorigin />
-<link rel="preconnect" href="https://scripts.clarity.ms" crossorigin />
-```
+### What's At Risk
 
-**Refactored:** Remove these preconnects entirely (or move to late injection). GTM will establish connections when it loads after the delay.
-
-**Keep:** The Stape/GTM preconnect is still useful since it's the first third-party to load:
-```html
-<link rel="preconnect" href="https://lunaa.itswindowman.com" crossorigin />
-```
-
-### Phase 3: Ensure dataLayer Events Queue Correctly
-
-The early dataLayer initialization ensures events pushed before GTM loads are still captured:
-
-```html
-<script>
-  window.dataLayer = window.dataLayer || [];
-</script>
-```
-
-Events pushed by React components (via `trackEvent()`) before GTM loads will queue in the array. When GTM finally loads, it processes the queue automatically.
-
-**Verification:** The `ensureDataLayer()` function in `gtm.ts` already handles this:
-```typescript
-function ensureDataLayer(): void {
-  if (typeof window !== 'undefined' && !window.dataLayer) {
-    window.dataLayer = [];
-  }
-}
-```
+| Risk | Impact | Probability |
+|------|--------|-------------|
+| GTM sees clean URL | Direct traffic in GA4/Meta | Low (React Router doesn't strip) |
+| Early dataLayer events lack UTMs | Engagement events mis-attributed | Medium |
+| URL cleaned by external redirect | Lost attribution | Low |
 
 ---
 
-## New Execution Timeline
+## Findings: No Active URL Cleaning
+
+**Good news**: Search of the codebase confirms:
+
+1. ✅ **No `replaceState`/`pushState` URL cleaning** - React Router preserves query strings
+2. ✅ **No `searchParams.delete()` for UTMs** - Only one usage (admin tabs, unrelated)
+3. ✅ **No third-party libraries stripping params** - Clean implementation
+
+**However**, the deferred `initializeAttribution()` (500ms delay) means:
+- Very early dataLayer pushes may lack attribution context
+- If a user bounces in < 500ms, attribution might not be persisted
+
+---
+
+## The Gap: No Early dataLayer Push
+
+**Critical Finding**: Currently, UTM parameters are:
+1. ✅ Captured to localStorage (via `initializeAttribution()` - 500ms delay)
+2. ✅ Included in lead form submissions (via `getAttributionData()`)
+3. ❌ **NOT pushed to dataLayer as a standalone event**
+
+When GTM loads (3-5s after page load), it reads `window.location.href` to get UTMs. This works **IF the URL hasn't changed**. But for SPA navigations within those 3-5 seconds, the URL might now be `/cost-calculator` instead of `/?utm_source=facebook&...`.
+
+---
+
+## Recommended Fix: Early Attribution Capture
+
+### Pattern: "Capture-Then-Queue"
+
+Add a synchronous, lightweight snippet to `index.html` that:
+1. Reads `window.location.search` immediately (before React)
+2. Parses all UTM/Click-ID parameters
+3. Pushes to `dataLayer` as a "seed" event
+4. GTM picks up these values from the queue when it loads
+
+### Implementation Plan
+
+**Modify: `index.html`**
+
+Add a new inline script (synchronous, < 1KB) **before** the GTM script:
+
+```html
+<!-- Attribution Capture (SYNCHRONOUS - runs before React) -->
+<script>
+  // Early Attribution Capture - Immunizes against GTM deferral
+  // This runs IMMEDIATELY during HTML parse, before any URL cleaning
+  (function() {
+    'use strict';
+    
+    // Initialize dataLayer first
+    window.dataLayer = window.dataLayer || [];
+    
+    // Parse current URL (guaranteed to have UTMs if they were present)
+    var url = new URL(window.location.href);
+    var params = url.searchParams;
+    
+    // Extract attribution parameters
+    var attribution = {
+      utm_source: params.get('utm_source') || undefined,
+      utm_medium: params.get('utm_medium') || undefined,
+      utm_campaign: params.get('utm_campaign') || undefined,
+      utm_term: params.get('utm_term') || undefined,
+      utm_content: params.get('utm_content') || undefined,
+      gclid: params.get('gclid') || undefined,
+      fbclid: params.get('fbclid') || undefined,
+      msclkid: params.get('msclkid') || undefined,
+      // Capture the ORIGINAL landing page with full query string
+      original_location: window.location.href,
+      page_path: window.location.pathname
+    };
+    
+    // Check if we have any meaningful attribution
+    var hasAttribution = attribution.utm_source || attribution.gclid || 
+                         attribution.fbclid || attribution.msclkid;
+    
+    if (hasAttribution) {
+      // Push to dataLayer - will be queued until GTM loads
+      window.dataLayer.push({
+        event: 'attribution_captured',
+        attribution_source: 'early_capture',
+        ...attribution
+      });
+      
+      // Also persist to sessionStorage for cross-page safety
+      try {
+        sessionStorage.setItem('wm_early_attribution', JSON.stringify(attribution));
+      } catch(e) {}
+      
+      console.log('[Attribution] Early capture:', attribution.utm_source || attribution.gclid || 'click-id');
+    }
+    
+    // Always capture the original landing URL (even without UTMs)
+    // This ensures GTM can reference it later
+    window.dataLayer.push({
+      original_page_location: window.location.href,
+      original_page_path: window.location.pathname,
+      original_referrer: document.referrer || 'direct'
+    });
+  })();
+</script>
+```
+
+### Key Properties of This Fix
+
+| Property | Value |
+|----------|-------|
+| **Timing** | Synchronous, before React, before GTM |
+| **Size** | < 1KB minified (no FCP impact) |
+| **Blocking** | ~1-2ms execution (negligible) |
+| **Fallback** | sessionStorage backup for cross-page persistence |
+| **GTM Integration** | `attribution_captured` event available in GTM triggers |
+
+---
+
+## Updated Timeline (After Fix)
 
 ```text
-Browser Parse Timeline (Optimized)
-────────────────────────────────────────────────────────────────────
-HTML Parse Start
+index.html parses (t=0)
     │
-    ├── <head> processing
-    │   ├── Font preconnects ✓
-    │   ├── Supabase preconnect ✓
-    │   ├── Stape preconnect ✓ (keeps connection warm for later)
-    │   └── GTM CONFIG ONLY (no blocking) ✓
-    │         └── Registers load event listener
+    ├── EARLY CAPTURE SCRIPT (NEW) ⬅️
+    │   ├── Reads window.location.search IMMEDIATELY
+    │   ├── Pushes attribution_captured to dataLayer
+    │   └── Persists to sessionStorage
     │
-    ├── <body> parse (FAST - no competition)
-    │   └── React mounts (#root)
+    ├── window.dataLayer initialized (contains attribution!)
     │
-    ├── FCP (First Contentful Paint) ← NOW MUCH FASTER
+    └── GTM load scheduled for window.load + 2s
+
+main.tsx executes (t=~50ms)
     │
-    ├── LCP (Largest Contentful Paint)
+    ├── createRoot().render() - React mounts
     │
-    ├── window.load fires
+    └── scheduleWhenIdle(initializeAttribution) - 500ms delay
+        └── Captures UTMs → localStorage (redundant but safe)
+
+React Router navigates (t=~100ms)
     │
-    └── +2000ms: GTM LOADS
-          │
-          ├── Processes queued dataLayer events
-          ├── Loads Meta Pixel (no duplicate)
-          └── Loads Clarity
+    └── URL changes to /new-page (UTMs stripped from URL bar)
+        └── ✅ SAFE: Attribution already captured in dataLayer
+
+GTM loads (t=~3-5s)
+    │
+    └── Processes queued events
+    └── Finds attribution_captured event with UTMs
+    └── ✅ Correct attribution reported
 ```
 
 ---
 
 ## Files to Modify
 
-| Action | File | Changes |
-|--------|------|---------|
-| **Modify** | `index.html` | Refactor GTM injection to use window load + delay |
+| Action | File | Change |
+|--------|------|--------|
+| **Modify** | `index.html` | Add early attribution capture script before GTM script |
+
+---
+
+## GTM Configuration Recommendations
+
+After implementing the early capture, configure GTM to use these dataLayer variables:
+
+| Variable Name | DataLayer Key | Use Case |
+|---------------|---------------|----------|
+| `DL - UTM Source` | `utm_source` | GA4 campaign tracking |
+| `DL - UTM Medium` | `utm_medium` | GA4 campaign tracking |
+| `DL - GCLID` | `gclid` | Google Ads conversion tracking |
+| `DL - FBCLID` | `fbclid` | Meta CAPI matching |
+| `DL - Original Location` | `original_page_location` | Full URL with UTMs |
+
+Create a GTM Trigger: `attribution_captured` event, which fires for any page load with UTMs.
 
 ---
 
 ## Success Criteria
 
 After implementation:
-- [ ] Mobile Performance score increases from ~40% to 60%+ (target 70%+)
-- [ ] FCP improves by 500-1000ms on mobile connections
-- [ ] Console shows `[GTM] Loaded (deferred, post-interactive)` ~2s after page load
-- [ ] All tracking events still fire (queued before GTM, processed after)
-- [ ] No duplicate Pixel loading (already verified)
-- [ ] Meta CAPI events continue to match correctly (fbclid, _fbp, _fbc preserved)
+- [ ] Console shows `[Attribution] Early capture: facebook` (or source) on UTM landing
+- [ ] `dataLayer` contains `attribution_captured` event before GTM loads
+- [ ] GA4 reports show correct campaign attribution (not all Direct)
+- [ ] Meta Events Manager shows UTM parameters in events
+- [ ] sessionStorage contains `wm_early_attribution` on pages with UTMs
+- [ ] Mobile Lighthouse score unchanged (< 2ms script execution)
 
 ---
 
-## Technical Notes
+## Alternative Considered: Partytown / Web Worker
 
-### Why Not Partytown?
+We considered using Partytown to run GTM in a Web Worker, which would allow GTM to "freeze" the URL state. However:
 
-Partytown moves scripts to a Web Worker, which sounds ideal but:
-1. **GTM Trigger Compatibility**: GTM triggers often rely on DOM element visibility, scroll position, etc. Web Workers can't access the DOM directly.
-2. **Meta Pixel**: Uses cookies and DOM events that may not proxy correctly.
-3. **Setup Complexity**: Requires Vite plugin configuration and careful allowlist management.
-4. **Debugging**: Harder to debug tracking issues when scripts run in a worker.
+1. **GTM trigger compatibility**: Many GTM triggers rely on main-thread DOM access
+2. **Complexity**: Requires Vite plugin + service worker setup
+3. **Diminishing returns**: Early capture provides same protection with 10x less complexity
 
-For a site with sophisticated GTM/Meta CAPI integration, the simpler "delay" approach is safer.
-
-### Why 2 Seconds After Load?
-
-- **< 1s**: Risks overlapping with React hydration on slow devices
-- **2s**: Sweet spot - page is definitely interactive
-- **> 3s**: Risk losing early page view events
-
-### Will This Break Anything?
-
-**Won't break:**
-- Page view tracking (events queue in dataLayer)
-- Conversion tracking (user-initiated, happens well after 2s)
-- Attribution (UTM params captured in React, not GTM)
-- CAPI matching (cookies set by Pixel persist across page loads)
-
-**Edge case:**
-- Immediate bounce (user leaves < 2s): No analytics recorded
-- This is acceptable — these users weren't going to convert anyway
-
----
-
-## Alternative: Future Partytown Migration
-
-If you want maximum performance later, we can add Partytown in a separate effort:
-
-```bash
-npm install @builder.io/partytown
-```
-
-This would require:
-1. Vite plugin configuration
-2. Service worker setup for script proxying
-3. Careful testing of all GTM triggers
-4. Meta Pixel compatibility testing
-
-For now, the deferred loading approach gives 80% of the benefit with 20% of the complexity.
+The synchronous early capture script is the simplest, safest solution.
 
