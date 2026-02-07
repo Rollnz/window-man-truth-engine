@@ -372,6 +372,7 @@ export type Database = {
           client_id: string | null
           client_user_agent: string | null
           created_at: string | null
+          device_type: string | null
           email: string
           emotional_state: string | null
           fbc: string | null
@@ -380,7 +381,10 @@ export type Database = {
           first_touch: Json | null
           gclid: string | null
           id: string
+          identity_version: number | null
           insurance_carrier: string | null
+          ip_hash: string | null
+          landing_page: string | null
           last_activity_at: string | null
           last_evidence: Json | null
           last_name: string | null
@@ -397,7 +401,9 @@ export type Database = {
           lead_type: string | null
           msclkid: string | null
           name: string | null
+          original_session_id: string | null
           phone: string | null
+          referrer: string | null
           session_data: Json | null
           source_form: string | null
           source_page: string | null
@@ -421,6 +427,7 @@ export type Database = {
           client_id?: string | null
           client_user_agent?: string | null
           created_at?: string | null
+          device_type?: string | null
           email: string
           emotional_state?: string | null
           fbc?: string | null
@@ -429,7 +436,10 @@ export type Database = {
           first_touch?: Json | null
           gclid?: string | null
           id?: string
+          identity_version?: number | null
           insurance_carrier?: string | null
+          ip_hash?: string | null
+          landing_page?: string | null
           last_activity_at?: string | null
           last_evidence?: Json | null
           last_name?: string | null
@@ -446,7 +456,9 @@ export type Database = {
           lead_type?: string | null
           msclkid?: string | null
           name?: string | null
+          original_session_id?: string | null
           phone?: string | null
+          referrer?: string | null
           session_data?: Json | null
           source_form?: string | null
           source_page?: string | null
@@ -470,6 +482,7 @@ export type Database = {
           client_id?: string | null
           client_user_agent?: string | null
           created_at?: string | null
+          device_type?: string | null
           email?: string
           emotional_state?: string | null
           fbc?: string | null
@@ -478,7 +491,10 @@ export type Database = {
           first_touch?: Json | null
           gclid?: string | null
           id?: string
+          identity_version?: number | null
           insurance_carrier?: string | null
+          ip_hash?: string | null
+          landing_page?: string | null
           last_activity_at?: string | null
           last_evidence?: Json | null
           last_name?: string | null
@@ -495,7 +511,9 @@ export type Database = {
           lead_type?: string | null
           msclkid?: string | null
           name?: string | null
+          original_session_id?: string | null
           phone?: string | null
+          referrer?: string | null
           session_data?: Json | null
           source_form?: string | null
           source_page?: string | null

@@ -13,6 +13,17 @@ export interface AttributionEventParams {
   pageTitle?: string;
   eventData?: Record<string, unknown>;
   leadId?: string;
+  /**
+   * GOLDEN THREAD v4: Pass the Golden Thread ID (clientId from request payload).
+   * 
+   * CRITICAL: This value should be the visitor's canonical ID (wte-anon-id from frontend),
+   * passed through sessionData.clientId in the request. This ensures:
+   * - wm_sessions.anonymous_id matches leads.client_id
+   * - CRM attribution chain works correctly via handle_new_lead_to_crm trigger
+   * - Proper joins between sessions and leads for analytics
+   * 
+   * Only falls back to `edge-fn-*` format if clientId is truly unavailable.
+   */
   anonymousIdFallback?: string;
 }
 

@@ -584,6 +584,12 @@ serve(async (req) => {
       enrichedZip = enrichedZip || geoData.zip;
     }
 
+    // Compute ip_hash for identity fingerprinting
+    const ipHash = clientIp !== 'unknown' 
+      ? await crypto.subtle.digest('SHA-256', new TextEncoder().encode(clientIp))
+          .then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''))
+      : null;
+
     // Build the lead record with all fields
     const leadRecord = {
       email: normalizedEmail,
@@ -596,6 +602,20 @@ serve(async (req) => {
       chat_history: chatHistory || [],
       // Anonymous identity for Truth Engine ownership validation
       client_id: clientId,
+      // ═══════════════════════════════════════════════════════════════════════
+      // GOLDEN THREAD v4: Identity versioning for analytics segmentation
+      // 2 = Golden Thread (unified wte-anon-id), 1 = legacy (mixed ID sources)
+      // ═══════════════════════════════════════════════════════════════════════
+      identity_version: 2,
+      // ═══════════════════════════════════════════════════════════════════════
+      // GOLDEN THREAD v4: 5 new attribution columns for complete CRM data
+      // ═══════════════════════════════════════════════════════════════════════
+      original_session_id: sessionId || null,
+      device_type: clientUserAgent?.includes('Mobile') ? 'mobile' : 
+                   clientUserAgent?.includes('Tablet') ? 'tablet' : 'desktop',
+      referrer: referer || null,
+      landing_page: aiContext?.source_form || lastNonDirect?.landing_page || null,
+      ip_hash: ipHash,
       // Attribution fields (last-touch)
       utm_source: attribution?.utm_source || null,
       utm_medium: attribution?.utm_medium || null,
@@ -703,6 +723,11 @@ serve(async (req) => {
           session_data: sessionData || {},
           chat_history: chatHistory || [],
           updated_at: new Date().toISOString(),
+          // ═══════════════════════════════════════════════════════════════════════
+          // GOLDEN THREAD v4: Upgrade identity version on re-engagement
+          // This ensures returning users get upgraded to v2 identity tracking
+          // ═══════════════════════════════════════════════════════════════════════
+          identity_version: 2,
           // AI Context always updates (last-touch for context)
           source_form: aiContext?.source_form || undefined,
           specific_detail: aiContext?.specific_detail || undefined,
@@ -1054,7 +1079,8 @@ serve(async (req) => {
           utm_source: attribution?.utm_source || null,
           utm_medium: attribution?.utm_medium || null,
         },
-        anonymousIdFallback: `lead-${leadId}`,
+        // GOLDEN THREAD v4: Pass actual clientId to ensure wm_sessions.anonymous_id matches leads.client_id
+        anonymousIdFallback: clientId || `lead-${leadId}`,
       });
     } else {
       console.warn('Golden Thread: No sessionId provided - wm_events event not persisted');
