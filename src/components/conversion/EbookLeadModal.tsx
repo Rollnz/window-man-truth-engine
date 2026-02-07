@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
+import { useFormLock } from '@/hooks/forms';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useCanonicalScore, getOrCreateAnonId } from '@/hooks/useCanonicalScore';
@@ -47,11 +48,13 @@ export function EbookLeadModal({
   config,
 }: EbookLeadModalProps) {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [modalOpenTime, setModalOpenTime] = useState<number>(0);
+  
+  // Form lock for double-submit protection
+  const { isLocked, lockAndExecute } = useFormLock();
 
   const { sessionData, updateFields } = useSessionData();
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
@@ -111,11 +114,9 @@ export function EbookLeadModal({
       return;
     }
 
-    setIsLoading(true);
+    await lockAndExecute(async () => {
+      const normalizedNames = normalizeNameFields(values.firstName, lastName);
 
-    const normalizedNames = normalizeNameFields(values.firstName, lastName);
-
-    try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`,
         {
@@ -216,20 +217,11 @@ export function EbookLeadModal({
       } else {
         throw new Error(data.error || 'Failed to save');
       }
-    } catch (error) {
-      console.error('Ebook lead capture error:', error);
-      toast({
-        title: 'Unable to save',
-        description: error instanceof Error ? error.message : 'Please try again',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   const handleClose = () => {
-    if (!isLoading) {
+    if (!isLocked) {
       if (!isSuccess && modalOpenTime > 0) {
         const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000);
         trackEvent('modal_abandon', {
@@ -287,7 +279,7 @@ export function EbookLeadModal({
                   autoComplete="given-name"
                   placeholder="John"
                   {...getFieldProps('firstName')}
-                  disabled={isLoading}
+                  disabled={isLocked}
                   autoFocus
                   onFocus={handleFirstFieldFocus}
                   className={hasError('firstName') ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -309,7 +301,7 @@ export function EbookLeadModal({
                   placeholder="Smith"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  disabled={isLoading}
+                  disabled={isLocked}
                 />
               </div>
             </div>
@@ -326,7 +318,7 @@ export function EbookLeadModal({
                   autoComplete="email"
                   placeholder="you@email.com"
                   {...getFieldProps('email')}
-                  disabled={isLoading}
+                  disabled={isLocked}
                   className={hasError('email') ? 'border-destructive focus-visible:ring-destructive' : ''}
                   aria-invalid={hasError('email')}
                 />
@@ -346,7 +338,7 @@ export function EbookLeadModal({
                   placeholder="(555) 123-4567"
                   value={phone}
                   onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
-                  disabled={isLoading}
+                  disabled={isLocked}
                 />
               </div>
             </div>
@@ -355,9 +347,9 @@ export function EbookLeadModal({
               type="submit"
               variant="cta"
               className="w-full"
-              disabled={isLoading || !values.firstName.trim() || !values.email.trim()}
+              disabled={isLocked || !values.firstName.trim() || !values.email.trim()}
             >
-              {isLoading ? (
+              {isLocked ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Sending...

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
+import { useFormLock } from '@/hooks/forms';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useCanonicalScore, getOrCreateAnonId } from '@/hooks/useCanonicalScore';
@@ -35,7 +36,6 @@ interface SampleReportAccessGateProps {
  */
 export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleReportAccessGateProps) {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -45,6 +45,9 @@ export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleRep
   const { awardScore } = useCanonicalScore();
   const effectiveLeadId = hookLeadId || getLeadAnchor();
   const hasFiredTrackingRef = useRef(false);
+  
+  // Form lock for double-submit protection
+  const { isLocked, lockAndExecute } = useFormLock();
 
   // Progressive gate logic
   const {
@@ -133,10 +136,10 @@ export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleRep
       });
       return; 
     }
-    setIsLoading(true);
-    const normalizedNames = normalizeNameFields(firstName, lastName);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`, { 
+    
+    await lockAndExecute(async () => {
+      const normalizedNames = normalizeNameFields(firstName, lastName);
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`, {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` }, 
         body: JSON.stringify({ 
@@ -181,17 +184,7 @@ export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleRep
         toast({ title: 'Access Granted!', description: 'Enjoy the sample report.' });
         setTimeout(() => { onSuccess(data.leadId); }, 1200);
       } else { throw new Error(data.error || 'Failed to save'); }
-    } catch (error) { 
-      console.error('Sample report gate error:', error); 
-      trackEvent('sample_report_gate_error', { 
-        error_message: error instanceof Error ? error.message : 'unknown',
-        attempt_number: attemptCount + 1,
-        lock_level: lockLevel
-      });
-      toast({ title: 'Unable to unlock', description: error instanceof Error ? error.message : 'Please try again', variant: 'destructive' }); 
-    } finally { 
-      setIsLoading(false); 
-    }
+    });
   };
 
   // Handle dialog close attempt
@@ -212,7 +205,7 @@ export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleRep
   const emailProps = getFieldProps('email'); 
   const emailHasError = hasError('email'); 
   const emailError = getError('email');
-  const btnDisabled = isLoading || !values.email.trim() || !firstName.trim() || !lastName.trim();
+  const btnDisabled = isLocked || !values.email.trim() || !firstName.trim() || !lastName.trim();
 
   // Dynamic header content based on lock level
   const getHeaderContent = () => {
@@ -295,19 +288,19 @@ export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleRep
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-            <NameInputPair firstName={firstName} lastName={lastName} onFirstNameChange={setFirstName} onLastNameChange={setLastName} disabled={isLoading} autoFocus />
+            <NameInputPair firstName={firstName} lastName={lastName} onFirstNameChange={setFirstName} onLastNameChange={setLastName} disabled={isLocked} autoFocus />
             <div className="space-y-2">
-              <Label htmlFor="email" className={`font-semibold text-slate-900 ${emailHasError ? 'text-destructive' : ''}`}>Email Address <span className="text-destructive">*</span></Label>
-              <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" {...emailProps} disabled={isLoading} className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''} aria-invalid={emailHasError} aria-describedby={emailHasError ? 'email-error' : undefined} />
+              <Label htmlFor="email" className={`font-semibold text-foreground ${emailHasError ? 'text-destructive' : ''}`}>Email Address <span className="text-destructive">*</span></Label>
+              <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" {...emailProps} disabled={isLocked} className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''} aria-invalid={emailHasError} aria-describedby={emailHasError ? 'email-error' : undefined} />
               {emailHasError && <p id="email-error" className="text-sm text-destructive">{emailError}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone" className="font-semibold text-slate-900">Phone <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input id="phone" name="phone" type="tel" autoComplete="tel" placeholder="(555) 123-4567" value={phone} onChange={(e) => setPhone(formatPhoneNumber(e.target.value))} disabled={isLoading} />
+              <Label htmlFor="phone" className="font-semibold text-foreground">Phone <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input id="phone" name="phone" type="tel" autoComplete="tel" placeholder="(555) 123-4567" value={phone} onChange={(e) => setPhone(formatPhoneNumber(e.target.value))} disabled={isLocked} />
               <p className="text-xs text-muted-foreground">Only if you'd like a free call about the audit</p>
             </div>
             <Button type="submit" variant="cta" className="w-full" disabled={btnDisabled}>
-              {isLoading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Unlocking...</>) : (<><Shield className="mr-2 h-4 w-4" />Unlock Sample Report</>)}
+              {isLocked ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Unlocking...</>) : (<><Shield className="mr-2 h-4 w-4" />Unlock Sample Report</>)}
             </Button>
             <div className="flex items-center justify-center gap-4 pt-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1"><Check className="w-3 h-3 text-primary" />100% Free</span>
