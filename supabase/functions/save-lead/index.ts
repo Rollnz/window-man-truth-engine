@@ -132,6 +132,69 @@ function getClientIp(req: Request): string {
   return 'unknown';
 }
 
+// ============= IP Geo Enrichment =============
+// Auto-fill city/state/zip from IP when missing (EMQ 9.5+ improvement)
+
+interface GeoData {
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  zip: string | null;
+}
+
+async function enrichGeoFromIP(clientIp: string): Promise<GeoData> {
+  const emptyResult: GeoData = { city: null, state: null, country: null, zip: null };
+  
+  // Skip private/local IPs
+  if (
+    clientIp === 'unknown' ||
+    clientIp.startsWith('127.') ||
+    clientIp.startsWith('192.168.') ||
+    clientIp.startsWith('10.') ||
+    clientIp.startsWith('172.16.') ||
+    clientIp === '::1'
+  ) {
+    return emptyResult;
+  }
+
+  try {
+    // Use ip-api.com (free tier: 45 requests/minute, no API key required)
+    const response = await fetch(
+      `http://ip-api.com/json/${clientIp}?fields=status,country,regionName,city,zip`,
+      { signal: AbortSignal.timeout(3000) } // 3 second timeout
+    );
+
+    if (!response.ok) {
+      console.warn('[save-lead] Geo API returned non-OK:', response.status);
+      return emptyResult;
+    }
+
+    const data = await response.json();
+
+    if (data.status === 'success') {
+      console.log('[save-lead] Geo enriched from IP:', {
+        city: data.city,
+        state: data.regionName,
+        ip: clientIp.slice(0, 6) + '***',
+      });
+      
+      return {
+        city: data.city || null,
+        state: data.regionName || null, // Full state name (e.g., "Florida")
+        country: data.country || null,
+        zip: data.zip || null,
+      };
+    }
+
+    console.log('[save-lead] Geo API status not success:', data.status);
+    return emptyResult;
+  } catch (error) {
+    // Non-blocking - don't fail lead save if geo lookup fails
+    console.error('[save-lead] Geo enrichment failed (non-blocking):', error);
+    return emptyResult;
+  }
+}
+
 // Check rate limit against the rate_limits table
 async function checkRateLimit(
   supabase: any,
@@ -505,6 +568,22 @@ serve(async (req) => {
 
     let leadId: string;
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // EMQ 9.5+: Auto-enrich geo data from IP if missing
+    // Priority: User-provided > AI Context > Session Data > IP Geo Enrichment
+    // ═══════════════════════════════════════════════════════════════════════════
+    let enrichedCity = aiContext?.city || null;
+    let enrichedState = aiContext?.state || (sessionData as Record<string, unknown>)?.state as string || null;
+    let enrichedZip = aiContext?.zip_code || null;
+
+    // Only call geo API if we're missing city OR state (non-blocking)
+    if (!enrichedCity || !enrichedState) {
+      const geoData = await enrichGeoFromIP(clientIp);
+      enrichedCity = enrichedCity || geoData.city;
+      enrichedState = enrichedState || geoData.state;
+      enrichedZip = enrichedZip || geoData.zip;
+    }
+
     // Build the lead record with all fields
     const leadRecord = {
       email: normalizedEmail,
@@ -542,10 +621,10 @@ serve(async (req) => {
       insurance_carrier: aiContext?.insurance_carrier || null,
       // Convert string window_count ranges to midpoint numbers for INTEGER column
       window_count: convertWindowCount(aiContext?.window_count),
-      // EMQ 9.5+: Address fields for improved matching
-      city: aiContext?.city || null,
-      state: aiContext?.state || (sessionData as Record<string, unknown>)?.state as string || null,
-      zip: aiContext?.zip_code || null,
+      // EMQ 9.5+: Address fields (with IP geo enrichment fallback)
+      city: enrichedCity,
+      state: enrichedState,
+      zip: enrichedZip,
       // EMQ 9.5+: Device fingerprinting for server-side matching
       client_user_agent: clientUserAgent,
     };

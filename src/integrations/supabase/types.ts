@@ -1074,6 +1074,39 @@ export type Database = {
           },
         ]
       }
+      tracking_health_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          id: string
+          message: string
+          metric_value: number | null
+          resolved_at: string | null
+          severity: string
+          threshold: number | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          id?: string
+          message: string
+          metric_value?: number | null
+          resolved_at?: string | null
+          severity?: string
+          threshold?: number | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          id?: string
+          message?: string
+          metric_value?: number | null
+          resolved_at?: string | null
+          severity?: string
+          threshold?: number | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
