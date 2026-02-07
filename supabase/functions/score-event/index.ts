@@ -20,13 +20,14 @@ const corsHeaders = {
 };
 
 // Whitelisted event types
-const ALLOWED_EVENT_TYPES = ['QUOTE_UPLOADED', 'LEAD_CAPTURED'] as const;
+const ALLOWED_EVENT_TYPES = ['QUOTE_UPLOADED', 'LEAD_CAPTURED', 'SESSION_ENGAGED'] as const;
 type EventType = typeof ALLOWED_EVENT_TYPES[number];
 
 // Points mapping (server-side only - matches DB function)
 const POINTS_MAP: Record<EventType, number> = {
   QUOTE_UPLOADED: 50,
   LEAD_CAPTURED: 100,
+  SESSION_ENGAGED: 10,
 };
 
 // Thresholds for GTM events
@@ -217,6 +218,26 @@ Deno.serve(async (req) => {
 });
 
 /**
+ * Check if a session ID exists in wm_sessions table
+ */
+async function isValidSession(
+  supabase: any,
+  sessionId: string
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('wm_sessions')
+      .select('id')
+      .eq('id', sessionId)
+      .maybeSingle();
+    
+    return !error && data !== null;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Validate that the source entity exists and belongs to this identity
  */
 async function validateOwnership(
@@ -284,25 +305,54 @@ async function validateOwnership(
       console.log(`[score-event] Lead data: user_id=${data.user_id}, client_id=${data.client_id}`);
       console.log(`[score-event] Request identity: userId=${userId}, anonId=${anonId}`);
 
-      // Validate ownership
+      // 1. Check authenticated user ownership
       if (userId && data.user_id === userId) {
         console.log(`[score-event] ✓ Ownership validated via user_id match`);
         return true;
       }
       
-      // For anonymous users, check client_id matches anon_id
+      // 2. Check anonymous client_id match (primary)
       if (anonId && data.client_id === anonId) {
         console.log(`[score-event] ✓ Ownership validated via client_id match`);
         return true;
       }
 
-      // Allow if this lead was just created (no user_id yet) and client matches
+      // 3. Allow if this lead was just created (no user_id yet) and client matches
       if (!data.user_id && anonId && data.client_id === anonId) {
         console.log(`[score-event] ✓ Ownership validated via new lead client_id match`);
         return true;
       }
 
-      console.log(`[score-event] ✗ Ownership validation failed: client_id=${data.client_id} !== anon_id=${anonId}`);
+      // 4. FALLBACK: Allow if anon_id is a valid session in wm_sessions
+      //    This handles cases where localStorage was cleared but user has valid session
+      if (anonId) {
+        const sessionValid = await isValidSession(supabase, anonId);
+        if (sessionValid) {
+          console.log(`[score-event] ✓ Ownership validated via valid session fallback`);
+          console.log(`[score-event] Note: client_id=${data.client_id} !== anon_id=${anonId} (allowed via session)`);
+          return true;
+        }
+      }
+
+      console.log(`[score-event] ✗ Ownership validation failed: no valid match found`);
+      return false;
+    }
+
+    if (entityType === 'session') {
+      // For session events, verify the session exists in wm_sessions
+      const sessionValid = await isValidSession(supabase, entityId);
+      if (sessionValid) {
+        console.log(`[score-event] ✓ Session entity validated: ${entityId}`);
+        return true;
+      }
+      
+      // Also allow if anon_id itself is a valid session
+      if (anonId && await isValidSession(supabase, anonId)) {
+        console.log(`[score-event] ✓ Session validated via anon_id: ${anonId}`);
+        return true;
+      }
+      
+      console.log(`[score-event] ✗ Session validation failed: ${entityId}`);
       return false;
     }
 

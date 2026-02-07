@@ -10,16 +10,56 @@ import { supabase } from '@/integrations/supabase/client';
 import { trackEvent } from '@/lib/gtm';
 import { useAuth } from '@/hooks/useAuth';
 
-// Anon ID management (persisted across sessions)
+// Anon ID management (persisted across sessions with cookie backup)
 const ANON_ID_KEY = 'wte-anon-id';
+const ANON_ID_COOKIE = 'wte_anon_id';
+const ANON_ID_TTL_DAYS = 400;
+
+function setAnonIdCookie(anonId: string): void {
+  try {
+    const expires = new Date();
+    expires.setDate(expires.getDate() + ANON_ID_TTL_DAYS);
+    document.cookie = `${ANON_ID_COOKIE}=${encodeURIComponent(anonId)}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+  } catch {
+    // Silently fail if cookies not available
+  }
+}
+
+function getAnonIdFromCookie(): string | null {
+  try {
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === ANON_ID_COOKIE && value) {
+        return decodeURIComponent(value);
+      }
+    }
+  } catch {
+    // Silently fail if cookies not available
+  }
+  return null;
+}
 
 export function getOrCreateAnonId(): string {
   try {
+    // 1. Try localStorage first (primary storage)
     let anonId = localStorage.getItem(ANON_ID_KEY);
-    if (!anonId) {
-      anonId = crypto.randomUUID();
-      localStorage.setItem(ANON_ID_KEY, anonId);
+    if (anonId) {
+      setAnonIdCookie(anonId); // Ensure cookie backup is in sync
+      return anonId;
     }
+    
+    // 2. Try cookie fallback (handles localStorage cleared)
+    const cookieId = getAnonIdFromCookie();
+    if (cookieId) {
+      localStorage.setItem(ANON_ID_KEY, cookieId); // Restore to localStorage
+      return cookieId;
+    }
+    
+    // 3. Generate new ID and persist to both
+    anonId = crypto.randomUUID();
+    localStorage.setItem(ANON_ID_KEY, anonId);
+    setAnonIdCookie(anonId);
     return anonId;
   } catch {
     // Fallback for SSR or storage errors
@@ -28,7 +68,7 @@ export function getOrCreateAnonId(): string {
 }
 
 // Event types (must match server whitelist)
-export type ScoreEventType = 'QUOTE_UPLOADED' | 'LEAD_CAPTURED';
+export type ScoreEventType = 'QUOTE_UPLOADED' | 'LEAD_CAPTURED' | 'SESSION_ENGAGED';
 
 export interface ScoreEventParams {
   eventType: ScoreEventType;
