@@ -1,387 +1,267 @@
 
-# Lazy Load Tracking Scripts — Performance Optimization Plan
+
+# Deferred Third-Party Script Loading — Performance Optimization Plan
 
 ## Problem Analysis
 
-The current implementation runs multiple tracking operations **synchronously on page load**, creating a main thread traffic jam that degrades mobile performance (currently ~40% score):
+### Current State (index.html)
+```html
+<!-- Lines 26-36: GTM loads SYNCHRONOUSLY during HTML parse -->
+<script>
+  var productionDomain = 'itswindowman.com';
+  
+  if (window.location.hostname === productionDomain || ...) {
+    // GTM script injection - BLOCKS CRITICAL RENDERING PATH
+    (function(w,d,s,l,i){...})(window,document,'script','dataLayer','...');
+  }
+</script>
+```
 
-### Current Execution Timeline (main.tsx)
+### Why This Is Slow
+
 ```text
-Page Load
+Browser Parse Timeline (Current)
+────────────────────────────────────────────────────────────────────
+HTML Parse Start
     │
-    ├── pushBotSignalToDataLayer() ← BLOCKS RENDER (synchronous)
-    │       └── 10+ checks (webdriver, UA parsing, plugins, languages...)
+    ├── <head> processing
+    │   ├── Font preconnects ✓
+    │   ├── Resource hints ✓
+    │   └── GTM INLINE SCRIPT ← BLOCKS PARSE (lines 26-36)
+    │         │
+    │         ├── Evaluates JS synchronously
+    │         ├── Creates script element
+    │         ├── Injects gtm.js (async=true, but damage done)
+    │         └── GTM loads Meta Pixel, Clarity, etc.
     │
-    ├── installTruthEngine() ← BLOCKS RENDER (synchronous)
+    ├── <body> parse begins
+    │   └── React mounts (#root)
     │
-    ├── reconcileIdentities() ← BLOCKS RENDER (synchronous)
-    │       └── localStorage reads, cookie parsing, cookie writes
-    │
-    └── createRoot().render()
-            │
-            ├── App.tsx → AppContent()
-            │       ├── usePageTimer() ← Sets 2-minute timer immediately
-            │       └── useSessionSync() ← Database calls on auth
-            │
-            └── Index.tsx (or other page)
-                    └── usePageTracking() ← Immediate trackEvent calls
+    └── FCP (First Contentful Paint) ← DELAYED BY GTM PARSE
 ```
 
 **Impact on Core Web Vitals:**
-- **TBT (Total Blocking Time)**: Bot detection loops through 10+ checks synchronously
-- **INP (Interaction to Next Paint)**: Heavy event listeners for scroll tracking
-- **FCP/LCP**: Main thread busy with tracking before first paint
+- **FCP (First Contentful Paint)**: GTM inline script blocks HTML parser
+- **LCP (Largest Contentful Paint)**: Delayed by competing network requests
+- **TBT (Total Blocking Time)**: GTM + downstream scripts (Pixel, Clarity) run on main thread
+
+### Verification: No Duplicate Pixel Loading
+
+**Search Results Confirm:**
+- ✅ Meta Pixel is loaded via GTM (no `fbevents.js` in index.html)
+- ✅ Code reads `_fbp` and `_fbc` cookies (set by GTM-loaded Pixel)
+- ✅ No hardcoded Pixel initialization in codebase
 
 ---
 
-## Solution: Deferred Initialization Pattern
+## Solution Options Comparison
 
-Refactor all non-critical tracking to use a **"Lazy Initialization"** pattern:
-1. Render the page content immediately (user sees content)
-2. Wait 3-5 seconds (or use `requestIdleCallback`)
-3. Initialize tracking systems during browser idle time
+| Approach | Complexity | Performance Gain | Risk |
+|----------|------------|-----------------|------|
+| **Partytown (Web Worker)** | High | Maximum | High - can break advanced GTM features |
+| **Delayed Injection (2s)** | Low | Good | Low - simple, predictable |
+| **Window Load Event** | Low | Medium | Low - fires after LCP complete |
 
-### Target Improvements
-| Metric | Current | Target | Improvement |
-|--------|---------|--------|-------------|
-| Mobile Performance | ~40% | 60%+ | +20 points |
-| TBT | High | < 200ms | Significant reduction |
-| INP | Elevated | < 200ms | Reduced event listener overhead |
+### Recommendation: Delayed Window Load Injection
+
+Partytown requires careful configuration and can break GTM triggers that depend on main-thread DOM access. For this project's analytics setup (Meta CAPI, GA4 Enhanced Conversions), a simpler **window load + delay** approach is safer and still highly effective.
 
 ---
 
-## Implementation Phases
+## Implementation Plan
 
-### Phase 1: Defer Bot Detection in main.tsx
+### Phase 1: Move GTM to Deferred Loading
 
-**Current (Blocks Render):**
-```typescript
-// Line 12 - Runs synchronously BEFORE render
-pushBotSignalToDataLayer();
+**Current (Synchronous - Blocks Parse):**
+```html
+<script>
+  // Runs immediately during HTML parse
+  (function(w,d,s,l,i){...})(window,document,'script','dataLayer','...');
+</script>
 ```
 
-**Refactored (Deferred):**
-```typescript
-// Defer bot detection to idle time
-const scheduleBotDetection = () => {
-  const delay = 3000; // 3 seconds after load
-  if ('requestIdleCallback' in window) {
-    (window as any).requestIdleCallback(() => pushBotSignalToDataLayer(), { timeout: delay + 2000 });
-  } else {
-    setTimeout(pushBotSignalToDataLayer, delay);
+**Refactored (Deferred - After Window Load + 2s):**
+```html
+<script>
+  // GTM configuration - does NOT block parse
+  window.dataLayer = window.dataLayer || [];
+  
+  var productionDomain = 'itswindowman.com';
+  var isProduction = window.location.hostname === productionDomain || 
+                     window.location.hostname === 'www.' + productionDomain;
+  
+  if (!isProduction) {
+    console.log('[GTM] Blocked on non-production domain:', window.location.hostname);
   }
-};
-scheduleBotDetection();
-```
-
-**Why 3 seconds?** Bot detection doesn't affect user experience — bots don't care about UX. We only need the signal before conversion events fire, which typically happen much later.
-
----
-
-### Phase 2: Defer Identity Reconciliation
-
-**Current (Blocks Render):**
-```typescript
-// Line 20-21 - Synchronous localStorage + cookie operations
-const goldenThreadFID = reconcileIdentities();
-console.log(`[Golden Thread] Active FID: ${goldenThreadFID}`);
-```
-
-**Refactored (Deferred with Lazy Getter):**
-```typescript
-// Immediately export a lazy getter that initializes on first access
-let cachedGoldenThreadId: string | null = null;
-
-const scheduleReconciliation = () => {
-  if ('requestIdleCallback' in window) {
-    (window as any).requestIdleCallback(() => {
-      cachedGoldenThreadId = reconcileIdentities();
-      console.log(`[Golden Thread] Active FID: ${cachedGoldenThreadId}`);
-    }, { timeout: 2000 });
-  } else {
-    setTimeout(() => {
-      cachedGoldenThreadId = reconcileIdentities();
-      console.log(`[Golden Thread] Active FID: ${cachedGoldenThreadId}`);
-    }, 1);
+  
+  // Defer GTM injection to after page is interactive
+  function loadGTM() {
+    if (!isProduction) return;
+    
+    // Standard GTM snippet - now runs post-LCP
+    window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+    var j = document.createElement('script');
+    j.async = true;
+    j.src = 'https://lunaa.itswindowman.com/76bwidfqcvb.js?' + 
+            'dwjnsf8=CxJeNjIpRDkqICUjUzUzURRLUV9XQg0ZXx8XAhENBxMNAQ4QCEoKGA8%3D';
+    document.head.appendChild(j);
+    
+    console.log('[GTM] Loaded (deferred, post-interactive)');
   }
-};
-scheduleReconciliation();
+  
+  // Strategy: Wait for window load, then add 2s buffer
+  // This ensures:
+  // 1. DOM is complete (DOMContentLoaded)
+  // 2. All critical resources loaded (load event)
+  // 3. React has mounted and painted
+  // 4. 2s buffer for hydration to complete
+  if (document.readyState === 'complete') {
+    setTimeout(loadGTM, 2000);
+  } else {
+    window.addEventListener('load', function() {
+      setTimeout(loadGTM, 2000);
+    }, { once: true });
+  }
+</script>
 ```
 
-**Safety Note:** The identity system already has lazy getters (`getGoldenThreadId()`), so early tracking calls will still work correctly.
+### Phase 2: Remove Blocking Preconnects for Deferred Resources
 
----
+Since GTM is now deferred, we can also defer the preconnect hints (they currently compete with critical resources):
 
-### Phase 3: Create Deferred Tracker Utility
+**Current:**
+```html
+<link rel="preconnect" href="https://connect.facebook.net" crossorigin />
+<link rel="preconnect" href="https://scripts.clarity.ms" crossorigin />
+```
 
-**Create: `src/lib/deferredInit.ts`**
+**Refactored:** Remove these preconnects entirely (or move to late injection). GTM will establish connections when it loads after the delay.
 
-A reusable utility for all tracking initialization:
+**Keep:** The Stape/GTM preconnect is still useful since it's the first third-party to load:
+```html
+<link rel="preconnect" href="https://lunaa.itswindowman.com" crossorigin />
+```
 
+### Phase 3: Ensure dataLayer Events Queue Correctly
+
+The early dataLayer initialization ensures events pushed before GTM loads are still captured:
+
+```html
+<script>
+  window.dataLayer = window.dataLayer || [];
+</script>
+```
+
+Events pushed by React components (via `trackEvent()`) before GTM loads will queue in the array. When GTM finally loads, it processes the queue automatically.
+
+**Verification:** The `ensureDataLayer()` function in `gtm.ts` already handles this:
 ```typescript
-/**
- * Schedule non-critical initialization to browser idle time.
- * 
- * @param fn - Function to execute
- * @param options - Configuration options
- */
-export function scheduleWhenIdle(
-  fn: () => void,
-  options: { 
-    minDelay?: number;  // Minimum wait (ms) - default: 3000
-    timeout?: number;   // Max wait for idle callback - default: 5000
-  } = {}
-): void {
-  const { minDelay = 3000, timeout = 5000 } = options;
-  
-  if (typeof window === 'undefined') return;
-  
-  const execute = () => {
-    if ('requestIdleCallback' in window) {
-      (window as any).requestIdleCallback(fn, { timeout });
-    } else {
-      fn();
-    }
-  };
-  
-  if (minDelay > 0) {
-    setTimeout(execute, minDelay);
-  } else {
-    execute();
+function ensureDataLayer(): void {
+  if (typeof window !== 'undefined' && !window.dataLayer) {
+    window.dataLayer = [];
   }
 }
-
-/**
- * Check if tracking has been initialized
- */
-let trackingInitialized = false;
-export const isTrackingReady = () => trackingInitialized;
-export const markTrackingReady = () => { trackingInitialized = true; };
 ```
 
 ---
 
-### Phase 4: Defer usePageTimer Hook
+## New Execution Timeline
 
-**Current (Immediate Setup):**
-```typescript
-useEffect(() => {
-  const TWO_MINUTES = 2 * 60 * 1000;
-  const timer = setTimeout(() => { ... }, TWO_MINUTES);
-  return () => clearTimeout(timer);
-}, []);
-```
-
-**Refactored (Delayed Setup):**
-```typescript
-import { scheduleWhenIdle } from '@/lib/deferredInit';
-
-useEffect(() => {
-  // Defer timer setup by 3 seconds
-  let timer: NodeJS.Timeout | null = null;
-  
-  scheduleWhenIdle(() => {
-    // Check if already fired this session
-    try {
-      if (sessionStorage.getItem(TIMER_FIRED_KEY)) {
-        firedRef.current = true;
-        return;
-      }
-    } catch { /* Ignore */ }
-    
-    const TWO_MINUTES = 2 * 60 * 1000;
-    timer = setTimeout(() => { ... }, TWO_MINUTES);
-  }, { minDelay: 3000 });
-  
-  return () => {
-    if (timer) clearTimeout(timer);
-  };
-}, []);
+```text
+Browser Parse Timeline (Optimized)
+────────────────────────────────────────────────────────────────────
+HTML Parse Start
+    │
+    ├── <head> processing
+    │   ├── Font preconnects ✓
+    │   ├── Supabase preconnect ✓
+    │   ├── Stape preconnect ✓ (keeps connection warm for later)
+    │   └── GTM CONFIG ONLY (no blocking) ✓
+    │         └── Registers load event listener
+    │
+    ├── <body> parse (FAST - no competition)
+    │   └── React mounts (#root)
+    │
+    ├── FCP (First Contentful Paint) ← NOW MUCH FASTER
+    │
+    ├── LCP (Largest Contentful Paint)
+    │
+    ├── window.load fires
+    │
+    └── +2000ms: GTM LOADS
+          │
+          ├── Processes queued dataLayer events
+          ├── Loads Meta Pixel (no duplicate)
+          └── Loads Clarity
 ```
 
 ---
 
-### Phase 5: Defer usePageTracking Hook
+## Files to Modify
 
-**Current:**
-```typescript
-useEffect(() => {
-  trackPageView(path);
-  trackEvent('tool_page_view', { ... });
-}, []); // Fire once on mount
-```
-
-**Refactored:**
-```typescript
-import { scheduleWhenIdle } from '@/lib/deferredInit';
-
-useEffect(() => {
-  // Defer page tracking to idle time
-  scheduleWhenIdle(() => {
-    trackPageView(path);
-    trackEvent('tool_page_view', {
-      tool_name: toolName,
-      page_path: path,
-      referrer: document.referrer || 'direct',
-    });
-  }, { minDelay: 500 }); // Small delay for page views
-}, []);
-```
-
----
-
-### Phase 6: Defer useSessionSync Database Calls
-
-**Current:**
-```typescript
-// Line 71 - Database sync on auth with 500ms debounce
-const timer = setTimeout(syncSession, 500);
-```
-
-**Refactored:**
-```typescript
-// Increase debounce to 2000ms and use idle callback
-scheduleWhenIdle(syncSession, { minDelay: 2000 });
-```
-
----
-
-### Phase 7: Optimize ExitIntentModal Scroll Tracking
-
-**Current (Always Active):**
-```typescript
-useEffect(() => {
-  const handleScroll = () => {
-    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const currentScrollDepth = scrollHeight > 0 ? window.scrollY / scrollHeight : 0;
-    maxScrollDepthRef.current = Math.max(maxScrollDepthRef.current, currentScrollDepth);
-    lastScrollYRef.current = window.scrollY;
-  };
-  window.addEventListener('scroll', handleScroll, { passive: true });
-  return () => window.removeEventListener('scroll', handleScroll);
-}, []);
-```
-
-**Refactored (Throttled + Deferred):**
-```typescript
-import { scheduleWhenIdle } from '@/lib/deferredInit';
-
-useEffect(() => {
-  let rafId: number | null = null;
-  
-  const handleScroll = () => {
-    // RAF-throttle scroll handler for performance
-    if (rafId !== null) return;
-    
-    rafId = requestAnimationFrame(() => {
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const currentScrollDepth = scrollHeight > 0 ? window.scrollY / scrollHeight : 0;
-      maxScrollDepthRef.current = Math.max(maxScrollDepthRef.current, currentScrollDepth);
-      lastScrollYRef.current = window.scrollY;
-      rafId = null;
-    });
-  };
-  
-  // Defer scroll listener setup
-  let cleanup: (() => void) | null = null;
-  
-  scheduleWhenIdle(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    cleanup = () => window.removeEventListener('scroll', handleScroll);
-  }, { minDelay: 2000 });
-  
-  return () => {
-    if (rafId !== null) cancelAnimationFrame(rafId);
-    cleanup?.();
-  };
-}, []);
-```
-
----
-
-### Phase 8: Defer useEngagementScore Polling
-
-**Current (500ms Polling):**
-```typescript
-useEffect(() => {
-  const interval = setInterval(() => {
-    const currentScore = getEngagementScore();
-    if (currentScore !== score) { ... }
-  }, 500);
-  return () => clearInterval(interval);
-}, [score]);
-```
-
-**Refactored (Deferred Start + Event-Driven):**
-```typescript
-useEffect(() => {
-  let interval: NodeJS.Timeout | null = null;
-  
-  // Defer polling start by 3 seconds
-  const startPolling = () => {
-    interval = setInterval(() => {
-      const currentScore = getEngagementScore();
-      if (currentScore !== score) { ... }
-    }, 500);
-  };
-  
-  scheduleWhenIdle(startPolling, { minDelay: 3000 });
-  
-  return () => {
-    if (interval) clearInterval(interval);
-  };
-}, [score]);
-```
-
----
-
-## Files to Create/Modify
-
-| Action | File |
-|--------|------|
-| **Create** | `src/lib/deferredInit.ts` |
-| **Modify** | `src/main.tsx` |
-| **Modify** | `src/hooks/usePageTimer.ts` |
-| **Modify** | `src/hooks/usePageTracking.ts` |
-| **Modify** | `src/hooks/useSessionSync.ts` |
-| **Modify** | `src/hooks/useEngagementScore.ts` |
-| **Modify** | `src/components/authority/ExitIntentModal.tsx` |
+| Action | File | Changes |
+|--------|------|---------|
+| **Modify** | `index.html` | Refactor GTM injection to use window load + delay |
 
 ---
 
 ## Success Criteria
 
 After implementation:
-- [ ] Mobile Performance score increases from ~40% to 60%+
-- [ ] Console shows `[Golden Thread]` log ~3 seconds after page load (not immediately)
-- [ ] Console shows `[Bot Detection]` log ~3 seconds after page load
-- [ ] Page renders visibly faster on mobile devices
-- [ ] All tracking events still fire (just delayed, not removed)
-- [ ] No tracking data loss — events eventually fire during idle time
+- [ ] Mobile Performance score increases from ~40% to 60%+ (target 70%+)
+- [ ] FCP improves by 500-1000ms on mobile connections
+- [ ] Console shows `[GTM] Loaded (deferred, post-interactive)` ~2s after page load
+- [ ] All tracking events still fire (queued before GTM, processed after)
+- [ ] No duplicate Pixel loading (already verified)
+- [ ] Meta CAPI events continue to match correctly (fbclid, _fbp, _fbc preserved)
 
 ---
 
 ## Technical Notes
 
-### Why Not Just Use `defer` on Script Tags?
+### Why Not Partytown?
 
-The GTM script already uses `async`. The problem is our **custom JavaScript** running synchronously in `main.tsx` before React mounts. Script attributes don't help here.
+Partytown moves scripts to a Web Worker, which sounds ideal but:
+1. **GTM Trigger Compatibility**: GTM triggers often rely on DOM element visibility, scroll position, etc. Web Workers can't access the DOM directly.
+2. **Meta Pixel**: Uses cookies and DOM events that may not proxy correctly.
+3. **Setup Complexity**: Requires Vite plugin configuration and careful allowlist management.
+4. **Debugging**: Harder to debug tracking issues when scripts run in a worker.
 
-### Why 3 Seconds?
+For a site with sophisticated GTM/Meta CAPI integration, the simpler "delay" approach is safer.
 
-This is the "goldilocks zone":
-- **Too short (< 1s)**: Still competes with initial render
-- **Too long (> 5s)**: Risk missing early conversions
-- **3 seconds**: User has seen content, main thread is idle, tracking can run safely
+### Why 2 Seconds After Load?
 
-### Conversion Events Are Safe
+- **< 1s**: Risks overlapping with React hydration on slow devices
+- **2s**: Sweet spot - page is definitely interactive
+- **> 3s**: Risk losing early page view events
 
-This optimization does NOT delay conversion tracking (form submissions, lead captures). Those are user-initiated and fire immediately. We're only deferring:
-- Bot detection (no user impact)
-- Identity reconciliation (lazy getter already exists)
-- Passive engagement tracking (scroll, time on page)
-- Page view analytics (can wait a few seconds)
+### Will This Break Anything?
 
-### requestIdleCallback Fallback
+**Won't break:**
+- Page view tracking (events queue in dataLayer)
+- Conversion tracking (user-initiated, happens well after 2s)
+- Attribution (UTM params captured in React, not GTM)
+- CAPI matching (cookies set by Pixel persist across page loads)
 
-Not all browsers support `requestIdleCallback` (Safari). The fallback uses `setTimeout`, which is still better than synchronous execution.
+**Edge case:**
+- Immediate bounce (user leaves < 2s): No analytics recorded
+- This is acceptable — these users weren't going to convert anyway
+
+---
+
+## Alternative: Future Partytown Migration
+
+If you want maximum performance later, we can add Partytown in a separate effort:
+
+```bash
+npm install @builder.io/partytown
+```
+
+This would require:
+1. Vite plugin configuration
+2. Service worker setup for script proxying
+3. Careful testing of all GTM triggers
+4. Meta Pixel compatibility testing
+
+For now, the deferred loading approach gives 80% of the benefit with 20% of the complexity.
+
