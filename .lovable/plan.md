@@ -1,328 +1,203 @@
 
+# Edge Function Stability Fix: save-lead
 
-# Strict Funnel Strategy Implementation
-## Tasks 1, 2, 3, 5, 7
+## Problem Summary
 
----
+The `save-lead` edge function crashes on the **second submission** because:
+1. The email lookup query (line 593) uses `.maybeSingle()` 
+2. When duplicate leads exist in the database, `.maybeSingle()` throws `PGRST116` error
+3. Confirmed: `partyclean@yahoo.com` has 2 duplicate entries
 
-## Overview
-
-This implementation transforms 5 "Money Pages" into a focused funnel by:
-- Creating a minimal Funnel Navbar (Task 1)
-- Removing PillarBreadcrumb badges (Task 2)
-- Hiding MobileStickyFooter (Task 3)
-- Fixing the AI Scanner dead end with a success state (Task 5)
-- Removing RelatedToolsGrid distractions (Task 7)
-
----
-
-## Task 1: Create Funnel-Mode Navbar
-
-**Goal**: Strip all navigation links on Core 5 pages. Keep only Logo + "Call Window Man" + Vault icon.
-
-### Changes to `src/components/home/Navbar.tsx`
-
-Add `funnelMode?: boolean` prop that:
-- Hides: Tools, Evidence, Intel Library, Beat Your Quote, ReadinessIndicator
-- Shows: Logo, "Call Window Man" tel button, Vault icon-only login
-- Keeps: Theme toggle on desktop
-
-### Funnel Mode Layout
-```text
-Desktop: [Logo] ──────────────────── [📞 Call Window Man] [🔒] [🌙]
-Mobile:  [Logo] ───────────────────────────────── [📞] [🔒] [☰]
+**Error Message:**
+```
+"Results contain 2 rows, application/vnd.pgrst.object+json requires 1 row"
 ```
 
-### Pages to Pass `funnelMode={true}`
-
-| Page | File | Current Navbar |
-|------|------|----------------|
-| Homepage | `src/pages/Index.tsx` | Line 104 |
-| AI Scanner | `src/pages/QuoteScanner.tsx` | Line 117 |
-| Beat Your Quote | `src/pages/BeatYourQuote.tsx` | Line 133 |
-| Sample Report | `src/pages/SampleReport.tsx` | Lines 105, 116 |
-| Audit | `src/pages/Audit.tsx` | No Navbar currently - Add one |
-
 ---
 
-## Task 2: Hide PillarBreadcrumb on Core 5 Pages
+## Fix Strategy
 
-**Goal**: Remove "Part of Risk & Code" badge that leaks users to pillar pages.
+### Fix 1: Replace `.maybeSingle()` with Safe Array Query
 
-### Files to Modify
+**File:** `supabase/functions/save-lead/index.ts`
 
-| File | Line | Component |
-|------|------|-----------|
-| `src/pages/QuoteScanner.tsx` | Lines 121-123 | `<PillarBreadcrumb toolPath="/ai-scanner" variant="badge" />` |
-| `src/pages/BeatYourQuote.tsx` | Lines 136-138 | `<PillarBreadcrumb toolPath="/beat-your-quote" variant="dossier" />` |
-
-**Action**: Delete these JSX blocks entirely.
-
----
-
-## Task 3: Hide MobileStickyFooter on Core 5 Pages
-
-**Goal**: Prevent sticky footer from blocking mobile viewport on money pages.
-
-### Step 1: Add FUNNEL_ROUTES to `src/config/navigation.ts`
-
+**Current Code (Lines 588-600):**
 ```typescript
-/**
- * Funnel Routes - Pages optimized for paid traffic conversion
- * These pages hide distracting UI elements (sticky footer, floating CTAs)
- */
-export const FUNNEL_ROUTES = [
-  '/',
-  '/audit',
-  '/ai-scanner',
-  '/sample-report',
-  '/beat-your-quote',
-] as const;
+const { data: leadByEmail, error: emailSelectError } = await supabase
+  .from('leads')
+  .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id')
+  .eq('email', normalizedEmail)
+  .maybeSingle();  // ← FAILS if 2+ rows exist
+
+if (emailSelectError) {
+  console.error('Error checking existing lead by email:', emailSelectError);
+  throw new Error('Database error while checking lead');
+}
+
+existingLead = leadByEmail;
 ```
 
-### Step 2: Modify `src/components/navigation/MobileStickyFooter.tsx`
-
-Add route check at the top of the component:
-
+**Fixed Code:**
 ```typescript
-import { FUNNEL_ROUTES } from '@/config/navigation';
+// SAFE: Use limit(1) instead of maybeSingle() to handle duplicate emails gracefully
+const { data: leadsArray, error: emailSelectError } = await supabase
+  .from('leads')
+  .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id')
+  .eq('email', normalizedEmail)
+  .order('created_at', { ascending: false })  // Get most recent lead first
+  .limit(1);
 
-export function MobileStickyFooter() {
-  const location = useLocation();
-  
-  // Hide on funnel pages to reduce distractions
-  const isFunnelPage = FUNNEL_ROUTES.includes(location.pathname as any);
-  if (isFunnelPage) return null;
-  
-  // ...rest of component
+if (emailSelectError) {
+  console.error('Error checking existing lead by email:', emailSelectError);
+  throw new Error('Database error while checking lead');
+}
+
+// Take first result if exists (handles 0, 1, or 2+ rows safely)
+existingLead = leadsArray && leadsArray.length > 0 ? leadsArray[0] : null;
+if (existingLead) {
+  console.log('Found lead by email:', existingLead.id, '(selected most recent)');
 }
 ```
 
+**Why This Fix Works:**
+- `.limit(1)` always returns an **array** (0 or 1 items) - never throws on multiple rows
+- `order('created_at', { ascending: false })` ensures we get the **most recent** lead
+- Handles edge cases: 0 rows, 1 row, 2+ rows all work correctly
+
 ---
 
-## Task 5: Fix AI Scanner Post-Submit Dead End (Critical)
+### Fix 2: Clean Up Existing Duplicate Leads
 
-**Goal**: Replace toast notification with persistent success state that drives users to Vault.
+**Action:** Run a one-time database migration to merge duplicate leads
 
-### Current Flow (Broken)
-```text
-User clicks "Continue with Email"
-    → Lead saved ✓
-    → Toast: "Saved! We'll help you..."
-    → User left on same page (DEAD END)
+```sql
+-- Find and merge duplicate leads (keep most recent, update references)
+WITH duplicates AS (
+  SELECT email, 
+         array_agg(id ORDER BY created_at DESC) as ids,
+         COUNT(*) as cnt
+  FROM leads 
+  GROUP BY email 
+  HAVING COUNT(*) > 1
+),
+keep_ids AS (
+  SELECT email, ids[1] as keep_id, ids[2:] as delete_ids
+  FROM duplicates
+)
+-- Log duplicates first (before deletion)
+SELECT * FROM keep_ids;
+
+-- Then delete the older duplicates (keeping the newest)
+DELETE FROM leads 
+WHERE id IN (
+  SELECT unnest(delete_ids) 
+  FROM keep_ids
+);
 ```
 
-### New Flow
-```text
-User clicks "Continue with Email"
-    → Lead saved ✓
-    → NoQuotePivotSection transforms to SUCCESS STATE:
-    
-    ┌────────────────────────────────────────────┐
-    │  ✓ You're In. Your Vault is Ready.         │
-    │                                            │
-    │  "I just saved your place. When you get    │
-    │   your first quote, upload it here and     │
-    │   I'll tell you if it's worth signing."    │
-    │                                            │
-    │  [Open My Vault]  [Get Quote Checklist]    │
-    └────────────────────────────────────────────┘
-```
+**Note:** This is a data cleanup, not a schema change. Should be run manually after reviewing which leads to keep.
 
-### Implementation Steps
+---
 
-**Step 1**: Add state to `src/pages/QuoteScanner.tsx`
+### Fix 3: Add Global Error Handling Improvement
+
+**Current:** Error at line 597 throws a generic error that gets caught at line 733
+
+**Enhancement:** Add more specific error logging before the throw:
 
 ```typescript
-const [isNoQuoteSubmitted, setIsNoQuoteSubmitted] = useState(false);
-```
-
-**Step 2**: Update `onEmailSubmit` handler (lines 208-275)
-
-Replace the toast with:
-```typescript
-if (result?.leadId) {
-  // ...existing tracking code...
-  setIsNoQuoteSubmitted(true);  // NEW: Trigger success state
-  // Remove toast call
-}
-```
-
-**Step 3**: Pass to `NoQuotePivotSection`:
-
-```tsx
-<NoQuotePivotSection 
-  isLoading={isNoQuoteSubmitting}
-  isSubmitted={isNoQuoteSubmitted}  // NEW PROP
-  onGoogleAuth={...}
-  onEmailSubmit={...}
-/>
-```
-
-**Step 4**: Modify `src/components/quote-scanner/vault-pivot/NoQuotePivotSection.tsx`
-
-Add `isSubmitted?: boolean` prop and render success UI when true:
-
-```tsx
-interface NoQuotePivotSectionProps {
-  onGoogleAuth?: () => void;
-  onEmailSubmit?: (data: {...}) => void;
-  isLoading?: boolean;
-  isSubmitted?: boolean;  // NEW
-}
-
-export function NoQuotePivotSection({ 
-  onGoogleAuth, onEmailSubmit, isLoading, isSubmitted 
-}: NoQuotePivotSectionProps) {
+if (emailSelectError) {
+  // Log detailed error for debugging
+  console.error('Error checking existing lead by email:', {
+    error: emailSelectError,
+    email: normalizedEmail.slice(0, 3) + '***', // Redact for privacy
+    code: emailSelectError.code,
+    details: emailSelectError.details,
+  });
   
-  // SUCCESS STATE
-  if (isSubmitted) {
-    return (
-      <div className="max-w-[680px] mx-auto p-8 md:p-10 rounded-xl border border-border/40 bg-background">
-        <div className="text-center">
-          {/* Success Icon */}
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
-            <CheckCircle className="w-8 h-8 text-emerald-500" />
-          </div>
-          
-          {/* Success Message */}
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            You're In. Your Vault is Ready.
-          </h2>
-          
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            I just saved your place. When you get your first quote, 
-            upload it here and I'll tell you if it's worth signing.
-          </p>
-          
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button asChild size="lg">
-              <Link to="/vault">
-                <Vault className="w-5 h-5 mr-2" />
-                Open My Vault
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link to="/spec-checklist-guide">
-                Get Quote Checklist
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+  // If it's a "multiple rows" error, log a warning and continue
+  if (emailSelectError.code === 'PGRST116') {
+    console.warn('Multiple leads found for email - using limit(1) query');
+    // This should never happen after Fix 1, but defensive coding
   }
   
-  // EXISTING FORM UI
-  return (
-    <div className="max-w-[680px] mx-auto...">
-      {/* ...existing code... */}
-    </div>
-  );
+  throw new Error('Database error while checking lead');
 }
 ```
 
 ---
 
-## Task 7: Remove RelatedToolsGrid from Core 5 Pages
+## Files to Modify
 
-**Goal**: Stop leaking users to 15+ secondary tools.
-
-### Files to Modify
-
-| File | Lines | Section |
-|------|-------|---------|
-| `src/pages/QuoteScanner.tsx` | 297-302 | RelatedToolsGrid section |
-| `src/pages/BeatYourQuote.tsx` | 168-173 | RelatedToolsGrid section |
-
-**Action**: Delete these JSX blocks and their imports.
-
-### QuoteScanner.tsx - Remove lines 297-302:
-```tsx
-{/* Related Tools - "Enforce Your Rights" section */}
-<RelatedToolsGrid
-  title={getFrameControl('quote-scanner').title}
-  description={getFrameControl('quote-scanner').description}
-  tools={getSmartRelatedTools('quote-scanner', sessionData.toolsCompleted)}
-/>
-```
-
-### BeatYourQuote.tsx - Remove lines 168-173:
-```tsx
-{/* Related Tools */}
-<RelatedToolsGrid
-  title={getFrameControl('beat-your-quote').title}
-  description={getFrameControl('beat-your-quote').description}
-  tools={getSmartRelatedTools('beat-your-quote', sessionData.toolsCompleted)}
-/>
-```
-
-Also remove unused imports:
-- `getSmartRelatedTools`, `getFrameControl` from `@/config/toolRegistry`
-- `RelatedToolsGrid` from `@/components/ui/RelatedToolsGrid`
+| File | Change | Risk |
+|------|--------|------|
+| `supabase/functions/save-lead/index.ts` | Replace `.maybeSingle()` with `.limit(1)` on email lookup | Low |
+| Database (manual) | Clean up duplicate leads | Low (data cleanup only) |
 
 ---
 
-## Files Summary
+## Implementation Details
 
-| File | Changes | Risk |
-|------|---------|------|
-| `src/config/navigation.ts` | Add `FUNNEL_ROUTES` array | Very Low |
-| `src/components/home/Navbar.tsx` | Add `funnelMode` prop with simplified UI | Medium |
-| `src/components/navigation/MobileStickyFooter.tsx` | Add route-based visibility check | Low |
-| `src/pages/Index.tsx` | Pass `funnelMode={true}` | Very Low |
-| `src/pages/Audit.tsx` | Add Navbar with `funnelMode={true}` | Low |
-| `src/pages/QuoteScanner.tsx` | Remove breadcrumb, grid, add success state | Medium |
-| `src/pages/SampleReport.tsx` | Pass `funnelMode={true}` | Very Low |
-| `src/pages/BeatYourQuote.tsx` | Remove breadcrumb, grid, pass `funnelMode={true}` | Low |
-| `src/components/quote-scanner/vault-pivot/NoQuotePivotSection.tsx` | Add `isSubmitted` prop with success UI | Low |
+### Step 1: Fix the Query (Lines 588-604)
 
----
+Replace the vulnerable `.maybeSingle()` pattern with a safe array query:
 
-## Implementation Order
+```typescript
+// PRIORITY 2: Fallback to email lookup if no lead found by ID
+if (!existingLead) {
+  // SAFE: Use limit(1) instead of maybeSingle() to handle duplicate emails gracefully
+  // This prevents PGRST116 errors when multiple leads share the same email
+  const { data: leadsArray, error: emailSelectError } = await supabase
+    .from('leads')
+    .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id')
+    .eq('email', normalizedEmail)
+    .order('created_at', { ascending: false })  // Most recent first
+    .limit(1);
 
-| Step | Task | Description |
-|------|------|-------------|
-| 1 | Task 3 | Add FUNNEL_ROUTES to navigation.ts |
-| 2 | Task 3 | Hide MobileStickyFooter on funnel routes |
-| 3 | Task 1 | Add funnelMode to Navbar component |
-| 4 | Task 1 | Apply funnelMode to all 5 Core pages |
-| 5 | Task 2 | Remove PillarBreadcrumb from QuoteScanner |
-| 6 | Task 2 | Remove PillarBreadcrumb from BeatYourQuote |
-| 7 | Task 7 | Remove RelatedToolsGrid from QuoteScanner |
-| 8 | Task 7 | Remove RelatedToolsGrid from BeatYourQuote |
-| 9 | Task 5 | Add success state to NoQuotePivotSection |
-| 10 | Task 5 | Wire success state in QuoteScanner |
+  if (emailSelectError) {
+    console.error('Error checking existing lead by email:', emailSelectError);
+    throw new Error('Database error while checking lead');
+  }
 
----
-
-## Before/After Comparison
-
-### AI Scanner Before
-```text
-[Full Navbar: Logo, Tools, Evidence, Intel, Beat Quote, Theme, Vault]
-[PillarBreadcrumb: "Part of Risk & Code"]
-...scanner content...
-[Email Submit → Toast → DEAD END]
-[RelatedToolsGrid: 6+ tool links]
-[MobileStickyFooter: Beat, Scan, Home, Tools]
+  // Take first result if exists (handles 0, 1, or 2+ rows safely)
+  existingLead = leadsArray && leadsArray.length > 0 ? leadsArray[0] : null;
+  if (existingLead) {
+    console.log('Found lead by email:', existingLead.id, '(selected most recent)');
+  }
+}
 ```
 
-### AI Scanner After
-```text
-[Funnel Navbar: Logo, Call Window Man, Vault icon, Theme]
-...scanner content...
-[Email Submit → Success State → "Open My Vault" + "Get Checklist"]
-(No related tools grid)
-(No mobile sticky footer)
-```
+### Step 2: Deploy and Test
+
+1. Deploy the edge function
+2. Test with the same email that previously failed
+3. Verify the lead is updated (not duplicated)
 
 ---
 
-## Phone Number for "Call Window Man"
+## Testing Checklist
 
-Using existing constant from codebase: `+15614685571`
+1. Submit lead with NEW email → Should create new lead
+2. Submit lead with EXISTING email → Should update existing lead (not crash)
+3. Submit lead with DUPLICATE email (`partyclean@yahoo.com`) → Should work (picks most recent)
+4. Verify rate limiting still works
+5. Verify Stape GTM events still fire
+6. Verify email notifications still trigger
 
-Display format: `(561) 468-5571`
+---
 
+## Root Cause Summary
+
+| What | Details |
+|------|---------|
+| **Error** | `PGRST116: Results contain 2 rows, application/vnd.pgrst.object+json requires 1 row` |
+| **Location** | `save-lead/index.ts` line 593 |
+| **Trigger** | Email lookup when duplicate leads exist |
+| **Fix** | Replace `.maybeSingle()` with `.limit(1)` |
+| **Prevention** | Consider adding unique constraint on `email` column (future) |
+
+---
+
+## No Blockers
+
+I can fix this completely. The issue is a single line change from `.maybeSingle()` to a safe array query pattern. No external dependencies or missing permissions required.
