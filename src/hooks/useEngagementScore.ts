@@ -1,41 +1,57 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getEngagementScore, getEngagementState } from '@/services/analytics';
+import { scheduleWhenIdle } from '@/lib/deferredInit';
 
 const SCORE_STORAGE_KEY = 'wte-engagement-score';
 
 /**
  * Hook to reactively listen to engagement score changes
+ * - Polling is deferred to avoid blocking initial render
  */
 export function useEngagementScore() {
   const [score, setScore] = useState(getEngagementScore);
   const [previousScore, setPreviousScore] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   // Poll for changes (since sessionStorage doesn't have native events)
+  // Deferred to idle time to avoid blocking initial render
   useEffect(() => {
-    const interval = setInterval(() => {
-      const currentScore = getEngagementScore();
-      if (currentScore !== score) {
-        setPreviousScore(score);
-        setScore(currentScore);
-      }
-    }, 500);
-    
-    // Also listen to storage events (for cross-tab sync)
+    // Also listen to storage events (for cross-tab sync) - this is lightweight
     const handleStorage = (e: StorageEvent) => {
       if (e.key === SCORE_STORAGE_KEY) {
         const currentScore = getEngagementScore();
-        setPreviousScore(score);
-        setScore(currentScore);
+        setScore(prev => {
+          if (currentScore !== prev) {
+            setPreviousScore(prev);
+            return currentScore;
+          }
+          return prev;
+        });
       }
     };
     
     window.addEventListener('storage', handleStorage);
     
+    // Defer polling start by 3 seconds
+    const cancelIdle = scheduleWhenIdle(() => {
+      intervalRef.current = setInterval(() => {
+        const currentScore = getEngagementScore();
+        setScore(prev => {
+          if (currentScore !== prev) {
+            setPreviousScore(prev);
+            return currentScore;
+          }
+          return prev;
+        });
+      }, 500);
+    }, { minDelay: 3000 });
+    
     return () => {
-      clearInterval(interval);
+      cancelIdle();
+      if (intervalRef.current) clearInterval(intervalRef.current);
       window.removeEventListener('storage', handleStorage);
     };
-  }, [score]);
+  }, []);
   
   // Get status based on score thresholds
   const getStatus = useCallback((s: number) => {
