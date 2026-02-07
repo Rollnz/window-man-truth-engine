@@ -90,17 +90,29 @@ export default function LeadSourceROI() {
       const startDate = dateRange.startDate ? format(startOfDay(dateRange.startDate), "yyyy-MM-dd") : null;
       const endDate = dateRange.endDate ? format(endOfDay(dateRange.endDate), "yyyy-MM-dd") : null;
 
-      // Fetch leads via edge function
-      const { data: leadsResponse, error: leadsError } = await supabase.functions.invoke('crm-leads', {
-        body: { 
-          action: 'list',
-          startDate,
-          endDate,
+      // Fetch leads via edge function (GET request)
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-leads${params.toString() ? `?${params}` : ''}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
         }
-      });
+      );
 
-      if (leadsError) throw leadsError;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to fetch leads (${response.status})`);
+      }
 
+      const leadsResponse = await response.json();
       const leadsData = leadsResponse?.leads || [];
       
       // Group by source and calculate metrics
