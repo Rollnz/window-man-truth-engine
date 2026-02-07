@@ -24,12 +24,6 @@ verify_jwt = false
 [functions.quote-scanner]
 verify_jwt = false
 
-[functions.generate-presentation]
-verify_jwt = false
-
-[functions.get-presentation-status]
-verify_jwt = false
-
 [functions.generate-quote]
 verify_jwt = false
 

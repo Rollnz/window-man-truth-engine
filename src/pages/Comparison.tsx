@@ -12,7 +12,7 @@ import { ComparisonTable } from "@/components/comparison/ComparisonTable";
 import { ComparisonCards } from "@/components/comparison/ComparisonCards";
 import { SavingsBanner } from "@/components/comparison/SavingsBanner";
 import { ConsultationCTA } from "@/components/comparison/ConsultationCTA";
-import { GenerateComparisonReportButton } from "@/components/comparison/GenerateComparisonReportButton";
+
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
@@ -66,15 +66,9 @@ export default function Comparison() {
       {/* Main Comparison Section */}
       <section className="py-12 md:py-16">
         <div className="container px-4">
-          {/* View Mode Toggle + Report Button */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+          {/* View Mode Toggle */}
+          <div className="flex items-center justify-start mb-6">
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
-            <GenerateComparisonReportButton
-              windowCount={windowCount}
-              trueCosts={trueCosts}
-              viewMode={viewMode}
-              homeownerName={sessionData.name}
-            />
           </div>
 
           {/* Savings Banner (only show in long-term view) */}
