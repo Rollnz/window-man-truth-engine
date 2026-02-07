@@ -71,6 +71,10 @@ export interface LogSignalParams {
   email?: string;
   /** Raw phone - will be hashed server-side */
   phone?: string;
+  /** Raw firstName - will be hashed server-side */
+  firstName?: string;
+  /** Raw lastName - will be hashed server-side */
+  lastName?: string;
 }
 
 /**
@@ -107,6 +111,8 @@ export async function logHighValueSignal(params: LogSignalParams): Promise<void>
     intentTier,
     email,
     phone,
+    firstName,
+    lastName,
   } = params;
 
   try {
@@ -142,6 +148,8 @@ export async function logHighValueSignal(params: LogSignalParams): Promise<void>
       // This ensures the database ONLY stores hashed values
       email: email || null,
       phone: phone || null,
+      firstName: firstName || null,
+      lastName: lastName || null,
       
       // Attribution
       source_tool: sourceTool,
@@ -273,6 +281,8 @@ export async function logBookingConfirmed(params: {
   leadId?: string;
   email?: string;
   phone?: string;
+  firstName?: string;
+  lastName?: string;
 }): Promise<void> {
   return logHighValueSignal({
     eventName: 'booking_confirmed',
@@ -280,6 +290,8 @@ export async function logBookingConfirmed(params: {
     leadId: params.leadId,
     email: params.email,
     phone: params.phone,
+    firstName: params.firstName,
+    lastName: params.lastName,
     intentTier: 5, // Highest intent - ready to talk
     funnelStage: 'decision',
     metadata: {
