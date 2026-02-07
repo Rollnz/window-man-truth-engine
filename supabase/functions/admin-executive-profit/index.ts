@@ -11,12 +11,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ADMIN_EMAILS = [
-  "admin@windowman.com",
-  "support@windowman.com",
-  "vansiclenp@gmail.com",
-  "mongoloyd@protonmail.com",
-].map((e) => e.toLowerCase());
+// Database-driven admin check via user_roles table
+async function hasAdminRole(supabaseAdmin: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) {
+    console.error("[admin-executive-profit] Error checking admin role:", error.message);
+    return false;
+  }
+  return !!data;
+}
 
 // ===== Response Helpers =====
 function successResponse(data: unknown) {
@@ -196,12 +204,14 @@ serve(async (req) => {
       return errorResponse(401, "UNAUTHORIZED", "Invalid authentication");
     }
 
-    const userEmail = claimsData.claims.email as string;
-    if (!ADMIN_EMAILS.includes(userEmail?.toLowerCase())) {
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Check admin role in database
+    const userId = claimsData.claims.sub as string;
+    const isAdmin = await hasAdminRole(supabaseAdmin, userId);
+    if (!isAdmin) {
       return errorResponse(403, "FORBIDDEN", "Admin access required");
     }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse query parameters
     const url = new URL(req.url);

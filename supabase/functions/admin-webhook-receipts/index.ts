@@ -26,14 +26,19 @@ function safeInt(value: string | null, def: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-// Hardcoded admin whitelist (matching existing admin functions)
-const ADMIN_EMAILS = new Set(
-  ["vansiclenp@gmail.com", "mongoloyd@protonmail.com"].map((s) => s.toLowerCase())
-);
-
-function isAdminEmail(email: string | null | undefined) {
-  const e = (email || "").toLowerCase();
-  return e ? ADMIN_EMAILS.has(e) : false;
+// Database-driven admin check via user_roles table
+async function hasAdminRole(supabaseAdmin: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) {
+    console.error("[admin-webhook-receipts] Error checking admin role:", error.message);
+    return false;
+  }
+  return !!data;
 }
 
 // Mask PII (phone/email) unless explicitly requested
@@ -327,7 +332,8 @@ serve(async (req) => {
   if (userErr || !userRes?.user) return json(401, { error: "Invalid token" });
 
   const user = userRes.user;
-  if (!isAdminEmail(user.email)) return json(403, { error: "Access denied" });
+  const isAdmin = await hasAdminRole(supabaseAdmin, user.id);
+  if (!isAdmin) return json(403, { error: "Access denied" });
 
   const url = new URL(req.url);
 
