@@ -5,14 +5,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Admin email whitelist - must be lowercase for comparison
-const ADMIN_EMAILS = [
-  "admin@windowtruth.com",
-  "tim@impactwindowexperts.com",
-  "tim@itswindowman.com",
-  "vansiclenp@gmail.com",
-  "mongoloyd@protonmail.com",
-];
+// Database-driven admin check via user_roles table
+async function hasAdminRole(supabase: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) {
+    console.error("[admin-quotes] Error checking admin role:", error.message);
+    return false;
+  }
+  return !!data;
+}
 
 interface QuoteFile {
   id: string;
@@ -68,8 +74,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const userEmail = user.email?.toLowerCase() || "";
-    if (!ADMIN_EMAILS.includes(userEmail)) {
+    // Check admin role in database
+    const isAdmin = await hasAdminRole(supabase, user.id);
+    if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Access denied" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -6,8 +6,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Admin whitelist (case-insensitive)
-const ADMIN_EMAILS = ['vansiclenp@gmail.com', 'mongoloyd@protonmail.com', 'admin@windowman.com', 'support@windowman.com'];
+// Database-driven admin check via user_roles table
+async function hasAdminRole(supabase: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) {
+    console.error("[admin-revenue] Error checking admin role:", error.message);
+    return false;
+  }
+  return !!data;
+}
 
 // Helper: Derive platform from lead attribution fields
 function derivePlatform(lead: {
@@ -61,7 +73,9 @@ serve(async (req) => {
       });
     }
 
-    if (!ADMIN_EMAILS.some(email => email.toLowerCase() === user.email?.toLowerCase())) {
+    // Check admin role in database
+    const isAdmin = await hasAdminRole(supabase, user.id);
+    if (!isAdmin) {
       return new Response(JSON.stringify({ error: 'Access denied' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

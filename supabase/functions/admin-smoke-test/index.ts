@@ -1,7 +1,20 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ===== Config =====
-const ADMIN_EMAILS = ["vansiclenp@gmail.com", "mongoloyd@protonmail.com"];
+// Database-driven admin check via user_roles table
+async function hasAdminRole(supabase: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) {
+    console.error("[admin-smoke-test] Error checking admin role:", error.message);
+    return false;
+  }
+  return !!data;
+}
 
 // ===== CORS =====
 const corsHeaders = {
@@ -64,9 +77,8 @@ function errorResponse(status: number, code: string, message: string) {
   });
 }
 
-function isAdminEmail(email: string): boolean {
-  return ADMIN_EMAILS.includes(email.toLowerCase());
-}
+// isAdminEmail is no longer used - we use hasAdminRole instead
+// (keeping function stub for backwards compatibility with type checks)
 
 // ===== Invariant Checkers =====
 
@@ -538,9 +550,10 @@ Deno.serve(async (req: Request) => {
       return errorResponse(401, "unauthorized", "Unauthorized");
     }
 
-    // Check admin whitelist
-    const email = (user.email || "").toLowerCase();
-    if (!isAdminEmail(email)) {
+    // Check admin role in database
+    const supabaseAdmin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const isAdmin = await hasAdminRole(supabaseAdmin, user.id);
+    if (!isAdmin) {
       return errorResponse(403, "forbidden", "Access denied");
     }
 

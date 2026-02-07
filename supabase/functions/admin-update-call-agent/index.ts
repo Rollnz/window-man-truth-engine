@@ -20,14 +20,19 @@ function json(status: number, body: unknown) {
   });
 }
 
-// Admin whitelist (case-insensitive) - keep in sync with other admin functions
-const ADMIN_EMAILS = new Set(
-  ["vansiclenp@gmail.com", "mongoloyd@protonmail.com"].map((s) => s.toLowerCase())
-);
-
-function isAdminEmail(email: string | null | undefined): boolean {
-  const e = (email || "").toLowerCase();
-  return e ? ADMIN_EMAILS.has(e) : false;
+// Database-driven admin check via user_roles table
+async function hasAdminRole(supabaseAdmin: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) {
+    console.error("[admin-update-call-agent] Error checking admin role:", error.message);
+    return false;
+  }
+  return !!data;
 }
 
 // Valid source tools for call agents
@@ -103,9 +108,9 @@ serve(async (req) => {
     return json(401, { error: "Unauthorized" });
   }
 
-  // Check admin whitelist
-  const email = (user.email || "").toLowerCase();
-  if (!isAdminEmail(email)) {
+  // Check admin role in database
+  const isAdmin = await hasAdminRole(supabaseAdmin, user.id);
+  if (!isAdmin) {
     console.warn("[admin-update-call-agent] Non-admin access attempt:", email);
     return json(403, { error: "Access denied" });
   }

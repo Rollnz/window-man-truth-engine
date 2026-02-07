@@ -11,8 +11,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Admin whitelist (case-insensitive) - keep in sync with other admin functions
-const ADMIN_EMAILS = ["vansiclenp@gmail.com", "mongoloyd@protonmail.com"];
+// Database-driven admin check via user_roles table
+async function hasAdminRole(supabaseAdmin: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) {
+    console.error("[enqueue-manual-call] Error checking admin role:", error.message);
+    return false;
+  }
+  return !!data;
+}
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -101,9 +113,9 @@ Deno.serve(async (req) => {
     return json(401, { error: "Unauthorized" });
   }
 
-  // Check admin whitelist
-  const email = (user.email || "").toLowerCase();
-  if (!ADMIN_EMAILS.includes(email)) {
+  // Check admin role in database
+  const isAdmin = await hasAdminRole(supabaseAdmin, user.id);
+  if (!isAdmin) {
     console.warn("[enqueue-manual-call] Non-admin access attempt:", email);
     return json(403, { error: "Access denied" });
   }

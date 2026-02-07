@@ -23,13 +23,10 @@
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ADMIN WHITELIST - Single source of truth for all admin functions
+// ADMIN ACCESS CONTROL - Database-driven via user_roles table
 // ═══════════════════════════════════════════════════════════════════════════
-// IMPORTANT: Keep this list in sync. Add new admins here.
-export const ADMIN_EMAILS = [
-  "vansiclenp@gmail.com",
-  "mongoloyd@protonmail.com",
-] as const;
+// Admin roles are managed in the `user_roles` table with role='admin'.
+// To add/remove admins, modify the user_roles table in the database.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CORS Headers - Standard for all admin endpoints
@@ -87,13 +84,32 @@ export function jsonResponse(status: number, body: unknown): Response {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Admin Email Check
+// Admin Role Check - Database-driven via user_roles table
 // ═══════════════════════════════════════════════════════════════════════════
 
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false;
-  const normalized = email.toLowerCase().trim();
-  return ADMIN_EMAILS.some((admin) => admin.toLowerCase() === normalized);
+/**
+ * Check if a user has the admin role in the database.
+ * @param supabaseAdmin - Service role client for bypassing RLS
+ * @param userId - The user's UUID from auth.users
+ * @returns true if user has 'admin' role in user_roles table
+ */
+export async function hasAdminRole(
+  supabaseAdmin: SupabaseClient,
+  userId: string
+): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  if (error) {
+    console.error("[adminAuth] Error checking admin role:", error.message);
+    return false;
+  }
+
+  return !!data;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -183,8 +199,9 @@ export async function validateAdminRequest(req: Request): Promise<ValidationResu
     };
   }
 
-  // Check admin whitelist
-  if (!isAdminEmail(email)) {
+  // Check admin role in database
+  const isAdmin = await hasAdminRole(supabaseAdmin, userId);
+  if (!isAdmin) {
     console.warn("[adminAuth] Non-admin access attempt:", email);
     return {
       ok: false,
