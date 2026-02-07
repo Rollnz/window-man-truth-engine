@@ -113,3 +113,12 @@ verify_jwt = false
 
 [functions.sync-session]
 verify_jwt = false
+
+[functions.admin-tracking-health]
+verify_jwt = false
+
+[functions.admin-retry-failed-events]
+verify_jwt = false
+
+[functions.check-tracking-health]
+verify_jwt = false

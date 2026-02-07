@@ -87,11 +87,47 @@ export function TrackingHealthView({ dateRange, onStatusChange }: TrackingHealth
   }, [dateRange.startDate, dateRange.endDate]);
 
   const handleRetryAll = async () => {
-    // TODO: Implement retry endpoint in Phase 2
-    toast({
-      title: 'Coming soon',
-      description: 'Batch retry functionality will be available in Phase 2',
-    });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: 'Error', description: 'Not authenticated', variant: 'destructive' });
+        return;
+      }
+
+      toast({ title: 'Retrying...', description: 'Processing failed events...' });
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-retry-failed-events`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to retry events');
+      }
+
+      toast({
+        title: 'Retry Complete',
+        description: `${result.resolved || 0} resolved, ${result.failed || 0} still pending, ${result.deadLettered || 0} moved to dead letter`,
+      });
+
+      // Refresh the health data
+      fetchHealthData();
+    } catch (error) {
+      console.error('[TrackingHealthView] Retry error:', error);
+      toast({
+        title: 'Retry Failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
