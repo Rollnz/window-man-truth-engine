@@ -169,9 +169,9 @@ Use "weak" status for documents that are checked but have no file uploaded.`;
     console.log('Analysis complete:', result.overallScore, '% readiness');
 
     // Log attribution event (non-blocking)
-    if (sessionId) {
+    if (sessionId || ip) {
       logAttributionEvent({
-        sessionId,
+        sessionId: sessionId || `evidence-${ip}`,
         eventName: 'evidence_analyzed',
         eventCategory: 'ai_tool',
         pagePath: '/claim-survival',
@@ -181,10 +181,10 @@ Use "weak" status for documents that are checked but have no file uploaded.`;
           status: result.status,
           documents_analyzed: documents.length,
           documents_complete: documents.filter(d => d.hasFile).length,
-          user_id: userId, // May be null for anonymous users
+          user_id: userId,
         },
         leadId,
-        anonymousIdFallback: sessionId || `evidence-${ip}`, // Use sessionId or IP for anonymous
+        anonymousIdFallback: sessionId ?? `evidence-${ip}`,
       }).catch((err) => console.error('[analyze-evidence] Attribution logging failed:', err));
     }
 
