@@ -1,191 +1,328 @@
 
 
-# Phase 1 Only: Backend Session Sync (Zero UI Changes)
-
-## Executive Summary
-
-Implement automatic session data synchronization from localStorage to the database when users authenticate. This is **purely backend infrastructure** with **no changes to any lead capture modals**.
-
-**What we're NOT doing**: No "Create Vault" prompts, no blocking steps, no changes to `LeadCaptureModal`, `SampleReportLeadModal`, or any guide modals.
+# Strict Funnel Strategy Implementation
+## Tasks 1, 2, 3, 5, 7
 
 ---
 
-## Why This Is Safe
+## Overview
 
-| Concern | Status |
-|---------|--------|
-| Lead capture modals | UNTOUCHED |
-| Upsell flows (Call Offer, Project Details) | UNTOUCHED |
-| `onSuccess` callbacks | UNTOUCHED |
-| Revenue CTAs | UNTOUCHED |
-
-This phase is **purely additive backend code** that runs invisibly in the background.
+This implementation transforms 5 "Money Pages" into a focused funnel by:
+- Creating a minimal Funnel Navbar (Task 1)
+- Removing PillarBreadcrumb badges (Task 2)
+- Hiding MobileStickyFooter (Task 3)
+- Fixing the AI Scanner dead end with a success state (Task 5)
+- Removing RelatedToolsGrid distractions (Task 7)
 
 ---
 
-## What This Enables (Future "Passive" Options)
+## Task 1: Create Funnel-Mode Navbar
 
-Once Phase 1 is complete, you can add non-blocking "Create Vault" prompts on:
-- Results pages (after analysis complete)
-- Vault dashboard sidebar
-- Email follow-ups ("Secure your results")
+**Goal**: Strip all navigation links on Core 5 pages. Keep only Logo + "Call Window Man" + Vault icon.
 
-These can be added later without touching lead capture flows.
+### Changes to `src/components/home/Navbar.tsx`
 
----
+Add `funnelMode?: boolean` prop that:
+- Hides: Tools, Evidence, Intel Library, Beat Your Quote, ReadinessIndicator
+- Shows: Logo, "Call Window Man" tel button, Vault icon-only login
+- Keeps: Theme toggle on desktop
 
-## Technical Implementation
-
-### 1. Database Schema Update
-
-Add columns to store synced session data:
-
-```sql
-ALTER TABLE public.profiles
-ADD COLUMN IF NOT EXISTS session_data JSONB DEFAULT '{}';
-
-ALTER TABLE public.profiles
-ADD COLUMN IF NOT EXISTS session_sync_at TIMESTAMPTZ;
-```
-
-**Risk**: None - purely additive.
-
----
-
-### 2. Edge Function: `sync-session`
-
-**File**: `supabase/functions/sync-session/index.ts`
-
-**Core Logic**: Safe Deep Merge where existing DB data wins over empty incoming data.
-
+### Funnel Mode Layout
 ```text
-Merge Rules:
-  ┌────────────────────────────────────────────────────────┐
-  │  IF incoming[key] is null/empty → KEEP existing       │
-  │  IF existing[key] is null       → USE incoming        │
-  │  IF both have values (arrays)   → MERGE unique items  │
-  │  DEFAULT: existing wins (conservative)                │
-  └────────────────────────────────────────────────────────┘
+Desktop: [Logo] ──────────────────── [📞 Call Window Man] [🔒] [🌙]
+Mobile:  [Logo] ───────────────────────────────── [📞] [🔒] [☰]
 ```
 
-**Endpoint**:
-```text
-POST /sync-session
-Authorization: Bearer <JWT>
-Body: { sessionData: {...}, syncReason: "auth_login" }
-```
+### Pages to Pass `funnelMode={true}`
+
+| Page | File | Current Navbar |
+|------|------|----------------|
+| Homepage | `src/pages/Index.tsx` | Line 104 |
+| AI Scanner | `src/pages/QuoteScanner.tsx` | Line 117 |
+| Beat Your Quote | `src/pages/BeatYourQuote.tsx` | Line 133 |
+| Sample Report | `src/pages/SampleReport.tsx` | Lines 105, 116 |
+| Audit | `src/pages/Audit.tsx` | No Navbar currently - Add one |
 
 ---
 
-### 3. Client Hook: `useSessionSync`
+## Task 2: Hide PillarBreadcrumb on Core 5 Pages
 
-**File**: `src/hooks/useSessionSync.ts`
+**Goal**: Remove "Part of Risk & Code" badge that leaks users to pillar pages.
 
-Triggers automatically when `isAuthenticated` becomes true:
+### Files to Modify
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│              useSessionSync Hook                         │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  On Auth State Change:                                  │
-│  1. Check if user just authenticated                    │
-│  2. Check if localStorage has meaningful data           │
-│  3. If yes to both → call sync-session (fire & forget)  │
-│  4. Mark synced to avoid duplicate calls                │
-│                                                         │
-│  Safety: Errors are logged, never block UI              │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
+| File | Line | Component |
+|------|------|-----------|
+| `src/pages/QuoteScanner.tsx` | Lines 121-123 | `<PillarBreadcrumb toolPath="/ai-scanner" variant="badge" />` |
+| `src/pages/BeatYourQuote.tsx` | Lines 136-138 | `<PillarBreadcrumb toolPath="/beat-your-quote" variant="dossier" />` |
+
+**Action**: Delete these JSX blocks entirely.
 
 ---
 
-### 4. Vault Page: Hydrate from DB
+## Task 3: Hide MobileStickyFooter on Core 5 Pages
 
-**File**: `src/pages/Vault.tsx`
+**Goal**: Prevent sticky footer from blocking mobile viewport on money pages.
 
-When user opens Vault on a new device with empty localStorage:
+### Step 1: Add FUNNEL_ROUTES to `src/config/navigation.ts`
 
-```text
-On Mount:
-  1. Check localStorage for session data
-  2. If empty AND user authenticated:
-     → Fetch profiles.session_data from DB
-     → Hydrate localStorage with fetched data
-  3. Display unified data
+```typescript
+/**
+ * Funnel Routes - Pages optimized for paid traffic conversion
+ * These pages hide distracting UI elements (sticky footer, floating CTAs)
+ */
+export const FUNNEL_ROUTES = [
+  '/',
+  '/audit',
+  '/ai-scanner',
+  '/sample-report',
+  '/beat-your-quote',
+] as const;
 ```
 
----
+### Step 2: Modify `src/components/navigation/MobileStickyFooter.tsx`
 
-### 5. Integration Point
+Add route check at the top of the component:
 
-**File**: `src/App.tsx`
+```typescript
+import { FUNNEL_ROUTES } from '@/config/navigation';
 
-Add hook at app root (runs on every page):
-
-```tsx
-import { useSessionSync } from '@/hooks/useSessionSync';
-
-function App() {
-  useSessionSync(); // Fires in background on auth
-  // ... rest of app
+export function MobileStickyFooter() {
+  const location = useLocation();
+  
+  // Hide on funnel pages to reduce distractions
+  const isFunnelPage = FUNNEL_ROUTES.includes(location.pathname as any);
+  if (isFunnelPage) return null;
+  
+  // ...rest of component
 }
 ```
 
 ---
 
-## Files to Create/Modify
+## Task 5: Fix AI Scanner Post-Submit Dead End (Critical)
 
-| File | Action | Risk |
-|------|--------|------|
-| `supabase/migrations/xxx_add_session_sync.sql` | CREATE | None |
-| `supabase/functions/sync-session/index.ts` | CREATE | None |
-| `src/hooks/useSessionSync.ts` | CREATE | None |
-| `src/App.tsx` | MODIFY (add hook) | Very Low |
-| `src/pages/Vault.tsx` | MODIFY (add DB fetch) | Low |
+**Goal**: Replace toast notification with persistent success state that drives users to Vault.
+
+### Current Flow (Broken)
+```text
+User clicks "Continue with Email"
+    → Lead saved ✓
+    → Toast: "Saved! We'll help you..."
+    → User left on same page (DEAD END)
+```
+
+### New Flow
+```text
+User clicks "Continue with Email"
+    → Lead saved ✓
+    → NoQuotePivotSection transforms to SUCCESS STATE:
+    
+    ┌────────────────────────────────────────────┐
+    │  ✓ You're In. Your Vault is Ready.         │
+    │                                            │
+    │  "I just saved your place. When you get    │
+    │   your first quote, upload it here and     │
+    │   I'll tell you if it's worth signing."    │
+    │                                            │
+    │  [Open My Vault]  [Get Quote Checklist]    │
+    └────────────────────────────────────────────┘
+```
+
+### Implementation Steps
+
+**Step 1**: Add state to `src/pages/QuoteScanner.tsx`
+
+```typescript
+const [isNoQuoteSubmitted, setIsNoQuoteSubmitted] = useState(false);
+```
+
+**Step 2**: Update `onEmailSubmit` handler (lines 208-275)
+
+Replace the toast with:
+```typescript
+if (result?.leadId) {
+  // ...existing tracking code...
+  setIsNoQuoteSubmitted(true);  // NEW: Trigger success state
+  // Remove toast call
+}
+```
+
+**Step 3**: Pass to `NoQuotePivotSection`:
+
+```tsx
+<NoQuotePivotSection 
+  isLoading={isNoQuoteSubmitting}
+  isSubmitted={isNoQuoteSubmitted}  // NEW PROP
+  onGoogleAuth={...}
+  onEmailSubmit={...}
+/>
+```
+
+**Step 4**: Modify `src/components/quote-scanner/vault-pivot/NoQuotePivotSection.tsx`
+
+Add `isSubmitted?: boolean` prop and render success UI when true:
+
+```tsx
+interface NoQuotePivotSectionProps {
+  onGoogleAuth?: () => void;
+  onEmailSubmit?: (data: {...}) => void;
+  isLoading?: boolean;
+  isSubmitted?: boolean;  // NEW
+}
+
+export function NoQuotePivotSection({ 
+  onGoogleAuth, onEmailSubmit, isLoading, isSubmitted 
+}: NoQuotePivotSectionProps) {
+  
+  // SUCCESS STATE
+  if (isSubmitted) {
+    return (
+      <div className="max-w-[680px] mx-auto p-8 md:p-10 rounded-xl border border-border/40 bg-background">
+        <div className="text-center">
+          {/* Success Icon */}
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
+            <CheckCircle className="w-8 h-8 text-emerald-500" />
+          </div>
+          
+          {/* Success Message */}
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+            You're In. Your Vault is Ready.
+          </h2>
+          
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            I just saved your place. When you get your first quote, 
+            upload it here and I'll tell you if it's worth signing.
+          </p>
+          
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button asChild size="lg">
+              <Link to="/vault">
+                <Vault className="w-5 h-5 mr-2" />
+                Open My Vault
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" asChild>
+              <Link to="/spec-checklist-guide">
+                Get Quote Checklist
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // EXISTING FORM UI
+  return (
+    <div className="max-w-[680px] mx-auto...">
+      {/* ...existing code... */}
+    </div>
+  );
+}
+```
+
+---
+
+## Task 7: Remove RelatedToolsGrid from Core 5 Pages
+
+**Goal**: Stop leaking users to 15+ secondary tools.
+
+### Files to Modify
+
+| File | Lines | Section |
+|------|-------|---------|
+| `src/pages/QuoteScanner.tsx` | 297-302 | RelatedToolsGrid section |
+| `src/pages/BeatYourQuote.tsx` | 168-173 | RelatedToolsGrid section |
+
+**Action**: Delete these JSX blocks and their imports.
+
+### QuoteScanner.tsx - Remove lines 297-302:
+```tsx
+{/* Related Tools - "Enforce Your Rights" section */}
+<RelatedToolsGrid
+  title={getFrameControl('quote-scanner').title}
+  description={getFrameControl('quote-scanner').description}
+  tools={getSmartRelatedTools('quote-scanner', sessionData.toolsCompleted)}
+/>
+```
+
+### BeatYourQuote.tsx - Remove lines 168-173:
+```tsx
+{/* Related Tools */}
+<RelatedToolsGrid
+  title={getFrameControl('beat-your-quote').title}
+  description={getFrameControl('beat-your-quote').description}
+  tools={getSmartRelatedTools('beat-your-quote', sessionData.toolsCompleted)}
+/>
+```
+
+Also remove unused imports:
+- `getSmartRelatedTools`, `getFrameControl` from `@/config/toolRegistry`
+- `RelatedToolsGrid` from `@/components/ui/RelatedToolsGrid`
+
+---
+
+## Files Summary
+
+| File | Changes | Risk |
+|------|---------|------|
+| `src/config/navigation.ts` | Add `FUNNEL_ROUTES` array | Very Low |
+| `src/components/home/Navbar.tsx` | Add `funnelMode` prop with simplified UI | Medium |
+| `src/components/navigation/MobileStickyFooter.tsx` | Add route-based visibility check | Low |
+| `src/pages/Index.tsx` | Pass `funnelMode={true}` | Very Low |
+| `src/pages/Audit.tsx` | Add Navbar with `funnelMode={true}` | Low |
+| `src/pages/QuoteScanner.tsx` | Remove breadcrumb, grid, add success state | Medium |
+| `src/pages/SampleReport.tsx` | Pass `funnelMode={true}` | Very Low |
+| `src/pages/BeatYourQuote.tsx` | Remove breadcrumb, grid, pass `funnelMode={true}` | Low |
+| `src/components/quote-scanner/vault-pivot/NoQuotePivotSection.tsx` | Add `isSubmitted` prop with success UI | Low |
 
 ---
 
 ## Implementation Order
 
-| Step | Task | Test |
-|------|------|------|
-| 1 | Run migration to add columns | `SELECT session_data FROM profiles LIMIT 1` |
-| 2 | Deploy `sync-session` edge function | Test with curl |
-| 3 | Create `useSessionSync` hook | Console log verification |
-| 4 | Add hook to `App.tsx` | Auth flow test |
-| 5 | Update `Vault.tsx` to fetch from DB | Cross-device test |
+| Step | Task | Description |
+|------|------|-------------|
+| 1 | Task 3 | Add FUNNEL_ROUTES to navigation.ts |
+| 2 | Task 3 | Hide MobileStickyFooter on funnel routes |
+| 3 | Task 1 | Add funnelMode to Navbar component |
+| 4 | Task 1 | Apply funnelMode to all 5 Core pages |
+| 5 | Task 2 | Remove PillarBreadcrumb from QuoteScanner |
+| 6 | Task 2 | Remove PillarBreadcrumb from BeatYourQuote |
+| 7 | Task 7 | Remove RelatedToolsGrid from QuoteScanner |
+| 8 | Task 7 | Remove RelatedToolsGrid from BeatYourQuote |
+| 9 | Task 5 | Add success state to NoQuotePivotSection |
+| 10 | Task 5 | Wire success state in QuoteScanner |
 
 ---
 
-## Testing Checklist
+## Before/After Comparison
 
-1. Complete Fair Price Quiz without logging in
-2. Sign up for account (via navbar login)
-3. Check `profiles.session_data` in database - should contain quiz data
-4. Clear localStorage
-5. Open Vault on different browser
-6. Verify quiz results appear (fetched from DB)
+### AI Scanner Before
+```text
+[Full Navbar: Logo, Tools, Evidence, Intel, Beat Quote, Theme, Vault]
+[PillarBreadcrumb: "Part of Risk & Code"]
+...scanner content...
+[Email Submit → Toast → DEAD END]
+[RelatedToolsGrid: 6+ tool links]
+[MobileStickyFooter: Beat, Scan, Home, Tools]
+```
+
+### AI Scanner After
+```text
+[Funnel Navbar: Logo, Call Window Man, Vault icon, Theme]
+...scanner content...
+[Email Submit → Success State → "Open My Vault" + "Get Checklist"]
+(No related tools grid)
+(No mobile sticky footer)
+```
 
 ---
 
-## What's NOT in This Plan (Deferred to Later)
+## Phone Number for "Call Window Man"
 
-| Feature | Status | Why Deferred |
-|---------|--------|--------------|
-| "Create Vault" prompt in lead modals | SKIPPED | Blocks revenue CTAs |
-| Password creation flow | SKIPPED | Adds friction |
-| Modal step changes | SKIPPED | Interferes with upsells |
+Using existing constant from codebase: `+15614685571`
 
-These can be added as **passive, non-blocking elements** on results pages later.
-
----
-
-## Rollback Plan
-
-If issues arise:
-1. Comment out `useSessionSync()` in App.tsx
-2. localStorage continues working as before
-3. No data loss - columns remain for future use
+Display format: `(561) 468-5571`
 
