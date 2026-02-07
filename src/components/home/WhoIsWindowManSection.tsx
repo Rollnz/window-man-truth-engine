@@ -1,30 +1,26 @@
 import { ShieldCheck, Target, Zap, Scale, Eye, Users, BadgeCheck, DollarSign, Handshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
-interface ValueCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  highlight?: boolean;
-}
-function ValueCard({
-  icon,
-  title,
-  description,
-  highlight
-}: ValueCardProps) {
-  return <div className={cn("p-6 rounded-xl border transition-all duration-300 hover:translate-y-[-4px]", highlight ? "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30 hover:border-primary/50" : "bg-card/50 border-border/50 hover:border-border")}>
+
+interface ValueCardProps { icon: React.ReactNode; title: string; description: string; highlight?: boolean; }
+
+function ValueCard({ icon, title, description, highlight }: ValueCardProps) {
+  return (
+    <div className={cn("p-6 rounded-xl border transition-all duration-300 hover:translate-y-[-4px]", highlight ? "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30 hover:border-primary/50" : "bg-card/50 border-border/50 hover:border-border")}>
       <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-4", highlight ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground")}>{icon}</div>
       <h4 className="text-lg font-semibold text-foreground mb-2">{title}</h4><p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
-    </div>;
+    </div>
+  );
 }
+
 export function WhoIsWindowManSection() {
-  return <section className="py-20 md:py-32 relative bg-[hsl(var(--surface-1))]">
+  return (
+    <section className="py-20 md:py-32 relative bg-[hsl(var(--surface-1))]">
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-12"><h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">You Shouldn't Need a Law Degree<span className="block mt-2 text-primary">to Buy Windows.</span></h2><p className="text-lg text-muted-foreground">The window industry runs on a knowledge gap. Contractors know the loopholes. Insurers know the exclusions.<span className="block mt-2 text-foreground font-medium">Homeowners just get the bill.</span></p><p className="text-xl font-semibold text-primary mt-4">Window Man exists to flip that script — and put the power back in your hands.</p></div>
         <div className="max-w-4xl mx-auto mb-16">
           <div className="grid md:grid-cols-2 gap-8">
             <div className="p-8 rounded-2xl bg-card border border-border"><h3 className="text-xl font-semibold text-foreground mb-4">What You're Actually Looking At</h3><p className="text-muted-foreground leading-relaxed mb-4">When you receive a window estimate, you aren't just looking at a price.</p><p className="text-muted-foreground leading-relaxed mb-4">You're looking at a <span className="text-foreground font-medium">legal and technical document</span> designed to protect the company that wrote it — not you.</p><p className="text-muted-foreground leading-relaxed">Most homeowners assume quotes are straightforward: materials, labor, total cost. In reality, the real risk lives in what's missing, what's implied, and what's buried in fine print.</p></div>
-            <div className="p-8 rounded-2xl bg-gradient-to-br from-[hsl(var(--secondary)/0.1)] to-transparent border border-[hsl(var(--secondary)/0.2)] shadow-xl"><h3 className="text-xl font-semibold text-[hsl(var(--secondary))] mb-4">The Conflict of Interest</h3><div className="space-y-4"><div className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-[hsl(var(--secondary))] mt-2 flex-shrink-0" /><p className="text-muted-foreground">Contractors are paid to <span className="text-foreground">sell installations</span>.</p></div><div className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-[hsl(var(--secondary))] mt-2 flex-shrink-0" /><p className="text-muted-foreground">Insurers are paid to <span className="text-foreground">deny claims</span>.</p></div><div className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-[hsl(var(--secondary))] mt-2 flex-shrink-0" /><p className="text-foreground font-medium">No one in the process is paid to protect you from blind spots.</p></div></div><p className="text-xl font-semibold text-foreground mt-6">That's the gap Window Man fills.</p></div>
+            <div className="p-8 rounded-2xl bg-gradient-to-br from-[hsl(var(--secondary)/0.1)] to-transparent border border-[hsl(var(--secondary)/0.2)]"><h3 className="text-xl font-semibold text-[hsl(var(--secondary))] mb-4">The Conflict of Interest</h3><div className="space-y-4"><div className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-[hsl(var(--secondary))] mt-2 flex-shrink-0" /><p className="text-muted-foreground">Contractors are paid to <span className="text-foreground">sell installations</span>.</p></div><div className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-[hsl(var(--secondary))] mt-2 flex-shrink-0" /><p className="text-muted-foreground">Insurers are paid to <span className="text-foreground">deny claims</span>.</p></div><div className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-[hsl(var(--secondary))] mt-2 flex-shrink-0" /><p className="text-foreground font-medium">No one in the process is paid to protect you from blind spots.</p></div></div><p className="text-xl font-semibold text-foreground mt-6">That's the gap Window Man fills.</p></div>
           </div>
         </div>
         <div className="max-w-4xl mx-auto mb-16">
@@ -45,5 +41,6 @@ export function WhoIsWindowManSection() {
           </div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 }
