@@ -90,6 +90,18 @@ export const FOOTER_NAV = {
  * These paths redirect to their canonical destinations.
  * The browser URL will change to the destination.
  */
+/**
+ * Funnel Routes - Pages optimized for paid traffic conversion
+ * These pages hide distracting UI elements (sticky footer, floating CTAs)
+ */
+export const FUNNEL_ROUTES = [
+  '/',
+  '/audit',
+  '/ai-scanner',
+  '/sample-report',
+  '/beat-your-quote',
+] as const;
+
 export const ROUTE_REDIRECTS = {
   '/quote-scanner': ROUTES.QUOTE_SCANNER,
   '/calculate-your-estimate': ROUTES.FREE_ESTIMATE,

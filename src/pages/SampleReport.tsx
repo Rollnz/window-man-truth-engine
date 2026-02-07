@@ -102,7 +102,7 @@ const SampleReport = () => {
     return (
       <div className="min-h-screen bg-background">
         <SEO title="Sample AI Report - See What Your Audit Looks Like | Window Man" description="View a real example of our AI window quote audit." canonicalUrl="https://itswindowman.com/sample-report" />
-        <Navbar />
+        <Navbar funnelMode={true} />
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -113,7 +113,7 @@ const SampleReport = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO title="Sample AI Report - See What Your Audit Looks Like | Window Man" description="View a real example of our AI window quote audit. See the scorecard, risk flags, and plain-English findings before you upload your own estimate. 100% free, no obligation." canonicalUrl="https://itswindowman.com/sample-report" />
-      <Navbar />
+      <Navbar funnelMode={true} />
       <SampleReportHeader onOpenLeadModal={handleOpenLeadModal} />
 
       {/* Lead Capture Modal (2-step flow) - for users with quotes */}

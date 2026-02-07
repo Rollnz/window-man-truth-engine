@@ -101,7 +101,7 @@ const Index = () => {
         canonicalUrl="https://itswindowman.com/"
         jsonLd={[...homepageSchema, getBreadcrumbSchema('home')]}
       />
-      <Navbar />
+      <Navbar funnelMode={true} />
       <div className="pt-14"> {/* Padding for fixed navbar */}
         <HeroSection />
         <MarketRealitySection />

@@ -16,9 +16,7 @@ import { MissionInitiatedModal } from '@/components/beat-your-quote/MissionIniti
 import { AnalysisSuccessScreen } from '@/components/beat-your-quote/AnalysisSuccessScreen';
 import { QuoteCheckerSection } from '@/components/beat-your-quote/QuoteCheckerSection';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
-import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
-import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
-import { ToolFAQSection, PillarBreadcrumb } from '@/components/seo';
+import { ToolFAQSection } from '@/components/seo';
 import { getToolFAQs } from '@/data/toolFAQs';
 import { useToast } from '@/hooks/use-toast';
 
@@ -130,14 +128,11 @@ export default function BeatYourQuote() {
         canonicalUrl="https://itswindowman.com/beat-your-quote"
         jsonLd={[...beatYourQuoteSchema, getBreadcrumbSchema('beat-your-quote')]}
       />
-      <Navbar />
+      <Navbar funnelMode={true} />
       <main>
-        {/* Pillar Breadcrumb */}
-        <div className="container px-4 pt-20 mb-2">
-          <PillarBreadcrumb toolPath="/beat-your-quote" variant="dossier" />
+        <div className="pt-20">
+          <DossierHero onUploadSuccess={handleUploadSuccess} />
         </div>
-
-        <DossierHero onUploadSuccess={handleUploadSuccess} />
         <ConceptSection />
         <ManipulationTactics />
         <AnatomySection modalTriggerCount={modalTriggerCount} />
@@ -164,13 +159,6 @@ export default function BeatYourQuote() {
         <InterrogationFAQ />
         {/* Your Arsenal */}
         <ToolsSection />
-
-        {/* Related Tools */}
-        <RelatedToolsGrid
-          title={getFrameControl('beat-your-quote').title}
-          description={getFrameControl('beat-your-quote').description}
-          tools={getSmartRelatedTools('beat-your-quote', sessionData.toolsCompleted)}
-        />
       </main>
 
       {/* Mission Initiated Lead Capture Modal */}

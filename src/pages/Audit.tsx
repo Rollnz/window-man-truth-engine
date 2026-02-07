@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback, lazy, Suspense } from 'react';
 import { SEO } from '@/components/SEO';
+import { Navbar } from '@/components/home/Navbar';
 import {
   ScannerHeroWindow,
   ScannerIntelligenceBar,
@@ -41,6 +42,7 @@ export default function Audit() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <Navbar funnelMode={true} />
       <SEO 
         title="Free Quote Scanner - AI Lie Detector for Window Quotes"
         description="Upload your window replacement quote for a free, instant AI audit. We'll expose hidden fees, inflated prices, and missing scope items in 60 seconds."
