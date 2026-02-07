@@ -13,7 +13,7 @@
 
 import type { IntentTier, FunnelStage, InteractionType } from './intentTierMapping';
 import { getIntentTier, getFunnelStage, getInteractionType, getToolName } from './intentTierMapping';
-import { getVisitorIdFromCookie } from '@/hooks/useVisitorIdentity';
+import { getGoldenThreadId } from '@/lib/goldenThread';
 
 export interface EventMetadata {
   // DEDUPLICATION & IDENTITY
@@ -66,8 +66,8 @@ export interface EventMetadataInput {
  * Use this for every lead_captured, scanner_upload_completed, voice_estimate_confirmed event.
  */
 export function buildEventMetadata(input: EventMetadataInput): EventMetadata {
-  // Get visitor ID from cookie if not provided
-  const visitorId = input.visitorId || getVisitorIdFromCookie() || 'unknown';
+  // Get visitor ID from canonical Golden Thread source
+  const visitorId = input.visitorId || getGoldenThreadId() || 'unknown';
 
   // Get intent tier mapping from lead_source
   const intentTier = getIntentTier(input.sourceTool) || 3;

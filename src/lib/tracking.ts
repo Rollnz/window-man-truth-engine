@@ -29,7 +29,11 @@ function generateUUID(): string {
     });
 }
 
-/** Get or create persistent client ID (survives across sessions) */
+/**
+ * @deprecated Use getGoldenThreadId() from '@/lib/goldenThread' instead.
+ * This function is aliased to the canonical ID via the startup reconciler,
+ * so it works correctly but should be migrated in future cleanup.
+ */
 export function getOrCreateClientId(): string {
   if (typeof window === 'undefined') return generateUUID();
   

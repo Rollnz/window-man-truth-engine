@@ -8,6 +8,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { getGoldenThreadId } from '@/lib/goldenThread';
 
 import type { Json } from '@/integrations/supabase/types';
 
@@ -89,7 +90,8 @@ const createOrRefreshSession = async (): Promise<string> => {
 
   // Create new session in database
   const newSessionId = existing || crypto.randomUUID();
-  const anonymousId = crypto.randomUUID(); // Required field for wm_sessions
+  // Use Golden Thread ID for visitor identity (ensures leads.client_id matches wm_sessions.anonymous_id)
+  const anonymousId = getGoldenThreadId();
 
   try {
     const { error } = await supabase
