@@ -15,23 +15,46 @@
     <!-- Resource Hints for Critical Third-Party Domains -->
     <link rel="preconnect" href="https://uzulqexlgavggcyizabf.supabase.co" crossorigin />
     <link rel="preconnect" href="https://lunaa.itswindowman.com" crossorigin />
-    <link rel="preconnect" href="https://connect.facebook.net" crossorigin />
-    <link rel="preconnect" href="https://scripts.clarity.ms" crossorigin />
-    <link rel="dns-prefetch" href="https://www.facebook.com" />
+    <!-- Note: Facebook/Clarity preconnects removed - GTM now loads deferred, will establish connections when needed -->
     
     <!-- Preload LCP Candidate (Navbar Logo) with high priority -->
     <link rel="preload" href="/icon-512.webp" as="image" type="image/webp" fetchpriority="high" />
 
-    <!-- Google Tag Manager (Production Only) -->
+    <!-- Google Tag Manager (Production Only - Deferred for Performance) -->
     <script>
-      // Only load GTM on production domain
-      var productionDomain = 'itswindowman.com';
+      // Initialize dataLayer early so events queue before GTM loads
+      window.dataLayer = window.dataLayer || [];
       
-      if (window.location.hostname === productionDomain || window.location.hostname === 'www.' + productionDomain) {
-        // --- Stape Server-Side GTM ---
-        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src="https://lunaa.itswindowman.com/76bwidfqcvb.js?"+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','dwjnsf8=CxJeNjIpRDkqICUjUzUzURRLUV9XQg0ZXx8XAhENBxMNAQ4QCEoKGA8%3D');
-      } else {
+      var productionDomain = 'itswindowman.com';
+      var isProduction = window.location.hostname === productionDomain || 
+                         window.location.hostname === 'www.' + productionDomain;
+      
+      if (!isProduction) {
         console.log('[GTM] Blocked on non-production domain:', window.location.hostname);
+      }
+      
+      // Defer GTM injection to after page is interactive
+      function loadGTM() {
+        if (!isProduction) return;
+        
+        // Standard GTM snippet - now runs post-LCP
+        window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+        var j = document.createElement('script');
+        j.async = true;
+        j.src = 'https://lunaa.itswindowman.com/76bwidfqcvb.js?dwjnsf8=CxJeNjIpRDkqICUjUzUzURRLUV9XQg0ZXx8XAhENBxMNAQ4QCEoKGA8%3D';
+        document.head.appendChild(j);
+        
+        console.log('[GTM] Loaded (deferred, post-interactive)');
+      }
+      
+      // Strategy: Wait for window load, then add 2s buffer
+      // This ensures: DOM complete, critical resources loaded, React mounted, hydration complete
+      if (document.readyState === 'complete') {
+        setTimeout(loadGTM, 2000);
+      } else {
+        window.addEventListener('load', function() {
+          setTimeout(loadGTM, 2000);
+        }, { once: true });
       }
     </script>
     <!-- End Google Tag Manager -->
