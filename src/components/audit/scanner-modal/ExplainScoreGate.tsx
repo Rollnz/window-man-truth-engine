@@ -11,11 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NameInputPair } from '@/components/ui/NameInputPair';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
+import { useFormLock } from '@/hooks/forms';
 import { ExplainScoreFormData } from '@/types/audit';
 
 interface ExplainScoreGateProps {
   onSubmit: (data: ExplainScoreFormData) => Promise<void>;
-  isLoading?: boolean;
 }
 
 /**
@@ -24,7 +24,10 @@ interface ExplainScoreGateProps {
  * - Sub-headline: "We'll break down exactly what was missing..."
  * - CTA: "Unlock My Full Report"
  */
-export function ExplainScoreGate({ onSubmit, isLoading = false }: ExplainScoreGateProps) {
+export function ExplainScoreGate({ onSubmit }: ExplainScoreGateProps) {
+  // Form lock for double-submit protection
+  const { isLocked, lockAndExecute } = useFormLock();
+  
   const { values, errors, setValue, handleBlur, validateAll, clearErrors } = useFormValidation({
     initialValues: {
       firstName: '',
@@ -47,13 +50,15 @@ export function ExplainScoreGate({ onSubmit, isLoading = false }: ExplainScoreGa
     const isValid = validateAll();
     if (!isValid) return;
 
-    await onSubmit({
-      firstName: values.firstName,
-      lastName: values.lastName,
-      email: values.email,
-      phone: values.phone,
+    await lockAndExecute(async () => {
+      await onSubmit({
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email,
+        phone: values.phone,
+      });
     });
-  }, [values, validateAll, onSubmit]);
+  }, [values, validateAll, onSubmit, lockAndExecute]);
 
   return (
     <div className="px-6 py-8">
@@ -88,7 +93,7 @@ export function ExplainScoreGate({ onSubmit, isLoading = false }: ExplainScoreGa
             firstName: errors.firstName,
             lastName: errors.lastName,
           }}
-          disabled={isLoading}
+          disabled={isLocked}
           autoFocus
           className="[&_label]:text-white [&_input]:bg-white [&_input]:text-slate-900 [&_input]:border-slate-300"
         />
@@ -107,7 +112,7 @@ export function ExplainScoreGate({ onSubmit, isLoading = false }: ExplainScoreGa
             value={values.email}
             onChange={(e) => setValue('email', e.target.value)}
             onBlur={() => handleBlur('email')}
-            disabled={isLoading}
+            disabled={isLocked}
             className={cn(
               "h-10 bg-white text-slate-900 border-slate-300",
               errors.email && "border-destructive focus-visible:ring-destructive"
@@ -133,7 +138,7 @@ export function ExplainScoreGate({ onSubmit, isLoading = false }: ExplainScoreGa
             placeholder="(555) 123-4567"
             value={values.phone}
             onChange={(e) => setValue('phone', e.target.value)}
-            disabled={isLoading}
+            disabled={isLocked}
             className="h-10 bg-white text-slate-900 border-slate-300"
           />
         </div>
@@ -151,10 +156,10 @@ export function ExplainScoreGate({ onSubmit, isLoading = false }: ExplainScoreGa
         {/* CTA Button - EXACT TEXT */}
         <Button
           type="submit"
-          disabled={isLoading}
+          disabled={isLocked}
           className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold text-base"
         >
-          {isLoading ? (
+          {isLocked ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Unlocking...

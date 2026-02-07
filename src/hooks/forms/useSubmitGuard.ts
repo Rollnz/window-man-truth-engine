@@ -1,7 +1,20 @@
 import { useState, useCallback, useRef } from 'react';
 
 /**
+ * @deprecated Use `useFormLock` instead. This hook has race condition vulnerabilities.
+ * 
  * useSubmitGuard - Prevents double form submissions
+ * 
+ * MIGRATION GUIDE:
+ * ```typescript
+ * // Before (useSubmitGuard)
+ * const { isSubmitting, guardedSubmit } = useSubmitGuard();
+ * await guardedSubmit(handleSubmit);
+ * 
+ * // After (useFormLock) - recommended
+ * const { isLocked, lockAndExecute } = useFormLock();
+ * await lockAndExecute(handleSubmit);
+ * ```
  * 
  * Features:
  * - Disables submit button after first click

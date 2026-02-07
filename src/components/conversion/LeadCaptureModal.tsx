@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
+import { useFormLock } from '@/hooks/forms';
 import { SessionData, useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useFormAbandonment } from '@/hooks/useFormAbandonment';
@@ -44,9 +45,11 @@ export function LeadCaptureModal({
   leadId,
 }: LeadCaptureModalProps) {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [modalOpenTime, setModalOpenTime] = useState<number>(0);
+  
+  // Form lock for double-submit protection
+  const { isLocked, lockAndExecute } = useFormLock();
 
   // Golden Thread: Use hook as fallback if leadId prop not provided
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
@@ -131,12 +134,10 @@ export function LeadCaptureModal({
       return;
     }
 
-    setIsLoading(true);
+    await lockAndExecute(async () => {
+      // Normalize name fields - single source of truth from validation hook
+      const normalizedNames = normalizeNameFields(values.firstName, values.lastName);
 
-    // Normalize name fields - single source of truth from validation hook
-    const normalizedNames = normalizeNameFields(values.firstName, values.lastName);
-
-    try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`,
         {
@@ -245,20 +246,11 @@ export function LeadCaptureModal({
       } else {
         throw new Error(data.error || 'Failed to save');
       }
-    } catch (error) {
-      console.error('Lead capture error:', error);
-      toast({
-        title: 'Unable to save',
-        description: error instanceof Error ? error.message : 'Please try again',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   const handleClose = () => {
-    if (!isLoading) {
+    if (!isLocked) {
       // Track modal abandonment if not successful
       if (!isSuccess && modalOpenTime > 0) {
         const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000); // seconds
@@ -386,7 +378,7 @@ export function LeadCaptureModal({
                   onFirstNameChange={(v) => setValue('firstName', v)}
                   onLastNameChange={(v) => setValue('lastName', v)}
                   errors={{ firstName: hasError('firstName') ? getError('firstName') : undefined }}
-                  disabled={isLoading}
+                  disabled={isLocked}
                   autoFocus
                 />
               )}
@@ -402,7 +394,7 @@ export function LeadCaptureModal({
                   autoComplete="email"
                   placeholder="you@example.com"
                   {...emailProps}
-                  disabled={isLoading}
+                  disabled={isLocked}
                   autoFocus={!requiresFullContact}
                   onFocus={handleFirstFieldFocus}
                   onBlur={() => {
@@ -429,7 +421,7 @@ export function LeadCaptureModal({
                     value={values.phone}
                     onBlur={() => values.phone && trackFieldEntry('phone')}
                     onChange={(e) => setValue('phone', formatPhoneNumber(e.target.value))}
-                    disabled={isLoading}
+                    disabled={isLocked}
                   />
                 </div>
               )}
@@ -438,9 +430,9 @@ export function LeadCaptureModal({
                 type="submit"
                 variant="cta"
                 className="w-full"
-                disabled={isLoading || !isFormValid}
+                disabled={isLocked || !isFormValid}
               >
-                {isLoading ? (
+                {isLocked ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Sending...

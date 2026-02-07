@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
+import { useFormLock } from "@/hooks/forms";
 import { SessionData, useSessionData } from "@/hooks/useSessionData";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { useFormAbandonment } from "@/hooks/useFormAbandonment";
@@ -50,9 +51,11 @@ export function ConsultationBookingModal({
 }: ConsultationBookingModalProps) {
   const { toast } = useToast();
   const [notes, setNotes] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [modalOpenTime, setModalOpenTime] = useState<number>(0);
+  
+  // Form lock for double-submit protection
+  const { isLocked, lockAndExecute, unlock } = useFormLock();
 
   // Golden Thread: Use hook as fallback if leadId prop not provided
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
@@ -124,12 +127,10 @@ export function ConsultationBookingModal({
       return;
     }
 
-    setIsLoading(true);
+    await lockAndExecute(async () => {
+      // Normalize name fields
+      const { firstName, lastName } = normalizeNameFields(values.firstName, values.lastName);
 
-    // Normalize name fields
-    const { firstName, lastName } = normalizeNameFields(values.firstName, values.lastName);
-
-    try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`, {
         method: "POST",
         headers: {
@@ -269,23 +270,14 @@ export function ConsultationBookingModal({
       } else {
         throw new Error(data.error || "Failed to schedule");
       }
-    } catch (error) {
-      console.error("Consultation booking error:", error);
-      toast({
-        title: "Unable to schedule",
-        description: error instanceof Error ? error.message : "Please try again",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   const handleClose = () => {
-    if (!isLoading) {
+    if (!isLocked) {
       // Track modal abandonment if not successful
       if (!isSuccess && modalOpenTime > 0) {
-        const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000); // seconds
+        const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000);
         trackEvent("modal_abandon", {
           modal_type: "consultation_booking",
           time_spent_seconds: timeSpent,
@@ -293,7 +285,7 @@ export function ConsultationBookingModal({
       }
 
       setIsSuccess(false);
-      resetTracking(); // Reset abandonment tracking
+      resetTracking();
       setValues({
         firstName: sessionData.firstName || "",
         lastName: sessionData.lastName || "",
@@ -303,6 +295,7 @@ export function ConsultationBookingModal({
       });
       setNotes("");
       clearErrors();
+      unlock(); // Reset lock state
       onClose();
     }
   };
@@ -344,14 +337,14 @@ export function ConsultationBookingModal({
                 onLastNameChange={(value) => setValue("lastName", value)}
                 onFirstNameBlur={handleFirstFieldFocus}
                 errors={{ firstName: getError("firstName"), lastName: getError("lastName") }}
-                disabled={isLoading}
+                disabled={isLocked}
                 size="compact"
                 firstNameLabel="First Name"
                 lastNameLabel="Last Name"
               />
 
               <div className="space-y-1">
-                <Label htmlFor="consult-email" className={`text-sm font-semibold text-slate-900 ${hasError("email") ? "text-destructive" : ""}`}>
+                <Label htmlFor="consult-email" className={`text-sm font-semibold text-foreground ${hasError("email") ? "text-destructive" : ""}`}>
                   Email Address
                 </Label>
                 <Input
@@ -360,7 +353,7 @@ export function ConsultationBookingModal({
                   placeholder="you@example.com"
                   {...emailProps}
                   {...emailInputProps}
-                  disabled={isLoading}
+                  disabled={isLocked}
                   className={`h-9 ${hasError("email") ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   aria-invalid={hasError("email")}
                   aria-describedby={hasError("email") ? "email-error" : undefined}
@@ -382,7 +375,7 @@ export function ConsultationBookingModal({
                   placeholder="(555) 123-4567"
                   {...phoneProps}
                   {...phoneInputProps}
-                  disabled={isLoading}
+                  disabled={isLocked}
                   className={`h-9 ${hasError("phone") ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   aria-invalid={hasError("phone")}
                   aria-describedby={hasError("phone") ? "phone-error" : undefined}
@@ -404,7 +397,7 @@ export function ConsultationBookingModal({
                 <Select
                   value={values.preferredTime}
                   onValueChange={(value) => setValue("preferredTime", value)}
-                  disabled={isLoading}
+                  disabled={isLocked}
                 >
                   <SelectTrigger
                     id="preferred-time"
@@ -438,7 +431,7 @@ export function ConsultationBookingModal({
                   placeholder="Any specific questions or concerns?"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  disabled={isLoading}
+                  disabled={isLocked}
                   rows={2}
                   className="resize-none"
                 />
@@ -448,9 +441,9 @@ export function ConsultationBookingModal({
                 type="submit"
                 variant="cta"
                 className="w-full h-10 mt-2"
-                disabled={isLoading}
+                disabled={isLocked}
               >
-                {isLoading ? (
+                {isLocked ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Scheduling...

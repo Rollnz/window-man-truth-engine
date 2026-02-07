@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation, commonSchemas } from '@/hooks/useFormValidation';
+import { useFormLock } from '@/hooks/forms';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
 import { SessionData } from '@/hooks/useSessionData';
@@ -38,9 +39,11 @@ export function IntelLeadModal({
   const { toast } = useToast();
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
   const { trackToolComplete } = useTrackToolCompletion();
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [modalOpenTime, setModalOpenTime] = useState<number>(0);
+  
+  // Form lock for double-submit protection
+  const { isLocked, lockAndExecute } = useFormLock();
 
   const { values, hasError, getError, getFieldProps, validateAll } = useFormValidation({
     initialValues: { email: sessionData.email || '' },
@@ -72,9 +75,7 @@ export function IntelLeadModal({
       return;
     }
 
-    setIsLoading(true);
-
-    try {
+    await lockAndExecute(async () => {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`,
         {
@@ -149,21 +150,12 @@ export function IntelLeadModal({
       } else {
         throw new Error(data.error || 'Failed to save');
       }
-    } catch (error) {
-      console.error('Lead capture error:', error);
-      toast({
-        title: 'Unable to save',
-        description: error instanceof Error ? error.message : 'Please try again',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   // Soft gate: close button triggers skip behavior
   const handleClose = () => {
-    if (!isLoading) {
+    if (!isLocked) {
       // Track modal abandonment if not successful
       if (!isSuccess && modalOpenTime > 0 && resource) {
         const timeSpent = Math.round((Date.now() - modalOpenTime) / 1000); // seconds
@@ -238,7 +230,7 @@ export function IntelLeadModal({
                   type="email"
                   placeholder="you@example.com"
                   {...emailProps}
-                  disabled={isLoading}
+                  disabled={isLocked}
                   autoFocus
                   className={emailHasError ? 'border-destructive focus-visible:ring-destructive' : ''}
                   aria-invalid={emailHasError}
@@ -253,9 +245,9 @@ export function IntelLeadModal({
                 type="submit"
                 variant="cta"
                 className="w-full"
-                disabled={isLoading || !values.email.trim()}
+                disabled={isLocked || !values.email.trim()}
               >
-                {isLoading ? (
+                {isLocked ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Unlocking...
