@@ -1,153 +1,303 @@
 
-# EMQ Score Investigation: Root Cause Analysis and Fix Plan
 
-## Executive Summary
-The EMQ score is critically low (2.1/10) because the calculation includes ALL events from `wm_event_log`, but **56% of events are anonymous engagement events** that occur BEFORE users provide their email. The EMQ metric should only measure conversion event quality, not anonymous engagement.
+# Universal PII Translator - Enhanced `extractPII` Implementation
 
-## Root Causes Identified
+## Overview
+Transform the `extractPII` function in `supabase/functions/log-event/index.ts` into a robust "Universal Translator" that captures user data regardless of how GTM, Meta, Google, or external sources label PII fields.
 
-### 1. Architectural Issue: EMQ Includes Non-Conversion Events (PRIMARY CAUSE)
+## Current State Analysis
 
-**Evidence from Database:**
-| Event Type | Total Events | With Email Hash | Coverage |
-|------------|-------------|-----------------|----------|
-| Conversion (lead_*, booking_confirmed) | 137 | 108 | **78.8%** |
-| Engagement (scanner_*, etc.) | 171 | 1 | **0.6%** |
+The existing `extractPII` function only handles:
+- **Email**: 3 variations (email in body, user_data, metadata)
+- **Phone**: 6 variations (phone, phone_number in body, user_data, metadata)
+- **Names**: Not extracted at all
+- **External ID**: Partially handled in main handler
 
-The EMQ calculation in `admin-tracking-health/index.ts` queries ALL events:
-```sql
-SELECT email_sha256, phone_sha256... FROM wm_event_log
-```
-
-But scanner events (`scanner_upload_completed`, `scanner_analysis_completed`) are **intentionally anonymous** - they occur when users upload quotes BEFORE providing their contact info.
-
-### 2. Code Bug: `booking_confirmed` Events Missing PII
-
-**File**: `src/components/conversion/ConsultationBookingModal.tsx` (lines 247-254)
-
-**Current Code (BROKEN)**:
-```typescript
-await logBookingConfirmed({
-  preferredTime: values.preferredTime,
-  bookingType: 'consultation',
-  windowCount: sessionData.windowCount,
-  projectValue: sessionData.fairPriceQuizResults?.quoteAmount,
-  urgencyLevel: sessionData.urgencyLevel,
-  leadId: data.leadId,
-  // MISSING: email and phone!
-});
-```
-
-**Database Evidence**: All 5 `booking_confirmed` events have `email_sha256: null` despite having valid `lead_id`.
-
-### 3. Variable Coverage in `lead_captured` Events
-
-Some source tools have lower email hash coverage:
-| Source Tool | Events | With Email | Coverage |
-|-------------|--------|------------|----------|
-| expert-system | 3 | 3 | 100% |
-| quote-scanner | 2 | 2 | 100% |
-| beat-your-quote | 22 | 14 | 63.6% |
-| floating-estimate-form | 7 | 3 | 42.9% |
-| fair-price-quiz | 3 | 1 | 33.3% |
+**Problem**: GTM tags and external integrations often use inconsistent field names (`mobile` vs `phone`, `fname` vs `firstName`), causing 0% match rates in EMQ scoring.
 
 ---
 
 ## Implementation Plan
 
-### Phase 1: Fix EMQ Calculation (Backend)
+### Step 1: Define Field Variation Maps
 
-**File**: `supabase/functions/admin-tracking-health/index.ts`
+Create constant arrays defining all acceptable variations for each PII field:
 
-Filter the EMQ query to only include conversion events:
-
-```typescript
-// BEFORE (includes all events)
-const { data: currentEmqData } = await supabase
-  .from('wm_event_log')
-  .select('email_sha256, phone_sha256, user_data, fbp, fbc')
-  .gte('event_time', dateFilter.start)
-  .lte('event_time', dateFilter.end)
-  .limit(5000);
-
-// AFTER (conversion events only)
-const CONVERSION_EVENT_NAMES = [
-  'lead_submission_success',
-  'lead_captured',
-  'booking_confirmed',
-  'consultation_booked',
-  'phone_lead_captured',
-  'voice_estimate_confirmed',
-  'cv_fallback',
-];
-
-const { data: currentEmqData } = await supabase
-  .from('wm_event_log')
-  .select('email_sha256, phone_sha256, user_data, fbp, fbc')
-  .in('event_name', CONVERSION_EVENT_NAMES)
-  .gte('event_time', dateFilter.start)
-  .lte('event_time', dateFilter.end)
-  .limit(5000);
+```text
+EMAIL_KEYS:     email, email_address, mail, e-mail, em, userEmail
+PHONE_KEYS:     phone, phone_number, phoneNumber, mobile, cell, tel, ph, number, telephone
+FIRST_NAME_KEYS: firstName, first_name, fname, first, fn, givenName, given_name
+LAST_NAME_KEYS:  lastName, last_name, lname, last, ln, familyName, family_name, surname
+EXTERNAL_ID_KEYS: external_id, externalId, user_id, userId, id, client_user_id
 ```
 
-**Expected Result**: EMQ score will jump from 2.1 to approximately **7.9-8.5** (based on 78.8% conversion event coverage).
+### Step 2: Create Universal Field Finder Helper
 
-### Phase 2: Fix booking_confirmed PII Capture (Frontend)
+A generic helper function that searches for a field across:
+1. Top-level body
+2. Nested `user_data` object  
+3. Nested `metadata` object
 
-**File**: `src/components/conversion/ConsultationBookingModal.tsx`
+Returns the first non-null, non-empty string value found.
 
-Add email and phone to the `logBookingConfirmed` call:
+### Step 3: Add Name Hashing Function
 
-```typescript
-await logBookingConfirmed({
-  preferredTime: values.preferredTime,
-  bookingType: 'consultation',
-  windowCount: sessionData.windowCount,
-  projectValue: sessionData.fairPriceQuizResults?.quoteAmount,
-  urgencyLevel: sessionData.urgencyLevel,
-  leadId: data.leadId,
-  email: values.email,      // ADD THIS
-  phone: values.phone,      // ADD THIS
-});
+```text
+hashName(name: string) → string
+  1. Lowercase the input
+  2. Trim whitespace
+  3. Remove extra internal whitespace (normalize "John  Doe" → "john doe")
+  4. SHA-256 hash the result
 ```
 
-### Phase 3: Audit Lead Capture Forms (Investigation)
+### Step 4: Extend ExtractedPII Interface
 
-Review why some source tools have lower PII coverage on `lead_captured` events:
+```text
+interface ExtractedPII {
+  rawEmail: string | null;
+  rawPhone: string | null;
+  rawFirstName: string | null;      // NEW
+  rawLastName: string | null;       // NEW
+  rawExternalId: string | null;     // NEW
+  emailWasHashed: boolean;
+  phoneWasHashed: boolean;
+  firstNameWasHashed: boolean;      // NEW
+  lastNameWasHashed: boolean;       // NEW
+}
+```
 
-1. `beat-your-quote` (63.6%) - Check if PII is passed to tracking
-2. `floating-estimate-form` (42.9%) - Likely missing PII in event payload
-3. `fair-price-quiz` (33.3%) - Likely missing PII in event payload
+### Step 5: Rewrite extractPII Function
 
-This requires auditing each lead capture component to ensure they pass `email` and `phone` to the event logging functions.
+The new function will:
+1. Use the field variation maps to search all locations
+2. Detect if values are already hashed (64-char hex)
+3. Return all extracted PII in a single pass
+
+### Step 6: Update sanitizePIIKeys Function
+
+Remove ALL PII key variations from objects:
+- All email variations
+- All phone variations
+- All name variations
+- All external ID variations (optional - may want to keep for debugging)
+
+### Step 7: Update Main Handler PII Processing
+
+After extraction, hash and add to `user_data`:
+- `em` (hashed email)
+- `ph` (hashed phone)
+- `fn` (hashed firstName)
+- `ln` (hashed lastName)
+- `external_id` (preserved as-is)
 
 ---
 
-## Technical Details
+## Technical Specification
 
-### Files to Modify
+### File to Modify
+`supabase/functions/log-event/index.ts`
 
-1. `supabase/functions/admin-tracking-health/index.ts`
-   - Add conversion event filter to EMQ query
-   - Update previous period query with same filter
-   - Add debug logging for event counts
+### New Constants (lines ~17-30)
 
-2. `src/components/conversion/ConsultationBookingModal.tsx`
-   - Pass email/phone to `logBookingConfirmed()`
+```typescript
+// Universal PII field variations for GTM/Meta/Google compatibility
+const EMAIL_KEYS = ['email', 'email_address', 'mail', 'e-mail', 'em', 'userEmail'];
+const PHONE_KEYS = ['phone', 'phone_number', 'phoneNumber', 'mobile', 'cell', 'tel', 'ph', 'number', 'telephone'];
+const FIRST_NAME_KEYS = ['firstName', 'first_name', 'fname', 'first', 'fn', 'givenName', 'given_name'];
+const LAST_NAME_KEYS = ['lastName', 'last_name', 'lname', 'last', 'ln', 'familyName', 'family_name', 'surname'];
+const EXTERNAL_ID_KEYS = ['external_id', 'externalId', 'user_id', 'userId', 'id', 'client_user_id'];
 
-3. **Future audit** (out of scope for immediate fix):
-   - Various lead capture components using `lead_captured` event
+// All PII keys to sanitize from output objects
+const ALL_PII_KEYS = [
+  ...EMAIL_KEYS,
+  ...PHONE_KEYS,
+  ...FIRST_NAME_KEYS,
+  ...LAST_NAME_KEYS,
+];
+```
 
-### Success Metrics
+### New Helper Function
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| EMQ Score | 2.1/10 | 8.5+/10 |
-| Conversion Email Coverage | 78.8% | 95%+ |
-| booking_confirmed with PII | 0% | 100% |
+```typescript
+/**
+ * Search for a field value across multiple key variations and object locations
+ * Returns first non-null, non-empty string found
+ */
+function findFieldValue(
+  body: Record<string, unknown>,
+  keys: string[]
+): { value: string | null; wasHashed: boolean } {
+  const locations = [
+    body,
+    body.user_data as Record<string, unknown>,
+    body.metadata as Record<string, unknown>,
+  ];
+  
+  for (const location of locations) {
+    if (!location || typeof location !== 'object') continue;
+    
+    for (const key of keys) {
+      const val = location[key];
+      if (typeof val === 'string' && val.length > 0) {
+        return {
+          value: val,
+          wasHashed: isAlreadyHashed(val),
+        };
+      }
+    }
+  }
+  
+  return { value: null, wasHashed: false };
+}
+```
 
-### Risk Assessment
+### New Name Hashing Function
 
-- **Low Risk**: EMQ calculation change is read-only
-- **Low Risk**: Adding PII to existing function call
-- **No Breaking Changes**: All changes are additive
+```typescript
+/**
+ * Hash name with normalization
+ * Lowercase, trim, collapse internal whitespace
+ */
+async function hashName(name: string): Promise<string> {
+  const normalized = name.toLowerCase().trim().replace(/\s+/g, ' ');
+  return sha256Hash(normalized);
+}
+```
+
+### Updated extractPII Function
+
+```typescript
+interface ExtractedPII {
+  rawEmail: string | null;
+  rawPhone: string | null;
+  rawFirstName: string | null;
+  rawLastName: string | null;
+  rawExternalId: string | null;
+  emailWasHashed: boolean;
+  phoneWasHashed: boolean;
+  firstNameWasHashed: boolean;
+  lastNameWasHashed: boolean;
+}
+
+function extractPII(body: Record<string, unknown>): ExtractedPII {
+  const email = findFieldValue(body, EMAIL_KEYS);
+  const phone = findFieldValue(body, PHONE_KEYS);
+  const firstName = findFieldValue(body, FIRST_NAME_KEYS);
+  const lastName = findFieldValue(body, LAST_NAME_KEYS);
+  const externalId = findFieldValue(body, EXTERNAL_ID_KEYS);
+  
+  return {
+    rawEmail: email.value,
+    rawPhone: phone.value,
+    rawFirstName: firstName.value,
+    rawLastName: lastName.value,
+    rawExternalId: externalId.value,
+    emailWasHashed: email.wasHashed,
+    phoneWasHashed: phone.wasHashed,
+    firstNameWasHashed: firstName.wasHashed,
+    lastNameWasHashed: lastName.wasHashed,
+  };
+}
+```
+
+### Updated sanitizePIIKeys Function
+
+```typescript
+function sanitizePIIKeys(obj: Record<string, unknown> | null | undefined): Record<string, unknown> {
+  if (!obj || typeof obj !== 'object') return {};
+  
+  const sanitized = { ...obj };
+  
+  // Remove all PII key variations
+  for (const key of ALL_PII_KEYS) {
+    delete sanitized[key];
+  }
+  
+  return sanitized;
+}
+```
+
+### Updated Main Handler (PII Processing Section)
+
+Add name hashing after existing email/phone processing:
+
+```typescript
+// Hash firstName if present and not already hashed
+let firstNameSha256: string | null = null;
+if (extractedPII.rawFirstName) {
+  if (extractedPII.firstNameWasHashed) {
+    firstNameSha256 = extractedPII.rawFirstName;
+  } else {
+    firstNameSha256 = await hashName(extractedPII.rawFirstName);
+  }
+  processedUserData.fn = firstNameSha256;
+  processedUserData.sha256_first_name = firstNameSha256;
+}
+
+// Hash lastName if present and not already hashed
+let lastNameSha256: string | null = null;
+if (extractedPII.rawLastName) {
+  if (extractedPII.lastNameWasHashed) {
+    lastNameSha256 = extractedPII.rawLastName;
+  } else {
+    lastNameSha256 = await hashName(extractedPII.rawLastName);
+  }
+  processedUserData.ln = lastNameSha256;
+  processedUserData.sha256_last_name = lastNameSha256;
+}
+
+// Use extracted external_id (already handles variations)
+const externalId = extractedPII.rawExternalId || leadId || null;
+```
+
+---
+
+## Processing Logic Summary
+
+| Field | Input Variations | Normalization | Output Keys |
+|-------|-----------------|---------------|-------------|
+| Email | email, email_address, mail, e-mail, em | lowercase → trim → SHA-256 | em, email_sha256, sha256_email_address |
+| Phone | phone, phone_number, mobile, cell, tel, ph | remove non-digits → E.164 → SHA-256 | ph, phone_sha256, sha256_phone_number |
+| First Name | firstName, first_name, fname, first, fn | lowercase → trim → collapse spaces → SHA-256 | fn, sha256_first_name |
+| Last Name | lastName, last_name, lname, last, ln | lowercase → trim → collapse spaces → SHA-256 | ln, sha256_last_name |
+| External ID | external_id, externalId, user_id, userId, id | passthrough (no hashing) | external_id |
+
+---
+
+## Expected Results
+
+| Metric | Current | After Fix |
+|--------|---------|-----------|
+| EMQ firstName | 0% | ~80%+ |
+| EMQ lastName | 0% | ~60%+ |
+| Overall EMQ | 4.6/10 | ~8.0-8.5/10 |
+
+---
+
+## Risk Assessment
+
+- **Low Risk**: All changes are additive to existing logic
+- **Backward Compatible**: Existing field names still work
+- **No Breaking Changes**: Missing fields result in null, not errors
+- **Self-Healing**: GTM misconfigurations will now auto-correct
+
+---
+
+## Files to Modify
+
+1. **`supabase/functions/log-event/index.ts`**
+   - Add field variation constants
+   - Add `findFieldValue` helper
+   - Add `hashName` function
+   - Extend `ExtractedPII` interface
+   - Rewrite `extractPII` function
+   - Update `sanitizePIIKeys` function
+   - Add name hashing in main handler
+
+2. **`src/lib/highValueSignals.ts`** (complementary)
+   - Add firstName/lastName to LogSignalParams interface
+   - Pass names in payloads
+
+3. **`src/components/conversion/ConsultationBookingModal.tsx`** (complementary)
+   - Pass firstName/lastName to logBookingConfirmed
+
