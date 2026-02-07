@@ -1,74 +1,221 @@
-# Universal PII Translator - COMPLETED ✅
 
-## Implementation Summary
 
-**Completed: 2026-02-07**
+# Data Health Tab - Skeleton Loader UX Polish
 
-The Universal PII Translator has been implemented in `supabase/functions/log-event/index.ts`. The system now captures user data regardless of how GTM, Meta, Google, or external sources label PII fields.
+## Overview
+Replace basic "animate-pulse" loading states with proper shadcn/ui `Skeleton` components using the project's existing `badge-shimmer` animation class for a premium, professional loading experience.
 
-## What Was Implemented
+## Current State
+The tracking health components use inconsistent loading patterns:
+- Basic `<div className="bg-muted animate-pulse">` divs
+- No shimmer effect
+- Layouts don't match actual content structure
 
-### 1. Field Variation Maps
-```typescript
-EMAIL_KEYS:      ['email', 'email_address', 'mail', 'e-mail', 'em', 'userEmail']
-PHONE_KEYS:      ['phone', 'phone_number', 'phoneNumber', 'mobile', 'cell', 'tel', 'ph', 'number', 'telephone']
-FIRST_NAME_KEYS: ['firstName', 'first_name', 'fname', 'first', 'fn', 'givenName', 'given_name']
-LAST_NAME_KEYS:  ['lastName', 'last_name', 'lname', 'last', 'ln', 'familyName', 'family_name', 'surname']
-EXTERNAL_ID_KEYS: ['external_id', 'externalId', 'user_id', 'userId', 'client_user_id']
+## Implementation Plan
+
+### Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/components/admin/tracking-health/HealthStatusCard.tsx` | Replace loading state with Skeleton + shimmer |
+| `src/components/admin/tracking-health/EMQScoreCard.tsx` | Replace loading state with Skeleton + shimmer |
+| `src/components/admin/tracking-health/FixQueueCard.tsx` | Replace loading state with Skeleton + shimmer |
+| `src/components/admin/tracking-health/DiagnosticsPanel.tsx` | Replace loading state with Skeleton + shimmer |
+
+---
+
+### 1. HealthStatusCard.tsx
+
+**Before:**
+```tsx
+<div className="h-8 w-24 bg-muted animate-pulse rounded" />
+<div className="h-4 w-32 bg-muted animate-pulse rounded mt-2" />
 ```
 
-### 2. Universal Field Finder
-- Searches body, `user_data`, and `metadata` for field variations
-- Detects pre-hashed values (64-char hex) to avoid double-hashing
-- Returns first non-null, non-empty string found
+**After:**
+```tsx
+import { Skeleton } from '@/components/ui/skeleton';
 
-### 3. Name Hashing
-- `hashName()` function normalizes names (lowercase, trim, collapse spaces) before SHA-256 hashing
-- Hashed names stored as `fn` and `ln` in user_data for Meta CAPI compatibility
-
-### 4. Frontend Integration
-- `LogSignalParams` now accepts `firstName` and `lastName`
-- `logBookingConfirmed` passes names to log-event
-- `ConsultationBookingModal` passes form values to tracking
-
-## Files Modified
-
-1. `supabase/functions/log-event/index.ts` - Universal PII Translator
-2. `src/lib/highValueSignals.ts` - Added firstName/lastName to interfaces
-3. `src/components/conversion/ConsultationBookingModal.tsx` - Pass names to tracking
-
-## Verification Results
-
-Test payload with various field names:
-```json
-{"firstName":"John","lastName":"Doe","email":"john@test.com","mobile":"5551234567"}
+// In loading state:
+<Card className="relative overflow-hidden">
+  <CardHeader className="pb-2">
+    <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
+      <span>System Status</span>
+      <Skeleton className="h-4 w-4 rounded-full badge-shimmer" />
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-3">
+    <div className="flex items-center gap-2">
+      <Skeleton className="h-3 w-3 rounded-full badge-shimmer" />
+      <Skeleton className="h-8 w-24 badge-shimmer" />
+    </div>
+    <Skeleton className="h-4 w-full badge-shimmer" />
+    <Skeleton className="h-4 w-3/4 badge-shimmer" />
+  </CardContent>
+</Card>
 ```
 
-Result in `wm_event_log.user_data`:
-```json
-{
-  "fn": "96d9632f363564cc3032521409cf22a852f2032eec099ed5967c0d000cec607a",
-  "ln": "799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f",
-  "em": "f4f3592f0068d39300301670db1b1a0bb00e0c017645f16db829e1dc5eced916",
-  "ph": "8a59780bb8cd2ba022bfa5ba2ea3b6e07af17a7d8b30c1f9b3390e36f69019e4",
-  "sha256_first_name": "96d9632f...",
-  "sha256_last_name": "799ef92a...",
-  ...
-}
+---
+
+### 2. EMQScoreCard.tsx
+
+**Before:**
+```tsx
+<div className="h-10 w-20 bg-muted animate-pulse rounded" />
+<div className="h-4 w-28 bg-muted animate-pulse rounded mt-2" />
 ```
 
-## Expected EMQ Improvement
+**After:**
+```tsx
+import { Skeleton } from '@/components/ui/skeleton';
 
-| Metric | Before | After |
+// In loading state:
+<Card>
+  <CardHeader className="pb-2">
+    <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
+      <span>EMQ Score</span>
+      <Skeleton className="h-4 w-4 badge-shimmer" />
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-3">
+    <div className="flex items-baseline gap-2">
+      <Skeleton className="h-10 w-16 badge-shimmer" />
+      <Skeleton className="h-5 w-8 badge-shimmer" />
+    </div>
+    <div className="flex items-center gap-2">
+      <Skeleton className="h-4 w-4 badge-shimmer" />
+      <Skeleton className="h-4 w-32 badge-shimmer" />
+    </div>
+    <Skeleton className="h-3 w-40 badge-shimmer" />
+  </CardContent>
+</Card>
+```
+
+---
+
+### 3. FixQueueCard.tsx
+
+**Before:**
+```tsx
+<div className="h-8 w-20 bg-muted animate-pulse rounded" />
+<div className="h-9 w-full bg-muted animate-pulse rounded mt-3" />
+```
+
+**After:**
+```tsx
+import { Skeleton } from '@/components/ui/skeleton';
+
+// In loading state:
+<Card>
+  <CardHeader className="pb-2">
+    <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
+      <span>Fix Queue</span>
+      <Skeleton className="h-4 w-4 badge-shimmer" />
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-3">
+    <div className="flex items-baseline gap-2">
+      <Skeleton className="h-8 w-12 badge-shimmer" />
+      <Skeleton className="h-4 w-16 badge-shimmer" />
+    </div>
+    <Skeleton className="h-9 w-full rounded-md badge-shimmer" />
+    <div className="flex items-center gap-3">
+      <Skeleton className="h-5 w-20 rounded-full badge-shimmer" />
+      <Skeleton className="h-4 w-28 badge-shimmer" />
+    </div>
+  </CardContent>
+</Card>
+```
+
+---
+
+### 4. DiagnosticsPanel.tsx
+
+**Before:**
+```tsx
+{[...Array(4)].map((_, i) => (
+  <Card key={i}>
+    <CardContent className="pt-6">
+      <div className="h-6 w-24 bg-muted animate-pulse rounded mb-2" />
+      <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+    </CardContent>
+  </Card>
+))}
+```
+
+**After:**
+```tsx
+import { Skeleton } from '@/components/ui/skeleton';
+
+// In loading state:
+<div className="space-y-4">
+  <div className="flex items-center gap-2">
+    <Skeleton className="h-5 w-5 badge-shimmer" />
+    <Skeleton className="h-6 w-56 badge-shimmer" />
+  </div>
+  
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    {[...Array(4)].map((_, i) => (
+      <Card key={i}>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2">
+            <Skeleton className="h-4 w-4 badge-shimmer" />
+            <Skeleton className="h-4 w-24 badge-shimmer" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex items-baseline gap-2">
+            <Skeleton className="h-8 w-16 badge-shimmer" />
+            <Skeleton className="h-4 w-4 rounded-full badge-shimmer" />
+          </div>
+          <Skeleton className="h-3 w-full badge-shimmer" />
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+  
+  {/* Error Rate Bar skeleton */}
+  <Card>
+    <CardContent className="pt-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-4 w-32 badge-shimmer" />
+        <Skeleton className="h-5 w-12 rounded-full badge-shimmer" />
+      </div>
+      <Skeleton className="h-2 w-full badge-shimmer" />
+      <Skeleton className="h-3 w-64 badge-shimmer" />
+    </CardContent>
+  </Card>
+</div>
+```
+
+---
+
+## Visual Comparison
+
+```text
+BEFORE                          AFTER
+┌─────────────────────┐        ┌─────────────────────┐
+│ System Status   🔄  │        │ System Status  ▓░░░ │
+│ ▓▓▓▓▓▓▓▓▓▓▓▓       │        │ ● ▓▓▓▓▓▓▓▓▓░░░░░░░ │
+│ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓     │        │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ │
+│                     │        │ ▓▓▓▓▓▓▓▓▓▓▓░░░░░░░ │
+└─────────────────────┘        └─────────────────────┘
+     Plain pulse                  Shimmer sweep →
+```
+
+## Technical Notes
+
+- Import `Skeleton` from `@/components/ui/skeleton`
+- Add `badge-shimmer` class for the sweeping shine animation
+- Match skeleton dimensions to actual content for smooth transition
+- Keep card structure consistent with loaded state
+
+## Expected Result
+
+| Aspect | Before | After |
 |--------|--------|-------|
-| EMQ firstName | 0% | ~80%+ |
-| EMQ lastName | 0% | ~60%+ |
-| Overall EMQ | 4.6/10 | ~8.0-8.5/10 |
+| Animation | Basic pulse | Premium shimmer sweep |
+| Layout match | Rough | Exact content structure |
+| Transition | Jarring | Smooth reveal |
+| Professionalism | Basic | Premium feel |
 
-**Note**: New events will have name hashes. Existing events without names cannot be retroactively updated (append-only table).
-
-## Next Steps (Optional)
-
-1. Audit other lead capture forms to ensure they pass `firstName`/`lastName` to tracking
-2. Update `save-lead` edge function to also write `fn`/`ln` to event log
-3. Monitor EMQ dashboard for improvement over next 7 days
