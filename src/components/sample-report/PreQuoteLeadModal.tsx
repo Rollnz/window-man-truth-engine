@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { CheckCircle2, Zap, Download, ArrowRight, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { trackLeadCapture } from '@/lib/gtm';
+import { trackLeadCapture, trackLeadSubmissionSuccess } from '@/lib/gtm';
 import { getOrCreateClientId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
 import { useNavigate } from 'react-router-dom';
@@ -148,17 +148,29 @@ export function PreQuoteLeadModal({ isOpen, onClose, onSuccess, ctaSource = 'unk
       if (error) throw error;
       
       if (result?.leadId) {
-        // Track lead capture
-        await trackLeadCapture(
-          {
+        // Track both lead_captured AND lead_submission_success for full EMQ
+        Promise.allSettled([
+          trackLeadCapture(
+            {
+              leadId: result.leadId,
+              sourceTool: 'sample_report',
+              conversionAction: 'pre_quote_signup',
+            },
+            formData.email,
+            formData.phone,
+            { hasName: true, hasPhone: true }
+          ),
+          trackLeadSubmissionSuccess({
             leadId: result.leadId,
-            sourceTool: 'sample_report',
-            conversionAction: 'pre_quote_signup',
-          },
-          formData.email,
-          formData.phone,
-          { hasName: true, hasPhone: true }
-        );
+            email: formData.email,
+            phone: formData.phone.replace(/\D/g, ''),
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            sourceTool: 'sample-report',
+            eventId: `pre_quote_lead:${result.leadId}`,
+            value: 75,  // Higher value than quote uploads ($50) - main page goal
+          }),
+        ]).catch(err => console.warn('[PreQuoteLeadModal] Non-fatal tracking error:', err));
         
         setSubmittedName(formData.firstName);
         setIsSuccess(true);

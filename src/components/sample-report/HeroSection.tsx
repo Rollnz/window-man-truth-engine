@@ -80,13 +80,13 @@ export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectio
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button variant="cta" size="lg" className="group" onClick={handleUploadClick}>
-                <Upload className="w-5 h-5 mr-2" />
-                Upload My Quote
+              <Button variant="cta" size="lg" className="group" onClick={handleNoQuoteClick}>
+                Don't Have a Quote Yet? Get Ready
                 <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Button>
-              <Button variant="outline" size="lg" className="group" onClick={handleNoQuoteClick}>
-                Don't Have a Quote Yet? Get Ready
+              <Button variant="outline" size="lg" className="group" onClick={handleUploadClick}>
+                <Upload className="w-5 h-5 mr-2" />
+                Upload My Quote
                 <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Button>
             </div>
