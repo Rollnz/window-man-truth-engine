@@ -1,174 +1,390 @@
 
+# Phase 1: Tracking Health Tab Implementation Plan
 
-# Pivot Sample Report: Pre-Quote CTA Hierarchy + EMQ Value Fix
+## Overview
 
-## Problem Analysis
+This plan adds a **Data Health** tab to the existing Attribution Dashboard (`/admin/attribution`) with lazy-loaded health metrics, 3 summary cards, and a resurrection queue for failed events.
 
-### Issue 1: Button Hierarchy
-In `src/components/sample-report/HeroSection.tsx` (lines 82-91), the buttons are currently:
-- **Primary (CTA)**: "Upload My Quote" 
-- **Secondary (outline)**: "Don't Have a Quote Yet? Get Ready"
+---
 
-This prioritizes users who already have quotes, but the page goal is now to capture early-stage homeowners.
+## Architecture Diagram
 
-### Issue 2: EMQ Value Undefined
-In `src/components/sample-report/PreQuoteLeadModal.tsx` (lines 151-161), only `trackLeadCapture` is called:
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│                    AttributionDashboard.tsx                         │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │                         <Tabs>                                 │ │
+│  │  ┌─────────────┐  ┌──────────────────────────────────────────┐ │ │
+│  │  │ Attribution │  │ Data Health ● (status indicator)         │ │ │
+│  │  │   (active)  │  │                                          │ │ │
+│  │  └─────────────┘  └──────────────────────────────────────────┘ │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │                     <TabsContent>                              │ │
+│  │                                                                │ │
+│  │  [Attribution Tab]     [Data Health Tab - LAZY LOADED]        │ │
+│  │  - Summary Cards       - <TrackingHealthView />               │ │
+│  │  - Funnel              - Only fetches when tab selected       │ │
+│  │  - Events Table        - Receives dateRange prop              │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
-```typescript
-// Current code - MISSING trackLeadSubmissionSuccess
-await trackLeadCapture(
-  { leadId: result.leadId, sourceTool: 'sample_report', conversionAction: 'pre_quote_signup' },
-  formData.email,
-  formData.phone,
-  { hasName: true, hasPhone: true }
+---
+
+## Database Migration
+
+### New Table: `tracking_failed_events`
+
+This table stores events that failed to send to external APIs (Meta CAPI, Google) for later retry.
+
+```sql
+-- Migration: Create tracking_failed_events table for resurrection queue
+
+CREATE TABLE public.tracking_failed_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Event identification
+  event_id UUID NOT NULL,
+  event_name TEXT NOT NULL,
+  event_type TEXT NOT NULL DEFAULT 'conversion',
+  
+  -- Original payload (for replay)
+  event_payload JSONB NOT NULL,
+  user_data JSONB,
+  
+  -- Failure context
+  destination TEXT NOT NULL CHECK (destination IN ('meta_capi', 'google_ec', 'gtm_server', 'supabase')),
+  error_message TEXT NOT NULL,
+  error_code TEXT,
+  http_status INTEGER,
+  
+  -- Retry tracking
+  retry_count INTEGER NOT NULL DEFAULT 0,
+  max_retries INTEGER NOT NULL DEFAULT 5,
+  next_retry_at TIMESTAMPTZ,
+  
+  -- Status workflow
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'retrying', 'resolved', 'dead_letter')),
+  resolved_at TIMESTAMPTZ,
+  resolved_by TEXT,
+  
+  -- Audit
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  
+  -- Reference to source lead/session
+  lead_id UUID REFERENCES public.leads(id) ON DELETE SET NULL,
+  session_id UUID
 );
-```
 
-Compare to `SampleReportAccessGate.tsx` which calls BOTH:
-```typescript
-trackLeadCapture({ ... });
-trackLeadSubmissionSuccess({ ..., value: 50 });  // <-- THIS IS MISSING
-```
+-- Indexes for efficient queries
+CREATE INDEX idx_failed_events_status ON public.tracking_failed_events(status);
+CREATE INDEX idx_failed_events_destination ON public.tracking_failed_events(destination);
+CREATE INDEX idx_failed_events_next_retry ON public.tracking_failed_events(next_retry_at) WHERE status = 'pending';
+CREATE INDEX idx_failed_events_created ON public.tracking_failed_events(created_at DESC);
 
-The missing `trackLeadSubmissionSuccess` call means Meta CAPI receives no conversion value for pre-quote leads.
+-- RLS: Admin-only access
+ALTER TABLE public.tracking_failed_events ENABLE ROW LEVEL SECURITY;
 
----
+CREATE POLICY "Admin read access" ON public.tracking_failed_events
+  FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
 
-## Solution
+CREATE POLICY "Service role full access" ON public.tracking_failed_events
+  FOR ALL TO service_role
+  USING (true);
 
-### Part 1: Swap Button Hierarchy
+-- Trigger for updated_at
+CREATE TRIGGER set_updated_at_tracking_failed_events
+  BEFORE UPDATE ON public.tracking_failed_events
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
-**File**: `src/components/sample-report/HeroSection.tsx`
-
-**Lines 82-92** - Swap button variants AND positions:
-
-```typescript
-// BEFORE
-<div className="flex flex-col sm:flex-row gap-4 pt-4">
-  <Button variant="cta" size="lg" className="group" onClick={handleUploadClick}>
-    <Upload className="w-5 h-5 mr-2" />
-    Upload My Quote
-    <ArrowRight ... />
-  </Button>
-  <Button variant="outline" size="lg" className="group" onClick={handleNoQuoteClick}>
-    Don't Have a Quote Yet? Get Ready
-    <ArrowRight ... />
-  </Button>
-</div>
-
-// AFTER
-<div className="flex flex-col sm:flex-row gap-4 pt-4">
-  <Button variant="cta" size="lg" className="group" onClick={handleNoQuoteClick}>
-    Don't Have a Quote Yet? Get Ready
-    <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
-  </Button>
-  <Button variant="outline" size="lg" className="group" onClick={handleUploadClick}>
-    <Upload className="w-5 h-5 mr-2" />
-    Upload My Quote
-    <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
-  </Button>
-</div>
+-- Comment
+COMMENT ON TABLE public.tracking_failed_events IS 
+  'Resurrection Queue: Stores failed conversion events for retry. Supports Meta CAPI, Google Enhanced Conversions, and GTM Server failures.';
 ```
 
 ---
 
-### Part 2: Add EMQ Conversion Value for Pre-Quote Leads
+## Edge Function: `admin-tracking-health`
 
-**File**: `src/components/sample-report/PreQuoteLeadModal.tsx`
+### Purpose
+Aggregates health metrics from existing views and the new `tracking_failed_events` table.
 
-**Step A**: Add import for `trackLeadSubmissionSuccess`
-
+### Response Schema
 ```typescript
-// Line 9 - Update import
-import { trackLeadCapture, trackLeadSubmissionSuccess } from '@/lib/gtm';
-```
-
-**Step B**: Add `trackLeadSubmissionSuccess` call after `trackLeadCapture` (lines 151-165)
-
-**Value Strategy**: Pre-quote leads are the main goal of the page and represent early-funnel intent. Set value to **$75** (higher than the $50 for quote uploads, but less than $100 for full conversions).
-
-```typescript
-// BEFORE (lines 150-165)
-if (result?.leadId) {
-  await trackLeadCapture(
-    { leadId: result.leadId, sourceTool: 'sample_report', conversionAction: 'pre_quote_signup' },
-    formData.email,
-    formData.phone,
-    { hasName: true, hasPhone: true }
-  );
+interface TrackingHealthResponse {
+  // System Status
+  systemStatus: 'healthy' | 'degraded' | 'critical';
+  statusReason: string;
   
-  setSubmittedName(formData.firstName);
-  setIsSuccess(true);
-  onSuccess?.(result.leadId);
-}
-
-// AFTER
-if (result?.leadId) {
-  // Track both lead_captured AND lead_submission_success for full EMQ
-  Promise.allSettled([
-    trackLeadCapture(
-      { leadId: result.leadId, sourceTool: 'sample_report', conversionAction: 'pre_quote_signup' },
-      formData.email,
-      formData.phone,
-      { hasName: true, hasPhone: true }
-    ),
-    trackLeadSubmissionSuccess({
-      leadId: result.leadId,
-      email: formData.email,
-      phone: formData.phone.replace(/\D/g, ''),
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      sourceTool: 'sample-report',
-      eventId: `pre_quote_lead:${result.leadId}`,
-      value: 75,  // Higher value than quote uploads ($50) - main page goal
-    }),
-  ]).catch(err => console.warn('[PreQuoteLeadModal] Non-fatal tracking error:', err));
+  // EMQ Score (Event Match Quality)
+  emqScore: {
+    overall: number;      // 0-10 scale
+    breakdown: {
+      email: number;      // % of events with hashed email
+      phone: number;      // % of events with hashed phone
+      firstName: number;  // % with fn
+      lastName: number;   // % with ln
+      fbp: number;        // % with _fbp cookie
+      fbc: number;        // % with _fbc click ID
+    };
+    trend: 'up' | 'down' | 'stable';
+    previousScore: number;
+  };
   
-  setSubmittedName(formData.firstName);
-  setIsSuccess(true);
-  onSuccess?.(result.leadId);
+  // Fix Queue (Resurrection)
+  fixQueue: {
+    pendingCount: number;
+    deadLetterCount: number;
+    resolvedToday: number;
+    oldestPending: string | null;  // ISO date
+    byDestination: Record<string, number>;
+  };
+  
+  // Diagnostics (from existing views)
+  diagnostics: {
+    orphanEvents: number;
+    duplicateEvents: number;
+    conversionIntegrity: {
+      ok: number;
+      missing: number;
+    };
+    errorRate: number;  // % of cv_ events that are cv_fallback
+  };
+  
+  // Cost Impact (calculated)
+  costImpact: {
+    lostAttributedRevenue: number;  // $ estimate
+    potentialRecovery: number;      // $ if queue resolved
+  };
 }
 ```
+
+### Implementation Location
+`supabase/functions/admin-tracking-health/index.ts`
+
+### Data Sources
+- `v_ledger_health_summary` - daily orphan/duplicate counts
+- `v_conversion_integrity_check` - lead-to-conversion matching
+- `wm_event_log` - EMQ field presence analysis
+- `tracking_failed_events` - resurrection queue counts
+
+---
+
+## Frontend Components
+
+### 1. Tab Infrastructure in `AttributionDashboard.tsx`
+
+**Changes:**
+- Wrap content in `<Tabs>` from shadcn/ui
+- Add two tabs: "Attribution" (default) and "Data Health"
+- Add status indicator dot to Data Health tab label
+
+```tsx
+// New state
+const [activeTab, setActiveTab] = useState<'attribution' | 'health'>('attribution');
+const [healthStatus, setHealthStatus] = useState<'healthy' | 'degraded' | 'critical' | null>(null);
+
+// Tab structure
+<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+  <TabsList>
+    <TabsTrigger value="attribution">Attribution</TabsTrigger>
+    <TabsTrigger value="health" className="flex items-center gap-2">
+      Data Health
+      {healthStatus && (
+        <span className={cn(
+          "w-2 h-2 rounded-full",
+          healthStatus === 'healthy' && "bg-green-500",
+          healthStatus === 'degraded' && "bg-amber-500",
+          healthStatus === 'critical' && "bg-red-500"
+        )} />
+      )}
+    </TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="attribution">
+    {/* Existing attribution content */}
+  </TabsContent>
+  
+  <TabsContent value="health">
+    <TrackingHealthView 
+      dateRange={dateRange} 
+      onStatusChange={setHealthStatus}
+    />
+  </TabsContent>
+</Tabs>
+```
+
+### 2. `TrackingHealthView.tsx` Component
+
+**Location:** `src/components/admin/TrackingHealthView.tsx`
+
+**Key Features:**
+- Lazy loading: Only fetches data when mounted (tab selected)
+- Receives `dateRange` prop from parent
+- Progressive disclosure: 3 cards visible, details in collapsible
+
+**Props Interface:**
+```typescript
+interface TrackingHealthViewProps {
+  dateRange: DateRange;
+  onStatusChange?: (status: 'healthy' | 'degraded' | 'critical') => void;
+}
+```
+
+**Card Layout:**
+```text
+┌──────────────────┬──────────────────┬──────────────────┐
+│  System Status   │    EMQ Score     │    Fix Queue     │
+│  ●  Healthy      │      9.2/10      │   3 Pending      │
+│                  │   ↑ from 8.8     │  [Retry All]     │
+│  All systems     │                  │                  │
+│  operational     │  Email: 100%     │  0 Dead Letter   │
+│                  │  Phone: 94%      │                  │
+└──────────────────┴──────────────────┴──────────────────┘
+```
+
+### 3. Summary Cards
+
+**Card 1: System Status**
+- Green dot + "Healthy" when: EMQ >= 8.5, error_rate < 2%, orphans < 5%
+- Amber dot + "Degraded" when: EMQ 7-8.5 OR error_rate 2-5%
+- Red dot + "Critical" when: EMQ < 7 OR error_rate > 5% OR pending_queue > 50
+
+**Card 2: EMQ Score**
+- Large number display (e.g., "9.2/10")
+- Trend indicator (up/down arrow with previous score)
+- Expandable breakdown showing email/phone/fn/ln percentages
+
+**Card 3: Fix Queue**
+- Count of pending failed events
+- "Retry All" button (triggers edge function)
+- Dead letter count (events that exceeded max retries)
+
+---
+
+## File Changes Summary
+
+| File | Action | Description |
+|------|--------|-------------|
+| `supabase/migrations/YYYYMMDD_tracking_health_phase1.sql` | Create | New table + indexes + RLS |
+| `supabase/functions/admin-tracking-health/index.ts` | Create | Health metrics aggregation endpoint |
+| `src/pages/admin/AttributionDashboard.tsx` | Modify | Add Tabs wrapper, lazy health tab |
+| `src/components/admin/TrackingHealthView.tsx` | Create | Main health view component |
+| `src/components/admin/HealthStatusCard.tsx` | Create | System status card |
+| `src/components/admin/EMQScoreCard.tsx` | Create | EMQ breakdown card |
+| `src/components/admin/FixQueueCard.tsx` | Create | Resurrection queue card |
 
 ---
 
 ## Technical Details
 
-### Conversion Value Hierarchy (After Fix)
+### Lazy Loading Implementation
 
-| Flow | Value | Rationale |
-|------|-------|-----------|
-| Pre-quote signup (NEW) | $75 | Main page goal, early-funnel, nurture-ready |
-| Quote upload (existing) | $50 | Has quote, ready to analyze |
-| Standard lead (default) | $15 | Minimal engagement |
+The `TrackingHealthView` component will use a `useEffect` that triggers on mount:
 
-### Why `Promise.allSettled`?
+```typescript
+const [hasLoaded, setHasLoaded] = useState(false);
 
-Using `Promise.allSettled` instead of `await` ensures:
-1. Tracking failures don't block the success UI
-2. Both tracking calls fire in parallel (faster)
-3. User sees success state immediately
+useEffect(() => {
+  // Only fetch on first render (when tab becomes active)
+  if (!hasLoaded) {
+    fetchHealthMetrics();
+    setHasLoaded(true);
+  }
+}, [hasLoaded]);
+
+// Re-fetch when dateRange changes (but only if already loaded)
+useEffect(() => {
+  if (hasLoaded) {
+    fetchHealthMetrics();
+  }
+}, [dateRange]);
+```
+
+### EMQ Score Calculation
+
+The EMQ score is calculated as a weighted average of field presence:
+
+```typescript
+const calculateEMQ = (metrics: FieldPresenceMetrics): number => {
+  const weights = {
+    email: 3.0,      // Most important
+    phone: 2.5,      // Very important
+    fbp: 1.5,        // Browser ID
+    fbc: 1.0,        // Click ID (not always present)
+    firstName: 0.5,  // Nice to have
+    lastName: 0.5,   // Nice to have
+  };
+  
+  const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+  const score = Object.entries(weights).reduce((sum, [field, weight]) => {
+    return sum + (metrics[field] / 100) * weight;
+  }, 0);
+  
+  return (score / totalWeight) * 10;  // Scale to 0-10
+};
+```
+
+### Cost Impact Calculation
+
+```typescript
+const calculateCostImpact = (pendingCount: number, avgConversionValue: number = 75) => {
+  const estimatedConversionRate = 0.15;  // 15% of leads convert
+  return {
+    lostAttributedRevenue: pendingCount * avgConversionValue * estimatedConversionRate,
+    potentialRecovery: pendingCount * avgConversionValue * estimatedConversionRate * 0.8,  // 80% recovery rate
+  };
+};
+```
 
 ---
 
-## Files Changed
+## Health Status Logic
 
-| File | Change |
-|------|--------|
-| `src/components/sample-report/HeroSection.tsx` | Swap button variants and positions |
-| `src/components/sample-report/PreQuoteLeadModal.tsx` | Add `trackLeadSubmissionSuccess` with $75 value |
+```typescript
+const determineStatus = (metrics: HealthMetrics): 'healthy' | 'degraded' | 'critical' => {
+  const { emqScore, diagnostics, fixQueue } = metrics;
+  
+  // Critical conditions
+  if (
+    emqScore.overall < 7 ||
+    diagnostics.errorRate > 5 ||
+    fixQueue.pendingCount > 50
+  ) {
+    return 'critical';
+  }
+  
+  // Degraded conditions
+  if (
+    emqScore.overall < 8.5 ||
+    diagnostics.errorRate > 2 ||
+    fixQueue.pendingCount > 10 ||
+    diagnostics.orphanEvents > (diagnostics.totalEvents * 0.05)
+  ) {
+    return 'degraded';
+  }
+  
+  return 'healthy';
+};
+```
 
 ---
 
-## Visual Result
+## Deprecation Note
 
-**Before:**
-```
-[Upload My Quote] (solid blue)  [Don't Have a Quote Yet?] (outline)
-```
+After Phase 1 is complete and validated, the standalone `/admin/attribution-health` page (`AttributionHealthDashboard.tsx`) can be deprecated and redirected to `/admin/attribution?tab=health`.
 
-**After:**
-```
-[Don't Have a Quote Yet? Get Ready] (solid blue)  [Upload My Quote] (outline)
-```
+---
 
+## Implementation Order
+
+1. **Database Migration** - Create `tracking_failed_events` table
+2. **Edge Function** - Build `admin-tracking-health` endpoint
+3. **TrackingHealthView** - Create main component with cards
+4. **Tab Infrastructure** - Modify AttributionDashboard to add tabs
+5. **Status Indicator** - Add health dot to tab label
+6. **Testing** - Verify lazy loading and date range sync
