@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { subDays, format, startOfDay, endOfDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, ArrowLeft, ShieldAlert, FileText } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { AttributionSummaryCards } from "@/components/admin/AttributionSummaryCards";
 import { AttributionEventsTable, EnrichedAttributionEvent } from "@/components/admin/AttributionEventsTable";
 import { AttributionEventFilter } from "@/components/admin/AttributionEventFilter";
@@ -15,6 +17,7 @@ import { PaginationControls } from "@/components/admin/PaginationControls";
 import { DateRange } from "@/components/admin/DateRangePicker";
 import { ROASOverlaySection } from "@/components/admin/ROASOverlaySection";
 import { generateAttributionPDF } from "@/lib/pdfExport";
+import { TrackingHealthView, HealthStatus } from "@/components/admin/tracking-health";
 
 interface FunnelData {
   traffic: number;
@@ -36,8 +39,23 @@ const ADMIN_EMAILS = ['admin@windowman.com', 'support@windowman.com', 'vansiclen
 const getDefaultDateRange = (): DateRange => ({ startDate: subDays(new Date(), 30), endDate: new Date() });
 
 export default function AttributionDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Tab state with URL sync
+  const activeTab = searchParams.get('tab') === 'health' ? 'health' : 'attribution';
+  const setActiveTab = (tab: string) => {
+    if (tab === 'attribution') {
+      searchParams.delete('tab');
+    } else {
+      searchParams.set('tab', tab);
+    }
+    setSearchParams(searchParams);
+  };
+  
+  // Health status for tab indicator
+  const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -167,7 +185,7 @@ export default function AttributionDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <div className="w-full py-8 px-4 lg:px-8">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold">Attribution Command Center</h1>
             <p className="text-muted-foreground mt-1">
@@ -178,56 +196,85 @@ export default function AttributionDashboard() {
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => navigate('/admin/crm')}><ArrowLeft className="h-4 w-4 mr-2" />CRM</Button>
             <Button variant="outline" onClick={handleExportPDF} disabled={isLoading || !data}><FileText className="h-4 w-4 mr-2" />Export PDF</Button>
-            <Button onClick={() => fetchData()} disabled={isLoading}><RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />Refresh</Button>
+            <Button onClick={() => fetchData()} disabled={isLoading}><RefreshCw className={cn('h-4 w-4 mr-2', isLoading && 'animate-spin')} />Refresh</Button>
           </div>
         </div>
 
-        <div className="mb-8">
-          <AttributionSummaryCards 
-            totalLeads={data?.summary.totalLeads || 0} 
-            totalEmails={data?.summary.totalEmails || 0} 
-            totalAiInteractions={data?.summary.totalAiInteractions || 0} 
-            isLoading={isLoading} 
-          />
-        </div>
-        
-        <ConversionFunnel 
-          data={data?.funnel || { traffic: 0, engagement: 0, leadGen: 0, conversion: 0 }} 
-          isLoading={isLoading} 
-        />
+        {/* Tab Navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="attribution">Attribution</TabsTrigger>
+            <TabsTrigger value="health" className="flex items-center gap-2">
+              Data Health
+              {healthStatus && (
+                <span className={cn(
+                  "w-2 h-2 rounded-full",
+                  healthStatus === 'healthy' && "bg-green-500",
+                  healthStatus === 'degraded' && "bg-amber-500",
+                  healthStatus === 'critical' && "bg-red-500"
+                )} />
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="mb-8">
-          <ROASOverlaySection />
-        </div>
+          {/* Attribution Tab Content */}
+          <TabsContent value="attribution" className="mt-0">
+            <div className="mb-8">
+              <AttributionSummaryCards 
+                totalLeads={data?.summary.totalLeads || 0} 
+                totalEmails={data?.summary.totalEmails || 0} 
+                totalAiInteractions={data?.summary.totalAiInteractions || 0} 
+                isLoading={isLoading} 
+              />
+            </div>
+            
+            <ConversionFunnel 
+              data={data?.funnel || { traffic: 0, engagement: 0, leadGen: 0, conversion: 0 }} 
+              isLoading={isLoading} 
+            />
 
-        <div className="mb-6">
-          <AttributionEventFilter 
-            eventFilter={eventFilter} 
-            onEventFilterChange={setEventFilter} 
-            dateRange={dateRange} 
-            onDateRangeChange={setDateRange} 
-            onClearFilters={handleClearFilters} 
-            options={data?.eventTypes || []} 
-            disabled={isLoading} 
-          />
-        </div>
+            <div className="mb-8">
+              <ROASOverlaySection />
+            </div>
 
-        <AttributionEventsTable 
-          events={events} 
-          isLoading={isLoading} 
-          onLeadClick={handleLeadClick} 
-          onSessionClick={handleSessionClick}
-          sessionFilter={sessionStoryFilter}
-          onClearSessionFilter={handleClearSessionFilter}
-        />
-        
-        <PaginationControls 
-          currentCount={events.length} 
-          totalCount={data?.totalCount || 0} 
-          hasMore={data?.hasMore || false} 
-          isLoading={isLoadingMore} 
-          onLoadMore={() => fetchData(true)} 
-        />
+            <div className="mb-6">
+              <AttributionEventFilter 
+                eventFilter={eventFilter} 
+                onEventFilterChange={setEventFilter} 
+                dateRange={dateRange} 
+                onDateRangeChange={setDateRange} 
+                onClearFilters={handleClearFilters} 
+                options={data?.eventTypes || []} 
+                disabled={isLoading} 
+              />
+            </div>
+
+            <AttributionEventsTable 
+              events={events} 
+              isLoading={isLoading} 
+              onLeadClick={handleLeadClick} 
+              onSessionClick={handleSessionClick}
+              sessionFilter={sessionStoryFilter}
+              onClearSessionFilter={handleClearSessionFilter}
+            />
+            
+            <PaginationControls 
+              currentCount={events.length} 
+              totalCount={data?.totalCount || 0} 
+              hasMore={data?.hasMore || false} 
+              isLoading={isLoadingMore} 
+              onLoadMore={() => fetchData(true)} 
+            />
+          </TabsContent>
+
+          {/* Data Health Tab Content - Lazy Loaded */}
+          <TabsContent value="health" className="mt-0">
+            <TrackingHealthView 
+              dateRange={dateRange}
+              onStatusChange={setHealthStatus}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <LeadJourneyPanel 

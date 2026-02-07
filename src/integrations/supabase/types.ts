@@ -983,6 +983,97 @@ export type Database = {
         }
         Relationships: []
       }
+      tracking_failed_events: {
+        Row: {
+          created_at: string
+          destination: string
+          error_code: string | null
+          error_message: string
+          event_id: string
+          event_name: string
+          event_payload: Json
+          event_type: string
+          http_status: number | null
+          id: string
+          lead_id: string | null
+          max_retries: number
+          next_retry_at: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          retry_count: number
+          session_id: string | null
+          status: string
+          updated_at: string
+          user_data: Json | null
+        }
+        Insert: {
+          created_at?: string
+          destination: string
+          error_code?: string | null
+          error_message: string
+          event_id: string
+          event_name: string
+          event_payload: Json
+          event_type?: string
+          http_status?: number | null
+          id?: string
+          lead_id?: string | null
+          max_retries?: number
+          next_retry_at?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          retry_count?: number
+          session_id?: string | null
+          status?: string
+          updated_at?: string
+          user_data?: Json | null
+        }
+        Update: {
+          created_at?: string
+          destination?: string
+          error_code?: string | null
+          error_message?: string
+          event_id?: string
+          event_name?: string
+          event_payload?: Json
+          event_type?: string
+          http_status?: number | null
+          id?: string
+          lead_id?: string | null
+          max_retries?: number
+          next_retry_at?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          retry_count?: number
+          session_id?: string | null
+          status?: string
+          updated_at?: string
+          user_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracking_failed_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tracking_failed_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_dashboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tracking_failed_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "v_conversion_integrity_check"
+            referencedColumns: ["lead_id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
