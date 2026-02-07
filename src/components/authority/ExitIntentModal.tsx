@@ -28,6 +28,7 @@ import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
 import type { SourceTool } from '@/types/sourceTool';
 import { FormSurfaceProvider } from '@/components/forms/FormSurfaceProvider';
+import { scheduleWhenIdle } from '@/lib/deferredInit';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -482,50 +483,86 @@ export function ExitIntentModal({
   }, [isOpen, currentStep]);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // SCROLL TRACKING (Trigger Detection)
+  // SCROLL TRACKING (Trigger Detection) - Deferred & RAF-throttled for performance
   // ─────────────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const currentScrollDepth = scrollHeight > 0 ? window.scrollY / scrollHeight : 0;
+    let rafId: number | null = null;
+    let cleanup: (() => void) | null = null;
+    
+    // Defer scroll listener setup by 2 seconds to avoid blocking initial render
+    const cancelIdle = scheduleWhenIdle(() => {
+      const handleScroll = () => {
+        // RAF-throttle to avoid excessive calculations
+        if (rafId !== null) return;
+        
+        rafId = requestAnimationFrame(() => {
+          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const currentScrollDepth = scrollHeight > 0 ? window.scrollY / scrollHeight : 0;
 
-      maxScrollDepthRef.current = Math.max(maxScrollDepthRef.current, currentScrollDepth);
-      lastScrollYRef.current = window.scrollY;
+          maxScrollDepthRef.current = Math.max(maxScrollDepthRef.current, currentScrollDepth);
+          lastScrollYRef.current = window.scrollY;
+          rafId = null;
+        });
+      };
+
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      cleanup = () => window.removeEventListener('scroll', handleScroll);
+    }, { minDelay: 2000 });
+
+    return () => {
+      cancelIdle();
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      cleanup?.();
     };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Desktop: Mouse leave detection
+  // Desktop: Mouse leave detection - deferred
   useEffect(() => {
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 0) {
-        showModal();
-      }
-    };
+    let cleanup: (() => void) | null = null;
+    
+    const cancelIdle = scheduleWhenIdle(() => {
+      const handleMouseLeave = (e: MouseEvent) => {
+        if (e.clientY <= 0) {
+          showModal();
+        }
+      };
 
-    document.addEventListener('mouseleave', handleMouseLeave);
-    return () => document.removeEventListener('mouseleave', handleMouseLeave);
+      document.addEventListener('mouseleave', handleMouseLeave);
+      cleanup = () => document.removeEventListener('mouseleave', handleMouseLeave);
+    }, { minDelay: 2000 });
+
+    return () => {
+      cancelIdle();
+      cleanup?.();
+    };
   }, [showModal]);
 
-  // Mobile: Scroll up detection
+  // Mobile: Scroll up detection - deferred
   useEffect(() => {
-    let lastY = lastScrollYRef.current;
+    let cleanup: (() => void) | null = null;
+    
+    const cancelIdle = scheduleWhenIdle(() => {
+      let lastY = lastScrollYRef.current;
 
-    const handleScrollUp = () => {
-      if (window.innerWidth > 768) return;
-      if (maxScrollDepthRef.current < 0.5) return;
+      const handleScrollUp = () => {
+        if (window.innerWidth > 768) return;
+        if (maxScrollDepthRef.current < 0.5) return;
 
-      const currentY = window.scrollY;
-      if (currentY < lastY - 80) {
-        showModal();
-      }
-      lastY = currentY;
+        const currentY = window.scrollY;
+        if (currentY < lastY - 80) {
+          showModal();
+        }
+        lastY = currentY;
+      };
+
+      window.addEventListener('scroll', handleScrollUp, { passive: true });
+      cleanup = () => window.removeEventListener('scroll', handleScrollUp);
+    }, { minDelay: 2000 });
+
+    return () => {
+      cancelIdle();
+      cleanup?.();
     };
-
-    window.addEventListener('scroll', handleScrollUp, { passive: true });
-    return () => window.removeEventListener('scroll', handleScrollUp);
   }, [showModal]);
 
   // ESC key handler

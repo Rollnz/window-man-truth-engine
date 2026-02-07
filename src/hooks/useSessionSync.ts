@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSessionData, SessionData } from '@/hooks/useSessionData';
 import { supabase } from '@/integrations/supabase/client';
+import { scheduleWhenIdle } from '@/lib/deferredInit';
 
 /**
  * useSessionSync - Automatically syncs localStorage session data to database on authentication
@@ -12,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
  * 
  * Safety:
  * - Fire-and-forget: Errors are logged but never block UI
- * - Debounced: Waits for auth state to settle
+ * - Deferred: Uses idle callback to avoid blocking initial render
  * - Idempotent: Marks sync complete to avoid duplicate calls
  */
 export function useSessionSync() {
@@ -67,9 +68,9 @@ export function useSessionSync() {
       }
     };
 
-    // Debounce slightly to avoid race with auth state settling
-    const timer = setTimeout(syncSession, 500);
-    return () => clearTimeout(timer);
+    // Defer sync to idle time (2s delay to let auth settle + avoid blocking render)
+    const cancel = scheduleWhenIdle(syncSession, { minDelay: 2000, timeout: 5000 });
+    return cancel;
   }, [isAuthenticated, user, sessionData]);
 
   // Reset sync flag on logout
