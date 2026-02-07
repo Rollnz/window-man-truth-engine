@@ -1,144 +1,143 @@
 
-# Security Findings Resolution: Anonymous Lead Capture Pattern
+# Fix: CRM-Leads Edge Function Request Method Mismatch
 
-## Executive Summary
+## Problem Summary
 
-The "Anonymous-Write / Protected-Read" RLS pattern requested is **already implemented** correctly. The security scanner findings should be marked as "appropriately ignored" with business justification, since the anonymous INSERT capability is a core business requirement protected by comprehensive application-layer security controls.
+The `/admin/roi` page crashes with error `"leadId and updates required"` because:
 
----
+1. **`LeadSourceROI.tsx`** uses `supabase.functions.invoke('crm-leads', { body: { action: 'list' } })`
+2. **`supabase.functions.invoke()`** defaults to POST method
+3. **`crm-leads` edge function** POST handler expects `{ leadId, updates }`, not `{ action: 'list' }`
+4. **Result**: The function returns 400 error because `leadId` is missing
 
-## Current State Verification
-
-### leads Table (Already Secured)
-
-| Policy | Type | Expression | Status |
-|--------|------|------------|--------|
-| Allow anonymous insert on leads | INSERT | `WITH CHECK (true)` | Correct |
-| Users can select own leads | SELECT | `user_id = auth.uid()` | Correct |
-| Admins can select leads | SELECT | `has_role(admin)` | Correct |
-| Deny public update on leads | UPDATE | `USING (false)` | Correct |
-| Deny public delete on leads | DELETE | `USING (false)` | Correct |
-
-### lead_activities Table (Already Secured)
-
-| Policy | Type | Expression | Status |
-|--------|------|------------|--------|
-| Allow anonymous insert on lead_activities | INSERT | `WITH CHECK (true)` | Correct |
-| Admin can read lead_activities | SELECT | `has_role(admin)` | Correct |
-| (No public UPDATE) | UPDATE | No policy = denied | Correct |
-| (No public DELETE) | DELETE | No policy = denied | Correct |
-
-### quotes Storage Bucket (Already Secured)
-
-| Policy | Type | Expression | Status |
-|--------|------|------------|--------|
-| Service role full access | ALL | `bucket_id = 'quotes'` | Correct |
-| Allow authenticated upload | INSERT | `bucket_id = 'quotes'` | Not needed |
-
-**Note:** The `upload-quote` edge function uses `service_role` key which bypasses RLS, so the storage policy doesn't block anonymous uploads. Files are uploaded through the edge function, not directly from the client.
+The same issue exists in `AttributionHealthDashboard.tsx`.
 
 ---
 
-## Action Plan
+## Fix Strategy
 
-### Task 1: Mark Security Findings as Appropriately Ignored
+Change the admin pages to use **GET requests with query parameters** (matching the working pattern in `useCRMLeads.ts`).
 
-Update the security scanner findings with detailed business justification explaining why anonymous INSERT is required and how it's protected.
+---
 
-**Finding 1:** `leads_table_public_exposure`
-- **Ignore Reason:** Anonymous lead capture is a core business requirement for marketing funnel optimization. Protected by multi-tier rate limiting (10/hr per IP, 50/day per IP, 3/hr per email), comprehensive Zod validation (500+ lines in save-lead), and Edge Function mediation. SELECT restricted to authenticated owner (user_id = auth.uid()) or admin role. This is the standard "Anonymous-Write / Protected-Read" pattern for lead generation.
+## Files to Modify
 
-**Finding 2:** `lead_activities_anonymous_insert`  
-- **Ignore Reason:** Anonymous behavior tracking is required for engagement scoring before lead capture. Protected by session-based rate limiting and Edge Function mediation. SELECT restricted to admin role only. Data poisoning risk mitigated by server-side score calculation using get_event_score() function.
+| File | Change |
+|------|--------|
+| `src/pages/admin/LeadSourceROI.tsx` | Replace `supabase.functions.invoke()` with `fetch()` GET request |
+| `src/pages/admin/AttributionHealthDashboard.tsx` | Replace `supabase.functions.invoke()` with `fetch()` GET request |
 
-**Finding 3:** `profiles_user_data_exposure`
-- **Ignore Reason:** The profiles table correctly uses auth.uid() = user_id for all operations. INSERT is only allowed for authenticated users via the handle_new_user trigger (SECURITY DEFINER). Users cannot create profiles for other user_ids because profile creation happens automatically during auth.users insert. The warning about "user_id manipulation" is theoretical and not exploitable given the trigger-based creation pattern.
+---
 
-### Task 2 (Optional): Add User SELECT Policy for lead_activities
+## Implementation Details
 
-Allow authenticated users to view their own activity history. This is useful if you want to show users their engagement history in the Vault.
+### Fix 1: LeadSourceROI.tsx (Lines 94-100)
 
-```sql
-CREATE POLICY "Users can view own lead_activities"
-ON public.lead_activities FOR SELECT
-TO authenticated
-USING (auth.uid() IS NOT NULL AND user_id = auth.uid());
+**Current (broken):**
+```typescript
+const { data: leadsResponse, error: leadsError } = await supabase.functions.invoke('crm-leads', {
+  body: { 
+    action: 'list',
+    startDate,
+    endDate,
+  }
+});
 ```
 
-### Task 3 (Optional): Add Anon Storage Upload Policy
+**Fixed:**
+```typescript
+// Build query params for GET request
+const params = new URLSearchParams();
+if (startDate) params.append('startDate', startDate);
+if (endDate) params.append('endDate', endDate);
 
-For defense-in-depth, allow anonymous uploads directly to storage (even though edge function bypasses RLS). This provides an extra layer if someone calls storage directly.
+const response = await fetch(
+  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-leads${params.toString() ? `?${params}` : ''}`,
+  {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+      'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    },
+  }
+);
 
-```sql
-CREATE POLICY "Allow anonymous upload to quotes bucket"
-ON storage.objects FOR INSERT
-TO anon
-WITH CHECK (bucket_id = 'quotes');
+if (!response.ok) {
+  const errorData = await response.json().catch(() => ({}));
+  throw new Error(errorData.error || `Failed to fetch leads (${response.status})`);
+}
+
+const leadsResponse = await response.json();
+```
+
+### Fix 2: AttributionHealthDashboard.tsx (Lines 77-83)
+
+**Current (broken):**
+```typescript
+const { data: leads, error: leadsError } = await supabase.functions.invoke('crm-leads', {
+  body: { 
+    action: 'list',
+    startDate,
+    endDate,
+  }
+});
+```
+
+**Fixed:**
+```typescript
+// Build query params for GET request
+const leadsParams = new URLSearchParams();
+if (startDate) leadsParams.append('startDate', startDate);
+if (endDate) leadsParams.append('endDate', endDate);
+
+const leadsResponse = await fetch(
+  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-leads${leadsParams.toString() ? `?${leadsParams}` : ''}`,
+  {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+      'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    },
+  }
+);
+
+if (!leadsResponse.ok) {
+  const errorData = await leadsResponse.json().catch(() => ({}));
+  throw new Error(errorData.error || `Failed to fetch leads (${leadsResponse.status})`);
+}
+
+const leads = await leadsResponse.json();
+const leadsData = leads?.leads || [];
 ```
 
 ---
 
-## Implementation Steps
+## Why This Fix Works
 
-| Step | Task | Description | Risk |
-|------|------|-------------|------|
-| 1 | Update Security Findings | Mark 3 findings as ignored with justification | None |
-| 2 | (Optional) Add lead_activities SELECT | Users see own activities | Very Low |
-| 3 | (Optional) Add storage anon INSERT | Defense-in-depth | Low |
-
----
-
-## Why No SQL Migration is Needed
-
-The current RLS configuration already matches your requirements:
-
-**Your Request:**
-```text
-leads: Anon INSERT ✓, Protected SELECT ✓
-lead_activities: Anon INSERT ✓, Protected SELECT ✓  
-quotes storage: Anon UPLOAD via edge function ✓, Protected READ ✓
-```
-
-**Current Implementation:**
-```text
-leads: Anon INSERT ✓, SELECT only for owner/admin ✓
-lead_activities: Anon INSERT ✓, SELECT only for admin ✓
-quotes storage: Service role handles uploads ✓, Private bucket ✓
-```
-
-The security scanner findings are **informational warnings** about patterns that could be risky in other contexts, but are **appropriate for your lead generation business model** when combined with your comprehensive application-layer protections.
+1. **Matches existing pattern**: `useCRMLeads.ts` already uses this exact approach successfully
+2. **No backend changes needed**: The edge function GET handler is already designed for listing
+3. **Proper HTTP semantics**: GET for reading, POST for writing
+4. **Consistent error handling**: Both pages will have proper error handling with useful messages
 
 ---
 
-## Security Controls Already in Place
+## Testing Checklist
 
-1. **Multi-tier Rate Limiting** (save-lead edge function)
-   - 10 leads/hour per IP
-   - 50 leads/day per IP
-   - 3 submissions/hour per email
-
-2. **Input Validation** (Zod schemas)
-   - 500+ lines of validation rules
-   - Email format validation
-   - Phone regex validation
-   - Size limits on all fields
-
-3. **File Upload Protection** (upload-quote edge function)
-   - Magic byte validation
-   - MIME type verification
-   - 10MB file size limit
-   - Filename sanitization
-   - 5 uploads/hour per session
-
-4. **Edge Function Mediation**
-   - All writes go through edge functions
-   - Service role bypasses RLS appropriately
-   - Admin functions require JWT + email whitelist
+After implementation:
+1. Navigate to `/admin/roi` - should load without errors
+2. Navigate to `/admin/attribution-health` - should load without errors
+3. Verify date range filtering works on both pages
+4. Verify refresh button works on both pages
+5. Check that the CRM dashboard (`/admin/crm`) still works (uses `useCRMLeads.ts`)
 
 ---
 
-## Conclusion
+## Technical Notes
 
-**No RLS changes needed.** The correct action is to mark the security findings as "appropriately ignored" with the business justification documented above. The "Anonymous-Write / Protected-Read" pattern is already correctly implemented.
+The edge function has clear separation:
+- **GET**: List leads with optional filters (`startDate`, `endDate`, `status`, `quality`)
+- **POST**: Update a specific lead (`leadId` + `updates` object required)
 
-The optional enhancements (user SELECT on lead_activities, anon storage policy) provide marginal defense-in-depth but are not required for security.
+The admin pages were incorrectly using POST with `{ action: 'list' }` which the backend doesn't recognize.
