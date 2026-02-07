@@ -1,143 +1,174 @@
 
-# Fix: CRM-Leads Edge Function Request Method Mismatch
 
-## Problem Summary
+# Simplify AI Scanner: Remove Gamma Integration & Negotiation Section
 
-The `/admin/roi` page crashes with error `"leadId and updates required"` because:
+## Overview
 
-1. **`LeadSourceROI.tsx`** uses `supabase.functions.invoke('crm-leads', { body: { action: 'list' } })`
-2. **`supabase.functions.invoke()`** defaults to POST method
-3. **`crm-leads` edge function** POST handler expects `{ leadId, updates }`, not `{ action: 'list' }`
-4. **Result**: The function returns 400 error because `leadId` is missing
-
-The same issue exists in `AttributionHealthDashboard.tsx`.
+This plan implements the "Strict Funnel Strategy" by removing the Gamma.app presentation generation feature entirely and cleaning up the Negotiation section on the AI Scanner page. The goal is to create a focused user flow: **Upload → See Results → Chat with Expert → Save to Vault**.
 
 ---
 
-## Fix Strategy
+## Summary of Changes
 
-Change the admin pages to use **GET requests with query parameters** (matching the working pattern in `useCRMLeads.ts`).
+| Action | Files Affected |
+|--------|----------------|
+| Delete | 7 files (components, hook, edge functions) |
+| Modify | 3 files (QuoteScanner.tsx, Comparison.tsx, config.toml) |
+| Keep | QuoteQA component (AI Expert chat) |
 
 ---
 
-## Files to Modify
+## Detailed Changes
 
-| File | Change |
+### 1. Remove from AI Scanner Page (`src/pages/QuoteScanner.tsx`)
+
+**Remove imports:**
+```typescript
+// DELETE these imports:
+import { NegotiationTools } from '@/components/quote-scanner/NegotiationTools';
+import { GenerateProposalButton } from '@/components/quote-scanner/GenerateProposalButton';
+```
+
+**Remove components from render (lines 159-174):**
+
+Before:
+```typescript
+{isUnlocked && analysisResult && (
+  <>
+    <GenerateProposalButton ... />
+    <NegotiationTools />
+    <QuoteQA ... />
+  </>
+)}
+```
+
+After:
+```typescript
+{isUnlocked && analysisResult && (
+  <QuoteQA
+    answer={qaAnswer}
+    isAsking={isAskingQuestion}
+    onAsk={askQuestion}
+    disabled={!analysisResult}
+  />
+)}
+```
+
+---
+
+### 2. Remove from Comparison Page (`src/pages/Comparison.tsx`)
+
+**Remove import:**
+```typescript
+// DELETE this import:
+import { GenerateComparisonReportButton } from "@/components/comparison/GenerateComparisonReportButton";
+```
+
+**Remove component usage (around lines 70-77):**
+
+The `GenerateComparisonReportButton` component call will be deleted entirely.
+
+---
+
+### 3. Delete Frontend Files
+
+| File | Reason |
 |------|--------|
-| `src/pages/admin/LeadSourceROI.tsx` | Replace `supabase.functions.invoke()` with `fetch()` GET request |
-| `src/pages/admin/AttributionHealthDashboard.tsx` | Replace `supabase.functions.invoke()` with `fetch()` GET request |
+| `src/components/quote-scanner/GenerateProposalButton.tsx` | Gamma integration |
+| `src/components/quote-scanner/NegotiationTools.tsx` | Links away from funnel |
+| `src/components/quote-scanner/__tests__/NegotiationTools.test.tsx` | Test for deleted component |
+| `src/components/comparison/GenerateComparisonReportButton.tsx` | Gamma integration |
+| `src/hooks/usePresentationGenerator.ts` | Gamma polling logic |
 
 ---
 
-## Implementation Details
+### 4. Delete Edge Functions
 
-### Fix 1: LeadSourceROI.tsx (Lines 94-100)
+| Function Folder | Description |
+|-----------------|-------------|
+| `supabase/functions/generate-presentation/` | Gamma API generation |
+| `supabase/functions/get-presentation-status/` | Gamma status polling |
 
-**Current (broken):**
-```typescript
-const { data: leadsResponse, error: leadsError } = await supabase.functions.invoke('crm-leads', {
-  body: { 
-    action: 'list',
-    startDate,
-    endDate,
-  }
-});
-```
+After deleting the code, these functions will be removed from the deployed Supabase project.
 
-**Fixed:**
-```typescript
-// Build query params for GET request
-const params = new URLSearchParams();
-if (startDate) params.append('startDate', startDate);
-if (endDate) params.append('endDate', endDate);
+---
 
-const response = await fetch(
-  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-leads${params.toString() ? `?${params}` : ''}`,
-  {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-      'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    },
-  }
-);
+### 5. Update Edge Function Config (`supabase/config.toml`)
 
-if (!response.ok) {
-  const errorData = await response.json().catch(() => ({}));
-  throw new Error(errorData.error || `Failed to fetch leads (${response.status})`);
-}
+Remove the function entries for `generate-presentation` and `get-presentation-status`:
 
-const leadsResponse = await response.json();
-```
+```toml
+# DELETE these sections:
+[functions.generate-presentation]
+verify_jwt = false
 
-### Fix 2: AttributionHealthDashboard.tsx (Lines 77-83)
-
-**Current (broken):**
-```typescript
-const { data: leads, error: leadsError } = await supabase.functions.invoke('crm-leads', {
-  body: { 
-    action: 'list',
-    startDate,
-    endDate,
-  }
-});
-```
-
-**Fixed:**
-```typescript
-// Build query params for GET request
-const leadsParams = new URLSearchParams();
-if (startDate) leadsParams.append('startDate', startDate);
-if (endDate) leadsParams.append('endDate', endDate);
-
-const leadsResponse = await fetch(
-  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-leads${leadsParams.toString() ? `?${leadsParams}` : ''}`,
-  {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-      'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    },
-  }
-);
-
-if (!leadsResponse.ok) {
-  const errorData = await leadsResponse.json().catch(() => ({}));
-  throw new Error(errorData.error || `Failed to fetch leads (${leadsResponse.status})`);
-}
-
-const leads = await leadsResponse.json();
-const leadsData = leads?.leads || [];
+[functions.get-presentation-status]
+verify_jwt = false
 ```
 
 ---
 
-## Why This Fix Works
+## What Stays in Place
 
-1. **Matches existing pattern**: `useCRMLeads.ts` already uses this exact approach successfully
-2. **No backend changes needed**: The edge function GET handler is already designed for listing
-3. **Proper HTTP semantics**: GET for reading, POST for writing
-4. **Consistent error handling**: Both pages will have proper error handling with useful messages
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `QuoteQA` | AI Scanner results | "Ask the AI Expert" chat interface |
+| `SoftInterceptionAnchor` | AI Scanner | Vault pivot CTA |
+| `NoQuotePivotSection` | AI Scanner | No-quote lead capture |
 
----
-
-## Testing Checklist
-
-After implementation:
-1. Navigate to `/admin/roi` - should load without errors
-2. Navigate to `/admin/attribution-health` - should load without errors
-3. Verify date range filtering works on both pages
-4. Verify refresh button works on both pages
-5. Check that the CRM dashboard (`/admin/crm`) still works (uses `useCRMLeads.ts`)
+The AI Expert chat (`QuoteQA`) remains immediately accessible below the results, allowing users to ask questions about their scan without leaving the page.
 
 ---
 
-## Technical Notes
+## User Flow After Changes
 
-The edge function has clear separation:
-- **GET**: List leads with optional filters (`startDate`, `endDate`, `status`, `quality`)
-- **POST**: Update a specific lead (`leadId` + `updates` object required)
+```text
+┌─────────────────────────────────────────────────────┐
+│                   AI Scanner Page                    │
+├─────────────────────────────────────────────────────┤
+│  1. Upload Quote                                     │
+│           ↓                                         │
+│  2. See AI Gradecard Results                        │
+│           ↓                                         │
+│  3. Ask the AI Expert (QuoteQA - inline chat)       │
+│           ↓                                         │
+│  4. Save to Vault (NoQuotePivotSection)             │
+└─────────────────────────────────────────────────────┘
+```
 
-The admin pages were incorrectly using POST with `{ action: 'list' }` which the backend doesn't recognize.
+No external links. No 60-second waits. Pure funnel focus.
+
+---
+
+## Optional Cleanup (Manual)
+
+The `GAMMA_API_KEY` secret will no longer be used. Consider removing it via Settings → Secrets in the Supabase dashboard to keep secrets tidy.
+
+---
+
+## Risk Assessment
+
+| Risk | Level | Mitigation |
+|------|-------|------------|
+| Breaking comparison page | Low | Removing button cleanly |
+| Orphaned WindowTriviaLoader | None | Used only by Gamma buttons |
+| Missing tests | None | Deleting associated test file |
+
+---
+
+## Files Summary
+
+**DELETE (7 files):**
+1. `src/components/quote-scanner/GenerateProposalButton.tsx`
+2. `src/components/quote-scanner/NegotiationTools.tsx`
+3. `src/components/quote-scanner/__tests__/NegotiationTools.test.tsx`
+4. `src/components/comparison/GenerateComparisonReportButton.tsx`
+5. `src/hooks/usePresentationGenerator.ts`
+6. `supabase/functions/generate-presentation/index.ts`
+7. `supabase/functions/get-presentation-status/index.ts`
+
+**MODIFY (2 files):**
+1. `src/pages/QuoteScanner.tsx` - Remove imports and components
+2. `src/pages/Comparison.tsx` - Remove import and button
+3. `supabase/config.toml` - Remove function entries
+
