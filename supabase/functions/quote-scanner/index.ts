@@ -43,6 +43,18 @@ type JsonSchemaResponseFormat = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// HELPER: Compute SHA-256 hash for deduplication
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function computeImageHash(imageBase64: string): Promise<string> {
+  const imageBuffer = Uint8Array.from(atob(imageBase64), c => c.charCodeAt(0));
+  const hashBuffer = await crypto.subtle.digest('SHA-256', imageBuffer);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -119,6 +131,50 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "AI service configuration error" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // DEDUPLICATION CHECK (analyze mode only) - Before calling AI
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    let imageHash: string | null = null;
+    let startTime = Date.now();
+    
+    if (mode === "analyze" && imageBase64) {
+      // Compute SHA-256 hash of image for deduplication
+      imageHash = await computeImageHash(imageBase64);
+      
+      // Initialize Supabase client for DB operations
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+
+      // Check for cached analysis (deduplication)
+      const { data: cachedAnalysis } = await supabaseClient
+        .from('quote_analyses')
+        .select('analysis_json, created_at, id, lead_id')
+        .eq('image_hash', imageHash)
+        .maybeSingle();
+
+      if (cachedAnalysis) {
+        console.log(`[QuoteScanner] CACHE HIT - hash=${imageHash.substring(0, 12)}... id=${cachedAnalysis.id}`);
+        
+        // Update lead_id if we now have one and cached record doesn't
+        if (leadId && !cachedAnalysis.lead_id) {
+          await supabaseClient
+            .from('quote_analyses')
+            .update({ lead_id: leadId, updated_at: new Date().toISOString() })
+            .eq('id', cachedAnalysis.id);
+          console.log(`[QuoteScanner] Updated lead_id on cached analysis ${cachedAnalysis.id}`);
+        }
+        
+        return new Response(JSON.stringify(cachedAnalysis.analysis_json), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      console.log(`[QuoteScanner] CACHE MISS - hash=${imageHash.substring(0, 12)}... proceeding with AI analysis`);
     }
 
     // Build messages based on mode
@@ -276,7 +332,7 @@ Format the output with clear section headers and make it easy to read during a p
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // ANALYZE MODE: Parse signals → Score → Generate forensic summary
+    // ANALYZE MODE: Parse signals → Score → Generate forensic summary → Persist
     // ═══════════════════════════════════════════════════════════════════════════
     
     if (mode === "analyze") {
@@ -326,19 +382,73 @@ Format the output with clear section headers and make it easy to read during a p
         });
       }
 
+      // Build response payload
+      const responsePayload = {
+        overallScore: scored.overallScore,
+        safetyScore: scored.safetyScore,
+        scopeScore: scored.scopeScore,
+        priceScore: scored.priceScore,
+        finePrintScore: scored.finePrintScore,
+        warrantyScore: scored.warrantyScore,
+        pricePerOpening: scored.pricePerOpening,
+        warnings: scored.warnings,
+        missingItems: scored.missingItems,
+        summary: scored.summary,
+        forensic,
+        extractedIdentity,
+      };
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // PERSIST ANALYSIS TO DATABASE
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+
+      const processingTimeMs = Date.now() - startTime;
+      
+      const analysisRecord = {
+        session_id: sessionId || `anon-${Date.now()}`,
+        lead_id: leadId || null,
+        quote_file_id: null, // Files not currently persisted to storage
+        image_hash: imageHash!,
+        overall_score: scored.overallScore,
+        safety_score: scored.safetyScore,
+        scope_score: scored.scopeScore,
+        price_score: scored.priceScore,
+        fine_print_score: scored.finePrintScore,
+        warranty_score: scored.warrantyScore,
+        price_per_opening: scored.pricePerOpening,
+        warnings_count: scored.warnings.length,
+        missing_items_count: scored.missingItems.length,
+        analysis_json: responsePayload,
+        ai_model_version: Deno.env.get('AI_MODEL_VERSION') || 'gemini-3-flash-preview',
+        processing_time_ms: processingTimeMs,
+      };
+
+      const { data: insertedAnalysis, error: insertError } = await supabaseClient
+        .from('quote_analyses')
+        .insert(analysisRecord)
+        .select('id')
+        .single();
+
+      if (insertError) {
+        // Log but don't fail - analysis was successful
+        console.error('[QuoteScanner] Failed to persist analysis (non-fatal):', insertError.message);
+      } else {
+        console.log(`[QuoteScanner] Analysis persisted: id=${insertedAnalysis.id}, hash=${imageHash?.substring(0, 12)}..., time=${processingTimeMs}ms`);
+      }
+
       // Log to wm_event_log canonical ledger
       try {
-        const supabaseForLedger = createClient(
-          Deno.env.get('SUPABASE_URL')!,
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-        );
-
         let resolvedClientId = clientId || null;
         let resolvedLeadId = leadId || null;
         let resolvedSessionId = sessionId || null;
         
         if (sessionId && (!resolvedClientId || !resolvedLeadId)) {
-          const { data: sessionData } = await supabaseForLedger
+          const { data: sessionData } = await supabaseClient
             .from('wm_sessions')
             .select('id, anonymous_id, lead_id')
             .eq('id', sessionId)
@@ -366,7 +476,8 @@ Format the output with clear section headers and make it easy to read during a p
           ingested_by: 'quote-scanner',
           page_path: '/ai-scanner',
           metadata: {
-            analysis_version: '2.1',
+            analysis_version: '2.2',
+            analysis_id: insertedAnalysis?.id || null,
             overall_score: scored.overallScore,
             safety_score: scored.safetyScore,
             scope_score: scored.scopeScore,
@@ -381,10 +492,11 @@ Format the output with clear section headers and make it easy to read during a p
             hard_cap_statute: scored.hardCap.statute,
             forensic_risk_level: forensic.riskLevel,
             detected_vendor: extractedIdentity.contractorName,
+            processing_time_ms: processingTimeMs,
           },
         };
 
-        const { error: ledgerError } = await supabaseForLedger
+        const { error: ledgerError } = await supabaseClient
           .from('wm_event_log')
           .insert(eventPayload);
 
@@ -400,23 +512,6 @@ Format the output with clear section headers and make it easy to read during a p
       } catch (ledgerErr) {
         console.error('[quote-scanner] wm_event_log logging exception (non-fatal):', ledgerErr);
       }
-
-      // Build response with forensic data
-      const responsePayload = {
-        overallScore: scored.overallScore,
-        safetyScore: scored.safetyScore,
-        scopeScore: scored.scopeScore,
-        priceScore: scored.priceScore,
-        finePrintScore: scored.finePrintScore,
-        warrantyScore: scored.warrantyScore,
-        pricePerOpening: scored.pricePerOpening,
-        warnings: scored.warnings,
-        missingItems: scored.missingItems,
-        summary: scored.summary,
-        // NEW: Forensic Authority Fields (Safeguard 3)
-        forensic,
-        extractedIdentity,
-      };
 
       return new Response(JSON.stringify(responsePayload), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

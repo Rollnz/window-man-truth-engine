@@ -753,6 +753,145 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_analyses: {
+        Row: {
+          ai_model_version: string | null
+          analysis_json: Json
+          created_at: string
+          fine_print_score: number
+          id: string
+          image_hash: string
+          lead_id: string | null
+          missing_items_count: number
+          overall_score: number
+          price_per_opening: string | null
+          price_score: number
+          processing_time_ms: number | null
+          quote_file_id: string | null
+          safety_score: number
+          scope_score: number
+          session_id: string
+          updated_at: string
+          warnings_count: number
+          warranty_score: number
+        }
+        Insert: {
+          ai_model_version?: string | null
+          analysis_json?: Json
+          created_at?: string
+          fine_print_score?: number
+          id?: string
+          image_hash: string
+          lead_id?: string | null
+          missing_items_count?: number
+          overall_score?: number
+          price_per_opening?: string | null
+          price_score?: number
+          processing_time_ms?: number | null
+          quote_file_id?: string | null
+          safety_score?: number
+          scope_score?: number
+          session_id: string
+          updated_at?: string
+          warnings_count?: number
+          warranty_score?: number
+        }
+        Update: {
+          ai_model_version?: string | null
+          analysis_json?: Json
+          created_at?: string
+          fine_print_score?: number
+          id?: string
+          image_hash?: string
+          lead_id?: string | null
+          missing_items_count?: number
+          overall_score?: number
+          price_per_opening?: string | null
+          price_score?: number
+          processing_time_ms?: number | null
+          quote_file_id?: string | null
+          safety_score?: number
+          scope_score?: number
+          session_id?: string
+          updated_at?: string
+          warnings_count?: number
+          warranty_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_analyses_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_analyses_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_dashboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_analyses_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "v_conversion_integrity_check"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "quote_analyses_quote_file_id_fkey"
+            columns: ["quote_file_id"]
+            isOneToOne: false
+            referencedRelation: "quote_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_feedback: {
+        Row: {
+          analysis_id: string
+          correction_text: string | null
+          created_at: string
+          feedback_category: string | null
+          feedback_type: string
+          id: string
+          item_text: string | null
+          metadata: Json | null
+          session_id: string
+        }
+        Insert: {
+          analysis_id: string
+          correction_text?: string | null
+          created_at?: string
+          feedback_category?: string | null
+          feedback_type: string
+          id?: string
+          item_text?: string | null
+          metadata?: Json | null
+          session_id: string
+        }
+        Update: {
+          analysis_id?: string
+          correction_text?: string | null
+          created_at?: string
+          feedback_category?: string | null
+          feedback_type?: string
+          id?: string
+          item_text?: string | null
+          metadata?: Json | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_feedback_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "quote_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_files: {
         Row: {
           created_at: string
@@ -1839,6 +1978,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      link_quote_analyses_to_lead: {
+        Args: { p_lead_id: string; p_session_id: string }
+        Returns: number
       }
       rpc_claim_pending_calls: {
         Args: { batch_size?: number }

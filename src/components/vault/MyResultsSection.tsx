@@ -1,9 +1,10 @@
 import { SessionData } from '@/hooks/useSessionData';
 import { VaultSection } from './VaultSection';
-import { BarChart3, Shield, Zap, Brain, TrendingDown, AlertTriangle } from 'lucide-react';
+import { BarChart3, Shield, Zap, Brain, TrendingDown, AlertTriangle, FileSearch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/config/navigation';
+import { useQuoteAnalyses, QuoteAnalysis } from '@/hooks/useQuoteAnalyses';
 
 interface MyResultsSectionProps {
   sessionData: SessionData;
@@ -14,9 +15,9 @@ interface ResultCard {
   name: string;
   path: string;
   icon: React.ReactNode;
-  getValue: (data: SessionData) => string | null;
-  getLabel: (data: SessionData) => string;
-  getStatus: (data: SessionData) => 'success' | 'warning' | 'danger' | 'neutral';
+  getValue: (data: SessionData, dbAnalysis?: QuoteAnalysis | null) => string | null;
+  getLabel: (data: SessionData, dbAnalysis?: QuoteAnalysis | null) => string;
+  getStatus: (data: SessionData, dbAnalysis?: QuoteAnalysis | null) => 'success' | 'warning' | 'danger' | 'neutral';
 }
 
 const resultCards: ResultCard[] = [
@@ -78,6 +79,27 @@ const resultCards: ResultCard[] = [
     getValue: (data) => data.fastWinResult || null,
     getLabel: () => 'Recommendation',
     getStatus: () => 'neutral'
+  },
+  {
+    id: 'quote-analysis',
+    name: 'Quote Analysis',
+    path: ROUTES.QUOTE_SCANNER,
+    icon: <FileSearch className="w-5 h-5" />,
+    getValue: (data, dbAnalysis) => {
+      // Prefer database value, fall back to localStorage
+      const score = dbAnalysis?.overall_score ?? data.quoteAnalysisResult?.overallScore;
+      return score !== undefined ? `${score}/100` : null;
+    },
+    getLabel: (data, dbAnalysis) => {
+      const price = dbAnalysis?.price_per_opening ?? data.quoteAnalysisResult?.pricePerOpening;
+      return price || 'AI Grade';
+    },
+    getStatus: (data, dbAnalysis) => {
+      const score = dbAnalysis?.overall_score ?? data.quoteAnalysisResult?.overallScore ?? 0;
+      if (score >= 70) return 'success';
+      if (score >= 40) return 'warning';
+      return 'danger';
+    }
   }
 ];
 
@@ -89,7 +111,15 @@ const statusColors = {
 };
 
 export function MyResultsSection({ sessionData }: MyResultsSectionProps) {
-  const completedResults = resultCards.filter(card => card.getValue(sessionData) !== null);
+  // Fetch quote analyses from database
+  const { latestAnalysis } = useQuoteAnalyses();
+
+  // Filter cards that have values (pass dbAnalysis for quote-analysis card)
+  const completedResults = resultCards.filter(card => {
+    const dbAnalysis = card.id === 'quote-analysis' ? latestAnalysis : null;
+    return card.getValue(sessionData, dbAnalysis) !== null;
+  });
+  
   const isEmpty = completedResults.length === 0;
 
   return (
@@ -106,9 +136,10 @@ export function MyResultsSection({ sessionData }: MyResultsSectionProps) {
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {completedResults.map((card) => {
-          const value = card.getValue(sessionData);
-          const label = card.getLabel(sessionData);
-          const status = card.getStatus(sessionData);
+          const dbAnalysis = card.id === 'quote-analysis' ? latestAnalysis : null;
+          const value = card.getValue(sessionData, dbAnalysis);
+          const label = card.getLabel(sessionData, dbAnalysis);
+          const status = card.getStatus(sessionData, dbAnalysis);
 
           return (
             <Link
