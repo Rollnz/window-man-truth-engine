@@ -20,6 +20,62 @@
     <!-- Preload LCP Candidate (Navbar Logo) with high priority -->
     <link rel="preload" href="/icon-512.webp" as="image" type="image/webp" fetchpriority="high" />
 
+    <!-- Early Attribution Capture (SYNCHRONOUS - runs before React/GTM) -->
+    <script>
+      // Immunizes against GTM deferral race condition
+      // Captures UTMs immediately during HTML parse, before any URL changes
+      (function() {
+        'use strict';
+        window.dataLayer = window.dataLayer || [];
+        
+        try {
+          var params = new URL(window.location.href).searchParams;
+          var attribution = {
+            utm_source: params.get('utm_source') || undefined,
+            utm_medium: params.get('utm_medium') || undefined,
+            utm_campaign: params.get('utm_campaign') || undefined,
+            utm_term: params.get('utm_term') || undefined,
+            utm_content: params.get('utm_content') || undefined,
+            gclid: params.get('gclid') || undefined,
+            fbclid: params.get('fbclid') || undefined,
+            msclkid: params.get('msclkid') || undefined,
+            original_location: window.location.href,
+            page_path: window.location.pathname
+          };
+          
+          var hasAttribution = attribution.utm_source || attribution.gclid || 
+                               attribution.fbclid || attribution.msclkid;
+          
+          if (hasAttribution) {
+            window.dataLayer.push({
+              event: 'attribution_captured',
+              attribution_source: 'early_capture',
+              utm_source: attribution.utm_source,
+              utm_medium: attribution.utm_medium,
+              utm_campaign: attribution.utm_campaign,
+              utm_term: attribution.utm_term,
+              utm_content: attribution.utm_content,
+              gclid: attribution.gclid,
+              fbclid: attribution.fbclid,
+              msclkid: attribution.msclkid,
+              original_location: attribution.original_location,
+              page_path: attribution.page_path
+            });
+            try { sessionStorage.setItem('wm_early_attribution', JSON.stringify(attribution)); } catch(e) {}
+            console.log('[Attribution] Early capture:', attribution.utm_source || attribution.gclid || 'click-id');
+          }
+          
+          // Always capture original landing URL for GTM reference
+          window.dataLayer.push({
+            original_page_location: window.location.href,
+            original_page_path: window.location.pathname,
+            original_referrer: document.referrer || 'direct'
+          });
+        } catch(e) { console.warn('[Attribution] Early capture failed:', e); }
+      })();
+    </script>
+    <!-- End Early Attribution Capture -->
+
     <!-- Google Tag Manager (Production Only - Deferred for Performance) -->
     <script>
       // Initialize dataLayer early so events queue before GTM loads
