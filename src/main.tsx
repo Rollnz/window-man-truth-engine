@@ -6,12 +6,17 @@ import "./styles/impact-window.css";
 import { initializeAttribution } from "./lib/attribution";
 import { pushBotSignalToDataLayer } from "./lib/botDetection";
 import { installTruthEngine } from "./lib/gtm";
+import { getOrCreateAnonId } from "./hooks/useCanonicalScore";
 
 // Run bot detection immediately on load (before any other events)
 pushBotSignalToDataLayer();
 
 // Install TruthEngine on window for debugging and cross-module access
 installTruthEngine();
+
+// Log Golden Thread identity for debugging verification
+const goldenThreadFID = getOrCreateAnonId();
+console.log(`[Golden Thread] Active FID: ${goldenThreadFID}`);
 
 // Defer attribution capture to idle time for better TBT
 // Safe because initializeAttribution reads from window.location which is always available
