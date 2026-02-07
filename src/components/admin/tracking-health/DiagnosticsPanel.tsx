@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, CheckCircle, DollarSign, GitBranch, Copy, FileCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TrackingHealthData } from './types';
@@ -14,15 +15,42 @@ interface DiagnosticsPanelProps {
 export function DiagnosticsPanel({ diagnostics, costImpact, isLoading }: DiagnosticsPanelProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i}>
-            <CardContent className="pt-6">
-              <div className="h-6 w-24 bg-muted animate-pulse rounded mb-2" />
-              <div className="h-4 w-16 bg-muted animate-pulse rounded" />
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-5 w-5 badge-shimmer" />
+          <Skeleton className="h-6 w-56 badge-shimmer" />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4 badge-shimmer" />
+                  <Skeleton className="h-4 w-24 badge-shimmer" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-baseline gap-2">
+                  <Skeleton className="h-8 w-16 badge-shimmer" />
+                  <Skeleton className="h-4 w-4 rounded-full badge-shimmer" />
+                </div>
+                <Skeleton className="h-3 w-full badge-shimmer" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        <Card>
+          <CardContent className="pt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-32 badge-shimmer" />
+              <Skeleton className="h-5 w-12 rounded-full badge-shimmer" />
+            </div>
+            <Skeleton className="h-2 w-full badge-shimmer" />
+            <Skeleton className="h-3 w-64 badge-shimmer" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
