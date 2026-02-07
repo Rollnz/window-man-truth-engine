@@ -56,6 +56,17 @@ const EMQ_WEIGHTS = {
 
 const TOTAL_WEIGHT = Object.values(EMQ_WEIGHTS).reduce((a, b) => a + b, 0);
 
+// EMQ should only measure conversion event quality, not anonymous engagement events
+const CONVERSION_EVENT_NAMES = [
+  'lead_submission_success',
+  'lead_captured',
+  'booking_confirmed',
+  'consultation_booked',
+  'phone_lead_captured',
+  'voice_estimate_confirmed',
+  'cv_fallback',
+];
+
 function calculateEMQ(breakdown: Record<string, number>): number {
   const score = Object.entries(EMQ_WEIGHTS).reduce((sum, [field, weight]) => {
     const fieldValue = breakdown[field] ?? 0;
@@ -171,13 +182,16 @@ Deno.serve(async (req) => {
 
     console.log('[admin-tracking-health] Date range:', dateFilter);
 
-    // 1. EMQ Score - Current Period
+    // 1. EMQ Score - Current Period (conversion events only)
     const { data: currentEmqData, error: emqError } = await supabase
       .from('wm_event_log')
-      .select('email_sha256, phone_sha256, user_data, fbp, fbc')
+      .select('email_sha256, phone_sha256, user_data, fbp, fbc, event_name')
+      .in('event_name', CONVERSION_EVENT_NAMES)
       .gte('event_time', dateFilter.start)
       .lte('event_time', dateFilter.end)
       .limit(5000);
+
+    console.log('[admin-tracking-health] EMQ query filtered to conversion events:', CONVERSION_EVENT_NAMES.length, 'event types');
 
     if (emqError) {
       console.error('[admin-tracking-health] EMQ query error:', emqError);
@@ -204,10 +218,11 @@ Deno.serve(async (req) => {
 
     const currentEMQ = calculateEMQ(breakdown);
 
-    // 2. EMQ Score - Previous Period (for trend)
+    // 2. EMQ Score - Previous Period (for trend, conversion events only)
     const { data: previousEmqData } = await supabase
       .from('wm_event_log')
       .select('email_sha256, phone_sha256, user_data, fbp, fbc')
+      .in('event_name', CONVERSION_EVENT_NAMES)
       .gte('event_time', previousStart)
       .lt('event_time', previousEnd)
       .limit(5000);

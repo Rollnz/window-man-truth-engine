@@ -244,6 +244,7 @@ export function ConsultationBookingModal({
         });
         
         // PHASE 4: Log high-value booking_confirmed signal to wm_event_log
+        // Include email/phone for EMQ 9.5+ compliance
         await logBookingConfirmed({
           preferredTime: values.preferredTime,
           bookingType: 'consultation',
@@ -251,6 +252,8 @@ export function ConsultationBookingModal({
           projectValue: sessionData.fairPriceQuizResults?.quoteAmount,
           urgencyLevel: sessionData.urgencyLevel,
           leadId: data.leadId,
+          email: values.email,
+          phone: values.phone,
         });
 
         toast({
