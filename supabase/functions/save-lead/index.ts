@@ -586,20 +586,29 @@ serve(async (req) => {
 
       // PRIORITY 2: Fallback to email lookup if no lead found by ID
       if (!existingLead) {
-        const { data: leadByEmail, error: emailSelectError } = await supabase
+        // SAFE: Use limit(1) instead of maybeSingle() to handle duplicate emails gracefully
+        // This prevents PGRST116 errors when multiple leads share the same email
+        const { data: leadsArray, error: emailSelectError } = await supabase
           .from('leads')
           .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id')
           .eq('email', normalizedEmail)
-          .maybeSingle();
+          .order('created_at', { ascending: false })  // Most recent first
+          .limit(1);
 
         if (emailSelectError) {
-          console.error('Error checking existing lead by email:', emailSelectError);
+          console.error('Error checking existing lead by email:', {
+            error: emailSelectError,
+            email: normalizedEmail.slice(0, 3) + '***',
+            code: emailSelectError.code,
+            details: emailSelectError.details,
+          });
           throw new Error('Database error while checking lead');
         }
 
-        existingLead = leadByEmail;
+        // Take first result if exists (handles 0, 1, or 2+ rows safely)
+        existingLead = leadsArray && leadsArray.length > 0 ? leadsArray[0] : null;
         if (existingLead) {
-          console.log('Found lead by email:', existingLead.id);
+          console.log('Found lead by email:', existingLead.id, '(selected most recent)');
         }
       }
 
