@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BadgeDollarSign, ScanSearch } from 'lucide-react';
-import { FOOTER_NAV } from '@/config/navigation';
+import { FOOTER_NAV, FUNNEL_ROUTES } from '@/config/navigation';
 import { Button } from '@/components/ui/button';
 import { trackEvent } from '@/lib/gtm';
+
 export function MobileStickyFooter() {
   const location = useLocation();
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
+
   const handleScroll = useCallback(() => {
     if (!ticking.current) {
       window.requestAnimationFrame(() => {
@@ -30,12 +32,14 @@ export function MobileStickyFooter() {
       ticking.current = true;
     }
   }, []);
+
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, {
       passive: true
     });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
+
   const handleCTAClick = (cta: 'beat_your_quote' | 'scan_quote') => {
     trackEvent('footer_cta_click', {
       cta,
@@ -43,6 +47,7 @@ export function MobileStickyFooter() {
       page: location.pathname
     });
   };
+
   const handleNavClick = (link: string) => {
     trackEvent('footer_nav_click', {
       link,
@@ -50,7 +55,14 @@ export function MobileStickyFooter() {
       page: location.pathname
     });
   };
-  return <div className={`
+
+  // Hide on funnel pages to reduce distractions (after all hooks)
+  const isFunnelPage = FUNNEL_ROUTES.includes(location.pathname as typeof FUNNEL_ROUTES[number]);
+  if (isFunnelPage) return null;
+
+  return (
+    <div 
+      className={`
         fixed bottom-0 left-0 right-0 z-40 
         bg-white dark:bg-white 
         border-t border-slate-200 
@@ -58,9 +70,9 @@ export function MobileStickyFooter() {
         md:hidden
         transition-transform duration-300 ease-in-out
         ${isVisible ? 'translate-y-0' : 'translate-y-full'}
-      `} style={{
-    paddingBottom: 'env(safe-area-inset-bottom)'
-  }}>
+      `} 
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
       <div className="px-4 py-3 space-y-1.5">
         {/* Primary CTA Row - Beat & Scan Buttons */}
         <div className="flex gap-2">
@@ -99,5 +111,6 @@ export function MobileStickyFooter() {
           </Link>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 }

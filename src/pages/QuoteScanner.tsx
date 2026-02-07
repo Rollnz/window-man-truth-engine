@@ -17,10 +17,8 @@ import { trackScannerUploadCompleted } from '@/lib/secondarySignalEvents';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { ErrorBoundary } from '@/components/error';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
-import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
-import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
-import { ToolFAQSection, PillarBreadcrumb } from '@/components/seo';
+import { ToolFAQSection } from '@/components/seo';
 import { getToolFAQs } from '@/data/toolFAQs';
 // New supporting sections
 import { ScannerSocialProof } from '@/components/quote-scanner/ScannerSocialProof';
@@ -63,6 +61,7 @@ export default function QuoteScanner() {
   const [showLeadCapture, setShowLeadCapture] = useState(false);
   const [hasUnlockedResults, setHasUnlockedResults] = useState(!!sessionData.email);
   const [isNoQuoteSubmitting, setIsNoQuoteSubmitting] = useState(false);
+  const [isNoQuoteSubmitted, setIsNoQuoteSubmitted] = useState(false);
   const [registeredSessionId, setRegisteredSessionId] = useState<string>('');
   
   // Ref for scroll-to-upload functionality
@@ -114,14 +113,9 @@ export default function QuoteScanner() {
         canonicalUrl="https://itswindowman.com/quote-scanner"
         jsonLd={[...getToolPageSchemas('quote-scanner'), getBreadcrumbSchema('quote-scanner')]}
       />
-      <Navbar />
+      <Navbar funnelMode={true} />
       
       <main className="pt-20">
-        {/* Pillar Breadcrumb */}
-        <div className="container px-4 mb-2">
-          <PillarBreadcrumb toolPath="/ai-scanner" variant="badge" />
-        </div>
-
         <QuoteScannerHero />
 
         
@@ -201,6 +195,7 @@ export default function QuoteScanner() {
             <SoftInterceptionAnchor />
             <NoQuotePivotSection 
               isLoading={isNoQuoteSubmitting}
+              isSubmitted={isNoQuoteSubmitted}
               onGoogleAuth={() => {
                 // TODO: Wire to real Supabase Google OAuth
                 console.log('Google OAuth clicked - will redirect to /vault');
@@ -257,10 +252,8 @@ export default function QuoteScanner() {
                       value: 100,
                     });
 
-                    toast({
-                      title: "Saved!",
-                      description: "We'll help you prepare for your window project.",
-                    });
+                    // Trigger success state instead of toast
+                    setIsNoQuoteSubmitted(true);
                   }
                 } catch (err) {
                   console.error('[QuoteScanner] NoQuote submit error:', err);
@@ -293,13 +286,6 @@ export default function QuoteScanner() {
 
         {/* Legacy FAQ section - can be removed later */}
         <ScannerFAQSection uploadRef={uploadRef} />
-
-        {/* Related Tools - "Enforce Your Rights" section */}
-        <RelatedToolsGrid
-          title={getFrameControl('quote-scanner').title}
-          description={getFrameControl('quote-scanner').description}
-          tools={getSmartRelatedTools('quote-scanner', sessionData.toolsCompleted)}
-        />
       </main>
 
       <LeadCaptureModal

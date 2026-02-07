@@ -1,3 +1,6 @@
+import { Link } from 'react-router-dom';
+import { CheckCircle, Vault } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { VaultAdvantageGrid } from './VaultAdvantageGrid';
 import { VaultCTABlock } from './VaultCTABlock';
 
@@ -7,6 +10,8 @@ interface NoQuotePivotSectionProps {
   onEmailSubmit?: (data: { firstName: string; lastName: string; email: string }) => void;
   /** Loading state for submission - prevents double-submit */
   isLoading?: boolean;
+  /** Success state - shows Vault ready message instead of form */
+  isSubmitted?: boolean;
 }
 
 /**
@@ -14,7 +19,57 @@ interface NoQuotePivotSectionProps {
  * Main conversion engine for users without quotes.
  * WindowMan voice, fear injection, advantage cards, and CTA.
  */
-export function NoQuotePivotSection({ onGoogleAuth, onEmailSubmit, isLoading }: NoQuotePivotSectionProps) {
+export function NoQuotePivotSection({ onGoogleAuth, onEmailSubmit, isLoading, isSubmitted }: NoQuotePivotSectionProps) {
+  // SUCCESS STATE - User has submitted and is ready for Vault
+  if (isSubmitted) {
+    return (
+      <div className="max-w-[680px] mx-auto p-8 md:p-10 rounded-xl border border-border/40 bg-background relative overflow-hidden">
+        {/* Optional: Very subtle grid texture overlay */}
+        <div 
+          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px),
+                              linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`,
+            backgroundSize: '20px 20px',
+          }}
+        />
+        
+        <div className="relative z-10 text-center">
+          {/* Success Icon */}
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
+            <CheckCircle className="w-8 h-8 text-emerald-500" />
+          </div>
+          
+          {/* Success Message */}
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+            You're In. Your Vault is Ready.
+          </h2>
+          
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            I just saved your place. When you get your first quote, 
+            upload it here and I'll tell you if it's worth signing.
+          </p>
+          
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Link to="/vault">
+                <Vault className="w-5 h-5 mr-2" />
+                Open My Vault
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" asChild>
+              <Link to="/spec-checklist-guide">
+                Get Quote Checklist
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // DEFAULT FORM STATE
   return (
     <div className="max-w-[680px] mx-auto p-8 md:p-10 rounded-xl border border-border/40 bg-background relative overflow-hidden">
       {/* Optional: Very subtle grid texture overlay */}
