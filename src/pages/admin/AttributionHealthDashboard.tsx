@@ -73,17 +73,29 @@ export default function AttributionHealthDashboard() {
       const startDate = dateRange.startDate ? format(startOfDay(dateRange.startDate), "yyyy-MM-dd") : null;
       const endDate = dateRange.endDate ? format(endOfDay(dateRange.endDate), "yyyy-MM-dd") : null;
 
-      // Fetch leads with source attribution
-      const { data: leads, error: leadsError } = await supabase.functions.invoke('crm-leads', {
-        body: { 
-          action: 'list',
-          startDate,
-          endDate,
+      // Fetch leads with source attribution (GET request)
+      const leadsParams = new URLSearchParams();
+      if (startDate) leadsParams.append('startDate', startDate);
+      if (endDate) leadsParams.append('endDate', endDate);
+
+      const leadsResponse = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-leads${leadsParams.toString() ? `?${leadsParams}` : ''}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
         }
-      });
+      );
 
-      if (leadsError) throw leadsError;
+      if (!leadsResponse.ok) {
+        const errorData = await leadsResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to fetch leads (${leadsResponse.status})`);
+      }
 
+      const leads = await leadsResponse.json();
       const leadsData = leads?.leads || [];
       
       // Calculate source breakdown
