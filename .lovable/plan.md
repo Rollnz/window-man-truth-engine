@@ -1,75 +1,32 @@
 
-
-# Automation Layer Verification Tests - Execution Plan
+# Safety Valve Verification Tests - Execution Plan
 
 ## Overview
-Execute two targeted tests to verify the Deep Backend Automation features:
-1. **TEST 1**: IP Geo-Enrichment in `save-lead`
-2. **TEST 2**: Retry Logic in `admin-retry-failed-events`
+Execute two critical safety tests to validate the "Worst Case Scenarios" and ensure the system has proper safeguards against infinite loops and runaway costs.
 
 ---
 
-## TEST 1: IP Geo-Enrichment Verification
+## TEST 4: Dead Letter Safety Valve (Infinite Loop Check)
 
 ### Objective
-Prove that when a lead is submitted WITHOUT address data, the system automatically enriches `city`, `state`, and `zip` from the client's IP address.
+Prove that when `retry_count >= MAX_RETRIES (5)`, the system stops retrying and moves the event to `dead_letter` status instead of creating an infinite retry loop.
 
-### Test Setup
-The `save-lead` function extracts client IP from these headers (in order):
-1. `cf-connecting-ip` (Cloudflare)
-2. `x-forwarded-for` (standard proxy header)
-3. `x-real-ip`
-
-### Test Execution Steps
-
-**Step 1: Invoke save-lead with spoofed Florida IP**
-
-Call the edge function with:
-- **Email**: `test-geo@windowman.com`
-- **Source Tool**: `expert-system`
-- **City/State/Zip**: Empty (not provided)
-- **Header**: `X-Forwarded-For: 134.201.250.155` (Los Angeles IP for testing)
-
-**Step 2: Query the resulting lead record**
-
-```sql
-SELECT id, email, city, state, zip, created_at
-FROM leads
-WHERE email = 'test-geo@windowman.com'
-ORDER BY created_at DESC
-LIMIT 1;
+### Test Logic Verification
+From `admin-retry-failed-events/index.ts` (lines 222-234):
+```typescript
+const newRetryCount = event.retry_count + 1;
+if (newRetryCount >= MAX_RETRIES) {  // MAX_RETRIES = 5
+  status = 'dead_letter'
+}
 ```
 
-### Expected Results
-| Field | Expected Value |
-|-------|---------------|
-| city | Auto-populated (e.g., "Los Angeles") |
-| state | Auto-populated (e.g., "California") |
-| zip | Auto-populated (e.g., "90001") |
+**Math:** If we insert `retry_count = 5`, then:
+- `newRetryCount = 5 + 1 = 6`
+- `6 >= 5` → **TRUE** → Event goes to `dead_letter`
 
-### Note on IP Selection
-The IP `134.201.250.155` is a public LA IP. Using this instead of a Florida IP because ip-api.com can verify it. For production, real user IPs from Florida would enrich with Florida data.
+### Execution Steps
 
----
-
-## TEST 2: Retry Logic Verification
-
-### Objective
-Prove that the "Retry All" button actually processes failed events and marks them as resolved.
-
-### Current State
-The `tracking_failed_events` table is currently empty (0 rows).
-
-### Test Execution Steps
-
-**Step 1: Insert a dummy failed event**
-
-Insert a test row with:
-- **status**: `pending`
-- **destination**: `supabase` (this destination has working retry logic)
-- **event_payload**: Simple test payload
-- **next_retry_at**: Now (so it's eligible for immediate retry)
-
+**Step 1: Insert "Exhausted" Test Event**
 ```sql
 INSERT INTO tracking_failed_events (
   event_id,
@@ -77,101 +34,150 @@ INSERT INTO tracking_failed_events (
   event_type,
   destination,
   status,
-  retry_count,
+  retry_count,      -- Set to 5 (at the limit)
   max_retries,
-  next_retry_at,
+  next_retry_at,    -- Set to NOW so it's immediately eligible
   event_payload,
   error_message
 ) VALUES (
   gen_random_uuid(),
-  'test_retry_event',
+  'test_dead_letter_event',
   'conversion',
   'supabase',
-  'pending',
-  0,
+  'pending',        -- Must be 'pending' to be picked up
+  5,                -- Already at max retries
   5,
-  now(),
-  '{"test": "retry_logic_verification", "event_name": "test_retry_event"}'::jsonb,
-  'Manual test seed'
+  now(),            -- Eligible for immediate retry
+  '{"test": "dead_letter_verification"}'::jsonb,
+  'Manual test seed - should dead letter'
 );
 ```
 
-**Step 2: Verify insertion**
-
+**Step 2: Verify Insertion**
 ```sql
-SELECT id, event_name, status, retry_count, destination, error_message
+SELECT id, event_name, status, retry_count
 FROM tracking_failed_events
-WHERE event_name = 'test_retry_event';
+WHERE event_name = 'test_dead_letter_event';
 ```
 
-**Step 3: Trigger the retry function**
+**Step 3: Trigger Retry Function**
+Call `POST /admin-retry-failed-events`
 
-Call `POST /admin-retry-failed-events` as an authenticated admin.
-
-**Step 4: Verify the result**
-
+**Step 4: Verify Dead Letter**
 ```sql
-SELECT id, event_name, status, retry_count, resolved_at, resolved_by, error_message
+SELECT id, event_name, status, retry_count, error_message
 FROM tracking_failed_events
-WHERE event_name = 'test_retry_event';
+WHERE event_name = 'test_dead_letter_event';
 ```
 
 ### Expected Results
+| Before | After |
+|--------|-------|
+| `status: 'pending'` | `status: 'dead_letter'` |
+| `retry_count: 5` | `retry_count: 6` |
 
-| Before Retry | After Retry |
-|--------------|-------------|
-| status: `pending` | status: `resolved` OR `retrying` |
-| resolved_at: NULL | resolved_at: timestamp (if resolved) |
-| retry_count: 0 | retry_count: 1 (if retrying) |
+### Pass Criteria
+✅ Status changes to `dead_letter` (NOT `retrying`)
+✅ Event is NOT picked up on subsequent retry calls
+✅ Server bill is safe from infinite loops
 
-### Note on "Supabase" Destination
-The `supabase` destination handler attempts to re-insert the event_payload into `wm_event_log`. If the payload is valid, it succeeds and marks resolved. If not, it increments retry_count.
+---
+
+## TEST 3: Health Alerts Fire Drill
+
+### Objective
+Verify the `check-tracking-health` function returns valid metrics and correctly identifies system health state.
+
+### Key Validation Points
+1. **Error Rate**: Must be a number (not `NaN` or `null`)
+2. **EMQ Score**: Must be 0-10 scale
+3. **Alerts Created**: Should be 0 when system is healthy
+
+### Execution Steps
+
+**Step 1: Invoke Health Check**
+Call `GET /check-tracking-health`
+
+**Step 2: Examine Response Structure**
+```json
+{
+  "ok": true,
+  "timestamp": "...",
+  "metrics": {
+    "emqScore": <number>,
+    "emqBreakdown": {...},
+    "totalEvents": <number>,
+    "pendingCount": <number>,
+    "deadLetterCount": <number>,
+    "errorRate": <number>  // MUST NOT BE NaN
+  },
+  "alertsCreated": <number>,
+  "activeAlerts": <number>
+}
+```
+
+### Expected Results
+| Metric | Expected |
+|--------|----------|
+| `ok` | `true` |
+| `emqScore` | 0.0 - 10.0 |
+| `errorRate` | 0.0 - 100.0 (not NaN/null) |
+| `alertsCreated` | 0 (healthy state) |
+| `pendingCount` | 1 (our test event from TEST 2) |
+
+### Pass Criteria
+✅ Response is valid JSON
+✅ `errorRate` is a valid number (not NaN/null)
+✅ `alertsCreated` is 0 (no critical thresholds breached)
+✅ All metrics have appropriate data types
 
 ---
 
 ## Implementation Order
 
-1. **Run TEST 1**: Execute save-lead with spoofed IP, then query leads table
-2. **Run TEST 2**: Insert dummy failed event, trigger retry, verify status change
+1. **Run TEST 3 first** (non-destructive health check)
+2. **Run TEST 4** (dead letter verification)
+3. **Clean up test data** (optional)
 
 ---
 
-## Technical Details
+## Files Involved
 
-### How Geo Enrichment Works
-```
-Client Request → save-lead
-    ↓
-getClientIp(req) extracts IP from headers
-    ↓
-enrichGeoFromIP(clientIp) calls ip-api.com
-    ↓
-Response: { city, state, zip }
-    ↓
-Merged into leadRecord → Saved to `leads` table
-```
-
-### How Retry Logic Works
-```
-Admin clicks "Retry All"
-    ↓
-POST /admin-retry-failed-events
-    ↓
-Query: status IN ('pending', 'retrying') AND next_retry_at <= now()
-    ↓
-For each event: retryToDestination()
-    ↓
-Success → status = 'resolved'
-Failure → retry_count++ → next_retry_at = exponential backoff
-Max retries → status = 'dead_letter'
-```
+| File | Role |
+|------|------|
+| `supabase/functions/admin-retry-failed-events/index.ts` | Dead letter logic (lines 222-234) |
+| `supabase/functions/check-tracking-health/index.ts` | Health monitoring & error rate calc |
+| `tracking_failed_events` table | Test data storage |
+| `tracking_health_alerts` table | Alert log destination |
 
 ---
 
-## Success Criteria
+## Success Summary
 
-| Test | Pass Condition |
-|------|----------------|
-| TEST 1 | Lead record has non-null `city` and `state` values |
-| TEST 2 | Failed event moves from `pending` to `resolved` or `retrying` |
+| Test | Pass Condition | Impact if Fails |
+|------|----------------|-----------------|
+| TEST 3 | `errorRate` is valid number | Health monitoring broken |
+| TEST 4 | Event moves to `dead_letter` | Potential infinite retry loop |
 
+---
+
+## Technical Notes
+
+### Dead Letter Query Filter
+The retry function filters: `status IN ('pending', 'retrying') AND next_retry_at <= now()`
+
+Our test event will be picked up because:
+- `status = 'pending'` ✅
+- `next_retry_at = now()` ✅
+
+### Error Rate Division Safety
+```javascript
+const errorRate = totalRecentEvents && totalRecentEvents > 0
+  ? ((failedRecentEvents || 0) / totalRecentEvents) * 100
+  : 0;
+```
+
+This guards against:
+- Division by zero → returns `0`
+- Null failed count → uses `0`
+- Result: Never returns `NaN` or `null`
