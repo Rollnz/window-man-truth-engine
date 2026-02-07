@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, TrendingDown, Minus, ChevronDown, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -53,12 +54,19 @@ export function EMQScoreCard({
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
             <span>EMQ Score</span>
-            <BarChart3 className="h-4 w-4 animate-pulse" />
+            <Skeleton className="h-4 w-4 badge-shimmer" />
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-10 w-20 bg-muted animate-pulse rounded" />
-          <div className="h-4 w-28 bg-muted animate-pulse rounded mt-2" />
+        <CardContent className="space-y-3">
+          <div className="flex items-baseline gap-2">
+            <Skeleton className="h-10 w-16 badge-shimmer" />
+            <Skeleton className="h-5 w-8 badge-shimmer" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-4 badge-shimmer" />
+            <Skeleton className="h-4 w-32 badge-shimmer" />
+          </div>
+          <Skeleton className="h-3 w-40 badge-shimmer" />
         </CardContent>
       </Card>
     );

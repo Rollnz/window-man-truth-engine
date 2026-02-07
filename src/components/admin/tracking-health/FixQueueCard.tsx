@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { RefreshCw, AlertCircle, CheckCircle, ChevronDown, Inbox } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { RefreshCw, AlertCircle, CheckCircle, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -63,12 +64,19 @@ export function FixQueueCard({
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
             <span>Fix Queue</span>
-            <Inbox className="h-4 w-4 animate-pulse" />
+            <Skeleton className="h-4 w-4 badge-shimmer" />
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-8 w-20 bg-muted animate-pulse rounded" />
-          <div className="h-9 w-full bg-muted animate-pulse rounded mt-3" />
+        <CardContent className="space-y-3">
+          <div className="flex items-baseline gap-2">
+            <Skeleton className="h-8 w-12 badge-shimmer" />
+            <Skeleton className="h-4 w-16 badge-shimmer" />
+          </div>
+          <Skeleton className="h-9 w-full rounded-md badge-shimmer" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-5 w-20 rounded-full badge-shimmer" />
+            <Skeleton className="h-4 w-28 badge-shimmer" />
+          </div>
         </CardContent>
       </Card>
     );

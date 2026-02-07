@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, AlertTriangle, XCircle, Activity } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { HealthStatus } from './types';
 
@@ -47,12 +47,16 @@ export function HealthStatusCard({ status, reason, isLoading }: HealthStatusCard
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
             <span>System Status</span>
-            <Activity className="h-4 w-4 animate-pulse" />
+            <Skeleton className="h-4 w-4 rounded-full badge-shimmer" />
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-8 w-24 bg-muted animate-pulse rounded" />
-          <div className="h-4 w-32 bg-muted animate-pulse rounded mt-2" />
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-3 w-3 rounded-full badge-shimmer" />
+            <Skeleton className="h-8 w-24 badge-shimmer" />
+          </div>
+          <Skeleton className="h-4 w-full badge-shimmer" />
+          <Skeleton className="h-4 w-3/4 badge-shimmer" />
         </CardContent>
       </Card>
     );
