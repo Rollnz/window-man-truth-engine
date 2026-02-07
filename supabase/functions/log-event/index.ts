@@ -16,6 +16,24 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9
 const HASH_64_HEX_REGEX = /^[a-f0-9]{64}$/i;
 
 // ═══════════════════════════════════════════════════════════════════════════
+// UNIVERSAL PII FIELD VARIATIONS (GTM/Meta/Google Compatibility)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const EMAIL_KEYS = ['email', 'email_address', 'mail', 'e-mail', 'em', 'userEmail'];
+const PHONE_KEYS = ['phone', 'phone_number', 'phoneNumber', 'mobile', 'cell', 'tel', 'ph', 'number', 'telephone'];
+const FIRST_NAME_KEYS = ['firstName', 'first_name', 'fname', 'first', 'fn', 'givenName', 'given_name'];
+const LAST_NAME_KEYS = ['lastName', 'last_name', 'lname', 'last', 'ln', 'familyName', 'family_name', 'surname'];
+const EXTERNAL_ID_KEYS = ['external_id', 'externalId', 'user_id', 'userId', 'client_user_id'];
+
+// All PII keys to sanitize from output objects (exclude external_id for debugging)
+const ALL_PII_KEYS = [
+  ...EMAIL_KEYS,
+  ...PHONE_KEYS,
+  ...FIRST_NAME_KEYS,
+  ...LAST_NAME_KEYS,
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
 // VALIDATION HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -42,6 +60,15 @@ async function sha256Hash(text: string): Promise<string> {
   return Array.from(new Uint8Array(hashBuffer))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+/**
+ * Hash name with normalization
+ * Lowercase, trim, collapse internal whitespace
+ */
+async function hashName(name: string): Promise<string> {
+  const normalized = name.toLowerCase().trim().replace(/\s+/g, ' ');
+  return sha256Hash(normalized);
 }
 
 /**
@@ -79,76 +106,89 @@ async function hashPhone(phone: string): Promise<string | null> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PII EXTRACTION & SANITIZATION
+// PII EXTRACTION & SANITIZATION (Universal Translator)
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface ExtractedPII {
   rawEmail: string | null;
   rawPhone: string | null;
+  rawFirstName: string | null;
+  rawLastName: string | null;
+  rawExternalId: string | null;
   emailWasHashed: boolean;
   phoneWasHashed: boolean;
+  firstNameWasHashed: boolean;
+  lastNameWasHashed: boolean;
 }
 
 /**
- * Extract PII from all possible payload locations
+ * Search for a field value across multiple key variations and object locations
+ * Returns first non-null, non-empty string found
+ */
+function findFieldValue(
+  body: Record<string, unknown>,
+  keys: string[]
+): { value: string | null; wasHashed: boolean } {
+  const locations = [
+    body,
+    body.user_data as Record<string, unknown>,
+    body.metadata as Record<string, unknown>,
+  ];
+  
+  for (const location of locations) {
+    if (!location || typeof location !== 'object') continue;
+    
+    for (const key of keys) {
+      const val = location[key];
+      if (typeof val === 'string' && val.length > 0) {
+        return {
+          value: val,
+          wasHashed: isAlreadyHashed(val),
+        };
+      }
+    }
+  }
+  
+  return { value: null, wasHashed: false };
+}
+
+/**
+ * Extract PII from all possible payload locations using Universal Field Finder
  * Detects if values are already hashed (64-char hex)
  */
 function extractPII(body: Record<string, unknown>): ExtractedPII {
-  // Check all possible locations for email
-  const emailSources = [
-    body.email,
-    (body.user_data as Record<string, unknown>)?.email,
-    (body.metadata as Record<string, unknown>)?.email,
-  ];
+  const email = findFieldValue(body, EMAIL_KEYS);
+  const phone = findFieldValue(body, PHONE_KEYS);
+  const firstName = findFieldValue(body, FIRST_NAME_KEYS);
+  const lastName = findFieldValue(body, LAST_NAME_KEYS);
+  const externalId = findFieldValue(body, EXTERNAL_ID_KEYS);
   
-  // Check all possible locations for phone
-  const phoneSources = [
-    body.phone,
-    (body.user_data as Record<string, unknown>)?.phone,
-    (body.metadata as Record<string, unknown>)?.phone,
-    body.phone_number,
-    (body.user_data as Record<string, unknown>)?.phone_number,
-    (body.metadata as Record<string, unknown>)?.phone_number,
-  ];
-  
-  let rawEmail: string | null = null;
-  let emailWasHashed = false;
-  
-  for (const src of emailSources) {
-    if (typeof src === "string" && src.length > 0) {
-      rawEmail = src;
-      emailWasHashed = isAlreadyHashed(src);
-      break;
-    }
-  }
-  
-  let rawPhone: string | null = null;
-  let phoneWasHashed = false;
-  
-  for (const src of phoneSources) {
-    if (typeof src === "string" && src.length > 0) {
-      rawPhone = src;
-      phoneWasHashed = isAlreadyHashed(src);
-      break;
-    }
-  }
-  
-  return { rawEmail, rawPhone, emailWasHashed, phoneWasHashed };
+  return {
+    rawEmail: email.value,
+    rawPhone: phone.value,
+    rawFirstName: firstName.value,
+    rawLastName: lastName.value,
+    rawExternalId: externalId.value,
+    emailWasHashed: email.wasHashed,
+    phoneWasHashed: phone.wasHashed,
+    firstNameWasHashed: firstName.wasHashed,
+    lastNameWasHashed: lastName.wasHashed,
+  };
 }
 
 /**
- * Sanitize object by removing PII keys
- * Returns a new object with email/phone keys removed
+ * Sanitize object by removing ALL PII key variations
+ * Returns a new object with PII keys removed
  */
 function sanitizePIIKeys(obj: Record<string, unknown> | null | undefined): Record<string, unknown> {
   if (!obj || typeof obj !== "object") return {};
   
   const sanitized = { ...obj };
   
-  // Remove all possible PII keys
-  delete sanitized.email;
-  delete sanitized.phone;
-  delete sanitized.phone_number;
+  // Remove all PII key variations
+  for (const key of ALL_PII_KEYS) {
+    delete sanitized[key];
+  }
   
   return sanitized;
 }
@@ -230,7 +270,7 @@ Deno.serve(async (req) => {
     const sessionId = isValidUUID(body.session_id) ? body.session_id : null;
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // PII FIREWALL: Extract → Hash → Sanitize
+    // PII FIREWALL: Extract → Hash → Sanitize (Universal Translator)
     // ═══════════════════════════════════════════════════════════════════════════
 
     const extractedPII = extractPII(body);
@@ -270,12 +310,34 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Preserve external_id from various sources
-    const externalId = 
-      (body.user_data as Record<string, unknown>)?.external_id ||
-      body.external_id ||
-      leadId ||
-      null;
+    // Hash firstName if present and not already hashed
+    let firstNameSha256: string | null = null;
+    if (extractedPII.rawFirstName) {
+      if (extractedPII.firstNameWasHashed) {
+        firstNameSha256 = extractedPII.rawFirstName;
+      } else {
+        firstNameSha256 = await hashName(extractedPII.rawFirstName);
+      }
+      // Add to user_data in Meta format
+      processedUserData.fn = firstNameSha256;
+      processedUserData.sha256_first_name = firstNameSha256;
+    }
+    
+    // Hash lastName if present and not already hashed
+    let lastNameSha256: string | null = null;
+    if (extractedPII.rawLastName) {
+      if (extractedPII.lastNameWasHashed) {
+        lastNameSha256 = extractedPII.rawLastName;
+      } else {
+        lastNameSha256 = await hashName(extractedPII.rawLastName);
+      }
+      // Add to user_data in Meta format
+      processedUserData.ln = lastNameSha256;
+      processedUserData.sha256_last_name = lastNameSha256;
+    }
+    
+    // Use extracted external_id (handles all variations)
+    const externalId = extractedPII.rawExternalId || leadId || null;
     
     if (externalId && typeof externalId === "string") {
       processedUserData.external_id = externalId;
@@ -289,10 +351,16 @@ Deno.serve(async (req) => {
       event_name: body.event_name,
       has_email: !!extractedPII.rawEmail,
       has_phone: !!extractedPII.rawPhone,
+      has_first_name: !!extractedPII.rawFirstName,
+      has_last_name: !!extractedPII.rawLastName,
       email_was_hashed: extractedPII.emailWasHashed,
       phone_was_hashed: extractedPII.phoneWasHashed,
+      first_name_was_hashed: extractedPII.firstNameWasHashed,
+      last_name_was_hashed: extractedPII.lastNameWasHashed,
       email_hash_length: emailSha256?.length || 0,
       phone_hash_length: phoneSha256?.length || 0,
+      fn_hash_length: firstNameSha256?.length || 0,
+      ln_hash_length: lastNameSha256?.length || 0,
     });
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -370,6 +438,8 @@ Deno.serve(async (req) => {
     console.log(`[log-event] Logged: ${body.event_name} (${eventId.slice(0, 8)}...)`, {
       has_email_hash: !!emailSha256,
       has_phone_hash: !!phoneSha256,
+      has_fn_hash: !!firstNameSha256,
+      has_ln_hash: !!lastNameSha256,
       has_external_id: !!externalId,
     });
     

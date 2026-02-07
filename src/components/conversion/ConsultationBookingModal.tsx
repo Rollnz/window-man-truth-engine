@@ -254,6 +254,8 @@ export function ConsultationBookingModal({
           leadId: data.leadId,
           email: values.email,
           phone: values.phone,
+          firstName,
+          lastName: lastName || undefined,
         });
 
         toast({
