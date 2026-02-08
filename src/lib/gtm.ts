@@ -256,19 +256,14 @@ export function getClientUserAgent(): string {
 // EVENT ID GENERATION
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { generateSecureUUID } from './secureUUID';
+
 /**
  * Generate a unique event ID for CAPI deduplication
- * Uses crypto.randomUUID with fallback for older browsers
+ * Uses cryptographically secure UUID generation (CWE-338 compliant)
  */
 export function generateEventId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  // Fallback for older browsers
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0;
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-  });
+  return generateSecureUUID();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
