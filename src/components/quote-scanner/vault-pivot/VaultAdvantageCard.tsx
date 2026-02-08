@@ -14,44 +14,40 @@ interface VaultAdvantageCardProps {
 }
 
 const accentMap: Record<AccentColor, {
-  border: string;
-  shadow: string;
-  topBar: string;
+  tab: string;
+  stamp: string;
   icon: string;
   iconBg: string;
-  stepBadge: string;
+  folderBorder: string;
 }> = {
   blue: {
-    border: 'border-slate-200 dark:border-sky-500/30 hover:border-sky-300 dark:hover:border-sky-500/50',
-    shadow: 'shadow-md hover:shadow-lg dark:shadow-[0_0_25px_rgba(14,165,233,0.15)] dark:hover:shadow-[0_0_35px_rgba(14,165,233,0.25)]',
-    topBar: 'before:bg-sky-500',
+    tab: 'bg-sky-500',
+    stamp: 'border-sky-500/50 text-sky-700 dark:border-sky-400/50 dark:text-sky-400',
     icon: 'text-sky-600 dark:text-sky-400',
-    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
-    stepBadge: 'bg-sky-100 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400',
+    iconBg: 'bg-sky-100 dark:bg-sky-500/20',
+    folderBorder: 'border-stone-200 dark:border-emerald-500/20',
   },
   amber: {
-    border: 'border-slate-200 dark:border-amber-500/30 hover:border-amber-300 dark:hover:border-amber-500/50',
-    shadow: 'shadow-md hover:shadow-lg dark:shadow-[0_0_25px_rgba(245,158,11,0.15)] dark:hover:shadow-[0_0_35px_rgba(245,158,11,0.25)]',
-    topBar: 'before:bg-amber-500',
+    tab: 'bg-amber-500',
+    stamp: 'border-amber-500/50 text-amber-700 dark:border-amber-400/50 dark:text-amber-400',
     icon: 'text-amber-600 dark:text-amber-400',
-    iconBg: 'bg-amber-100 dark:bg-amber-500/10',
-    stepBadge: 'bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400',
+    iconBg: 'bg-amber-100 dark:bg-amber-500/20',
+    folderBorder: 'border-stone-200 dark:border-emerald-500/20',
   },
   emerald: {
-    border: 'border-slate-200 dark:border-emerald-500/30 hover:border-emerald-300 dark:hover:border-emerald-500/50',
-    shadow: 'shadow-md hover:shadow-lg dark:shadow-[0_0_25px_rgba(16,185,129,0.15)] dark:hover:shadow-[0_0_35px_rgba(16,185,129,0.25)]',
-    topBar: 'before:bg-emerald-500',
+    tab: 'bg-emerald-500',
+    stamp: 'border-emerald-500/50 text-emerald-700 dark:border-emerald-400/50 dark:text-emerald-400',
     icon: 'text-emerald-600 dark:text-emerald-400',
-    iconBg: 'bg-emerald-100 dark:bg-emerald-500/10',
-    stepBadge: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400',
+    iconBg: 'bg-emerald-100 dark:bg-emerald-500/20',
+    folderBorder: 'border-stone-200 dark:border-emerald-500/20',
   },
 };
 
 /**
  * VaultAdvantageCard
- * Theme-aware card for the Blueprint Breakout section.
- * Light mode: Clean "Technical Schematic" with accent top-bar
- * Dark mode: "Cyberpunk Blueprint" with glowing borders
+ * "Tactical Dossier" folder-style card for the War Room section.
+ * Light mode: Manila folder with paper shadow
+ * Dark mode: Dark folder with green edge glow
  */
 export function VaultAdvantageCard({ 
   microLabel, 
@@ -65,47 +61,48 @@ export function VaultAdvantageCard({
   const accent = accentMap[accentColor];
 
   return (
-    <div 
-      className={cn(
-        'group relative p-5 md:p-8 rounded-2xl overflow-hidden',
-        // Glassmorphism base - theme-aware
-        'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md',
-        // Border - clean in light, glowing in dark
-        'border dark:border-2 transition-all duration-300 hover:-translate-y-1',
-        accent.border,
-        accent.shadow,
-        // Light mode: accent top-bar
-        'before:absolute before:inset-x-0 before:top-0 before:h-1 before:rounded-t-2xl dark:before:hidden',
-        accent.topBar,
-        className
-      )}
-    >
-      {/* Step number badge (visible on mobile) */}
+    <div className={cn('relative group pt-3', className)}>
+      {/* Folder Tab */}
       {stepNumber && (
         <div className={cn(
-          'absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center',
-          'text-sm font-bold md:hidden',
-          accent.stepBadge
+          'absolute -top-0 left-4 px-3 py-1 rounded-t-md text-xs font-bold text-white z-10',
+          accent.tab
         )}>
           {stepNumber}
         </div>
       )}
       
-      {/* Large icon */}
-      <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center mb-4', accent.iconBg)}>
-        <Icon className={cn('w-7 h-7', accent.icon)} />
+      {/* Main Folder Body */}
+      <div className={cn(
+        'p-5 md:p-6 rounded-lg border-2 transition-all duration-300',
+        'md:hover:rotate-1 md:hover:-translate-y-1',
+        // Folder background
+        'bg-white dark:bg-stone-900/80',
+        accent.folderBorder,
+        // Light mode: paper shadow
+        'shadow-[4px_4px_0_rgba(0,0,0,0.08)]',
+        // Dark mode: green edge glow
+        'dark:shadow-[0_0_20px_rgba(34,197,94,0.15)]'
+      )}>
+        {/* Classified Stamp */}
+        <div className={cn(
+          'inline-block px-2 py-0.5 mb-3 border border-dashed rounded text-[10px] font-mono uppercase tracking-wider',
+          accent.stamp
+        )}>
+          [{microLabel}]
+        </div>
+        
+        {/* Icon */}
+        <div className={cn('w-12 h-12 rounded-lg flex items-center justify-center mb-3', accent.iconBg)}>
+          <Icon className={cn('w-6 h-6', accent.icon)} />
+        </div>
+        
+        {/* Title */}
+        <h3 className="text-lg font-bold text-stone-900 dark:text-white mb-2">{title}</h3>
+        
+        {/* Subtitle */}
+        <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">{subtitle}</p>
       </div>
-      
-      {/* Micro-label */}
-      <span className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">
-        {microLabel}
-      </span>
-      
-      {/* Title */}
-      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{title}</h3>
-      
-      {/* Subtitle */}
-      <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{subtitle}</p>
     </div>
   );
 }
