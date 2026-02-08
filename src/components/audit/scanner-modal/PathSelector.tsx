@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, Lock, Shield, ArrowRight } from 'lucide-react';
 import { PathSelectorProps, AuditPath } from '@/types/audit';
 import { trackEvent, trackModalOpen } from '@/lib/gtm';
-import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
+import { useTickerStats } from '@/hooks/useTickerStats';
 
 /**
  * Path selector for the audit scanner modal.
@@ -17,7 +17,7 @@ import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
  * - "No, not yet" → Blue outline (Path B)
  */
 export function PathSelector({ onSelectPath }: PathSelectorProps) {
-  const { total } = useProjectedQuotes();
+  const { total } = useTickerStats();
 
   // Track modal opened on mount
   useEffect(() => {
