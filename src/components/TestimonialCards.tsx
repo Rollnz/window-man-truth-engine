@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { Star, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/gtm';
@@ -12,6 +12,8 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from '@/components/ui/carousel';
+import Autoplay from 'embla-carousel-autoplay';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const REVIEWS = [
   {
@@ -96,8 +98,29 @@ interface TestimonialCardsProps {
 export function TestimonialCards({ variant = 'default', className }: TestimonialCardsProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const [isInView, setIsInView] = useState(false);
+  const [hasAnimated, setHasAnimated] = useState(false);
   const [hasTrackedImpression, setHasTrackedImpression] = useState(false);
   const [hasTrackedInteraction, setHasTrackedInteraction] = useState(false);
+  
+  const isMobile = useIsMobile();
+  
+  // Check for reduced motion preference
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
+  
+  // Autoplay plugin - only on desktop and when reduced motion is not preferred
+  const autoplayPlugin = useMemo(() => {
+    if (isMobile || prefersReducedMotion) return [];
+    return [
+      Autoplay({
+        delay: 5000,
+        stopOnInteraction: true,
+        stopOnMouseEnter: true,
+      }),
+    ];
+  }, [isMobile, prefersReducedMotion]);
 
   // Lazy loading with IntersectionObserver
   useEffect(() => {
@@ -105,6 +128,11 @@ export function TestimonialCards({ variant = 'default', className }: Testimonial
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(true);
+          
+          // Trigger slide-up animation
+          if (!hasAnimated) {
+            setHasAnimated(true);
+          }
           
           // Track impression once
           if (!hasTrackedImpression) {
@@ -124,7 +152,7 @@ export function TestimonialCards({ variant = 'default', className }: Testimonial
     }
 
     return () => observer.disconnect();
-  }, [variant, hasTrackedImpression]);
+  }, [variant, hasTrackedImpression, hasAnimated]);
 
   const handleCarouselInteraction = () => {
     if (!hasTrackedInteraction) {
@@ -167,7 +195,16 @@ export function TestimonialCards({ variant = 'default', className }: Testimonial
   }
 
   return (
-    <section ref={sectionRef} className={sectionClasses}>
+    <section 
+      ref={sectionRef} 
+      className={cn(
+        sectionClasses,
+        "transition-all duration-700 ease-out",
+        hasAnimated 
+          ? "opacity-100 translate-y-0" 
+          : "opacity-0 translate-y-8"
+      )}
+    >
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
@@ -198,7 +235,7 @@ export function TestimonialCards({ variant = 'default', className }: Testimonial
 
         {/* Carousel */}
         <div 
-          className="relative px-12"
+          className="relative px-4 md:px-12"
           onMouseDown={handleCarouselInteraction}
           onTouchStart={handleCarouselInteraction}
         >
@@ -207,6 +244,7 @@ export function TestimonialCards({ variant = 'default', className }: Testimonial
               align: 'start',
               loop: true,
             }}
+            plugins={autoplayPlugin}
             className="w-full"
           >
             <CarouselContent className="-ml-4">
@@ -288,6 +326,7 @@ export function TestimonialCards({ variant = 'default', className }: Testimonial
             
             <CarouselPrevious 
               className={cn(
+                "-left-2 md:-left-12 h-8 w-8",
                 isDark 
                   ? "bg-slate-800 border-slate-700 text-white hover:bg-slate-700" 
                   : ""
@@ -295,6 +334,7 @@ export function TestimonialCards({ variant = 'default', className }: Testimonial
             />
             <CarouselNext 
               className={cn(
+                "-right-2 md:-right-12 h-8 w-8",
                 isDark 
                   ? "bg-slate-800 border-slate-700 text-white hover:bg-slate-700" 
                   : ""
