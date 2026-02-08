@@ -20,6 +20,8 @@ const DEDUPE_PREFIX = 'cv_dedupe_';
 const MAX_STORED_EVENTS = 200; // Cap to prevent storage bloat
 const TTL_MS = 120 * 60 * 1000; // 120 minutes
 
+import { generateSecureShortId } from './secureUUID';
+
 // Generate a stable tab session ID that persists for this tab's lifetime
 let _tabSessionId: string | null = null;
 
@@ -34,14 +36,14 @@ function getTabSessionId(): string {
       return existing;
     }
     
-    // Generate new tab session ID
-    const newId = crypto.randomUUID().slice(0, 8);
+    // Generate new tab session ID (CWE-338 compliant)
+    const newId = generateSecureShortId();
     sessionStorage.setItem('wte_tab_session_id', newId);
     _tabSessionId = newId;
     return newId;
   } catch {
-    // Fallback if sessionStorage fails
-    _tabSessionId = Math.random().toString(36).slice(2, 10);
+    // Fallback if sessionStorage fails - still secure
+    _tabSessionId = generateSecureShortId();
     return _tabSessionId;
   }
 }

@@ -19,20 +19,13 @@ const VISITOR_ID_KEY = 'wm_vid';
 const VISITOR_ID_COOKIE_NAME = 'wm_vid';
 const VISITOR_ID_TTL_DAYS = 400; // ~13 months
 
+import { generateSecureUUID } from '@/lib/secureUUID';
+
 /**
- * Generate UUID v4 using native crypto API with fallback for older browsers
+ * Generate cryptographically secure UUID v4 (CWE-338 compliant)
  */
 function generateUUID(): string {
-  // Use native crypto.randomUUID if available
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  // Fallback for older browsers
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
+  return generateSecureUUID();
 }
 
 /**
