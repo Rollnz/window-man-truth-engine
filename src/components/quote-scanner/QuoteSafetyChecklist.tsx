@@ -189,101 +189,54 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
   return (
     <section className="py-12 md:py-16 bg-slate-50 dark:bg-zinc-950/60">
       <div className="container px-4">
+        {/* Section Header */}
         <div className="text-center mb-10">
           <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-zinc-100 mb-2">
-            What a Legitimate Quote Should Include
+            Spot the Difference
           </h2>
           <p className="text-slate-600 dark:text-zinc-400 max-w-2xl mx-auto">
-            Before signing, make sure your quote has these essential elements. 
-            Missing items = leverage for negotiation.
+            Know what separates a risky quote from a legitimate one.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-          {/* Good Signs */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                What to Look For
-              </h3>
-              <button
-                onClick={() => toggleAllItems('good', checklistItems)}
-                className="text-xs text-slate-500 dark:text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-              >
-                {allGoodExpanded ? 'Collapse All' : 'Expand All'}
-              </button>
+        {/* Two-Column Contract Comparison */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 max-w-6xl mx-auto">
+          
+          {/* BAD CONTRACT (Left) */}
+          <div className={cn(
+            "rounded-xl overflow-hidden",
+            "bg-white border-2 border-rose-400 shadow-lg",
+            "dark:bg-zinc-900 dark:border-rose-500/50"
+          )}>
+            {/* Document Header */}
+            <div className={cn(
+              "flex items-center gap-3 p-4 border-b",
+              "bg-rose-50 border-rose-200",
+              "dark:bg-rose-500/10 dark:border-rose-500/30"
+            )}>
+              <XCircle className="w-10 h-10 text-rose-600 dark:text-rose-400" />
+              <div>
+                <h3 className="text-xl font-bold text-rose-700 dark:text-rose-400">
+                  BAD CONTRACT
+                </h3>
+                <p className="text-sm text-rose-600/80 dark:text-rose-400/60">
+                  Red Flags to Watch For
+                </p>
+              </div>
             </div>
-            <div className="space-y-2">
-              {checklistItems.map((item, idx) => {
-                const itemId = `good-${idx}`;
-                const isExpanded = expandedItems.has(itemId);
-                const ItemIcon = item.icon;
-                
-                return (
-                  <div
-                    key={itemId}
-                    className={cn(
-                      "rounded-lg overflow-hidden",
-                      "bg-white border border-emerald-200 shadow-sm",
-                      "dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:shadow-none"
-                    )}
-                  >
-                    <button
-                      onClick={() => toggleItem(itemId, item.title, 'good')}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-3 text-left",
-                        "hover:bg-emerald-50 dark:hover:bg-emerald-500/5 transition-colors"
-                      )}
-                      aria-expanded={isExpanded}
-                    >
-                      <ItemIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                      <span className="flex-1 text-sm font-medium text-slate-700 dark:text-zinc-300">
-                        {item.title}
-                      </span>
-                      <ChevronDown className={cn(
-                        "w-4 h-4 text-slate-400 dark:text-zinc-500 transition-transform duration-200",
-                        isExpanded && "rotate-180"
-                      )} />
-                    </button>
-                    
-                    <div className={cn(
-                      "grid transition-all duration-200",
-                      isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                    )}>
-                      <div className="overflow-hidden">
-                        <div className={cn(
-                          "px-3 pb-3 pt-2 border-t",
-                          "bg-slate-50 border-emerald-100",
-                          "dark:bg-zinc-900/50 dark:border-emerald-500/20"
-                        )}>
-                          <p className="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
-                            {item.description}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Red Flags */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-rose-700 dark:text-rose-400 flex items-center gap-2">
-                <XCircle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                Common Red Flags
-              </h3>
-              <button
-                onClick={() => toggleAllItems('red', redFlags)}
-                className="text-xs text-slate-500 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
-              >
-                {allRedExpanded ? 'Collapse All' : 'Expand All'}
-              </button>
-            </div>
-            <div className="space-y-2">
+            
+            {/* Accordion Items */}
+            <div className="p-4 space-y-2">
+              {/* Expand All toggle */}
+              <div className="flex justify-end mb-2">
+                <button
+                  onClick={() => toggleAllItems('red', redFlags)}
+                  className="text-xs text-slate-500 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+                >
+                  {allRedExpanded ? 'Collapse All' : 'Expand All'}
+                </button>
+              </div>
+              
               {redFlags.map((item, idx) => {
                 const itemId = `red-${idx}`;
                 const isExpanded = expandedItems.has(itemId);
@@ -295,7 +248,7 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
                     className={cn(
                       "rounded-lg overflow-hidden",
                       "bg-white border border-rose-200 shadow-sm",
-                      "dark:bg-rose-500/10 dark:border-rose-500/30 dark:shadow-none"
+                      "dark:bg-rose-500/5 dark:border-rose-500/20 dark:shadow-none"
                     )}
                   >
                     <button
@@ -323,7 +276,7 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
                       <div className="overflow-hidden">
                         <div className={cn(
                           "px-3 pb-3 pt-2 border-t",
-                          "bg-slate-50 border-rose-100",
+                          "bg-rose-50/50 border-rose-100",
                           "dark:bg-zinc-900/50 dark:border-rose-500/20"
                         )}>
                           <p className="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
@@ -337,8 +290,8 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
               })}
             </div>
             
-            {/* CTA */}
-            <div className="pt-4">
+            {/* CTA Button */}
+            <div className="p-4 pt-0">
               <Button
                 onClick={handleScrollToUpload}
                 className={cn(
@@ -353,6 +306,96 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
               </Button>
             </div>
           </div>
+
+          {/* GOOD CONTRACT (Right) */}
+          <div className={cn(
+            "rounded-xl overflow-hidden",
+            "bg-white border-2 border-emerald-400 shadow-lg",
+            "dark:bg-zinc-900 dark:border-emerald-500/50"
+          )}>
+            {/* Document Header */}
+            <div className={cn(
+              "flex items-center gap-3 p-4 border-b",
+              "bg-emerald-50 border-emerald-200",
+              "dark:bg-emerald-500/10 dark:border-emerald-500/30"
+            )}>
+              <CheckCircle className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+              <div>
+                <h3 className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
+                  GOOD CONTRACT
+                </h3>
+                <p className="text-sm text-emerald-600/80 dark:text-emerald-400/60">
+                  What to Look For
+                </p>
+              </div>
+            </div>
+            
+            {/* Accordion Items */}
+            <div className="p-4 space-y-2">
+              {/* Expand All toggle */}
+              <div className="flex justify-end mb-2">
+                <button
+                  onClick={() => toggleAllItems('good', checklistItems)}
+                  className="text-xs text-slate-500 dark:text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                >
+                  {allGoodExpanded ? 'Collapse All' : 'Expand All'}
+                </button>
+              </div>
+              
+              {checklistItems.map((item, idx) => {
+                const itemId = `good-${idx}`;
+                const isExpanded = expandedItems.has(itemId);
+                const ItemIcon = item.icon;
+                
+                return (
+                  <div
+                    key={itemId}
+                    className={cn(
+                      "rounded-lg overflow-hidden",
+                      "bg-white border border-emerald-200 shadow-sm",
+                      "dark:bg-emerald-500/5 dark:border-emerald-500/20 dark:shadow-none"
+                    )}
+                  >
+                    <button
+                      onClick={() => toggleItem(itemId, item.title, 'good')}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-3 text-left",
+                        "hover:bg-emerald-50 dark:hover:bg-emerald-500/5 transition-colors"
+                      )}
+                      aria-expanded={isExpanded}
+                    >
+                      <ItemIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                      <span className="flex-1 text-sm font-medium text-slate-700 dark:text-zinc-300">
+                        {item.title}
+                      </span>
+                      <ChevronDown className={cn(
+                        "w-4 h-4 text-slate-400 dark:text-zinc-500 transition-transform duration-200",
+                        isExpanded && "rotate-180"
+                      )} />
+                    </button>
+                    
+                    <div className={cn(
+                      "grid transition-all duration-200",
+                      isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    )}>
+                      <div className="overflow-hidden">
+                        <div className={cn(
+                          "px-3 pb-3 pt-2 border-t",
+                          "bg-emerald-50/50 border-emerald-100",
+                          "dark:bg-zinc-900/50 dark:border-emerald-500/20"
+                        )}>
+                          <p className="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
+                            {item.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          
         </div>
       </div>
     </section>
