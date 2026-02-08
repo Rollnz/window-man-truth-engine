@@ -15,9 +15,8 @@ interface VaultCTABlockProps {
 
 /**
  * VaultCTABlock
- * Primary conversion engine with pulsing CTA button,
+ * Theme-aware CTA block with pulsing button (dark mode only),
  * "Memory Protection Active" status, and email fallback form.
- * Theme-locked to dark for Blueprint Breakout section.
  */
 export function VaultCTABlock({ 
   onGoogleAuth, 
@@ -48,20 +47,20 @@ export function VaultCTABlock({
   return (
     <div className="mt-12 text-center">
       {/* Simplicity Anchor */}
-      <p className="text-sm text-slate-400 mb-4">
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
         No decisions yet. Just saving your place.
       </p>
 
       {/* Memory Protection Status - "Smooth Criminal" trust pixel */}
       <div className="flex items-center justify-center gap-2 mb-6">
-        <span className="text-sm text-slate-400">Memory Protection Active</span>
+        <span className="text-sm text-slate-500 dark:text-slate-400">Memory Protection Active</span>
         <span className="relative flex h-2.5 w-2.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
         </span>
       </div>
 
-      {/* Primary CTA - Pulsing Glow */}
+      {/* Primary CTA - Pulsing Glow (dark mode only) */}
       <Button
         onClick={onGoogleAuth}
         disabled={isLoading}
@@ -69,14 +68,13 @@ export function VaultCTABlock({
         className={cn(
           'w-full md:w-auto md:min-w-[360px] h-16 text-lg font-bold',
           'bg-sky-500 hover:bg-sky-400 text-white',
-          'shadow-[0_0_30px_rgba(14,165,233,0.4)]',
-          'animate-[pulse-glow-cta_2.5s_ease-in-out_infinite]',
+          // Light mode: clean shadow
+          'shadow-lg hover:shadow-xl',
+          // Dark mode: glowing shadow + pulse animation
+          'dark:shadow-[0_0_30px_rgba(14,165,233,0.4)]',
+          'dark:animate-[pulse-glow-cta_2.5s_ease-in-out_infinite]',
           'transition-all duration-200'
         )}
-        style={{
-          // Inline animation as fallback
-          animation: 'pulse-glow-cta 2.5s ease-in-out infinite',
-        }}
       >
         <Lock className="w-5 h-5 mr-2" />
         ENTER MY WINDOW VAULT
@@ -85,7 +83,7 @@ export function VaultCTABlock({
       {/* Email Fallback Toggle */}
       <button
         onClick={() => setShowEmailForm(!showEmailForm)}
-        className="flex items-center justify-center gap-1 mx-auto mt-6 text-sm text-slate-400 hover:text-slate-300 transition-colors"
+        className="flex items-center justify-center gap-1 mx-auto mt-6 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
       >
         <Mail className="w-4 h-4" />
         Or continue with email
@@ -105,60 +103,60 @@ export function VaultCTABlock({
       >
         <form 
           onSubmit={handleEmailSubmit}
-          className="max-w-md mx-auto space-y-4 p-6 rounded-xl border border-slate-800 bg-slate-900/80 backdrop-blur-sm"
+          className="max-w-md mx-auto space-y-4 p-6 rounded-xl border bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 backdrop-blur-sm"
         >
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 text-left">
-              <Label htmlFor="firstName" className="text-slate-300">First Name</Label>
+              <Label htmlFor="firstName" className="text-slate-700 dark:text-slate-300">First Name</Label>
               <Input
                 id="firstName"
                 type="text"
                 value={values.firstName}
                 onChange={(e) => setValue('firstName', e.target.value)}
                 className={cn(
-                  "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500",
+                  "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500",
                   hasError('firstName') && 'border-red-500'
                 )}
                 required
               />
               {hasError('firstName') && (
-                <p className="text-xs text-red-400">{getError('firstName')}</p>
+                <p className="text-xs text-red-500 dark:text-red-400">{getError('firstName')}</p>
               )}
             </div>
             <div className="space-y-2 text-left">
-              <Label htmlFor="lastName" className="text-slate-300">Last Name</Label>
+              <Label htmlFor="lastName" className="text-slate-700 dark:text-slate-300">Last Name</Label>
               <Input
                 id="lastName"
                 type="text"
                 value={values.lastName}
                 onChange={(e) => setValue('lastName', e.target.value)}
                 className={cn(
-                  "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500",
+                  "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500",
                   hasError('lastName') && 'border-red-500'
                 )}
                 required
               />
               {hasError('lastName') && (
-                <p className="text-xs text-red-400">{getError('lastName')}</p>
+                <p className="text-xs text-red-500 dark:text-red-400">{getError('lastName')}</p>
               )}
             </div>
           </div>
           <div className="space-y-2 text-left">
-            <Label htmlFor="email" className="text-slate-300">Email</Label>
+            <Label htmlFor="email" className="text-slate-700 dark:text-slate-300">Email</Label>
             <Input
               id="email"
               type="email"
               value={values.email}
               onChange={(e) => setValue('email', e.target.value)}
               className={cn(
-                "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500",
+                "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500",
                 hasError('email') && 'border-red-500'
               )}
               placeholder="you@example.com"
               required
             />
             {hasError('email') && (
-              <p className="text-xs text-red-400">{getError('email')}</p>
+              <p className="text-xs text-red-500 dark:text-red-400">{getError('email')}</p>
             )}
           </div>
           <Button
@@ -176,7 +174,7 @@ export function VaultCTABlock({
         Free forever. Takes 10 seconds. We never sell or share your data.
       </p>
 
-      {/* Inline keyframes for pulse-glow-cta */}
+      {/* Inline keyframes for pulse-glow-cta (dark mode only via class) */}
       <style>{`
         @keyframes pulse-glow-cta {
           0%, 100% { box-shadow: 0 0 25px rgba(14,165,233,0.3); }

@@ -51,8 +51,8 @@ export function VaultAdvantageGrid() {
                 <div className={cn(
                   'w-px h-4',
                   index === 0 
-                    ? 'bg-gradient-to-b from-sky-500/50 to-amber-500/50' 
-                    : 'bg-gradient-to-b from-amber-500/50 to-emerald-500/50'
+                    ? 'bg-gradient-to-b from-sky-400/40 to-amber-400/40 dark:from-sky-500/50 dark:to-amber-500/50' 
+                    : 'bg-gradient-to-b from-amber-400/40 to-emerald-400/40 dark:from-amber-500/50 dark:to-emerald-500/50'
                 )} />
               </div>
             )}
