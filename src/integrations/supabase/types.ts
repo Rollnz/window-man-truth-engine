@@ -62,6 +62,36 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_traffic: {
+        Row: {
+          blocked_at: string
+          blocked_by: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          ip_hash: string
+          reason: string
+        }
+        Insert: {
+          blocked_at?: string
+          blocked_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          ip_hash: string
+          reason?: string
+        }
+        Update: {
+          blocked_at?: string
+          blocked_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          ip_hash?: string
+          reason?: string
+        }
+        Relationships: []
+      }
       call_agents: {
         Row: {
           agent_id: string
@@ -133,6 +163,20 @@ export type Database = {
           status?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "consultations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_attribution_gaps"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "consultations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_spam_signals"
+            referencedColumns: ["lead_id"]
+          },
           {
             foreignKeyName: "consultations_lead_id_fkey"
             columns: ["lead_id"]
@@ -367,6 +411,8 @@ export type Database = {
       }
       leads: {
         Row: {
+          ai_psych_profile: string | null
+          ai_sales_hook: string | null
           chat_history: Json | null
           city: string | null
           client_id: string | null
@@ -422,6 +468,8 @@ export type Database = {
           zip: string | null
         }
         Insert: {
+          ai_psych_profile?: string | null
+          ai_sales_hook?: string | null
           chat_history?: Json | null
           city?: string | null
           client_id?: string | null
@@ -477,6 +525,8 @@ export type Database = {
           zip?: string | null
         }
         Update: {
+          ai_psych_profile?: string | null
+          ai_sales_hook?: string | null
           chat_history?: Json | null
           city?: string | null
           client_id?: string | null
@@ -840,6 +890,20 @@ export type Database = {
             foreignKeyName: "quote_analyses_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "analytics_attribution_gaps"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "quote_analyses_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_spam_signals"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "quote_analyses_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "leads"
             referencedColumns: ["id"]
           },
@@ -961,6 +1025,20 @@ export type Database = {
             foreignKeyName: "quote_files_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "analytics_attribution_gaps"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "quote_files_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_spam_signals"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "quote_files_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "leads"
             referencedColumns: ["id"]
           },
@@ -1069,6 +1147,20 @@ export type Database = {
           user_data?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tracking_failed_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_attribution_gaps"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "tracking_failed_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_spam_signals"
+            referencedColumns: ["lead_id"]
+          },
           {
             foreignKeyName: "tracking_failed_events_lead_id_fkey"
             columns: ["lead_id"]
@@ -1493,6 +1585,20 @@ export type Database = {
             foreignKeyName: "wm_leads_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "analytics_attribution_gaps"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "wm_leads_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_spam_signals"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "wm_leads_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "leads"
             referencedColumns: ["id"]
           },
@@ -1681,6 +1787,20 @@ export type Database = {
             foreignKeyName: "wm_sessions_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
+            referencedRelation: "analytics_attribution_gaps"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "wm_sessions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_spam_signals"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "wm_sessions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
             referencedRelation: "leads"
             referencedColumns: ["id"]
           },
@@ -1738,6 +1858,92 @@ export type Database = {
       }
     }
     Views: {
+      analytics_attribution_breakdown: {
+        Row: {
+          first_seen: string | null
+          last_seen: string | null
+          lead_count: number | null
+          qualification_rate: number | null
+          qualified_count: number | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Relationships: []
+      }
+      analytics_attribution_gaps: {
+        Row: {
+          client_id: string | null
+          current_utm_medium: string | null
+          current_utm_source: string | null
+          email: string | null
+          first_touch_landing_page: string | null
+          first_touch_time: string | null
+          first_touch_utm_campaign: string | null
+          first_touch_utm_medium: string | null
+          first_touch_utm_source: string | null
+          fix_reason: string | null
+          lead_created_at: string | null
+          lead_id: string | null
+        }
+        Relationships: []
+      }
+      analytics_daily_overview: {
+        Row: {
+          calculator_completions: number | null
+          consultations_booked: number | null
+          conversion_rate: number | null
+          date: string | null
+          leads: number | null
+          quote_scans: number | null
+          risk_assessments: number | null
+          visitors: number | null
+        }
+        Relationships: []
+      }
+      analytics_orphaned_events: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          event_data: Json | null
+          event_id: string | null
+          event_name: string | null
+          issue: string | null
+          session_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wm_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "wm_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      analytics_spam_signals: {
+        Row: {
+          created_at: string | null
+          device_type: string | null
+          email: string | null
+          ip_hash: string | null
+          lead_id: string | null
+          lead_score_total: number | null
+          leads_from_same_ip: number | null
+          spam_indicator: string | null
+        }
+        Relationships: []
+      }
+      analytics_tool_performance: {
+        Row: {
+          avg_engagement_score: number | null
+          qualification_rate: number | null
+          qualified_leads: number | null
+          source_tool: string | null
+          total_leads: number | null
+        }
+        Relationships: []
+      }
       leads_dashboard: {
         Row: {
           chat_history: Json | null
