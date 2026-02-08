@@ -1,154 +1,260 @@
 
-# Visual Quality Assurance Fix for Full-Funnel Audit Page
 
-## Problem Analysis
+# UrgencyTicker - Gemini Cyberpunk Style + Updated Dynamic Numbers
 
-The `/admin/full-funnel-audit` page has severe contrast issues making text nearly unreadable. From the screenshot and code inspection:
-
-### Root Causes Identified
-
-1. **Accordion Component Global Override**
-   - The `AccordionItem` component in `src/components/ui/accordion.tsx` has hardcoded styling:
-     - `[background:var(--accordion,transparent)]` - Forces blue gradient on all accordions
-     - `text-black` - Forces dark text regardless of theme
-   - This works on public pages with intentional gradient backgrounds but breaks admin pages
-
-2. **Badge Color Mismatch**
-   - Status badges use `getStatusColor()` which returns `bg-primary/10 text-primary` 
-   - These semi-transparent colors appear washed out against the blue gradient background
-
-3. **Missing Theme Override**
-   - The admin audit page needs to explicitly opt-out of the gradient accordion styling
-   - Validation grid items inherit poor contrast from parent
+## Overview
+Create the urgency ticker with the cyberpunk/tech aesthetic using specific Zinc, Emerald, and Amber translucent colors, plus date-based dynamic number calculation with updated baseline values.
 
 ---
 
-## Technical Solution
-
-### File 1: `src/pages/admin/FullFunnelAudit.tsx`
-
-**Changes Required:**
-
-| Section | Current Issue | Fix |
-|---------|--------------|-----|
-| AccordionItem | Inherits blue gradient + black text | Override with `[background:transparent] bg-card border border-border text-foreground` |
-| AccordionContent validation grid | Inherits `text-black` | Add explicit `text-foreground` class |
-| Score badges | Semi-transparent on gradient | Use solid badge variants with proper contrast |
-| Event ID code blocks | `bg-muted` nearly invisible | Use `bg-background border border-border` for contrast |
-| Network capture stats | `bg-muted/50` washed out | Use `bg-card border border-border` |
-| Server-Side Parity text | Uses theme colors on gradient | Force `text-foreground` |
-
-### Specific Code Changes
-
-**1. Accordion Items - Override gradient styling:**
-```tsx
-<AccordionItem 
-  key={result.eventName} 
-  value={result.eventName}
-  className="[background:transparent] bg-card border border-border rounded-lg mb-2"
->
-```
-
-**2. AccordionTrigger - Ensure text visibility:**
-```tsx
-<AccordionTrigger className="hover:no-underline text-foreground">
-```
-
-**3. Validation Grid Items - Force foreground text:**
-```tsx
-<div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-foreground">
-```
-
-**4. Event ID Code Blocks - Higher contrast:**
-```tsx
-<code className="text-xs bg-background border border-border px-2 py-0.5 rounded text-foreground">
-```
-
-**5. Network Capture Stats - Card-style boxes:**
-```tsx
-<div className="text-center p-4 bg-card border border-border rounded-lg">
-  <div className="text-2xl font-bold text-foreground">...</div>
-  <div className="text-xs text-muted-foreground">...</div>
-</div>
-```
-
-**6. Server-Side Parity Line - Ensure readable:**
-```tsx
-<span className="text-foreground">
-  {report.serverSideParity.recommendation}
-</span>
-```
-
-**7. Score Badges - Solid styling for visibility:**
-
-Replace `getStatusColor()` returns with higher-contrast variants:
-```tsx
-const getStatusColor = (status: 'PASS' | 'PARTIAL' | 'FAIL') => {
-  switch (status) {
-    case 'PASS':
-      return 'bg-primary text-primary-foreground border-primary';
-    case 'PARTIAL':
-      return 'bg-amber-500 text-white border-amber-500';
-    case 'FAIL':
-      return 'bg-destructive text-destructive-foreground border-destructive';
-  }
-};
-```
-
----
-
-## Visual Before/After
+## Visual Design (Gemini Style)
 
 ```text
-BEFORE:
-+------------------------------------------+
-| [Blue Gradient Background]               |
-| ⚡ scanner_upload    [9.0/10 - invisible]|
-| text barely readable, badges washed out  |
-+------------------------------------------+
+┌──────────────────────────────────────────────────────────────────┐
+│  🛡️(emerald)  3,568 quotes scanned  │  🟠(amber) +19 today      │
+│  [dark zinc bg with glass effect]    │  [amber tinted section]   │
+└──────────────────────────────────────────────────────────────────┘
+```
 
-AFTER:
-+------------------------------------------+
-| [Dark Card Background with Border]       |
-| ⚡ scanner_upload    [9.0/10 - SOLID]    |
-| High contrast text, visible badges       |
-+------------------------------------------+
+**Cyberpunk Color Palette:**
+| Element | Color Class |
+|---------|-------------|
+| Container BG | `bg-zinc-900/70` (translucent dark) |
+| Container Border | `border-zinc-700/40` (subtle) |
+| Divider | `divide-zinc-700/50` |
+| Shield Icon | `text-emerald-400` |
+| Total Number | `text-zinc-100` |
+| "quotes scanned" label | `text-zinc-400` |
+| Today Section BG | `bg-amber-500/10` (tinted) |
+| Pulsing Dot | `bg-amber-400` |
+| Today Text | `text-amber-300` |
+
+---
+
+## Updated Dynamic Number Logic
+
+**Configuration:**
+| Parameter | Value |
+|-----------|-------|
+| Start Date | `2024-02-12` |
+| Base Total | `0` |
+| Growth Rate | `4.9` quotes/day |
+
+**Calculation Formula:**
+```text
+Total = 0 + (4.9 × Days Since Feb 12, 2024) + Today's Count
+
+Today = Seeded random (12-28) based on date string hash
+```
+
+**Example Progression:**
+| Date | Days Passed | Today | Total |
+|------|-------------|-------|-------|
+| 2024-02-12 | 0 | 17 | 0 + (0×4.9) + 17 = 17 |
+| 2025-02-08 | 362 | 21 | 0 + (362×4.9) + 21 = 1,795 |
+| 2026-02-08 | 727 | 19 | 0 + (727×4.9) + 19 = 3,581 |
+
+**Note:** Today (Feb 8, 2026) shows approximately **3,568** quotes as expected.
+
+---
+
+## Technical Implementation
+
+### File 1: `src/components/quote-scanner/UrgencyTicker.tsx` (NEW)
+
+**Complete Component:**
+
+```tsx
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Shield } from 'lucide-react';
+
+// Generates consistent "random" number for a date string
+// Same seed = same number (no flickering on refresh)
+const getDailyRandom = (seed: string, min: number, max: number) => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  const random = (Math.abs(hash) % 1000) / 1000;
+  return Math.floor(random * (max - min + 1)) + min;
+};
+
+// easeOutExpo count animation
+function useCountUp(end: number, duration: number = 2500) {
+  const [count, setCount] = useState(0);
+  const prevEndRef = useRef(0);
+
+  useEffect(() => {
+    if (end === prevEndRef.current) return;
+    prevEndRef.current = end;
+    
+    if (end === 0) {
+      setCount(0);
+      return;
+    }
+
+    let startTime: number | null = null;
+    let animationFrame: number;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = timestamp - startTime;
+
+      if (progress < duration) {
+        const t = progress / duration;
+        const ease = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+        setCount(Math.floor(ease * end));
+        animationFrame = requestAnimationFrame(animate);
+      } else {
+        setCount(end);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [end, duration]);
+
+  return count;
+}
+
+export function UrgencyTicker() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Dynamic date-based calculation with UPDATED VALUES
+  const { total, today } = useMemo(() => {
+    const startDate = new Date('2024-02-12'); // Updated start date
+    const now = new Date();
+    
+    const daysPassed = Math.floor(
+      (now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    
+    // Today's count: seeded random 12-28
+    const todayString = now.toISOString().split('T')[0];
+    const todayCount = getDailyRandom(todayString, 12, 28);
+
+    // Total: base + growth + today (UPDATED VALUES)
+    const baseTotal = 0;
+    const growthRate = 4.9;
+    const currentTotal = Math.floor(baseTotal + (daysPassed * growthRate) + todayCount);
+
+    return { total: currentTotal, today: todayCount };
+  }, []);
+
+  // Single IntersectionObserver for unified trigger
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Both animate simultaneously
+  const totalCount = useCountUp(isVisible ? total : 0, 2500);
+  const todayCount = useCountUp(isVisible ? today : 0, 2500);
+
+  return (
+    <div ref={ref} className="flex items-center justify-center">
+      <div className="inline-flex items-center divide-x divide-zinc-700/50 rounded-lg 
+                      bg-zinc-900/70 border border-zinc-700/40 overflow-hidden 
+                      shadow-xl backdrop-blur-sm ring-1 ring-white/5">
+        
+        {/* Left: Total Count */}
+        <div className="flex items-center gap-2 px-4 py-2.5">
+          <Shield className="w-4 h-4 text-emerald-400" />
+          <span className="font-bold text-zinc-100 tabular-nums">
+            {totalCount.toLocaleString()}
+          </span>
+          <span className="text-xs text-zinc-400">quotes scanned</span>
+        </div>
+
+        {/* Right: Today Count */}
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 h-full">
+          <div className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full 
+                           rounded-full bg-amber-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
+          </div>
+          <span className="text-sm font-semibold text-amber-300 tabular-nums">
+            +{todayCount} today
+          </span>
+        </div>
+
+      </div>
+    </div>
+  );
+}
 ```
 
 ---
 
-## Theme Alignment Verification
+### File 2: `src/pages/QuoteScanner.tsx` (MODIFY)
 
-| Token | Expected Usage | Applied |
-|-------|---------------|---------|
-| `bg-background` | Page base | Yes (container) |
-| `bg-card` | Elevated surfaces | Yes (accordions, stats) |
-| `text-foreground` | Primary text | Yes (event names, validation) |
-| `text-muted-foreground` | Secondary text | Yes (labels, hints) |
-| `border-border` | Standard borders | Yes (all cards/accordions) |
-| `text-primary` | Accent/links | Yes (pass indicators) |
-| `text-destructive` | Errors/fails | Yes (fail indicators) |
+**Add import and placement:**
+
+```tsx
+// Add import at top
+import { UrgencyTicker } from '@/components/quote-scanner/UrgencyTicker';
+
+// After QuoteScannerHero, before upload section:
+<QuoteScannerHero />
+
+<div className="container px-4 pb-6 -mt-6">
+  <UrgencyTicker />
+</div>
+
+<section className="py-12 md:py-20">
+  {/* Upload zone grid... */}
+</section>
+```
 
 ---
 
-## No New Components
+## Animation Timeline
 
-All fixes use existing Tailwind utility classes on standard shadcn components:
-- No new CSS files
-- No new component imports
-- Only inline class overrides
+```text
+Time: 0ms ──────────────────────────────────────────► 2500ms
+      │                                               │
+      ├─ Viewport entry → isVisible = true            │
+      │                                               │
+      ├─ Total:  0 ─────────────────────► 3,568       │
+      │          └── easeOutExpo curve                │
+      │                                               │
+      ├─ Today:  0 ─────────────────────► 19          │
+      │          └── SAME curve, SAME start time      │
+      │                                               │
+      └── Both land together, unified feel ───────────┘
+```
 
 ---
 
-## Files to Modify
+## Key Features Summary
 
-| File | Changes |
-|------|---------|
-| `src/pages/admin/FullFunnelAudit.tsx` | Override accordion styling, fix badge contrast, update stat boxes |
+| Feature | Implementation |
+|---------|----------------|
+| Cyberpunk Aesthetic | Zinc/Emerald/Amber palette, glass effect |
+| Daily Growth | ~4.9 quotes/day from Feb 12, 2024 |
+| Current Total | ~3,568 as of Feb 8, 2026 |
+| Consistent "Today" | Seeded hash ensures same number all day (12-28 range) |
+| Unified Animation | Single trigger, both numbers animate together |
+| No Backend Needed | Pure client-side calculation |
+| Mobile Compatible | `inline-flex` keeps side-by-side on all screens |
 
-## Implementation Notes
+---
 
-1. The `[background:transparent]` CSS-in-class syntax explicitly overrides the `var(--accordion)` gradient
-2. Adding `bg-card` after the transparent override applies the theme-correct background
-3. All text elements get explicit `text-foreground` to override the `text-black` from accordion component
-4. Badge variants switched from semi-transparent (`bg-primary/10`) to solid fills for maximum contrast
+## Files Summary
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/components/quote-scanner/UrgencyTicker.tsx` | CREATE | Gemini-style ticker with updated dynamic math |
+| `src/pages/QuoteScanner.tsx` | MODIFY | Import and place ticker after hero |
+
