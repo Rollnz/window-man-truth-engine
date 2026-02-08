@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
+import { useTickerStats } from '@/hooks/useTickerStats';
 import { useCountUp } from './useCountUp';
 
 type TickerVariant = 'cyberpunk' | 'minimal' | 'homepage';
@@ -65,7 +65,7 @@ export function UrgencyTicker({
 }: UrgencyTickerProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(!animated);
-  const { total, today } = useProjectedQuotes();
+  const { total, today } = useTickerStats();
 
   const styles = variantStyles[variant];
   const sizes = sizeStyles[size];

@@ -1,6 +1,6 @@
 import { ScanSearch, DollarSign, AlertTriangle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
+import { useTickerStats } from '@/hooks/useTickerStats';
 
 const testimonials = [
   {
@@ -14,7 +14,7 @@ const testimonials = [
 ];
 
 export function ScannerSocialProof() {
-  const { total } = useProjectedQuotes();
+  const { total } = useTickerStats();
 
   const stats = [
     {

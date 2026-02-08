@@ -122,3 +122,6 @@ verify_jwt = false
 
 [functions.check-tracking-health]
 verify_jwt = false
+
+[functions.get-ticker-stats]
+verify_jwt = false

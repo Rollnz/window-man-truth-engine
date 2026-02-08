@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Shield, Scan, Lock, Sparkles } from "lucide-react";
 import { AUDIT_CONFIG } from "@/config/auditConfig";
-import { useProjectedQuotes } from "@/hooks/useProjectedQuotes";
+import { useTickerStats } from "@/hooks/useTickerStats";
 
 interface ScannerHeroWindowProps {
   onScanClick: () => void;
@@ -12,7 +12,7 @@ interface ScannerHeroWindowProps {
 }
 
 export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHeroWindowProps) {
-  const { total } = useProjectedQuotes();
+  const { total } = useTickerStats();
   const [isVisible, setIsVisible] = useState(false);
   const [mousePosition, setMousePosition] = useState({
     x: 50,

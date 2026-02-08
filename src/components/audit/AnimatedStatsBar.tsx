@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { TrendingDown, FileSearch, ShieldCheck, Users } from 'lucide-react';
-import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
+import { useTickerStats } from '@/hooks/useTickerStats';
 
 interface StatItem {
   icon: React.ReactNode;
@@ -100,7 +100,7 @@ function StatCard({ stat, index }: { stat: StatItem; index: number }) {
 }
 
 export function AnimatedStatsBar() {
-  const { total } = useProjectedQuotes();
+  const { total } = useTickerStats();
 
   const stats: StatItem[] = [
     {
