@@ -16,124 +16,128 @@ interface NoQuotePivotSectionProps {
 
 /**
  * NoQuotePivotSection
- * Main conversion engine for users without quotes.
- * WindowMan voice, fear injection, advantage cards, and CTA.
+ * Blueprint Breakout conversion engine with forced dark theme,
+ * glassmorphism cards, and pulsing CTA.
  */
 export function NoQuotePivotSection({ onGoogleAuth, onEmailSubmit, isLoading, isSubmitted }: NoQuotePivotSectionProps) {
   // SUCCESS STATE - User has submitted and is ready for Vault
   if (isSubmitted) {
     return (
-      <div className="max-w-[680px] mx-auto p-8 md:p-10 rounded-xl border border-border/40 bg-background relative overflow-hidden">
-        {/* Optional: Very subtle grid texture overlay */}
+      <section className="relative py-16 md:py-24 bg-slate-950 overflow-hidden">
+        {/* Blueprint grid background */}
         <div 
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px),
-                              linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`,
-            backgroundSize: '20px 20px',
+            backgroundImage: `
+              linear-gradient(90deg, rgba(56,189,248,0.08) 1px, transparent 1px),
+              linear-gradient(rgba(56,189,248,0.08) 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px',
           }}
         />
         
-        <div className="relative z-10 text-center">
-          {/* Success Icon */}
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
-            <CheckCircle className="w-8 h-8 text-emerald-500" />
-          </div>
-          
-          {/* Success Message */}
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            You're In. Your Vault is Ready.
-          </h2>
-          
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            I just saved your place. When you get your first quote, 
-            upload it here and I'll tell you if it's worth signing.
-          </p>
-          
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link to="/vault">
-                <Vault className="w-5 h-5 mr-2" />
-                Open My Vault
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link to="/spec-checklist-guide">
-                Get Quote Checklist
-              </Link>
-            </Button>
+        <div className="container relative z-10 max-w-6xl mx-auto px-4">
+          <div className="max-w-xl mx-auto text-center">
+            {/* Success Icon */}
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-emerald-400" />
+            </div>
+            
+            {/* Success Message */}
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-3">
+              You're In. Your Vault is Ready.
+            </h2>
+            
+            <p className="text-slate-300 mb-8">
+              I just saved your place. When you get your first quote, 
+              upload it here and I'll tell you if it's worth signing.
+            </p>
+            
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button asChild size="lg" className="bg-sky-500 hover:bg-sky-400 text-white h-12">
+                <Link to="/vault">
+                  <Vault className="w-5 h-5 mr-2" />
+                  Open My Vault
+                </Link>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                asChild
+                className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white h-12"
+              >
+                <Link to="/spec-checklist-guide">
+                  Get Quote Checklist
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
     );
   }
 
   // DEFAULT FORM STATE
   return (
-    <div className="max-w-[680px] mx-auto p-8 md:p-10 rounded-xl border border-border/40 bg-background relative overflow-hidden">
-      {/* Optional: Very subtle grid texture overlay */}
+    <section className="relative py-16 md:py-24 bg-slate-950 overflow-hidden">
+      {/* Blueprint grid background */}
       <div 
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px),
-                            linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`,
-          backgroundSize: '20px 20px',
+          backgroundImage: `
+            linear-gradient(90deg, rgba(56,189,248,0.08) 1px, transparent 1px),
+            linear-gradient(rgba(56,189,248,0.08) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px',
         }}
       />
       
-      <div className="relative z-10">
+      <div className="container relative z-10 max-w-6xl mx-auto px-4">
         {/* Headline + Intro Copy */}
-        <div className="text-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-6">
             Perfect. You don't have a quote yet.
           </h2>
           
-          <p className="text-lg text-foreground mb-3">
+          <p className="text-xl md:text-2xl text-sky-400 font-medium mb-4">
             That's actually the best time to find me.
           </p>
           
-          <p className="text-foreground leading-relaxed mb-3">
+          <p className="text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
             I'm WindowMan — and I try to meet homeowners{' '}
-            <em className="text-primary">before</em> they get quotes, not after.
-            <br />
+            <em className="text-white">before</em> they get quotes, not after.
             This is when I can be the most helpful to you.
-          </p>
-          
-          <p className="text-muted-foreground text-sm">
-            Once prices are on paper, the game changes.
-            <br />
-            Before that? You still control the conversation.
           </p>
         </div>
 
         {/* Story + Fear Injection Block */}
-        <div className="text-center mb-8 px-4">
-          <p className="text-sm md:text-base text-muted-foreground leading-loose">
+        <div className="text-center mb-10 max-w-2xl mx-auto">
+          <p className="text-sm md:text-base text-slate-400 leading-loose">
             I see this pattern all the time.
             <br />
             Someone gets door-knocked on a Friday… presentation Saturday… paperwork Sunday.
           </p>
           
-          <p className="text-sm md:text-base text-foreground/80 mt-4 leading-loose italic">
+          <p className="text-sm md:text-base text-slate-300 mt-4 leading-loose italic">
             A month later they're staring at their bank statement thinking,
             <br />
-            <span className="text-foreground">"What the hell just happened?"</span>
+            <span className="text-white">"What the hell just happened?"</span>
           </p>
           
-          <p className="text-sm text-muted-foreground mt-4">
+          <p className="text-sm text-slate-500 mt-4">
             It moves fast when you're not prepared.
           </p>
         </div>
 
-        {/* Advantage Grid (Achilles Heel Stack) */}
+        {/* Advantage Grid (3 Pillars) */}
         <VaultAdvantageGrid />
 
         {/* Regret Micro-Injection */}
-        <p className="text-center text-sm italic text-muted-foreground/80 mt-8">
+        <p className="text-center text-sm italic text-slate-500 mt-10">
           Almost every homeowner I work with says later,
           <br />
-          <span className="text-foreground/70">"I wish I had saved this before my first quote."</span>
+          <span className="text-slate-400">"I wish I had saved this before my first quote."</span>
         </p>
 
         {/* Vault CTA Block */}
@@ -143,6 +147,6 @@ export function NoQuotePivotSection({ onGoogleAuth, onEmailSubmit, isLoading, is
           isLoading={isLoading}
         />
       </div>
-    </div>
+    </section>
   );
 }
