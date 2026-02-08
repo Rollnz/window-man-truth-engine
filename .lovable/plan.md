@@ -1,309 +1,140 @@
 
 
-# Updated Analytics Dashboard Migration — Optimized Indexes
+# Fix: StatusBadge Crash — Mismatched Lead Quality Values
 
-## Index Optimizations Applied
+## Problem Summary
 
-Your requested changes have been incorporated:
+The `/admin/leads` page crashes because the `QualityBadge` component receives `lead_quality` values from the database that aren't mapped in the TypeScript configuration.
 
-### 1. Session Index — Composite with DESC ordering
-```sql
--- OLD (single column):
-CREATE INDEX IF NOT EXISTS idx_sessions_anonymous_id ON public.wm_sessions (anonymous_id);
+**Database values:** `window_shopper` (52), `curious` (9), `qualified` (9), `engaged` (2), `hot` (1)
 
--- NEW (composite for efficient sorting):
-CREATE INDEX IF NOT EXISTS idx_sessions_client_created_desc 
-    ON public.wm_sessions (anonymous_id, created_at DESC);
-```
+**TypeScript config:** Only maps `cold`, `warm`, `hot`, `qualified`
 
-**Why this is faster:** The Attribution Gaps view uses a LATERAL join that finds the first session per client ordered by `created_at ASC`. With a descending index, Postgres can efficiently seek to the first row without scanning all sessions for that client.
-
-### 2. Event Index — For Ghost Lead Detection
-```sql
--- NEW (enables efficient JOIN in orphaned_events view):
-CREATE INDEX IF NOT EXISTS idx_events_session_id 
-    ON public.wm_events (session_id);
-```
-
-**Why this is needed:** The `analytics_orphaned_events` view joins `wm_events` to `wm_sessions` on `session_id`. Without this index, the join requires a full table scan.
+When the component receives an unmapped value like `"window_shopper"`, it crashes trying to access `.color` on `undefined`.
 
 ---
 
-## Complete SQL Migration (Ready to Execute)
+## Solution
 
-```sql
--- Analytics Dashboard Views & AI-Ready Schema Migration
--- Adds analytics views for Truth Engine dashboard + prepares schema for AI features
+Update `src/types/crm.ts` and `src/components/crm/StatusBadge.tsx` to:
 
--- ============================================================
--- PART 1: AI-Ready Columns on Leads Table
--- ============================================================
-ALTER TABLE public.leads
-ADD COLUMN IF NOT EXISTS ai_psych_profile text,
-ADD COLUMN IF NOT EXISTS ai_sales_hook text;
+1. Add missing quality values to the TypeScript type and config
+2. Add a defensive fallback in the badge component to prevent crashes on unknown values
 
-COMMENT ON COLUMN public.leads.ai_psych_profile IS 'AI-generated psychological profile for personalized outreach';
-COMMENT ON COLUMN public.leads.ai_sales_hook IS 'AI-generated sales hook based on lead behavior and context';
+---
 
--- ============================================================
--- PART 2: Analytics Daily Overview View
--- ============================================================
-CREATE OR REPLACE VIEW public.analytics_daily_overview
-WITH (security_invoker = true)
-AS
-SELECT
-    DATE(s.created_at) AS date,
-    COUNT(DISTINCT s.anonymous_id) AS visitors,
-    COUNT(DISTINCT l.id) AS leads,
-    ROUND(
-        COUNT(DISTINCT l.id)::numeric / 
-        NULLIF(COUNT(DISTINCT s.anonymous_id), 0) * 100,
-        2
-    ) AS conversion_rate,
-    COUNT(DISTINCT CASE 
-        WHEN e.event_name = 'quote_scanned' THEN e.id 
-    END) AS quote_scans,
-    COUNT(DISTINCT CASE 
-        WHEN e.event_name IN ('cost_calculator_completed', 'calculator_completed') THEN e.id 
-    END) AS calculator_completions,
-    COUNT(DISTINCT CASE 
-        WHEN e.event_name = 'risk_diagnostic_completed' THEN e.id 
-    END) AS risk_assessments,
-    COUNT(DISTINCT CASE 
-        WHEN e.event_name = 'consultation_booked' THEN e.id 
-    END) AS consultations_booked
-FROM public.wm_sessions s
-LEFT JOIN public.leads l ON DATE(l.created_at) = DATE(s.created_at) AND l.lead_status != 'spam'
-LEFT JOIN public.wm_events e ON e.session_id = s.id
-WHERE s.created_at >= NOW() - INTERVAL '90 days'
-GROUP BY DATE(s.created_at)
-ORDER BY date DESC;
+## Implementation Details
 
--- ============================================================
--- PART 3: Attribution Breakdown View
--- ============================================================
-CREATE OR REPLACE VIEW public.analytics_attribution_breakdown
-WITH (security_invoker = true)
-AS
-SELECT
-    COALESCE(l.utm_source, '(direct)') AS utm_source,
-    COALESCE(l.utm_medium, '(none)') AS utm_medium,
-    COALESCE(l.utm_campaign, '(no campaign)') AS utm_campaign,
-    COUNT(*) AS lead_count,
-    COUNT(CASE WHEN l.lead_status = 'qualified' THEN 1 END) AS qualified_count,
-    ROUND(
-        COUNT(CASE WHEN l.lead_status = 'qualified' THEN 1 END)::numeric / 
-        NULLIF(COUNT(*), 0) * 100,
-        1
-    ) AS qualification_rate,
-    DATE(MIN(l.created_at)) AS first_seen,
-    DATE(MAX(l.created_at)) AS last_seen
-FROM public.leads l
-WHERE l.created_at >= NOW() - INTERVAL '90 days'
-  AND l.lead_status != 'spam'
-GROUP BY 
-    COALESCE(l.utm_source, '(direct)'),
-    COALESCE(l.utm_medium, '(none)'),
-    COALESCE(l.utm_campaign, '(no campaign)')
-ORDER BY lead_count DESC;
+### Step 1: Update `src/types/crm.ts`
 
--- ============================================================
--- PART 4: Tool Performance View
--- ============================================================
-CREATE OR REPLACE VIEW public.analytics_tool_performance
-WITH (security_invoker = true)
-AS
-SELECT
-    l.source_tool,
-    COUNT(*) AS total_leads,
-    COUNT(CASE WHEN l.lead_status = 'qualified' THEN 1 END) AS qualified_leads,
-    ROUND(
-        COUNT(CASE WHEN l.lead_status = 'qualified' THEN 1 END)::numeric / 
-        NULLIF(COUNT(*), 0) * 100,
-        2
-    ) AS qualification_rate,
-    ROUND(AVG(l.lead_score_total), 1) AS avg_engagement_score
-FROM public.leads l
-WHERE l.created_at >= NOW() - INTERVAL '30 days'
-  AND l.lead_status != 'spam'
-GROUP BY l.source_tool
-ORDER BY total_leads DESC;
+Expand `LeadQuality` type and `LEAD_QUALITY_CONFIG` to include all database values:
 
--- ============================================================
--- PART 5: Attribution Gaps Detection View (Attribution Time Machine)
--- ============================================================
-CREATE OR REPLACE VIEW public.analytics_attribution_gaps
-WITH (security_invoker = true)
-AS
-SELECT 
-    l.id AS lead_id,
-    l.email,
-    l.utm_source AS current_utm_source,
-    l.utm_medium AS current_utm_medium,
-    l.client_id,
-    l.created_at AS lead_created_at,
-    first_session.utm_source AS first_touch_utm_source,
-    first_session.utm_medium AS first_touch_utm_medium,
-    first_session.utm_campaign AS first_touch_utm_campaign,
-    first_session.landing_page AS first_touch_landing_page,
-    first_session.created_at AS first_touch_time,
-    'Missing attribution can be healed from first touch' AS fix_reason
-FROM public.leads l
-CROSS JOIN LATERAL (
-    SELECT 
-        s.utm_source, 
-        s.utm_medium, 
-        s.utm_campaign,
-        s.landing_page,
-        s.created_at
-    FROM public.wm_sessions s
-    WHERE s.anonymous_id = l.client_id
-      AND s.utm_source IS NOT NULL
-    ORDER BY s.created_at ASC
-    LIMIT 1
-) first_session
-WHERE 
-    l.utm_source IS NULL 
-    AND l.client_id IS NOT NULL
-    AND first_session.utm_source IS NOT NULL
-    AND l.created_at >= NOW() - INTERVAL '90 days'
-    AND l.lead_status != 'spam';
+```typescript
+// Before
+export type LeadQuality = "cold" | "warm" | "hot" | "qualified";
 
--- ============================================================
--- PART 6: Orphaned Events Detection View (Ghost Lead Resurrector)
--- ============================================================
-CREATE OR REPLACE VIEW public.analytics_orphaned_events
-WITH (security_invoker = true)
-AS
-SELECT 
-    e.id AS event_id,
-    e.event_name,
-    e.session_id,
-    e.event_data,
-    e.created_at,
-    s.anonymous_id AS client_id,
-    'Event exists but no matching lead found' AS issue
-FROM public.wm_events e
-JOIN public.wm_sessions s ON e.session_id = s.id
-WHERE 
-    e.event_name IN ('lead_submission_success', 'lead_captured', 'consultation_booked', 'form_submission')
-    AND e.created_at >= NOW() - INTERVAL '30 days'
-    AND NOT EXISTS (
-        SELECT 1 FROM public.leads l 
-        WHERE l.original_session_id = e.session_id
-           OR l.client_id = s.anonymous_id
-    )
-ORDER BY e.created_at DESC
-LIMIT 100;
+// After
+export type LeadQuality = 
+  | "cold" 
+  | "warm" 
+  | "hot" 
+  | "qualified"
+  | "window_shopper"  // Low intent browser
+  | "curious"         // Medium interest
+  | "engaged";        // Active but not yet qualified
+```
 
--- ============================================================
--- PART 7: Spam Signals Detection View
--- ============================================================
-CREATE OR REPLACE VIEW public.analytics_spam_signals
-WITH (security_invoker = true)
-AS
-SELECT 
-    l.id AS lead_id,
-    l.email,
-    l.ip_hash,
-    l.created_at,
-    l.lead_score_total,
-    l.device_type,
-    COUNT(*) OVER (PARTITION BY l.ip_hash) AS leads_from_same_ip,
-    CASE 
-        WHEN l.lead_score_total = 0 THEN 'zero_engagement'
-        WHEN COUNT(*) OVER (PARTITION BY l.ip_hash) > 3 THEN 'ip_cluster'
-        WHEN l.email LIKE '%test%' OR l.email LIKE '%fake%' OR l.email LIKE '%example.com' THEN 'suspicious_email'
-        ELSE 'other'
-    END AS spam_indicator
-FROM public.leads l
-WHERE 
-    l.created_at >= NOW() - INTERVAL '30 days'
-    AND l.lead_status != 'spam'
-    AND (
-        l.lead_score_total = 0 
-        OR l.email LIKE '%test%' 
-        OR l.email LIKE '%fake%'
-        OR l.email LIKE '%example.com'
-    )
-ORDER BY l.created_at DESC;
+Add new entries to `LEAD_QUALITY_CONFIG`:
 
--- ============================================================
--- PART 8: Blocked Traffic Table for Spam Management
--- ============================================================
-CREATE TABLE IF NOT EXISTS public.blocked_traffic (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    ip_hash text NOT NULL,
-    reason text NOT NULL DEFAULT 'spam',
-    blocked_at timestamptz NOT NULL DEFAULT now(),
-    blocked_by uuid REFERENCES auth.users(id),
-    expires_at timestamptz,
-    created_at timestamptz NOT NULL DEFAULT now()
+```typescript
+export const LEAD_QUALITY_CONFIG: Record<LeadQuality, { label: string; color: string }> = {
+  cold: { label: "Cold", color: "bg-blue-100 text-blue-800" },
+  warm: { label: "Warm", color: "bg-amber-100 text-amber-800" },
+  hot: { label: "Hot", color: "bg-orange-100 text-orange-800" },
+  qualified: { label: "Qualified", color: "bg-green-100 text-green-800" },
+  // New values from database
+  window_shopper: { label: "Window Shopper", color: "bg-slate-100 text-slate-600" },
+  curious: { label: "Curious", color: "bg-sky-100 text-sky-700" },
+  engaged: { label: "Engaged", color: "bg-purple-100 text-purple-700" },
+};
+```
+
+### Step 2: Add Defensive Fallback in `StatusBadge.tsx`
+
+Even with the config updated, add a fallback to prevent future crashes from unknown values:
+
+```typescript
+// QualityBadge component - add safe fallback
+export const QualityBadge = forwardRef<HTMLSpanElement, QualityBadgeProps>(
+  ({ quality, size = 'sm' }, ref) => {
+    // Defensive fallback for unknown quality values
+    const config = LEAD_QUALITY_CONFIG[quality] ?? {
+      label: quality || 'Unknown',
+      color: 'bg-gray-100 text-gray-600',
+    };
+    
+    return (
+      <span 
+        ref={ref}
+        className={cn(
+          'inline-flex items-center rounded-full font-medium',
+          config.color,
+          size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'
+        )}
+      >
+        {config.label}
+      </span>
+    );
+  }
 );
+```
 
-CREATE INDEX IF NOT EXISTS idx_blocked_traffic_ip_hash ON public.blocked_traffic (ip_hash);
+### Step 3: Add Same Fallback to `StatusBadge`
 
--- Enable RLS on blocked_traffic
-ALTER TABLE public.blocked_traffic ENABLE ROW LEVEL SECURITY;
+Apply the same defensive pattern to `StatusBadge` for `status` values:
 
--- Only admins can manage blocked traffic
-CREATE POLICY "Admins can view blocked_traffic"
-    ON public.blocked_traffic FOR SELECT
-    USING (has_role(auth.uid(), 'admin'::app_role));
-
-CREATE POLICY "Admins can insert blocked_traffic"
-    ON public.blocked_traffic FOR INSERT
-    WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
-
-CREATE POLICY "Admins can delete blocked_traffic"
-    ON public.blocked_traffic FOR DELETE
-    USING (has_role(auth.uid(), 'admin'::app_role));
-
--- ============================================================
--- PART 9: Performance Indexes (OPTIMIZED per user request)
--- ============================================================
-
--- OPTIMIZED: Composite index for session lookups with chronological ordering
--- Supports the Attribution Gaps view's LATERAL join efficiently
-CREATE INDEX IF NOT EXISTS idx_sessions_client_created_desc 
-    ON public.wm_sessions (anonymous_id, created_at DESC);
-
--- NEW: Index for Ghost Lead detection - wm_events by session_id
-CREATE INDEX IF NOT EXISTS idx_events_session_id 
-    ON public.wm_events (session_id);
-
--- Index for lead lookups by client_id (Golden Thread)
-CREATE INDEX IF NOT EXISTS idx_leads_client_id 
-    ON public.leads (client_id) 
-    WHERE client_id IS NOT NULL;
-
--- Index for spam detection by IP
-CREATE INDEX IF NOT EXISTS idx_leads_ip_hash 
-    ON public.leads (ip_hash) 
-    WHERE ip_hash IS NOT NULL;
+```typescript
+export const StatusBadge = forwardRef<HTMLSpanElement, StatusBadgeProps>(
+  ({ status, size = 'sm' }, ref) => {
+    // Defensive fallback for unknown status values
+    const config = LEAD_STATUS_CONFIG[status] ?? {
+      title: status || 'Unknown',
+      color: 'bg-gray-500',
+      description: 'Unknown status',
+    };
+    
+    return (
+      <span 
+        ref={ref}
+        className={cn(
+          'inline-flex items-center rounded-full font-medium',
+          config.color,
+          'text-white',
+          size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'
+        )}
+      >
+        {config.title}
+      </span>
+    );
+  }
+);
 ```
 
 ---
 
-## Summary of Changes
+## Files to Modify
 
-| Component | Status |
-|-----------|--------|
-| AI Columns (`ai_psych_profile`, `ai_sales_hook`) | ✅ Included |
-| 6 Analytics Views | ✅ Included |
-| `blocked_traffic` Table + RLS | ✅ Included |
-| Session Index (composite DESC) | ✅ **OPTIMIZED** |
-| Events Index (session_id) | ✅ **ADDED** |
-| Lead Indexes (client_id, ip_hash) | ✅ Included |
+| File | Change |
+|------|--------|
+| `src/types/crm.ts` | Add `window_shopper`, `curious`, `engaged` to `LeadQuality` type and `LEAD_QUALITY_CONFIG` |
+| `src/components/crm/StatusBadge.tsx` | Add defensive fallback (nullish coalescing) to both badge components |
 
 ---
 
-## Next Steps After Migration Approval
+## Expected Result
 
-Once the database migration is approved and executed, I will proceed with:
-
-1. **Step 0** — Update `attribution.ts` with early capture fallback
-2. **Step 2** — Create edge functions (`admin-analytics`, `admin-fix-attribution`, etc.)
-3. **Step 3** — Create `useAnalyticsDashboard` hook
-4. **Step 4** — Build all UI components and replace `Analytics.tsx`
+After this fix:
+- The `/admin/leads` page will load without crashing
+- All existing quality values will display with appropriate colors
+- Future unknown values will gracefully show a gray "Unknown" badge instead of crashing
 
