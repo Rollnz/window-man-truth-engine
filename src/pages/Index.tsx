@@ -1,25 +1,75 @@
+import { lazy, Suspense } from 'react';
 import { Navbar } from '@/components/home/Navbar';
 import { HeroSection } from '@/components/home/HeroSection';
-import { MarketRealitySection } from '@/components/home/MarketRealitySection';
-import { FailurePointsSection } from '@/components/home/FailurePointsSection';
-import { WhoIsWindowManSection } from '@/components/home/WhoIsWindowManSection';
-import { SecretPlaybookSection } from '@/components/home/SecretPlaybookSection';
-import { SampleReportSection } from '@/components/home/SampleReportSection';
-import { WeaponizeAuditSection } from '@/components/home/WeaponizeAuditSection';
-import { FinalDecisionSection } from '@/components/home/FinalDecisionSection';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
 import { getBreadcrumbSchema, getPillarHasPartReferences, generateLocalBusinessSchema } from '@/lib/seoSchemas/index';
 import { getReviewBoardSchema } from '@/config/expertIdentity';
-import { UrgencyTicker } from '@/components/social-proof';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BELOW-FOLD LAZY LOADING
+// Only Hero and Navbar are critical for LCP. Everything else is deferred.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const MarketRealitySection = lazy(() => 
+  import('@/components/home/MarketRealitySection').then(m => ({ default: m.MarketRealitySection }))
+);
+const FailurePointsSection = lazy(() => 
+  import('@/components/home/FailurePointsSection').then(m => ({ default: m.FailurePointsSection }))
+);
+const WhoIsWindowManSection = lazy(() => 
+  import('@/components/home/WhoIsWindowManSection').then(m => ({ default: m.WhoIsWindowManSection }))
+);
+const SecretPlaybookSection = lazy(() => 
+  import('@/components/home/SecretPlaybookSection').then(m => ({ default: m.SecretPlaybookSection }))
+);
+const SampleReportSection = lazy(() => 
+  import('@/components/home/SampleReportSection').then(m => ({ default: m.SampleReportSection }))
+);
+const WeaponizeAuditSection = lazy(() => 
+  import('@/components/home/WeaponizeAuditSection').then(m => ({ default: m.WeaponizeAuditSection }))
+);
+const FinalDecisionSection = lazy(() => 
+  import('@/components/home/FinalDecisionSection').then(m => ({ default: m.FinalDecisionSection }))
+);
+const UrgencyTicker = lazy(() => 
+  import('@/components/social-proof').then(m => ({ default: m.UrgencyTicker }))
+);
+
+/**
+ * Lightweight skeleton for below-fold sections
+ * Prevents CLS by reserving approximate space
+ */
+function SectionSkeleton() {
+  return (
+    <div className="w-full py-20 md:py-32 flex items-center justify-center">
+      <div className="container px-4 max-w-4xl space-y-6">
+        <Skeleton className="h-10 w-3/4 mx-auto" />
+        <Skeleton className="h-6 w-1/2 mx-auto" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+          <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-48 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TickerSkeleton() {
+  return (
+    <div className="flex justify-center">
+      <Skeleton className="h-12 w-64 rounded-lg" />
+    </div>
+  );
+}
 
 const Index = () => {
   usePageTracking('homepage');
 
   const homepageSchema = [
-    // Organization schema for statewide service business (not LocalBusiness)
     generateLocalBusinessSchema(),
-    // Organization schema for brand identity
     {
       "@context": "https://schema.org",
       "@type": "Organization",
@@ -103,18 +153,45 @@ const Index = () => {
         jsonLd={[...homepageSchema, getBreadcrumbSchema('home')]}
       />
       <Navbar funnelMode={true} />
-      <div className="pt-14"> {/* Padding for fixed navbar */}
+      <div className="pt-14">
+        {/* CRITICAL PATH: Hero loads immediately for LCP */}
         <HeroSection />
+        
+        {/* UrgencyTicker - deferred but above main content */}
         <div className="container px-4 py-8 -mt-16 relative z-10">
-          <UrgencyTicker variant="homepage" size="lg" />
+          <Suspense fallback={<TickerSkeleton />}>
+            <UrgencyTicker variant="homepage" size="lg" />
+          </Suspense>
         </div>
-        <MarketRealitySection />
-        <FailurePointsSection />
-        <WhoIsWindowManSection />
-        <SecretPlaybookSection />
-        <SampleReportSection />
-        <WeaponizeAuditSection />
-        <FinalDecisionSection />
+        
+        {/* BELOW-FOLD: All sections lazy-loaded */}
+        <Suspense fallback={<SectionSkeleton />}>
+          <MarketRealitySection />
+        </Suspense>
+        
+        <Suspense fallback={<SectionSkeleton />}>
+          <FailurePointsSection />
+        </Suspense>
+        
+        <Suspense fallback={<SectionSkeleton />}>
+          <WhoIsWindowManSection />
+        </Suspense>
+        
+        <Suspense fallback={<SectionSkeleton />}>
+          <SecretPlaybookSection />
+        </Suspense>
+        
+        <Suspense fallback={<SectionSkeleton />}>
+          <SampleReportSection />
+        </Suspense>
+        
+        <Suspense fallback={<SectionSkeleton />}>
+          <WeaponizeAuditSection />
+        </Suspense>
+        
+        <Suspense fallback={<SectionSkeleton />}>
+          <FinalDecisionSection />
+        </Suspense>
       </div>
     </div>
   );
