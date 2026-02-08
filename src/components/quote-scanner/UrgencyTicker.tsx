@@ -1,17 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Shield } from 'lucide-react';
-
-// Generates consistent "random" number for a date string
-// Same seed = same number (no flickering on refresh)
-const getDailyRandom = (seed: string, min: number, max: number) => {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
-    hash |= 0;
-  }
-  const random = (Math.abs(hash) % 1000) / 1000;
-  return Math.floor(random * (max - min + 1)) + min;
-};
+import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
 
 // easeOutExpo count animation
 function useCountUp(end: number, duration: number = 2500) {
@@ -55,26 +44,8 @@ export function UrgencyTicker() {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Dynamic date-based calculation with UPDATED VALUES
-  const { total, today } = useMemo(() => {
-    const startDate = new Date('2024-02-12'); // Updated start date
-    const now = new Date();
-    
-    const daysPassed = Math.floor(
-      (now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    
-    // Today's count: seeded random 12-28
-    const todayString = now.toISOString().split('T')[0];
-    const todayCount = getDailyRandom(todayString, 12, 28);
-
-    // Total: base + growth + today (UPDATED VALUES)
-    const baseTotal = 0;
-    const growthRate = 4.9;
-    const currentTotal = Math.floor(baseTotal + (daysPassed * growthRate) + todayCount);
-
-    return { total: currentTotal, today: todayCount };
-  }, []);
+  // Use shared hook for quote calculations
+  const { total, today } = useProjectedQuotes();
 
   // Single IntersectionObserver for unified trigger
   useEffect(() => {

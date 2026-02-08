@@ -4,12 +4,15 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Shield, Scan, Lock, Sparkles } from "lucide-react";
 import { AUDIT_CONFIG } from "@/config/auditConfig";
+import { useProjectedQuotes } from "@/hooks/useProjectedQuotes";
 
 interface ScannerHeroWindowProps {
   onScanClick: () => void;
   onViewSampleClick?: () => void;
 }
+
 export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHeroWindowProps) {
+  const { total } = useProjectedQuotes();
   const [isVisible, setIsVisible] = useState(false);
   const [mousePosition, setMousePosition] = useState({
     x: 50,
@@ -285,7 +288,7 @@ export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHer
         <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500 px-4">
           <div className="flex items-center gap-2 bg-slate-900/50 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-800/50">
             <Shield className="w-4 h-4 text-emerald-500" />
-            <span>12,847+ Quotes Scanned</span>
+            <span>{total.toLocaleString()}+ Quotes Scanned</span>
           </div>
           <div className="flex items-center gap-2 bg-slate-900/50 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-800/50">
             <Shield className="w-4 h-4 text-emerald-500" />

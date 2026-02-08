@@ -1,29 +1,6 @@
 import { ScanSearch, DollarSign, AlertTriangle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const stats = [
-  {
-    icon: ScanSearch,
-    value: '12,847',
-    label: 'Quotes Scanned',
-    color: 'text-rose-500',
-    bgColor: 'bg-rose-500/10',
-  },
-  {
-    icon: DollarSign,
-    value: '$4.2M+',
-    label: 'Overcharges Detected',
-    color: 'text-emerald-500',
-    bgColor: 'bg-emerald-500/10',
-  },
-  {
-    icon: AlertTriangle,
-    value: '94%',
-    label: 'Found At Least One Red Flag',
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-500/10',
-  },
-];
+import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
 
 const testimonials = [
   {
@@ -37,6 +14,33 @@ const testimonials = [
 ];
 
 export function ScannerSocialProof() {
+  const { total } = useProjectedQuotes();
+
+  const stats = [
+    {
+      icon: ScanSearch,
+      value: total.toLocaleString(),
+      label: 'Quotes Scanned',
+      color: 'text-rose-500',
+      bgColor: 'bg-rose-500/10',
+    },
+    {
+      icon: DollarSign,
+      value: '$4.2M+',
+      label: 'Overcharges Detected',
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-500/10',
+    },
+    {
+      icon: AlertTriangle,
+      value: '94%',
+      label: 'Found At Least One Red Flag',
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-500/10',
+    },
+  ];
+
+  
   return (
     <section className="py-12 md:py-16 bg-muted/30">
       <div className="container px-4">

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, Lock, Shield, ArrowRight } from 'lucide-react';
 import { PathSelectorProps, AuditPath } from '@/types/audit';
 import { trackEvent, trackModalOpen } from '@/lib/gtm';
+import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
 
 /**
  * Path selector for the audit scanner modal.
@@ -16,6 +17,8 @@ import { trackEvent, trackModalOpen } from '@/lib/gtm';
  * - "No, not yet" → Blue outline (Path B)
  */
 export function PathSelector({ onSelectPath }: PathSelectorProps) {
+  const { total } = useProjectedQuotes();
+
   // Track modal opened on mount
   useEffect(() => {
     trackModalOpen({ modalName: 'audit_scanner' });
@@ -98,7 +101,7 @@ export function PathSelector({ onSelectPath }: PathSelectorProps) {
         <p className="text-xs text-slate-500 mb-2">Trusted by Florida homeowners</p>
         <div className="flex items-center justify-center gap-6 text-sm">
           <div className="text-center">
-            <span className="block text-lg font-bold text-orange-400">12,847+</span>
+            <span className="block text-lg font-bold text-orange-400">{total.toLocaleString()}+</span>
             <span className="text-slate-500">Quotes scanned</span>
           </div>
           <div className="w-px h-8 bg-slate-700" />
