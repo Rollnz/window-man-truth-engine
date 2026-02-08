@@ -19,6 +19,7 @@ import { LeverageOptionsSection } from '@/components/sample-report/LeverageOptio
 import { CloserSection } from '@/components/sample-report/CloserSection';
 import { FAQSection } from '@/components/sample-report/FAQSection';
 import { SampleReportLeadModal } from '@/components/sample-report/SampleReportLeadModal';
+import { UrgencyTicker } from '@/components/social-proof';
 import { PreQuoteLeadModal } from '@/components/sample-report/PreQuoteLeadModal';
 
 const SampleReport = () => {
@@ -115,6 +116,10 @@ const SampleReport = () => {
       <SEO title="Sample AI Report - See What Your Audit Looks Like | Window Man" description="View a real example of our AI window quote audit. See the scorecard, risk flags, and plain-English findings before you upload your own estimate. 100% free, no obligation." canonicalUrl="https://itswindowman.com/sample-report" />
       <Navbar funnelMode={true} />
       <SampleReportHeader onOpenLeadModal={handleOpenLeadModal} />
+      
+      <div className="container px-4 py-6">
+        <UrgencyTicker variant="minimal" />
+      </div>
 
       {/* Lead Capture Modal (2-step flow) - for users with quotes */}
       <SampleReportLeadModal

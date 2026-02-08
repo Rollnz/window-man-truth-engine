@@ -26,7 +26,7 @@ import { WindowCalculatorTeaser } from '@/components/quote-scanner/WindowCalcula
 import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChecklist';
 // Vault Pivot Conversion Engine
 import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
-import { UrgencyTicker } from '@/components/quote-scanner/UrgencyTicker';
+import { UrgencyTicker } from '@/components/social-proof';
 // Attribution & tracking for NoQuotePivotSection handler
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';

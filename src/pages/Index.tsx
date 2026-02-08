@@ -11,6 +11,7 @@ import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
 import { getBreadcrumbSchema, getPillarHasPartReferences, generateLocalBusinessSchema } from '@/lib/seoSchemas/index';
 import { getReviewBoardSchema } from '@/config/expertIdentity';
+import { UrgencyTicker } from '@/components/social-proof';
 
 const Index = () => {
   usePageTracking('homepage');
@@ -104,6 +105,9 @@ const Index = () => {
       <Navbar funnelMode={true} />
       <div className="pt-14"> {/* Padding for fixed navbar */}
         <HeroSection />
+        <div className="container px-4 py-8 -mt-16 relative z-10">
+          <UrgencyTicker variant="homepage" size="lg" />
+        </div>
         <MarketRealitySection />
         <FailurePointsSection />
         <WhoIsWindowManSection />
