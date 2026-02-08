@@ -157,7 +157,18 @@ const captureAttributionFromUrl = (): AttributionData => {
   const url = new URL(window.location.href);
   const pick = (key: string) => url.searchParams.get(key) ?? undefined;
   
-  const fbclid = pick('fbclid');
+  // EARLY CAPTURE FALLBACK: Check sessionStorage for data captured
+  // synchronously in index.html before any URL cleaning could occur
+  let earlyCapture: Record<string, string | undefined> = {};
+  try {
+    const early = sessionStorage.getItem('wm_early_attribution');
+    if (early) {
+      earlyCapture = JSON.parse(early);
+    }
+  } catch { /* ignore parse errors */ }
+  
+  // URL params take priority, then fall back to early capture
+  const fbclid = pick('fbclid') || earlyCapture.fbclid;
   let fbc = getFbCookie('_fbc');
   const fbp = getFbCookie('_fbp');
   
@@ -173,16 +184,17 @@ const captureAttributionFromUrl = (): AttributionData => {
   }
   
   const data: AttributionData = {
-    utm_source: pick('utm_source'),
-    utm_medium: pick('utm_medium'),
-    utm_campaign: pick('utm_campaign'),
-    utm_term: pick('utm_term'),
-    utm_content: pick('utm_content'),
-    gclid: pick('gclid'),
-    msclkid: pick('msclkid'),
+    utm_source: pick('utm_source') || earlyCapture.utm_source,
+    utm_medium: pick('utm_medium') || earlyCapture.utm_medium,
+    utm_campaign: pick('utm_campaign') || earlyCapture.utm_campaign,
+    utm_term: pick('utm_term') || earlyCapture.utm_term,
+    utm_content: pick('utm_content') || earlyCapture.utm_content,
+    gclid: pick('gclid') || earlyCapture.gclid,
+    msclkid: pick('msclkid') || earlyCapture.msclkid,
     fbc,
     fbp,
-    landing_page: window.location.pathname + window.location.search,
+    landing_page: earlyCapture.original_location || 
+                  (window.location.pathname + window.location.search),
   };
   
   // Add channel classification
