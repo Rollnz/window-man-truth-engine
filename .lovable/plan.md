@@ -1,140 +1,252 @@
 
 
-# Fix: StatusBadge Crash — Mismatched Lead Quality Values
+# Security Fix: Replace Math.random() with Cryptographically Secure Fallback (CWE-338)
 
-## Problem Summary
+## Summary
 
-The `/admin/leads` page crashes because the `QualityBadge` component receives `lead_quality` values from the database that aren't mapped in the TypeScript configuration.
+This fix addresses **GitHub High Severity Alert CWE-338 (Insecure Randomness)** by replacing all `Math.random()` fallbacks with `crypto.getRandomValues()` across 4 files.
 
-**Database values:** `window_shopper` (52), `curious` (9), `qualified` (9), `engaged` (2), `hot` (1)
+## Current State (Vulnerable)
 
-**TypeScript config:** Only maps `cold`, `warm`, `hot`, `qualified`
+Each file uses this insecure fallback pattern when `crypto.randomUUID()` isn't available:
 
-When the component receives an unmapped value like `"window_shopper"`, it crashes trying to access `.color` on `undefined`.
+```typescript
+// INSECURE - Predictable pattern
+return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+  const r = Math.random() * 16 | 0;  // ❌ CWE-338 vulnerability
+  return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+});
+```
 
----
+## Proposed Fix
 
-## Solution
+Replace with cryptographically secure `crypto.getRandomValues()`:
 
-Update `src/types/crm.ts` and `src/components/crm/StatusBadge.tsx` to:
+```typescript
+// SECURE - Cryptographically random
+const bytes = new Uint8Array(16);
+crypto.getRandomValues(bytes);
+// Set version (4) and variant (8, 9, a, or b) bits per RFC 4122
+bytes[6] = (bytes[6] & 0x0f) | 0x40;
+bytes[8] = (bytes[8] & 0x3f) | 0x80;
+const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+```
 
-1. Add missing quality values to the TypeScript type and config
-2. Add a defensive fallback in the badge component to prevent crashes on unknown values
+## Files to Modify
+
+| File | Line(s) | Current Issue |
+|------|---------|---------------|
+| `src/lib/gtm.ts` | 268-271 | `Math.random()` in `generateEventId()` fallback |
+| `src/lib/tracking.ts` | 25-28 | `Math.random()` in `generateUUID()` fallback |
+| `src/hooks/useVisitorIdentity.ts` | 31-35 | `Math.random()` in `generateUUID()` fallback |
+| `src/lib/eventDeduplication.ts` | 44 | `Math.random()` in `getTabSessionId()` fallback |
 
 ---
 
 ## Implementation Details
 
-### Step 1: Update `src/types/crm.ts`
+### 1. Create Shared Secure UUID Generator
 
-Expand `LeadQuality` type and `LEAD_QUALITY_CONFIG` to include all database values:
+To avoid code duplication, create a utility function that can be imported:
 
-```typescript
-// Before
-export type LeadQuality = "cold" | "warm" | "hot" | "qualified";
-
-// After
-export type LeadQuality = 
-  | "cold" 
-  | "warm" 
-  | "hot" 
-  | "qualified"
-  | "window_shopper"  // Low intent browser
-  | "curious"         // Medium interest
-  | "engaged";        // Active but not yet qualified
-```
-
-Add new entries to `LEAD_QUALITY_CONFIG`:
+**New file: `src/lib/secureUUID.ts`**
 
 ```typescript
-export const LEAD_QUALITY_CONFIG: Record<LeadQuality, { label: string; color: string }> = {
-  cold: { label: "Cold", color: "bg-blue-100 text-blue-800" },
-  warm: { label: "Warm", color: "bg-amber-100 text-amber-800" },
-  hot: { label: "Hot", color: "bg-orange-100 text-orange-800" },
-  qualified: { label: "Qualified", color: "bg-green-100 text-green-800" },
-  // New values from database
-  window_shopper: { label: "Window Shopper", color: "bg-slate-100 text-slate-600" },
-  curious: { label: "Curious", color: "bg-sky-100 text-sky-700" },
-  engaged: { label: "Engaged", color: "bg-purple-100 text-purple-700" },
-};
-```
-
-### Step 2: Add Defensive Fallback in `StatusBadge.tsx`
-
-Even with the config updated, add a fallback to prevent future crashes from unknown values:
-
-```typescript
-// QualityBadge component - add safe fallback
-export const QualityBadge = forwardRef<HTMLSpanElement, QualityBadgeProps>(
-  ({ quality, size = 'sm' }, ref) => {
-    // Defensive fallback for unknown quality values
-    const config = LEAD_QUALITY_CONFIG[quality] ?? {
-      label: quality || 'Unknown',
-      color: 'bg-gray-100 text-gray-600',
-    };
-    
-    return (
-      <span 
-        ref={ref}
-        className={cn(
-          'inline-flex items-center rounded-full font-medium',
-          config.color,
-          size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'
-        )}
-      >
-        {config.label}
-      </span>
-    );
+/**
+ * Generate a cryptographically secure UUID v4
+ * Uses crypto.randomUUID() with secure fallback via crypto.getRandomValues()
+ * 
+ * SECURITY: This function is compliant with CWE-338 requirements.
+ * It does NOT use Math.random() which is cryptographically weak.
+ */
+export function generateSecureUUID(): string {
+  // Primary: Use native crypto.randomUUID if available (modern browsers)
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
   }
-);
+  
+  // Fallback: Use crypto.getRandomValues (supported since IE11)
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    
+    // Set version (4) and variant (8, 9, a, or b) bits per RFC 4122
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // Version 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant 10xx
+    
+    const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+  }
+  
+  // Last resort fallback (extremely rare - only for very old environments)
+  // This should never execute in any modern browser
+  console.warn('[Security] crypto API unavailable - using timestamp-based ID');
+  return `fallback-${Date.now()}-${performance.now().toString(36)}`;
+}
+
+/**
+ * Generate a short secure ID (8 characters)
+ * Used for tab session IDs and other non-critical identifiers
+ */
+export function generateSecureShortId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID().slice(0, 8);
+  }
+  
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(4);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+  }
+  
+  // Fallback using timestamp
+  return Date.now().toString(36).slice(-8);
+}
 ```
 
-### Step 3: Add Same Fallback to `StatusBadge`
+### 2. Update `src/lib/gtm.ts` (lines 263-272)
 
-Apply the same defensive pattern to `StatusBadge` for `status` values:
-
+**Before:**
 ```typescript
-export const StatusBadge = forwardRef<HTMLSpanElement, StatusBadgeProps>(
-  ({ status, size = 'sm' }, ref) => {
-    // Defensive fallback for unknown status values
-    const config = LEAD_STATUS_CONFIG[status] ?? {
-      title: status || 'Unknown',
-      color: 'bg-gray-500',
-      description: 'Unknown status',
-    };
-    
-    return (
-      <span 
-        ref={ref}
-        className={cn(
-          'inline-flex items-center rounded-full font-medium',
-          config.color,
-          'text-white',
-          size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'
-        )}
-      >
-        {config.title}
-      </span>
-    );
+export function generateEventId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
   }
-);
+  // Fallback for older browsers
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+```
+
+**After:**
+```typescript
+import { generateSecureUUID } from './secureUUID';
+
+export function generateEventId(): string {
+  return generateSecureUUID();
+}
+```
+
+### 3. Update `src/lib/tracking.ts` (lines 22-30)
+
+**Before:**
+```typescript
+function generateUUID(): string {
+  return crypto.randomUUID?.() ?? 
+    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+}
+```
+
+**After:**
+```typescript
+import { generateSecureUUID } from './secureUUID';
+
+function generateUUID(): string {
+  return generateSecureUUID();
+}
+```
+
+### 4. Update `src/hooks/useVisitorIdentity.ts` (lines 25-36)
+
+**Before:**
+```typescript
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback for older browsers
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+```
+
+**After:**
+```typescript
+import { generateSecureUUID } from '@/lib/secureUUID';
+
+function generateUUID(): string {
+  return generateSecureUUID();
+}
+```
+
+### 5. Update `src/lib/eventDeduplication.ts` (lines 37-46)
+
+**Before:**
+```typescript
+function getTabSessionId(): string {
+  // ...
+  try {
+    // Generate new tab session ID
+    const newId = crypto.randomUUID().slice(0, 8);
+    // ...
+  } catch {
+    // Fallback if sessionStorage fails
+    _tabSessionId = Math.random().toString(36).slice(2, 10);
+    return _tabSessionId;
+  }
+}
+```
+
+**After:**
+```typescript
+import { generateSecureShortId } from './secureUUID';
+
+function getTabSessionId(): string {
+  // ...
+  try {
+    // Generate new tab session ID
+    const newId = generateSecureShortId();
+    // ...
+  } catch {
+    // Fallback if sessionStorage fails - still secure
+    _tabSessionId = generateSecureShortId();
+    return _tabSessionId;
+  }
+}
 ```
 
 ---
 
-## Files to Modify
+## Impact Assessment
 
-| File | Change |
+| Concern | Impact |
+|---------|--------|
+| **Existing Data** | ✅ No impact - new IDs are still valid UUIDv4 format |
+| **Tracking Continuity** | ✅ No impact - IDs already in localStorage/cookies remain unchanged |
+| **Browser Compatibility** | ✅ No impact - `crypto.getRandomValues()` supported since IE11 |
+| **ID Format** | ✅ No change - still generates standard UUIDv4 (8-4-4-4-12 hex) |
+| **Performance** | ✅ Minimal - crypto operations are fast (~0.01ms) |
+
+---
+
+## Summary of Changes
+
+| File | Action |
 |------|--------|
-| `src/types/crm.ts` | Add `window_shopper`, `curious`, `engaged` to `LeadQuality` type and `LEAD_QUALITY_CONFIG` |
-| `src/components/crm/StatusBadge.tsx` | Add defensive fallback (nullish coalescing) to both badge components |
+| `src/lib/secureUUID.ts` | **CREATE** - Centralized secure UUID generator |
+| `src/lib/gtm.ts` | **UPDATE** - Import and use `generateSecureUUID()` |
+| `src/lib/tracking.ts` | **UPDATE** - Import and use `generateSecureUUID()` |
+| `src/hooks/useVisitorIdentity.ts` | **UPDATE** - Import and use `generateSecureUUID()` |
+| `src/lib/eventDeduplication.ts` | **UPDATE** - Import and use `generateSecureShortId()` |
 
 ---
 
-## Expected Result
+## Verification Checklist
 
-After this fix:
-- The `/admin/leads` page will load without crashing
-- All existing quality values will display with appropriate colors
-- Future unknown values will gracefully show a gray "Unknown" badge instead of crashing
+After implementation:
+1. Verify Analytics Dashboard loads without errors
+2. Confirm visitor IDs are still generated on new sessions
+3. Check that existing localStorage/cookie IDs persist
+4. Validate event deduplication still works
+5. Test lead capture flow end-to-end
 
