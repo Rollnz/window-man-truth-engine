@@ -82,11 +82,11 @@ export default function FullFunnelAuditPage() {
   const getStatusColor = (status: 'PASS' | 'PARTIAL' | 'FAIL') => {
     switch (status) {
       case 'PASS':
-        return 'bg-primary/10 text-primary border-primary/20';
+        return 'bg-primary text-primary-foreground border-primary';
       case 'PARTIAL':
-        return 'bg-secondary text-secondary-foreground border-border';
+        return 'bg-amber-500 text-white border-amber-500';
       case 'FAIL':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
+        return 'bg-destructive text-destructive-foreground border-destructive';
     }
   };
 
@@ -230,9 +230,9 @@ export default function FullFunnelAuditPage() {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-muted-foreground">Raw Data</h4>
                     <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
+                      <div className="flex justify-between text-foreground">
                         <span className="text-muted-foreground">Lead ID:</span>
-                        <code className="text-xs bg-muted px-2 py-0.5 rounded">{report.goldenLead.leadId.slice(0, 12)}...</code>
+                        <code className="text-xs bg-background border border-border px-2 py-0.5 rounded text-foreground">{report.goldenLead.leadId.slice(0, 12)}...</code>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Email:</span>
@@ -258,22 +258,22 @@ export default function FullFunnelAuditPage() {
                       <Hash className="h-3 w-3" />
                       SHA-256 Hashes (for Parity Check)
                     </h4>
-                    <div className="space-y-1 text-sm font-mono">
+                    <div className="space-y-1 text-sm font-mono text-foreground">
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">em:</span>
-                        <code className="text-xs bg-muted px-2 py-0.5 rounded truncate max-w-[180px]">{report.goldenLeadHashes.email.slice(0, 16)}...</code>
+                        <code className="text-xs bg-background border border-border px-2 py-0.5 rounded truncate max-w-[180px] text-foreground">{report.goldenLeadHashes.email.slice(0, 16)}...</code>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">ph:</span>
-                        <code className="text-xs bg-muted px-2 py-0.5 rounded truncate max-w-[180px]">{report.goldenLeadHashes.phone?.slice(0, 16) || 'N/A'}...</code>
+                        <code className="text-xs bg-background border border-border px-2 py-0.5 rounded truncate max-w-[180px] text-foreground">{report.goldenLeadHashes.phone?.slice(0, 16) || 'N/A'}...</code>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">fn:</span>
-                        <code className="text-xs bg-muted px-2 py-0.5 rounded truncate max-w-[180px]">{report.goldenLeadHashes.firstName?.slice(0, 16) || 'N/A'}...</code>
+                        <code className="text-xs bg-background border border-border px-2 py-0.5 rounded truncate max-w-[180px] text-foreground">{report.goldenLeadHashes.firstName?.slice(0, 16) || 'N/A'}...</code>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">ln:</span>
-                        <code className="text-xs bg-muted px-2 py-0.5 rounded truncate max-w-[180px]">{report.goldenLeadHashes.lastName?.slice(0, 16) || 'N/A'}...</code>
+                        <code className="text-xs bg-background border border-border px-2 py-0.5 rounded truncate max-w-[180px] text-foreground">{report.goldenLeadHashes.lastName?.slice(0, 16) || 'N/A'}...</code>
                       </div>
                     </div>
                   </div>
@@ -291,10 +291,14 @@ export default function FullFunnelAuditPage() {
                   {report.eventResults.map((result, index) => {
                     const status = getEventStatus(result);
                     return (
-                      <AccordionItem key={result.eventName} value={result.eventName}>
-                        <AccordionTrigger className="hover:no-underline">
+                      <AccordionItem 
+                        key={result.eventName} 
+                        value={result.eventName}
+                        className="[background:transparent] bg-card border border-border rounded-lg mb-2 text-foreground"
+                      >
+                        <AccordionTrigger className="hover:no-underline text-foreground">
                           <div className="flex items-center gap-3 w-full pr-4">
-                            <span className="flex items-center gap-2">
+                            <span className="flex items-center gap-2 text-foreground">
                               {EVENT_ICONS[result.eventName]}
                               <span className="font-medium">{result.eventName}</span>
                             </span>
@@ -308,7 +312,7 @@ export default function FullFunnelAuditPage() {
                         </AccordionTrigger>
                         <AccordionContent>
                           <div className="space-y-4 pt-2">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-foreground">
                               <div className="flex items-center gap-2">
                                 {result.validation.hasEventId ? 
                                   <CheckCircle2 className="h-4 w-4 text-primary" /> : 
@@ -359,9 +363,9 @@ export default function FullFunnelAuditPage() {
                               </div>
                             </div>
                             
-                            <div className="text-sm">
+                            <div className="text-sm text-foreground">
                               <span className="text-muted-foreground">Event ID: </span>
-                              <code className="text-xs bg-muted px-2 py-0.5 rounded">{result.eventId}</code>
+                              <code className="text-xs bg-background border border-border px-2 py-0.5 rounded text-foreground">{result.eventId}</code>
                             </div>
                             
                             {result.issues.length > 0 && (
@@ -390,29 +394,29 @@ export default function FullFunnelAuditPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-muted/50 rounded-lg">
-                    <div className="text-2xl font-bold">{report.networkCapture.totalRequests}</div>
+                  <div className="text-center p-4 bg-card border border-border rounded-lg">
+                    <div className="text-2xl font-bold text-foreground">{report.networkCapture.totalRequests}</div>
                     <div className="text-xs text-muted-foreground">Pixel Requests</div>
                   </div>
-                  <div className="text-center p-4 bg-muted/50 rounded-lg">
-                    <div className="text-2xl font-bold">{report.networkCapture.eventsWithEventId}</div>
+                  <div className="text-center p-4 bg-card border border-border rounded-lg">
+                    <div className="text-2xl font-bold text-foreground">{report.networkCapture.eventsWithEventId}</div>
                     <div className="text-xs text-muted-foreground">With eventID</div>
                   </div>
-                  <div className="text-center p-4 bg-muted/50 rounded-lg">
-                    <div className="text-2xl font-bold">{report.networkCapture.eventsWithAdvancedMatching}</div>
+                  <div className="text-center p-4 bg-card border border-border rounded-lg">
+                    <div className="text-2xl font-bold text-foreground">{report.networkCapture.eventsWithAdvancedMatching}</div>
                     <div className="text-xs text-muted-foreground">Advanced Matching</div>
                   </div>
-                  <div className="text-center p-4 bg-muted/50 rounded-lg">
-                    <div className="text-2xl font-bold">{report.serverSideParity.eventIdFormat}</div>
+                  <div className="text-center p-4 bg-card border border-border rounded-lg">
+                    <div className="text-2xl font-bold text-foreground">{report.serverSideParity.eventIdFormat}</div>
                     <div className="text-xs text-muted-foreground">Event ID Format</div>
                   </div>
                 </div>
                 
                 <Separator className="my-4" />
                 
-                <div className="text-sm">
+                <div className="text-sm text-foreground">
                   <span className="font-medium">Server-Side Parity: </span>
-                  <span className={report.serverSideParity.formatConsistent ? 'text-primary' : 'text-secondary-foreground'}>
+                  <span className={report.serverSideParity.formatConsistent ? 'text-primary' : 'text-foreground'}>
                     {report.serverSideParity.recommendation}
                   </span>
                 </div>
