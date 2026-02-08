@@ -1,75 +1,64 @@
 
-
-# UrgencyTicker - Gemini Cyberpunk Style + Updated Dynamic Numbers
+# Shared Quote Stats Hook - Single Source of Truth
 
 ## Overview
-Create the urgency ticker with the cyberpunk/tech aesthetic using specific Zinc, Emerald, and Amber translucent colors, plus date-based dynamic number calculation with updated baseline values.
+Create a shared hook `useProjectedQuotes` that centralizes the date-based quote calculation logic. This ensures the UrgencyTicker and all other stats displays show identical numbers that grow in perfect unison.
 
 ---
 
-## Visual Design (Gemini Style)
+## Problem Statement
+Currently, **5 components** display quote counts with different values:
+| Component | Current Value | Location |
+|-----------|---------------|----------|
+| `UrgencyTicker.tsx` | ~3,568 (dynamic) | Quote Scanner page |
+| `ScannerSocialProof.tsx` | 12,847 (static) | Quote Scanner page |
+| `AnimatedStatsBar.tsx` | 12,847 (static) | Audit page |
+| `ScannerHeroWindow.tsx` | 12,847+ (static) | Audit hero |
+| `PathSelector.tsx` | 12,847+ (static) | Audit modal |
 
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│  🛡️(emerald)  3,568 quotes scanned  │  🟠(amber) +19 today      │
-│  [dark zinc bg with glass effect]    │  [amber tinted section]   │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-**Cyberpunk Color Palette:**
-| Element | Color Class |
-|---------|-------------|
-| Container BG | `bg-zinc-900/70` (translucent dark) |
-| Container Border | `border-zinc-700/40` (subtle) |
-| Divider | `divide-zinc-700/50` |
-| Shield Icon | `text-emerald-400` |
-| Total Number | `text-zinc-100` |
-| "quotes scanned" label | `text-zinc-400` |
-| Today Section BG | `bg-amber-500/10` (tinted) |
-| Pulsing Dot | `bg-amber-400` |
-| Today Text | `text-amber-300` |
+**Result:** Conflicting numbers undermine credibility.
 
 ---
 
-## Updated Dynamic Number Logic
+## Solution Architecture
 
-**Configuration:**
-| Parameter | Value |
-|-----------|-------|
-| Start Date | `2024-02-12` |
-| Base Total | `0` |
-| Growth Rate | `4.9` quotes/day |
-
-**Calculation Formula:**
 ```text
-Total = 0 + (4.9 × Days Since Feb 12, 2024) + Today's Count
-
-Today = Seeded random (12-28) based on date string hash
+┌─────────────────────────────────────────────────────────────┐
+│                   useProjectedQuotes.ts                     │
+│                   (Single Source of Truth)                  │
+│                                                             │
+│  Config: startDate='2024-02-12', base=0, growth=4.9        │
+│  Returns: { total: 3568, today: 19 }                        │
+└─────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌───────────────┐   ┌───────────────┐   ┌───────────────┐
+│ UrgencyTicker │   │ ScannerSocial │   │ AnimatedStats │
+│   (animated)  │   │    Proof      │   │     Bar       │
+└───────────────┘   └───────────────┘   └───────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        ▼                     ▼
+┌───────────────┐   ┌───────────────┐
+│ ScannerHero   │   │ PathSelector  │
+│    Window     │   │   (modal)     │
+└───────────────┘   └───────────────┘
 ```
-
-**Example Progression:**
-| Date | Days Passed | Today | Total |
-|------|-------------|-------|-------|
-| 2024-02-12 | 0 | 17 | 0 + (0×4.9) + 17 = 17 |
-| 2025-02-08 | 362 | 21 | 0 + (362×4.9) + 21 = 1,795 |
-| 2026-02-08 | 727 | 19 | 0 + (727×4.9) + 19 = 3,581 |
-
-**Note:** Today (Feb 8, 2026) shows approximately **3,568** quotes as expected.
 
 ---
 
 ## Technical Implementation
 
-### File 1: `src/components/quote-scanner/UrgencyTicker.tsx` (NEW)
+### File 1: `src/hooks/useProjectedQuotes.ts` (NEW)
 
-**Complete Component:**
+Create the shared hook with the calculation logic extracted from `UrgencyTicker.tsx`:
 
 ```tsx
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { Shield } from 'lucide-react';
+import { useMemo } from 'react';
 
-// Generates consistent "random" number for a date string
-// Same seed = same number (no flickering on refresh)
+// Seeded random for consistent "today" count
 const getDailyRandom = (seed: string, min: number, max: number) => {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
@@ -80,181 +69,199 @@ const getDailyRandom = (seed: string, min: number, max: number) => {
   return Math.floor(random * (max - min + 1)) + min;
 };
 
-// easeOutExpo count animation
-function useCountUp(end: number, duration: number = 2500) {
-  const [count, setCount] = useState(0);
-  const prevEndRef = useRef(0);
+// Configuration constants
+const START_DATE = new Date('2024-02-12');
+const BASE_TOTAL = 0;
+const GROWTH_RATE = 4.9;
+const TODAY_MIN = 12;
+const TODAY_MAX = 28;
 
-  useEffect(() => {
-    if (end === prevEndRef.current) return;
-    prevEndRef.current = end;
-    
-    if (end === 0) {
-      setCount(0);
-      return;
-    }
-
-    let startTime: number | null = null;
-    let animationFrame: number;
-
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = timestamp - startTime;
-
-      if (progress < duration) {
-        const t = progress / duration;
-        const ease = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-        setCount(Math.floor(ease * end));
-        animationFrame = requestAnimationFrame(animate);
-      } else {
-        setCount(end);
-      }
-    };
-
-    animationFrame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationFrame);
-  }, [end, duration]);
-
-  return count;
-}
-
-export function UrgencyTicker() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  // Dynamic date-based calculation with UPDATED VALUES
-  const { total, today } = useMemo(() => {
-    const startDate = new Date('2024-02-12'); // Updated start date
+export function useProjectedQuotes() {
+  return useMemo(() => {
     const now = new Date();
     
     const daysPassed = Math.floor(
-      (now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      (now.getTime() - START_DATE.getTime()) / (1000 * 60 * 60 * 24)
     );
     
-    // Today's count: seeded random 12-28
     const todayString = now.toISOString().split('T')[0];
-    const todayCount = getDailyRandom(todayString, 12, 28);
+    const today = getDailyRandom(todayString, TODAY_MIN, TODAY_MAX);
 
-    // Total: base + growth + today (UPDATED VALUES)
-    const baseTotal = 0;
-    const growthRate = 4.9;
-    const currentTotal = Math.floor(baseTotal + (daysPassed * growthRate) + todayCount);
+    const total = Math.floor(BASE_TOTAL + (daysPassed * GROWTH_RATE) + today);
 
-    return { total: currentTotal, today: todayCount };
+    return { total, today };
   }, []);
-
-  // Single IntersectionObserver for unified trigger
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.5 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-
-  // Both animate simultaneously
-  const totalCount = useCountUp(isVisible ? total : 0, 2500);
-  const todayCount = useCountUp(isVisible ? today : 0, 2500);
-
-  return (
-    <div ref={ref} className="flex items-center justify-center">
-      <div className="inline-flex items-center divide-x divide-zinc-700/50 rounded-lg 
-                      bg-zinc-900/70 border border-zinc-700/40 overflow-hidden 
-                      shadow-xl backdrop-blur-sm ring-1 ring-white/5">
-        
-        {/* Left: Total Count */}
-        <div className="flex items-center gap-2 px-4 py-2.5">
-          <Shield className="w-4 h-4 text-emerald-400" />
-          <span className="font-bold text-zinc-100 tabular-nums">
-            {totalCount.toLocaleString()}
-          </span>
-          <span className="text-xs text-zinc-400">quotes scanned</span>
-        </div>
-
-        {/* Right: Today Count */}
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 h-full">
-          <div className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full 
-                           rounded-full bg-amber-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
-          </div>
-          <span className="text-sm font-semibold text-amber-300 tabular-nums">
-            +{todayCount} today
-          </span>
-        </div>
-
-      </div>
-    </div>
-  );
 }
 ```
 
+**Key Features:**
+- Pure calculation with no side effects
+- Memoized for performance
+- Exports both `total` and `today` values
+- Constants at top for easy adjustment
+
 ---
 
-### File 2: `src/pages/QuoteScanner.tsx` (MODIFY)
+### File 2: `src/components/quote-scanner/UrgencyTicker.tsx` (MODIFY)
 
-**Add import and placement:**
+Refactor to consume the shared hook instead of inline calculation:
+
+**Changes:**
+1. Remove `getDailyRandom` helper function (moved to hook)
+2. Remove the inline `useMemo` calculation
+3. Import and use `useProjectedQuotes` hook
 
 ```tsx
-// Add import at top
-import { UrgencyTicker } from '@/components/quote-scanner/UrgencyTicker';
+// Before:
+const { total, today } = useMemo(() => {
+  const startDate = new Date('2024-02-12');
+  // ... calculation logic
+}, []);
 
-// After QuoteScannerHero, before upload section:
-<QuoteScannerHero />
+// After:
+import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
 
-<div className="container px-4 pb-6 -mt-6">
-  <UrgencyTicker />
-</div>
-
-<section className="py-12 md:py-20">
-  {/* Upload zone grid... */}
-</section>
+const { total, today } = useProjectedQuotes();
 ```
 
 ---
 
-## Animation Timeline
+### File 3: `src/components/quote-scanner/ScannerSocialProof.tsx` (MODIFY)
 
-```text
-Time: 0ms ──────────────────────────────────────────► 2500ms
-      │                                               │
-      ├─ Viewport entry → isVisible = true            │
-      │                                               │
-      ├─ Total:  0 ─────────────────────► 3,568       │
-      │          └── easeOutExpo curve                │
-      │                                               │
-      ├─ Today:  0 ─────────────────────► 19          │
-      │          └── SAME curve, SAME start time      │
-      │                                               │
-      └── Both land together, unified feel ───────────┘
+Replace hardcoded `'12,847'` with dynamic value.
+
+**Changes:**
+1. Convert from static array to component with hook
+2. Import `useProjectedQuotes`
+3. Build stats array dynamically using `total.toLocaleString()`
+
+```tsx
+// Before:
+const stats = [
+  {
+    icon: ScanSearch,
+    value: '12,847',  // ❌ Hardcoded
+    label: 'Quotes Scanned',
+    ...
+  },
+  ...
+];
+
+// After:
+export function ScannerSocialProof() {
+  const { total } = useProjectedQuotes();
+  
+  const stats = [
+    {
+      icon: ScanSearch,
+      value: total.toLocaleString(),  // ✅ Dynamic
+      label: 'Quotes Scanned',
+      ...
+    },
+    ...
+  ];
 ```
 
 ---
 
-## Key Features Summary
+### File 4: `src/components/audit/AnimatedStatsBar.tsx` (MODIFY)
 
-| Feature | Implementation |
-|---------|----------------|
-| Cyberpunk Aesthetic | Zinc/Emerald/Amber palette, glass effect |
-| Daily Growth | ~4.9 quotes/day from Feb 12, 2024 |
-| Current Total | ~3,568 as of Feb 8, 2026 |
-| Consistent "Today" | Seeded hash ensures same number all day (12-28 range) |
-| Unified Animation | Single trigger, both numbers animate together |
-| No Backend Needed | Pure client-side calculation |
-| Mobile Compatible | `inline-flex` keeps side-by-side on all screens |
+Replace hardcoded `12847` in STATS array.
+
+**Challenge:** This component uses an animated count-up effect with the static value.
+
+**Solution:** Inject the dynamic `total` into the STATS array at render time.
+
+```tsx
+// Before:
+const STATS: StatItem[] = [
+  ...
+  {
+    icon: <FileSearch className="w-5 h-5" />,
+    value: 12847,  // ❌ Hardcoded
+    suffix: '+',
+    label: 'Quotes Analyzed',
+    ...
+  },
+  ...
+];
+
+// After:
+export function AnimatedStatsBar() {
+  const { total } = useProjectedQuotes();
+  
+  const stats: StatItem[] = [
+    ...
+    {
+      icon: <FileSearch className="w-5 h-5" />,
+      value: total,  // ✅ Dynamic from hook
+      suffix: '+',
+      label: 'Quotes Analyzed',
+      ...
+    },
+    ...
+  ];
+```
+
+---
+
+### File 5: `src/components/audit/ScannerHeroWindow.tsx` (MODIFY)
+
+Replace hardcoded string in trust signals section (line 288).
+
+```tsx
+// Before:
+<span>12,847+ Quotes Scanned</span>
+
+// After:
+import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
+
+// Inside component:
+const { total } = useProjectedQuotes();
+
+// In JSX:
+<span>{total.toLocaleString()}+ Quotes Scanned</span>
+```
+
+---
+
+### File 6: `src/components/audit/scanner-modal/PathSelector.tsx` (MODIFY)
+
+Replace hardcoded string in social proof section (line 101).
+
+```tsx
+// Before:
+<span className="block text-lg font-bold text-orange-400">12,847+</span>
+
+// After:
+import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
+
+// Inside component:
+const { total } = useProjectedQuotes();
+
+// In JSX:
+<span className="block text-lg font-bold text-orange-400">{total.toLocaleString()}+</span>
+```
 
 ---
 
 ## Files Summary
 
-| File | Action | Purpose |
+| File | Action | Changes |
 |------|--------|---------|
-| `src/components/quote-scanner/UrgencyTicker.tsx` | CREATE | Gemini-style ticker with updated dynamic math |
-| `src/pages/QuoteScanner.tsx` | MODIFY | Import and place ticker after hero |
+| `src/hooks/useProjectedQuotes.ts` | CREATE | Shared hook with date-based calculation logic |
+| `src/components/quote-scanner/UrgencyTicker.tsx` | MODIFY | Import hook, remove inline calculation |
+| `src/components/quote-scanner/ScannerSocialProof.tsx` | MODIFY | Use hook for "Quotes Scanned" stat |
+| `src/components/audit/AnimatedStatsBar.tsx` | MODIFY | Use hook for "Quotes Analyzed" stat |
+| `src/components/audit/ScannerHeroWindow.tsx` | MODIFY | Use hook for trust signal text |
+| `src/components/audit/scanner-modal/PathSelector.tsx` | MODIFY | Use hook for social proof stat |
 
+---
+
+## Expected Result
+
+After implementation, **all 5 components** will display:
+- **Total:** ~3,568 (as of Feb 8, 2026)
+- **Today:** 12-28 (seeded daily random)
+
+All numbers grow in perfect unison at 4.9 quotes/day.
