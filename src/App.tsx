@@ -53,6 +53,7 @@ const ExecutiveProfit = lazy(() => import("./pages/admin/ExecutiveProfit"));
 const AdminHome = lazy(() => import("./pages/admin/AdminHome"));
 const CallAgentsConfig = lazy(() => import("./pages/admin/CallAgentsConfig"));
 const TrackingTest = lazy(() => import("./pages/admin/TrackingTest"));
+const FullFunnelAudit = lazy(() => import("./pages/admin/FullFunnelAudit"));
 const About = lazy(() => import("./pages/About"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Defense = lazy(() => import("./pages/Defense"));
@@ -169,6 +170,7 @@ function AppContent() {
           <Route path="/admin/executive" element={<ExecutiveProfit />} />
           <Route path="/admin/call-agents" element={<CallAgentsConfig />} />
           <Route path="/admin/tracking-test" element={<TrackingTest />} />
+          <Route path="/admin/full-funnel-audit" element={<FullFunnelAudit />} />
         </Route>
         
         {/* Internal dev tools (no footer) */}
