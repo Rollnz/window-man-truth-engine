@@ -27,6 +27,7 @@ import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChec
 // Vault Pivot Conversion Engine
 import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
 import { UrgencyTicker } from '@/components/social-proof';
+import { TestimonialCards } from '@/components/TestimonialCards';
 // Attribution & tracking for NoQuotePivotSection handler
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -266,6 +267,7 @@ export default function QuoteScanner() {
 
         {/* Supporting Content Sections */}
         <ScannerSocialProof />
+        <TestimonialCards variant="default" />
         <QuoteSafetyChecklist uploadRef={uploadRef} />
         <WindowCalculatorTeaser />
         <NoQuotePathway />
