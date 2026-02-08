@@ -1,257 +1,309 @@
 
 
-# Attribution Race Condition Audit — Analysis & Fix
+# Updated Analytics Dashboard Migration — Optimized Indexes
 
-## Executive Summary
+## Index Optimizations Applied
 
-**STATUS: MODERATE RISK IDENTIFIED** ⚠️
+Your requested changes have been incorporated:
 
-The current implementation has a timing vulnerability that could cause attribution loss for very fast bounces or React Router navigation. While React Router doesn't actively strip UTMs, the deferred initialization pattern creates a window where GTM could miss attribution data.
+### 1. Session Index — Composite with DESC ordering
+```sql
+-- OLD (single column):
+CREATE INDEX IF NOT EXISTS idx_sessions_anonymous_id ON public.wm_sessions (anonymous_id);
 
----
-
-## Current Timing Analysis
-
-### Execution Timeline (Current)
-
-```text
-index.html parses (t=0)
-    │
-    ├── window.dataLayer = [] (IMMEDIATE) ✓
-    │
-    └── GTM load scheduled for window.load + 2s
-    
-main.tsx executes (t=~50ms)
-    │
-    ├── createRoot().render() - React mounts
-    │
-    ├── scheduleWhenIdle(initializeAttribution) - 500ms delay
-    │   └── Captures UTMs → localStorage (t=~550ms)
-    │
-    └── scheduleWhenIdle(reconcileIdentities) - 1000ms delay
-        └── Sets up Golden Thread (t=~1000ms)
-
-window.load fires (t=~1-3s)
-    │
-    └── setTimeout(loadGTM, 2000) scheduled
-
-GTM loads (t=~3-5s)
-    │
-    └── Reads window.location for UTMs
-    └── ❓ URL may still have UTMs OR may have been cleaned
+-- NEW (composite for efficient sorting):
+CREATE INDEX IF NOT EXISTS idx_sessions_client_created_desc 
+    ON public.wm_sessions (anonymous_id, created_at DESC);
 ```
 
-### What's Protected (Already Safe)
+**Why this is faster:** The Attribution Gaps view uses a LATERAL join that finds the first session per client ordered by `created_at ASC`. With a descending index, Postgres can efficiently seek to the first row without scanning all sessions for that client.
 
-| System | Where | Timing | Safe? |
-|--------|-------|--------|-------|
-| Golden Thread ID | `getGoldenThreadId()` | Lazy getter | ✅ Yes |
-| localStorage persistence | `attribution.ts` | 500ms deferred | ⚠️ Mostly |
-| Cookie capture (_fbc, _fbp) | `attribution.ts` | 500ms deferred | ⚠️ Mostly |
-| Lead form submissions | Various | User-initiated | ✅ Yes |
-
-### What's At Risk
-
-| Risk | Impact | Probability |
-|------|--------|-------------|
-| GTM sees clean URL | Direct traffic in GA4/Meta | Low (React Router doesn't strip) |
-| Early dataLayer events lack UTMs | Engagement events mis-attributed | Medium |
-| URL cleaned by external redirect | Lost attribution | Low |
-
----
-
-## Findings: No Active URL Cleaning
-
-**Good news**: Search of the codebase confirms:
-
-1. ✅ **No `replaceState`/`pushState` URL cleaning** - React Router preserves query strings
-2. ✅ **No `searchParams.delete()` for UTMs** - Only one usage (admin tabs, unrelated)
-3. ✅ **No third-party libraries stripping params** - Clean implementation
-
-**However**, the deferred `initializeAttribution()` (500ms delay) means:
-- Very early dataLayer pushes may lack attribution context
-- If a user bounces in < 500ms, attribution might not be persisted
-
----
-
-## The Gap: No Early dataLayer Push
-
-**Critical Finding**: Currently, UTM parameters are:
-1. ✅ Captured to localStorage (via `initializeAttribution()` - 500ms delay)
-2. ✅ Included in lead form submissions (via `getAttributionData()`)
-3. ❌ **NOT pushed to dataLayer as a standalone event**
-
-When GTM loads (3-5s after page load), it reads `window.location.href` to get UTMs. This works **IF the URL hasn't changed**. But for SPA navigations within those 3-5 seconds, the URL might now be `/cost-calculator` instead of `/?utm_source=facebook&...`.
-
----
-
-## Recommended Fix: Early Attribution Capture
-
-### Pattern: "Capture-Then-Queue"
-
-Add a synchronous, lightweight snippet to `index.html` that:
-1. Reads `window.location.search` immediately (before React)
-2. Parses all UTM/Click-ID parameters
-3. Pushes to `dataLayer` as a "seed" event
-4. GTM picks up these values from the queue when it loads
-
-### Implementation Plan
-
-**Modify: `index.html`**
-
-Add a new inline script (synchronous, < 1KB) **before** the GTM script:
-
-```html
-<!-- Attribution Capture (SYNCHRONOUS - runs before React) -->
-<script>
-  // Early Attribution Capture - Immunizes against GTM deferral
-  // This runs IMMEDIATELY during HTML parse, before any URL cleaning
-  (function() {
-    'use strict';
-    
-    // Initialize dataLayer first
-    window.dataLayer = window.dataLayer || [];
-    
-    // Parse current URL (guaranteed to have UTMs if they were present)
-    var url = new URL(window.location.href);
-    var params = url.searchParams;
-    
-    // Extract attribution parameters
-    var attribution = {
-      utm_source: params.get('utm_source') || undefined,
-      utm_medium: params.get('utm_medium') || undefined,
-      utm_campaign: params.get('utm_campaign') || undefined,
-      utm_term: params.get('utm_term') || undefined,
-      utm_content: params.get('utm_content') || undefined,
-      gclid: params.get('gclid') || undefined,
-      fbclid: params.get('fbclid') || undefined,
-      msclkid: params.get('msclkid') || undefined,
-      // Capture the ORIGINAL landing page with full query string
-      original_location: window.location.href,
-      page_path: window.location.pathname
-    };
-    
-    // Check if we have any meaningful attribution
-    var hasAttribution = attribution.utm_source || attribution.gclid || 
-                         attribution.fbclid || attribution.msclkid;
-    
-    if (hasAttribution) {
-      // Push to dataLayer - will be queued until GTM loads
-      window.dataLayer.push({
-        event: 'attribution_captured',
-        attribution_source: 'early_capture',
-        ...attribution
-      });
-      
-      // Also persist to sessionStorage for cross-page safety
-      try {
-        sessionStorage.setItem('wm_early_attribution', JSON.stringify(attribution));
-      } catch(e) {}
-      
-      console.log('[Attribution] Early capture:', attribution.utm_source || attribution.gclid || 'click-id');
-    }
-    
-    // Always capture the original landing URL (even without UTMs)
-    // This ensures GTM can reference it later
-    window.dataLayer.push({
-      original_page_location: window.location.href,
-      original_page_path: window.location.pathname,
-      original_referrer: document.referrer || 'direct'
-    });
-  })();
-</script>
+### 2. Event Index — For Ghost Lead Detection
+```sql
+-- NEW (enables efficient JOIN in orphaned_events view):
+CREATE INDEX IF NOT EXISTS idx_events_session_id 
+    ON public.wm_events (session_id);
 ```
 
-### Key Properties of This Fix
-
-| Property | Value |
-|----------|-------|
-| **Timing** | Synchronous, before React, before GTM |
-| **Size** | < 1KB minified (no FCP impact) |
-| **Blocking** | ~1-2ms execution (negligible) |
-| **Fallback** | sessionStorage backup for cross-page persistence |
-| **GTM Integration** | `attribution_captured` event available in GTM triggers |
+**Why this is needed:** The `analytics_orphaned_events` view joins `wm_events` to `wm_sessions` on `session_id`. Without this index, the join requires a full table scan.
 
 ---
 
-## Updated Timeline (After Fix)
+## Complete SQL Migration (Ready to Execute)
 
-```text
-index.html parses (t=0)
-    │
-    ├── EARLY CAPTURE SCRIPT (NEW) ⬅️
-    │   ├── Reads window.location.search IMMEDIATELY
-    │   ├── Pushes attribution_captured to dataLayer
-    │   └── Persists to sessionStorage
-    │
-    ├── window.dataLayer initialized (contains attribution!)
-    │
-    └── GTM load scheduled for window.load + 2s
+```sql
+-- Analytics Dashboard Views & AI-Ready Schema Migration
+-- Adds analytics views for Truth Engine dashboard + prepares schema for AI features
 
-main.tsx executes (t=~50ms)
-    │
-    ├── createRoot().render() - React mounts
-    │
-    └── scheduleWhenIdle(initializeAttribution) - 500ms delay
-        └── Captures UTMs → localStorage (redundant but safe)
+-- ============================================================
+-- PART 1: AI-Ready Columns on Leads Table
+-- ============================================================
+ALTER TABLE public.leads
+ADD COLUMN IF NOT EXISTS ai_psych_profile text,
+ADD COLUMN IF NOT EXISTS ai_sales_hook text;
 
-React Router navigates (t=~100ms)
-    │
-    └── URL changes to /new-page (UTMs stripped from URL bar)
-        └── ✅ SAFE: Attribution already captured in dataLayer
+COMMENT ON COLUMN public.leads.ai_psych_profile IS 'AI-generated psychological profile for personalized outreach';
+COMMENT ON COLUMN public.leads.ai_sales_hook IS 'AI-generated sales hook based on lead behavior and context';
 
-GTM loads (t=~3-5s)
-    │
-    └── Processes queued events
-    └── Finds attribution_captured event with UTMs
-    └── ✅ Correct attribution reported
+-- ============================================================
+-- PART 2: Analytics Daily Overview View
+-- ============================================================
+CREATE OR REPLACE VIEW public.analytics_daily_overview
+WITH (security_invoker = true)
+AS
+SELECT
+    DATE(s.created_at) AS date,
+    COUNT(DISTINCT s.anonymous_id) AS visitors,
+    COUNT(DISTINCT l.id) AS leads,
+    ROUND(
+        COUNT(DISTINCT l.id)::numeric / 
+        NULLIF(COUNT(DISTINCT s.anonymous_id), 0) * 100,
+        2
+    ) AS conversion_rate,
+    COUNT(DISTINCT CASE 
+        WHEN e.event_name = 'quote_scanned' THEN e.id 
+    END) AS quote_scans,
+    COUNT(DISTINCT CASE 
+        WHEN e.event_name IN ('cost_calculator_completed', 'calculator_completed') THEN e.id 
+    END) AS calculator_completions,
+    COUNT(DISTINCT CASE 
+        WHEN e.event_name = 'risk_diagnostic_completed' THEN e.id 
+    END) AS risk_assessments,
+    COUNT(DISTINCT CASE 
+        WHEN e.event_name = 'consultation_booked' THEN e.id 
+    END) AS consultations_booked
+FROM public.wm_sessions s
+LEFT JOIN public.leads l ON DATE(l.created_at) = DATE(s.created_at) AND l.lead_status != 'spam'
+LEFT JOIN public.wm_events e ON e.session_id = s.id
+WHERE s.created_at >= NOW() - INTERVAL '90 days'
+GROUP BY DATE(s.created_at)
+ORDER BY date DESC;
+
+-- ============================================================
+-- PART 3: Attribution Breakdown View
+-- ============================================================
+CREATE OR REPLACE VIEW public.analytics_attribution_breakdown
+WITH (security_invoker = true)
+AS
+SELECT
+    COALESCE(l.utm_source, '(direct)') AS utm_source,
+    COALESCE(l.utm_medium, '(none)') AS utm_medium,
+    COALESCE(l.utm_campaign, '(no campaign)') AS utm_campaign,
+    COUNT(*) AS lead_count,
+    COUNT(CASE WHEN l.lead_status = 'qualified' THEN 1 END) AS qualified_count,
+    ROUND(
+        COUNT(CASE WHEN l.lead_status = 'qualified' THEN 1 END)::numeric / 
+        NULLIF(COUNT(*), 0) * 100,
+        1
+    ) AS qualification_rate,
+    DATE(MIN(l.created_at)) AS first_seen,
+    DATE(MAX(l.created_at)) AS last_seen
+FROM public.leads l
+WHERE l.created_at >= NOW() - INTERVAL '90 days'
+  AND l.lead_status != 'spam'
+GROUP BY 
+    COALESCE(l.utm_source, '(direct)'),
+    COALESCE(l.utm_medium, '(none)'),
+    COALESCE(l.utm_campaign, '(no campaign)')
+ORDER BY lead_count DESC;
+
+-- ============================================================
+-- PART 4: Tool Performance View
+-- ============================================================
+CREATE OR REPLACE VIEW public.analytics_tool_performance
+WITH (security_invoker = true)
+AS
+SELECT
+    l.source_tool,
+    COUNT(*) AS total_leads,
+    COUNT(CASE WHEN l.lead_status = 'qualified' THEN 1 END) AS qualified_leads,
+    ROUND(
+        COUNT(CASE WHEN l.lead_status = 'qualified' THEN 1 END)::numeric / 
+        NULLIF(COUNT(*), 0) * 100,
+        2
+    ) AS qualification_rate,
+    ROUND(AVG(l.lead_score_total), 1) AS avg_engagement_score
+FROM public.leads l
+WHERE l.created_at >= NOW() - INTERVAL '30 days'
+  AND l.lead_status != 'spam'
+GROUP BY l.source_tool
+ORDER BY total_leads DESC;
+
+-- ============================================================
+-- PART 5: Attribution Gaps Detection View (Attribution Time Machine)
+-- ============================================================
+CREATE OR REPLACE VIEW public.analytics_attribution_gaps
+WITH (security_invoker = true)
+AS
+SELECT 
+    l.id AS lead_id,
+    l.email,
+    l.utm_source AS current_utm_source,
+    l.utm_medium AS current_utm_medium,
+    l.client_id,
+    l.created_at AS lead_created_at,
+    first_session.utm_source AS first_touch_utm_source,
+    first_session.utm_medium AS first_touch_utm_medium,
+    first_session.utm_campaign AS first_touch_utm_campaign,
+    first_session.landing_page AS first_touch_landing_page,
+    first_session.created_at AS first_touch_time,
+    'Missing attribution can be healed from first touch' AS fix_reason
+FROM public.leads l
+CROSS JOIN LATERAL (
+    SELECT 
+        s.utm_source, 
+        s.utm_medium, 
+        s.utm_campaign,
+        s.landing_page,
+        s.created_at
+    FROM public.wm_sessions s
+    WHERE s.anonymous_id = l.client_id
+      AND s.utm_source IS NOT NULL
+    ORDER BY s.created_at ASC
+    LIMIT 1
+) first_session
+WHERE 
+    l.utm_source IS NULL 
+    AND l.client_id IS NOT NULL
+    AND first_session.utm_source IS NOT NULL
+    AND l.created_at >= NOW() - INTERVAL '90 days'
+    AND l.lead_status != 'spam';
+
+-- ============================================================
+-- PART 6: Orphaned Events Detection View (Ghost Lead Resurrector)
+-- ============================================================
+CREATE OR REPLACE VIEW public.analytics_orphaned_events
+WITH (security_invoker = true)
+AS
+SELECT 
+    e.id AS event_id,
+    e.event_name,
+    e.session_id,
+    e.event_data,
+    e.created_at,
+    s.anonymous_id AS client_id,
+    'Event exists but no matching lead found' AS issue
+FROM public.wm_events e
+JOIN public.wm_sessions s ON e.session_id = s.id
+WHERE 
+    e.event_name IN ('lead_submission_success', 'lead_captured', 'consultation_booked', 'form_submission')
+    AND e.created_at >= NOW() - INTERVAL '30 days'
+    AND NOT EXISTS (
+        SELECT 1 FROM public.leads l 
+        WHERE l.original_session_id = e.session_id
+           OR l.client_id = s.anonymous_id
+    )
+ORDER BY e.created_at DESC
+LIMIT 100;
+
+-- ============================================================
+-- PART 7: Spam Signals Detection View
+-- ============================================================
+CREATE OR REPLACE VIEW public.analytics_spam_signals
+WITH (security_invoker = true)
+AS
+SELECT 
+    l.id AS lead_id,
+    l.email,
+    l.ip_hash,
+    l.created_at,
+    l.lead_score_total,
+    l.device_type,
+    COUNT(*) OVER (PARTITION BY l.ip_hash) AS leads_from_same_ip,
+    CASE 
+        WHEN l.lead_score_total = 0 THEN 'zero_engagement'
+        WHEN COUNT(*) OVER (PARTITION BY l.ip_hash) > 3 THEN 'ip_cluster'
+        WHEN l.email LIKE '%test%' OR l.email LIKE '%fake%' OR l.email LIKE '%example.com' THEN 'suspicious_email'
+        ELSE 'other'
+    END AS spam_indicator
+FROM public.leads l
+WHERE 
+    l.created_at >= NOW() - INTERVAL '30 days'
+    AND l.lead_status != 'spam'
+    AND (
+        l.lead_score_total = 0 
+        OR l.email LIKE '%test%' 
+        OR l.email LIKE '%fake%'
+        OR l.email LIKE '%example.com'
+    )
+ORDER BY l.created_at DESC;
+
+-- ============================================================
+-- PART 8: Blocked Traffic Table for Spam Management
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.blocked_traffic (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    ip_hash text NOT NULL,
+    reason text NOT NULL DEFAULT 'spam',
+    blocked_at timestamptz NOT NULL DEFAULT now(),
+    blocked_by uuid REFERENCES auth.users(id),
+    expires_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_blocked_traffic_ip_hash ON public.blocked_traffic (ip_hash);
+
+-- Enable RLS on blocked_traffic
+ALTER TABLE public.blocked_traffic ENABLE ROW LEVEL SECURITY;
+
+-- Only admins can manage blocked traffic
+CREATE POLICY "Admins can view blocked_traffic"
+    ON public.blocked_traffic FOR SELECT
+    USING (has_role(auth.uid(), 'admin'::app_role));
+
+CREATE POLICY "Admins can insert blocked_traffic"
+    ON public.blocked_traffic FOR INSERT
+    WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+
+CREATE POLICY "Admins can delete blocked_traffic"
+    ON public.blocked_traffic FOR DELETE
+    USING (has_role(auth.uid(), 'admin'::app_role));
+
+-- ============================================================
+-- PART 9: Performance Indexes (OPTIMIZED per user request)
+-- ============================================================
+
+-- OPTIMIZED: Composite index for session lookups with chronological ordering
+-- Supports the Attribution Gaps view's LATERAL join efficiently
+CREATE INDEX IF NOT EXISTS idx_sessions_client_created_desc 
+    ON public.wm_sessions (anonymous_id, created_at DESC);
+
+-- NEW: Index for Ghost Lead detection - wm_events by session_id
+CREATE INDEX IF NOT EXISTS idx_events_session_id 
+    ON public.wm_events (session_id);
+
+-- Index for lead lookups by client_id (Golden Thread)
+CREATE INDEX IF NOT EXISTS idx_leads_client_id 
+    ON public.leads (client_id) 
+    WHERE client_id IS NOT NULL;
+
+-- Index for spam detection by IP
+CREATE INDEX IF NOT EXISTS idx_leads_ip_hash 
+    ON public.leads (ip_hash) 
+    WHERE ip_hash IS NOT NULL;
 ```
 
 ---
 
-## Files to Modify
+## Summary of Changes
 
-| Action | File | Change |
-|--------|------|--------|
-| **Modify** | `index.html` | Add early attribution capture script before GTM script |
-
----
-
-## GTM Configuration Recommendations
-
-After implementing the early capture, configure GTM to use these dataLayer variables:
-
-| Variable Name | DataLayer Key | Use Case |
-|---------------|---------------|----------|
-| `DL - UTM Source` | `utm_source` | GA4 campaign tracking |
-| `DL - UTM Medium` | `utm_medium` | GA4 campaign tracking |
-| `DL - GCLID` | `gclid` | Google Ads conversion tracking |
-| `DL - FBCLID` | `fbclid` | Meta CAPI matching |
-| `DL - Original Location` | `original_page_location` | Full URL with UTMs |
-
-Create a GTM Trigger: `attribution_captured` event, which fires for any page load with UTMs.
+| Component | Status |
+|-----------|--------|
+| AI Columns (`ai_psych_profile`, `ai_sales_hook`) | ✅ Included |
+| 6 Analytics Views | ✅ Included |
+| `blocked_traffic` Table + RLS | ✅ Included |
+| Session Index (composite DESC) | ✅ **OPTIMIZED** |
+| Events Index (session_id) | ✅ **ADDED** |
+| Lead Indexes (client_id, ip_hash) | ✅ Included |
 
 ---
 
-## Success Criteria
+## Next Steps After Migration Approval
 
-After implementation:
-- [ ] Console shows `[Attribution] Early capture: facebook` (or source) on UTM landing
-- [ ] `dataLayer` contains `attribution_captured` event before GTM loads
-- [ ] GA4 reports show correct campaign attribution (not all Direct)
-- [ ] Meta Events Manager shows UTM parameters in events
-- [ ] sessionStorage contains `wm_early_attribution` on pages with UTMs
-- [ ] Mobile Lighthouse score unchanged (< 2ms script execution)
+Once the database migration is approved and executed, I will proceed with:
 
----
-
-## Alternative Considered: Partytown / Web Worker
-
-We considered using Partytown to run GTM in a Web Worker, which would allow GTM to "freeze" the URL state. However:
-
-1. **GTM trigger compatibility**: Many GTM triggers rely on main-thread DOM access
-2. **Complexity**: Requires Vite plugin + service worker setup
-3. **Diminishing returns**: Early capture provides same protection with 10x less complexity
-
-The synchronous early capture script is the simplest, safest solution.
+1. **Step 0** — Update `attribution.ts` with early capture fallback
+2. **Step 2** — Create edge functions (`admin-analytics`, `admin-fix-attribution`, etc.)
+3. **Step 3** — Create `useAnalyticsDashboard` hook
+4. **Step 4** — Build all UI components and replace `Analytics.tsx`
 
