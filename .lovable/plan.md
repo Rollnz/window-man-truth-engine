@@ -1,344 +1,210 @@
 
 
-# Reusable UrgencyTicker Component
+# Theme-Aware "What a Legitimate Quote Should Include" Section
 
 ## Overview
-Create a centralized, configurable `UrgencyTicker` component in `src/components/social-proof/` that can be placed on multiple pages with different visual variants and data sources.
+Refactor the `QuoteSafetyChecklist` component to fully support the site's Light/Dark theme toggle while maintaining accessibility with a 5:1 contrast ratio. The section will feature a "Cyberpunk" aesthetic in dark mode and a clean "Professional Audit" look in light mode.
 
 ---
 
-## Component Architecture
+## Current State Analysis
 
-```text
-src/components/social-proof/
-├── UrgencyTicker.tsx          # Main reusable component with variants
-├── useCountUp.ts              # Extracted animation hook (reusable)
-└── index.ts                   # Barrel export
-```
+**File:** `src/components/quote-scanner/QuoteSafetyChecklist.tsx`
 
----
-
-## Configuration Options
-
-The component will support these configurable props:
-
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `variant` | `'cyberpunk' \| 'minimal' \| 'homepage'` | `'cyberpunk'` | Visual style preset |
-| `showToday` | `boolean` | `true` | Show/hide the "+X today" section |
-| `animated` | `boolean` | `true` | Enable/disable count-up animation |
-| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Size preset |
-| `className` | `string` | `''` | Additional classes |
+**Current Issues:**
+- Uses single-mode colors (`text-emerald-500`, `text-rose-500`) that lack sufficient contrast in light mode
+- Relies on generic theme tokens (`bg-card`, `border-border`) that don't provide the distinct dual-mode aesthetic
+- No explicit light vs dark color definitions
 
 ---
 
-## Visual Variants
+## Dual-Mode Visual Strategy
 
-### 1. Cyberpunk (Default) - For AI Scanner
-Current Gemini-style dark zinc/emerald/amber aesthetic:
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│  🛡️(emerald)  3,568 quotes scanned  │  🟠(amber) +19 today      │
-│  [bg-zinc-900/70, backdrop-blur-sm]   [bg-amber-500/10]          │
-└──────────────────────────────────────────────────────────────────┘
-```
+### Dark Mode - "Cyberpunk" Aesthetic
+| Element | Classes |
+|---------|---------|
+| Section BG | `bg-zinc-950/60` |
+| Card BG | `bg-zinc-900/50` |
+| Card Border | `border-zinc-800` |
+| Emerald Icon/Header | `text-emerald-400` |
+| Emerald Card Tint | `bg-emerald-500/10` + `border-emerald-500/30` |
+| Rose Icon/Header | `text-rose-400` |
+| Rose Card Tint | `bg-rose-500/10` + `border-rose-500/30` |
+| Body Text | `text-zinc-300` |
+| CTA Button | Gradient red glow effect |
 
-### 2. Minimal - For Sample Report
-Lighter, less visually dominant for content-focused pages:
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│  🛡️  3,568 quotes scanned  │  🟢 +19 today                      │
-│  [bg-card, border-border]   [subtle primary tint]                │
-└──────────────────────────────────────────────────────────────────┘
-```
+### Light Mode - "Professional Audit" Aesthetic
+| Element | Classes |
+|---------|---------|
+| Section BG | `bg-slate-50` |
+| Card BG | `bg-white` |
+| Card Border | `border-slate-200` + `shadow-sm` |
+| Emerald Icon/Header | `text-emerald-700` |
+| Emerald Card Tint | `bg-emerald-50` + `border-emerald-200` |
+| Rose Icon/Header | `text-rose-700` |
+| Rose Card Tint | `bg-rose-50` + `border-rose-200` |
+| Body Text | `text-slate-700` |
+| CTA Button | Solid rose with subtle shadow |
 
-### 3. Homepage - For Index
-Integrated with the homepage aesthetic (primary color focus):
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│  🛡️  3,568+ quotes analyzed  │  Live                            │
-│  [bg-primary/5, border-primary/20]                               │
-└──────────────────────────────────────────────────────────────────┘
-```
+---
+
+## Accessibility Compliance (5:1 Contrast Ratio)
+
+**Text Colors:**
+| Context | Light Mode | Dark Mode | Contrast |
+|---------|------------|-----------|----------|
+| Body text | `text-slate-700` | `text-zinc-300` | >7:1 |
+| Emerald accent | `text-emerald-700` | `text-emerald-400` | >5:1 |
+| Rose accent | `text-rose-700` | `text-rose-400` | >5:1 |
+| Muted text | `text-slate-500` | `text-zinc-400` | >4.5:1 |
+
+**Icon Colors:**
+| Type | Light Mode | Dark Mode |
+|------|------------|-----------|
+| Checkmark | `text-emerald-600` | `text-emerald-400` |
+| X mark | `text-rose-600` | `text-rose-400` |
 
 ---
 
 ## Technical Implementation
 
-### File 1: `src/components/social-proof/useCountUp.ts` (NEW)
+### File: `src/components/quote-scanner/QuoteSafetyChecklist.tsx`
 
-Extract the animation hook for reusability:
+**Key Changes:**
 
-```tsx
-import { useState, useEffect, useRef } from 'react';
-
-export function useCountUp(end: number, duration: number = 2500) {
-  const [count, setCount] = useState(0);
-  const prevEndRef = useRef(0);
-
-  useEffect(() => {
-    if (end === prevEndRef.current) return;
-    prevEndRef.current = end;
-    
-    if (end === 0) {
-      setCount(0);
-      return;
-    }
-
-    let startTime: number | null = null;
-    let animationFrame: number;
-
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = timestamp - startTime;
-
-      if (progress < duration) {
-        const t = progress / duration;
-        const ease = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-        setCount(Math.floor(ease * end));
-        animationFrame = requestAnimationFrame(animate);
-      } else {
-        setCount(end);
-      }
-    };
-
-    animationFrame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationFrame);
-  }, [end, duration]);
-
-  return count;
-}
-```
-
----
-
-### File 2: `src/components/social-proof/UrgencyTicker.tsx` (NEW)
-
-Main reusable component with variant support:
-
-```tsx
-import { useState, useEffect, useRef } from 'react';
-import { Shield } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
-import { useCountUp } from './useCountUp';
-
-type TickerVariant = 'cyberpunk' | 'minimal' | 'homepage';
-type TickerSize = 'sm' | 'md' | 'lg';
-
-interface UrgencyTickerProps {
-  variant?: TickerVariant;
-  showToday?: boolean;
-  animated?: boolean;
-  size?: TickerSize;
-  className?: string;
-}
-
-const variantStyles = {
-  cyberpunk: {
-    container: 'bg-zinc-900/70 border-zinc-700/40 divide-zinc-700/50 backdrop-blur-sm ring-1 ring-white/5 shadow-xl',
-    icon: 'text-emerald-400',
-    count: 'text-zinc-100',
-    label: 'text-zinc-400',
-    todayBg: 'bg-amber-500/10',
-    todayDot: 'bg-amber-400',
-    todayText: 'text-amber-300',
-  },
-  minimal: {
-    container: 'bg-card border-border divide-border',
-    icon: 'text-primary',
-    count: 'text-foreground',
-    label: 'text-muted-foreground',
-    todayBg: 'bg-primary/5',
-    todayDot: 'bg-primary',
-    todayText: 'text-primary',
-  },
-  homepage: {
-    container: 'bg-primary/5 border-primary/20 divide-primary/20',
-    icon: 'text-primary',
-    count: 'text-foreground',
-    label: 'text-muted-foreground',
-    todayBg: 'bg-primary/10',
-    todayDot: 'bg-primary',
-    todayText: 'text-primary',
-  },
-};
-
-const sizeStyles = {
-  sm: { padding: 'px-3 py-1.5', iconSize: 'w-3 h-3', text: 'text-xs', label: 'text-[10px]' },
-  md: { padding: 'px-4 py-2.5', iconSize: 'w-4 h-4', text: 'text-sm', label: 'text-xs' },
-  lg: { padding: 'px-5 py-3', iconSize: 'w-5 h-5', text: 'text-base', label: 'text-sm' },
-};
-
-export function UrgencyTicker({
-  variant = 'cyberpunk',
-  showToday = true,
-  animated = true,
-  size = 'md',
-  className,
-}: UrgencyTickerProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(!animated);
-  const { total, today } = useProjectedQuotes();
-
-  const styles = variantStyles[variant];
-  const sizes = sizeStyles[size];
-
-  // IntersectionObserver for animation trigger
-  useEffect(() => {
-    if (!animated) return;
-    
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.5 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [animated]);
-
-  const totalCount = useCountUp(isVisible ? total : 0, 2500);
-  const todayCount = useCountUp(isVisible && showToday ? today : 0, 2500);
-
-  return (
-    <div ref={ref} className={cn('flex items-center justify-center', className)}>
-      <div className={cn(
-        'inline-flex items-center divide-x rounded-lg border overflow-hidden',
-        styles.container
-      )}>
-        {/* Left: Total Count */}
-        <div className={cn('flex items-center gap-2', sizes.padding)}>
-          <Shield className={cn(sizes.iconSize, styles.icon)} />
-          <span className={cn('font-bold tabular-nums', sizes.text, styles.count)}>
-            {totalCount.toLocaleString()}
-          </span>
-          <span className={cn(sizes.label, styles.label)}>quotes scanned</span>
-        </div>
-
-        {/* Right: Today Count (optional) */}
-        {showToday && (
-          <div className={cn('flex items-center gap-2 h-full', sizes.padding, styles.todayBg)}>
-            <div className="relative flex h-2 w-2">
-              <span className={cn(
-                'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
-                styles.todayDot
-              )} />
-              <span className={cn('relative inline-flex rounded-full h-2 w-2', styles.todayDot)} />
-            </div>
-            <span className={cn('font-semibold tabular-nums', sizes.text, styles.todayText)}>
-              +{todayCount} today
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-```
-
----
-
-### File 3: `src/components/social-proof/index.ts` (NEW)
-
-Barrel export:
-
-```tsx
-export { UrgencyTicker } from './UrgencyTicker';
-export { useCountUp } from './useCountUp';
-```
-
----
-
-### File 4: `src/pages/QuoteScanner.tsx` (MODIFY)
-
-Update import to use new location:
-
+1. **Section Background:**
 ```tsx
 // Before:
-import { UrgencyTicker } from '@/components/quote-scanner/UrgencyTicker';
+<section className="py-12 md:py-16 bg-muted/20">
 
 // After:
-import { UrgencyTicker } from '@/components/social-proof';
-
-// Usage (no change needed - uses cyberpunk default):
-<UrgencyTicker />
+<section className="py-12 md:py-16 bg-slate-50 dark:bg-zinc-950/60">
 ```
 
----
-
-### File 5: `src/pages/SampleReport.tsx` (MODIFY)
-
-Add the ticker with minimal variant:
-
+2. **Title & Subtitle:**
 ```tsx
-import { UrgencyTicker } from '@/components/social-proof';
+// Title
+<h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-zinc-100 mb-2">
 
-// After SampleReportHeader, before main content:
-<SampleReportHeader onOpenLeadModal={handleOpenLeadModal} />
+// Subtitle
+<p className="text-slate-600 dark:text-zinc-400 max-w-2xl mx-auto">
+```
 
-<div className="container px-4 py-6">
-  <UrgencyTicker variant="minimal" />
+3. **Column Headers:**
+```tsx
+// Emerald header
+<h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-2 mb-4">
+  <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+  What to Look For
+</h3>
+
+// Rose header
+<h3 className="text-lg font-semibold text-rose-700 dark:text-rose-400 flex items-center gap-2 mb-4">
+  <XCircle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+  Common Red Flags
+</h3>
+```
+
+4. **Checklist Cards (Emerald/Good):**
+```tsx
+<div className={cn(
+  "flex items-start gap-3 p-3 rounded-lg",
+  // Light mode: clean white card
+  "bg-white border border-emerald-200 shadow-sm",
+  // Dark mode: glassmorphism
+  "dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:shadow-none"
+)}>
+  <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+  <span className="text-sm text-slate-700 dark:text-zinc-300">{item.text}</span>
 </div>
-
-<main className="pt-28">
 ```
 
----
-
-### File 6: `src/pages/Index.tsx` (MODIFY)
-
-Add the ticker to homepage (after HeroSection):
-
+5. **Red Flag Cards (Rose/Bad):**
 ```tsx
-import { UrgencyTicker } from '@/components/social-proof';
-
-// After HeroSection:
-<HeroSection />
-
-<div className="container px-4 py-8 -mt-16 relative z-10">
-  <UrgencyTicker variant="homepage" size="lg" />
+<div className={cn(
+  "flex items-start gap-3 p-3 rounded-lg",
+  // Light mode: clean white card with rose accent
+  "bg-white border border-rose-200 shadow-sm",
+  // Dark mode: glassmorphism with rose tint
+  "dark:bg-rose-500/10 dark:border-rose-500/30 dark:shadow-none"
+)}>
+  <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 mt-0.5 flex-shrink-0" />
+  <span className="text-sm text-slate-700 dark:text-zinc-300">{item.text}</span>
 </div>
-
-<MarketRealitySection />
 ```
 
----
-
-### File 7: `src/components/quote-scanner/UrgencyTicker.tsx` (DELETE or DEPRECATE)
-
-Option A (Recommended): Delete and update all imports
-Option B: Keep as re-export wrapper for backwards compatibility:
-
+6. **CTA Button:**
 ```tsx
-// Re-export from new location for backwards compatibility
-export { UrgencyTicker } from '@/components/social-proof';
+<Button
+  onClick={handleScrollToUpload}
+  className={cn(
+    "w-full gap-2",
+    // Light mode: solid rose
+    "bg-rose-600 text-white hover:bg-rose-700 border-0",
+    // Dark mode: transparent with glow
+    "dark:bg-rose-500/20 dark:text-rose-300 dark:border dark:border-rose-500/40",
+    "dark:hover:bg-rose-500/30"
+  )}
+>
+  <Upload className="w-4 h-4" />
+  Scan Your Quote for Red Flags
+</Button>
 ```
 
 ---
 
-## Page-Specific Integration
+## Visual Comparison
 
-| Page | Variant | Position | Extra Config |
-|------|---------|----------|--------------|
-| `/ai-scanner` | `cyberpunk` | After hero, `-mt-6` overlap | Default |
-| `/sample-report` | `minimal` | After header, before hero | Standard spacing |
-| `/` (Homepage) | `homepage` | After HeroSection, `-mt-16` overlap | `size="lg"` |
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          LIGHT MODE                                      │
+│  ┌─────────────────────────────┐  ┌─────────────────────────────┐       │
+│  │  ✓ What to Look For         │  │  ✗ Common Red Flags          │       │
+│  │  [emerald-700 text]         │  │  [rose-700 text]             │       │
+│  │                             │  │                              │       │
+│  │  ┌─ White card ──────────┐  │  │  ┌─ White card ──────────┐  │       │
+│  │  │ ✓ Impact rating...    │  │  │  │ ✗ Vague install...    │  │       │
+│  │  │ [slate-700 text]      │  │  │  │ [slate-700 text]      │  │       │
+│  │  │ [emerald-200 border]  │  │  │  │ [rose-200 border]     │  │       │
+│  │  └───────────────────────┘  │  │  └───────────────────────┘  │       │
+│  │  [bg-slate-50 section]      │  │  [shadow-sm for depth]      │       │
+│  └─────────────────────────────┘  └─────────────────────────────┘       │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          DARK MODE                                       │
+│  ┌─────────────────────────────┐  ┌─────────────────────────────┐       │
+│  │  ✓ What to Look For         │  │  ✗ Common Red Flags          │       │
+│  │  [emerald-400 neon text]    │  │  [rose-400 neon text]        │       │
+│  │                             │  │                              │       │
+│  │  ┌─ Glassy card ─────────┐  │  │  ┌─ Glassy card ─────────┐  │       │
+│  │  │ ✓ Impact rating...    │  │  │  │ ✗ Vague install...    │  │       │
+│  │  │ [zinc-300 text]       │  │  │  │ [zinc-300 text]       │  │       │
+│  │  │ [emerald-500/30 bdr]  │  │  │  │ [rose-500/30 border]  │  │       │
+│  │  │ [emerald-500/10 bg]   │  │  │  │ [rose-500/10 bg]      │  │       │
+│  │  └───────────────────────┘  │  │  └───────────────────────┘  │       │
+│  │  [bg-zinc-950/60 section]   │  │  [no shadow - glow instead] │       │
+│  └─────────────────────────────┘  └─────────────────────────────┘       │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Implementation Rule Summary
+
+| Rule | Implementation |
+|------|----------------|
+| No opacity-only colors | Every color has explicit `light:` and `dark:` tokens |
+| 5:1 contrast minimum | Light uses 700 shades, dark uses 400 shades |
+| Explicit declarations | `className="bg-white dark:bg-zinc-900..."` pattern |
+| Consistent text hierarchy | `slate-900/700/600` (light) → `zinc-100/300/400` (dark) |
+| Shadow strategy | Light uses `shadow-sm`, dark removes shadows for glow |
 
 ---
 
 ## Files Summary
 
-| File | Action | Purpose |
+| File | Action | Changes |
 |------|--------|---------|
-| `src/components/social-proof/useCountUp.ts` | CREATE | Extracted animation hook |
-| `src/components/social-proof/UrgencyTicker.tsx` | CREATE | Reusable component with variants |
-| `src/components/social-proof/index.ts` | CREATE | Barrel exports |
-| `src/pages/QuoteScanner.tsx` | MODIFY | Update import path |
-| `src/pages/SampleReport.tsx` | MODIFY | Add ticker with minimal variant |
-| `src/pages/Index.tsx` | MODIFY | Add ticker with homepage variant |
-| `src/components/quote-scanner/UrgencyTicker.tsx` | DELETE | Remove old location |
+| `src/components/quote-scanner/QuoteSafetyChecklist.tsx` | MODIFY | Add explicit light/dark color tokens for all elements |
 
