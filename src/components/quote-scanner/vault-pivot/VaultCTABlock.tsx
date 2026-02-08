@@ -15,8 +15,7 @@ interface VaultCTABlockProps {
 
 /**
  * VaultCTABlock
- * Theme-aware CTA block with pulsing button (dark mode only),
- * "Memory Protection Active" status, and email fallback form.
+ * "War Room Entry" - Military-style CTA with tactical status indicator.
  */
 export function VaultCTABlock({ 
   onGoogleAuth, 
@@ -47,43 +46,44 @@ export function VaultCTABlock({
   return (
     <div className="mt-12 text-center">
       {/* Simplicity Anchor */}
-      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-        No decisions yet. Just saving your place.
+      <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">
+        No decisions yet. Just securing your position.
       </p>
 
-      {/* Memory Protection Status - "Smooth Criminal" trust pixel */}
+      {/* Tactical Status Indicator */}
       <div className="flex items-center justify-center gap-2 mb-6">
-        <span className="text-sm text-slate-500 dark:text-slate-400">Memory Protection Active</span>
+        <span className="text-sm font-mono text-stone-500 dark:text-emerald-400 uppercase tracking-wider">
+          Tactical Systems Active
+        </span>
         <span className="relative flex h-2.5 w-2.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
         </span>
       </div>
 
-      {/* Primary CTA - Pulsing Glow (dark mode only) */}
+      {/* Primary CTA - Military Style */}
       <Button
         onClick={onGoogleAuth}
         disabled={isLoading}
         size="lg"
         className={cn(
-          'w-full md:w-auto md:min-w-[360px] h-16 text-lg font-bold',
-          'bg-sky-500 hover:bg-sky-400 text-white',
-          // Light mode: clean shadow
+          'w-full md:w-auto md:min-w-[360px] h-16 text-lg font-bold uppercase tracking-wider',
+          'bg-emerald-600 hover:bg-emerald-500 text-white',
+          'border-2 border-emerald-700',
           'shadow-lg hover:shadow-xl',
-          // Dark mode: glowing shadow + pulse animation
-          'dark:shadow-[0_0_30px_rgba(14,165,233,0.4)]',
-          'dark:animate-[pulse-glow-cta_2.5s_ease-in-out_infinite]',
+          'dark:shadow-[0_0_30px_rgba(34,197,94,0.4)]',
+          'dark:animate-[radar-pulse_3s_ease-in-out_infinite]',
           'transition-all duration-200'
         )}
       >
         <Lock className="w-5 h-5 mr-2" />
-        ENTER MY WINDOW VAULT
+        ENTER THE WAR ROOM
       </Button>
 
       {/* Email Fallback Toggle */}
       <button
         onClick={() => setShowEmailForm(!showEmailForm)}
-        className="flex items-center justify-center gap-1 mx-auto mt-6 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+        className="flex items-center justify-center gap-1 mx-auto mt-6 text-sm text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 transition-colors"
       >
         <Mail className="w-4 h-4" />
         Or continue with email
@@ -103,18 +103,18 @@ export function VaultCTABlock({
       >
         <form 
           onSubmit={handleEmailSubmit}
-          className="max-w-md mx-auto space-y-4 p-6 rounded-xl border bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 backdrop-blur-sm"
+          className="max-w-md mx-auto space-y-4 p-6 rounded-xl border-2 bg-white dark:bg-stone-900/80 border-stone-200 dark:border-emerald-500/20"
         >
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 text-left">
-              <Label htmlFor="firstName" className="text-slate-700 dark:text-slate-300">First Name</Label>
+              <Label htmlFor="firstName" className="text-stone-700 dark:text-stone-300">First Name</Label>
               <Input
                 id="firstName"
                 type="text"
                 value={values.firstName}
                 onChange={(e) => setValue('firstName', e.target.value)}
                 className={cn(
-                  "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500",
+                  "bg-white dark:bg-stone-800 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-500",
                   hasError('firstName') && 'border-red-500'
                 )}
                 required
@@ -124,14 +124,14 @@ export function VaultCTABlock({
               )}
             </div>
             <div className="space-y-2 text-left">
-              <Label htmlFor="lastName" className="text-slate-700 dark:text-slate-300">Last Name</Label>
+              <Label htmlFor="lastName" className="text-stone-700 dark:text-stone-300">Last Name</Label>
               <Input
                 id="lastName"
                 type="text"
                 value={values.lastName}
                 onChange={(e) => setValue('lastName', e.target.value)}
                 className={cn(
-                  "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500",
+                  "bg-white dark:bg-stone-800 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-500",
                   hasError('lastName') && 'border-red-500'
                 )}
                 required
@@ -142,14 +142,14 @@ export function VaultCTABlock({
             </div>
           </div>
           <div className="space-y-2 text-left">
-            <Label htmlFor="email" className="text-slate-700 dark:text-slate-300">Email</Label>
+            <Label htmlFor="email" className="text-stone-700 dark:text-stone-300">Email</Label>
             <Input
               id="email"
               type="email"
               value={values.email}
               onChange={(e) => setValue('email', e.target.value)}
               className={cn(
-                "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500",
+                "bg-white dark:bg-stone-800 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-500",
                 hasError('email') && 'border-red-500'
               )}
               placeholder="you@example.com"
@@ -162,7 +162,7 @@ export function VaultCTABlock({
           <Button
             type="submit"
             disabled={isLoading || !isFormValid}
-            className="w-full bg-sky-500 hover:bg-sky-400 text-white"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white uppercase tracking-wider"
           >
             Continue with Email
           </Button>
@@ -170,15 +170,15 @@ export function VaultCTABlock({
       </div>
 
       {/* Final Assurance */}
-      <p className="text-xs text-slate-500 mt-8 max-w-sm mx-auto">
+      <p className="text-xs text-stone-500 mt-8 max-w-sm mx-auto">
         Free forever. Takes 10 seconds. We never sell or share your data.
       </p>
 
-      {/* Inline keyframes for pulse-glow-cta (dark mode only via class) */}
+      {/* Radar pulse animation for dark mode */}
       <style>{`
-        @keyframes pulse-glow-cta {
-          0%, 100% { box-shadow: 0 0 25px rgba(14,165,233,0.3); }
-          50% { box-shadow: 0 0 45px rgba(14,165,233,0.5); }
+        @keyframes radar-pulse {
+          0%, 100% { box-shadow: 0 0 20px rgba(34,197,94,0.3); }
+          50% { box-shadow: 0 0 40px rgba(34,197,94,0.5); }
         }
       `}</style>
     </div>

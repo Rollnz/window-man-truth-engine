@@ -1,7 +1,6 @@
 import React from 'react';
 import { Compass, TrendingUp, ShieldCheck } from 'lucide-react';
 import { VaultAdvantageCard } from './VaultAdvantageCard';
-import { cn } from '@/lib/utils';
 
 const advantages = [
   {
@@ -29,12 +28,22 @@ const advantages = [
 
 /**
  * VaultAdvantageGrid
- * 3-pillar glassmorphism card grid with mobile connectors.
+ * Tactical Dossiers grid with folder-style cards.
  */
 export function VaultAdvantageGrid() {
   return (
     <div className="mt-10">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
+      {/* Section Header */}
+      <div className="flex items-center justify-center gap-3 mb-6">
+        <div className="h-px w-12 bg-stone-300 dark:bg-stone-700" />
+        <span className="text-xs font-mono uppercase tracking-[0.3em] text-stone-500">
+          Tactical Dossiers
+        </span>
+        <div className="h-px w-12 bg-stone-300 dark:bg-stone-700" />
+      </div>
+
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
         {advantages.map((advantage, index) => (
           <React.Fragment key={advantage.title}>
             <VaultAdvantageCard
@@ -45,15 +54,10 @@ export function VaultAdvantageGrid() {
               accentColor={advantage.accentColor}
               stepNumber={index + 1}
             />
-            {/* Mobile connector (not after last card) */}
+            {/* Mobile tactical connector (not after last card) */}
             {index < advantages.length - 1 && (
-              <div className="flex md:hidden justify-center py-1">
-                <div className={cn(
-                  'w-px h-4',
-                  index === 0 
-                    ? 'bg-gradient-to-b from-sky-400/40 to-amber-400/40 dark:from-sky-500/50 dark:to-amber-500/50' 
-                    : 'bg-gradient-to-b from-amber-400/40 to-emerald-400/40 dark:from-amber-500/50 dark:to-emerald-500/50'
-                )} />
+              <div className="flex md:hidden justify-center py-2">
+                <div className="w-px h-6 border-l-2 border-dashed border-stone-300 dark:border-emerald-500/30" />
               </div>
             )}
           </React.Fragment>
