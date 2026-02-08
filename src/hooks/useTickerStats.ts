@@ -113,24 +113,40 @@ export function useTickerStats(): TickerStats {
 
     let isMounted = true;
 
-    fetchTickerStats().then((result) => {
-      if (!isMounted) return;
-
-      if (result) {
-        setStats({
-          total: result.total,
-          today: result.today,
-          isLoading: false,
-          isFromServer: true,
-        });
+    // PERFORMANCE: Defer fetch to idle time to not block FCP/LCP
+    // The fallback values are already displayed, so this is purely enhancement
+    const timeoutId = setTimeout(() => {
+      if ('requestIdleCallback' in window) {
+        (window as Window).requestIdleCallback(() => {
+          if (!isMounted) return;
+          performFetch();
+        }, { timeout: 3000 });
       } else {
-        // Keep fallback values, just mark as not loading
-        setStats((prev) => ({ ...prev, isLoading: false }));
+        performFetch();
       }
-    });
+    }, 100); // Small delay to ensure render completes first
+
+    function performFetch() {
+      fetchTickerStats().then((result) => {
+        if (!isMounted) return;
+
+        if (result) {
+          setStats({
+            total: result.total,
+            today: result.today,
+            isLoading: false,
+            isFromServer: true,
+          });
+        } else {
+          // Keep fallback values, just mark as not loading
+          setStats((prev) => ({ ...prev, isLoading: false }));
+        }
+      });
+    }
 
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
     };
   }, [fallback]);
 

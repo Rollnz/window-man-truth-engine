@@ -21,29 +21,65 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Core vendor - React ecosystem
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          // Data layer
-          'vendor-data': ['@supabase/supabase-js', '@tanstack/react-query'],
-          // UI components (heavy)
-          'vendor-ui': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-accordion',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-popover',
-            '@radix-ui/react-select',
-          ],
-          // Charts (only loaded when needed)
-          'vendor-charts': ['recharts'],
-          // Form handling
-          'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+        manualChunks(id) {
+          // Core React - absolute minimum for FCP
+          if (id.includes('node_modules/react/') || 
+              id.includes('node_modules/react-dom/') ||
+              id.includes('node_modules/scheduler/')) {
+            return 'vendor-react-core';
+          }
+          
+          // Router - needed for navigation but can be slightly deferred
+          if (id.includes('react-router')) {
+            return 'vendor-router';
+          }
+          
+          // Data layer - Supabase & TanStack Query (deferred until needed)
+          if (id.includes('@supabase/') || id.includes('@tanstack/')) {
+            return 'vendor-data';
+          }
+          
+          // Radix UI - split into critical (tooltip/slot) and deferred
+          if (id.includes('@radix-ui/react-tooltip') || 
+              id.includes('@radix-ui/react-slot') ||
+              id.includes('@radix-ui/react-primitive')) {
+            return 'vendor-ui-core';
+          }
+          
+          // Heavy Radix components (dialogs, dropdowns, etc.)
+          if (id.includes('@radix-ui/')) {
+            return 'vendor-ui-deferred';
+          }
+          
+          // Charts - only loaded when needed (lazy routes)
+          if (id.includes('recharts') || id.includes('d3-')) {
+            return 'vendor-charts';
+          }
+          
+          // Forms - only needed on form pages
+          if (id.includes('react-hook-form') || 
+              id.includes('@hookform/') || 
+              id.includes('zod')) {
+            return 'vendor-forms';
+          }
+          
+          // Lucide icons - tree-shaken but still a chunk
+          if (id.includes('lucide-react')) {
+            return 'vendor-icons';
+          }
+          
+          // Helmet/SEO
+          if (id.includes('react-helmet')) {
+            return 'vendor-seo';
+          }
         },
       },
     },
     // Increase chunk size warning limit since we're intentionally chunking
     chunkSizeWarningLimit: 600,
+    // Enable minification optimizations
+    minify: 'esbuild',
+    // Target modern browsers for smaller bundles
+    target: 'es2020',
   },
 }));
