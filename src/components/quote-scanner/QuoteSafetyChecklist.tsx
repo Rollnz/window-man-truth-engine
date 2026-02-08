@@ -35,13 +35,13 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
   };
 
   return (
-    <section className="py-12 md:py-16 bg-muted/20">
+    <section className="py-12 md:py-16 bg-slate-50 dark:bg-zinc-950/60">
       <div className="container px-4">
         <div className="text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-zinc-100 mb-2">
             What a Legitimate Quote Should Include
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-slate-600 dark:text-zinc-400 max-w-2xl mx-auto">
             Before signing, make sure your quote has these essential elements. 
             Missing items = leverage for negotiation.
           </p>
@@ -50,18 +50,24 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
           {/* Good Signs */}
           <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-emerald-500 flex items-center gap-2 mb-4">
-              <CheckCircle className="w-5 h-5" />
+            <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-2 mb-4">
+              <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               What to Look For
             </h3>
             <div className="space-y-2">
               {checklistItems.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-card border border-border/50"
+                  className={cn(
+                    "flex items-start gap-3 p-3 rounded-lg",
+                    // Light mode: clean white card
+                    "bg-white border border-emerald-200 shadow-sm",
+                    // Dark mode: glassmorphism
+                    "dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:shadow-none"
+                  )}
                 >
-                  <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-foreground">{item.text}</span>
+                  <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-slate-700 dark:text-zinc-300">{item.text}</span>
                 </div>
               ))}
             </div>
@@ -69,18 +75,24 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
 
           {/* Red Flags */}
           <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-rose-500 flex items-center gap-2 mb-4">
-              <XCircle className="w-5 h-5" />
+            <h3 className="text-lg font-semibold text-rose-700 dark:text-rose-400 flex items-center gap-2 mb-4">
+              <XCircle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
               Common Red Flags
             </h3>
             <div className="space-y-2">
               {redFlags.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-card border border-rose-500/20"
+                  className={cn(
+                    "flex items-start gap-3 p-3 rounded-lg",
+                    // Light mode: clean white card with rose accent
+                    "bg-white border border-rose-200 shadow-sm",
+                    // Dark mode: glassmorphism with rose tint
+                    "dark:bg-rose-500/10 dark:border-rose-500/30 dark:shadow-none"
+                  )}
                 >
-                  <XCircle className="w-4 h-4 text-rose-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-foreground">{item.text}</span>
+                  <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-slate-700 dark:text-zinc-300">{item.text}</span>
                 </div>
               ))}
             </div>
@@ -89,8 +101,14 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
             <div className="pt-4">
               <Button
                 onClick={handleScrollToUpload}
-                variant="outline"
-                className="w-full gap-2 border-rose-500/30 text-rose-500 hover:bg-rose-500/10"
+                className={cn(
+                  "w-full gap-2",
+                  // Light mode: solid rose
+                  "bg-rose-600 text-white hover:bg-rose-700 border-0",
+                  // Dark mode: transparent with glow
+                  "dark:bg-rose-500/20 dark:text-rose-300 dark:border dark:border-rose-500/40",
+                  "dark:hover:bg-rose-500/30"
+                )}
               >
                 <Upload className="w-4 h-4" />
                 Scan Your Quote for Red Flags
