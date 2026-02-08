@@ -195,7 +195,7 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
             Spot the Difference
           </h2>
           <p className="text-slate-600 dark:text-zinc-400 max-w-2xl mx-auto">
-            Know what separates a risky quote from a legitimate one.
+            Know What Separates a Risky Quote From a Legitimate One. Missing Items = Leverage for Negotiation.
           </p>
         </div>
 
