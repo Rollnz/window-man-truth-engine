@@ -50,7 +50,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
         {/* Header */}
         <div className="flex items-center gap-2 text-xs uppercase tracking-wider">
           <FileText className="w-4 h-4 text-muted-foreground" />
-          <span className="font-bold text-destructive">
+          <span className="font-bold text-destructive text-base">
             Before: Just a Confusing Estimate
           </span>
         </div>
