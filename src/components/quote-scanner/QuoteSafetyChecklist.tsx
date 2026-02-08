@@ -1,5 +1,31 @@
 import { RefObject, useState } from 'react';
-import { CheckCircle, XCircle, Upload, ChevronDown } from 'lucide-react';
+import { 
+  // Section headers
+  CheckCircle, 
+  XCircle,
+  // General UI
+  Upload, 
+  ChevronDown,
+  // "What to Look For" icons
+  Shield,
+  Wind,
+  Factory,
+  Hammer,
+  FileText,
+  ShieldCheck,
+  CalendarClock,
+  Undo2,
+  // "Red Flags" icons
+  HelpCircle,
+  PackageX,
+  Timer,
+  AlertTriangle,
+  Receipt,
+  Trash2,
+  Gauge,
+  ShieldAlert,
+  LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/gtm';
@@ -7,75 +33,92 @@ import { trackEvent } from '@/lib/gtm';
 interface ChecklistItem {
   title: string;
   description: string;
+  icon: LucideIcon;
 }
 
 const checklistItems: ChecklistItem[] = [
   {
     title: 'Impact rating clearly stated (e.g., Large Missile)',
-    description: "Florida code requires specific ratings (like 'Large Missile Level D') for hurricane zones. Without this explicit rating, your windows may not pass inspection or qualify for insurance discounts."
+    description: "Florida code requires specific ratings (like 'Large Missile Level D') for hurricane zones. Without this explicit rating, your windows may not pass inspection or qualify for insurance discounts.",
+    icon: Shield,
   },
   {
     title: 'Design pressure specified per opening',
-    description: "This number (e.g., +50/-50) defines the exact wind force the window can withstand. It must match the specific wind zone requirements of your home's location."
+    description: "This number (e.g., +50/-50) defines the exact wind force the window can withstand. It must match the specific wind zone requirements of your home's location.",
+    icon: Wind,
   },
   {
     title: 'Product manufacturer and model identified',
-    description: "Generic terms like 'Impact Window' aren't enough. You need the exact brand and model (e.g., 'PGT WinGuard') to verify performance specs and product approvals."
+    description: "Generic terms like 'Impact Window' aren't enough. You need the exact brand and model (e.g., 'PGT WinGuard') to verify performance specs and product approvals.",
+    icon: Factory,
   },
   {
     title: 'Detailed installation scope (removal, disposal, etc.)',
-    description: "A vague 'install included' leaves room for shortcuts. The quote should specify bucking, anchoring, waterproofing, and debris removal to ensure a code-compliant install."
+    description: "A vague 'install included' leaves room for shortcuts. The quote should specify bucking, anchoring, waterproofing, and debris removal to ensure a code-compliant install.",
+    icon: Hammer,
   },
   {
     title: 'Permit fees included or listed separately',
-    description: "Permits are mandatory for structural work. If fees aren't listed, you might be stuck paying them later, or worse—the contractor might be planning to skip the permit entirely."
+    description: "Permits are mandatory for structural work. If fees aren't listed, you might be stuck paying them later, or worse—the contractor might be planning to skip the permit entirely.",
+    icon: FileText,
   },
   {
     title: 'Warranty terms (product + labor) clearly defined',
-    description: "Manufacturer warranties cover the product, but who covers the work? Ensure the contractor explicitly states how long their labor and workmanship is guaranteed (e.g., 5 years)."
+    description: "Manufacturer warranties cover the product, but who covers the work? Ensure the contractor explicitly states how long their labor and workmanship is guaranteed (e.g., 5 years).",
+    icon: ShieldCheck,
   },
   {
     title: 'Payment schedule with milestones',
-    description: "Never pay 100% upfront. A legitimate schedule ties payments to completed steps (e.g., Deposit, Measurement, Delivery, Final Inspection) to protect your leverage."
+    description: "Never pay 100% upfront. A legitimate schedule ties payments to completed steps (e.g., Deposit, Measurement, Delivery, Final Inspection) to protect your leverage.",
+    icon: CalendarClock,
   },
   {
     title: 'Notice of Right to Cancel included',
-    description: "Florida law grants a 3-day 'cooling-off' period for home improvement contracts signed in your home. This mandatory disclosure protects you from high-pressure sales."
+    description: "Florida law grants a 3-day 'cooling-off' period for home improvement contracts signed in your home. This mandatory disclosure protects you from high-pressure sales.",
+    icon: Undo2,
   },
 ];
 
 const redFlags: ChecklistItem[] = [
   {
     title: 'Vague "installation included" without details',
-    description: "This catch-all phrase often hides sub-standard materials. It usually allows them to skip critical finish work like stucco repair, drywall patching, or painting."
+    description: "This catch-all phrase often hides sub-standard materials. It usually allows them to skip critical finish work like stucco repair, drywall patching, or painting.",
+    icon: HelpCircle,
   },
   {
     title: 'No specific product models or specs',
-    description: "If they won't name the window, you can't check its ratings. This is often a bait-and-switch tactic to swap in cheaper, lower-quality builder-grade windows later."
+    description: "If they won't name the window, you can't check its ratings. This is often a bait-and-switch tactic to swap in cheaper, lower-quality builder-grade windows later.",
+    icon: PackageX,
   },
   {
     title: 'Pressure to sign same-day for "special pricing"',
-    description: "Legitimate pricing is based on material costs, not timelines. 'Sign now or the price doubles' is a manipulation tactic designed to stop you from comparing quotes."
+    description: "Legitimate pricing is based on material costs, not timelines. 'Sign now or the price doubles' is a manipulation tactic designed to stop you from comparing quotes.",
+    icon: Timer,
   },
   {
     title: 'Missing permit or inspection mentions',
-    description: "Unpermitted work is illegal, uninsurable, and can force you to tear out the windows later. If they say 'you don't need a permit' for window replacement, run."
+    description: "Unpermitted work is illegal, uninsurable, and can force you to tear out the windows later. If they say 'you don't need a permit' for window replacement, run.",
+    icon: AlertTriangle,
   },
   {
     title: 'Lump Sum Pricing (No Breakdown)',
-    description: "Bundling everything into one big number ('$25,000 for everything') prevents you from seeing overcharged line items or verifying that you aren't paying for phantom services."
+    description: "Bundling everything into one big number ('$25,000 for everything') prevents you from seeing overcharged line items or verifying that you aren't paying for phantom services.",
+    icon: Receipt,
   },
   {
     title: 'Hidden "Disposal" or "Admin" Fees',
-    description: "Some quotes leave out disposal costs, hitting you with a surprise bill for hauling away your old windows. Ensure 'removal and disposal' is explicitly written."
+    description: "Some quotes leave out disposal costs, hitting you with a surprise bill for hauling away your old windows. Ensure 'removal and disposal' is explicitly written.",
+    icon: Trash2,
   },
   {
     title: 'Missing Design Pressure Ratings',
-    description: "Design pressure determines if the window can actually withstand hurricane-force winds in your specific zone. Without this spec, you have no way to verify code compliance."
+    description: "Design pressure determines if the window can actually withstand hurricane-force winds in your specific zone. Without this spec, you have no way to verify code compliance.",
+    icon: Gauge,
   },
   {
     title: 'Vague Warranty Coverage (Labor vs. Product)',
-    description: "Contractors often hide that their labor warranty is much shorter than the product warranty. Demand separate durations for product, labor, and seal failure coverage."
+    description: "Contractors often hide that their labor warranty is much shorter than the product warranty. Demand separate durations for product, labor, and seal failure coverage.",
+    icon: ShieldAlert,
   },
 ];
 
@@ -175,6 +218,7 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
               {checklistItems.map((item, idx) => {
                 const itemId = `good-${idx}`;
                 const isExpanded = expandedItems.has(itemId);
+                const ItemIcon = item.icon;
                 
                 return (
                   <div
@@ -193,7 +237,7 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
                       )}
                       aria-expanded={isExpanded}
                     >
-                      <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                      <ItemIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                       <span className="flex-1 text-sm font-medium text-slate-700 dark:text-zinc-300">
                         {item.title}
                       </span>
@@ -243,6 +287,7 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
               {redFlags.map((item, idx) => {
                 const itemId = `red-${idx}`;
                 const isExpanded = expandedItems.has(itemId);
+                const ItemIcon = item.icon;
                 
                 return (
                   <div
@@ -261,7 +306,7 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
                       )}
                       aria-expanded={isExpanded}
                     >
-                      <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+                      <ItemIcon className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
                       <span className="flex-1 text-sm font-medium text-slate-700 dark:text-zinc-300">
                         {item.title}
                       </span>
