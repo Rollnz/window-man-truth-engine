@@ -1,267 +1,344 @@
 
-# Shared Quote Stats Hook - Single Source of Truth
+
+# Reusable UrgencyTicker Component
 
 ## Overview
-Create a shared hook `useProjectedQuotes` that centralizes the date-based quote calculation logic. This ensures the UrgencyTicker and all other stats displays show identical numbers that grow in perfect unison.
+Create a centralized, configurable `UrgencyTicker` component in `src/components/social-proof/` that can be placed on multiple pages with different visual variants and data sources.
 
 ---
 
-## Problem Statement
-Currently, **5 components** display quote counts with different values:
-| Component | Current Value | Location |
-|-----------|---------------|----------|
-| `UrgencyTicker.tsx` | ~3,568 (dynamic) | Quote Scanner page |
-| `ScannerSocialProof.tsx` | 12,847 (static) | Quote Scanner page |
-| `AnimatedStatsBar.tsx` | 12,847 (static) | Audit page |
-| `ScannerHeroWindow.tsx` | 12,847+ (static) | Audit hero |
-| `PathSelector.tsx` | 12,847+ (static) | Audit modal |
-
-**Result:** Conflicting numbers undermine credibility.
-
----
-
-## Solution Architecture
+## Component Architecture
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                   useProjectedQuotes.ts                     │
-│                   (Single Source of Truth)                  │
-│                                                             │
-│  Config: startDate='2024-02-12', base=0, growth=4.9        │
-│  Returns: { total: 3568, today: 19 }                        │
-└─────────────────────────────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌───────────────┐   ┌───────────────┐   ┌───────────────┐
-│ UrgencyTicker │   │ ScannerSocial │   │ AnimatedStats │
-│   (animated)  │   │    Proof      │   │     Bar       │
-└───────────────┘   └───────────────┘   └───────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        ▼                     ▼
-┌───────────────┐   ┌───────────────┐
-│ ScannerHero   │   │ PathSelector  │
-│    Window     │   │   (modal)     │
-└───────────────┘   └───────────────┘
+src/components/social-proof/
+├── UrgencyTicker.tsx          # Main reusable component with variants
+├── useCountUp.ts              # Extracted animation hook (reusable)
+└── index.ts                   # Barrel export
+```
+
+---
+
+## Configuration Options
+
+The component will support these configurable props:
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `variant` | `'cyberpunk' \| 'minimal' \| 'homepage'` | `'cyberpunk'` | Visual style preset |
+| `showToday` | `boolean` | `true` | Show/hide the "+X today" section |
+| `animated` | `boolean` | `true` | Enable/disable count-up animation |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Size preset |
+| `className` | `string` | `''` | Additional classes |
+
+---
+
+## Visual Variants
+
+### 1. Cyberpunk (Default) - For AI Scanner
+Current Gemini-style dark zinc/emerald/amber aesthetic:
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│  🛡️(emerald)  3,568 quotes scanned  │  🟠(amber) +19 today      │
+│  [bg-zinc-900/70, backdrop-blur-sm]   [bg-amber-500/10]          │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### 2. Minimal - For Sample Report
+Lighter, less visually dominant for content-focused pages:
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│  🛡️  3,568 quotes scanned  │  🟢 +19 today                      │
+│  [bg-card, border-border]   [subtle primary tint]                │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### 3. Homepage - For Index
+Integrated with the homepage aesthetic (primary color focus):
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│  🛡️  3,568+ quotes analyzed  │  Live                            │
+│  [bg-primary/5, border-primary/20]                               │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Technical Implementation
 
-### File 1: `src/hooks/useProjectedQuotes.ts` (NEW)
+### File 1: `src/components/social-proof/useCountUp.ts` (NEW)
 
-Create the shared hook with the calculation logic extracted from `UrgencyTicker.tsx`:
+Extract the animation hook for reusability:
 
 ```tsx
-import { useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-// Seeded random for consistent "today" count
-const getDailyRandom = (seed: string, min: number, max: number) => {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
-    hash |= 0;
-  }
-  const random = (Math.abs(hash) % 1000) / 1000;
-  return Math.floor(random * (max - min + 1)) + min;
-};
+export function useCountUp(end: number, duration: number = 2500) {
+  const [count, setCount] = useState(0);
+  const prevEndRef = useRef(0);
 
-// Configuration constants
-const START_DATE = new Date('2024-02-12');
-const BASE_TOTAL = 0;
-const GROWTH_RATE = 4.9;
-const TODAY_MIN = 12;
-const TODAY_MAX = 28;
-
-export function useProjectedQuotes() {
-  return useMemo(() => {
-    const now = new Date();
+  useEffect(() => {
+    if (end === prevEndRef.current) return;
+    prevEndRef.current = end;
     
-    const daysPassed = Math.floor(
-      (now.getTime() - START_DATE.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    
-    const todayString = now.toISOString().split('T')[0];
-    const today = getDailyRandom(todayString, TODAY_MIN, TODAY_MAX);
+    if (end === 0) {
+      setCount(0);
+      return;
+    }
 
-    const total = Math.floor(BASE_TOTAL + (daysPassed * GROWTH_RATE) + today);
+    let startTime: number | null = null;
+    let animationFrame: number;
 
-    return { total, today };
-  }, []);
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = timestamp - startTime;
+
+      if (progress < duration) {
+        const t = progress / duration;
+        const ease = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+        setCount(Math.floor(ease * end));
+        animationFrame = requestAnimationFrame(animate);
+      } else {
+        setCount(end);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [end, duration]);
+
+  return count;
 }
 ```
 
-**Key Features:**
-- Pure calculation with no side effects
-- Memoized for performance
-- Exports both `total` and `today` values
-- Constants at top for easy adjustment
-
 ---
 
-### File 2: `src/components/quote-scanner/UrgencyTicker.tsx` (MODIFY)
+### File 2: `src/components/social-proof/UrgencyTicker.tsx` (NEW)
 
-Refactor to consume the shared hook instead of inline calculation:
-
-**Changes:**
-1. Remove `getDailyRandom` helper function (moved to hook)
-2. Remove the inline `useMemo` calculation
-3. Import and use `useProjectedQuotes` hook
+Main reusable component with variant support:
 
 ```tsx
-// Before:
-const { total, today } = useMemo(() => {
-  const startDate = new Date('2024-02-12');
-  // ... calculation logic
-}, []);
-
-// After:
+import { useState, useEffect, useRef } from 'react';
+import { Shield } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
+import { useCountUp } from './useCountUp';
 
-const { total, today } = useProjectedQuotes();
-```
+type TickerVariant = 'cyberpunk' | 'minimal' | 'homepage';
+type TickerSize = 'sm' | 'md' | 'lg';
 
----
+interface UrgencyTickerProps {
+  variant?: TickerVariant;
+  showToday?: boolean;
+  animated?: boolean;
+  size?: TickerSize;
+  className?: string;
+}
 
-### File 3: `src/components/quote-scanner/ScannerSocialProof.tsx` (MODIFY)
-
-Replace hardcoded `'12,847'` with dynamic value.
-
-**Changes:**
-1. Convert from static array to component with hook
-2. Import `useProjectedQuotes`
-3. Build stats array dynamically using `total.toLocaleString()`
-
-```tsx
-// Before:
-const stats = [
-  {
-    icon: ScanSearch,
-    value: '12,847',  // ❌ Hardcoded
-    label: 'Quotes Scanned',
-    ...
+const variantStyles = {
+  cyberpunk: {
+    container: 'bg-zinc-900/70 border-zinc-700/40 divide-zinc-700/50 backdrop-blur-sm ring-1 ring-white/5 shadow-xl',
+    icon: 'text-emerald-400',
+    count: 'text-zinc-100',
+    label: 'text-zinc-400',
+    todayBg: 'bg-amber-500/10',
+    todayDot: 'bg-amber-400',
+    todayText: 'text-amber-300',
   },
-  ...
-];
-
-// After:
-export function ScannerSocialProof() {
-  const { total } = useProjectedQuotes();
-  
-  const stats = [
-    {
-      icon: ScanSearch,
-      value: total.toLocaleString(),  // ✅ Dynamic
-      label: 'Quotes Scanned',
-      ...
-    },
-    ...
-  ];
-```
-
----
-
-### File 4: `src/components/audit/AnimatedStatsBar.tsx` (MODIFY)
-
-Replace hardcoded `12847` in STATS array.
-
-**Challenge:** This component uses an animated count-up effect with the static value.
-
-**Solution:** Inject the dynamic `total` into the STATS array at render time.
-
-```tsx
-// Before:
-const STATS: StatItem[] = [
-  ...
-  {
-    icon: <FileSearch className="w-5 h-5" />,
-    value: 12847,  // ❌ Hardcoded
-    suffix: '+',
-    label: 'Quotes Analyzed',
-    ...
+  minimal: {
+    container: 'bg-card border-border divide-border',
+    icon: 'text-primary',
+    count: 'text-foreground',
+    label: 'text-muted-foreground',
+    todayBg: 'bg-primary/5',
+    todayDot: 'bg-primary',
+    todayText: 'text-primary',
   },
-  ...
-];
+  homepage: {
+    container: 'bg-primary/5 border-primary/20 divide-primary/20',
+    icon: 'text-primary',
+    count: 'text-foreground',
+    label: 'text-muted-foreground',
+    todayBg: 'bg-primary/10',
+    todayDot: 'bg-primary',
+    todayText: 'text-primary',
+  },
+};
 
-// After:
-export function AnimatedStatsBar() {
-  const { total } = useProjectedQuotes();
-  
-  const stats: StatItem[] = [
-    ...
-    {
-      icon: <FileSearch className="w-5 h-5" />,
-      value: total,  // ✅ Dynamic from hook
-      suffix: '+',
-      label: 'Quotes Analyzed',
-      ...
-    },
-    ...
-  ];
+const sizeStyles = {
+  sm: { padding: 'px-3 py-1.5', iconSize: 'w-3 h-3', text: 'text-xs', label: 'text-[10px]' },
+  md: { padding: 'px-4 py-2.5', iconSize: 'w-4 h-4', text: 'text-sm', label: 'text-xs' },
+  lg: { padding: 'px-5 py-3', iconSize: 'w-5 h-5', text: 'text-base', label: 'text-sm' },
+};
+
+export function UrgencyTicker({
+  variant = 'cyberpunk',
+  showToday = true,
+  animated = true,
+  size = 'md',
+  className,
+}: UrgencyTickerProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(!animated);
+  const { total, today } = useProjectedQuotes();
+
+  const styles = variantStyles[variant];
+  const sizes = sizeStyles[size];
+
+  // IntersectionObserver for animation trigger
+  useEffect(() => {
+    if (!animated) return;
+    
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [animated]);
+
+  const totalCount = useCountUp(isVisible ? total : 0, 2500);
+  const todayCount = useCountUp(isVisible && showToday ? today : 0, 2500);
+
+  return (
+    <div ref={ref} className={cn('flex items-center justify-center', className)}>
+      <div className={cn(
+        'inline-flex items-center divide-x rounded-lg border overflow-hidden',
+        styles.container
+      )}>
+        {/* Left: Total Count */}
+        <div className={cn('flex items-center gap-2', sizes.padding)}>
+          <Shield className={cn(sizes.iconSize, styles.icon)} />
+          <span className={cn('font-bold tabular-nums', sizes.text, styles.count)}>
+            {totalCount.toLocaleString()}
+          </span>
+          <span className={cn(sizes.label, styles.label)}>quotes scanned</span>
+        </div>
+
+        {/* Right: Today Count (optional) */}
+        {showToday && (
+          <div className={cn('flex items-center gap-2 h-full', sizes.padding, styles.todayBg)}>
+            <div className="relative flex h-2 w-2">
+              <span className={cn(
+                'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
+                styles.todayDot
+              )} />
+              <span className={cn('relative inline-flex rounded-full h-2 w-2', styles.todayDot)} />
+            </div>
+            <span className={cn('font-semibold tabular-nums', sizes.text, styles.todayText)}>
+              +{todayCount} today
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 ```
 
 ---
 
-### File 5: `src/components/audit/ScannerHeroWindow.tsx` (MODIFY)
+### File 3: `src/components/social-proof/index.ts` (NEW)
 
-Replace hardcoded string in trust signals section (line 288).
+Barrel export:
 
 ```tsx
-// Before:
-<span>12,847+ Quotes Scanned</span>
-
-// After:
-import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
-
-// Inside component:
-const { total } = useProjectedQuotes();
-
-// In JSX:
-<span>{total.toLocaleString()}+ Quotes Scanned</span>
+export { UrgencyTicker } from './UrgencyTicker';
+export { useCountUp } from './useCountUp';
 ```
 
 ---
 
-### File 6: `src/components/audit/scanner-modal/PathSelector.tsx` (MODIFY)
+### File 4: `src/pages/QuoteScanner.tsx` (MODIFY)
 
-Replace hardcoded string in social proof section (line 101).
+Update import to use new location:
 
 ```tsx
 // Before:
-<span className="block text-lg font-bold text-orange-400">12,847+</span>
+import { UrgencyTicker } from '@/components/quote-scanner/UrgencyTicker';
 
 // After:
-import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
+import { UrgencyTicker } from '@/components/social-proof';
 
-// Inside component:
-const { total } = useProjectedQuotes();
-
-// In JSX:
-<span className="block text-lg font-bold text-orange-400">{total.toLocaleString()}+</span>
+// Usage (no change needed - uses cyberpunk default):
+<UrgencyTicker />
 ```
+
+---
+
+### File 5: `src/pages/SampleReport.tsx` (MODIFY)
+
+Add the ticker with minimal variant:
+
+```tsx
+import { UrgencyTicker } from '@/components/social-proof';
+
+// After SampleReportHeader, before main content:
+<SampleReportHeader onOpenLeadModal={handleOpenLeadModal} />
+
+<div className="container px-4 py-6">
+  <UrgencyTicker variant="minimal" />
+</div>
+
+<main className="pt-28">
+```
+
+---
+
+### File 6: `src/pages/Index.tsx` (MODIFY)
+
+Add the ticker to homepage (after HeroSection):
+
+```tsx
+import { UrgencyTicker } from '@/components/social-proof';
+
+// After HeroSection:
+<HeroSection />
+
+<div className="container px-4 py-8 -mt-16 relative z-10">
+  <UrgencyTicker variant="homepage" size="lg" />
+</div>
+
+<MarketRealitySection />
+```
+
+---
+
+### File 7: `src/components/quote-scanner/UrgencyTicker.tsx` (DELETE or DEPRECATE)
+
+Option A (Recommended): Delete and update all imports
+Option B: Keep as re-export wrapper for backwards compatibility:
+
+```tsx
+// Re-export from new location for backwards compatibility
+export { UrgencyTicker } from '@/components/social-proof';
+```
+
+---
+
+## Page-Specific Integration
+
+| Page | Variant | Position | Extra Config |
+|------|---------|----------|--------------|
+| `/ai-scanner` | `cyberpunk` | After hero, `-mt-6` overlap | Default |
+| `/sample-report` | `minimal` | After header, before hero | Standard spacing |
+| `/` (Homepage) | `homepage` | After HeroSection, `-mt-16` overlap | `size="lg"` |
 
 ---
 
 ## Files Summary
 
-| File | Action | Changes |
+| File | Action | Purpose |
 |------|--------|---------|
-| `src/hooks/useProjectedQuotes.ts` | CREATE | Shared hook with date-based calculation logic |
-| `src/components/quote-scanner/UrgencyTicker.tsx` | MODIFY | Import hook, remove inline calculation |
-| `src/components/quote-scanner/ScannerSocialProof.tsx` | MODIFY | Use hook for "Quotes Scanned" stat |
-| `src/components/audit/AnimatedStatsBar.tsx` | MODIFY | Use hook for "Quotes Analyzed" stat |
-| `src/components/audit/ScannerHeroWindow.tsx` | MODIFY | Use hook for trust signal text |
-| `src/components/audit/scanner-modal/PathSelector.tsx` | MODIFY | Use hook for social proof stat |
+| `src/components/social-proof/useCountUp.ts` | CREATE | Extracted animation hook |
+| `src/components/social-proof/UrgencyTicker.tsx` | CREATE | Reusable component with variants |
+| `src/components/social-proof/index.ts` | CREATE | Barrel exports |
+| `src/pages/QuoteScanner.tsx` | MODIFY | Update import path |
+| `src/pages/SampleReport.tsx` | MODIFY | Add ticker with minimal variant |
+| `src/pages/Index.tsx` | MODIFY | Add ticker with homepage variant |
+| `src/components/quote-scanner/UrgencyTicker.tsx` | DELETE | Remove old location |
 
----
-
-## Expected Result
-
-After implementation, **all 5 components** will display:
-- **Total:** ~3,568 (as of Feb 8, 2026)
-- **Today:** 12-28 (seeded daily random)
-
-All numbers grow in perfect unison at 4.9 quotes/day.
