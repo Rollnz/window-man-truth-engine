@@ -1118,6 +1118,9 @@ serve(async (req) => {
         // Pre-compute hashes once using E.164 for phones
         const hashedEmail = await hashEmail(normalizedEmail);
         const hashedPhone = phone ? await hashPhoneE164(phone) : null;
+        // EMQ 9.5+: Defensive null checking for first/last name hashing
+        const hashedFirstName = normalizedFirstName ? await hashName(normalizedFirstName) : null;
+        const hashedLastName = normalizedLastName ? await hashName(normalizedLastName) : null;
 
         const eventLogPayload = {
           event_id: crypto.randomUUID(),
@@ -1162,6 +1165,11 @@ serve(async (req) => {
           user_data: {
             em: hashedEmail,
             ph: hashedPhone,
+            // EMQ 9.5+: First/last name hashes for Meta Advanced Matching
+            fn: hashedFirstName || undefined,
+            ln: hashedLastName || undefined,
+            sha256_first_name: hashedFirstName || undefined,
+            sha256_last_name: hashedLastName || undefined,
             external_id: leadId,
             sha256_email_address: hashedEmail,
             sha256_phone_number: hashedPhone,
