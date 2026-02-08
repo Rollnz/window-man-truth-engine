@@ -13,7 +13,14 @@ export type LeadStatus =
   | "closed_lost"
   | "dead";
 
-export type LeadQuality = "cold" | "warm" | "hot" | "qualified";
+export type LeadQuality = 
+  | "cold" 
+  | "warm" 
+  | "hot" 
+  | "qualified"
+  | "window_shopper"  // Low intent browser
+  | "curious"         // Medium interest
+  | "engaged";        // Active but not yet qualified
 
 // Disqualification reason codes for granular tracking
 export type DisqualificationReason = 
@@ -146,6 +153,9 @@ export const LEAD_QUALITY_CONFIG: Record<LeadQuality, { label: string; color: st
   warm: { label: "Warm", color: "bg-amber-100 text-amber-800" },
   hot: { label: "Hot", color: "bg-orange-100 text-orange-800" },
   qualified: { label: "Qualified", color: "bg-green-100 text-green-800" },
+  window_shopper: { label: "Window Shopper", color: "bg-slate-100 text-slate-600" },
+  curious: { label: "Curious", color: "bg-sky-100 text-sky-700" },
+  engaged: { label: "Engaged", color: "bg-purple-100 text-purple-700" },
 };
 
 export const DISQUALIFICATION_REASONS: Record<DisqualificationReason, { label: string; description: string }> = {

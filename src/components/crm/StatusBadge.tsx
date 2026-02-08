@@ -9,7 +9,12 @@ interface StatusBadgeProps {
 
 export const StatusBadge = forwardRef<HTMLSpanElement, StatusBadgeProps>(
   ({ status, size = 'sm' }, ref) => {
-    const config = LEAD_STATUS_CONFIG[status];
+    // Defensive fallback for unknown status values
+    const config = LEAD_STATUS_CONFIG[status] ?? {
+      title: status || 'Unknown',
+      color: 'bg-gray-500',
+      description: 'Unknown status',
+    };
     
     return (
       <span 
@@ -35,7 +40,11 @@ interface QualityBadgeProps {
 
 export const QualityBadge = forwardRef<HTMLSpanElement, QualityBadgeProps>(
   ({ quality, size = 'sm' }, ref) => {
-    const config = LEAD_QUALITY_CONFIG[quality];
+    // Defensive fallback for unknown quality values
+    const config = LEAD_QUALITY_CONFIG[quality] ?? {
+      label: quality || 'Unknown',
+      color: 'bg-gray-100 text-gray-600',
+    };
     
     return (
       <span 
