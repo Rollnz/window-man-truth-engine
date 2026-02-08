@@ -26,6 +26,7 @@ import { WindowCalculatorTeaser } from '@/components/quote-scanner/WindowCalcula
 import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChecklist';
 // Vault Pivot Conversion Engine
 import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
+import { UrgencyTicker } from '@/components/quote-scanner/UrgencyTicker';
 // Attribution & tracking for NoQuotePivotSection handler
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -116,7 +117,11 @@ export default function QuoteScanner() {
       <main className="pt-20">
         <QuoteScannerHero />
 
-        
+        <div className="container px-4 pb-6 -mt-6">
+          <UrgencyTicker />
+        </div>
+
+
         <section className="py-12 md:py-20">
           <div className="container px-4">
             <ErrorBoundary
