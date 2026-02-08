@@ -25,7 +25,10 @@ const BASE_PROJECT_VALUE = BASE_WINDOW_VALUE * AVG_WINDOWS_PER_HOME; // $6,000
 const QUALITY_MULTIPLIERS: Record<LeadQuality, number> = {
   qualified: 1.5,
   hot: 1.25,
+  engaged: 1.1,
   warm: 1.0,
+  curious: 0.8,
+  window_shopper: 0.5,
   cold: 0.6,
 };
 
