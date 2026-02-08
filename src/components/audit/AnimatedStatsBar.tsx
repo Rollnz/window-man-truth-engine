@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { TrendingDown, FileSearch, ShieldCheck, Users } from 'lucide-react';
+import { useProjectedQuotes } from '@/hooks/useProjectedQuotes';
 
 interface StatItem {
   icon: React.ReactNode;
@@ -10,38 +11,6 @@ interface StatItem {
   label: string;
   color: string;
 }
-
-const STATS: StatItem[] = [
-  {
-    icon: <TrendingDown className="w-5 h-5" />,
-    value: 4200000,
-    prefix: '$',
-    suffix: '+',
-    label: 'Overcharges Detected',
-    color: 'text-red-400',
-  },
-  {
-    icon: <FileSearch className="w-5 h-5" />,
-    value: 12847,
-    suffix: '+',
-    label: 'Quotes Analyzed',
-    color: 'text-primary',
-  },
-  {
-    icon: <ShieldCheck className="w-5 h-5" />,
-    value: 94,
-    suffix: '%',
-    label: 'Red Flag Detection Rate',
-    color: 'text-emerald-400',
-  },
-  {
-    icon: <Users className="w-5 h-5" />,
-    value: 8400,
-    suffix: '+',
-    label: 'Florida Homeowners Protected',
-    color: 'text-amber-400',
-  },
-];
 
 function useCountUp(end: number, duration: number = 2000, startOnView: boolean = true) {
   const [count, setCount] = useState(0);
@@ -131,6 +100,40 @@ function StatCard({ stat, index }: { stat: StatItem; index: number }) {
 }
 
 export function AnimatedStatsBar() {
+  const { total } = useProjectedQuotes();
+
+  const stats: StatItem[] = [
+    {
+      icon: <TrendingDown className="w-5 h-5" />,
+      value: 4200000,
+      prefix: '$',
+      suffix: '+',
+      label: 'Overcharges Detected',
+      color: 'text-red-400',
+    },
+    {
+      icon: <FileSearch className="w-5 h-5" />,
+      value: total,
+      suffix: '+',
+      label: 'Quotes Analyzed',
+      color: 'text-primary',
+    },
+    {
+      icon: <ShieldCheck className="w-5 h-5" />,
+      value: 94,
+      suffix: '%',
+      label: 'Red Flag Detection Rate',
+      color: 'text-emerald-400',
+    },
+    {
+      icon: <Users className="w-5 h-5" />,
+      value: 8400,
+      suffix: '+',
+      label: 'Florida Homeowners Protected',
+      color: 'text-amber-400',
+    },
+  ];
+
   return (
     <section className="relative bg-slate-900/80 backdrop-blur-sm border-y border-slate-800/50 py-6 overflow-hidden">
       {/* Subtle animated gradient background */}
@@ -138,7 +141,7 @@ export function AnimatedStatsBar() {
       
       <div className="container relative px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-          {STATS.map((stat, index) => (
+          {stats.map((stat, index) => (
             <StatCard key={stat.label} stat={stat} index={index} />
           ))}
         </div>
