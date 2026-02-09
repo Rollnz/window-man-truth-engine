@@ -1,41 +1,74 @@
 
 
-# Fix UrgencyTicker: Mobile Layout & Theme Colors
+# Refactor "Scan Your Quote" CTA with Analytics Tracking
 
 ## What and Why
 
-The UrgencyTicker component has two issues:
-1. **Mobile text wrapping** - On small screens, "quotes scanned" and "+6 today" break onto multiple lines because there's no `whitespace-nowrap` and the `lg` size uses padding/text sizes that overflow.
-2. **Dark mode muddy backgrounds** - The `homepage` and `minimal` variants use transparency-based colors (`bg-primary/5`) that blend poorly with dark backgrounds, creating an unclear visual.
+The current button inside the Bad Contract card has no analytics tracking. When moved to a standalone CTA below the comparison grid, we need to know *which* pitch motivated the scan (hero vs. red-flags section). This is critical CRO data.
 
 ## Changes (Single File)
 
-**File:** `src/components/social-proof/UrgencyTicker.tsx`
+**File:** `src/components/quote-scanner/QuoteSafetyChecklist.tsx`
 
-### 1. Update `variantStyles` with explicit theme tokens
+### 1. Remove CTA from Bad Contract card (lines 293-307)
 
-Replace transparency-based colors with explicit `dark:` variants:
+Delete the `<div className="p-4 pt-0">` block containing the current button inside the Bad Contract column.
 
-- **cyberpunk**: No changes (already dark-only)
-- **minimal**: `bg-slate-100 dark:bg-slate-800`, `border-slate-200 dark:border-slate-700`, explicit text colors
-- **homepage**: `bg-sky-50 dark:bg-slate-800/90`, `border-sky-200 dark:border-slate-700`, sky-tinted text tokens
+### 2. Create tracked click handler
 
-### 2. Update `sizeStyles` with responsive values
+Add a new `handleRedFlagsCTAClick` function next to the existing `handleScrollToUpload`:
 
-Add responsive breakpoints so mobile gets compact sizing:
+```tsx
+const handleRedFlagsCTAClick = () => {
+  // 1. Fire GTM analytics event (existing trackEvent pattern)
+  trackEvent('cta_click', {
+    location: 'red_flags_section',
+    destination: 'scanner',
+    cta_label: 'Scan Your Quote for Red Flags',
+  });
 
-| Size | Mobile | sm+ |
-|------|--------|-----|
-| sm | `px-2 py-1`, `text-[10px]` | `px-3 py-1.5`, `text-xs` |
-| md | `px-2.5 py-1.5`, `text-xs` | `px-4 py-2.5`, `text-sm` |
-| lg | `px-3 py-2`, `text-sm` | `px-5 py-3`, `text-base` |
+  // 2. Scroll to scanner upload zone
+  handleScrollToUpload();
+};
+```
 
-### 3. Add layout enforcement classes
+This uses the already-imported `trackEvent` from `@/lib/gtm` (line 31).
 
-- Container: add `whitespace-nowrap`
-- Left section: add `flex-shrink-0`
-- Right section: add `flex-shrink-0`
-- Gap: `gap-1.5 sm:gap-2` for tighter mobile spacing
+### 3. Add standalone CTA below the grid (after line 399)
 
-These three changes together guarantee a single-row, non-wrapping pill layout on all screen sizes with clean, readable colors in both themes.
+Insert a centered button block between the grid closing `</div>` and the container closing `</div>`:
+
+```tsx
+{/* Section CTA - Below both columns */}
+<div className="flex justify-center mt-10">
+  <Button
+    onClick={handleRedFlagsCTAClick}
+    data-id="cta-red-flags-section"
+    size="lg"
+    className={cn(
+      "gap-2 px-8 py-6 text-base font-bold",
+      "bg-rose-600 text-white hover:bg-rose-700 border-0",
+      "shadow-lg hover:shadow-xl",
+      "dark:bg-rose-500 dark:hover:bg-rose-400",
+      "dark:shadow-[0_0_20px_rgba(244,63,94,0.3)]",
+      "transition-all duration-200"
+    )}
+  >
+    <Upload className="w-5 h-5" />
+    Scan Your Quote for Red Flags
+  </Button>
+</div>
+```
+
+### What gets tracked
+
+| Field | Value | Purpose |
+|-------|-------|---------|
+| `event` | `cta_click` | Standard GTM event name |
+| `location` | `red_flags_section` | Distinguishes from hero CTA |
+| `destination` | `scanner` | Where the click leads |
+| `cta_label` | `Scan Your Quote for Red Flags` | Exact button text |
+| `data-id` | `cta-red-flags-section` | GTM/external script targeting |
+
+This lets you compare conversion rates: "hero CTA" vs. "red flags CTA" in Google Analytics or any GTM-connected platform.
 
