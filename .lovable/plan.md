@@ -1,74 +1,132 @@
 
 
-# Refactor "Scan Your Quote" CTA with Analytics Tracking
+# "Why AI Instead of a Human Advisor?" Comparison Section
 
 ## What and Why
 
-The current button inside the Bad Contract card has no analytics tracking. When moved to a standalone CTA below the comparison grid, we need to know *which* pitch motivated the scan (hero vs. red-flags section). This is critical CRO data.
+A two-column comparison section showing the shortcomings of traditional window advisors vs. the AI Scanner's advantages. Positioned between `ScannerSocialProof` and `TestimonialCards` to provide logical justification before emotional proof (testimonials).
 
-## Changes (Single File)
+## Theming Strategy: Semantic Tokens Only
 
-**File:** `src/components/quote-scanner/QuoteSafetyChecklist.tsx`
+All colors use the project's design system variables -- zero hardcoded Tailwind colors for backgrounds, text, or borders.
 
-### 1. Remove CTA from Bad Contract card (lines 293-307)
+| Element | Class Used | Why |
+|---------|-----------|-----|
+| Section BG | `bg-background` | Adapts to both themes automatically |
+| Cards | `bg-card border-border` | Uses card surface tokens |
+| Primary accent text | `text-primary` | Maps to Industrial Blue (#3993DD) |
+| Muted text | `text-muted-foreground` | Correct secondary text token |
+| Headings | `text-foreground` | Main text color |
+| Destructive accents | `text-destructive` | Red for "bad" bullet icons |
+| Badge | `bg-primary/10 text-primary` | Tinted primary token |
+| Grid overlay | Uses `pattern-grid` utility | Already exists in index.css |
+| Card elevation | `elev-md` class | Existing shadow utility |
 
-Delete the `<div className="p-4 pt-0">` block containing the current button inside the Bad Contract column.
+No `bg-slate-*`, `text-sky-*`, or `dark:` overrides needed.
 
-### 2. Create tracked click handler
+## Import Strategy: Static Import
 
-Add a new `handleRedFlagsCTAClick` function next to the existing `handleScrollToUpload`:
+All existing sections on QuoteScanner.tsx (`ScannerSocialProof`, `TestimonialCards`, `QuoteSafetyChecklist`, etc.) use standard static imports. This new component will follow the same pattern to avoid introducing inconsistent Suspense boundaries.
 
-```tsx
-const handleRedFlagsCTAClick = () => {
-  // 1. Fire GTM analytics event (existing trackEvent pattern)
-  trackEvent('cta_click', {
-    location: 'red_flags_section',
-    destination: 'scanner',
-    cta_label: 'Scan Your Quote for Red Flags',
-  });
-
-  // 2. Scroll to scanner upload zone
-  handleScrollToUpload();
-};
+```
+import { AIComparisonSection } from '@/components/quote-scanner/AIComparisonSection';
 ```
 
-This uses the already-imported `trackEvent` from `@/lib/gtm` (line 31).
+## Component Architecture
 
-### 3. Add standalone CTA below the grid (after line 399)
+### Single New Component
 
-Insert a centered button block between the grid closing `</div>` and the container closing `</div>`:
+**File:** `src/components/quote-scanner/AIComparisonSection.tsx`
 
-```tsx
-{/* Section CTA - Below both columns */}
-<div className="flex justify-center mt-10">
-  <Button
-    onClick={handleRedFlagsCTAClick}
-    data-id="cta-red-flags-section"
-    size="lg"
-    className={cn(
-      "gap-2 px-8 py-6 text-base font-bold",
-      "bg-rose-600 text-white hover:bg-rose-700 border-0",
-      "shadow-lg hover:shadow-xl",
-      "dark:bg-rose-500 dark:hover:bg-rose-400",
-      "dark:shadow-[0_0_20px_rgba(244,63,94,0.3)]",
-      "transition-all duration-200"
-    )}
-  >
-    <Upload className="w-5 h-5" />
-    Scan Your Quote for Red Flags
-  </Button>
-</div>
+- **Props:** `uploadRef?: React.RefObject<HTMLDivElement>`
+- **Responsibilities:** Render comparison cards, CTA with analytics, section-view tracking
+- **No sub-components** -- self-contained
+
+### Visual Layout
+
+```text
+[AI ADVANTAGE] badge (bg-primary/10 text-primary)
+
+Why AI Instead of a Human Advisor?
+Subtitle text (text-muted-foreground)
+
++---------------------------+  +---------------------------+
+| border-destructive/30     |  | border-primary/30         |
+| Traditional Advisors      |  | AI Quote Scanner          |
+|                           |  |                           |
+| x Bullet 1 (destructive) |  | check Bullet 1 (primary)  |
+| x Bullet 2               |  | check Bullet 2            |
+| x Bullet 3               |  | check Bullet 3            |
+| x Bullet 4               |  | check Bullet 4            |
++---------------------------+  +---------------------------+
+
+        [ Try the AI Quote Scanner ]
+        (bg-primary text-primary-foreground)
 ```
 
-### What gets tracked
+### Content
 
-| Field | Value | Purpose |
-|-------|-------|---------|
-| `event` | `cta_click` | Standard GTM event name |
-| `location` | `red_flags_section` | Distinguishes from hero CTA |
-| `destination` | `scanner` | Where the click leads |
-| `cta_label` | `Scan Your Quote for Red Flags` | Exact button text |
-| `data-id` | `cta-red-flags-section` | GTM/external script targeting |
+**Traditional Advisors (left card):**
+- Commission bias and hidden sales pressure
+- Inconsistent advice from door-to-door reps
+- Cannot compare every product and code requirement
+- Limited time, human error, no audit trail
 
-This lets you compare conversion rates: "hero CTA" vs. "red flags CTA" in Google Analytics or any GTM-connected platform.
+**AI Quote Scanner (right card):**
+- Reads every line item and clause instantly
+- Flags hidden risks and overpricing with data
+- Zero commission bias -- works only for you
+- 24/7 consistent logic, updated to FL building code
+
+### Analytics Integration
+
+**CTA click** (uses existing `trackEvent` from `@/lib/gtm`):
+```tsx
+trackEvent('cta_click', {
+  location: 'ai_comparison_section',
+  destination: 'scanner',
+  cta_label: 'Try the AI Quote Scanner',
+});
+```
+Plus `data-id="cta-ai-comparison"` for GTM targeting.
+
+**Section view** (IntersectionObserver, fires once at 50% visibility):
+```tsx
+trackEvent('section_view', {
+  section: 'ai_comparison',
+  page: 'quote-scanner',
+});
+```
+
+### CSS Additions (index.css)
+
+Minimal -- only a subtle pulse animation for the decorative Brain icon between cards:
+
+```css
+@keyframes tech-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+.animate-tech-pulse {
+  animation: tech-pulse 3s ease-in-out infinite;
+}
+```
+
+Wrapped in `@media (prefers-reduced-motion: no-preference)` for accessibility. Uses existing `pattern-grid` utility for the section background overlay.
+
+### Accessibility
+
+- All decorative icons: `aria-hidden="true"`
+- Card headings use `h3` under the section `h2`
+- Animation disabled for `prefers-reduced-motion: reduce`
+- CTA is a `Button` component with visible focus ring
+- All text meets WCAG AA contrast via semantic tokens
+
+## Files Changed
+
+| File | Change |
+|------|--------|
+| `src/index.css` | Add `animate-tech-pulse` keyframe (6 lines) |
+| `src/components/quote-scanner/AIComparisonSection.tsx` | New component |
+| `src/pages/QuoteScanner.tsx` | Static import + render between SocialProof and TestimonialCards |
 
