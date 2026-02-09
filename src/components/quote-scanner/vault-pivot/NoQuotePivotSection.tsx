@@ -3,11 +3,14 @@ import { CheckCircle, Vault } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VaultAdvantageGrid } from './VaultAdvantageGrid';
 import { VaultCTABlock } from './VaultCTABlock';
-
 interface NoQuotePivotSectionProps {
   /** Mock handler for Google auth - will be wired to real Supabase later */
   onGoogleAuth?: () => void;
-  onEmailSubmit?: (data: { firstName: string; lastName: string; email: string }) => void;
+  onEmailSubmit?: (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  }) => void;
   /** Loading state for submission - prevents double-submit */
   isLoading?: boolean;
   /** Success state - shows Vault ready message instead of form */
@@ -20,15 +23,17 @@ interface NoQuotePivotSectionProps {
  * Light mode: Stone/cream with topographic contours
  * Dark mode: Dark stone with green radar grid
  */
-export function NoQuotePivotSection({ onGoogleAuth, onEmailSubmit, isLoading, isSubmitted }: NoQuotePivotSectionProps) {
+export function NoQuotePivotSection({
+  onGoogleAuth,
+  onEmailSubmit,
+  isLoading,
+  isSubmitted
+}: NoQuotePivotSectionProps) {
   // SUCCESS STATE - Mission Accepted
   if (isSubmitted) {
-    return (
-      <section className="relative py-16 md:py-24 bg-stone-50 dark:bg-stone-950 overflow-hidden">
+    return <section className="relative py-16 md:py-24 bg-stone-50 dark:bg-stone-950 overflow-hidden">
         {/* Tactical grid background */}
-        <div 
-          className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(120,113,108,0.03)_0%,transparent_50%)] dark:bg-[linear-gradient(90deg,rgba(34,197,94,0.06)_1px,transparent_1px),linear-gradient(rgba(34,197,94,0.06)_1px,transparent_1px)] dark:bg-[size:40px_40px]"
-        />
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(120,113,108,0.03)_0%,transparent_50%)] dark:bg-[linear-gradient(90deg,rgba(34,197,94,0.06)_1px,transparent_1px),linear-gradient(rgba(34,197,94,0.06)_1px,transparent_1px)] dark:bg-[size:40px_40px]" />
         
         <div className="container relative z-10 max-w-6xl mx-auto px-4">
           <div className="max-w-xl mx-auto text-center">
@@ -55,12 +60,7 @@ export function NoQuotePivotSection({ onGoogleAuth, onEmailSubmit, isLoading, is
                   Open My War Room
                 </Link>
               </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                asChild
-                className="border-stone-300 text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-white h-12"
-              >
+              <Button variant="outline" size="lg" asChild className="border-stone-300 text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-white h-12">
                 <Link to="/spec-checklist-guide">
                   Get Quote Checklist
                 </Link>
@@ -68,23 +68,19 @@ export function NoQuotePivotSection({ onGoogleAuth, onEmailSubmit, isLoading, is
             </div>
           </div>
         </div>
-      </section>
-    );
+      </section>;
   }
 
   // DEFAULT FORM STATE - War Room Briefing
-  return (
-    <section className="relative py-16 md:py-24 bg-stone-50 dark:bg-stone-950 overflow-hidden">
+  return <section className="relative py-16 md:py-24 bg-stone-50 dark:bg-stone-950 overflow-hidden">
       {/* Tactical grid background */}
-      <div 
-        className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(120,113,108,0.03)_0%,transparent_50%)] dark:bg-[linear-gradient(90deg,rgba(34,197,94,0.06)_1px,transparent_1px),linear-gradient(rgba(34,197,94,0.06)_1px,transparent_1px)] dark:bg-[size:40px_40px]"
-      />
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(120,113,108,0.03)_0%,transparent_50%)] dark:bg-[linear-gradient(90deg,rgba(34,197,94,0.06)_1px,transparent_1px),linear-gradient(rgba(34,197,94,0.06)_1px,transparent_1px)] dark:bg-[size:40px_40px]" />
       
       <div className="container relative z-10 max-w-6xl mx-auto px-4">
         {/* Headline + Intro Copy */}
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-stone-900 dark:text-white mb-6">
-            Perfect. You don't have a quote yet.
+            Perfect. You Don't Have a Quote Yet.
           </h2>
           
           <p className="text-xl md:text-2xl text-emerald-600 dark:text-emerald-400 font-medium mb-4">
@@ -128,12 +124,7 @@ export function NoQuotePivotSection({ onGoogleAuth, onEmailSubmit, isLoading, is
         </p>
 
         {/* Vault CTA Block (War Room Entry) */}
-        <VaultCTABlock 
-          onGoogleAuth={onGoogleAuth}
-          onEmailSubmit={onEmailSubmit}
-          isLoading={isLoading}
-        />
+        <VaultCTABlock onGoogleAuth={onGoogleAuth} onEmailSubmit={onEmailSubmit} isLoading={isLoading} />
       </div>
-    </section>
-  );
+    </section>;
 }
