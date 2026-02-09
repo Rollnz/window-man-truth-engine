@@ -83,9 +83,7 @@ export function NoQuotePivotSection({
             Perfect. You Don't Have a Quote Yet.
           </h2>
           
-          <p className="text-xl md:text-2xl text-emerald-600 dark:text-emerald-400 font-medium mb-4">
-            That's actually the best time to find me.
-          </p>
+          <p className="text-xl md:text-2xl text-emerald-600 dark:text-emerald-400 font-medium mb-4">That's Actually The Best Time To Find Me.</p>
           
           <p className="text-lg text-stone-600 dark:text-stone-300 max-w-2xl mx-auto leading-relaxed">
             I'm WindowMan — and I try to meet homeowners{' '}
