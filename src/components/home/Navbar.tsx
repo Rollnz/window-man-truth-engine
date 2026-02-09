@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuth } from '@/hooks/useAuth';
+import { useVaultNotifications } from '@/hooks/useVaultNotifications';
 import { ReadinessIndicator } from '@/components/navigation/ReadinessIndicator';
 import { Vault, LogIn, Menu, X, Sun, Moon, Phone } from 'lucide-react';
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState } from 'react';
 import { useTheme } from 'next-themes';
 import { ROUTES } from '@/config/navigation';
 
@@ -11,51 +13,16 @@ interface NavbarProps {
   funnelMode?: boolean;
 }
 
-// Deferred auth hook - only loads after initial render
-function useDeferredNavbarAuth() {
-  const [state, setState] = useState({
-    isAuthenticated: false,
-    loading: true,
-    hasNotifications: false,
-    incompleteToolsCount: 0,
-    hasMissingDocuments: false,
-  });
-
-  useEffect(() => {
-    // Defer auth check by 50ms to not block FCP/LCP
-    const timer = setTimeout(() => {
-      Promise.all([
-        import('@/hooks/useAuth'),
-        import('@/hooks/useVaultNotifications'),
-      ]).then(([authModule, notifModule]) => {
-        // We need to get the actual values - this requires a component re-render
-        // For now, we'll use Supabase directly
-        import('@/integrations/supabase/client').then(({ supabase }) => {
-          supabase.auth.getSession().then(({ data: { session } }) => {
-            setState(prev => ({
-              ...prev,
-              isAuthenticated: !!session?.user,
-              loading: false,
-            }));
-          });
-        });
-      });
-    }, 50);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  return state;
-}
-
 export function Navbar({ funnelMode = false }: NavbarProps) {
   const {
     isAuthenticated,
-    loading,
+    loading
+  } = useAuth();
+  const {
     hasNotifications,
     incompleteToolsCount,
     hasMissingDocuments
-  } = useDeferredNavbarAuth();
+  } = useVaultNotifications();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const {
     setTheme,

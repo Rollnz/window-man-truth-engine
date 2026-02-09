@@ -16,8 +16,8 @@ import { AdminLayout } from "@/layouts/AdminLayout";
 import { GTMDebugPanel } from "@/components/debug/GTMDebugPanel";
 import { EMQValidatorOverlay } from "@/components/debug/EMQValidatorOverlay";
 
-// Critical path - Index uses internal lazy loading, NotFound is tiny
-const Index = lazy(() => import("./pages/Index"));
+// Critical path - load immediately
+import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 // Route-based code splitting for major pages
