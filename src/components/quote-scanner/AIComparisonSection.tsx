@@ -38,7 +38,7 @@ export const AIComparisonSection = ({ uploadRef }: AIComparisonSectionProps) => 
             </div>
 
             {/* Live data stream bar */}
-            <div className="w-full max-w-xs space-y-3">
+            <div className="w-full max-w-xs rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2 text-slate-300">
                   <span className="relative flex h-2 w-2">
@@ -51,10 +51,10 @@ export const AIComparisonSection = ({ uploadRef }: AIComparisonSectionProps) => 
               </div>
 
               <div className="relative h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
-                <div className="tp-stream-pulse absolute inset-y-0 left-0 w-1/3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" />
+                <div className="tp-stream-pulse absolute inset-y-0 left-0 w-1/3 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
                 <div className="absolute inset-y-0 right-0 flex gap-1 items-center pr-1">
                   {[0, 1, 2].map((i) => (
-                    <span key={i} className="block w-0.5 h-0.5 rounded-full bg-blue-400/60" />
+                    <span key={i} className="block w-0.5 h-0.5 rounded-full bg-slate-400/60" />
                   ))}
                 </div>
               </div>
@@ -84,9 +84,9 @@ export const AIComparisonSection = ({ uploadRef }: AIComparisonSectionProps) => 
           {/* Copy + cards — second on mobile (order-2), left on desktop (lg:order-1) */}
           <div className="order-2 lg:order-1 space-y-8">
             <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
                 Why AI instead of human advisors?
-              </h2>
+              </p>
 
               <div className="flex items-center gap-3">
                 <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-sm font-medium">
@@ -95,10 +95,10 @@ export const AIComparisonSection = ({ uploadRef }: AIComparisonSectionProps) => 
                 </span>
               </div>
 
-              <p className="text-lg text-slate-300 leading-relaxed max-w-xl">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight max-w-xl">
                 Unbiased Comparison.{' '}
-                <span className="text-white font-medium">Data Driven insight. Updated Daily</span>
-              </p>
+                <span className="text-primary">Data Driven insight. Updated Daily</span>
+              </h2>
 
               <p className="text-slate-400 leading-relaxed max-w-xl">
                 Our AI doesn't get tired, distracted, or commission-driven. It reads every line,
@@ -110,7 +110,7 @@ export const AIComparisonSection = ({ uploadRef }: AIComparisonSectionProps) => 
             {/* Problem vs Solution cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Problem card */}
-              <div className="tp-glow-problem relative rounded-xl bg-slate-900/80 border border-red-400/40 p-5 space-y-3 overflow-hidden">
+              <div className="tp-glow-problem relative rounded-xl bg-slate-950/40 backdrop-blur-md border border-red-400/40 p-5 space-y-3 overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500/80 to-red-400/40" />
                 <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-red-500/5 blur-2xl" />
                 <h3 className="flex items-center gap-2 text-red-400 font-semibold text-sm">
@@ -134,8 +134,8 @@ export const AIComparisonSection = ({ uploadRef }: AIComparisonSectionProps) => 
               </div>
 
               {/* Solution card */}
-              <div className="tp-glow-solution relative rounded-xl bg-slate-900/80 border border-blue-500/40 p-5 space-y-3 overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500/80 to-cyan-400/40" />
+              <div className="tp-glow-solution relative rounded-xl bg-slate-950/40 backdrop-blur-md border border-blue-500/40 p-5 space-y-3 overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500/80 to-blue-400/40" />
                 <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-blue-500/5 blur-2xl" />
                 <h3 className="flex items-center gap-2 text-blue-400 font-semibold text-sm">
                   <CheckCircle2 className="w-4 h-4" />
