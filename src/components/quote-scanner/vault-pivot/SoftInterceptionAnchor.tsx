@@ -36,7 +36,7 @@ export function SoftInterceptionAnchor() {
         Hey — You Up There.
         <br />
         <span className="text-foreground/80">
-          Scroll down just a little bit… yeah, right here.
+          Scroll Down a Bit… Yeah, Right Here.
         </span>
       </p>
     </div>;
