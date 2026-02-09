@@ -140,6 +140,15 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
     }
   };
 
+  const handleRedFlagsCTAClick = () => {
+    trackEvent('cta_click', {
+      location: 'red_flags_section',
+      destination: 'scanner',
+      cta_label: 'Scan Your Quote for Red Flags',
+    });
+    handleScrollToUpload();
+  };
+
   const toggleItem = (id: string, title: string, section: 'good' | 'red') => {
     setExpandedItems(prev => {
       const next = new Set(prev);
@@ -290,21 +299,6 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
               })}
             </div>
             
-            {/* CTA Button */}
-            <div className="p-4 pt-0">
-              <Button
-                onClick={handleScrollToUpload}
-                className={cn(
-                  "w-full gap-2",
-                  "bg-rose-600 text-white hover:bg-rose-700 border-0",
-                  "dark:bg-rose-500/20 dark:text-rose-300 dark:border dark:border-rose-500/40",
-                  "dark:hover:bg-rose-500/30"
-                )}
-              >
-                <Upload className="w-4 h-4" />
-                Scan Your Quote for Red Flags
-              </Button>
-            </div>
           </div>
 
           {/* GOOD CONTRACT (Right) */}
@@ -396,6 +390,26 @@ export function QuoteSafetyChecklist({ uploadRef }: QuoteSafetyChecklistProps) {
             </div>
           </div>
           
+        </div>
+
+        {/* Section CTA - Below both columns */}
+        <div className="flex justify-center mt-10">
+          <Button
+            onClick={handleRedFlagsCTAClick}
+            data-id="cta-red-flags-section"
+            size="lg"
+            className={cn(
+              "gap-2 px-8 py-6 text-base font-bold",
+              "bg-rose-600 text-white hover:bg-rose-700 border-0",
+              "shadow-lg hover:shadow-xl",
+              "dark:bg-rose-500 dark:hover:bg-rose-400",
+              "dark:shadow-[0_0_20px_rgba(244,63,94,0.3)]",
+              "transition-all duration-200"
+            )}
+          >
+            <Upload className="w-5 h-5" />
+            Scan Your Quote for Red Flags
+          </Button>
         </div>
       </div>
     </section>
