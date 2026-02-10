@@ -19,6 +19,7 @@ import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index'
 import { ToolFAQSection } from '@/components/seo';
 import { getToolFAQs } from '@/data/toolFAQs';
 // New supporting sections
+import { ScannerVideoSection } from '@/components/quote-scanner/ScannerVideoSection';
 import { ScannerSocialProof } from '@/components/quote-scanner/ScannerSocialProof';
 import { ScannerFAQSection } from '@/components/quote-scanner/ScannerFAQSection';
 import { NoQuotePathway } from '@/components/quote-scanner/NoQuotePathway';
@@ -191,6 +192,8 @@ export default function QuoteScanner() {
             </ErrorBoundary>
           </div>
         </section>
+
+        <ScannerVideoSection />
 
         {/* Vault Pivot Conversion Engine - Primary lead capture for no-quote visitors */}
         <section className="py-8 md:py-12">
