@@ -40,7 +40,11 @@ function FAQItem({ faq, isOpen, onToggle, index }: { faq: FAQ; isOpen: boolean; 
   );
 }
 
-export function FAQSection() {
+interface FAQSectionProps {
+  onOpenPreQuoteModal?: (ctaSource: string) => void;
+}
+
+export function FAQSection({ onOpenPreQuoteModal }: FAQSectionProps) {
   const sectionRef = useSectionTracking('faq');
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
