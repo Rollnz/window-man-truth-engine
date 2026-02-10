@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MessageSquare, Zap, Check, ArrowRight, ArrowLeft, Shield } from 'lucide-react';
+import { MessageSquare, Zap, Check, ArrowRight, Shield } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 import { useSectionTracking } from '@/hooks/useSectionTracking';
 
@@ -34,14 +34,9 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
   return (
     <>
       <style>{`
-        @keyframes live-wire {
+        @keyframes border-beam-spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
-        }
-        @keyframes beckon {
-          0%, 100% { transform: translateX(0); }
-          30%, 50% { transform: translateX(-3px); }
-          70% { transform: translateX(0); }
         }
       `}</style>
       <section ref={sectionRef} className="py-16 md:py-24 bg-[hsl(var(--surface-1))]">
@@ -83,24 +78,23 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
                   <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
                 </Button>
               ) : (
-                <div className="relative rounded-md p-[2px] overflow-hidden">
+                <div className="relative rounded-lg p-[2px] overflow-hidden">
+                  {/* Spinning conic gradient — only a narrow beam is visible */}
                   <div
-                    className="absolute inset-[-100%]"
+                    className="absolute inset-[-50%]"
                     style={{
-                      background: 'conic-gradient(from 0deg, transparent 0%, transparent 30%, #D97706 50%, transparent 70%, transparent 100%)',
-                      animation: 'live-wire 3s linear infinite',
+                      background: 'conic-gradient(from 0deg, transparent 0%, transparent 70%, #D97706 80%, #F59E0B 85%, #D97706 90%, transparent 100%)',
+                      animation: 'border-beam-spin 3s linear infinite',
                     }}
                   />
+                  {/* Dim border underneath for the non-beam portions */}
+                  <div className="absolute inset-[0px] rounded-lg border border-border/20" />
                   <Button
                     variant="outline"
                     size="lg"
-                    className="relative w-full bg-muted text-muted-foreground border-0 cursor-not-allowed"
+                    className="relative w-full bg-muted text-muted-foreground border-0 cursor-not-allowed rounded-[6px]"
                     disabled
                   >
-                    <ArrowLeft
-                      className="w-4 h-4 mr-2"
-                      style={{ animation: 'beckon 2s ease-in-out infinite' }}
-                    />
                     Request Better Quote Options
                   </Button>
                 </div>
