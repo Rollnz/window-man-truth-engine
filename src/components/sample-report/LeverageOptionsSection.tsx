@@ -83,7 +83,7 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
                   <div
                     className="absolute inset-[-50%]"
                     style={{
-                      background: 'conic-gradient(from 0deg, transparent 0%, transparent 70%, #D97706 80%, #F59E0B 85%, #D97706 90%, transparent 100%)',
+                      background: 'conic-gradient(from 0deg, transparent 0%, transparent 65%, #D97706 72%, #F59E0B 78%, #EAB308 82%, #F59E0B 86%, #D97706 92%, transparent 100%)',
                       animation: 'border-beam-spin 3s linear infinite',
                     }}
                   />
