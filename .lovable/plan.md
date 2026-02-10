@@ -1,60 +1,102 @@
 
 
-# Replace Static Trust Signal with Rotating Value Proposition Ticker
+# Replace ScanPipelineStrip with AIScannerHero (4-Scene Forensic Pipeline)
 
 ## What Changes
 
-Replace the static `<p>` element at line 625-637 of `ScanPipelineStrip.tsx` with a new `RotatingValueProp` sub-component that cycles through 7 messages with a fade-out/slide-up/fade-in transition every 3 seconds.
+Replace the current 3-step `ScanPipelineStrip` component with a significantly upgraded 4-scene animated pipeline featuring rich SVG illustrations, particle beam connectors, rotating orbit rings, circuit trace backgrounds, and a "Forensic Ally" banner.
 
-## Messages Array
+## New Visual Architecture
 
-```typescript
-const VALUE_PROPS = [
-  { text: "⚠️ {80%} of quotes contain hidden errors. Find yours before you sign." },
-  { text: "🔒 100% {Private} Analysis - Your contractor will never know." },
-  { text: "💪 Shift the power dynamic. Negotiate with {facts}, not feelings." },
-  { text: "🧐 See exactly what your contractor is hoping you won't notice." },
-  { text: "🧠 Translates 'Contractor Jargon' into plain English warnings." },
-  { text: "⏱️ Faster (and more accurate) than getting a {second opinion}." },
-  { text: "⚖️ The only {unbiased}, non-commissioned review in the industry." },
-];
+The pipeline expands from 3 simple icon cards to 4 illustrated scene cards:
+
+```text
+Desktop (7-column grid):
+  [ Extraction ] ─beam─ [ AI Brain ] ─beam─ [ Database ] ─beam─ [ Red Flag Report ]
+       PDF doc        orbit rings      cylinder DB        flagged report
+       + scan lines   + neural nodes   + data rows        + checklist items
+
+Mobile (vertical stack):
+  [ Extraction ]  (220px)
+       |  beam
+  [ AI Brain ]    (240px)
+       |  beam
+  [ Database ]    (180px)
+       |  beam (red)
+  [ Red Flag ]    (210px)
 ```
-
-Keywords wrapped in `{}` markers will be rendered in `hsl(var(--primary))` (brand blue). All other text stays `hsl(var(--muted-foreground))`.
-
-## Animation Approach
-
-- Two new scoped keyframes added to the existing `<style>` block:
-  - `sp-vpFadeOut`: opacity 1 -> 0 + translateY(0) -> translateY(-8px) over 300ms
-  - `sp-vpFadeIn`: opacity 0 -> 1 + translateY(8px) -> translateY(0) over 300ms
-- A `useEffect` with a 3000ms `setInterval` increments a message index
-- On each tick: apply fade-out animation, wait 300ms via setTimeout, swap text, apply fade-in animation
-- Container has a fixed `minHeight: 40px` so layout never shifts
-- Respects `prefers-reduced-motion`: no animation, just instant swap (or show all statically)
-- Only starts cycling once `phase >= 3` (after the pipeline sequence completes)
-
-## Component Structure
-
-A new `RotatingValueProp` function component defined inside `ScanPipelineStrip.tsx` (no new file needed). It receives `active: boolean` (mapped to `phase >= 3`) and handles its own interval + animation state.
-
-### Keyword Highlighting
-
-A small helper function `renderHighlighted(text: string)` splits on `{...}` markers and returns spans -- highlighted keywords get `color: hsl(var(--primary)); fontWeight: 600`, rest stays muted.
-
-## Styling
-
-- `textAlign: 'center'`
-- `fontSize: 12` (matches current 12px / ~text-xs)
-- `color: hsl(var(--muted-foreground))` for base text
-- `marginTop: 16` (same as current)
-- Fixed height container to prevent layout jump
-- Same entrance transition as current (fade in when phase >= 3)
 
 ## File Changes
 
-| File | Change |
-|---|---|
-| `src/components/quote-scanner/ScanPipelineStrip.tsx` | Replace lines 624-637 (the static `<p>`) with the `RotatingValueProp` component call. Add the sub-component definition and two keyframes to the style block. |
+### `src/components/quote-scanner/ScanPipelineStrip.tsx` -- Full Rewrite
 
-No other files change. No new dependencies.
+The existing 719-line component is replaced entirely with the new design. Key elements:
+
+**Sub-components (all internal, no new files):**
+
+| Component | Purpose |
+|---|---|
+| `GlobalStyles` | Scoped keyframes for all animations (replaces current `SCOPED_STYLES`) |
+| `ParticleBeam` | Horizontal/vertical data flow connectors with animated particles |
+| `CircuitTraces` | SVG background pattern for scene cards |
+| `ForensicBadge` | "FORENSIC ALLY" branding banner with animated hexagon icon |
+| `ExtractionScene` | Scene 1: PDF document with scan lines and extracted data fragments |
+| `AIBrainScene` | Scene 2: Neural chip with rotating orbit rings and connection nodes |
+| `DatabaseScene` | Scene 3: Cylinder database icon with pulsing data rows |
+| `RedFlagScene` | Scene 4: Report card with flag/check/warn items and corner decorations |
+| `VerticalBeam` | Mobile-specific vertical connector between stacked cards |
+| `RotatingValueProp` | Preserved from current implementation (rotating ticker below pipeline) |
+
+**Preserved from current component:**
+- `RotatingValueProp` sub-component and `VALUE_PROPS` array (the rotating ticker)
+- `renderHighlighted` utility function
+- Named export: `export function ScanPipelineStrip()`
+- `useIsMobile()` hook from `@/hooks/use-mobile`
+- IntersectionObserver scroll-trigger pattern
+- `prefers-reduced-motion` respect
+
+**Adaptations from provided code:**
+- `export default function AIScannerHero()` becomes `export function ScanPipelineStrip()` (named export, matching existing import in QuoteScanner.tsx)
+- Remove Google Fonts `<link>` tag (Inter already loaded globally, JetBrains Mono replaced with project's existing monospace stack)
+- Custom `window.innerWidth < 768` resize listener replaced with `useIsMobile()` hook
+- All inline SVGs kept as-is (too complex for Lucide replacements -- custom illustrated scenes)
+- Color constants: keep hardcoded hex values for gradient precision (cyan `#00e5ff`, red `#ff3d5a`, dark bg `#0b1018`) since these are illustration-specific and don't need to follow the theme system
+- TypeScript types added to all component props
+- `setTimeout(() => setVisible(true), 300)` fallback removed (IntersectionObserver is sufficient)
+
+**Layout:**
+- Desktop: `gridTemplateColumns: "1fr auto 1.3fr auto 0.8fr auto 1fr"` with scene cards in columns 1/3/5/7 and horizontal `ParticleBeam` connectors in columns 2/4/6
+- Mobile: `flexDirection: column` with `VerticalBeam` connectors (44px height) between cards
+- Last beam connector (Database to Red Flag) uses `color={C.red}` instead of cyan
+- Banner (`ForensicBadge`) stacks vertically on mobile
+
+**Animations (all via scoped `<style>` block):**
+- `streamRight` / `streamDown`: Particle flow through beam connectors
+- `sonarPing`: Active node highlight pulses
+- `breathe`: Subtle opacity breathing on orbit ring nodes
+- `coreGlow`: Box-shadow pulse on AI brain chip
+- `rotate` / `rotateReverse`: Orbit ring rotation (AI Brain scene)
+- `flagWave`: Red flag icon wobble
+- `scanLine`: Vertical scan sweep on Extraction scene
+- `textFlicker`: Subtle text opacity flicker
+- `dataFlow`: Stroke-dashoffset animation on circuit traces
+- `checkPop`: Checkmark entrance animation
+- `dbPulse`: Database cylinder breathing
+
+### `src/pages/QuoteScanner.tsx` -- No Changes
+
+The import `import { ScanPipelineStrip } from '@/components/quote-scanner/ScanPipelineStrip'` and the `<ScanPipelineStrip />` placement remain identical. The component name and export are preserved.
+
+### `src/components/quote-scanner/QuoteScannerHero.tsx` -- No Changes
+
+The hero section above remains untouched.
+
+## What Does NOT Change
+
+- No new files created (single file rewrite)
+- No new dependencies
+- No database changes
+- No analytics events modified
+- QuoteScanner.tsx import and placement unchanged
+- RotatingValueProp ticker preserved with identical behavior
 
