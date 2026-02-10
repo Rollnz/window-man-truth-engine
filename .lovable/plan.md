@@ -1,49 +1,94 @@
 
 
-# Replace Cyan with Blue + Orange Theme Colors
+# Redesign QuoteUploadGateModal to Match Reference Screenshot
 
 ## What Changes
 
-Swap every cyan color reference in `AIComparisonSection.tsx` to use the project's Industrial Blue (`#3993DD` / `hsl(209 68% 55%)`) and Safety Orange (`hsl(25 95% 55%)`) theme. The red problem card stays red as requested.
+A frontend-only visual update to `QuoteUploadGateModal.tsx`. No new files, no new props, no backend changes. The modal switches from a dark slate theme to a clean white/light theme matching the reference image.
 
-## File: `src/components/quote-scanner/AIComparisonSection.tsx`
+## File: `src/components/audit/QuoteUploadGateModal.tsx`
 
-### 1. Embedded CSS (`STYLES` constant) -- Replace all cyan/`#2776F5` with theme blue
+### 1. Modal Container -- Dark to Light
 
-| Find | Replace With |
-|------|-------------|
-| `rgba(39,118,245,...)` (the blue in grid/glows) | `rgba(57,147,221,...)` (theme primary `#3993DD`) |
-| `#2776F5` (brain color pulse target) | `#3993DD` |
-| `#e6effd` (brain pulse light state) | `#d4e8f8` (lighter tint of theme blue) |
-| `rgb(39 118 245)` (nodes) | `rgb(57 147 221)` |
-| `rgb(244 114 182)` (rose node) | `rgb(234 138 50)` (Safety Orange node) |
+- `DialogContent` changes from `bg-slate-900 text-white` to `bg-white text-slate-900` or the color e5e5e5
+- Border changes to `border-slate-200`
+- Remove the gradient header bar entirely (no more orange gradient strip with FileCheck icon)
 
-### 2. JSX Tailwind classes -- Replace cyan with primary/secondary
+### 2. New Header Layout
 
-| Current | New |
-|---------|-----|
-| `border-cyan-500/20` | `border-primary/20` |
-| `border-cyan-500/30` | `border-primary/30` |
-| `text-cyan-400` | `text-primary` |
-| `text-cyan-300` | `text-primary/80` |
-| `text-cyan-500/60` | `text-primary/40` |
-| `bg-cyan-500/10` | `bg-primary/10` |
-| `border-cyan-500/30` (badge) | `border-primary/30` |
-| `from-cyan-500/80 to-blue-500/60` (stream) | `from-primary/80 to-primary/60` |
-| `bg-cyan-500` (CTA button) | `bg-secondary` |
-| `hover:bg-cyan-400` (CTA hover) | `hover:bg-secondary/90` |
-| `text-slate-900` (CTA text) | `text-secondary-foreground` |
-| `shadow-cyan-500/30` (CTA shadow) | `shadow-secondary/30` |
+Replace the current gradient header with a simple top section:
+- Lock icon (inline, small, `text-slate-700`) + bold heading **"Unlock Your Full Analysis"** on the same line
+- Subtitle paragraph below: "Your quote has been analyzed. Enter your details to see the complete breakdown, warnings, and recommendations."
 
-### 3. Solution card -- keep blue but use theme blue
+### 3. Trust Banner
 
-The `.tp-glow-solution` CSS already uses blue tones close to theme. The JSX classes `text-blue-300` and `bg-blue-500/60` stay as-is (they align with theme primary). No change needed on the solution card or problem card (red stays).
+Add a green trust banner below the subtitle (matching the reference):
+- Rounded pill with green background (`bg-green-50 border border-green-200`)
+- Green checkmark circle icon + bold "Your data is secure." + "And Saved in Your Vault."
 
-### 4. Node colors
+### 4. Form Fields -- Restyle for Light Theme
 
-- Default node: theme blue (already close)
-- `.tp-node-rose` renamed conceptually to orange node using Safety Orange (`rgb(234 138 50)`)
+All labels change from `text-white` to `text-slate-800`. Inputs stay `bg-white text-slate-900 border-slate-300` (already correct). Icon colors change from `text-slate-400` to `text-slate-500`.
 
-## Summary
+- **First Name / Last Name**: Keep existing 2-column grid (already matches requirement). Labels show `First Name *` and `Last Name *` with User icon on First Name only.
+- **Email**: Label shows `Email *` with Mail icon.
+- **Phone**: Label changes from `Phone Number *` to `Phone *` with Phone icon. Remove "(optional)" -- phone stays required (already is).
 
-Pure color swap -- no layout, animation, or structural changes. Every cyan instance becomes either `primary` (blue) or `secondary` (orange for CTA/accents).
+### 5. SMS Consent Checkbox
+
+Add a new checkbox row between Phone and the CTA button:
+- Use a circle checkbox or standard checkbox
+- Text: "I agree to receive SMS updates about my quote analysis. Message & data rates may apply. Reply STOP to unsubscribe."
+- This is visual/UX only -- not a blocking validation field (informational consent)
+
+### 6. CTA Button -- Restyle
+
+- Change from orange gradient (`from-orange-500 to-amber-500`) to solid blue (`bg-primary hover:bg-primary/90`)
+- Keep Lock icon + text "Unlock My Score Now" (replacing "Unlock My AI Report")
+- Keep `text-white font-bold`
+
+### 7. Footer Text
+
+Replace current "No spam. No pressure..." with:
+- "By submitting, you agree to our Terms of Service and Privacy Policy. We'll send your analysis to this email."
+- Style: `text-xs text-slate-500 text-center`
+
+### 8. Remove Old Trust Copy
+
+Remove the line "We'll analyze your quote and send results to your email. Your info is never shared or sold." (replaced by the trust banner and footer).
+
+## Summary of Visual Changes
+
+| Element | Before | After |
+|---------|--------|-------|
+| Background | `bg-slate-900` dark | `bg-white` light #e5e5e5 |
+| Header | Orange gradient strip + FileCheck | Lock icon + "Unlock Your Full Analysis" |
+| Trust | Bottom micro-copy | Green banner "Your data is secure" |
+| Labels | `text-white` | `text-slate-800` |
+| Phone label | "Phone Number *" | "Phone *" |
+| SMS consent | None | Checkbox with SMS opt-in text |
+| CTA color | Orange gradient | `bg-primary` (blue) |
+| CTA text | "Unlock My AI Report" | "Unlock My Score Now" |
+| Footer | "No spam..." | Terms/Privacy disclaimer |
+
+## What Does NOT Change
+
+- Props interface (same `QuoteUploadGateModalProps`)
+- Form validation logic (all 4 fields required via `commonSchemas`)
+- Phone formatting (`formatPhoneNumber`)
+- GTM tracking events (`quote_upload_gate_open`, `_close`, `_submit`)
+- Focus management (autofocus, return focus)
+- Form reset on close
+- Locked-open UX (`onPointerDownOutside` prevented)
+- Double-submit protection (existing `isLoading` guard)
+- Payload shape (`ExplainScoreFormData` with firstName, lastName, email, phone)
+
+## Answers to Safety Questions
+
+- **Payload shape match API contract?** Yes -- unchanged `ExplainScoreFormData`
+- **Button clickable when validation fails?** Yes, but `validateAll()` blocks submission -- unchanged
+- **Double-click/rapid submit?** Handled by existing `isLoading` disable -- unchanged
+- **What does user see on fail?** Inline field errors via `errors.*` -- unchanged
+- **Tests that break?** None -- no structural/prop changes, only class names and copy
+- **All imports added?** Need to add `CheckCircle2` from lucide-react (for trust banner) and `Checkbox` from shadcn if using it for SMS consent
+
