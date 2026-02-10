@@ -1,47 +1,64 @@
 
 
-# Fix Meta Event Deduplication: Strip Prefixed `event_id` from All 12 Files
+# Integrate ScanPipelineV2 into the AI Scanner Page
 
-## Problem
+## What This Does
 
-Meta deduplication requires the browser-side `event_id` to exactly match the server-side `event_id`. Currently, the browser sends prefixed strings (e.g., `lead_captured:550e8400-...`) while the server sends raw UUIDs (`550e8400-...`). This mismatch causes double-counting of conversions.
+Adds a visually rich, scroll-triggered 3-step pipeline animation between the UrgencyTicker and the upload section on the `/ai-scanner` page. It shows users exactly how the AI processes their quote: OCR Extraction -> AI Analysis -> Red Flag Report, with flowing data beams, animated counters, and sonar-ping effects on each node.
 
-## The Fix
+## Approach
 
-In every file that calls `trackLeadSubmissionSuccess`, change the `eventId` from a prefixed string to the raw `leadId` UUID.
+The provided component uses inline styles and raw CSS keyframes (no Tailwind). Rather than rewriting it entirely into Tailwind classes (which would lose fidelity on the complex animations), the plan is to:
 
-## Files to Update (11 call sites + 1 test + 1 validator)
+1. **Create the component as-is**, adapted to TypeScript and project conventions (named export, Lucide icons where possible, `useIsMobile` hook reuse, `prefers-reduced-motion` respect).
+2. **Keep the inline `<style>` block** for the custom keyframes (`particleX`, `particleY`, `sonarPing`, `iconFloat`, `sheenSweep`, `scanLine`, `gridPulse`, `borderGlow`) since these are component-scoped and too complex for Tailwind config.
+3. **Remove the Google Fonts `<link>`** -- the project already has Inter loaded globally and uses `font-typewriter` for monospace.
+4. **Wire it into `QuoteScanner.tsx`** between the `UrgencyTicker` and the upload `<section>`.
 
-### Lead Capture Call Sites
+## Files to Create
 
-1. `src/hooks/useLeadFormSubmit.ts` -- change `eventId: \`lead_captured:${leadId}\`` to `eventId: leadId`
-2. `src/components/conversion/LeadCaptureModal.tsx` -- same change
-3. `src/components/conversion/ConsultationBookingModal.tsx` -- same change
-4. `src/components/conversion/EbookLeadModal.tsx` -- same change
-5. `src/components/quote-scanner/ScannerLeadCaptureModal.tsx` -- same change
-6. `src/pages/QuoteScanner.tsx` -- same change
-7. `src/pages/Consultation.tsx` -- same change
-8. `src/components/quote-builder/LeadModal.tsx` -- same change
-9. `src/hooks/useQuoteBuilder.ts` -- same change
-10. `src/components/beat-your-quote/MissionInitiatedModal.tsx` -- same change
-11. `src/components/sample-report/SampleReportAccessGate.tsx` (line 181) -- change `eventId: \`sample_report_gate:${data.leadId}\`` to `eventId: data.leadId`
+### `src/components/quote-scanner/ScanPipelineStrip.tsx`
 
-### Validator Update
+- Named export: `ScanPipelineStrip`
+- TypeScript with proper interfaces for props
+- Uses Lucide icons (`FileSearch`, `Brain`, `ShieldAlert`) instead of inline SVGs
+- Uses `useIsMobile()` from `@/hooks/use-mobile` instead of custom resize listener
+- Uses `useRef`, `useState`, `useEffect` for IntersectionObserver + phase sequencer
+- Contains a `useAnimatedCounter` internal hook for the metric counters
+- Contains a `ParticleStream` sub-component for the data flow beams
+- Contains a `PipelineNode` sub-component for each step card
+- All CSS keyframes in a scoped `<style>` tag inside the component
+- Respects `prefers-reduced-motion`: if enabled, all steps render visible immediately, no animations
+- Color constants use CSS variables where possible (`hsl(var(--primary))` for cyan accents, `hsl(var(--background))` for dark bg) to stay theme-consistent. The red flag color stays hardcoded (`#ff3d5a`) as it matches the existing claim-survival tool color.
 
-12. `src/lib/emqValidator.ts` -- Update comments in `isValidEventId` to note that plain UUID is the primary/recommended format. The `event_type:uuid` pattern remains accepted as a fallback but is no longer preferred. Logic stays as-is since it already accepts both formats.
+## Files to Modify
 
-### Test Update
+### `src/pages/QuoteScanner.tsx`
 
-13. `src/lib/__tests__/gtm-tracking.test.ts` -- Update the test that passes `lead_captured:test-lead-456` to pass a raw UUID instead (e.g., `test-lead-456` or a proper UUID string).
+Two changes:
+1. Add import: `import { ScanPipelineStrip } from '@/components/quote-scanner/ScanPipelineStrip';`
+2. Insert `<ScanPipelineStrip />` on a new line after the `UrgencyTicker` container div (after line 126) and before the upload `<section>` (line 129)
 
-## What Does NOT Change
+### `tailwind.config.ts`
 
-- The `trackLeadSubmissionSuccess` function signature (it already accepts any string as `eventId`)
-- The `save-lead` Edge Function (already sends raw UUID)
-- GTM configuration (already updated to read `event_id` from dataLayer)
-- No new dependencies, no database changes, no new files
+No changes needed -- all animations are handled via the component's internal `<style>` block since they use container queries and complex multi-step sequences that don't map cleanly to Tailwind utilities.
 
-## Expected Outcome
+## Key Adaptations from Provided Code
 
-After deployment, the browser pixel and server CAPI will send identical `event_id` values (raw UUIDs), bringing Meta's Event Coverage Rate from approximately 8% to approximately 97% and enabling proper deduplication.
+| Original | Adapted |
+|---|---|
+| Inline SVG icons | Lucide `FileSearch`, `Brain`, `ShieldAlert` |
+| `window.innerWidth < 640` resize listener | `useIsMobile()` hook (breakpoint 768px, consistent with project) |
+| Google Fonts `<link>` tag | Removed (Inter already loaded globally) |
+| Hardcoded hex colors (`#00e5ff`, `#0a0e14`) | Mapped to CSS variables where feasible; some kept for gradient precision |
+| `export default` | `export function ScanPipelineStrip()` (named export, project convention) |
+| No reduced-motion handling | Added `prefers-reduced-motion` media query check |
+| No TypeScript types | Full TypeScript interfaces for step data, component props |
+
+## No Other Changes
+
+- No database migrations
+- No new dependencies
+- No analytics events (purely visual)
+- No changes to existing components
 
