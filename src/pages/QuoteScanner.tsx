@@ -29,6 +29,7 @@ import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChec
 import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
 import { AIComparisonSection } from '@/components/quote-scanner/AIComparisonSection';
 import { UrgencyTicker } from '@/components/social-proof';
+import { ScanPipelineStrip } from '@/components/quote-scanner/ScanPipelineStrip';
 import { TestimonialCards } from '@/components/TestimonialCards';
 // Attribution & tracking for NoQuotePivotSection handler
 import { supabase } from '@/integrations/supabase/client';
@@ -125,6 +126,7 @@ export default function QuoteScanner() {
           <UrgencyTicker />
         </div>
 
+        <ScanPipelineStrip />
 
         <section className="py-12 md:py-20">
           <div className="container px-4">
