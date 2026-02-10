@@ -19,8 +19,15 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
     onOpenLeadModal?.('leverage_path_a');
   };
 
+  const handleInactiveButtonClick = () => {
+    setPartnerConsent(true);
+    trackEvent('sample_report_auto_consent', {
+      location: 'leverage_options',
+      trigger: 'button_click',
+    });
+  };
+
   const handleOptionBClick = () => {
-    if (!partnerConsent) return;
     trackEvent('sample_report_upload_click', { location: 'leverage_options', option: 'improve_deal' });
     // Pre-check partner consent in the modal
     onOpenLeadModal?.('leverage_path_b', true);
@@ -74,13 +81,12 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full bg-muted text-muted-foreground border-2 border-[#D97706] dark:border-[#D97706] cursor-not-allowed"
-                  disabled
+                  className="w-full bg-muted text-muted-foreground border-2 border-[#D97706] dark:border-[#D97706]"
+                  onClick={handleInactiveButtonClick}
                 >
                   Request Better Quote Options
                 </Button>
               )}
-              {!partnerConsent && <p className="text-xs text-muted-foreground text-center mt-3">Check the box above to enable this option</p>}
             </div>
           </div>
           <div className="max-w-2xl mx-auto mt-8"><div className="flex items-center justify-center gap-2 text-sm text-muted-foreground"><Shield className="w-4 h-4 text-primary" /><span>Either way, the audit is free whether you use your contractor or ours.</span></div></div>
