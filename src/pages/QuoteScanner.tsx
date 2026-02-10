@@ -26,6 +26,7 @@ import { WindowCalculatorTeaser } from '@/components/quote-scanner/WindowCalcula
 import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChecklist';
 // Vault Pivot Conversion Engine
 import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
+import { AIComparisonSection } from '@/components/quote-scanner/AIComparisonSection';
 import { UrgencyTicker } from '@/components/social-proof';
 import { TestimonialCards } from '@/components/TestimonialCards';
 // Attribution & tracking for NoQuotePivotSection handler
@@ -267,6 +268,7 @@ export default function QuoteScanner() {
 
         {/* Supporting Content Sections */}
         <ScannerSocialProof />
+        <AIComparisonSection uploadRef={uploadRef} />
         <TestimonialCards variant="default" />
         <QuoteSafetyChecklist uploadRef={uploadRef} />
         <WindowCalculatorTeaser />
