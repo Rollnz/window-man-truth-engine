@@ -23,9 +23,14 @@ export function QuoteScannerHero() {
           </h1>
           
           {/* Subtext */}
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-4">
             Stop guessing. Upload a photo of your contractor's quote and let our AI flag hidden risks, 
             missing scope, and overpricing — in seconds.
+          </p>
+
+          {/* Before/After context line */}
+          <p className="text-sm text-muted-foreground/70 font-medium tracking-wide uppercase">
+            See what our AI finds in seconds ↓
           </p>
         </div>
       </div>
