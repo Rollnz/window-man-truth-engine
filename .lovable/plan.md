@@ -1,60 +1,47 @@
 
 
-# Animate the Hero Score Card on the Sample Report Page
+# Fix Meta Event Deduplication: Strip Prefixed `event_id` from All 12 Files
 
-## What Changes
+## Problem
 
-The right-side "Quote Safety Score / SAMPLE" card in `HeroSection.tsx` currently renders with static, pre-filled values. We will add the same animation treatment as `ScoreboardSection`:
+Meta deduplication requires the browser-side `event_id` to exactly match the server-side `event_id`. Currently, the browser sends prefixed strings (e.g., `lead_captured:550e8400-...`) while the server sends raw UUIDs (`550e8400-...`). This mismatch causes double-counting of conversions.
 
-1. **Score counter**: The "62" counts up from 0 to 62 on mount using requestAnimationFrame (same pattern as `AnimatedScore` in ScoreboardSection)
-2. **SVG ring fill**: The circular progress ring animates from empty to 62% using a CSS transition on `strokeDashoffset`
-3. **Pillar bars stagger**: Each of the 5 bars in `PreviewBars` starts at 0% width and fills to its target with a staggered delay (50ms between each)
+## The Fix
 
-## Why It Works for CRO
+In every file that calls `trackLeadSubmissionSuccess`, change the `eventId` from a prefixed string to the raw `leadId` UUID.
 
-- Animated elements draw the eye to the score card, reinforcing the "your quote could look like this" message
-- Motion creates a sense of the AI "calculating" -- builds perceived value before the user even scrolls
-- Matches the ScoreboardSection animation language, so the page feels cohesive
+## Files to Update (11 call sites + 1 test + 1 validator)
 
-## Zero Performance Impact
+### Lead Capture Call Sites
 
-- No IntersectionObserver needed (hero is always in viewport on load)
-- Animations trigger on mount via a simple `useEffect(() => setIsVisible(true), [])`
-- Uses CSS transitions for bars and ring (GPU-accelerated), rAF for the number counter
-- No new dependencies
+1. `src/hooks/useLeadFormSubmit.ts` -- change `eventId: \`lead_captured:${leadId}\`` to `eventId: leadId`
+2. `src/components/conversion/LeadCaptureModal.tsx` -- same change
+3. `src/components/conversion/ConsultationBookingModal.tsx` -- same change
+4. `src/components/conversion/EbookLeadModal.tsx` -- same change
+5. `src/components/quote-scanner/ScannerLeadCaptureModal.tsx` -- same change
+6. `src/pages/QuoteScanner.tsx` -- same change
+7. `src/pages/Consultation.tsx` -- same change
+8. `src/components/quote-builder/LeadModal.tsx` -- same change
+9. `src/hooks/useQuoteBuilder.ts` -- same change
+10. `src/components/beat-your-quote/MissionInitiatedModal.tsx` -- same change
+11. `src/components/sample-report/SampleReportAccessGate.tsx` (line 181) -- change `eventId: \`sample_report_gate:${data.leadId}\`` to `eventId: data.leadId`
 
-## Technical Changes
+### Validator Update
 
-### File: `src/components/sample-report/HeroSection.tsx`
+12. `src/lib/emqValidator.ts` -- Update comments in `isValidEventId` to note that plain UUID is the primary/recommended format. The `event_type:uuid` pattern remains accepted as a fallback but is no longer preferred. Logic stays as-is since it already accepts both formats.
 
-**1. Add mount-triggered visibility state**
+### Test Update
 
-Inside `HeroSection`, add:
-```tsx
-const [isVisible, setIsVisible] = useState(false);
-useEffect(() => { setIsVisible(true); }, []);
-```
+13. `src/lib/__tests__/gtm-tracking.test.ts` -- Update the test that passes `lead_captured:test-lead-456` to pass a raw UUID instead (e.g., `test-lead-456` or a proper UUID string).
 
-**2. Animate the score number**
+## What Does NOT Change
 
-Replace the static `<span className="text-3xl font-bold">62</span>` with an inline animated counter (same rAF pattern as ScoreboardSection's `AnimatedScore`):
-- Counts from 0 to 62 over 1500ms with ease-out cubic
-- Triggered when `isVisible` becomes true
+- The `trackLeadSubmissionSuccess` function signature (it already accepts any string as `eventId`)
+- The `save-lead` Edge Function (already sends raw UUID)
+- GTM configuration (already updated to read `event_id` from dataLayer)
+- No new dependencies, no database changes, no new files
 
-**3. Animate the SVG ring**
+## Expected Outcome
 
-Currently the ring's `strokeDasharray` is pre-calculated. Change it to:
-- Start with full dashoffset (empty ring)
-- Transition to the 62% offset when `isVisible` is true
-- Add `transition-all duration-[1500ms] ease-out` class
-
-**4. Animate the PreviewBars**
-
-Update the `PreviewBars` component to accept an `isVisible` prop:
-- Bars start at `width: 0%`
-- Transition to their target width with `transition-all duration-700`
-- Each bar gets a staggered `transitionDelay` (e.g., 0ms, 100ms, 200ms, 300ms, 400ms)
-- Pillar score numbers also count up (reuse the same rAF pattern)
-
-### No other files change.
+After deployment, the browser pixel and server CAPI will send identical `event_id` values (raw UUIDs), bringing Meta's Event Coverage Rate from approximately 8% to approximately 97% and enabling proper deduplication.
 
