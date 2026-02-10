@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload, Shield, Check, ArrowRight } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
@@ -8,7 +9,27 @@ interface HeroSectionProps {
   onOpenPreQuoteModal?: (ctaSource: string) => void;
 }
 
-const PreviewBars = () => {
+function AnimatedScore({ targetScore, isVisible }: { targetScore: number; isVisible: boolean }) {
+  const [score, setScore] = useState(0);
+  useEffect(() => {
+    if (!isVisible) return;
+    const duration = 1500;
+    const startTime = Date.now();
+    let rafId = 0;
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setScore(Math.round(targetScore * eased));
+      if (progress < 1) rafId = requestAnimationFrame(animate);
+    };
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [targetScore, isVisible]);
+  return <span>{score}</span>;
+}
+
+const PreviewBars = ({ isVisible }: { isVisible: boolean }) => {
   const pillars = [
     { name: 'Safety & Code', score: 78, color: 'bg-primary' },
     { name: 'Install Clarity', score: 42, color: 'bg-[hsl(var(--secondary))]' },
@@ -19,16 +40,21 @@ const PreviewBars = () => {
 
   return (
     <div className="space-y-2">
-      {pillars.map((pillar) => (
+      {pillars.map((pillar, index) => (
         <div key={pillar.name} className="flex items-center gap-2">
           <span className="text-[10px] text-muted-foreground w-20 truncate">{pillar.name}</span>
           <div className="flex-1 h-2 bg-muted/50 rounded-full overflow-hidden">
             <div 
-              className={`h-full ${pillar.color} rounded-full transition-all duration-1000`}
-              style={{ width: `${pillar.score}%` }}
+              className={`h-full ${pillar.color} rounded-full transition-all duration-700 ease-out`}
+              style={{ 
+                width: isVisible ? `${pillar.score}%` : '0%',
+                transitionDelay: isVisible ? `${index * 100}ms` : '0ms',
+              }}
             />
           </div>
-          <span className="text-[10px] font-medium text-foreground w-6">{pillar.score}</span>
+          <span className="text-[10px] font-medium text-foreground w-6">
+            <AnimatedScore targetScore={pillar.score} isVisible={isVisible} />
+          </span>
         </div>
       ))}
     </div>
@@ -37,6 +63,9 @@ const PreviewBars = () => {
 
 export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectionProps) {
   const sectionRef = useSectionTracking('hero');
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => { setIsVisible(true); }, []);
 
   const handleUploadClick = () => {
     trackEvent('sample_report_upload_click', { location: 'hero_section' });
@@ -48,6 +77,9 @@ export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectio
     onOpenPreQuoteModal?.('hero_no_quote');
   };
 
+  const circumference = 2 * Math.PI * 56;
+  const offset = circumference - (62 / 100) * circumference;
+
   return (
     <section ref={sectionRef} className="relative py-16 md:py-24 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background" />
@@ -56,6 +88,7 @@ export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectio
       <div className="container px-4 relative">
         <div className="grid lg:grid-cols-5 gap-8 lg:gap-12 items-center">
           <div className="lg:col-span-3 space-y-6">
+            
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
               <Shield className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium text-primary">Sample AI Audit Report</span>
@@ -112,10 +145,21 @@ export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectio
                   <div className="relative w-32 h-32">
                     <svg className="w-full h-full transform -rotate-90">
                       <circle cx="64" cy="64" r="56" stroke="hsl(var(--muted))" strokeWidth="12" fill="none" />
-                      <circle cx="64" cy="64" r="56" stroke="hsl(var(--primary))" strokeWidth="12" fill="none" strokeLinecap="round" strokeDasharray={`${62 * 3.52} ${100 * 3.52}`} className="transition-all duration-1000" />
+                      <circle
+                        cx="64" cy="64" r="56"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth="12"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={isVisible ? offset : circumference}
+                        className="transition-all duration-[1500ms] ease-out"
+                      />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-bold text-foreground">62</span>
+                      <span className="text-3xl font-bold text-foreground">
+                        <AnimatedScore targetScore={62} isVisible={isVisible} />
+                      </span>
                       <span className="text-xs text-muted-foreground">/ 100</span>
                     </div>
                   </div>
@@ -125,7 +169,7 @@ export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectio
                   Not a bad quote — a quote with <span className="text-[hsl(var(--secondary))] font-medium">avoidable risk</span>.
                 </p>
 
-                <PreviewBars />
+                <PreviewBars isVisible={isVisible} />
 
                 <p className="text-[10px] text-muted-foreground text-center mt-4 pt-4 border-t border-border/50">
                   Scores reflect completeness and protection — not brand names.
