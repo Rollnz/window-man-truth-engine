@@ -14,6 +14,8 @@ interface EnhancedFloatingCalloutProps {
   fromRight?: boolean;
   /** Hide entire callout on mobile */
   hideMobile?: boolean;
+  /** Staggered animation delay */
+  animationDelay?: string;
 }
 
 const calloutConfig: Record<EnhancedCalloutType, { 
@@ -65,6 +67,7 @@ export function EnhancedFloatingCallout({
   className,
   fromRight = false,
   hideMobile = false,
+  animationDelay,
 }: EnhancedFloatingCalloutProps) {
   const config = calloutConfig[type];
   const Icon = config.icon;
@@ -72,9 +75,10 @@ export function EnhancedFloatingCallout({
   return (
     <div
       className={cn(
-        "absolute z-10 px-3 py-2 shadow-lg",
+        "absolute px-3 py-2 shadow-lg",
         "flex items-start gap-2 max-w-[220px] md:max-w-[260px]",
-        "animate-in fade-in duration-500",
+        "animate-in fade-in duration-500 fill-mode-forwards",
+        animationDelay ? "opacity-0" : "",
         config.bgColor,
         fromRight 
           ? "rounded-l-lg slide-in-from-right-2" 
@@ -82,6 +86,7 @@ export function EnhancedFloatingCallout({
         hideMobile && "hidden md:flex",
         className
       )}
+      style={animationDelay ? { animationDelay, animationFillMode: 'forwards' } : undefined}
     >
       {/* Icon container */}
       <div className={cn(
