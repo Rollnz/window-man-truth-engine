@@ -1,55 +1,45 @@
 
 
-# Transform "Before" Section to Match Reference Screenshot
+# Match "Before" Box to Reference Screenshot
 
-## What Changes
+## Key Visual Differences to Fix
 
-Restyle the "Before: Just a Confusing Estimate" upload zone to be a 1:1 square card with repositioned callout badges matching the reference screenshot.
+### 1. Outer container styling (`QuoteUploadZone.tsx`)
+- Change from `border-2 border-dashed` to a solid subtle border with shadow (`border border-border/40 shadow-xl rounded-2xl`)
+- Change `overflow-hidden` to `overflow-visible` so callout badges can extend outside the card boundary (as shown in the reference where badges poke out beyond the card edges)
+- Keep `aspect-square` and `bg-card/50`
 
-## File: `src/components/quote-scanner/QuoteUploadZone.tsx`
+### 2. Sample document styling (`SampleQuoteDocument.tsx`)
+- Remove the dashed border (`border-dashed border-border/60`) and replace with no visible border — the document text should sit directly on the card background
+- Adjust the inset and spacing to better match the reference layout (more breathing room at top)
+- Add a subtle `Date: May 28, 2025` next to Customer line to match the reference
 
-### 1. Make the container square (1:1 aspect ratio)
+### 3. Upload CTA card (`QuoteUploadZone.tsx`)
+- Remove the circular ScanSearch icon above the heading — the reference shows no icon circle
+- Keep "Analyze Quote" heading in primary/green bold text
+- Make the "Upload Your Quote" button dark/black (`bg-foreground text-background` or similar) to match the dark button in the reference
+- Slightly reduce card max-width and padding for a tighter look
 
-Replace the `min-h-[300px] md:min-h-[400px]` sizing with `aspect-square` to enforce a 1:1 ratio. Remove the min-height constraints entirely.
+### 4. Callout positions fine-tuned (`QuoteUploadZone.tsx`)
+- **Price Warning** (red, top-right): Shift to partially overflow outside the card boundary — `top-[15%] -right-3`
+- **Warranty Issue** (yellow, left): Position at roughly 40% from top, partially behind center card — `top-[38%] -left-2`
+- **Missing Scope** (red, bottom-left): Position to overflow bottom-left — `-bottom-2 -left-3`
+- **Legal Clause** (red, bottom-right): Position to overflow bottom-right — `-bottom-2 -right-3`
 
-### 2. Reposition callout badges to match the reference
+### 5. Description text always visible (`EnhancedFloatingCallout.tsx`)
+- Remove `hidden md:block` from description text — in the reference all descriptions are visible even at smaller sizes
 
-Current positions vs. target:
+## Files Modified
 
-| Callout | Current Position | Target Position | Z-Index |
-|---------|-----------------|-----------------|---------|
-| Price Warning (red) | `top-20 right-0` | `top-3 right-0` (top-right corner) | z-[5] (behind upload card) |
-| Legal Clause (red) | `top-4 left-0` | `bottom-8 right-0` (bottom-right) | z-[5] (behind upload card) |
-| Warranty Issue (yellow) | `bottom-10 right-0` | `top-1/2 -translate-y-1/2 left-0` (left-center, vertically centered) | z-[5] (behind upload card, partially obscured) |
-| Missing Scope (red) | `bottom-24 left-0` | `bottom-8 left-0` (bottom-left corner) | z-[5] (behind upload card) |
+| File | Change |
+|------|--------|
+| `QuoteUploadZone.tsx` | Container border/overflow, remove icon circle, dark button, callout positions |
+| `SampleQuoteDocument.tsx` | Remove dashed border, add date field, spacing tweaks |
+| `EnhancedFloatingCallout.tsx` | Show description on all screen sizes |
 
-### 3. Fix z-index layering
-
-- Callouts: `z-[5]` -- they sit behind the upload card
-- Upload CTA card overlay: `z-10` (already set) -- it sits on top
-- This creates the effect where the yellow "Warranty Issue" badge is partially obscured by the centered Analyze Quote card
-
-### 4. Show all callouts on mobile
-
-Remove `hideMobile` from both the Price Warning and Warranty Issue callouts so they display on all screen sizes (the square layout has room for all four).
-
-### 5. Add entrance animation
-
-Add an IntersectionObserver-based trigger so callout badges animate in (slide + fade) when the section scrolls into view, using the existing `animate-in fade-in slide-in-from-left/right` classes with staggered delays via inline `style={{ animationDelay }}`.
-
-## File: `src/components/quote-scanner/EnhancedFloatingCallout.tsx`
-
-### 6. Accept animation delay prop
-
-Add an optional `animationDelay` prop (string like `"200ms"`) that gets applied as `style={{ animationDelay }}` on the root div. Also add `fill-mode-forwards` and start with `opacity-0` so callouts are hidden until they animate in.
-
-## Summary of visual result
-
-- Square 1:1 card container
-- Red "Price Warning" badge in top-right corner, clearly visible
-- Yellow "Warranty Issue" badge on the left side, partially behind the centered upload card
-- Red "Missing Scope" badge in bottom-left corner, fully visible
-- Red "Legal Clause" badge in bottom-right corner, fully visible
-- All four callouts slide in with staggered animation as the user scrolls to this section
-- Upload card stays centered and clickable on top of everything
+## What Stays the Same
+- All upload functionality (drag/drop, file input, analyzing state)
+- Animation delays and stagger logic
+- Callout color strategy (red/yellow)
+- The forwardRef and scroll-to behavior
 
