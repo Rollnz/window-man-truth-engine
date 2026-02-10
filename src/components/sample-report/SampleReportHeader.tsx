@@ -4,6 +4,7 @@ import { trackEvent } from '@/lib/gtm';
 
 interface SampleReportHeaderProps {
   onOpenLeadModal?: (ctaSource: string) => void;
+  onOpenPreQuoteModal?: (ctaSource: string) => void;
 }
 
 export function SampleReportHeader({ onOpenLeadModal }: SampleReportHeaderProps) {
