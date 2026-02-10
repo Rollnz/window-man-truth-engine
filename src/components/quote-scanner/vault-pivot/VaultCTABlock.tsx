@@ -68,16 +68,17 @@ export function VaultCTABlock({
         size="lg"
         className={cn(
           'w-full md:w-auto md:min-w-[360px] h-16 text-lg font-bold uppercase tracking-wider',
-          'bg-emerald-600 hover:bg-emerald-500 text-white',
-          'border-2 border-emerald-700',
-          'shadow-lg hover:shadow-xl',
-          'dark:shadow-[0_0_30px_rgba(34,197,94,0.4)]',
+          'text-white',
+          'border-2 border-[#b45309]',
+          'shadow-lg hover:shadow-xl hover:brightness-110',
+          'dark:shadow-[0_0_30px_rgba(217,119,6,0.4)]',
           'dark:animate-[radar-pulse_3s_ease-in-out_infinite]',
           'transition-all duration-200'
         )}
+        style={{ backgroundColor: '#D97706' }}
       >
         <Lock className="w-5 h-5 mr-2" />
-        ENTER THE WAR ROOM
+        ENTER YOUR SECURE VAULT
       </Button>
 
       {/* Email Fallback Toggle */}
@@ -177,8 +178,8 @@ export function VaultCTABlock({
       {/* Radar pulse animation for dark mode */}
       <style>{`
         @keyframes radar-pulse {
-          0%, 100% { box-shadow: 0 0 20px rgba(34,197,94,0.3); }
-          50% { box-shadow: 0 0 40px rgba(34,197,94,0.5); }
+          0%, 100% { box-shadow: 0 0 20px rgba(217,119,6,0.3); }
+          50% { box-shadow: 0 0 40px rgba(217,119,6,0.5); }
         }
       `}</style>
     </div>
