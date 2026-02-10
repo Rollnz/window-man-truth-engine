@@ -88,7 +88,7 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
               )}
             </div>
           </div>
-          <div className="max-w-2xl mx-auto mt-8"><div className="flex items-center justify-center gap-2 text-sm text-muted-foreground"><Shield className="w-4 h-4 text-primary" /><span>Either Way, Your Audit is 100% Free & Secured 🔐 Whether You Stick With Your Contractor & Negotiate Better Terms, Or Let Window Man Find A Better One</span></div></div>
+          <div className="max-w-2xl mx-auto mt-8"><div className="flex items-center justify-center gap-2 text-sm text-muted-foreground"><Shield className="w-4 h-4 text-primary" /><span>Either Way, Your Audit is 100% Free & Secured 🔐 <br/> Whether You Stick With Your Contractor & Negotiate Better Terms, Or Let Window Man Find A Better One</span></div></div>
         </div>
     </section>
   );
