@@ -92,7 +92,7 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
         firstName,
         lastName: lastName || undefined,
         sourceTool: 'quote-builder',
-        eventId: `lead_captured:${leadId}`,
+        eventId: leadId,
         value: 100,
       });
     }

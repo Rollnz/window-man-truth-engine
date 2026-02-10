@@ -192,7 +192,7 @@ export function MissionInitiatedModal({
         state: sessionData?.state || undefined,
         zipCode: sessionData?.zipCode || undefined,
         sourceTool: 'beat-your-quote',
-        eventId: `lead_captured:${effectiveLeadId}`,
+        eventId: effectiveLeadId || '',
         value: 100,
       });
 

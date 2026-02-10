@@ -95,7 +95,7 @@ export default function Consultation() {
           lastName: data.lastName,
           city: data.cityZip,
           sourceTool: 'consultation',
-          eventId: `lead_captured:${leadId}`,
+          eventId: leadId,
           value: 100,
         }),
       ]);

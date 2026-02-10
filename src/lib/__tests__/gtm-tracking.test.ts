@@ -105,18 +105,18 @@ describe('trackLeadSubmissionSuccess', () => {
     expect(event.currency).toBe('USD');
   });
 
-  it('should accept deterministic eventId for deduplication parity', async () => {
-    const deterministicId = 'lead_captured:test-lead-456';
+  it('should use raw leadId as eventId for Meta deduplication parity', async () => {
+    const rawLeadId = '550e8400-e29b-41d4-a716-446655440000';
     await trackLeadSubmissionSuccess({
-      leadId: 'test-lead-456',
+      leadId: rawLeadId,
       email: 'eventid@test.com',
       sourceTool: 'quote-builder',
-      eventId: deterministicId,
+      eventId: rawLeadId,
     });
 
     const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
     expect(event).toBeDefined();
-    expect(event.event_id).toBe(deterministicId);
+    expect(event.event_id).toBe(rawLeadId);
   });
 
   it('should NOT include hasPhone in the function signature', async () => {
