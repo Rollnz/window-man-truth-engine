@@ -34,7 +34,7 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
   return (
     <section ref={sectionRef} className="py-16 md:py-24 bg-[hsl(var(--surface-1))]">
       <div className="container px-4">
-        <div className="max-w-3xl mx-auto text-center mb-12"><h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">How Do You Want to Use This Report?</h2><p className="text-lg text-muted-foreground">Two paths. Same goal: protecting your investment. You choose.</p></div>
+        <div className="max-w-3xl mx-auto text-center mb-12"><h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">How Do You Want to Use Your Free Report?</h2><p className="text-lg text-muted-foreground">Two paths. Same goal: protecting your investment. You choose.</p></div>
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           <div className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 flex flex-col">
             <div className="flex items-center gap-2 mb-4"><div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><MessageSquare className="w-4 h-4 text-primary" /></div><span className="text-sm font-medium text-muted-foreground">Option A</span></div>
