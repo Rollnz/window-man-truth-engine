@@ -244,11 +244,12 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
 
               {onNoQuoteClick && (
                 <div className="mt-4 flex flex-col items-center gap-2">
-                  <span className="text-sm font-bold text-foreground">No Quote To Analyze Yet?</span>
+                  <span className="text-sm font-bold text-foreground">No Quote To Analyze Yet</span>
                   <Button
                     variant="outline"
-                    size="sm"
-                    className="gap-2 border-primary/40 text-primary hover:bg-primary/10"
+                    size="lg"
+                    className="gap-2 w-full border-none text-white font-semibold shadow-[0_4px_14px_rgba(245,158,66,0.45)]"
+                    style={{ backgroundColor: '#f59e42' }}
                     onClick={(e) => {
                       e.stopPropagation();
                       trackEvent('no_quote_sample_click', { location: 'before_card' });
