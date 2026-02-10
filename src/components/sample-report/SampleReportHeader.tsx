@@ -3,11 +3,13 @@ import { Upload, Phone, FileText } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 
 interface SampleReportHeaderProps {
+  firstName?: string;
   onOpenLeadModal?: (ctaSource: string) => void;
   onOpenPreQuoteModal?: (ctaSource: string) => void;
 }
 
-export function SampleReportHeader({ onOpenLeadModal, onOpenPreQuoteModal }: SampleReportHeaderProps) {
+export function SampleReportHeader({ firstName, onOpenLeadModal, onOpenPreQuoteModal }: SampleReportHeaderProps) {
+  const safeFirstName = firstName?.trim().slice(0, 24);
   const handleUploadClick = () => {
     trackEvent('sample_report_upload_click', {
       location: 'sticky_header',
@@ -39,6 +41,11 @@ export function SampleReportHeader({ onOpenLeadModal, onOpenPreQuoteModal }: Sam
               Sample Report
             </span>
           </div>
+          {safeFirstName && safeFirstName.length >= 2 && (
+            <span className="shrink-0 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full hidden sm:inline">
+              Hi, {safeFirstName}
+            </span>
+          )}
         </div>
 
         {/* Right: CTAs */}
