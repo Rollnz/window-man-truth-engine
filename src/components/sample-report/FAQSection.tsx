@@ -72,7 +72,7 @@ export function FAQSection({ onOpenPreQuoteModal }: FAQSectionProps) {
           </div>
         </div>
         <p className="text-center text-sm text-muted-foreground mt-8">
-          Still have questions? <Link to={ROUTES.CONSULTATION} className="text-primary hover:underline">Talk to Window Man</Link>
+          Still have questions? <button onClick={() => onOpenPreQuoteModal?.('faq_talk')} className="text-primary hover:underline">Talk to Window Man</button>
         </p>
       </div>
     </section>

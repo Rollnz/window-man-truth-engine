@@ -146,7 +146,7 @@ const SampleReport = () => {
         <HowItWorksSection />
         <LeverageOptionsSection onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
         <CloserSection onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
-        <FAQSection />
+        <FAQSection onOpenPreQuoteModal={handleOpenPreQuoteModal} />
       </main>
     </div>
   );

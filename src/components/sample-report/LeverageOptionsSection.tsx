@@ -34,7 +34,7 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
 
   const handleNoQuoteClick = () => {
     trackEvent('sample_report_no_quote_click', { location: 'leverage_options' });
-    onOpenPreQuoteModal?.('leverage_no_quote');
+    onOpenPreQuoteModal?.('option_a_setup');
   };
 
   return (

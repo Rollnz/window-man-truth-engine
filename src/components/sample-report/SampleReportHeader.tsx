@@ -44,14 +44,13 @@ export function SampleReportHeader({ onOpenLeadModal, onOpenPreQuoteModal }: Sam
         {/* Right: CTAs */}
         <div className="flex items-center gap-3">
           {/* Secondary: Talk to Window Man - Direct Phone Call */}
-          <a 
-            href="tel:+15614685571"
+          <button 
             onClick={handleTalkClick}
             className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <Phone className="w-4 h-4" />
             <span>Talk to Window Man</span>
-          </a>
+          </button>
 
           {/* Primary: Upload My Estimate - Opens Lead Modal */}
           <Button 
