@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Play } from 'lucide-react';
+import { Play, Volume2, VolumeX } from 'lucide-react';
 
 interface NavigatorConnection {
   saveData?: boolean;
@@ -23,6 +23,7 @@ export function ScannerVideoSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [showPlayButton, setShowPlayButton] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
 
   const handlePlay = useCallback(() => {
     const video = videoRef.current;
@@ -30,6 +31,13 @@ export function ScannerVideoSection() {
     video.preload = 'auto';
     video.play();
     setShowPlayButton(false);
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
   }, []);
 
   useEffect(() => {
@@ -89,6 +97,13 @@ export function ScannerVideoSection() {
             <source src="https://itswindowman-videos.b-cdn.net/Windowmanscanner.mp4" type="video/mp4" />
           </video>
           {showPlayButton && <PlayButtonOverlay onClick={handlePlay} />}
+          <button
+            onClick={toggleMute}
+            className="absolute bottom-4 right-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-colors duration-200"
+            aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+          >
+            {isMuted ? <VolumeX className="w-5 h-5 text-white" /> : <Volume2 className="w-5 h-5 text-white" />}
+          </button>
         </div>
       </div>
     </section>
