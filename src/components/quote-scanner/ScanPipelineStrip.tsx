@@ -87,6 +87,14 @@ const SCOPED_STYLES = `
   0%, 100% { opacity: 0.3; }
   50% { opacity: 0.6; }
 }
+@keyframes sp-vpFadeOut {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes sp-vpFadeIn {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .sp-pipeline-root * {
@@ -409,6 +417,89 @@ function PipelineNode({ step, index, active, phase, compact }: {
   );
 }
 
+// ─── Value Propositions ───────────────────────────────────────────────────────
+const VALUE_PROPS = [
+  "⚠️ {80%} of quotes contain hidden errors. Find yours before you sign.",
+  "🔒 100% {Private} Analysis — Your contractor will never know.",
+  "💪 Shift the power dynamic. Negotiate with {facts}, not feelings.",
+  "🧐 See exactly what your contractor is hoping you won't notice.",
+  "🧠 Translates 'Contractor Jargon' into plain English warnings.",
+  "⏱️ Faster (and more accurate) than getting a {second opinion}.",
+  "⚖️ The only {unbiased}, non-commissioned review in the industry.",
+];
+
+function renderHighlighted(text: string) {
+  return text.split(/\{(.*?)\}/g).map((part, i) =>
+    i % 2 === 1 ? (
+      <span key={i} style={{ color: 'hsl(var(--primary))', fontWeight: 600 }}>{part}</span>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  );
+}
+
+// ─── Rotating Value Prop ──────────────────────────────────────────────────────
+function RotatingValueProp({ active }: { active: boolean }) {
+  const [index, setIndex] = useState(0);
+  const [animClass, setAnimClass] = useState<'in' | 'out' | 'none'>('in');
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  useEffect(() => {
+    if (!active) return;
+    timerRef.current = setInterval(() => {
+      if (prefersReducedMotion) {
+        setIndex((prev) => (prev + 1) % VALUE_PROPS.length);
+        return;
+      }
+      setAnimClass('out');
+      setTimeout(() => {
+        setIndex((prev) => (prev + 1) % VALUE_PROPS.length);
+        setAnimClass('in');
+      }, 300);
+    }, 3000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [active, prefersReducedMotion]);
+
+  return (
+    <div
+      style={{
+        textAlign: 'center',
+        marginTop: 16,
+        minHeight: 40,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: active ? 1 : 0,
+        transform: active ? 'translateY(0)' : 'translateY(8px)',
+        transition: 'opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s',
+      }}
+    >
+      <p
+        style={{
+          fontSize: 12,
+          color: 'hsl(var(--muted-foreground))',
+          margin: 0,
+          lineHeight: 1.5,
+          animation:
+            prefersReducedMotion || animClass === 'none'
+              ? 'none'
+              : animClass === 'out'
+              ? 'sp-vpFadeOut 0.3s ease forwards'
+              : 'sp-vpFadeIn 0.3s ease forwards',
+        }}
+      >
+        {renderHighlighted(VALUE_PROPS[index])}
+      </p>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function ScanPipelineStrip() {
   const [phase, setPhase] = useState(0);
@@ -621,20 +712,7 @@ export function ScanPipelineStrip() {
           </div>
         </div>
 
-        {/* Trust signal */}
-        <p
-          style={{
-            textAlign: 'center',
-            fontSize: 12,
-            color: 'hsl(var(--muted-foreground))',
-            marginTop: 16,
-            opacity: phase >= 3 ? 1 : 0,
-            transform: phase >= 3 ? 'translateY(0)' : 'translateY(8px)',
-            transition: 'opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s',
-          }}
-        >
-          ⚡ Average scan time: 4.2 seconds • Trained on 12,000+ Florida window quotes
-        </p>
+        <RotatingValueProp active={phase >= 3} />
       </div>
     </div>
   );
