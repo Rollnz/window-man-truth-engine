@@ -195,7 +195,7 @@ export const AIComparisonSection: React.FC<AIComparisonSectionProps> = ({
                 </div>
               </div>
 
-              <p className="text-[11px] uppercase tracking-widest text-primary/40 text-center">
+              <p className="text-[11px] uppercase tracking-widest text-center text-[#a5c5e3]">
                 Innovation at scale · Human-level empathy, machine-level focus
               </p>
             </div>
