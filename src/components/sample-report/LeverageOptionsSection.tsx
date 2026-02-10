@@ -74,7 +74,7 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full bg-muted text-muted-foreground border-2 border-[#D97706] cursor-not-allowed"
+                  className="w-full bg-muted text-muted-foreground border-2 border-[#D97706] dark:border-[#D97706] cursor-not-allowed"
                   disabled
                 >
                   Request Better Quote Options
