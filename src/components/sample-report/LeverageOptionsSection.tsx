@@ -19,8 +19,15 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
     onOpenLeadModal?.('leverage_path_a');
   };
 
+  const handleInactiveButtonClick = () => {
+    setPartnerConsent(true);
+    trackEvent('sample_report_auto_consent', {
+      location: 'leverage_options',
+      trigger: 'button_click',
+    });
+  };
+
   const handleOptionBClick = () => {
-    if (!partnerConsent) return;
     trackEvent('sample_report_upload_click', { location: 'leverage_options', option: 'improve_deal' });
     // Pre-check partner consent in the modal
     onOpenLeadModal?.('leverage_path_b', true);
