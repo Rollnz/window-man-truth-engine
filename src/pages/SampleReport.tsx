@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Navbar } from '@/components/home/Navbar';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
@@ -25,6 +25,8 @@ import { PreQuoteLeadModal } from '@/components/sample-report/PreQuoteLeadModal'
 const SampleReport = () => {
   usePageTracking('sample-report');
   const navigate = useNavigate();
+  const location = useLocation();
+  const firstNameFromNav = (location.state as any)?.firstName as string | undefined;
   
   const { leadId, hasIdentity } = useLeadIdentity();
   const anchorId = getLeadAnchor();
