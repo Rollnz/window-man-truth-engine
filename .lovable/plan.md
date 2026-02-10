@@ -1,77 +1,97 @@
 
-# Update LeadCaptureModal (quote-scanner variant) to Match New Design
 
-## Component Being Changed
+# Dynamic Warning Bubbles on Before Card (Post-Analysis)
 
-**`src/components/conversion/LeadCaptureModal.tsx`** -- the `LeadCaptureModal` component, specifically when `sourceTool === 'quote-scanner'`. This is the modal triggered from "Upload Your Quote" on the `/ai-scanner` page.
+## What Changes
 
-## What Will Change (quote-scanner variant only)
+Add dynamic warning bubbles to the "Before" card after analysis completes. The bubbles show the 3 lowest-scoring categories from the AI results, positioned over the uploaded image preview.
 
-All other `sourceTool` variants remain untouched.
+## File Changes
 
-### 1. Copy Updates (lines 291-296)
+### 1. `src/components/quote-scanner/QuoteUploadZone.tsx`
 
-| Field | Before | After |
-|-------|--------|-------|
-| `modalTitle` | "Unlock Your Quote Analysis" | "Unlock Your Full Analysis" |
-| `modalDescription` | "Get your complete 5-point breakdown plus AI-generated negotiation scripts to save thousands." | "Your quote has been analyzed. Enter your details to see the complete breakdown, warnings, and recommendations." |
-| `buttonText` | "Unlock My Report" | "Unlock My Score Now" |
+**New prop:** Accept `analysisResult` from parent so the component knows what scores came back.
 
-### 2. Header Icon
+```
+interface QuoteUploadZoneProps {
+  onFileSelect: (file: File) => void;
+  isAnalyzing: boolean;
+  hasResult: boolean;
+  imagePreview: string | null;
+  analysisResult?: QuoteAnalysisResult | null;  // NEW
+}
+```
 
-When `isQuoteScanner`, replace the Mail icon circle with a **Lock** icon (matching the right screenshot). Add `Lock` to the lucide-react imports.
+**New logic:** A helper function that takes the analysis result, extracts the 5 category scores (safety, scope, price, finePrint, warranty), sorts them ascending, and returns the bottom 3 as callout configs:
 
-### 3. Trust Banner
+```
+function getTopWarnings(result: QuoteAnalysisResult): Array<{
+  type: EnhancedCalloutType;
+  heading: string;
+  description: string;
+}> {
+  const categories = [
+    { key: 'safety', score: result.safetyScore, heading: 'Safety Risk', type: 'missing' as const, desc: 'Impact ratings or design pressures missing' },
+    { key: 'scope', score: result.scopeScore, heading: 'Scope Gaps', type: 'missing' as const, desc: 'Key line items missing from scope' },
+    { key: 'price', score: result.priceScore, heading: 'Price Concern', type: 'price' as const, desc: 'Pricing outside fair market range' },
+    { key: 'finePrint', score: result.finePrintScore, heading: 'Fine Print Alert', type: 'legal' as const, desc: 'Hidden clauses or risky terms found' },
+    { key: 'warranty', score: result.warrantyScore, heading: 'Warranty Issue', type: 'warning' as const, desc: 'Inadequate warranty coverage detected' },
+  ];
+  return categories
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 3)
+    .map(c => ({
+      type: c.score < 50 ? 'missing' as const : c.type,  // Force red for scores under 50
+      heading: c.heading,
+      description: `Score: ${c.score}/100 — ${c.desc}`,
+    }));
+}
+```
 
-Add a green trust banner (only for quote-scanner variant) below the description, above the form:
-- Rounded pill with `bg-green-50 border border-green-200`
-- CheckCircle2 icon + text: **"Your data is secure."** + "Your Report is Securely Saved in Your Vault."
-- Import `CheckCircle2` from lucide-react.
+**Color logic:** Scores below 50 force the `missing` type (red/rose bubble). Scores 50-69 use `warning` type (amber). This ensures critical issues appear as red bubbles, not yellow.
 
-### 4. Form Labels
+**New JSX block:** Inside the upload zone, after the image preview renders and when `imagePreview` exists, `!isAnalyzing`, and `analysisResult` exists, render 3 `EnhancedFloatingCallout` components at staggered positions:
 
-For the quote-scanner variant:
-- **Email**: Change label from "Email Address" to "Email *" with a Mail icon
-- **Phone**: Change label from "Phone Number" to "Phone *" with a Phone icon, no "(optional)" text
+- Warning 1: top-right area
+- Warning 2: middle-left area  
+- Warning 3: bottom-left area
 
-### 5. SMS Consent Checkbox
+These mirror the pre-upload callout positions but show real data.
 
-Add a checkbox row between Phone and the CTA button (quote-scanner only):
-- Checkbox + text: "I agree to receive SMS updates about my quote analysis. Message & data rates may apply. Reply STOP to unsubscribe."
-- Visual only, not a blocking validation field. Track consent in the `smsConsent` state variable.
+### 2. `src/pages/QuoteScanner.tsx`
 
-### 6. CTA Button
+Pass `analysisResult` down to `QuoteUploadZone`:
 
-For quote-scanner variant:
-- Change icon from Mail to Lock
-- Text already updated via `buttonText` above
-
-### 7. Footer Text
-
-Add a footer line below the CTA (quote-scanner only):
-- "By submitting, you agree to our Terms of Service and Privacy Policy. We'll send your analysis to this email."
-- Style: `text-xs text-slate-500 text-center`
+```
+<QuoteUploadZone
+  ref={uploadRef}
+  onFileSelect={handleFileSelect}
+  isAnalyzing={isAnalyzing}
+  hasResult={!!analysisResult}
+  imagePreview={imageBase64}
+  analysisResult={analysisResult}   // NEW
+/>
+```
 
 ## What Does NOT Change
 
-- Props interface (`LeadCaptureModalProps`)
-- Form validation logic (firstName, lastName, email, phone -- all same schemas)
-- `NameInputPair` component usage (already renders First Name / Last Name side-by-side)
-- Submission handler and API call to `save-lead`
-- GTM/tracking events
-- All other `sourceTool` variants (comparison-tool, risk-diagnostic, etc.)
-- Success state UI
-- Double-submit protection via `useFormLock`
+- `EnhancedFloatingCallout` component (reused as-is)
+- `QuoteAnalysisResult` interface (read-only)
+- Analysis flow, API calls, tracking
+- Pre-upload static callouts (still show before any upload)
+- The "After" gradecard display
 
-## Technical Details
+## Visual Behavior
 
-### Imports to Add
-- `Lock`, `CheckCircle2`, `Phone` from `lucide-react`
-- `Checkbox` from `@/components/ui/checkbox`
-- `useState` for `smsConsent` (already imported)
+| State | Before Card Shows |
+|-------|-------------------|
+| No upload yet | Sample document + 4 static callouts |
+| Analyzing | Spinner overlay |
+| Post-analysis | Uploaded image + 3 dynamic warning bubbles (red for low scores) + "Select Different File" button |
 
-### New State
-- `const [smsConsent, setSmsConsent] = useState(false);`
+## Edge Cases
 
-### Conditional Rendering Pattern
-All new elements (trust banner, SMS checkbox, footer) will be wrapped in `{isQuoteScanner && (...)}` guards so zero impact on other tool variants.
+- If all 5 scores are high (80+), the 3 lowest still show but with amber/warning styling (not red)
+- Bubbles use staggered animation delays (200ms, 400ms, 600ms) for visual polish
+- Mobile: heading always visible, description hidden (existing EnhancedFloatingCallout behavior)
+
