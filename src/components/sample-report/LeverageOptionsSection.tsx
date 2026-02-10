@@ -32,13 +32,6 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
   };
 
   return (
-    <>
-      <style>{`
-        @keyframes border-beam-spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
       <section ref={sectionRef} className="py-16 md:py-24 bg-[hsl(var(--surface-1))]">
         <div className="container px-4">
           <div className="max-w-3xl mx-auto text-center mb-12"><h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">How Do You Want to Use Your Free Report?</h2><p className="text-lg text-muted-foreground">Two paths. Same goal: protecting your investment. You choose.</p></div>
@@ -78,33 +71,20 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
                   <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
                 </Button>
               ) : (
-                <div className="relative rounded-lg p-[2px] overflow-hidden">
-                  {/* Spinning conic gradient — only a narrow beam is visible */}
-                  <div
-                    className="absolute inset-[-50%]"
-                    style={{
-                      background: 'conic-gradient(from 0deg, transparent 0%, transparent 65%, #D97706 72%, #F59E0B 78%, #EAB308 82%, #F59E0B 86%, #D97706 92%, transparent 100%)',
-                      animation: 'border-beam-spin 3s linear infinite',
-                    }}
-                  />
-                  {/* Dim border underneath for the non-beam portions */}
-                  <div className="absolute inset-[0px] rounded-lg border border-border/20" />
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="relative w-full bg-muted text-muted-foreground border-0 cursor-not-allowed rounded-[6px]"
-                    disabled
-                  >
-                    Request Better Quote Options
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full bg-muted text-muted-foreground border-2 border-[#D97706] cursor-not-allowed"
+                  disabled
+                >
+                  Request Better Quote Options
+                </Button>
               )}
               {!partnerConsent && <p className="text-xs text-muted-foreground text-center mt-3">Check the box above to enable this option</p>}
             </div>
           </div>
           <div className="max-w-2xl mx-auto mt-8"><div className="flex items-center justify-center gap-2 text-sm text-muted-foreground"><Shield className="w-4 h-4 text-primary" /><span>Either way, the audit is free whether you use your contractor or ours.</span></div></div>
         </div>
-      </section>
-    </>
+    </section>
   );
 }
