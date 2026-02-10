@@ -27,6 +27,7 @@ import { WindowCalculatorTeaser } from '@/components/quote-scanner/WindowCalcula
 import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChecklist';
 // Vault Pivot Conversion Engine
 import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
+import { SampleReportGateModal } from '@/components/audit/SampleReportGateModal';
 import { AIComparisonSection } from '@/components/quote-scanner/AIComparisonSection';
 import { UrgencyTicker } from '@/components/social-proof';
 import { ScanPipelineStrip } from '@/components/quote-scanner/ScanPipelineStrip';
@@ -66,10 +67,12 @@ export default function QuoteScanner() {
   const [hasUnlockedResults, setHasUnlockedResults] = useState(!!sessionData.email);
   const [isNoQuoteSubmitting, setIsNoQuoteSubmitting] = useState(false);
   const [isNoQuoteSubmitted, setIsNoQuoteSubmitted] = useState(false);
+  const [sampleGateOpen, setSampleGateOpen] = useState(false);
   const [registeredSessionId, setRegisteredSessionId] = useState<string>('');
   
   // Ref for scroll-to-upload functionality
   const uploadRef = useRef<HTMLDivElement>(null);
+  const sampleGateTriggerRef = useRef<HTMLButtonElement>(null);
 
   // CRITICAL: Register session with wm_sessions table on mount
   // This ensures the sessionId exists in the database before save-lead is called
@@ -150,6 +153,7 @@ export default function QuoteScanner() {
                       const el = document.getElementById(`score-row-${key}`);
                       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }}
+                    onNoQuoteClick={() => setSampleGateOpen(true)}
                   />
                 </div>
 
@@ -304,6 +308,12 @@ export default function QuoteScanner() {
         onSuccess={handleLeadCaptureSuccess}
         sourceTool={'quote-scanner' satisfies SourceTool}
         sessionData={sessionData}
+      />
+
+      <SampleReportGateModal
+        isOpen={sampleGateOpen}
+        onClose={() => setSampleGateOpen(false)}
+        returnFocusRef={sampleGateTriggerRef}
       />
     </div>
   );

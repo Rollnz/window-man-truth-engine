@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, forwardRef } from 'react';
-import { Upload, FileImage, Loader2, RefreshCw, FileText, ScanSearch } from 'lucide-react';
+import { Upload, FileImage, Loader2, RefreshCw, FileText, ScanSearch, FileDown } from 'lucide-react';
+import { trackEvent } from '@/lib/gtm';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SampleQuoteDocument } from './SampleQuoteDocument';
@@ -14,6 +15,7 @@ interface QuoteUploadZoneProps {
   mimeType?: string | null;
   analysisResult?: QuoteAnalysisResult | null;
   onWarningSelect?: (categoryKey: string) => void;
+  onNoQuoteClick?: () => void;
 }
 
 function getTopWarnings(result: QuoteAnalysisResult): Array<{
@@ -48,6 +50,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
   mimeType,
   analysisResult,
   onWarningSelect,
+  onNoQuoteClick,
 }, ref) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -238,6 +241,25 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
                 <Upload className="w-4 h-4" />
                 Upload Your Quote
               </Button>
+
+              {onNoQuoteClick && (
+                <div className="mt-4 flex flex-col items-center gap-2">
+                  <span className="text-sm font-bold text-foreground">No Quote To Analyze Yet?</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-primary/40 text-primary hover:bg-primary/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      trackEvent('no_quote_sample_click', { location: 'before_card' });
+                      onNoQuoteClick();
+                    }}
+                  >
+                    <FileDown className="w-4 h-4" />
+                    Download Sample
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
