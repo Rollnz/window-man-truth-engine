@@ -13,16 +13,17 @@ export function CloserSection({ onOpenLeadModal, onOpenPreQuoteModal }: CloserSe
   
   const handleUploadClick = () => {
     trackEvent('sample_report_upload_click', { location: 'closer_section' });
-    onOpenLeadModal?.('closer_upload');
+    onOpenPreQuoteModal?.('bottom_upload');
   };
   
   const handleNoQuoteClick = () => {
     trackEvent('sample_report_no_quote_click', { location: 'closer_section' });
-    onOpenPreQuoteModal?.('closer_no_quote');
+    onOpenPreQuoteModal?.('bottom_get_ready');
   };
   
   const handleTalkClick = () => {
     trackEvent('sample_report_talk_click', { location: 'closer_section', action: 'phone_call' });
+    onOpenPreQuoteModal?.('bottom_talk');
   };
 
   return (
