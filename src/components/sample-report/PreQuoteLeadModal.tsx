@@ -66,6 +66,7 @@ export function PreQuoteLeadModal({ isOpen, onClose, onSuccess, ctaSource = 'unk
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submittedName, setSubmittedName] = useState('');
+  const [submittedLeadId, setSubmittedLeadId] = useState('');
 
   // Focus first field when modal opens
   useEffect(() => {
@@ -173,6 +174,7 @@ export function PreQuoteLeadModal({ isOpen, onClose, onSuccess, ctaSource = 'unk
         ]).catch(err => console.warn('[PreQuoteLeadModal] Non-fatal tracking error:', err));
         
         setSubmittedName(formData.firstName);
+        setSubmittedLeadId(result.leadId);
         setIsSuccess(true);
         onSuccess?.(result.leadId);
       }
@@ -188,9 +190,41 @@ export function PreQuoteLeadModal({ isOpen, onClose, onSuccess, ctaSource = 'unk
     }
   };
 
-  const handleGoToScanner = () => {
+  const getContinueLabel = () => {
+    switch (ctaSource) {
+      case 'scanner_download_sample':
+        return 'View Sample Report';
+      case 'option_b_request':
+      default:
+        return 'Go to Quote Scanner';
+    }
+  };
+
+  const handleContinue = () => {
     onClose();
-    navigate(ROUTES.QUOTE_SCANNER);
+
+    switch (ctaSource) {
+      case 'scanner_download_sample': {
+        navigate(ROUTES.SAMPLE_REPORT, {
+          state: {
+            firstName: formData.firstName || submittedName || '',
+            leadId: submittedLeadId || '',
+            ctaSource,
+          },
+        });
+        return;
+      }
+
+      case 'option_b_request':
+      default: {
+        if (submittedLeadId) {
+          navigate(`${ROUTES.QUOTE_SCANNER}?lead=${submittedLeadId}#upload`);
+        } else {
+          navigate(ROUTES.QUOTE_SCANNER);
+        }
+        return;
+      }
+    }
   };
 
   const isFormValid = 
@@ -367,9 +401,9 @@ export function PreQuoteLeadModal({ isOpen, onClose, onSuccess, ctaSource = 'unk
               
               <Button 
                 className="w-full"
-                onClick={handleGoToScanner}
+                onClick={handleContinue}
               >
-                Go to Quote Scanner
+                {getContinueLabel()}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
