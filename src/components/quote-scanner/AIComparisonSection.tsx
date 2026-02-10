@@ -2,11 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import { Brain, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 import { cn } from '@/lib/utils';
-
 interface AIComparisonSectionProps {
   uploadRef?: React.RefObject<HTMLDivElement>;
 }
-
 const STYLES = `
 .tp-section{position:relative;overflow:hidden}
 .tp-circuit-bg{position:relative;background:linear-gradient(90deg,rgba(57,147,221,.08) 1px,transparent 1px),linear-gradient(0deg,rgba(57,147,221,.06) 1px,transparent 1px);background-size:48px 48px}
@@ -30,10 +28,10 @@ const STYLES = `
 @media(prefers-reduced-motion:reduce){.tp-brain-shell,.tp-stream-pulse,.tp-node,.tp-ping,.tp-brain-color-pulse,.shimmer-cta::after{animation:none!important;transform:none!important}.tp-brain-color-pulse{color:#3993DD!important;filter:drop-shadow(0 0 16px rgba(57,147,221,.8))}.tp-brain-shell{box-shadow:0 0 20px rgba(57,147,221,.6),0 0 50px rgba(57,147,221,.5)}.tp-node{opacity:.8}.tp-stream-pulse{opacity:.7}}
 @media(max-width:768px){.tp-section::before{opacity:.16}.tp-circuit-bg{background-size:36px 36px}.tp-stream-pulse{animation:none;opacity:.55}.tp-brain-shell{animation-duration:4s}.tp-glow-problem,.tp-glow-solution{box-shadow:0 0 10px currentColor,inset 0 0 8px currentColor}}
 `;
-
-export const AIComparisonSection: React.FC<AIComparisonSectionProps> = ({ uploadRef }) => {
+export const AIComparisonSection: React.FC<AIComparisonSectionProps> = ({
+  uploadRef
+}) => {
   const styleRef = useRef<HTMLStyleElement | null>(null);
-
   useEffect(() => {
     if (!styleRef.current) {
       const el = document.createElement('style');
@@ -46,14 +44,17 @@ export const AIComparisonSection: React.FC<AIComparisonSectionProps> = ({ upload
       styleRef.current = null;
     };
   }, []);
-
   const handleCTA = () => {
-    trackEvent('cta_click', { location: 'ai_comparison_section', destination: 'scanner' });
-    uploadRef?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    trackEvent('cta_click', {
+      location: 'ai_comparison_section',
+      destination: 'scanner'
+    });
+    uploadRef?.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
   };
-
-  return (
-    <section className="tp-section bg-slate-950 py-16 md:py-24" aria-label="Why AI instead of human advisors">
+  return <section className="tp-section bg-slate-950 py-16 md:py-24" aria-label="Why AI instead of human advisors">
       <div className="tp-circuit-bg relative z-[1]">
         <div className="container px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -89,13 +90,9 @@ export const AIComparisonSection: React.FC<AIComparisonSectionProps> = ({ upload
                     </div>
                     <div className="h-px bg-slate-700/50" />
                     <div className="relative h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                      {[0, 1, 2].map(i => (
-                        <div
-                          key={i}
-                          className="tp-stream-pulse absolute inset-y-0 w-1/4 rounded-full bg-gradient-to-r from-primary/80 to-primary/60"
-                          style={{ animationDelay: `${i * 1.3}s` }}
-                        />
-                      ))}
+                      {[0, 1, 2].map(i => <div key={i} className="tp-stream-pulse absolute inset-y-0 w-1/4 rounded-full bg-gradient-to-r from-primary/80 to-primary/60" style={{
+                      animationDelay: `${i * 1.3}s`
+                    }} />)}
                     </div>
                     <div className="h-px bg-slate-700/50" />
                     <p className="text-[11px] text-slate-500 text-center italic">
@@ -105,11 +102,7 @@ export const AIComparisonSection: React.FC<AIComparisonSectionProps> = ({ upload
                 </div>
 
                 {/* CTA */}
-                <button
-                  onClick={handleCTA}
-                  data-id="cta-ai-comparison"
-                  className="shimmer-cta inline-flex items-center gap-2 rounded-full bg-secondary hover:bg-secondary/90 transition-colors px-6 py-3 text-sm font-semibold text-secondary-foreground shadow-lg shadow-secondary/30"
-                >
+                <button onClick={handleCTA} data-id="cta-ai-comparison" className="shimmer-cta inline-flex items-center gap-2 rounded-full bg-secondary hover:bg-secondary/90 transition-colors px-6 py-3 text-sm font-semibold text-secondary-foreground shadow-lg shadow-secondary/30">
                   Try the AI Quote Scanner
                   <ArrowRight className="w-4 h-4" />
                 </button>
@@ -118,7 +111,9 @@ export const AIComparisonSection: React.FC<AIComparisonSectionProps> = ({ upload
               {/* Decorative nodes */}
               <div className="tp-node top-4 right-8" />
               <div className="tp-node tp-node-rose bottom-12 left-4" />
-              <div className="tp-node bottom-4 right-16" style={{ animationDelay: '0.8s' }} />
+              <div className="tp-node bottom-4 right-16" style={{
+              animationDelay: '0.8s'
+            }} />
             </div>
 
             {/* Left column: copy + cards */}
@@ -200,13 +195,12 @@ export const AIComparisonSection: React.FC<AIComparisonSectionProps> = ({ upload
                 </div>
               </div>
 
-              <p className="text-[11px] uppercase tracking-widest text-primary/40">
+              <p className="text-[11px] uppercase tracking-widest text-primary/40 text-center">
                 Innovation at scale · Human-level empathy, machine-level focus
               </p>
             </div>
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
