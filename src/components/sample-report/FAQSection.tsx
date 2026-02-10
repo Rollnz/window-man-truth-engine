@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { ChevronDown, HelpCircle } from 'lucide-react';
-import { ROUTES } from '@/config/navigation';
 import { useSectionTracking } from '@/hooks/useSectionTracking';
 
 interface FAQ { question: string; answer: string; }
@@ -42,7 +40,11 @@ function FAQItem({ faq, isOpen, onToggle, index }: { faq: FAQ; isOpen: boolean; 
   );
 }
 
-export function FAQSection() {
+interface FAQSectionProps {
+  onOpenPreQuoteModal?: (ctaSource: string) => void;
+}
+
+export function FAQSection({ onOpenPreQuoteModal }: FAQSectionProps) {
   const sectionRef = useSectionTracking('faq');
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -70,7 +72,7 @@ export function FAQSection() {
           </div>
         </div>
         <p className="text-center text-sm text-muted-foreground mt-8">
-          Still have questions? <Link to={ROUTES.CONSULTATION} className="text-primary hover:underline">Talk to Window Man</Link>
+          Still have questions? <button onClick={() => onOpenPreQuoteModal?.('faq_talk')} className="text-primary hover:underline">Talk to Window Man</button>
         </p>
       </div>
     </section>

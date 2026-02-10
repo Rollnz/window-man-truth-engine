@@ -69,7 +69,7 @@ export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectio
 
   const handleUploadClick = () => {
     trackEvent('sample_report_upload_click', { location: 'hero_section' });
-    onOpenLeadModal?.('hero_upload');
+    onOpenPreQuoteModal?.('hero_upload');
   };
 
   const handleNoQuoteClick = () => {

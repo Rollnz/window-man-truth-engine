@@ -4,14 +4,15 @@ import { trackEvent } from '@/lib/gtm';
 
 interface SampleReportHeaderProps {
   onOpenLeadModal?: (ctaSource: string) => void;
+  onOpenPreQuoteModal?: (ctaSource: string) => void;
 }
 
-export function SampleReportHeader({ onOpenLeadModal }: SampleReportHeaderProps) {
+export function SampleReportHeader({ onOpenLeadModal, onOpenPreQuoteModal }: SampleReportHeaderProps) {
   const handleUploadClick = () => {
     trackEvent('sample_report_upload_click', {
       location: 'sticky_header',
     });
-    onOpenLeadModal?.('sticky_header_upload');
+    onOpenPreQuoteModal?.('header_upload');
   };
 
   const handleTalkClick = () => {
@@ -19,6 +20,7 @@ export function SampleReportHeader({ onOpenLeadModal }: SampleReportHeaderProps)
       location: 'sticky_header',
       action: 'phone_call',
     });
+    onOpenPreQuoteModal?.('header_talk');
   };
 
   return (
@@ -42,14 +44,13 @@ export function SampleReportHeader({ onOpenLeadModal }: SampleReportHeaderProps)
         {/* Right: CTAs */}
         <div className="flex items-center gap-3">
           {/* Secondary: Talk to Window Man - Direct Phone Call */}
-          <a 
-            href="tel:+15614685571"
+          <button 
             onClick={handleTalkClick}
             className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <Phone className="w-4 h-4" />
             <span>Talk to Window Man</span>
-          </a>
+          </button>
 
           {/* Primary: Upload My Estimate - Opens Lead Modal */}
           <Button 

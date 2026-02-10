@@ -13,16 +13,17 @@ export function CloserSection({ onOpenLeadModal, onOpenPreQuoteModal }: CloserSe
   
   const handleUploadClick = () => {
     trackEvent('sample_report_upload_click', { location: 'closer_section' });
-    onOpenLeadModal?.('closer_upload');
+    onOpenPreQuoteModal?.('bottom_upload');
   };
   
   const handleNoQuoteClick = () => {
     trackEvent('sample_report_no_quote_click', { location: 'closer_section' });
-    onOpenPreQuoteModal?.('closer_no_quote');
+    onOpenPreQuoteModal?.('bottom_get_ready');
   };
   
   const handleTalkClick = () => {
     trackEvent('sample_report_talk_click', { location: 'closer_section', action: 'phone_call' });
+    onOpenPreQuoteModal?.('bottom_talk');
   };
 
   return (
@@ -43,11 +44,9 @@ export function CloserSection({ onOpenLeadModal, onOpenPreQuoteModal }: CloserSe
               Getting Quotes Soon? Get Ready
               <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
             </Button>
-            <Button asChild variant="ghost" size="lg" className="text-lg" onClick={handleTalkClick}>
-              <a href="tel:+15614685571">
-                <Phone className="w-5 h-5 mr-2" />
-                Talk to Window Man
-              </a>
+            <Button variant="ghost" size="lg" className="text-lg" onClick={handleTalkClick}>
+              <Phone className="w-5 h-5 mr-2" />
+              Talk to Window Man
             </Button>
           </div>
           
