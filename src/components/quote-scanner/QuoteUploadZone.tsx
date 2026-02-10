@@ -1,22 +1,25 @@
 import { useState, useRef, useCallback, forwardRef } from 'react';
-import { Upload, FileImage, Loader2, RefreshCw, FileText } from 'lucide-react';
+import { Upload, Loader2, RefreshCw, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SampleQuoteDocument } from './SampleQuoteDocument';
-import { EnhancedFloatingCallout } from './EnhancedFloatingCallout';
+import { EnhancedFloatingCallout, EnhancedCalloutType } from './EnhancedFloatingCallout';
+import type { QuoteAnalysisResult } from '@/hooks/useQuoteScanner';
 
 interface QuoteUploadZoneProps {
   onFileSelect: (file: File) => void;
   isAnalyzing: boolean;
   hasResult: boolean;
   imagePreview: string | null;
+  analysisResult?: QuoteAnalysisResult | null;
 }
 
 export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(function QuoteUploadZone({
   onFileSelect,
   isAnalyzing,
   hasResult,
-  imagePreview
+  imagePreview,
+  analysisResult,
 }, ref) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,7 +115,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
         )}
 
         {/* Before Upload Overlay - Sample Quote + Floating Callouts */}
-        {showBeforeUploadOverlay && (
+        {showBeforeUploadOverlay && !analysisResult && (
           <>
             <SampleQuoteDocument />
 
@@ -124,6 +127,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
               className="top-[15%] -right-3 z-[5]"
               fromRight
               animationDelay="200ms"
+              rotation={-2}
             />
             <EnhancedFloatingCallout 
               type="warning" 
@@ -131,6 +135,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
               description="20 years on product... but 1 year on labor."
               className="top-[38%] -left-2 z-[5]"
               animationDelay="400ms"
+              rotation={2}
             />
             <EnhancedFloatingCallout 
               type="missing" 
@@ -138,6 +143,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
               description="No mention of stucco repair or debris removal."
               className="-bottom-2 -left-3 z-[5]"
               animationDelay="600ms"
+              rotation={-1}
             />
             <EnhancedFloatingCallout 
               type="legal" 
@@ -146,7 +152,36 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
               className="-bottom-2 -right-3 z-[5]"
               fromRight
               animationDelay="800ms"
+              rotation={1}
             />
+          </>
+        )}
+
+        {/* Dynamic callouts from analysis results */}
+        {imagePreview && !isAnalyzing && analysisResult && analysisResult.warnings.length > 0 && (
+          <>
+            {analysisResult.warnings.slice(0, 4).map((warning, i) => {
+              const positions = [
+                { className: 'top-[15%] -right-3 z-[5]', fromRight: true, rotation: -2 },
+                { className: 'top-[38%] -left-2 z-[5]', fromRight: false, rotation: 2 },
+                { className: '-bottom-2 -left-3 z-[5]', fromRight: false, rotation: -1 },
+                { className: '-bottom-2 -right-3 z-[5]', fromRight: true, rotation: 1 },
+              ];
+              const types: EnhancedCalloutType[] = ['warning', 'price', 'missing', 'legal'];
+              const pos = positions[i % positions.length];
+              return (
+                <EnhancedFloatingCallout
+                  key={i}
+                  type={types[i % types.length]}
+                  heading="AI Detected"
+                  description={warning.length > 60 ? warning.slice(0, 60) + '...' : warning}
+                  className={pos.className}
+                  fromRight={pos.fromRight}
+                  rotation={pos.rotation}
+                  animationDelay={`${200 + i * 200}ms`}
+                />
+              );
+            })}
           </>
         )}
 
