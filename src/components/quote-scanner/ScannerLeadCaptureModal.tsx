@@ -119,7 +119,7 @@ export function ScannerLeadCaptureModal({
           firstName,
           lastName,
           sourceTool: 'quote-scanner',
-          eventId: `lead_captured:${leadId}`,
+          eventId: leadId,
           value: 100, // High-value scanner lead
         });
 

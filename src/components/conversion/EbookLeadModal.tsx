@@ -202,7 +202,7 @@ export function EbookLeadModal({
           firstName: normalizedNames.firstName,
           lastName: normalizedNames.lastName || undefined,
           sourceTool,
-          eventId: `lead_captured:${data.leadId}`,
+          eventId: data.leadId,
           value: 100,
         });
 

@@ -38,12 +38,14 @@ export const CONVERSION_EVENTS = [
   'booking_confirmed',
 ];
 
-// Validate event_id format: either UUID v4 OR deterministic format like "event_type:uuid"
+// Validate event_id format: plain UUID v4 is the primary/recommended format.
+// The "event_type:uuid" deterministic pattern is accepted as a legacy fallback but is no longer preferred,
+// because Meta deduplication requires browser event_id to exactly match the server event_id (raw UUID).
 const isValidEventId = (id: string | undefined | null): boolean => {
   if (!id || typeof id !== 'string') return false;
-  // Standard UUID v4
+  // Primary format: plain UUID v4 (matches server-side event_id for Meta deduplication)
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  // Deterministic format: event_type:uuid (e.g., "lead_captured:uuid", "consultation_booked:uuid")
+  // Legacy fallback: event_type:uuid (e.g., "lead_captured:uuid") — accepted but no longer recommended
   const deterministicPattern = /^[a-z_]+:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidPattern.test(id) || deterministicPattern.test(id);
 };

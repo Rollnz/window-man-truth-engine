@@ -254,7 +254,7 @@ export default function QuoteScanner() {
                       firstName: data.firstName,
                       lastName: data.lastName,
                       sourceTool: 'quote-scanner',
-                      eventId: `lead_captured:${result.leadId}`,
+                      eventId: result.leadId,
                       value: 100,
                     });
 

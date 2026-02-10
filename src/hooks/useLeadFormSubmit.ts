@@ -225,7 +225,7 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
         firstName,
         lastName,
         sourceTool,
-        eventId: `lead_captured:${effectiveLeadId}`,
+        eventId: effectiveLeadId || '',
         value: 100,
       });
 

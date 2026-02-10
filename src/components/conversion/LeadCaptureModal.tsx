@@ -233,7 +233,7 @@ export function LeadCaptureModal({
           state: sessionData.state || undefined,
           zipCode: sessionData.zipCode || undefined,
           sourceTool,
-          eventId: `lead_captured:${data.leadId}`,
+          eventId: data.leadId,
           value: 100,
         });
 
