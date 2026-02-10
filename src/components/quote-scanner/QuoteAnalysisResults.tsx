@@ -83,15 +83,15 @@ export function QuoteAnalysisResults({
       {/* Results Card */}
       <div className="relative rounded-xl border bg-card overflow-hidden">
         {/* Blur/Lock Overlay */}
-        {showBlur && <div className="absolute inset-0 backdrop-blur-md bg-background/60 z-10 flex flex-col items-center justify-center p-6">
-            <div className="w-12 h-12 rounded-full bg-muted border border-border flex items-center justify-center mb-3">
-              <Lock className="w-6 h-6 text-muted-foreground" />
+        {showBlur && <div className="absolute inset-0 backdrop-blur-md bg-white/50 dark:bg-background/60 z-10 flex flex-col items-center justify-center p-6 rounded-xl">
+            <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center mb-4">
+              <Lock className="w-7 h-7 text-primary" />
             </div>
-            <p className="font-semibold text-lg">
+            <p className="font-bold text-xl text-foreground">
               {hasImage ? 'Results Locked' : 'Upload to Reveal'}
             </p>
-            <p className="text-sm text-muted-foreground text-center max-w-xs mt-1">
-              {hasImage ? 'Your quote has been analyzed. Enter your email to unlock your full report.' : 'See your instant Safety Score, Price Check, and Risk Analysis.'}
+            <p className="text-sm text-muted-foreground text-center max-w-xs mt-2">
+              {hasImage ? 'Your quote has been analyzed. Enter your email to unlock your full report.' : 'See your instant Safety Score & Price Check'}
             </p>
           </div>}
 

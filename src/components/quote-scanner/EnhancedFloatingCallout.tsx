@@ -14,51 +14,47 @@ interface EnhancedFloatingCalloutProps {
   fromRight?: boolean;
   /** Hide entire callout on mobile */
   hideMobile?: boolean;
-  /** Animation delay in milliseconds */
-  animationDelay?: number;
-  /** Whether callout is visible (for staggered reveals) */
-  isVisible?: boolean;
 }
 
 const calloutConfig: Record<EnhancedCalloutType, { 
   icon: typeof DollarSign; 
-  borderColor: string;
-  borderColorRight: string;
-  iconColor: string;
   bgColor: string;
+  iconBgColor: string;
+  iconColor: string;
   headingColor: string;
+  textColor: string;
 }> = {
   price: {
     icon: DollarSign,
-    borderColor: 'border-l-emerald-500',
-    borderColorRight: 'border-r-emerald-500',
-    iconColor: 'text-emerald-500',
-    bgColor: 'bg-emerald-500/10',
-    headingColor: 'text-emerald-600 dark:text-emerald-400',
+    bgColor: 'bg-rose-500 dark:bg-rose-600',
+    iconBgColor: 'bg-white/20',
+    iconColor: 'text-white',
+    headingColor: 'text-white',
+    textColor: 'text-white/80',
   },
   warning: {
     icon: AlertTriangle,
-    borderColor: 'border-l-amber-500',
-    borderColorRight: 'border-r-amber-500',
-    iconColor: 'text-amber-500',
-    bgColor: 'bg-amber-500/10',
-    headingColor: 'text-amber-600 dark:text-amber-400',
+    bgColor: 'bg-amber-400 dark:bg-amber-500',
+    iconBgColor: 'bg-amber-900/20',
+    iconColor: 'text-amber-900 dark:text-black',
+    headingColor: 'text-amber-900 dark:text-black',
+    textColor: 'text-amber-900/70 dark:text-black/70',
   },
   missing: {
     icon: XCircle,
-    borderColor: 'border-l-rose-500',
-    borderColorRight: 'border-r-rose-500',
-    iconColor: 'text-rose-500',
-    bgColor: 'bg-rose-500/10',
-    headingColor: 'text-rose-600 dark:text-rose-400',
+    bgColor: 'bg-rose-600 dark:bg-rose-500',
+    iconBgColor: 'bg-white/20',
+    iconColor: 'text-white',
+    headingColor: 'text-white',
+    textColor: 'text-white/80',
   },
   legal: {
     icon: FileWarning,
-    borderColor: 'border-l-primary',
-    borderColorRight: 'border-r-primary',
-    iconColor: 'text-primary',
-    bgColor: 'bg-primary/10',
-    headingColor: 'text-primary',
+    bgColor: 'bg-rose-500 dark:bg-rose-500',
+    iconBgColor: 'bg-white/20',
+    iconColor: 'text-white',
+    headingColor: 'text-white',
+    textColor: 'text-white/80',
   },
 };
 
@@ -69,50 +65,39 @@ export function EnhancedFloatingCallout({
   className,
   fromRight = false,
   hideMobile = false,
-  animationDelay = 0,
-  isVisible = true,
 }: EnhancedFloatingCalloutProps) {
   const config = calloutConfig[type];
   const Icon = config.icon;
 
-  if (!isVisible) return null;
-
   return (
     <div
       className={cn(
-        "absolute z-10 px-3 py-2 border-2",
-        "bg-background/95 backdrop-blur-sm shadow-lg",
-        "flex items-start gap-2",
-        // Animation
-        fromRight ? "callout-reveal-right" : "callout-reveal",
-        // Border and rounding based on side
+        "absolute z-10 px-3 py-2 shadow-lg",
+        "flex items-start gap-2 max-w-[220px] md:max-w-[260px]",
+        "animate-in fade-in duration-500",
+        config.bgColor,
         fromRight 
-          ? cn("rounded-l-md border-r-0", config.borderColorRight, "border-l-0 border-t border-b")
-          : cn("rounded-r-md border-l-2 border-r-0 border-t-0 border-b-0", config.borderColor),
-        // Visibility on mobile
+          ? "rounded-l-lg slide-in-from-right-2" 
+          : "rounded-r-lg slide-in-from-left-2",
         hideMobile && "hidden md:flex",
         className
       )}
-      style={{ 
-        animationDelay: `${animationDelay}ms`,
-        animationFillMode: 'forwards',
-      }}
     >
       {/* Icon container */}
       <div className={cn(
         "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
-        config.bgColor
+        config.iconBgColor
       )}>
         <Icon className={cn("w-3.5 h-3.5", config.iconColor)} />
       </div>
       
       {/* Text content */}
       <div className="flex flex-col gap-0.5 min-w-0">
-        <span className={cn("text-xs font-semibold leading-tight", config.headingColor)}>
+        <span className={cn("text-[11px] md:text-xs font-bold leading-tight", config.headingColor)}>
           {heading}
         </span>
         {description && (
-          <span className="text-[10px] md:text-xs text-muted-foreground leading-snug hidden md:block">
+          <span className={cn("text-[9px] md:text-[10px] leading-snug hidden md:block", config.textColor)}>
             {description}
           </span>
         )}
