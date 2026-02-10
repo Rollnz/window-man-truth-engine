@@ -8,10 +8,10 @@ vi.mock('../SampleQuoteDocument', () => ({
   SampleQuoteDocument: () => <div data-testid="sample-quote-document">Sample Quote</div>,
 }));
 
-// Mock the FloatingCallout component
-vi.mock('../FloatingCallout', () => ({
-  FloatingCallout: ({ label }: { label: string }) => (
-    <div data-testid="floating-callout">{label}</div>
+// Mock the EnhancedFloatingCallout component
+vi.mock('../EnhancedFloatingCallout', () => ({
+  EnhancedFloatingCallout: ({ heading }: { heading: string }) => (
+    <div data-testid="floating-callout">{heading}</div>
   ),
 }));
 

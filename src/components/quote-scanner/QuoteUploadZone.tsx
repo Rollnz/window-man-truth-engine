@@ -70,7 +70,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
         onDrop={handleDrop}
         className={cn(
           "relative rounded-xl border-2 border-dashed transition-all duration-300 overflow-hidden",
-          "min-h-[300px] md:min-h-[400px]",
+          "aspect-square",
           isDragOver
             ? "border-primary bg-primary/5 scale-[1.02]"
             : "border-border hover:border-primary/50 bg-card/50",
@@ -116,34 +116,36 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
           <>
             <SampleQuoteDocument />
 
-            {/* Enhanced Floating Callouts with descriptions */}
-            <EnhancedFloatingCallout 
-              type="legal" 
-              heading="Legal Clause" 
-              description='"Subject to remeasure" — surprise charges later.'
-              className="top-4 left-0 md:top-6"
-            />
+            {/* Enhanced Floating Callouts — repositioned per reference */}
             <EnhancedFloatingCallout 
               type="price" 
               heading="Price Warning" 
               description="Price per opening looks high for the market."
-              className="top-20 right-0 md:top-24"
+              className="top-3 right-0 z-[5]"
               fromRight
-              hideMobile
-            />
-            <EnhancedFloatingCallout 
-              type="missing" 
-              heading="Missing Scope" 
-              description="No mention of stucco repair or debris removal."
-              className="bottom-24 left-0 md:bottom-28"
+              animationDelay="200ms"
             />
             <EnhancedFloatingCallout 
               type="warning" 
               heading="Warranty Issue" 
               description="20 years on product... but 1 year on labor."
-              className="bottom-10 right-0 md:bottom-14"
+              className="top-1/2 -translate-y-1/2 left-0 z-[5]"
+              animationDelay="400ms"
+            />
+            <EnhancedFloatingCallout 
+              type="missing" 
+              heading="Missing Scope" 
+              description="No mention of stucco repair or debris removal."
+              className="bottom-8 left-0 z-[5]"
+              animationDelay="600ms"
+            />
+            <EnhancedFloatingCallout 
+              type="legal" 
+              heading="Legal Clause" 
+              description='"Subject to remeasure" — surprise charges later.'
+              className="bottom-8 right-0 z-[5]"
               fromRight
-              hideMobile
+              animationDelay="800ms"
             />
           </>
         )}
