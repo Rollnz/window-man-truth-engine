@@ -1,87 +1,49 @@
 
 
-# Add "Why AI Instead of Human Advisors?" Section
+# Replace Cyan with Blue + Orange Theme Colors
 
-## What This Does
+## What Changes
 
-Creates a new `AIComparisonSection` component with a dark cyberpunk aesthetic (dark slate background, circuit-grid pattern, pulsing brain icon, animated data stream) and places it above the `TestimonialCards` on the AI Scanner page.
+Swap every cyan color reference in `AIComparisonSection.tsx` to use the project's Industrial Blue (`#3993DD` / `hsl(209 68% 55%)`) and Safety Orange (`hsl(25 95% 55%)`) theme. The red problem card stays red as requested.
 
-## Reference Screenshot Description
+## File: `src/components/quote-scanner/AIComparisonSection.tsx`
 
-The image shows a full-width dark section (`bg-slate-950`) with:
-- A subtle 3D beveled tile/circuit grid background pattern
-- Top-left: small uppercase cyan label "WHY AI INSTEAD OF HUMAN ADVISORS?"
-- Below that: a pill badge "AI ADVANTAGE" with a brain icon
-- Large bold hero heading: "Unbiased Comparison." (white) + "Data Driven insight." (cyan/primary) + "Updated Daily" (white)
-- Body paragraph explaining the AI advantage
-- Two side-by-side comparison cards at the bottom:
-  - Left: "Traditional Human Advisors" with red glow border, listing 3 drawbacks with bullet markers
-  - Right: "AI Advisor Engine" with blue glow border, listing 3 benefits with checkmark icons
-- Right side: a large glowing brain icon inside a pulsing circle with animated ring
-- Below the brain: a frosted glass "Live data stream / Analyzing scenarios" bar with animated horizontal pulses
-- A tagline: "Even if you never read the fine print, your AI co-pilot does."
-- A cyan "Try the AI Quote Scanner" CTA button with shimmer effect
-- Decorative floating dot nodes in corners
-- Bottom-left: small uppercase footer text "INNOVATION AT SCALE..."
+### 1. Embedded CSS (`STYLES` constant) -- Replace all cyan/`#2776F5` with theme blue
 
-## Files to Create/Modify
+| Find | Replace With |
+|------|-------------|
+| `rgba(39,118,245,...)` (the blue in grid/glows) | `rgba(57,147,221,...)` (theme primary `#3993DD`) |
+| `#2776F5` (brain color pulse target) | `#3993DD` |
+| `#e6effd` (brain pulse light state) | `#d4e8f8` (lighter tint of theme blue) |
+| `rgb(39 118 245)` (nodes) | `rgb(57 147 221)` |
+| `rgb(244 114 182)` (rose node) | `rgb(234 138 50)` (Safety Orange node) |
 
-### 1. NEW: `src/components/quote-scanner/AIComparisonSection.tsx`
+### 2. JSX Tailwind classes -- Replace cyan with primary/secondary
 
-A self-contained component with embedded CSS (via a `<style>` tag injected in a useEffect or inline style block). Contains:
+| Current | New |
+|---------|-----|
+| `border-cyan-500/20` | `border-primary/20` |
+| `border-cyan-500/30` | `border-primary/30` |
+| `text-cyan-400` | `text-primary` |
+| `text-cyan-300` | `text-primary/80` |
+| `text-cyan-500/60` | `text-primary/40` |
+| `bg-cyan-500/10` | `bg-primary/10` |
+| `border-cyan-500/30` (badge) | `border-primary/30` |
+| `from-cyan-500/80 to-blue-500/60` (stream) | `from-primary/80 to-primary/60` |
+| `bg-cyan-500` (CTA button) | `bg-secondary` |
+| `hover:bg-cyan-400` (CTA hover) | `hover:bg-secondary/90` |
+| `text-slate-900` (CTA text) | `text-secondary-foreground` |
+| `shadow-cyan-500/30` (CTA shadow) | `shadow-secondary/30` |
 
-**Layout (desktop):** Two-column grid (`lg:grid-cols-2`). Left column has copy + comparison cards. Right column has the brain visual + data stream + CTA.
+### 3. Solution card -- keep blue but use theme blue
 
-**Layout (mobile):** Single column. Brain visual appears first (via `order-first`), then copy + cards below.
+The `.tp-glow-solution` CSS already uses blue tones close to theme. The JSX classes `text-blue-300` and `bg-blue-500/60` stay as-is (they align with theme primary). No change needed on the solution card or problem card (red stays).
 
-**Visual effects (all CSS-based, no images):**
-- `.tp-section` wrapper with `bg-slate-950` and `overflow-hidden`
-- `.tp-circuit-bg` background using CSS linear gradients to create the grid pattern
-- Radial gradient overlays for subtle colored glows
-- `.tp-brain-shell` with `@keyframes tp-brain-pulse` (scale + box-shadow animation)
-- `.tp-brain-color-pulse` on the Brain icon (color cycles between light blue and brand blue)
-- `.tp-stream-pulse` horizontal bars animating left-to-right inside the data stream container
-- `.tp-node` floating dots with `@keyframes tp-node-pulse` (float up/down)
-- `.tp-glow-problem` (red glow border) and `.tp-glow-solution` (blue glow border) on comparison cards
-- `.shimmer-cta` button with a sweeping white highlight animation
-- Full `@media (prefers-reduced-motion: reduce)` support -- all animations disabled
-- Mobile calming: reduced opacity, smaller grid, slower brain pulse
+### 4. Node colors
 
-**CTA button:** Smooth-scrolls to the scanner upload zone (accepts `uploadRef` prop) and fires `trackEvent('cta_click', { location: 'ai_comparison_section', destination: 'scanner' })`. Includes `data-id="cta-ai-comparison"` for GTM targeting.
+- Default node: theme blue (already close)
+- `.tp-node-rose` renamed conceptually to orange node using Safety Orange (`rgb(234 138 50)`)
 
-**Imports needed:** `Brain`, `AlertTriangle`, `CheckCircle2`, `ArrowRight` from lucide-react; `trackEvent` from `@/lib/gtm`; `cn` from `@/lib/utils`.
+## Summary
 
-### 2. MODIFY: `src/pages/QuoteScanner.tsx`
-
-- Import `AIComparisonSection` from `@/components/quote-scanner/AIComparisonSection`
-- Insert `<AIComparisonSection uploadRef={uploadRef} />` on line 270, directly above `<TestimonialCards variant="default" />`
-
-## Props Interface
-
-```tsx
-interface AIComparisonSectionProps {
-  uploadRef?: React.RefObject<HTMLDivElement>;
-}
-```
-
-## Color Palette (Fixed Dark Theme)
-
-| Element | Color |
-|---------|-------|
-| Background | `bg-slate-950` |
-| Grid lines | `rgba(39,118,245,0.08)` |
-| Section label | `text-cyan-400` |
-| Hero heading accent | `text-cyan-400` (or `text-primary`) |
-| Body text | `text-slate-300` |
-| Problem card glow | `rgba(248,113,113,0.6)` red |
-| Solution card glow | `rgba(39,118,245,0.7)` blue |
-| Brain glow | `rgba(39,118,245,...)` |
-| CTA button | `bg-cyan-500 text-slate-900` |
-| Footer text | `text-cyan-500/60` |
-
-## Accessibility
-
-- All animations respect `prefers-reduced-motion`
-- Comparison cards use semantic headings
-- CTA is a focusable button element
-- Sufficient color contrast on all text (light text on dark bg)
+Pure color swap -- no layout, animation, or structural changes. Every cyan instance becomes either `primary` (blue) or `secondary` (orange for CTA/accents).
