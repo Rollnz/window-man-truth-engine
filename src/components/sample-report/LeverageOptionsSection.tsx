@@ -16,7 +16,7 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
 
   const handleOptionAClick = () => {
     trackEvent('sample_report_upload_click', { location: 'leverage_options', option: 'negotiate' });
-    onOpenLeadModal?.('leverage_path_a');
+    onOpenPreQuoteModal?.('option_a_audit');
   };
 
   const handleInactiveButtonClick = () => {
