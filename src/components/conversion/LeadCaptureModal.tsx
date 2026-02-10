@@ -10,7 +10,7 @@ import { SessionData, useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useFormAbandonment } from '@/hooks/useFormAbandonment';
 import { useCanonicalScore, getOrCreateAnonId } from '@/hooks/useCanonicalScore';
-import { Mail, Check, Loader2 } from 'lucide-react';
+import { Mail, Check, Loader2, Lock, CheckCircle2, Phone } from 'lucide-react';
 import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess, trackFormStart, trackLeadCapture, generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
@@ -19,6 +19,7 @@ import { getLeadQuality } from '@/lib/leadQuality';
 import { SourceTool } from '@/types/sourceTool';
 import { TrustModal } from '@/components/forms/TrustModal';
 import { NameInputPair, normalizeNameFields } from '@/components/ui/NameInputPair';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -47,6 +48,7 @@ export function LeadCaptureModal({
   const { toast } = useToast();
   const [isSuccess, setIsSuccess] = useState(false);
   const [modalOpenTime, setModalOpenTime] = useState<number>(0);
+  const [smsConsent, setSmsConsent] = useState(false);
   
   // Form lock for double-submit protection
   const { isLocked, lockAndExecute } = useFormLock();
@@ -289,9 +291,9 @@ export function LeadCaptureModal({
   let successDescription = 'We\'ve saved your conversation and session data.';
 
   if (isQuoteScanner) {
-    modalTitle = 'Unlock Your Quote Analysis';
-    modalDescription = 'Get your complete 5-point breakdown plus AI-generated negotiation scripts to save thousands.';
-    buttonText = 'Unlock My Report';
+    modalTitle = 'Unlock Your Full Analysis';
+    modalDescription = 'Your quote has been analyzed. Enter your details to see the complete breakdown, warnings, and recommendations.';
+    buttonText = 'Unlock My Score Now';
     successTitle = 'Report Unlocked!';
     successDescription = 'Your full analysis is now available.';
   } else if (isComparisonTool) {
@@ -350,11 +352,15 @@ export function LeadCaptureModal({
         modalDescription={isSuccess ? undefined : modalDescription}
         headerAlign="center"
       >
-        {/* Mail icon above title */}
+        {/* Header icon above title */}
         {!isSuccess && (
           <div className="flex justify-center mb-2 -mt-2">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Mail className="w-4 h-4 text-primary" />
+              {isQuoteScanner ? (
+                <Lock className="w-4 h-4 text-primary" />
+              ) : (
+                <Mail className="w-4 h-4 text-primary" />
+              )}
             </div>
           </div>
         )}
@@ -370,6 +376,16 @@ export function LeadCaptureModal({
         ) : (
           <>
             {/* TrustModal auto-wraps children with FormSurfaceProvider surface="trust" */}
+            {/* Trust banner for quote-scanner */}
+            {isQuoteScanner && (
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-green-50 border border-green-200 mt-2">
+                <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                <p className="text-sm text-green-800">
+                  <span className="font-semibold">Your data is secure.</span> Your Report is Securely Saved in Your Vault.
+                </p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               {requiresFullContact && (
                 <NameInputPair
@@ -384,8 +400,9 @@ export function LeadCaptureModal({
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className={`font-semibold text-slate-900 ${emailHasError ? 'text-destructive' : ''}`}>
-                  Email Address
+                <Label htmlFor="email" className={`font-semibold text-slate-900 flex items-center gap-2 ${emailHasError ? 'text-destructive' : ''}`}>
+                  {isQuoteScanner && <Mail className="h-4 w-4 text-muted-foreground" />}
+                  {isQuoteScanner ? 'Email *' : 'Email Address'}
                 </Label>
                 <Input
                   id="email"
@@ -411,7 +428,10 @@ export function LeadCaptureModal({
 
               {requiresFullContact && (
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="font-semibold text-slate-900">Phone Number</Label>
+                  <Label htmlFor="phone" className="font-semibold text-slate-900 flex items-center gap-2">
+                    {isQuoteScanner && <Phone className="h-4 w-4 text-muted-foreground" />}
+                    {isQuoteScanner ? 'Phone *' : 'Phone Number'}
+                  </Label>
                   <Input
                     id="phone"
                     name="phone"
@@ -423,6 +443,21 @@ export function LeadCaptureModal({
                     onChange={(e) => setValue('phone', formatPhoneNumber(e.target.value))}
                     disabled={isLocked}
                   />
+                </div>
+              )}
+
+              {/* SMS consent checkbox for quote-scanner */}
+              {isQuoteScanner && (
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="sms-consent"
+                    checked={smsConsent}
+                    onCheckedChange={(checked) => setSmsConsent(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="sms-consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                    I agree to receive SMS updates about my quote analysis. Message &amp; data rates may apply. Reply STOP to unsubscribe.
+                  </label>
                 </div>
               )}
 
@@ -439,11 +474,18 @@ export function LeadCaptureModal({
                   </>
                 ) : (
                   <>
-                    <Mail className="mr-2 h-4 w-4" />
+                    {isQuoteScanner ? <Lock className="mr-2 h-4 w-4" /> : <Mail className="mr-2 h-4 w-4" />}
                     {buttonText}
                   </>
                 )}
               </Button>
+
+              {/* Footer text for quote-scanner */}
+              {isQuoteScanner && (
+                <p className="text-xs text-muted-foreground text-center">
+                  By submitting, you agree to our Terms of Service and Privacy Policy. We'll send your analysis to this email.
+                </p>
+              )}
             </form>
           </>
         )}
