@@ -48,7 +48,7 @@ export function HowItWorksSection() {
 
         <div className="max-w-2xl mx-auto mt-12">
           <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-            <div className="flex items-start gap-3"><Shield className="w-5 h-5 text-primary shrink-0 mt-0.5" /><div><h4 className="font-semibold text-foreground text-sm mb-1">Your Privacy Matters</h4><p className="text-sm text-muted-foreground">Window Man may share project specs only with vetted partners if <span className="font-medium text-foreground">you request it</span>. Your personal contact details are never shared without permission.</p></div></div>
+            <div className="flex items-start gap-3"><Shield className="w-5 h-5 text-primary shrink-0 mt-0.5" /><div><h4 className="font-semibold text-foreground text-sm mb-1">Your Privacy Matters</h4><p className="text-sm text-muted-foreground">Window Man may share project specs only with vetted partners if <span className="font-medium text-foreground">You Want a More Competitive Proposal</span>. Your personal contact details are never shared without permission.</p></div></div>
           </div>
         </div>
       </div>
