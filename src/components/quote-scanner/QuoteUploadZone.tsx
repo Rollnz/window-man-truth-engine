@@ -1,25 +1,22 @@
 import { useState, useRef, useCallback, forwardRef } from 'react';
-import { Upload, Loader2, RefreshCw, FileText } from 'lucide-react';
+import { Upload, FileImage, Loader2, RefreshCw, FileText, ScanSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SampleQuoteDocument } from './SampleQuoteDocument';
-import { EnhancedFloatingCallout, EnhancedCalloutType } from './EnhancedFloatingCallout';
-import type { QuoteAnalysisResult } from '@/hooks/useQuoteScanner';
+import { EnhancedFloatingCallout } from './EnhancedFloatingCallout';
 
 interface QuoteUploadZoneProps {
   onFileSelect: (file: File) => void;
   isAnalyzing: boolean;
   hasResult: boolean;
   imagePreview: string | null;
-  analysisResult?: QuoteAnalysisResult | null;
 }
 
 export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(function QuoteUploadZone({
   onFileSelect,
   isAnalyzing,
   hasResult,
-  imagePreview,
-  analysisResult,
+  imagePreview
 }, ref) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -72,11 +69,11 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          "relative rounded-2xl border transition-all duration-300 overflow-visible shadow-xl",
+          "relative rounded-xl border-2 border-dashed transition-all duration-300 overflow-hidden",
           "aspect-square",
           isDragOver
             ? "border-primary bg-primary/5 scale-[1.02]"
-            : "border-border/40 bg-card/50",
+            : "border-border hover:border-primary/50 bg-card/50",
           isAnalyzing && "pointer-events-none"
         )}
       >
@@ -115,7 +112,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
         )}
 
         {/* Before Upload Overlay - Sample Quote + Floating Callouts */}
-        {showBeforeUploadOverlay && !analysisResult && (
+        {showBeforeUploadOverlay && (
           <>
             <SampleQuoteDocument />
 
@@ -124,64 +121,32 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
               type="price" 
               heading="Price Warning" 
               description="Price per opening looks high for the market."
-              className="top-[15%] -right-3 z-[5]"
+              className="top-3 right-0 z-[5]"
               fromRight
               animationDelay="200ms"
-              rotation={-2}
             />
             <EnhancedFloatingCallout 
               type="warning" 
               heading="Warranty Issue" 
               description="20 years on product... but 1 year on labor."
-              className="top-[38%] -left-2 z-[5]"
+              className="top-1/2 -translate-y-1/2 left-0 z-[5]"
               animationDelay="400ms"
-              rotation={2}
             />
             <EnhancedFloatingCallout 
               type="missing" 
               heading="Missing Scope" 
               description="No mention of stucco repair or debris removal."
-              className="-bottom-2 -left-3 z-[5]"
+              className="bottom-8 left-0 z-[5]"
               animationDelay="600ms"
-              rotation={-1}
             />
             <EnhancedFloatingCallout 
               type="legal" 
               heading="Legal Clause" 
               description='"Subject to remeasure" — surprise charges later.'
-              className="-bottom-2 -right-3 z-[5]"
+              className="bottom-8 right-0 z-[5]"
               fromRight
               animationDelay="800ms"
-              rotation={1}
             />
-          </>
-        )}
-
-        {/* Dynamic callouts from analysis results */}
-        {imagePreview && !isAnalyzing && analysisResult && analysisResult.warnings.length > 0 && (
-          <>
-            {analysisResult.warnings.slice(0, 4).map((warning, i) => {
-              const positions = [
-                { className: 'top-[15%] -right-3 z-[5]', fromRight: true, rotation: -2 },
-                { className: 'top-[38%] -left-2 z-[5]', fromRight: false, rotation: 2 },
-                { className: '-bottom-2 -left-3 z-[5]', fromRight: false, rotation: -1 },
-                { className: '-bottom-2 -right-3 z-[5]', fromRight: true, rotation: 1 },
-              ];
-              const types: EnhancedCalloutType[] = ['warning', 'price', 'missing', 'legal'];
-              const pos = positions[i % positions.length];
-              return (
-                <EnhancedFloatingCallout
-                  key={i}
-                  type={types[i % types.length]}
-                  heading="AI Detected"
-                  description={warning.length > 60 ? warning.slice(0, 60) + '...' : warning}
-                  className={pos.className}
-                  fromRight={pos.fromRight}
-                  rotation={pos.rotation}
-                  animationDelay={`${200 + i * 200}ms`}
-                />
-              );
-            })}
           </>
         )}
 
@@ -189,6 +154,9 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 z-10">
           {!imagePreview && !isAnalyzing && (
             <div className="bg-card/95 backdrop-blur-sm shadow-xl rounded-2xl p-5 md:p-6 max-w-xs w-full text-center border border-border/50">
+              <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-3">
+                <ScanSearch className="w-6 h-6 text-primary" />
+              </div>
               <h3 className="text-lg font-bold text-primary mb-1">Analyze Quote</h3>
               <p className="text-xs text-muted-foreground mb-4">
                 Take a photo or upload a screenshot. Supports JPG, PNG, and PDF. Max 10MB.
@@ -196,7 +164,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
 
               <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp" onChange={handleFileChange} className="hidden" />
 
-              <Button onClick={handleClick} className="w-full gap-2 bg-foreground text-background hover:bg-foreground/90" size="lg" disabled={isAnalyzing}>
+              <Button onClick={handleClick} className="w-full gap-2" size="lg" disabled={isAnalyzing}>
                 <Upload className="w-4 h-4" />
                 Upload Your Quote
               </Button>

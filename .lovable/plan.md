@@ -1,79 +1,55 @@
 
 
-# Match "Before" Box to Reference Screenshot -- Three Changes
+# Transform "Before" Section to Match Reference Screenshot
 
-## Overview
+## What Changes
 
-Three updates to the Before/After card area only. The hero header, counter pill, and everything above remain untouched.
+Restyle the "Before: Just a Confusing Estimate" upload zone to be a 1:1 square card with repositioned callout badges matching the reference screenshot.
 
----
+## File: `src/components/quote-scanner/QuoteUploadZone.tsx`
 
-## 1. Add `rotation` prop to `EnhancedFloatingCallout.tsx`
+### 1. Make the container square (1:1 aspect ratio)
 
-Add an optional `rotation` prop (number, degrees). Apply it as an inline `style={{ transform: 'rotate(Xdeg)' }}` merged with the existing animation styles. This gives callouts a scattered, hand-placed tilt.
+Replace the `min-h-[300px] md:min-h-[400px]` sizing with `aspect-square` to enforce a 1:1 ratio. Remove the min-height constraints entirely.
 
-- Props interface: add `rotation?: number`
-- Apply via inline style on the root div
+### 2. Reposition callout badges to match the reference
 
-## 2. Update `QuoteUploadZone.tsx` -- Rotation + Dynamic Callouts
+Current positions vs. target:
 
-### A. Pass rotation values to the 4 static callouts
+| Callout | Current Position | Target Position | Z-Index |
+|---------|-----------------|-----------------|---------|
+| Price Warning (red) | `top-20 right-0` | `top-3 right-0` (top-right corner) | z-[5] (behind upload card) |
+| Legal Clause (red) | `top-4 left-0` | `bottom-8 right-0` (bottom-right) | z-[5] (behind upload card) |
+| Warranty Issue (yellow) | `bottom-10 right-0` | `top-1/2 -translate-y-1/2 left-0` (left-center, vertically centered) | z-[5] (behind upload card, partially obscured) |
+| Missing Scope (red) | `bottom-24 left-0` | `bottom-8 left-0` (bottom-left corner) | z-[5] (behind upload card) |
 
-| Callout | Rotation |
-|---------|----------|
-| Price Warning (top-right) | -2 |
-| Warranty Issue (left) | 2 |
-| Missing Scope (bottom-left) | -1 |
-| Legal Clause (bottom-right) | 1 |
+### 3. Fix z-index layering
 
-### B. Accept `analysisResult` prop and swap callouts post-upload
+- Callouts: `z-[5]` -- they sit behind the upload card
+- Upload CTA card overlay: `z-10` (already set) -- it sits on top
+- This creates the effect where the yellow "Warranty Issue" badge is partially obscured by the centered Analyze Quote card
 
-- Add `analysisResult?: QuoteAnalysisResult` to the props interface (import the type from `useQuoteScanner`)
-- When `analysisResult` is present AND `imagePreview` exists (post-upload state):
-  - Hide the 4 static demo callouts
-  - Map through `analysisResult.warnings` (up to 4) and render an `EnhancedFloatingCallout` for each, using pre-defined positions from the demo layout (top-right, left, bottom-left, bottom-right) and alternating rotation values
-  - Type assignment: alternate between `warning`, `price`, `missing`, `legal` based on index
+### 4. Show all callouts on mobile
 
-### C. Wire the prop in `QuoteScanner.tsx`
+Remove `hideMobile` from both the Price Warning and Warranty Issue callouts so they display on all screen sizes (the square layout has room for all four).
 
-Pass `analysisResult={analysisResult}` from the parent page into `QuoteUploadZone`.
+### 5. Add entrance animation
 
-## 3. Create `AnalysisLoadingSequence.tsx`
+Add an IntersectionObserver-based trigger so callout badges animate in (slide + fade) when the section scrolls into view, using the existing `animate-in fade-in slide-in-from-left/right` classes with staggered delays via inline `style={{ animationDelay }}`.
 
-New component: `src/components/quote-scanner/AnalysisLoadingSequence.tsx`
+## File: `src/components/quote-scanner/EnhancedFloatingCallout.tsx`
 
-### Behavior
-- Displays a vertical checklist of 4 steps:
-  1. "Scanning document..."
-  2. "Identifying line items..."
-  3. "Checking market rates..."
-  4. "Finalizing score"
-- Each step appears every ~800ms with a fade-in animation
-- Completed steps show a green checkmark icon; the active step shows a spinner; future steps are dimmed
-- Uses `useEffect` with `setInterval` to advance through steps
-- Props: `isActive: boolean`, `onComplete?: () => void`
-- Calls `onComplete` after the last step finishes (after ~3.5s total)
+### 6. Accept animation delay prop
 
-### Integration in `QuoteScanner.tsx`
-- In the right column, when `isAnalyzing` is true, render `AnalysisLoadingSequence` instead of `QuoteAnalysisResults`
-- When `isAnalyzing` is false, show `QuoteAnalysisResults` as normal
+Add an optional `animationDelay` prop (string like `"200ms"`) that gets applied as `style={{ animationDelay }}` on the root div. Also add `fill-mode-forwards` and start with `opacity-0` so callouts are hidden until they animate in.
 
----
+## Summary of visual result
 
-## Files Summary
-
-| File | Action |
-|------|--------|
-| `src/components/quote-scanner/EnhancedFloatingCallout.tsx` | Add `rotation` prop, apply as inline transform |
-| `src/components/quote-scanner/QuoteUploadZone.tsx` | Add rotation to callouts, accept `analysisResult`, show dynamic callouts post-upload |
-| `src/components/quote-scanner/AnalysisLoadingSequence.tsx` | **New file** -- step-by-step loading theater |
-| `src/pages/QuoteScanner.tsx` | Pass `analysisResult` to `QuoteUploadZone`, conditionally render `AnalysisLoadingSequence` in right column |
-
-## What Stays the Same
-
-- Everything above the cards (hero, counter pill, badge) -- untouched
-- All upload/drag-drop functionality
-- `QuoteAnalysisResults` component internals
-- GTM tracking, lead capture, session logic
-- The `forwardRef` scroll behavior
+- Square 1:1 card container
+- Red "Price Warning" badge in top-right corner, clearly visible
+- Yellow "Warranty Issue" badge on the left side, partially behind the centered upload card
+- Red "Missing Scope" badge in bottom-left corner, fully visible
+- Red "Legal Clause" badge in bottom-right corner, fully visible
+- All four callouts slide in with staggered animation as the user scrolls to this section
+- Upload card stays centered and clickable on top of everything
 

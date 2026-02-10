@@ -16,8 +16,6 @@ interface EnhancedFloatingCalloutProps {
   hideMobile?: boolean;
   /** Staggered animation delay */
   animationDelay?: string;
-  /** Rotation in degrees for scattered look */
-  rotation?: number;
 }
 
 const calloutConfig: Record<EnhancedCalloutType, { 
@@ -70,15 +68,9 @@ export function EnhancedFloatingCallout({
   fromRight = false,
   hideMobile = false,
   animationDelay,
-  rotation,
 }: EnhancedFloatingCalloutProps) {
   const config = calloutConfig[type];
   const Icon = config.icon;
-
-  const inlineStyle: React.CSSProperties = {
-    ...(animationDelay ? { animationDelay, animationFillMode: 'forwards' as const } : {}),
-    ...(rotation !== undefined ? { transform: `rotate(${rotation}deg)` } : {}),
-  };
 
   return (
     <div
@@ -94,7 +86,7 @@ export function EnhancedFloatingCallout({
         hideMobile && "hidden md:flex",
         className
       )}
-      style={Object.keys(inlineStyle).length ? inlineStyle : undefined}
+      style={animationDelay ? { animationDelay, animationFillMode: 'forwards' } : undefined}
     >
       {/* Icon container */}
       <div className={cn(
@@ -110,7 +102,7 @@ export function EnhancedFloatingCallout({
           {heading}
         </span>
         {description && (
-          <span className={cn("text-[9px] md:text-[10px] leading-snug", config.textColor)}>
+          <span className={cn("text-[9px] md:text-[10px] leading-snug hidden md:block", config.textColor)}>
             {description}
           </span>
         )}
