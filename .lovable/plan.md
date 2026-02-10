@@ -1,102 +1,63 @@
 
 
-# Replace ScanPipelineStrip with AIScannerHero (4-Scene Forensic Pipeline)
+# Add "No Quote Yet? Download Sample" Secondary CTA to the Before Card
 
 ## What Changes
 
-Replace the current 3-step `ScanPipelineStrip` component with a significantly upgraded 4-scene animated pipeline featuring rich SVG illustrations, particle beam connectors, rotating orbit rings, circuit trace backgrounds, and a "Forensic Ally" banner.
+Add a secondary conversion path inside the "Before Card" (`QuoteUploadZone.tsx`) upload overlay. Below the existing "Upload Your Quote" button, a divider label ("No Quote To Analyze Yet?") and a secondary "Download Sample" button will appear, matching the reference screenshot.
 
-## New Visual Architecture
-
-The pipeline expands from 3 simple icon cards to 4 illustrated scene cards:
+## Visual Layout (Before Upload State Only)
 
 ```text
-Desktop (7-column grid):
-  [ Extraction ] ─beam─ [ AI Brain ] ─beam─ [ Database ] ─beam─ [ Red Flag Report ]
-       PDF doc        orbit rings      cylinder DB        flagged report
-       + scan lines   + neural nodes   + data rows        + checklist items
-
-Mobile (vertical stack):
-  [ Extraction ]  (220px)
-       |  beam
-  [ AI Brain ]    (240px)
-       |  beam
-  [ Database ]    (180px)
-       |  beam (red)
-  [ Red Flag ]    (210px)
+  +----------------------------------+
+  |    [scan icon]                   |
+  |    Analyze Quote                 |
+  |    Take a photo or upload...     |
+  |                                  |
+  |  [ Upload Your Quote ]  (primary)|
+  |                                  |
+  |  No Quote To Analyze Yet?        |
+  |                                  |
+  |  [ Download Sample ]  (secondary)|
+  +----------------------------------+
 ```
+
+The secondary CTA only appears in the "before upload" state (no image preview, not analyzing). It disappears once a file is selected.
 
 ## File Changes
 
-### `src/components/quote-scanner/ScanPipelineStrip.tsx` -- Full Rewrite
+### `src/components/quote-scanner/QuoteUploadZone.tsx`
 
-The existing 719-line component is replaced entirely with the new design. Key elements:
+1. Add new props to the interface:
+   - `onNoQuoteClick?: () => void` -- callback when "Download Sample" is clicked
 
-**Sub-components (all internal, no new files):**
+2. Inside the upload overlay `div` (lines 226-241), after the `<Button>Upload Your Quote</Button>`, add:
+   - A divider: bold text "No Quote To Analyze Yet?" (`text-sm font-bold text-foreground mt-4`)
+   - A secondary button: "Download Sample" using `variant="cta"` with orange/secondary styling (matching the screenshot's orange button), calling `onNoQuoteClick` and firing a `trackEvent('no_quote_sample_click', { location: 'before_card' })`
 
-| Component | Purpose |
-|---|---|
-| `GlobalStyles` | Scoped keyframes for all animations (replaces current `SCOPED_STYLES`) |
-| `ParticleBeam` | Horizontal/vertical data flow connectors with animated particles |
-| `CircuitTraces` | SVG background pattern for scene cards |
-| `ForensicBadge` | "FORENSIC ALLY" branding banner with animated hexagon icon |
-| `ExtractionScene` | Scene 1: PDF document with scan lines and extracted data fragments |
-| `AIBrainScene` | Scene 2: Neural chip with rotating orbit rings and connection nodes |
-| `DatabaseScene` | Scene 3: Cylinder database icon with pulsing data rows |
-| `RedFlagScene` | Scene 4: Report card with flag/check/warn items and corner decorations |
-| `VerticalBeam` | Mobile-specific vertical connector between stacked cards |
-| `RotatingValueProp` | Preserved from current implementation (rotating ticker below pipeline) |
+3. Import `trackEvent` from `@/lib/gtm`
 
-**Preserved from current component:**
-- `RotatingValueProp` sub-component and `VALUE_PROPS` array (the rotating ticker)
-- `renderHighlighted` utility function
-- Named export: `export function ScanPipelineStrip()`
-- `useIsMobile()` hook from `@/hooks/use-mobile`
-- IntersectionObserver scroll-trigger pattern
-- `prefers-reduced-motion` respect
+### `src/pages/QuoteScanner.tsx`
 
-**Adaptations from provided code:**
-- `export default function AIScannerHero()` becomes `export function ScanPipelineStrip()` (named export, matching existing import in QuoteScanner.tsx)
-- Remove Google Fonts `<link>` tag (Inter already loaded globally, JetBrains Mono replaced with project's existing monospace stack)
-- Custom `window.innerWidth < 768` resize listener replaced with `useIsMobile()` hook
-- All inline SVGs kept as-is (too complex for Lucide replacements -- custom illustrated scenes)
-- Color constants: keep hardcoded hex values for gradient precision (cyan `#00e5ff`, red `#ff3d5a`, dark bg `#0b1018`) since these are illustration-specific and don't need to follow the theme system
-- TypeScript types added to all component props
-- `setTimeout(() => setVisible(true), 300)` fallback removed (IntersectionObserver is sufficient)
+1. Add state: `const [sampleGateOpen, setSampleGateOpen] = useState(false)`
+2. Add a ref for focus restoration: `const sampleGateTriggerRef = useRef<HTMLElement>(null)`
+3. Pass `onNoQuoteClick={() => setSampleGateOpen(true)}` to the `QuoteUploadZone` component
+4. Import and render `SampleReportGateModal` at the bottom of the page with `isOpen={sampleGateOpen}`, `onClose={() => setSampleGateOpen(false)}`, and `returnFocusRef={sampleGateTriggerRef}`
+5. Import `SampleReportGateModal` from `@/components/audit/SampleReportGateModal`
 
-**Layout:**
-- Desktop: `gridTemplateColumns: "1fr auto 1.3fr auto 0.8fr auto 1fr"` with scene cards in columns 1/3/5/7 and horizontal `ParticleBeam` connectors in columns 2/4/6
-- Mobile: `flexDirection: column` with `VerticalBeam` connectors (44px height) between cards
-- Last beam connector (Database to Red Flag) uses `color={C.red}` instead of cyan
-- Banner (`ForensicBadge`) stacks vertically on mobile
+## Analytics
 
-**Animations (all via scoped `<style>` block):**
-- `streamRight` / `streamDown`: Particle flow through beam connectors
-- `sonarPing`: Active node highlight pulses
-- `breathe`: Subtle opacity breathing on orbit ring nodes
-- `coreGlow`: Box-shadow pulse on AI brain chip
-- `rotate` / `rotateReverse`: Orbit ring rotation (AI Brain scene)
-- `flagWave`: Red flag icon wobble
-- `scanLine`: Vertical scan sweep on Extraction scene
-- `textFlicker`: Subtle text opacity flicker
-- `dataFlow`: Stroke-dashoffset animation on circuit traces
-- `checkPop`: Checkmark entrance animation
-- `dbPulse`: Database cylinder breathing
+| Event | Location | Fires When |
+|---|---|---|
+| `no_quote_sample_click` | `before_card` | User clicks "Download Sample" button |
 
-### `src/pages/QuoteScanner.tsx` -- No Changes
-
-The import `import { ScanPipelineStrip } from '@/components/quote-scanner/ScanPipelineStrip'` and the `<ScanPipelineStrip />` placement remain identical. The component name and export are preserved.
-
-### `src/components/quote-scanner/QuoteScannerHero.tsx` -- No Changes
-
-The hero section above remains untouched.
+The `SampleReportGateModal` already tracks its own open/close/submit/success events internally.
 
 ## What Does NOT Change
 
-- No new files created (single file rewrite)
-- No new dependencies
+- No new files created
 - No database changes
-- No analytics events modified
-- QuoteScanner.tsx import and placement unchanged
-- RotatingValueProp ticker preserved with identical behavior
-
+- No new dependencies
+- The "after upload" state (Analyze Another / Select Different File) is untouched
+- The existing `NoQuotePathway` section further down the page remains as-is
+- All existing upload logic, drag-and-drop, and analysis flow untouched
