@@ -4,7 +4,7 @@ import { useSectionTracking } from '@/hooks/useSectionTracking';
 interface Step { number: number; title: string; description: string; icon: typeof Upload; }
 
 const steps: Step[] = [
-  { number: 1, title: 'Upload your estimate', description: 'PDF, photo, or screenshot of your window quote. Takes 60 seconds.', icon: Upload },
+  { number: 1, title: 'Upload your estimate', description: 'PDF, photo, or screenshot of your window quote. Takes 5-15 seconds.', icon: Upload },
   { number: 2, title: 'AI checks everything', description: 'We analyze specs, scope, code compliance, and contract terms automatically.', icon: Scan },
   { number: 3, title: 'You receive a score + action plan', description: 'A complete breakdown with specific questions to ask and risks to address.', icon: FileCheck },
 ];
