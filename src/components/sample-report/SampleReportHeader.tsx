@@ -7,12 +7,12 @@ interface SampleReportHeaderProps {
   onOpenPreQuoteModal?: (ctaSource: string) => void;
 }
 
-export function SampleReportHeader({ onOpenLeadModal }: SampleReportHeaderProps) {
+export function SampleReportHeader({ onOpenLeadModal, onOpenPreQuoteModal }: SampleReportHeaderProps) {
   const handleUploadClick = () => {
     trackEvent('sample_report_upload_click', {
       location: 'sticky_header',
     });
-    onOpenLeadModal?.('sticky_header_upload');
+    onOpenPreQuoteModal?.('header_upload');
   };
 
   const handleTalkClick = () => {
@@ -20,6 +20,7 @@ export function SampleReportHeader({ onOpenLeadModal }: SampleReportHeaderProps)
       location: 'sticky_header',
       action: 'phone_call',
     });
+    onOpenPreQuoteModal?.('header_talk');
   };
 
   return (
