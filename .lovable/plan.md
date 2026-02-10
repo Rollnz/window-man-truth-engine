@@ -1,64 +1,60 @@
 
 
-# Integrate ScanPipelineV2 into the AI Scanner Page
+# Replace Static Trust Signal with Rotating Value Proposition Ticker
 
-## What This Does
+## What Changes
 
-Adds a visually rich, scroll-triggered 3-step pipeline animation between the UrgencyTicker and the upload section on the `/ai-scanner` page. It shows users exactly how the AI processes their quote: OCR Extraction -> AI Analysis -> Red Flag Report, with flowing data beams, animated counters, and sonar-ping effects on each node.
+Replace the static `<p>` element at line 625-637 of `ScanPipelineStrip.tsx` with a new `RotatingValueProp` sub-component that cycles through 7 messages with a fade-out/slide-up/fade-in transition every 3 seconds.
 
-## Approach
+## Messages Array
 
-The provided component uses inline styles and raw CSS keyframes (no Tailwind). Rather than rewriting it entirely into Tailwind classes (which would lose fidelity on the complex animations), the plan is to:
+```typescript
+const VALUE_PROPS = [
+  { text: "⚠️ {80%} of quotes contain hidden errors. Find yours before you sign." },
+  { text: "🔒 100% {Private} Analysis - Your contractor will never know." },
+  { text: "💪 Shift the power dynamic. Negotiate with {facts}, not feelings." },
+  { text: "🧐 See exactly what your contractor is hoping you won't notice." },
+  { text: "🧠 Translates 'Contractor Jargon' into plain English warnings." },
+  { text: "⏱️ Faster (and more accurate) than getting a {second opinion}." },
+  { text: "⚖️ The only {unbiased}, non-commissioned review in the industry." },
+];
+```
 
-1. **Create the component as-is**, adapted to TypeScript and project conventions (named export, Lucide icons where possible, `useIsMobile` hook reuse, `prefers-reduced-motion` respect).
-2. **Keep the inline `<style>` block** for the custom keyframes (`particleX`, `particleY`, `sonarPing`, `iconFloat`, `sheenSweep`, `scanLine`, `gridPulse`, `borderGlow`) since these are component-scoped and too complex for Tailwind config.
-3. **Remove the Google Fonts `<link>`** -- the project already has Inter loaded globally and uses `font-typewriter` for monospace.
-4. **Wire it into `QuoteScanner.tsx`** between the `UrgencyTicker` and the upload `<section>`.
+Keywords wrapped in `{}` markers will be rendered in `hsl(var(--primary))` (brand blue). All other text stays `hsl(var(--muted-foreground))`.
 
-## Files to Create
+## Animation Approach
 
-### `src/components/quote-scanner/ScanPipelineStrip.tsx`
+- Two new scoped keyframes added to the existing `<style>` block:
+  - `sp-vpFadeOut`: opacity 1 -> 0 + translateY(0) -> translateY(-8px) over 300ms
+  - `sp-vpFadeIn`: opacity 0 -> 1 + translateY(8px) -> translateY(0) over 300ms
+- A `useEffect` with a 3000ms `setInterval` increments a message index
+- On each tick: apply fade-out animation, wait 300ms via setTimeout, swap text, apply fade-in animation
+- Container has a fixed `minHeight: 40px` so layout never shifts
+- Respects `prefers-reduced-motion`: no animation, just instant swap (or show all statically)
+- Only starts cycling once `phase >= 3` (after the pipeline sequence completes)
 
-- Named export: `ScanPipelineStrip`
-- TypeScript with proper interfaces for props
-- Uses Lucide icons (`FileSearch`, `Brain`, `ShieldAlert`) instead of inline SVGs
-- Uses `useIsMobile()` from `@/hooks/use-mobile` instead of custom resize listener
-- Uses `useRef`, `useState`, `useEffect` for IntersectionObserver + phase sequencer
-- Contains a `useAnimatedCounter` internal hook for the metric counters
-- Contains a `ParticleStream` sub-component for the data flow beams
-- Contains a `PipelineNode` sub-component for each step card
-- All CSS keyframes in a scoped `<style>` tag inside the component
-- Respects `prefers-reduced-motion`: if enabled, all steps render visible immediately, no animations
-- Color constants use CSS variables where possible (`hsl(var(--primary))` for cyan accents, `hsl(var(--background))` for dark bg) to stay theme-consistent. The red flag color stays hardcoded (`#ff3d5a`) as it matches the existing claim-survival tool color.
+## Component Structure
 
-## Files to Modify
+A new `RotatingValueProp` function component defined inside `ScanPipelineStrip.tsx` (no new file needed). It receives `active: boolean` (mapped to `phase >= 3`) and handles its own interval + animation state.
 
-### `src/pages/QuoteScanner.tsx`
+### Keyword Highlighting
 
-Two changes:
-1. Add import: `import { ScanPipelineStrip } from '@/components/quote-scanner/ScanPipelineStrip';`
-2. Insert `<ScanPipelineStrip />` on a new line after the `UrgencyTicker` container div (after line 126) and before the upload `<section>` (line 129)
+A small helper function `renderHighlighted(text: string)` splits on `{...}` markers and returns spans -- highlighted keywords get `color: hsl(var(--primary)); fontWeight: 600`, rest stays muted.
 
-### `tailwind.config.ts`
+## Styling
 
-No changes needed -- all animations are handled via the component's internal `<style>` block since they use container queries and complex multi-step sequences that don't map cleanly to Tailwind utilities.
+- `textAlign: 'center'`
+- `fontSize: 12` (matches current 12px / ~text-xs)
+- `color: hsl(var(--muted-foreground))` for base text
+- `marginTop: 16` (same as current)
+- Fixed height container to prevent layout jump
+- Same entrance transition as current (fade in when phase >= 3)
 
-## Key Adaptations from Provided Code
+## File Changes
 
-| Original | Adapted |
+| File | Change |
 |---|---|
-| Inline SVG icons | Lucide `FileSearch`, `Brain`, `ShieldAlert` |
-| `window.innerWidth < 640` resize listener | `useIsMobile()` hook (breakpoint 768px, consistent with project) |
-| Google Fonts `<link>` tag | Removed (Inter already loaded globally) |
-| Hardcoded hex colors (`#00e5ff`, `#0a0e14`) | Mapped to CSS variables where feasible; some kept for gradient precision |
-| `export default` | `export function ScanPipelineStrip()` (named export, project convention) |
-| No reduced-motion handling | Added `prefers-reduced-motion` media query check |
-| No TypeScript types | Full TypeScript interfaces for step data, component props |
+| `src/components/quote-scanner/ScanPipelineStrip.tsx` | Replace lines 624-637 (the static `<p>`) with the `RotatingValueProp` component call. Add the sub-component definition and two keyframes to the style block. |
 
-## No Other Changes
-
-- No database migrations
-- No new dependencies
-- No analytics events (purely visual)
-- No changes to existing components
+No other files change. No new dependencies.
 
