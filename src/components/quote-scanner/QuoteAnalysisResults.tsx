@@ -23,12 +23,14 @@ function getOverallBorderColor(score: number): string {
   return 'border-rose-400/50 bg-rose-400/5';
 }
 interface ScoreRowProps {
+  id?: string;
   label: string;
   score: number | string;
   icon: React.ReactNode;
   description: string;
 }
 function ScoreRow({
+  id,
   label,
   score,
   icon,
@@ -36,7 +38,7 @@ function ScoreRow({
 }: ScoreRowProps) {
   const isPlaceholder = typeof score === 'string';
   const numScore = isPlaceholder ? 0 : score;
-  return <div className="space-y-2">
+  return <div id={id} className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm">
           {icon}
@@ -126,11 +128,11 @@ export function QuoteAnalysisResults({
 
           {/* Category Scores */}
           <div className="space-y-5">
-            <ScoreRow label="Safety" score={result?.safetyScore ?? '?'} icon={<ShieldCheck className="w-4 h-4 text-primary" />} description="Checks for impact ratings and design pressures." />
-            <ScoreRow label="Scope" score={result?.scopeScore ?? '?'} icon={<FileSearch className="w-4 h-4 text-primary" />} description={result?.missingItems.length ? `Missing: ${result.missingItems.slice(0, 2).join(', ')}` : "Scope appears comprehensive."} />
-            <ScoreRow label="Price" score={result?.priceScore ?? '?'} icon={<DollarSign className="w-4 h-4 text-primary" />} description={`Est. price per opening: ${displayData.pricePerOpening}`} />
-            <ScoreRow label="Fine Print" score={result?.finePrintScore ?? '?'} icon={<FileWarning className="w-4 h-4 text-primary" />} description={result?.warnings.length ? `Warning: ${result.warnings[0]}` : "No major red flags found."} />
-            <ScoreRow label="Warranty" score={result?.warrantyScore ?? '?'} icon={<BadgeCheck className="w-4 h-4 text-primary" />} description="Evaluates product vs. labor coverage duration." />
+            <ScoreRow id="score-row-safety" label="Safety" score={result?.safetyScore ?? '?'} icon={<ShieldCheck className="w-4 h-4 text-primary" />} description="Checks for impact ratings and design pressures." />
+            <ScoreRow id="score-row-scope" label="Scope" score={result?.scopeScore ?? '?'} icon={<FileSearch className="w-4 h-4 text-primary" />} description={result?.missingItems.length ? `Missing: ${result.missingItems.slice(0, 2).join(', ')}` : "Scope appears comprehensive."} />
+            <ScoreRow id="score-row-price" label="Price" score={result?.priceScore ?? '?'} icon={<DollarSign className="w-4 h-4 text-primary" />} description={`Est. price per opening: ${displayData.pricePerOpening}`} />
+            <ScoreRow id="score-row-fineprint" label="Fine Print" score={result?.finePrintScore ?? '?'} icon={<FileWarning className="w-4 h-4 text-primary" />} description={result?.warnings.length ? `Warning: ${result.warnings[0]}` : "No major red flags found."} />
+            <ScoreRow id="score-row-warranty" label="Warranty" score={result?.warrantyScore ?? '?'} icon={<BadgeCheck className="w-4 h-4 text-primary" />} description="Evaluates product vs. labor coverage duration." />
           </div>
 
           {/* Warnings & Missing Items */}

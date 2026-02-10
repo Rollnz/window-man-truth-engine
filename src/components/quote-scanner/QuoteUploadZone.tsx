@@ -11,20 +11,23 @@ interface QuoteUploadZoneProps {
   isAnalyzing: boolean;
   hasResult: boolean;
   imagePreview: string | null;
+  mimeType?: string | null;
   analysisResult?: QuoteAnalysisResult | null;
+  onWarningSelect?: (categoryKey: string) => void;
 }
 
 function getTopWarnings(result: QuoteAnalysisResult): Array<{
   type: EnhancedCalloutType;
   heading: string;
   description: string;
+  categoryKey: string;
 }> {
   const categories = [
-    { score: result.safetyScore, heading: 'Safety Risk', type: 'missing' as const, desc: 'Impact ratings or design pressures missing' },
-    { score: result.scopeScore, heading: 'Scope Gaps', type: 'missing' as const, desc: 'Key line items missing from scope' },
-    { score: result.priceScore, heading: 'Price Concern', type: 'price' as const, desc: 'Pricing outside fair market range' },
-    { score: result.finePrintScore, heading: 'Fine Print Alert', type: 'legal' as const, desc: 'Hidden clauses or risky terms found' },
-    { score: result.warrantyScore, heading: 'Warranty Issue', type: 'warning' as const, desc: 'Inadequate warranty coverage detected' },
+    { score: result.safetyScore, heading: 'Safety Risk', type: 'missing' as const, desc: 'Impact ratings or design pressures missing', key: 'safety' },
+    { score: result.scopeScore, heading: 'Scope Gaps', type: 'missing' as const, desc: 'Key line items missing from scope', key: 'scope' },
+    { score: result.priceScore, heading: 'Price Concern', type: 'price' as const, desc: 'Pricing outside fair market range', key: 'price' },
+    { score: result.finePrintScore, heading: 'Fine Print Alert', type: 'legal' as const, desc: 'Hidden clauses or risky terms found', key: 'fineprint' },
+    { score: result.warrantyScore, heading: 'Warranty Issue', type: 'warning' as const, desc: 'Inadequate warranty coverage detected', key: 'warranty' },
   ];
   return categories
     .sort((a, b) => a.score - b.score)
@@ -33,6 +36,7 @@ function getTopWarnings(result: QuoteAnalysisResult): Array<{
       type: c.score < 50 ? 'missing' as const : c.type,
       heading: c.heading,
       description: `Score: ${c.score}/100 — ${c.desc}`,
+      categoryKey: c.key,
     }));
 }
 
@@ -41,7 +45,9 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
   isAnalyzing,
   hasResult,
   imagePreview,
-  analysisResult
+  mimeType,
+  analysisResult,
+  onWarningSelect,
 }, ref) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,6 +83,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
   }, []);
 
   const showBeforeUploadOverlay = !imagePreview && !isAnalyzing;
+  const isPdf = mimeType === 'application/pdf';
 
   return (
     <div ref={ref} className="space-y-4">
@@ -128,11 +135,23 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
           </div>
         )}
 
-        {/* Preview State */}
-        {imagePreview && !isAnalyzing && (
+        {/* Preview State — Image */}
+        {imagePreview && !isAnalyzing && !isPdf && (
           <div className="absolute inset-0">
-            <img src={`data:image/jpeg;base64,${imagePreview}`} alt="Preview of your uploaded window replacement quote" className="w-full h-full object-contain opacity-70" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+            <img
+              src={`data:${mimeType || 'image/jpeg'};base64,${imagePreview}`}
+              alt="Preview of your uploaded window replacement quote"
+              className="w-full h-full object-contain opacity-50"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+          </div>
+        )}
+
+        {/* Preview State — PDF placeholder */}
+        {imagePreview && !isAnalyzing && isPdf && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/30 backdrop-blur-sm">
+            <FileText className="w-16 h-16 text-muted-foreground/60 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">PDF Document Uploaded</p>
           </div>
         )}
 
@@ -140,20 +159,25 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
         {imagePreview && !isAnalyzing && analysisResult && (() => {
           const warnings = getTopWarnings(analysisResult);
           const positions = [
-            { className: 'top-3 right-0 z-[5]', fromRight: true, delay: '200ms' },
-            { className: 'top-1/2 -translate-y-1/2 left-0 z-[5]', fromRight: false, delay: '400ms' },
-            { className: 'bottom-8 left-0 z-[5]', fromRight: false, delay: '600ms' },
+            { className: 'top-3 right-0 z-30', fromRight: true },
+            { className: 'top-1/2 -translate-y-1/2 left-0 z-30', fromRight: false },
+            { className: 'bottom-8 left-0 z-30', fromRight: false },
           ];
           return warnings.map((w, i) => (
-            <EnhancedFloatingCallout
+            <div
               key={`dynamic-${i}`}
-              type={w.type}
-              heading={w.heading}
-              description={w.description}
-              className={positions[i].className}
-              fromRight={positions[i].fromRight}
-              animationDelay={positions[i].delay}
-            />
+              className="animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-500 fill-mode-forwards opacity-0"
+              style={{ animationDelay: `${i * 300}ms`, animationFillMode: 'forwards' }}
+            >
+              <EnhancedFloatingCallout
+                type={w.type}
+                heading={w.heading}
+                description={w.description}
+                className={positions[i].className}
+                fromRight={positions[i].fromRight}
+                onClick={onWarningSelect ? () => onWarningSelect(w.categoryKey) : undefined}
+              />
+            </div>
           ));
         })()}
 
@@ -196,8 +220,8 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
           </>
         )}
 
-        {/* Upload CTA Overlay — Prominent Card */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 z-10">
+        {/* Upload CTA Overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 z-20">
           {!imagePreview && !isAnalyzing && (
             <div className="bg-card/95 backdrop-blur-sm shadow-xl rounded-2xl p-5 md:p-6 max-w-xs w-full text-center border border-border/50">
               <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-3">
