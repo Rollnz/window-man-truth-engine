@@ -3,12 +3,13 @@
 // Core CRO: Gate results BEFORE analysis to maximize commitment-consistency
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Lock, Mail, Phone, User, FileCheck } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, Lock, Mail, Phone, User, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { trackEvent, trackModalOpen } from '@/lib/gtm';
@@ -40,6 +41,7 @@ export function QuoteUploadGateModal({
 }: QuoteUploadGateModalProps) {
   const firstInputRef = useRef<HTMLInputElement>(null);
   const openTimeRef = useRef<number | null>(null);
+  const [smsConsent, setSmsConsent] = useState(false);
 
   // Form validation with ALL fields required
   const { values, errors, setValue, handleBlur, validateAll, setValues, clearErrors } = useFormValidation({
@@ -88,6 +90,7 @@ export function QuoteUploadGateModal({
           phone: '',
         });
         clearErrors();
+        setSmsConsent(false);
       }, 200);
       return () => clearTimeout(timer);
     }
@@ -123,6 +126,7 @@ export function QuoteUploadGateModal({
 
     trackEvent('quote_upload_gate_submit', {
       has_all_fields: true,
+      sms_consent: smsConsent,
     });
 
     await onSubmit({
@@ -131,38 +135,44 @@ export function QuoteUploadGateModal({
       email: values.email,
       phone: values.phone,
     });
-  }, [values, validateAll, onSubmit]);
+  }, [values, validateAll, onSubmit, smsConsent]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent 
-        className="sm:max-w-md bg-slate-900 border-slate-700/50 text-white p-0 overflow-hidden"
-        onPointerDownOutside={(e) => e.preventDefault()} // Prevent accidental close
+        className="sm:max-w-md bg-[#e5e5e5] border-slate-200 text-slate-900 p-0 overflow-hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
       >
-        {/* Visual Header */}
-        <div className="bg-gradient-to-r from-orange-500/20 to-amber-500/20 px-6 pt-6 pb-4 border-b border-slate-700/50">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-orange-500/30 flex items-center justify-center flex-shrink-0">
-              <FileCheck className="w-7 h-7 text-orange-400" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">
-                Your Quote is Ready to Scan
-              </h2>
-              <p className="text-sm text-slate-400 mt-1">
-                Enter your details to unlock your AI analysis
-              </p>
-            </div>
+        {/* Header */}
+        <div className="px-6 pt-6 pb-2">
+          <div className="flex items-center gap-2 mb-2">
+            <Lock className="w-5 h-5 text-slate-700" />
+            <h2 className="text-xl font-bold text-slate-900">
+              Unlock Your Full Analysis
+            </h2>
+          </div>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Your quote has been analyzed. Enter your details to see the complete breakdown, warnings, and recommendations.
+          </p>
+        </div>
+
+        {/* Trust Banner */}
+        <div className="mx-6 mb-2">
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-green-50 border border-green-200">
+            <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+            <p className="text-sm text-green-800">
+              <span className="font-bold">Your data is secure.</span> And Saved in Your Vault.
+            </p>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
           {/* First Name / Last Name Row */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="gate-firstName" className="text-white font-medium text-sm flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-slate-400" />
+              <Label htmlFor="gate-firstName" className="text-slate-800 font-medium text-sm flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-slate-500" />
                 First Name *
               </Label>
               <Input
@@ -187,7 +197,7 @@ export function QuoteUploadGateModal({
               )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="gate-lastName" className="text-white font-medium text-sm">
+              <Label htmlFor="gate-lastName" className="text-slate-800 font-medium text-sm">
                 Last Name *
               </Label>
               <Input
@@ -214,9 +224,9 @@ export function QuoteUploadGateModal({
 
           {/* Email */}
           <div className="space-y-1.5">
-            <Label htmlFor="gate-email" className="text-white font-medium text-sm flex items-center gap-1.5">
-              <Mail className="w-3.5 h-3.5 text-slate-400" />
-              Email Address *
+            <Label htmlFor="gate-email" className="text-slate-800 font-medium text-sm flex items-center gap-1.5">
+              <Mail className="w-3.5 h-3.5 text-slate-500" />
+              Email *
             </Label>
             <Input
               id="gate-email"
@@ -242,9 +252,9 @@ export function QuoteUploadGateModal({
 
           {/* Phone */}
           <div className="space-y-1.5">
-            <Label htmlFor="gate-phone" className="text-white font-medium text-sm flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5 text-slate-400" />
-              Phone Number *
+            <Label htmlFor="gate-phone" className="text-slate-800 font-medium text-sm flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-slate-500" />
+              Phone *
             </Label>
             <Input
               id="gate-phone"
@@ -269,17 +279,24 @@ export function QuoteUploadGateModal({
             )}
           </div>
 
-          {/* Trust copy */}
-          <p className="text-xs text-slate-500 leading-relaxed">
-            We'll analyze your quote and send results to your email. 
-            Your info is never shared or sold.
-          </p>
+          {/* SMS Consent Checkbox */}
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="sms-consent"
+              checked={smsConsent}
+              onCheckedChange={(checked) => setSmsConsent(checked === true)}
+              className="mt-0.5"
+            />
+            <label htmlFor="sms-consent" className="text-xs text-slate-600 leading-relaxed cursor-pointer">
+              I agree to receive SMS updates about my quote analysis. Message &amp; data rates may apply. Reply STOP to unsubscribe.
+            </label>
+          </div>
 
           {/* CTA Button */}
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-base"
+            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base"
           >
             {isLoading ? (
               <>
@@ -289,14 +306,14 @@ export function QuoteUploadGateModal({
             ) : (
               <>
                 <Lock className="w-4 h-4 mr-2" />
-                Unlock My AI Report
+                Unlock My Score Now
               </>
             )}
           </Button>
 
-          {/* Micro-trust line */}
-          <p className="text-center text-xs text-slate-600">
-            No spam. No pressure. Just your honest analysis.
+          {/* Footer */}
+          <p className="text-center text-xs text-slate-500">
+            By submitting, you agree to our Terms of Service and Privacy Policy. We'll send your analysis to this email.
           </p>
         </form>
       </DialogContent>
