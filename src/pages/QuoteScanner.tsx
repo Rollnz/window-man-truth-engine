@@ -51,6 +51,7 @@ export default function QuoteScanner() {
     phoneScript,
     qaAnswer,
     imageBase64,
+    mimeType,
     analyzeQuote,
     generateEmailDraft,
     generatePhoneScript,
@@ -140,7 +141,12 @@ export default function QuoteScanner() {
                     isAnalyzing={isAnalyzing}
                     hasResult={!!analysisResult}
                     imagePreview={imageBase64}
+                    mimeType={mimeType}
                     analysisResult={analysisResult}
+                    onWarningSelect={(key) => {
+                      const el = document.getElementById(`score-row-${key}`);
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
                   />
                 </div>
 

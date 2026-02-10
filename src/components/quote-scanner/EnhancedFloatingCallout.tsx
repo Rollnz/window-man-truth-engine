@@ -16,6 +16,8 @@ interface EnhancedFloatingCalloutProps {
   hideMobile?: boolean;
   /** Staggered animation delay */
   animationDelay?: string;
+  /** Click handler for interactive bubbles */
+  onClick?: () => void;
 }
 
 const calloutConfig: Record<EnhancedCalloutType, { 
@@ -68,12 +70,17 @@ export function EnhancedFloatingCallout({
   fromRight = false,
   hideMobile = false,
   animationDelay,
+  onClick,
 }: EnhancedFloatingCalloutProps) {
   const config = calloutConfig[type];
   const Icon = config.icon;
 
   return (
     <div
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
       className={cn(
         "absolute px-3 py-2 shadow-lg",
         "flex items-start gap-2 max-w-[220px] md:max-w-[260px]",
@@ -84,6 +91,7 @@ export function EnhancedFloatingCallout({
           ? "rounded-l-lg slide-in-from-right-2" 
           : "rounded-r-lg slide-in-from-left-2",
         hideMobile && "hidden md:flex",
+        onClick && "cursor-pointer hover:scale-105 transition-transform",
         className
       )}
       style={animationDelay ? { animationDelay, animationFillMode: 'forwards' } : undefined}
