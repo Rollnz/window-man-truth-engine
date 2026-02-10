@@ -3,13 +3,17 @@ import { Button } from '@/components/ui/button';
 import { Upload, Shield, Check, ArrowRight } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 import { useSectionTracking } from '@/hooks/useSectionTracking';
-
 interface HeroSectionProps {
   onOpenLeadModal?: (ctaSource: string) => void;
   onOpenPreQuoteModal?: (ctaSource: string) => void;
 }
-
-function AnimatedScore({ targetScore, isVisible }: { targetScore: number; isVisible: boolean }) {
+function AnimatedScore({
+  targetScore,
+  isVisible
+}: {
+  targetScore: number;
+  isVisible: boolean;
+}) {
   const [score, setScore] = useState(0);
   useEffect(() => {
     if (!isVisible) return;
@@ -28,60 +32,71 @@ function AnimatedScore({ targetScore, isVisible }: { targetScore: number; isVisi
   }, [targetScore, isVisible]);
   return <span>{score}</span>;
 }
-
-const PreviewBars = ({ isVisible }: { isVisible: boolean }) => {
-  const pillars = [
-    { name: 'Safety & Code', score: 78, color: 'bg-primary' },
-    { name: 'Install Clarity', score: 42, color: 'bg-[hsl(var(--secondary))]' },
-    { name: 'Price Fairness', score: 39, color: 'bg-[hsl(var(--secondary))]' },
-    { name: 'Fine Print', score: 55, color: 'bg-amber-500' },
-    { name: 'Warranty', score: 71, color: 'bg-primary' },
-  ];
-
-  return (
-    <div className="space-y-2">
-      {pillars.map((pillar, index) => (
-        <div key={pillar.name} className="flex items-center gap-2">
+const PreviewBars = ({
+  isVisible
+}: {
+  isVisible: boolean;
+}) => {
+  const pillars = [{
+    name: 'Safety & Code',
+    score: 78,
+    color: 'bg-primary'
+  }, {
+    name: 'Install Clarity',
+    score: 42,
+    color: 'bg-[hsl(var(--secondary))]'
+  }, {
+    name: 'Price Fairness',
+    score: 39,
+    color: 'bg-[hsl(var(--secondary))]'
+  }, {
+    name: 'Fine Print',
+    score: 55,
+    color: 'bg-amber-500'
+  }, {
+    name: 'Warranty',
+    score: 71,
+    color: 'bg-primary'
+  }];
+  return <div className="space-y-2">
+      {pillars.map((pillar, index) => <div key={pillar.name} className="flex items-center gap-2">
           <span className="text-[10px] text-muted-foreground w-20 truncate">{pillar.name}</span>
           <div className="flex-1 h-2 bg-muted/50 rounded-full overflow-hidden">
-            <div 
-              className={`h-full ${pillar.color} rounded-full transition-all duration-700 ease-out`}
-              style={{ 
-                width: isVisible ? `${pillar.score}%` : '0%',
-                transitionDelay: isVisible ? `${index * 100}ms` : '0ms',
-              }}
-            />
+            <div className={`h-full ${pillar.color} rounded-full transition-all duration-700 ease-out`} style={{
+          width: isVisible ? `${pillar.score}%` : '0%',
+          transitionDelay: isVisible ? `${index * 100}ms` : '0ms'
+        }} />
           </div>
           <span className="text-[10px] font-medium text-foreground w-6">
             <AnimatedScore targetScore={pillar.score} isVisible={isVisible} />
           </span>
-        </div>
-      ))}
-    </div>
-  );
+        </div>)}
+    </div>;
 };
-
-export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectionProps) {
+export function HeroSection({
+  onOpenLeadModal,
+  onOpenPreQuoteModal
+}: HeroSectionProps) {
   const sectionRef = useSectionTracking('hero');
   const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => { setIsVisible(true); }, []);
-
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
   const handleUploadClick = () => {
-    trackEvent('sample_report_upload_click', { location: 'hero_section' });
+    trackEvent('sample_report_upload_click', {
+      location: 'hero_section'
+    });
     onOpenPreQuoteModal?.('hero_upload');
   };
-
   const handleNoQuoteClick = () => {
-    trackEvent('sample_report_no_quote_click', { location: 'hero_section' });
+    trackEvent('sample_report_no_quote_click', {
+      location: 'hero_section'
+    });
     onOpenPreQuoteModal?.('hero_no_quote');
   };
-
   const circumference = 2 * Math.PI * 56;
-  const offset = circumference - (62 / 100) * circumference;
-
-  return (
-    <section ref={sectionRef} className="relative py-16 md:py-24 overflow-hidden">
+  const offset = circumference - 62 / 100 * circumference;
+  return <section ref={sectionRef} className="relative py-16 md:py-24 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background" />
       <div className="absolute top-1/4 right-0 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.08)_0%,transparent_70%)]" />
 
@@ -104,12 +119,10 @@ export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectio
             </p>
 
             <div className="flex flex-wrap gap-3">
-              {['No charge', 'No obligation', 'You stay in control'].map((chip) => (
-                <span key={chip} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-border/50 text-sm text-muted-foreground">
+              {['No charge', 'No obligation', 'You stay in control'].map(chip => <span key={chip} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-border/50 text-sm text-muted-foreground">
                   <Check className="w-3.5 h-3.5 text-primary" />
                   {chip}
-                </span>
-              ))}
+                </span>)}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -125,7 +138,7 @@ export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectio
             </div>
 
             <p className="text-xs text-muted-foreground pt-2">
-              PDF or photo. Takes about 60 seconds.
+              PNG, JPEG. PDF Works Best for Multi-Page Uploads                
             </p>
           </div>
 
@@ -145,16 +158,7 @@ export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectio
                   <div className="relative w-32 h-32">
                     <svg className="w-full h-full transform -rotate-90">
                       <circle cx="64" cy="64" r="56" stroke="hsl(var(--muted))" strokeWidth="12" fill="none" />
-                      <circle
-                        cx="64" cy="64" r="56"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth="12"
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={isVisible ? offset : circumference}
-                        className="transition-all duration-[1500ms] ease-out"
-                      />
+                      <circle cx="64" cy="64" r="56" stroke="hsl(var(--primary))" strokeWidth="12" fill="none" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={isVisible ? offset : circumference} className="transition-all duration-[1500ms] ease-out" />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <span className="text-3xl font-bold text-foreground">
@@ -179,6 +183,5 @@ export function HeroSection({ onOpenLeadModal, onOpenPreQuoteModal }: HeroSectio
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 }
