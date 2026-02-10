@@ -102,7 +102,7 @@ export function EnhancedFloatingCallout({
           {heading}
         </span>
         {description && (
-          <span className={cn("text-[9px] md:text-[10px] leading-snug hidden md:block", config.textColor)}>
+          <span className={cn("text-[9px] md:text-[10px] leading-snug", config.textColor)}>
             {description}
           </span>
         )}

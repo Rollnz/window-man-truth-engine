@@ -9,7 +9,7 @@ export function SampleQuoteDocument({ className }: SampleQuoteDocumentProps) {
     <div 
       className={cn(
         "absolute inset-3 md:inset-4 rounded-lg overflow-hidden",
-        "bg-card/80 border border-dashed border-border/60",
+        "bg-transparent",
         "font-mono text-muted-foreground/50",
         "p-3 md:p-5 space-y-2.5",
         className
@@ -32,6 +32,7 @@ export function SampleQuoteDocument({ className }: SampleQuoteDocumentProps) {
         <p className="text-[9px] md:text-[10px] uppercase tracking-wider font-semibold">Project Summary</p>
         <div className="flex gap-4 md:gap-8 text-[8px] md:text-[9px]">
           <span>Customer: John Smith</span>
+          <span>Date: May 28, 2025</span>
           <span>Windows: 5</span>
         </div>
       </div>
