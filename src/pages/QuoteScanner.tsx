@@ -5,6 +5,7 @@ import { QuoteScannerHero } from '@/components/quote-scanner/QuoteScannerHero';
 import { QuoteUploadZone } from '@/components/quote-scanner/QuoteUploadZone';
 import { QuoteAnalysisResults } from '@/components/quote-scanner/QuoteAnalysisResults';
 import { QuoteQA } from '@/components/quote-scanner/QuoteQA';
+import { AnalysisLoadingSequence } from '@/components/quote-scanner/AnalysisLoadingSequence';
 import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
 
 import { useQuoteScanner } from '@/hooks/useQuoteScanner';
@@ -139,6 +140,7 @@ export default function QuoteScanner() {
                     isAnalyzing={isAnalyzing}
                     hasResult={!!analysisResult}
                     imagePreview={imageBase64}
+                    analysisResult={analysisResult}
                   />
                 </div>
 
@@ -154,13 +156,21 @@ export default function QuoteScanner() {
                     />
                   )}
 
-                  <QuoteAnalysisResults 
-                    result={analysisResult} 
-                    isLocked={!isUnlocked}
-                    hasImage={hasImage}
-                  />
+                  {/* Loading theater during analysis */}
+                  {isAnalyzing && (
+                    <AnalysisLoadingSequence isActive={isAnalyzing} />
+                  )}
 
-                  {isUnlocked && analysisResult && (
+                  {/* Results after analysis */}
+                  {!isAnalyzing && (
+                    <QuoteAnalysisResults 
+                      result={analysisResult} 
+                      isLocked={!isUnlocked}
+                      hasImage={hasImage}
+                    />
+                  )}
+
+                  {!isAnalyzing && isUnlocked && analysisResult && (
                     <QuoteQA
                       answer={qaAnswer}
                       isAsking={isAskingQuestion}
