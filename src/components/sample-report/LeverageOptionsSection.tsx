@@ -29,8 +29,7 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
 
   const handleOptionBClick = () => {
     trackEvent('sample_report_upload_click', { location: 'leverage_options', option: 'improve_deal' });
-    // Pre-check partner consent in the modal
-    onOpenLeadModal?.('leverage_path_b', true);
+    onOpenPreQuoteModal?.('option_b_request');
   };
 
   const handleNoQuoteClick = () => {
