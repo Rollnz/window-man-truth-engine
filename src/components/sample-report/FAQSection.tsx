@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { ChevronDown, HelpCircle } from 'lucide-react';
-import { ROUTES } from '@/config/navigation';
 import { useSectionTracking } from '@/hooks/useSectionTracking';
 
 interface FAQ { question: string; answer: string; }
