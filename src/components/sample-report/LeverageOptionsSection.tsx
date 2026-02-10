@@ -65,10 +65,55 @@ export function LeverageOptionsSection({ onOpenLeadModal, onOpenPreQuoteModal }:
             <div className="p-4 rounded-lg bg-muted/30 border border-border/50 mb-6">
               <label className="flex items-start gap-3 cursor-pointer"><Checkbox checked={partnerConsent} onCheckedChange={(checked) => setPartnerConsent(checked === true)} className="mt-1" /><div><span className="text-sm font-medium text-foreground">Yes — share my project specs with vetted partners</span><p className="text-xs text-muted-foreground mt-1">We never sell your contact info. If a partner needs to reach you, we'll ask first.</p></div></label>
             </div>
-            <Button variant={partnerConsent ? "cta" : "outline"} size="lg" className="w-full group" disabled={!partnerConsent} onClick={handleOptionBClick}>
-              Request Better Quote Options
-              <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-            </Button>
+            {/* Live Wire + Charge-Up animated button */}
+            <style>{`
+              @keyframes lob-wireRotate { to { --lob-angle: 360deg; } }
+              @keyframes lob-beckon { 0%,100% { transform: translateX(0); } 40% { transform: translateX(3px); } 60% { transform: translateX(3px); } }
+              @keyframes lob-chargeUp { 0% { width: 0%; } 100% { width: 100%; } }
+              @property --lob-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+              .lob-wire-wrap {
+                position: relative;
+                border-radius: 0.5rem;
+                padding: 2px;
+                background: conic-gradient(from var(--lob-angle), transparent 0%, transparent 30%, #D97706 50%, transparent 70%, transparent 100%);
+                animation: lob-wireRotate 3s linear infinite;
+              }
+              .lob-wire-wrap.lob-unlocked { animation: none; background: hsl(var(--primary)); }
+              .lob-beckon { animation: lob-beckon 2s ease-in-out infinite; }
+              .lob-unlocked .lob-beckon { animation: none; }
+              .lob-charge-bar {
+                position: absolute; bottom: 0; left: 0; height: 2px; border-radius: 0 0 0.375rem 0.375rem;
+                background: linear-gradient(90deg, transparent, #D97706, #f59e42);
+                animation: lob-chargeUp 4s ease-in-out infinite;
+              }
+              .lob-unlocked .lob-charge-bar { width: 100% !important; animation: none; box-shadow: 0 0 8px rgba(217,119,6,0.6); }
+              .lob-spark {
+                position: absolute; top: -1px; right: 0; width: 4px; height: 4px; border-radius: 50%;
+                background: #f59e42; box-shadow: 0 0 6px #D97706;
+              }
+              .lob-unlocked .lob-spark { display: none; }
+              @media (prefers-reduced-motion: reduce) {
+                .lob-wire-wrap, .lob-beckon, .lob-charge-bar { animation: none !important; }
+                .lob-spark { display: none; }
+              }
+            `}</style>
+            <div className={`lob-wire-wrap transition-all duration-300 ${partnerConsent ? 'lob-unlocked' : ''}`}>
+              <Button
+                variant={partnerConsent ? "cta" : "outline"}
+                size="lg"
+                className="w-full relative overflow-hidden rounded-md bg-card"
+                disabled={!partnerConsent}
+                onClick={handleOptionBClick}
+              >
+                Request Better Quote Options
+                <ArrowRight className={`w-4 h-4 ml-2 transition-transform group-hover:translate-x-1 ${!partnerConsent ? 'lob-beckon' : ''}`} />
+                {!partnerConsent && (
+                  <div className="lob-charge-bar">
+                    <div className="lob-spark" />
+                  </div>
+                )}
+              </Button>
+            </div>
             {!partnerConsent && <p className="text-xs text-muted-foreground text-center mt-3">Check the box above to enable this option</p>}
           </div>
         </div>
