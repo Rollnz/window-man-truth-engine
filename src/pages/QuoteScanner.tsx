@@ -140,6 +140,7 @@ export default function QuoteScanner() {
                     isAnalyzing={isAnalyzing}
                     hasResult={!!analysisResult}
                     imagePreview={imageBase64}
+                    analysisResult={analysisResult}
                   />
                 </div>
 

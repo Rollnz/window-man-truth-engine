@@ -3,20 +3,45 @@ import { Upload, FileImage, Loader2, RefreshCw, FileText, ScanSearch } from 'luc
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SampleQuoteDocument } from './SampleQuoteDocument';
-import { EnhancedFloatingCallout } from './EnhancedFloatingCallout';
+import { EnhancedFloatingCallout, type EnhancedCalloutType } from './EnhancedFloatingCallout';
+import type { QuoteAnalysisResult } from '@/hooks/useQuoteScanner';
 
 interface QuoteUploadZoneProps {
   onFileSelect: (file: File) => void;
   isAnalyzing: boolean;
   hasResult: boolean;
   imagePreview: string | null;
+  analysisResult?: QuoteAnalysisResult | null;
+}
+
+function getTopWarnings(result: QuoteAnalysisResult): Array<{
+  type: EnhancedCalloutType;
+  heading: string;
+  description: string;
+}> {
+  const categories = [
+    { score: result.safetyScore, heading: 'Safety Risk', type: 'missing' as const, desc: 'Impact ratings or design pressures missing' },
+    { score: result.scopeScore, heading: 'Scope Gaps', type: 'missing' as const, desc: 'Key line items missing from scope' },
+    { score: result.priceScore, heading: 'Price Concern', type: 'price' as const, desc: 'Pricing outside fair market range' },
+    { score: result.finePrintScore, heading: 'Fine Print Alert', type: 'legal' as const, desc: 'Hidden clauses or risky terms found' },
+    { score: result.warrantyScore, heading: 'Warranty Issue', type: 'warning' as const, desc: 'Inadequate warranty coverage detected' },
+  ];
+  return categories
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 3)
+    .map(c => ({
+      type: c.score < 50 ? 'missing' as const : c.type,
+      heading: c.heading,
+      description: `Score: ${c.score}/100 — ${c.desc}`,
+    }));
 }
 
 export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(function QuoteUploadZone({
   onFileSelect,
   isAnalyzing,
   hasResult,
-  imagePreview
+  imagePreview,
+  analysisResult
 }, ref) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +135,27 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
           </div>
         )}
+
+        {/* Dynamic Warning Bubbles — post-analysis */}
+        {imagePreview && !isAnalyzing && analysisResult && (() => {
+          const warnings = getTopWarnings(analysisResult);
+          const positions = [
+            { className: 'top-3 right-0 z-[5]', fromRight: true, delay: '200ms' },
+            { className: 'top-1/2 -translate-y-1/2 left-0 z-[5]', fromRight: false, delay: '400ms' },
+            { className: 'bottom-8 left-0 z-[5]', fromRight: false, delay: '600ms' },
+          ];
+          return warnings.map((w, i) => (
+            <EnhancedFloatingCallout
+              key={`dynamic-${i}`}
+              type={w.type}
+              heading={w.heading}
+              description={w.description}
+              className={positions[i].className}
+              fromRight={positions[i].fromRight}
+              animationDelay={positions[i].delay}
+            />
+          ));
+        })()}
 
         {/* Before Upload Overlay - Sample Quote + Floating Callouts */}
         {showBeforeUploadOverlay && (
