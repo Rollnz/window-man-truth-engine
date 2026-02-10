@@ -18,6 +18,7 @@ export const ROUTES = {
   COST_CALCULATOR: '/cost-calculator',
   BEAT_YOUR_QUOTE: '/beat-your-quote',
   QUOTE_SCANNER: '/ai-scanner',
+  SAMPLE_REPORT: '/sample-report',
   CLAIM_SURVIVAL: '/claim-survival',
   CONSULTATION: '/consultation',
 
