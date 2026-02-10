@@ -1,74 +1,116 @@
 
 
-# Fix Warning Bubbles, Image Preview & Add Click-to-Scroll
+# Bulletproof Video Section for AI Scanner
 
-## Problems Identified
+## Overview
 
-1. **Image not showing**: The `img` tag hardcodes `data:image/jpeg;base64,...` but the uploaded file's mime type could be `image/png`, `image/webp`, or `application/pdf`. PDFs cannot render as `<img>` tags at all -- this is why the Before card is blank after upload.
-2. **Warning bubbles invisible**: The bubbles render at `z-[5]` but the "Analyze Another Quote" CTA overlay sits at `z-10`, covering them entirely.
-3. **No click-to-scroll**: Bubbles are not interactive -- no `onClick`, no `cursor-pointer`, no scroll targets on the score rows.
-4. **No entrance animation**: Bubbles lack a dramatic staggered reveal.
+Enhance the previously approved `ScannerVideoSection` plan with 4 production-grade optimizations: poster image, WebM source, explicit dimensions, and network-aware autoplay.
 
-## File Changes
+## New File: `src/components/quote-scanner/ScannerVideoSection.tsx`
 
-### 1. `src/components/quote-scanner/QuoteUploadZone.tsx`
+### Core behavior (unchanged from prior plan)
+- Native `<video>` tag, no third-party JS
+- `preload="none"` -- zero bytes downloaded on page load
+- IntersectionObserver triggers loading at 25% visibility
+- Muted, looping, inline autoplay
+- Full-width responsive layout with `aspect-video`
 
-**Fix image rendering (line 134):**
-- Accept `mimeType` as a new prop alongside `imagePreview`
-- Change the `src` from hardcoded `data:image/jpeg;base64,...` to `data:${mimeType || 'image/jpeg'};base64,...`
-- For PDFs (`application/pdf`), render a placeholder card instead of a broken `<img>` tag (a FileText icon + "PDF Document Uploaded" label with a blurred background)
+### Enhancement 1: Poster attribute
+- Add a `poster` prop pointing to a WebP still frame hosted on Bunny CDN
+- URL: `https://itswindowman-videos.b-cdn.net/scanner-poster.webp`
+- Prevents the "black box flash" while video loads its first frame
+- You will need to upload a screenshot/first-frame image to Bunny at that path (or change the URL to match your actual poster file)
 
-**Fix z-index layering (lines 142-146):**
-- Change warning bubble z-index from `z-[5]` to `z-30` so they sit above both the image and the CTA overlay
-- Move the "Analyze Another Quote" CTA to `z-20` (below bubbles but above image)
+### Enhancement 2: WebM + MP4 dual source
+- Use `<source>` children instead of a single `src` attribute
+- WebM first (30-50% smaller on Chrome/Edge/Firefox), MP4 fallback for Safari
 
-**Add `onWarningSelect` callback prop:**
-- New prop: `onWarningSelect?: (categoryKey: string) => void`
-- Add a `categoryKey` field to `getTopWarnings` output (values: `'safety'`, `'scope'`, `'price'`, `'finePrint'`, `'warranty'`)
-- Wrap each `EnhancedFloatingCallout` in a clickable `<button>` with `cursor-pointer` and `hover:scale-105 transition-transform`
-- On click, call `onWarningSelect(categoryKey)`
+```text
+<video poster="..." ...>
+  <source src="https://itswindowman-videos.b-cdn.net/Windowmanscanner.webm" type="video/webm" />
+  <source src="https://itswindowman-videos.b-cdn.net/Windowmanscanner.mp4" type="video/mp4" />
+</video>
+```
 
-**Add dramatic reveal animation:**
-- Use Tailwind `animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-500 ease-out` classes
-- Staggered delays: 0ms, 300ms, 600ms
-- Start with `opacity-0` and use `fill-mode-forwards` so bubbles stay hidden until their delay fires
+- You will need to create/upload the `.webm` version to Bunny CDN. If unavailable at launch, the component gracefully falls back to MP4 only.
 
-### 2. `src/components/quote-scanner/EnhancedFloatingCallout.tsx`
+### Enhancement 3: Explicit width/height
+- Add `width={1920}` and `height={1080}` to the `<video>` element
+- Gives the browser an intrinsic aspect ratio before CSS loads, eliminating CLS
 
-**Add `onClick` prop:**
-- New optional prop: `onClick?: () => void`
-- When provided, add `cursor-pointer hover:scale-105 transition-transform` to the outer div
-- Attach the `onClick` handler to the outer div
+### Enhancement 4: Network-aware autoplay
+- Inside the IntersectionObserver callback, check `navigator.connection?.saveData`
+- If Data Saver is active: skip autoplay, show poster image with a centered play button overlay
+- On play button click: call `video.play()` manually
+- Also respects `prefers-reduced-motion` (existing plan item)
 
-### 3. `src/components/quote-scanner/QuoteAnalysisResults.tsx`
+### Component structure
 
-**Add scroll-target IDs to ScoreRow:**
-- Add an `id` prop to `ScoreRow`
-- Each ScoreRow gets a unique ID: `score-row-safety`, `score-row-scope`, `score-row-price`, `score-row-fineprint`, `score-row-warranty`
+```text
+ScannerVideoSection
+  |-- useRef<HTMLVideoElement> for video control
+  |-- useRef<HTMLDivElement> for observer target
+  |-- useState<boolean> showPlayButton (true when data-saver or reduced-motion)
+  |-- useEffect: IntersectionObserver
+  |     |-- threshold: 0.25
+  |     |-- on intersect:
+  |           |-- check saveData -> if true, show play button, return
+  |           |-- check prefers-reduced-motion -> if true, show play button, return
+  |           |-- set video.preload = "auto", call video.play()
+  |           |-- unobserve
+  |-- JSX:
+       <section class="py-12 md:py-16">
+         <div class="container px-4 text-center mb-8">
+           <h2>"See the AI Scanner in Action"</h2>
+           <p>subtext</p>
+         </div>
+         <div ref={wrapperRef} class="w-full px-4 md:px-8 lg:px-16">
+           <div class="relative rounded-xl overflow-hidden">
+             <video
+               ref={videoRef}
+               poster="...scanner-poster.webp"
+               width={1920}
+               height={1080}
+               muted loop playsInline
+               preload="none"
+               class="w-full aspect-video object-cover"
+               aria-label="AI Quote Scanner demonstration video"
+             >
+               <source src="...Windowmanscanner.webm" type="video/webm" />
+               <source src="...Windowmanscanner.mp4" type="video/mp4" />
+             </video>
+             {showPlayButton && <PlayButtonOverlay onClick={handlePlay} />}
+           </div>
+         </div>
+       </section>
+```
 
-### 4. `src/pages/QuoteScanner.tsx`
+The play button overlay is a simple centered circle with a Play icon from lucide-react, semi-transparent background, `cursor-pointer`, and `hover:scale-110`.
 
-**Pass new props and handle scroll:**
-- Pass `mimeType` (from `useQuoteScanner`) to `QuoteUploadZone`
-- Add `onWarningSelect` handler that finds the element by ID (`#score-row-${key}`) and calls `scrollIntoView({ behavior: 'smooth', block: 'center' })`
+## Changes to `src/pages/QuoteScanner.tsx`
 
-### 5. `src/hooks/useQuoteScanner.ts`
+- Import `ScannerVideoSection`
+- Place it between line 193 (end of upload/results section) and line 195 (Vault Pivot section)
 
-No changes needed -- `mimeType` is already exposed in the return value.
+```text
+  </section>  {/* upload/results grid */}
 
-## Summary of Visual Behavior
+  <ScannerVideoSection />
 
-| State | Before Card |
-|-------|-------------|
-| No upload | Sample document + 4 static callouts |
-| Analyzing | Spinner overlay |
-| Post-analysis (image) | Uploaded image visible (correct mime type) + 3 dynamic warning bubbles with dramatic stagger entrance + "Select Different File" below |
-| Post-analysis (PDF) | PDF placeholder card + 3 dynamic warning bubbles |
+  {/* Vault Pivot Conversion Engine */}
+  <section className="py-8 md:py-12">
+    <SoftInterceptionAnchor />
+```
+
+## Pre-requisites (action items for you)
+
+1. **Poster image**: Upload a WebP screenshot of the video's first frame to Bunny CDN at `https://itswindowman-videos.b-cdn.net/scanner-poster.webp` (or provide the actual URL so we can update the component)
+2. **WebM version**: Convert and upload the video as WebM to Bunny CDN at `https://itswindowman-videos.b-cdn.net/Windowmanscanner.webm`. If not available yet, the component will fall back to MP4 only -- no errors.
 
 ## What Does NOT Change
 
-- Props interface shape (only additive new optional props)
-- Form validation, API calls, tracking
-- Pre-upload static callouts
-- The "After" gradecard display logic
+- No existing components modified (except one import + JSX line in QuoteScanner.tsx)
+- No new npm dependencies
+- Zero impact on initial page load (preload="none" + lazy observer)
+- No tracking events added (can be layered on later)
 
