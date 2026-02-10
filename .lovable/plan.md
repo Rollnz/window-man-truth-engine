@@ -1,33 +1,30 @@
 
 
-# Multi-Color Border Beam Upgrade
+# Fix: Consistent Orange Border in Both Themes
 
-## Summary
+## What the button will look like
 
-Replace the current single-color orange border beam with a multi-color beam that shifts through orange, amber, and gold as it travels around the button perimeter.
+**Light mode**: Muted gray background, muted gray text, solid 2px orange (#D97706) border. No animation, no glow.
 
-## File Changes
+**Dark mode**: Identical -- muted background, muted text, solid 2px orange (#D97706) border. No animation, no glow.
+
+Right now the `variant="outline"` base styles add a `dark:border-muted-foreground/40` override that can wash out the orange in dark mode. The fix is to add `dark:border-[#D97706]` to force the same orange in dark mode.
+
+## File Change
 
 ### `src/components/sample-report/LeverageOptionsSection.tsx`
 
-**Single change**: Update the `conic-gradient` in the spinning overlay div (around line 82) to include a wider color spectrum:
+Update the disabled Button className (line ~79) from:
 
-Current:
-```css
-conic-gradient(from 0deg, transparent 0%, transparent 70%, #D97706 80%, #F59E0B 85%, #D97706 90%, transparent 100%)
+```
+className="w-full bg-muted text-muted-foreground border-2 border-[#D97706] cursor-not-allowed"
 ```
 
-New:
-```css
-conic-gradient(from 0deg, transparent 0%, transparent 65%, #D97706 72%, #F59E0B 78%, #EAB308 82%, #F59E0B 86%, #D97706 92%, transparent 100%)
+to:
+
+```
+className="w-full bg-muted text-muted-foreground border-2 border-[#D97706] dark:border-[#D97706] cursor-not-allowed"
 ```
 
-This creates a beam that fades from deep orange to bright amber to gold and back, giving a richer "living energy" feel while staying within the warm color family established by the theme.
-
-## No Other Changes
-
-- No new files, dependencies, or database changes
-- Keyframe animation name and speed unchanged
-- Button styling, contrast, and accessibility unchanged
-- All other components untouched
+Single class addition. Nothing else changes.
 
