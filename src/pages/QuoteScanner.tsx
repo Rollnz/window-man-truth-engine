@@ -20,7 +20,6 @@ import { ToolFAQSection } from '@/components/seo';
 import { getToolFAQs } from '@/data/toolFAQs';
 // New supporting sections
 import { ScannerSocialProof } from '@/components/quote-scanner/ScannerSocialProof';
-import { AIComparisonSection } from '@/components/quote-scanner/AIComparisonSection';
 import { ScannerFAQSection } from '@/components/quote-scanner/ScannerFAQSection';
 import { NoQuotePathway } from '@/components/quote-scanner/NoQuotePathway';
 import { WindowCalculatorTeaser } from '@/components/quote-scanner/WindowCalculatorTeaser';
@@ -268,7 +267,6 @@ export default function QuoteScanner() {
 
         {/* Supporting Content Sections */}
         <ScannerSocialProof />
-        <AIComparisonSection uploadRef={uploadRef} />
         <TestimonialCards variant="default" />
         <QuoteSafetyChecklist uploadRef={uploadRef} />
         <WindowCalculatorTeaser />
