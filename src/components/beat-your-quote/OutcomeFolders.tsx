@@ -76,7 +76,10 @@ export function OutcomeFolders({
     trackEvent('byq_cta_clicked', {
       location: 'outcome_folders'
     });
-    trackModalOpen({ modalName: 'beat_your_quote_lead_capture', sourceTool: 'beat-your-quote' });
+    trackModalOpen({
+      modalName: 'beat_your_quote_lead_capture',
+      sourceTool: 'beat-your-quote'
+    });
     setIsModalOpen(true);
     setModalOpenTime(Date.now());
   }, []);
@@ -183,22 +186,17 @@ export function OutcomeFolders({
         trackFormSubmit({
           formName: 'beat_your_quote_lead_capture',
           sourceTool: 'beat-your-quote',
-          success: true,
+          success: true
         });
-        await trackLeadCapture(
-          {
-            leadId: data.leadId,
-            sourceTool: 'beat_your_quote',
-            conversionAction: 'form_submit',
-          },
-          values.email.trim(),
-          phone || undefined,
-          {
-            hasName: !!name.trim(),
-            hasPhone: !!phone.trim(),
-            hasProjectDetails: !!(projectCost || windowCount),
-          }
-        );
+        await trackLeadCapture({
+          leadId: data.leadId,
+          sourceTool: 'beat_your_quote',
+          conversionAction: 'form_submit'
+        }, values.email.trim(), phone || undefined, {
+          hasName: !!name.trim(),
+          hasPhone: !!phone.trim(),
+          hasProjectDetails: !!(projectCost || windowCount)
+        });
         toast({
           title: 'Mission Started!',
           description: 'Redirecting to Quote Scanner...'
@@ -289,7 +287,7 @@ export function OutcomeFolders({
               <CheckCircle className="w-5 h-5 text-green-400" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-green-400 uppercase tracking-wide font-mono text-3xl">
+              <h4 className="font-bold text-green-400 uppercase tracking-wide font-mono text-2xl">
                 WE BEAT IT
               </h4>
               <p className="text-sm text-primary-foreground">We beat your quote</p>
