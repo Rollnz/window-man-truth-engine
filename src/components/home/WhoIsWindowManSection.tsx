@@ -160,7 +160,7 @@ export function WhoIsWindowManSection() {
                     <Zap className="w-5 h-5 text-[hsl(var(--secondary))]" />
                   </div>
                   <h4 className="text-lg font-semibold text-foreground">
-                    The Power Move <span className="text-sm font-normal text-muted-foreground">(Optional)</span>
+                    The Power Move <span className="text-sm font-normal text-muted-foreground">(Recommended)</span>
                   </h4>
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
