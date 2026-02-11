@@ -670,7 +670,7 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
         <div style={{ fontSize: isMobile ? 9 : 11, fontWeight: 600, color: C.red, letterSpacing: "0.05em" }}>
           ANOMALY DETECTION
         </div>
-        <div style={{ fontSize: isMobile ? 7 : 8, color: C.whiteDim, marginTop: 1, lineHeight: 1.3 }}>
+        <div style={{ fontSize: isMobile ? 14 : 8, color: C.whiteDim, marginTop: 1, lineHeight: 1.3 }}>
           Flags &quot;Red Flags&quot; like
           <br />
           bundled labor costs
