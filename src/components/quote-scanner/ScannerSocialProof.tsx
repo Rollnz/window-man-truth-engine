@@ -35,7 +35,7 @@ export function ScannerSocialProof() {
       <div className="container px-4">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-10">
-          {stats.map(stat => <div key={stat.label} className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border/50 shadow-2xl">
+          {stats.map(stat => <div key={stat.label} className="p-4 rounded-xl bg-card border-border/50 shadow-2xl border-2 flex items-center justify-center gap-[75px]">
               <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", stat.bgColor)}>
                 <stat.icon className={cn("w-6 h-6", stat.color)} />
               </div>
