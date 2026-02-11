@@ -67,8 +67,8 @@ export function VaultCTABlock({
         disabled={isLoading}
         size="lg"
         className={cn(
-          'w-full md:w-auto md:min-w-[360px] h-16 text-lg font-bold uppercase tracking-wider',
-          'text-white',
+          'w-full md:w-auto md:min-w-[360px] h-16 text-sm md:text-lg font-bold uppercase tracking-wider',
+          'text-white justify-center',
           'border-2 border-[#b45309]',
           'shadow-lg hover:shadow-xl hover:brightness-110',
           'dark:shadow-[0_0_30px_rgba(217,119,6,0.4)]',
@@ -77,8 +77,7 @@ export function VaultCTABlock({
         )}
         style={{ backgroundColor: '#D97706' }}
       >
-        <Lock className="w-5 h-5 mr-2" />
-        ENTER YOUR SECURE VAULT
+        Enter Your Secure Vault
       </Button>
 
       {/* Email Fallback Toggle */}
