@@ -116,7 +116,7 @@ export const AIComparisonSection: React.FC<AIComparisonSectionProps> = ({
                     }} />)}
                     </div>
                     <div className="h-px bg-slate-700/50" />
-                    <p className="text-[11px] text-slate-500 text-center italic">
+                    <p className="text-xs text-white text-center italic">
                       Even if you never read the fine print, your AI co-pilot does.
                     </p>
                   </div>
