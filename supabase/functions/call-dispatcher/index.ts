@@ -437,9 +437,10 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[Dispatcher] Unexpected error:', error);
+    // Log full error and truncated message server-side, but do not expose details to the client
+    console.error('[Dispatcher] Unexpected error:', error, 'Truncated:', truncateError(error));
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: truncateError(error) }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
