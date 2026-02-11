@@ -485,7 +485,7 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
         <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: C.cyan, letterSpacing: "0.05em" }}>
           EXTRACTION
         </div>
-        <div style={{ fontSize: isMobile ? 8 : 9, color: C.whiteDim, marginTop: 2, lineHeight: 1.3 }}>
+        <div style={{ fontSize: isMobile ? 16 : 9, color: C.whiteDim, marginTop: 2, lineHeight: 1.3 }}>
           Raw PDF/text parsed
           <br />
           into structured JSON
