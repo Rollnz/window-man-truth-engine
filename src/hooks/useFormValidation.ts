@@ -90,6 +90,20 @@ export function useFormValidation<T extends Record<string, string>>({
     });
 
     setErrors(newErrors);
+
+    // Track validation errors to analytics for CRO analysis
+    if (!isValid && typeof window !== 'undefined' && (window as any).dataLayer) {
+      Object.entries(newErrors).forEach(([field, error]) => {
+        if (error) {
+          (window as any).dataLayer.push({
+            event: 'form_field_error',
+            field_name: field,
+            error_message: error,
+          });
+        }
+      });
+    }
+
     return isValid;
   }, [schemas, values]);
 

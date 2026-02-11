@@ -22,6 +22,7 @@ import { setLeadAnchor } from "@/lib/leadAnchor";
 import { logBookingConfirmed } from "@/lib/highValueSignals";
 import type { SourceTool } from "@/types/sourceTool";
 import { TrustModal } from "@/components/forms/TrustModal";
+import { HoneypotField, useHoneypot } from "@/components/forms/HoneypotField";
 import { NameInputPair, normalizeNameFields } from "@/components/ui/NameInputPair";
 import { emailInputProps, phoneInputProps } from "@/lib/formAccessibility";
 
@@ -62,6 +63,9 @@ export function ConsultationBookingModal({
   const { updateFields } = useSessionData();
   const { awardScore } = useScore();
   const effectiveLeadId = leadId || hookLeadId;
+
+  // Honeypot for spam prevention
+  const { honeypotProps, isBot } = useHoneypot();
 
   // Form abandonment tracking (Phase 7)
   const { trackFieldEntry, resetTracking } = useFormAbandonment({
@@ -118,6 +122,9 @@ export function ConsultationBookingModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Silent spam rejection via honeypot
+    if (isBot()) return;
+
     if (!validateAll()) {
       toast({
         title: "Please fix the errors",
@@ -131,12 +138,16 @@ export function ConsultationBookingModal({
       // Normalize name fields
       const { firstName, lastName } = normalizeNameFields(values.firstName, values.lastName);
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
+        signal: controller.signal,
         body: JSON.stringify({
           email: values.email.trim(),
           firstName,
@@ -160,6 +171,8 @@ export function ConsultationBookingModal({
           leadId: effectiveLeadId || undefined,
         }),
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -329,6 +342,7 @@ export function ConsultationBookingModal({
 
             {/* TrustModal auto-wraps children with FormSurfaceProvider surface="trust" */}
             <form onSubmit={handleSubmit} className="space-y-3">
+              <HoneypotField {...honeypotProps} />
               {/* First/Last Name */}
               <NameInputPair
                 firstName={values.firstName}
@@ -338,6 +352,7 @@ export function ConsultationBookingModal({
                 onFirstNameBlur={handleFirstFieldFocus}
                 errors={{ firstName: getError("firstName"), lastName: getError("lastName") }}
                 disabled={isLocked}
+                autoFocus
                 size="compact"
                 firstNameLabel="First Name"
                 lastNameLabel="Last Name"
@@ -433,6 +448,7 @@ export function ConsultationBookingModal({
                   onChange={(e) => setNotes(e.target.value)}
                   disabled={isLocked}
                   rows={2}
+                  maxLength={2000}
                   className="resize-none"
                 />
               </div>
