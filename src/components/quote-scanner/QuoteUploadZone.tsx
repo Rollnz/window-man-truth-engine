@@ -91,11 +91,11 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
   return (
     <div ref={ref} className="space-y-4">
       {/* Header */}
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wider">
-        <FileText className="w-4 h-4 text-muted-foreground" />
-        <span className="font-bold text-rose-600 dark:text-rose-400 text-base">
-          Before: Just a Confusing Estimate
-        </span>
+      {/* Use 'flex' to control layout. 'flex-col' stacks them on mobile, 'md:flex-row' puts them side-by-side on desktop. */}
+<span className="flex flex-col md:flex-row items-center font-bold text-rose-600 dark:text-rose-400 text-base text-center md:text-left">
+  <span className="md:mr-1">Before:</span>
+  <span>Just a Confusing Estimate</span>
+</span>
       </div>
 
       {/* Upload Zone */}
