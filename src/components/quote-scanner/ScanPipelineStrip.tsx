@@ -1,32 +1,61 @@
 import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-// ─── Semantic Color Constants (CSS custom property references) ────────────────
+// ─── Component-local themeable tokens (art-direction names preserved) ─────────
 const C = {
-  bg:             'hsl(var(--secondary) / 0.5)',
-  bgCard:         'hsl(var(--card))',
-  primary:        'hsl(var(--primary))',
-  primaryDim:     'hsl(var(--primary) / 0.12)',
-  primaryMid:     'hsl(var(--primary) / 0.35)',
-  primaryGlow:    'hsl(var(--primary) / 0.55)',
-  primaryBright:  'hsl(var(--primary) / 0.85)',
-  destructive:    'hsl(var(--destructive))',
-  destructiveDim: 'hsl(var(--destructive) / 0.15)',
-  destructiveMid: 'hsl(var(--destructive) / 0.4)',
-  green:          '#4ade80',              // status color (pass)
-  greenDim:       'rgba(74,222,128,0.2)', // status color (pass bg)
-  fg:             'hsl(var(--foreground))',
-  fgMuted:        'hsl(var(--muted-foreground))',
-  border:         'hsl(var(--border))',
+  // Surfaces
+  bg:         'hsl(var(--sp-bg) / 0.55)',
+  bgCard:     'hsl(var(--sp-card))',
+
+  // Accent (was "cyan" in the original art direction)
+  cyan:       'hsl(var(--sp-accent))',
+  cyanDim:    'hsl(var(--sp-accent) / 0.12)',
+  cyanMid:    'hsl(var(--sp-accent) / 0.35)',
+  cyanGlow:   'hsl(var(--sp-accent) / 0.55)',
+  cyanBright: 'hsl(var(--sp-accent) / 0.85)',
+
+  // Destructive (red flag)
+  red:        'hsl(var(--sp-danger))',
+  redDim:     'hsl(var(--sp-danger) / 0.15)',
+  redMid:     'hsl(var(--sp-danger) / 0.4)',
+
+  // Status colors (data states, not theme accents)
+  green:      '#4ade80',
+  greenDim:   'rgba(74,222,128,0.2)',
+
+  // Text
+  white:      'hsl(var(--sp-fg))',
+  whiteDim:   'hsl(var(--sp-muted))',
+  whiteFaint: 'hsl(var(--sp-border))',
 };
 
 // ─── Scoped Keyframes ─────────────────────────────────────────────────────────
 const SCOPED_STYLES = `
+/* Component-local CSS variables: Light defaults + Dark overrides */
+.sp-pipeline-root {
+  --sp-bg: var(--muted);
+  --sp-card: var(--card);
+  --sp-accent: var(--primary);
+  --sp-danger: var(--destructive);
+  --sp-fg: var(--foreground);
+  --sp-muted: var(--muted-foreground);
+  --sp-border: var(--border);
+}
+.dark .sp-pipeline-root {
+  --sp-bg: var(--background);
+  --sp-card: var(--card);
+  --sp-accent: var(--primary);
+  --sp-danger: var(--destructive);
+  --sp-fg: var(--foreground);
+  --sp-muted: var(--muted-foreground);
+  --sp-border: var(--border);
+}
+
 @keyframes sp-streamRight { 0% { left: -6px; opacity: 0; } 5% { opacity: 1; } 90% { opacity: 1; } 100% { left: calc(100% + 6px); opacity: 0; } }
 @keyframes sp-streamDown { 0% { top: -6px; opacity: 0; } 5% { opacity: 1; } 90% { opacity: 1; } 100% { top: calc(100% + 6px); opacity: 0; } }
 @keyframes sp-sonarPing { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2.8); opacity: 0; } }
 @keyframes sp-breathe { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
-@keyframes sp-coreGlow { 0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.2), 0 0 40px hsl(var(--primary) / 0.1); } 50% { box-shadow: 0 0 30px hsl(var(--primary) / 0.35), 0 0 60px hsl(var(--primary) / 0.15); } }
+@keyframes sp-coreGlow { 0%, 100% { box-shadow: 0 0 20px hsl(var(--sp-accent) / 0.20), 0 0 40px hsl(var(--sp-accent) / 0.10); } 50% { box-shadow: 0 0 30px hsl(var(--sp-accent) / 0.35), 0 0 60px hsl(var(--sp-accent) / 0.15); } }
 @keyframes sp-rotate { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
 @keyframes sp-rotateReverse { from { transform: translate(-50%,-50%) rotate(360deg); } to { transform: translate(-50%,-50%) rotate(0deg); } }
 @keyframes sp-flagWave { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
@@ -146,7 +175,7 @@ function ParticleBeam({
   height = 40,
   count = 7,
   speed = 1.6,
-  color = C.primary,
+  color = C.cyan,
   style = {},
 }: ParticleBeamProps) {
   const isH = direction === 'right';
@@ -170,7 +199,7 @@ function ParticleBeam({
           position: 'absolute',
           width: isH ? '100%' : 2,
           height: isH ? 2 : '100%',
-          background: `linear-gradient(${isH ? '90deg' : '180deg'}, transparent, ${C.primaryDim}, transparent)`,
+          background: `linear-gradient(${isH ? '90deg' : '180deg'}, transparent, ${C.cyanDim}, transparent)`,
           borderRadius: 1,
         }}
       />
@@ -204,12 +233,12 @@ function CircuitTraces({ opacity = 0.08 }: { opacity?: number }) {
       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity }}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <line x1="10%" y1="20%" x2="40%" y2="20%" stroke={C.primary} strokeWidth="0.5" strokeDasharray="4 4" style={{ animation: 'sp-dataFlow 3s linear infinite' }} />
-      <line x1="60%" y1="30%" x2="90%" y2="30%" stroke={C.primary} strokeWidth="0.5" strokeDasharray="4 4" style={{ animation: 'sp-dataFlow 3s linear 0.5s infinite' }} />
-      <line x1="20%" y1="70%" x2="50%" y2="70%" stroke={C.primary} strokeWidth="0.5" strokeDasharray="4 4" style={{ animation: 'sp-dataFlow 3s linear 1s infinite' }} />
-      <line x1="70%" y1="80%" x2="95%" y2="80%" stroke={C.primary} strokeWidth="0.5" strokeDasharray="4 4" style={{ animation: 'sp-dataFlow 3s linear 1.5s infinite' }} />
-      <circle cx="10%" cy="20%" r="2" fill={C.primary} opacity="0.4" />
-      <circle cx="90%" cy="30%" r="2" fill={C.primary} opacity="0.4" />
+      <line x1="10%" y1="20%" x2="40%" y2="20%" stroke={C.cyan} strokeWidth="0.5" strokeDasharray="4 4" style={{ animation: 'sp-dataFlow 3s linear infinite' }} />
+      <line x1="60%" y1="30%" x2="90%" y2="30%" stroke={C.cyan} strokeWidth="0.5" strokeDasharray="4 4" style={{ animation: 'sp-dataFlow 3s linear 0.5s infinite' }} />
+      <line x1="20%" y1="70%" x2="50%" y2="70%" stroke={C.cyan} strokeWidth="0.5" strokeDasharray="4 4" style={{ animation: 'sp-dataFlow 3s linear 1s infinite' }} />
+      <line x1="70%" y1="80%" x2="95%" y2="80%" stroke={C.cyan} strokeWidth="0.5" strokeDasharray="4 4" style={{ animation: 'sp-dataFlow 3s linear 1.5s infinite' }} />
+      <circle cx="10%" cy="20%" r="2" fill={C.cyan} opacity="0.4" />
+      <circle cx="90%" cy="30%" r="2" fill={C.cyan} opacity="0.4" />
     </svg>
   );
 }
@@ -234,14 +263,14 @@ function ForensicBadge({ isMobile }: { isMobile: boolean }) {
           <polygon
             points="20,2 36,11 36,29 20,38 4,29 4,11"
             fill="none"
-            stroke={C.primary}
+            stroke={C.cyan}
             strokeWidth="1.5"
             opacity="0.6"
           />
           <polygon
             points="20,8 30,14 30,26 20,32 10,26 10,14"
-            fill={C.primaryDim}
-            stroke={C.primary}
+            fill={C.cyanDim}
+            stroke={C.cyan}
             strokeWidth="0.5"
             opacity="0.8"
           />
@@ -253,13 +282,13 @@ function ForensicBadge({ isMobile }: { isMobile: boolean }) {
                 cx={20 + Math.cos(a) * 14}
                 cy={20 + Math.sin(a) * 14}
                 r="1.5"
-                fill={C.primary}
+                fill={C.cyan}
                 opacity="0.5"
                 style={{ animation: `sp-breathe 2s ease-in-out ${i * 0.25}s infinite` }}
               />
             );
           })}
-          <text x="20" y="23" textAnchor="middle" fill={C.primary} fontSize="10" fontWeight="700">AI</text>
+          <text x="20" y="23" textAnchor="middle" fill={C.cyan} fontSize="10" fontWeight="700">AI</text>
         </svg>
       </div>
       {/* Text */}
@@ -268,7 +297,7 @@ function ForensicBadge({ isMobile }: { isMobile: boolean }) {
           style={{
             fontSize: isMobile ? 13 : 15,
             fontWeight: 700,
-            color: C.primary,
+            color: C.cyan,
             letterSpacing: '0.12em',
             textTransform: 'uppercase' as const,
           }}
@@ -278,7 +307,7 @@ function ForensicBadge({ isMobile }: { isMobile: boolean }) {
         <div
           style={{
             fontSize: isMobile ? 9 : 10,
-            color: C.fgMuted,
+            color: C.whiteDim,
             letterSpacing: '0.08em',
             textTransform: 'uppercase' as const,
             marginTop: 2,
@@ -310,7 +339,7 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
               height: docH,
               borderRadius: 4,
               background: C.bgCard,
-              border: `1px solid ${C.primaryDim}`,
+              border: `1px solid ${C.cyanDim}`,
               top: i * 4,
               left: i * 4 + 8,
               opacity: 0.4,
@@ -324,14 +353,14 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
             width: docW,
             height: docH,
             borderRadius: 4,
-            background: `linear-gradient(180deg, ${C.bgCard}, hsl(var(--background)))`,
-            border: `1px solid ${C.primaryMid}`,
+            background: `linear-gradient(180deg, ${C.bgCard}, hsl(var(--sp-bg)))`,
+            border: `1px solid ${C.cyanMid}`,
             left: 8,
             overflow: 'hidden',
           }}
         >
           {/* PDF label */}
-          <div style={{ fontSize: isMobile ? 7 : 8, fontWeight: 700, color: C.primary, textAlign: 'center', marginTop: 5, letterSpacing: '0.1em', fontFamily: 'monospace' }}>
+          <div style={{ fontSize: isMobile ? 7 : 8, fontWeight: 700, color: C.cyan, textAlign: 'center', marginTop: 5, letterSpacing: '0.1em', fontFamily: 'monospace' }}>
             PDF
           </div>
           {/* Text lines */}
@@ -344,7 +373,7 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
                 top: `${y}%`,
                 width: `${55 + (i % 3) * 10}%`,
                 height: 2,
-                background: C.border,
+                background: C.whiteFaint,
                 borderRadius: 1,
                 animation: `sp-textFlicker 4s ease ${i * 0.3}s infinite`,
               }}
@@ -357,8 +386,8 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
               left: 0,
               width: '100%',
               height: 2,
-              background: `linear-gradient(90deg, transparent, ${C.primaryBright}, transparent)`,
-              boxShadow: `0 0 8px ${C.primary}`,
+              background: `linear-gradient(90deg, transparent, ${C.cyanBright}, transparent)`,
+              boxShadow: `0 0 8px ${C.cyan}`,
               animation: 'sp-scanLine 2.5s ease-in-out infinite',
               top: 0,
             }}
@@ -375,22 +404,22 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
               width: isMobile ? 16 : 20,
               height: isMobile ? 8 : 10,
               borderRadius: 2,
-              background: `linear-gradient(90deg, ${C.primaryDim}, ${C.primaryMid})`,
+              background: `linear-gradient(90deg, ${C.cyanDim}, ${C.cyanMid})`,
               opacity: 0.6,
               animation: `sp-breathe 2s ease ${i * 0.2}s infinite`,
             }}
           >
-            <div style={{ width: '60%', height: 2, background: C.primary, borderRadius: 1, margin: '3px auto 0', opacity: 0.5 }} />
+            <div style={{ width: '60%', height: 2, background: C.cyan, borderRadius: 1, margin: '3px auto 0', opacity: 0.5 }} />
           </div>
         ))}
       </div>
 
       {/* Labels */}
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: C.primary, letterSpacing: '0.05em' }}>
+        <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: C.cyan, letterSpacing: '0.05em' }}>
           EXTRACTION
         </div>
-        <div style={{ fontSize: isMobile ? 8 : 9, color: C.fgMuted, marginTop: 2, lineHeight: 1.3 }}>
+        <div style={{ fontSize: isMobile ? 8 : 9, color: C.whiteDim, marginTop: 2, lineHeight: 1.3 }}>
           Raw PDF/text parsed<br />into structured JSON
         </div>
       </div>
@@ -416,7 +445,7 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
           width: outerR,
           height: outerR,
           borderRadius: '50%',
-          border: `1px solid ${C.primaryDim}`,
+          border: `1px solid ${C.cyanDim}`,
           animation: 'sp-rotate 20s linear infinite',
           transform: 'translate(-50%, -50%)',
         }}
@@ -432,7 +461,7 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
                 width: 4,
                 height: 4,
                 borderRadius: '50%',
-                background: C.primary,
+                background: C.cyan,
                 opacity: 0.5,
                 top: `calc(50% + ${Math.sin(a) * r}px - 2px)`,
                 left: `calc(50% + ${Math.cos(a) * r}px - 2px)`,
@@ -452,7 +481,7 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
           width: innerR,
           height: innerR,
           borderRadius: '50%',
-          border: `1px dashed ${C.primaryDim}`,
+          border: `1px dashed ${C.cyanDim}`,
           animation: 'sp-rotateReverse 15s linear infinite',
           transform: 'translate(-50%, -50%)',
         }}
@@ -468,7 +497,7 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
                 width: 3,
                 height: 3,
                 borderRadius: '50%',
-                background: C.primaryGlow,
+                background: C.cyanGlow,
                 top: `calc(50% + ${Math.sin(a) * r}px - 1.5px)`,
                 left: `calc(50% + ${Math.cos(a) * r}px - 1.5px)`,
               }}
@@ -485,8 +514,8 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
           width: chipSize,
           height: chipSize,
           borderRadius: 10,
-          background: `linear-gradient(135deg, ${C.bgCard}, hsl(var(--background)))`,
-          border: `1.5px solid ${C.primaryMid}`,
+          background: `linear-gradient(135deg, ${C.bgCard}, hsl(var(--sp-bg)))`,
+          border: `1.5px solid ${C.cyanMid}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -495,18 +524,18 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
         }}
       >
         <svg viewBox="0 0 20 20" width={isMobile ? 16 : 20} height={isMobile ? 16 : 20}>
-          <rect x="3" y="3" width="14" height="14" rx="2" fill="none" stroke={C.primary} strokeWidth="1" />
-          <circle cx="10" cy="10" r="3" fill={C.primaryDim} stroke={C.primary} strokeWidth="0.5" />
-          <line x1="10" y1="3" x2="10" y2="7" stroke={C.primary} strokeWidth="0.5" opacity="0.6" />
+          <rect x="3" y="3" width="14" height="14" rx="2" fill="none" stroke={C.cyan} strokeWidth="1" />
+          <circle cx="10" cy="10" r="3" fill={C.cyanDim} stroke={C.cyan} strokeWidth="0.5" />
+          <line x1="10" y1="3" x2="10" y2="7" stroke={C.cyan} strokeWidth="0.5" opacity="0.6" />
         </svg>
-        <div style={{ fontSize: isMobile ? 7 : 8, fontWeight: 700, color: C.primary, marginTop: 2, fontFamily: 'monospace' }}>AI</div>
+        <div style={{ fontSize: isMobile ? 7 : 8, fontWeight: 700, color: C.cyan, marginTop: 2, fontFamily: 'monospace' }}>AI</div>
         {/* Sonar ping */}
         <div
           style={{
             position: 'absolute',
             inset: -4,
             borderRadius: 14,
-            border: `1px solid ${C.primary}`,
+            border: `1px solid ${C.cyan}`,
             opacity: 0,
             animation: 'sp-sonarPing 2.5s ease-out infinite',
           }}
@@ -534,7 +563,7 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
             left: `calc(50% + ${t.x}px)`,
             width: t.w,
             height: t.h,
-            background: C.primaryDim,
+            background: C.cyanDim,
             borderRadius: 1,
           }}
         />
@@ -542,20 +571,20 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
 
       {/* Labels */}
       <div style={{ position: 'absolute', bottom: isMobile ? 12 : 16, left: 0, right: 0, textAlign: 'center', zIndex: 3 }}>
-        <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: C.primary, letterSpacing: '0.05em' }}>
+        <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: C.cyan, letterSpacing: '0.05em' }}>
           CONTEXT INJECTION
         </div>
-        <div style={{ fontSize: isMobile ? 7 : 8, color: C.fgMuted, marginTop: 2, lineHeight: 1.3 }}>
+        <div style={{ fontSize: isMobile ? 7 : 8, color: C.whiteDim, marginTop: 2, lineHeight: 1.3 }}>
           AI cross-references against<br />Ground Truth database
         </div>
       </div>
 
       {/* Secondary label */}
       <div style={{ position: 'absolute', top: isMobile ? 12 : 16, left: 0, right: 0, textAlign: 'center', zIndex: 3 }}>
-        <div style={{ fontSize: isMobile ? 9 : 11, fontWeight: 600, color: C.destructive, letterSpacing: '0.05em' }}>
+        <div style={{ fontSize: isMobile ? 9 : 11, fontWeight: 600, color: C.red, letterSpacing: '0.05em' }}>
           ANOMALY DETECTION
         </div>
-        <div style={{ fontSize: isMobile ? 7 : 8, color: C.fgMuted, marginTop: 1, lineHeight: 1.3 }}>
+        <div style={{ fontSize: isMobile ? 7 : 8, color: C.whiteDim, marginTop: 1, lineHeight: 1.3 }}>
           Flags &quot;Red Flags&quot; like<br />bundled labor costs
         </div>
       </div>
@@ -581,8 +610,8 @@ function DatabaseScene({ isMobile }: { isMobile: boolean }) {
             width: dbW,
             height: dbW * 0.35,
             borderRadius: '50%',
-            background: `linear-gradient(180deg, ${C.primaryMid}, ${C.primaryDim})`,
-            border: `1px solid ${C.primaryMid}`,
+            background: `linear-gradient(180deg, ${C.cyanMid}, ${C.cyanDim})`,
+            border: `1px solid ${C.cyanMid}`,
             zIndex: 2,
           }}
         />
@@ -594,9 +623,9 @@ function DatabaseScene({ isMobile }: { isMobile: boolean }) {
             left: 0,
             width: dbW,
             height: dbH - dbW * 0.35,
-            background: `linear-gradient(180deg, ${C.bgCard}, hsl(var(--background)))`,
-            borderLeft: `1px solid ${C.primaryDim}`,
-            borderRight: `1px solid ${C.primaryDim}`,
+            background: `linear-gradient(180deg, ${C.bgCard}, hsl(var(--sp-bg)))`,
+            borderLeft: `1px solid ${C.cyanDim}`,
+            borderRight: `1px solid ${C.cyanDim}`,
           }}
         >
           {/* Data rows */}
@@ -609,7 +638,7 @@ function DatabaseScene({ isMobile }: { isMobile: boolean }) {
                 top: `${y}%`,
                 width: '76%',
                 height: 3,
-                background: `linear-gradient(90deg, ${C.primaryDim}, ${C.primaryMid}, ${C.primaryDim})`,
+                background: `linear-gradient(90deg, ${C.cyanDim}, ${C.cyanMid}, ${C.cyanDim})`,
                 borderRadius: 1,
                 animation: `sp-breathe 2s ease ${i * 0.4}s infinite`,
               }}
@@ -625,8 +654,8 @@ function DatabaseScene({ isMobile }: { isMobile: boolean }) {
             width: dbW,
             height: dbW * 0.35,
             borderRadius: '50%',
-            background: `linear-gradient(180deg, ${C.primaryDim}, hsl(var(--background)))`,
-            border: `1px solid ${C.primaryDim}`,
+            background: `linear-gradient(180deg, ${C.cyanDim}, hsl(var(--sp-bg)))`,
+            border: `1px solid ${C.cyanDim}`,
           }}
         />
         {/* Glow */}
@@ -635,7 +664,7 @@ function DatabaseScene({ isMobile }: { isMobile: boolean }) {
             position: 'absolute',
             inset: -8,
             borderRadius: '50%',
-            background: `radial-gradient(circle, ${C.primaryDim} 0%, transparent 70%)`,
+            background: `radial-gradient(circle, ${C.cyanDim} 0%, transparent 70%)`,
             animation: 'sp-breathe 3s ease infinite',
           }}
         />
@@ -650,11 +679,11 @@ function DatabaseScene({ isMobile }: { isMobile: boolean }) {
               width: isMobile ? 12 : 16,
               height: isMobile ? 6 : 8,
               borderRadius: 2,
-              background: C.primaryDim,
+              background: C.cyanDim,
               animation: `sp-breathe 2s ease ${i * 0.15}s infinite`,
             }}
           >
-            <div style={{ width: '50%', height: 1.5, background: C.primary, borderRadius: 1, margin: '2px auto 0', opacity: 0.4 }} />
+            <div style={{ width: '50%', height: 1.5, background: C.cyan, borderRadius: 1, margin: '2px auto 0', opacity: 0.4 }} />
           </div>
         ))}
       </div>
@@ -683,18 +712,18 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
             position: 'absolute',
             inset: 0,
             borderRadius: 8,
-            background: `linear-gradient(180deg, ${C.bgCard}, hsl(var(--background)))`,
-            border: `1px solid ${C.destructiveDim}`,
+            background: `linear-gradient(180deg, ${C.bgCard}, hsl(var(--sp-bg)))`,
+            border: `1px solid ${C.redDim}`,
             overflow: 'hidden',
           }}
         >
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 10px', borderBottom: `1px solid ${C.destructiveDim}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 10px', borderBottom: `1px solid ${C.redDim}` }}>
             <svg width="12" height="12" viewBox="0 0 12 12" style={{ animation: 'sp-flagWave 2s ease-in-out infinite', transformOrigin: 'bottom left' }}>
-              <rect x="1" y="0" width="1.5" height="12" fill={C.destructive} />
-              <path d="M2.5,0 L11,0 L9,3 L11,6 L2.5,6 Z" fill={C.destructive} opacity="0.8" />
+              <rect x="1" y="0" width="1.5" height="12" fill={C.red} />
+              <path d="M2.5,0 L11,0 L9,3 L11,6 L2.5,6 Z" fill={C.red} opacity="0.8" />
             </svg>
-            <span style={{ fontSize: isMobile ? 7 : 8, fontWeight: 700, color: C.destructive, letterSpacing: '0.08em', fontFamily: 'monospace' }}>
+            <span style={{ fontSize: isMobile ? 7 : 8, fontWeight: 700, color: C.red, letterSpacing: '0.08em', fontFamily: 'monospace' }}>
               RED FLAG REPORT
             </span>
           </div>
@@ -714,8 +743,8 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
               }}
             >
               {item.type === 'flag' ? (
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: C.destructiveDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="6" height="6" viewBox="0 0 6 6"><path d="M0.5,0 L0.5,6 M0.5,0 L5,0 L4,1.5 L5,3 L0.5,3" stroke={C.destructive} strokeWidth="0.8" fill="none" /></svg>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: C.redDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="6" height="6" viewBox="0 0 6 6"><path d="M0.5,0 L0.5,6 M0.5,0 L5,0 L4,1.5 L5,3 L0.5,3" stroke={C.red} strokeWidth="0.8" fill="none" /></svg>
                 </div>
               ) : item.type === 'check' ? (
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: C.greenDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -729,7 +758,7 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
                   </svg>
                 </div>
               )}
-              <span style={{ fontSize: isMobile ? 8 : 9, color: C.fgMuted, fontFamily: 'monospace' }}>
+              <span style={{ fontSize: isMobile ? 8 : 9, color: C.whiteDim, fontFamily: 'monospace' }}>
                 {item.label}
               </span>
             </div>
@@ -746,8 +775,8 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
               }}
             >
               <svg width="12" height="12" viewBox="0 0 12 12">
-                <path d={side === -1 ? 'M0,12 L0,4 L4,0' : 'M12,12 L12,4 L8,0'} stroke={C.destructive} strokeWidth="0.5" fill="none" opacity="0.3" />
-                <circle cx={side === -1 ? 0 : 12} cy="12" r="1.5" fill={C.destructive} opacity="0.3" />
+                <path d={side === -1 ? 'M0,12 L0,4 L4,0' : 'M12,12 L12,4 L8,0'} stroke={C.red} strokeWidth="0.5" fill="none" opacity="0.3" />
+                <circle cx={side === -1 ? 0 : 12} cy="12" r="1.5" fill={C.red} opacity="0.3" />
               </svg>
             </div>
           ))}
@@ -758,7 +787,7 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
 }
 
 // ─── Vertical Beam (mobile connector) ─────────────────────────────────────────
-function VerticalBeam({ color = C.primary, visible }: { color?: string; visible: boolean }) {
+function VerticalBeam({ color = C.cyan, visible }: { color?: string; visible: boolean }) {
   return (
     <div
       style={{
@@ -809,7 +838,7 @@ export function ScanPipelineStrip() {
     position: 'relative',
     background: C.bgCard,
     borderRadius: 16,
-    border: `1px solid ${borderOverride || C.primaryDim}`,
+    border: `1px solid ${borderOverride || C.cyanDim}`,
     overflow: 'hidden',
     opacity: visible ? 1 : 0,
     transform: visible ? 'translateY(0)' : 'translateY(20px)',
@@ -821,7 +850,7 @@ export function ScanPipelineStrip() {
       <style>{SCOPED_STYLES}</style>
 
       <div
-        className="bg-secondary/50 rounded-[20px] relative overflow-hidden max-w-[960px] mx-auto"
+        className="bg-muted/50 dark:bg-background/40 rounded-[20px] relative overflow-hidden max-w-[960px] mx-auto"
         style={{ padding: isMobile ? '24px 12px' : '32px 28px' }}
       >
         <CircuitTraces />
@@ -851,9 +880,9 @@ export function ScanPipelineStrip() {
               <DatabaseScene isMobile={isMobile} />
             </div>
 
-            <VerticalBeam color={C.destructive} visible={visible} />
+            <VerticalBeam color={C.red} visible={visible} />
 
-            <div style={{ ...cell(0.7, C.destructiveDim), height: 210 }}>
+            <div style={{ ...cell(0.7, C.redDim), height: 210 }}>
               <RedFlagScene isMobile={isMobile} />
             </div>
           </div>
@@ -891,10 +920,10 @@ export function ScanPipelineStrip() {
             </div>
 
             <div style={{ padding: '0 4px', display: 'flex', alignItems: 'center', width: 60 }}>
-              <ParticleBeam direction="right" count={5} speed={1.8} color={C.destructive} />
+              <ParticleBeam direction="right" count={5} speed={1.8} color={C.red} />
             </div>
 
-            <div style={{ ...cell(0.7, C.destructiveDim), height: 240 }}>
+            <div style={{ ...cell(0.7, C.redDim), height: 240 }}>
               <RedFlagScene isMobile={false} />
             </div>
           </div>
