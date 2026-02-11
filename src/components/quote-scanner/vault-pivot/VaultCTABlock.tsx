@@ -163,7 +163,7 @@ export function VaultCTABlock({ onGoogleAuth, onEmailSubmit, isLoading = false }
       </div>
 
       {/* Final Assurance */}
-      <p className="text-xs text-stone-100 mt-8 max-w-sm mx-auto">
+      <p className="text-xs text-stone-900 dark:text-white mt-8 max-w-sm mx-auto">
         Free forever. Takes 10 seconds. We never sell or share your data.
       </p>
 
