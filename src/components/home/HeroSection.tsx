@@ -21,7 +21,7 @@ export function HeroSection() {
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
             <div className="flex flex-col items-center">
-              <Button asChild size="lg" variant="cta" className="text-base px-8 py-6 group cta-glow"><Link to={ROUTES.QUOTE_SCANNER}><Eye className="mr-2 w-5 h-5" />See What Homeowners Miss in Window Quotes<ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" /></Link></Button>
+              <Button asChild size="lg" variant="cta" className="text-sm sm:text-base px-4 sm:px-8 py-6 group cta-glow w-full sm:w-auto"><Link to={ROUTES.QUOTE_SCANNER}><Eye className="mr-2 w-5 h-5 flex-shrink-0" />See What People Miss In Window Contracts<ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1 flex-shrink-0" /></Link></Button>
               <p className="mt-2 text-xs text-muted-foreground">No upload required. No pressure.</p>
             </div>
           </div>
