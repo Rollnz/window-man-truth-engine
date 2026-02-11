@@ -1,52 +1,47 @@
 
 
-# Wire firstName Greeting Badge into SampleReportHeader
+# Add firstName Personalization to Hero H1
 
 ## Changes
 
-### 1. `src/components/sample-report/SampleReportHeader.tsx`
+### 1. `src/pages/SampleReport.tsx`
 
-- Add `firstName?: string` to `SampleReportHeaderProps` interface
-- Destructure `firstName` in the component
-- Add safety logic and badge rendering inside the left-side div, after the title spans:
+Pass `firstNameFromNav` to `HeroSection`:
 
 ```tsx
-const safeFirstName = firstName?.trim().slice(0, 24);
-```
-
-Badge markup (inside the existing left-side `flex items-center gap-3` div, after the two title `<span>` elements):
-
-```tsx
-{safeFirstName && safeFirstName.length >= 2 && (
-  <span className="shrink-0 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full hidden sm:inline">
-    Hi, {safeFirstName}
-  </span>
-)}
-```
-
-Guards:
-- `trim()` strips whitespace junk
-- `slice(0, 24)` prevents layout blowups from long names
-- `length >= 2` filters one-letter garbage data
-- `shrink-0` prevents flex compression against CTAs
-- `hidden sm:inline` keeps it desktop-only
-
-### 2. `src/pages/SampleReport.tsx` (line ~120)
-
-Pass the existing `firstNameFromNav` variable (already defined on line 30) to the header:
-
-```tsx
-<SampleReportHeader
+<HeroSection
   firstName={firstNameFromNav}
   onOpenLeadModal={handleOpenLeadModal}
   onOpenPreQuoteModal={handleOpenPreQuoteModal}
 />
 ```
 
+### 2. `src/components/sample-report/HeroSection.tsx`
+
+- Add `firstName?: string` to `HeroSectionProps` interface
+- Destructure it in the component
+- Derive `safeFirstName` using `firstName?.trim().slice(0, 24)`
+- Update the H1 to prefix the name when available, keeping SEO keywords intact:
+
+```tsx
+const safeFirstName = firstName?.trim().slice(0, 24);
+
+<h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
+  {safeFirstName && safeFirstName.length >= 2 ? (
+    <>
+      <span className="text-primary">{safeFirstName}</span>, see exactly what your AI audit looks like
+    </>
+  ) : (
+    <>See Exactly What Your AI Audit Looks Like</>
+  )}
+  <span className="block text-primary">Before You Upload Anything</span>
+</h1>
+```
+
 ## What Is NOT Changing
 
-- Page title / H1 -- untouched
-- Right-side CTAs layout -- untouched
+- SampleReportHeader greeting badge -- stays as-is
 - PreQuoteLeadModal -- zero edits
 - Tracking, submission, routing -- untouched
+- The "Before You Upload Anything" subtitle line -- untouched
 
