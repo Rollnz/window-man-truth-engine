@@ -832,11 +832,11 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
             </svg>
             <span
               style={{
-                fontSize: isMobile ? "clamp(14px, 4vw, 18px)" : "clamp(11px, 1.2vw, 14px)",
+                fontSize: isMobile ? "clamp(11px, 3.2vw, 14px)" : "clamp(9px, 1vw, 12px)",
                 whiteSpace: "nowrap",
                 fontWeight: 700,
                 color: C.red,
-                letterSpacing: "0.08em",
+                letterSpacing: "0.02em",
                 fontFamily: "monospace",
               }}
             >
