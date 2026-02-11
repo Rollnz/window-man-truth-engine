@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import aiBrainImg from "@/assets/ai_brain.webp";
 
 // ─── Component-local themeable tokens (art-direction names preserved) ─────────
 const C = {
@@ -294,39 +295,7 @@ function ForensicBadge({ isMobile }: { isMobile: boolean }) {
     >
       {/* Hexagon icon */}
       <div style={{ position: "relative", width: 40, height: 40, flexShrink: 0 }}>
-        <svg viewBox="0 0 40 40" width="40" height="40">
-          <polygon
-            points="20,2 36,11 36,29 20,38 4,29 4,11"
-            fill="none"
-            stroke={C.cyan}
-            strokeWidth="1.5"
-            opacity="0.6"
-          />
-          <polygon
-            points="20,8 30,14 30,26 20,32 10,26 10,14"
-            fill={C.cyanDim}
-            stroke={C.cyan}
-            strokeWidth="0.5"
-            opacity="0.8"
-          />
-          {Array.from({ length: 8 }).map((_, i) => {
-            const a = (i / 8) * Math.PI * 2;
-            return (
-              <circle
-                key={i}
-                cx={20 + Math.cos(a) * 14}
-                cy={20 + Math.sin(a) * 14}
-                r="1.5"
-                fill={C.cyan}
-                opacity="0.5"
-                style={{ animation: `sp-breathe 2s ease-in-out ${i * 0.25}s infinite` }}
-              />
-            );
-          })}
-          <text x="20" y="23" textAnchor="middle" fill={C.cyan} fontSize="10" fontWeight="700">
-            AI
-          </text>
-        </svg>
+        <img src={aiBrainImg} alt="AI Brain" width={40} height={40} style={{ objectFit: "contain" }} />
       </div>
       {/* Text */}
       <div>
