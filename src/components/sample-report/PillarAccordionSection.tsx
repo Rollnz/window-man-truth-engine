@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ShieldCheck, FileText, DollarSign, ScrollText, Award, ChevronDown, AlertTriangle, MessageSquare } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 import { useSectionTracking } from '@/hooks/useSectionTracking';
+import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 
 interface PillarData { id: string; name: string; score: number; icon: typeof ShieldCheck; checks: string[]; hiddenRisk: string; financialConsequence: string; whatToAsk: string; }
 
@@ -19,7 +20,7 @@ function PillarAccordion({ pillar, isOpen, onToggle }: { pillar: PillarData; isO
   const scoreBgColor = pillar.score >= 70 ? 'bg-primary/10' : pillar.score >= 50 ? 'bg-amber-500/10' : 'bg-[hsl(var(--secondary)/0.1)]';
 
   return (
-    <div className="border border-border/50 rounded-xl overflow-hidden bg-card">
+    <div className="border border-border/50 rounded-xl overflow-hidden bg-card shadow-lg shadow-black/5 dark:shadow-black/15 hover:shadow-xl hover:scale-[1.01] transition-all duration-300">
       <button onClick={onToggle} className="w-full flex items-center justify-between p-4 md:p-5 hover:bg-muted/30 transition-colors">
         <div className="flex items-center gap-3 md:gap-4">
           <div className={`w-10 h-10 rounded-lg ${scoreBgColor} flex items-center justify-center`}><Icon className={`w-5 h-5 ${scoreColor}`} /></div>
@@ -28,7 +29,7 @@ function PillarAccordion({ pillar, isOpen, onToggle }: { pillar: PillarData; isO
         <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[600px]' : 'max-h-0'}`}>
-        <div className="p-4 md:p-6 pt-0 space-y-6">
+        <div className={`p-4 md:p-6 pt-0 space-y-6 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
           <div><h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" />What We Check</h4><ul className="space-y-2">{pillar.checks.map((check, i) => (<li key={i} className="flex items-start gap-2 text-sm text-muted-foreground"><span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />{check}</li>))}</ul></div>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="p-4 rounded-lg bg-[hsl(var(--secondary)/0.05)] border border-[hsl(var(--secondary)/0.2)]"><h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-[hsl(var(--secondary))]" />Hidden Risk</h4><p className="text-sm text-muted-foreground">{pillar.hiddenRisk}</p><p className="text-sm font-semibold text-[hsl(var(--secondary))] mt-2">Potential Cost: {pillar.financialConsequence}</p></div>
@@ -48,8 +49,16 @@ export function PillarAccordionSection() {
   return (
     <section ref={sectionRef} className="py-16 md:py-24 bg-[hsl(var(--surface-1))]">
       <div className="container px-4">
-        <div className="max-w-3xl mx-auto text-center mb-12"><h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">Deep Dive: The 5 Pillars</h2><p className="text-lg text-muted-foreground">Each pillar represents a critical area where quotes hide risk. Expand to see what we check, the hidden dangers, and exactly what to ask your contractor.</p></div>
-        <div className="max-w-3xl mx-auto space-y-4">{pillarData.map((pillar) => (<PillarAccordion key={pillar.id} pillar={pillar} isOpen={openPillar === pillar.id} onToggle={() => handleToggle(pillar.id)} />))}</div>
+        <AnimateOnScroll duration={600}>
+          <div className="max-w-3xl mx-auto text-center mb-12"><h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">Deep Dive: The 5 Pillars</h2><p className="text-lg text-muted-foreground">Each pillar represents a critical area where quotes hide risk. Expand to see what we check, the hidden dangers, and exactly what to ask your contractor.</p></div>
+        </AnimateOnScroll>
+        <div className="max-w-3xl mx-auto space-y-4">
+          {pillarData.map((pillar, index) => (
+            <AnimateOnScroll key={pillar.id} delay={index * 120} duration={700}>
+              <PillarAccordion pillar={pillar} isOpen={openPillar === pillar.id} onToggle={() => handleToggle(pillar.id)} />
+            </AnimateOnScroll>
+          ))}
+        </div>
       </div>
     </section>
   );
