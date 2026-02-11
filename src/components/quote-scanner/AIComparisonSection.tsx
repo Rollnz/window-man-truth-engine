@@ -107,7 +107,7 @@ export const AIComparisonSection: React.FC<AIComparisonSectionProps> = ({
                         </span>
                         Live data stream
                       </span>
-                      <span className="text-slate-500">Analyzing scenarios</span>
+                      <span className="text-white">Analyzing scenarios</span>
                     </div>
                     <div className="h-px bg-slate-700/50" />
                     <div className="relative h-1.5 rounded-full bg-slate-800 overflow-hidden">
