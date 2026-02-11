@@ -254,7 +254,7 @@ export function OutcomeFolders({
 
       {/* Header Badge */}
       <div className="flex justify-center">
-        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-tools-truth-engine/40 bg-tools-truth-engine/10">
+        <div className="inline-flex items-center gap-2 rounded-full border border-tools-truth-engine/40 bg-tools-truth-engine/10 px-[2px] py-0 my-0 mx-0 text-center text-xs">
           <ClipboardCheck className="w-4 h-4 text-tools-truth-engine" />
           <span className="text-sm font-mono tracking-wider text-tools-truth-engine">
             MISSION OUTCOME BRIEFING
@@ -287,7 +287,7 @@ export function OutcomeFolders({
               <CheckCircle className="w-5 h-5 text-green-400" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-green-400 uppercase tracking-wide font-mono text-2xl whitespace-nowrap">
+              <h4 className="font-bold text-green-400 uppercase tracking-wide font-mono text-2xl">
                 WE BEAT IT
               </h4>
               <p className="text-sm text-primary-foreground">We beat your quote</p>
@@ -341,7 +341,7 @@ export function OutcomeFolders({
               <Shield className="w-5 h-5 text-tools-truth-engine" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono text-xl whitespace-nowrap">
+              <h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono text-xl">
                 OR VALIDATE IT 
               </h4>
               <p className="text-sm text-muted-foreground">We can't beat it</p>
