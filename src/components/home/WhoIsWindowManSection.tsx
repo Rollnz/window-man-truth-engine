@@ -176,7 +176,7 @@ export function WhoIsWindowManSection() {
                 If — and only if — a partner beats your best quote with better terms and you choose to switch,
                 <span className="text-foreground font-medium"> the contractor pays us a finder's fee</span>.
               </p>
-              <div className="flex flex-wrap justify-center gap-6 mt-6">
+              <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-center md:gap-6 mt-6">
                 <div className="flex items-center gap-2">
                   <BadgeCheck className="w-5 h-5 text-primary" />
                   <span className="text-sm text-foreground">You get a better deal</span>
