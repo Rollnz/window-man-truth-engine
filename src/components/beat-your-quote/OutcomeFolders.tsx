@@ -341,7 +341,7 @@ export function OutcomeFolders({
               <Shield className="w-5 h-5 text-tools-truth-engine" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono text-xl">
+              <h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono text-xl whitespace-nowrap">
                 OR VALIDATE IT 
               </h4>
               <p className="text-sm text-muted-foreground">We can't beat it</p>
