@@ -864,6 +864,7 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
             <span
               style={{
                 fontSize: isMobile ? 16 : 12,
+                whiteSpace: "nowrap",
                 fontWeight: 700,
                 color: C.red,
                 letterSpacing: "0.08em",
