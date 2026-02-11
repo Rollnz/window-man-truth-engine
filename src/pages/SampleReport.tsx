@@ -141,7 +141,7 @@ const SampleReport = () => {
 
       {/* Main Content */}
       <main className="pt-28">
-        <HeroSection onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
+        <HeroSection firstName={firstNameFromNav} onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
         <ComparisonSection />
         <ScoreboardSection />
         <PillarAccordionSection />

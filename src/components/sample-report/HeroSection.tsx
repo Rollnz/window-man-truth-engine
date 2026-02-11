@@ -4,6 +4,7 @@ import { Upload, Shield, Check, ArrowRight } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 import { useSectionTracking } from '@/hooks/useSectionTracking';
 interface HeroSectionProps {
+  firstName?: string;
   onOpenLeadModal?: (ctaSource: string) => void;
   onOpenPreQuoteModal?: (ctaSource: string) => void;
 }
@@ -74,9 +75,11 @@ const PreviewBars = ({
     </div>;
 };
 export function HeroSection({
+  firstName,
   onOpenLeadModal,
   onOpenPreQuoteModal
 }: HeroSectionProps) {
+  const safeFirstName = firstName?.trim().slice(0, 24);
   const sectionRef = useSectionTracking('hero');
   const [isVisible, setIsVisible] = useState(false);
   useEffect(() => {
@@ -110,7 +113,13 @@ export function HeroSection({
             </div>
 
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
-              See Exactly What Your AI Audit Looks Like
+              {safeFirstName && safeFirstName.length >= 2 ? (
+                <>
+                  <span className="text-primary">{safeFirstName}</span>, see exactly what your AI audit looks like
+                </>
+              ) : (
+                <>See Exactly What Your AI Audit Looks Like</>
+              )}
               <span className="block text-primary">Before You Upload Anything</span>
             </h1>
 
