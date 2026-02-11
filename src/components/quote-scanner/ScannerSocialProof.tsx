@@ -47,8 +47,8 @@ export function ScannerSocialProof() {
         </div>
 
         {/* Testimonials */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {testimonials.map((testimonial, idx) => <div key={idx} className="flex items-start gap-3 p-4 rounded-lg bg-card/50 border border-border/30">
+        <div className="flex flex-col md:flex-row gap-4 px-2 md:px-0">
+          {testimonials.map((testimonial, idx) => <div key={idx} className="flex items-start gap-3 p-4 rounded-lg bg-card/50 border border-border/30 w-full">
               <CheckCircle className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm text-foreground italic">"{testimonial.quote}"</p>
