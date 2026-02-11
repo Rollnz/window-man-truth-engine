@@ -88,7 +88,8 @@ export function HeroSection({
   const sectionRef = useSectionTracking('hero');
   const [isVisible, setIsVisible] = useState(false);
   useEffect(() => {
-    setIsVisible(true);
+    const timer = setTimeout(() => setIsVisible(true), 1000);
+    return () => clearTimeout(timer);
   }, []);
   const handleUploadClick = () => {
     trackEvent('sample_report_upload_click', {
