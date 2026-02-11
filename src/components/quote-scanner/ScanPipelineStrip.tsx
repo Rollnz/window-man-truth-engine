@@ -658,7 +658,7 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
         <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: C.cyan, letterSpacing: "0.05em" }}>
           CONTEXT INJECTION
         </div>
-        <div style={{ fontSize: isMobile ? 7 : 8, color: C.whiteDim, marginTop: 2, lineHeight: 1.3 }}>
+        <div style={{ fontSize: isMobile ? 14 : 8, color: C.whiteDim, marginTop: 2, lineHeight: 1.3 }}>
           AI cross-references against
           <br />
           Ground Truth database
