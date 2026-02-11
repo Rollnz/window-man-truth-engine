@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, Mail, ChevronDown, ChevronUp } from "lucide-react";
+import { Mail, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFormValidation, commonSchemas } from "@/hooks/useFormValidation";
 import { useState } from "react";
@@ -61,7 +61,7 @@ export function VaultCTABlock({ onGoogleAuth, onEmailSubmit, isLoading = false }
         disabled={isLoading}
         size="lg"
         className={cn(
-          "w-full md:w-auto md:min-w-[360px] h-16 text-lg font-bold uppercase tracking-wider",
+          "w-full md:w-auto md:min-w-[360px] h-16 text-lg font-bold uppercase tracking-wider px-[5px]",
           "text-white",
           "border-2 border-[#b45309]",
           "shadow-lg hover:shadow-xl hover:brightness-110",
@@ -71,7 +71,6 @@ export function VaultCTABlock({ onGoogleAuth, onEmailSubmit, isLoading = false }
         )}
         style={{ backgroundColor: "#D97706" }}
       >
-        <Lock className="w-5 h-5 mr-2" />
         ENTER YOUR SECURE VAULT
       </Button>
 
