@@ -485,7 +485,7 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
         <div style={{ fontSize: isMobile ? 22 : 13, fontWeight: 600, color: C.cyan, letterSpacing: "0.05em" }}>
           EXTRACTION
         </div>
-        <div style={{ fontSize: isMobile ? 16 : 9, color: C.whiteDim, marginTop: 2, lineHeight: 1.3 }}>
+        <div style={{ fontSize: isMobile ? 16 : 18, color: C.whiteDim, marginTop: 2, lineHeight: 1.3 }}>
           Raw PDF/text parsed
           <br />
           into structured JSON
@@ -658,7 +658,7 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
         <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: C.cyan, letterSpacing: "0.05em" }}>
           CONTEXT INJECTION
         </div>
-        <div style={{ fontSize: isMobile ? 14 : 8, color: C.whiteDim, marginTop: 2, lineHeight: 1.3 }}>
+        <div style={{ fontSize: isMobile ? 14 : 16, color: C.whiteDim, marginTop: 2, lineHeight: 1.3 }}>
           AI cross-references against
           <br />
           Ground Truth database
@@ -670,7 +670,7 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
         <div style={{ fontSize: isMobile ? 18 : 11, fontWeight: 600, color: C.red, letterSpacing: "0.05em" }}>
           ANOMALY DETECTION
         </div>
-        <div style={{ fontSize: isMobile ? 14 : 8, color: C.whiteDim, marginTop: 1, lineHeight: 1.3 }}>
+        <div style={{ fontSize: isMobile ? 14 : 16, color: C.whiteDim, marginTop: 1, lineHeight: 1.3 }}>
           Flags &quot;Red Flags&quot; like
           <br />
           bundled labor costs
