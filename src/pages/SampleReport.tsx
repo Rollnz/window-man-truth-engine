@@ -21,6 +21,7 @@ import { FAQSection } from '@/components/sample-report/FAQSection';
 import { SampleReportLeadModal } from '@/components/sample-report/SampleReportLeadModal';
 import { UrgencyTicker } from '@/components/social-proof';
 import { PreQuoteLeadModal } from '@/components/sample-report/PreQuoteLeadModal';
+import { FairPriceImageSection } from '@/components/sample-report/FairPriceImageSection';
 
 const SampleReport = () => {
   usePageTracking('sample-report');
@@ -147,6 +148,7 @@ const SampleReport = () => {
         <PillarAccordionSection />
         <HowItWorksSection />
         <LeverageOptionsSection onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
+        <FairPriceImageSection />
         <CloserSection onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
         <FAQSection onOpenPreQuoteModal={handleOpenPreQuoteModal} />
       </main>
