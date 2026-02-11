@@ -254,7 +254,7 @@ export function OutcomeFolders({
 
       {/* Header Badge */}
       <div className="flex justify-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-tools-truth-engine/40 bg-tools-truth-engine/10 px-[2px] py-0 my-0 mx-0 text-center text-xs">
+        <div className="inline-flex items-center gap-2 rounded-full border border-tools-truth-engine/40 bg-tools-truth-engine/10 my-0 mx-0 text-center text-xs px-[15px] py-[8px]">
           <ClipboardCheck className="w-4 h-4 text-tools-truth-engine" />
           <span className="text-sm font-mono tracking-wider text-tools-truth-engine">
             MISSION OUTCOME BRIEFING
