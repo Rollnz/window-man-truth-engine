@@ -863,7 +863,7 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
             </svg>
             <span
               style={{
-                fontSize: isMobile ? 11 : 8,
+                fontSize: isMobile ? 16 : 12,
                 fontWeight: 700,
                 color: C.red,
                 letterSpacing: "0.08em",
@@ -943,7 +943,7 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
                   </svg>
                 </div>
               )}
-              <span style={{ fontSize: isMobile ? 12 : 9, color: C.whiteDim, fontFamily: "monospace" }}>
+              <span style={{ fontSize: isMobile ? 18 : 14, color: C.whiteDim, fontFamily: "monospace" }}>
                 {item.label}
               </span>
             </div>
