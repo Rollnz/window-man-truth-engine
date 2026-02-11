@@ -61,6 +61,27 @@ export const AIComparisonSection: React.FC<AIComparisonSectionProps> = ({
 
             {/* Right column on desktop, first on mobile */}
             <div className="relative flex flex-col items-center gap-8 order-first lg:order-last">
+
+              {/* Text headers - shown first on mobile */}
+              <div className="space-y-5 text-center lg:hidden">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                  Why AI instead of human advisors?
+                </p>
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5">
+                  <Brain className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-primary/80">AI Advantage</span>
+                </div>
+                <h2 className="text-3xl font-bold leading-tight">
+                  <span className="text-white">Unbiased Comparison. </span>
+                  <span className="text-primary">Data Driven insight. Updated Daily </span>
+                </h2>
+                <p className="text-slate-300 text-base leading-relaxed">
+                  Our AI doesn't get tired, distracted, or commission-driven. It reads every line,
+                  compares thousands of scenarios, and flags risk in seconds — so you can make decisions
+                  with the same confidence the institutions have.
+                </p>
+              </div>
+
               {/* Orbiting glow ring */}
               <div className="absolute inset-0 flex items-start justify-center pt-4 pointer-events-none">
                 <div className="w-52 h-52 md:w-64 md:h-64 rounded-full border border-primary/20 animate-[spin_20s_linear_infinite]" />
@@ -116,9 +137,9 @@ export const AIComparisonSection: React.FC<AIComparisonSectionProps> = ({
             }} />
             </div>
 
-            {/* Left column: copy + cards */}
+            {/* Left column: copy + cards (desktop only headers here) */}
             <div className="space-y-8">
-              <div className="space-y-5">
+              <div className="space-y-5 hidden lg:block">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
                   Why AI instead of human advisors?
                 </p>
