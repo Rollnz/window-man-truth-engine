@@ -1,32 +1,32 @@
-import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // ─── Component-local themeable tokens (art-direction names preserved) ─────────
 const C = {
   // Surfaces
-  bg:         'hsl(var(--sp-bg) / 0.55)',
-  bgCard:     'hsl(var(--sp-card))',
+  bg: "hsl(var(--sp-bg) / 0.55)",
+  bgCard: "hsl(var(--sp-card))",
 
   // Accent (was "cyan" in the original art direction)
-  cyan:       'hsl(var(--sp-accent))',
-  cyanDim:    'hsl(var(--sp-accent) / 0.12)',
-  cyanMid:    'hsl(var(--sp-accent) / 0.35)',
-  cyanGlow:   'hsl(var(--sp-accent) / 0.55)',
-  cyanBright: 'hsl(var(--sp-accent) / 0.85)',
+  cyan: "hsl(var(--sp-accent))",
+  cyanDim: "hsl(var(--sp-accent) / 0.12)",
+  cyanMid: "hsl(var(--sp-accent) / 0.35)",
+  cyanGlow: "hsl(var(--sp-accent) / 0.55)",
+  cyanBright: "hsl(var(--sp-accent) / 0.85)",
 
   // Destructive (red flag)
-  red:        'hsl(var(--sp-danger))',
-  redDim:     'hsl(var(--sp-danger) / 0.15)',
-  redMid:     'hsl(var(--sp-danger) / 0.4)',
+  red: "hsl(var(--sp-danger))",
+  redDim: "hsl(var(--sp-danger) / 0.15)",
+  redMid: "hsl(var(--sp-danger) / 0.4)",
 
   // Status colors (data states, not theme accents)
-  green:      '#4ade80',
-  greenDim:   'rgba(74,222,128,0.2)',
+  green: "#4ade80",
+  greenDim: "rgba(74,222,128,0.2)",
 
   // Text
-  white:      'hsl(var(--sp-fg))',
-  whiteDim:   'hsl(var(--sp-muted))',
-  whiteFaint: 'hsl(var(--sp-border))',
+  white: "hsl(var(--sp-fg))",
+  whiteDim: "hsl(var(--sp-muted))",
+  whiteFaint: "hsl(var(--sp-border))",
 };
 
 // ─── Scoped Keyframes ─────────────────────────────────────────────────────────
@@ -77,34 +77,35 @@ const SCOPED_STYLES = `
 
 // ─── Value Propositions (preserved) ───────────────────────────────────────────
 const VALUE_PROPS = [
-  '⚠️ {80%} of quotes contain hidden errors. Find yours before you sign.',
-  '🔒 100% {Private} Analysis — Your contractor will never know.',
-  '💪 Shift the power dynamic. Negotiate with {facts}, not feelings.',
-  '🧐 See exactly what your contractor is hoping you won\'t notice.',
-  '🧠 Translates \'Contractor Jargon\' into plain English warnings.',
-  '⏱️ Faster (and more accurate) than getting a {second opinion}.',
-  '⚖️ The only {unbiased}, non-commissioned review in the industry.',
+  "⚠️ {80%} of quotes contain hidden errors. Find yours before you sign.",
+  "🔒 100% {Private} Analysis — Your contractor will never know.",
+  "💪 Shift the power dynamic. Negotiate with {facts}, not feelings.",
+  "🧐 See exactly what your contractor is hoping you won't notice.",
+  "🧠 Translates 'Contractor Jargon' into plain English warnings.",
+  "⏱️ Faster (and more accurate) than getting a {second opinion}.",
+  "⚖️ The only {unbiased}, non-commissioned review in the industry.",
 ];
 
 function renderHighlighted(text: string): ReactNode[] {
   return text.split(/\{(.*?)\}/g).map((part, i) =>
     i % 2 === 1 ? (
-      <span key={i} style={{ color: 'hsl(var(--primary))', fontWeight: 600 }}>{part}</span>
+      <span key={i} style={{ color: "hsl(var(--primary))", fontWeight: 600 }}>
+        {part}
+      </span>
     ) : (
       <span key={i}>{part}</span>
-    )
+    ),
   );
 }
 
 // ─── Rotating Value Prop (preserved) ──────────────────────────────────────────
 function RotatingValueProp({ active }: { active: boolean }) {
   const [index, setIndex] = useState(0);
-  const [animClass, setAnimClass] = useState<'in' | 'out' | 'none'>('in');
+  const [animClass, setAnimClass] = useState<"in" | "out" | "none">("in");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   useEffect(() => {
     if (!active) return;
@@ -113,10 +114,10 @@ function RotatingValueProp({ active }: { active: boolean }) {
         setIndex((prev) => (prev + 1) % VALUE_PROPS.length);
         return;
       }
-      setAnimClass('out');
+      setAnimClass("out");
       setTimeout(() => {
         setIndex((prev) => (prev + 1) % VALUE_PROPS.length);
-        setAnimClass('in');
+        setAnimClass("in");
       }, 300);
     }, 3000);
     return () => {
@@ -127,29 +128,29 @@ function RotatingValueProp({ active }: { active: boolean }) {
   return (
     <div
       style={{
-        textAlign: 'center',
+        textAlign: "center",
         marginTop: 16,
         minHeight: 40,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         opacity: active ? 1 : 0,
-        transform: active ? 'translateY(0)' : 'translateY(8px)',
-        transition: 'opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s',
+        transform: active ? "translateY(0)" : "translateY(8px)",
+        transition: "opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s",
       }}
     >
       <p
         style={{
-          fontSize: 12,
-          color: 'hsl(var(--muted-foreground))',
+          fontSize: 14,
+          color: "hsl(var(--muted-foreground))",
           margin: 0,
           lineHeight: 1.5,
           animation:
-            prefersReducedMotion || animClass === 'none'
-              ? 'none'
-              : animClass === 'out'
-              ? 'sp-vpFadeOut 0.3s ease forwards'
-              : 'sp-vpFadeIn 0.3s ease forwards',
+            prefersReducedMotion || animClass === "none"
+              ? "none"
+              : animClass === "out"
+                ? "sp-vpFadeOut 0.3s ease forwards"
+                : "sp-vpFadeIn 0.3s ease forwards",
         }}
       >
         {renderHighlighted(VALUE_PROPS[index])}
@@ -160,7 +161,7 @@ function RotatingValueProp({ active }: { active: boolean }) {
 
 // ─── Particle Beam ────────────────────────────────────────────────────────────
 interface ParticleBeamProps {
-  direction?: 'right' | 'down';
+  direction?: "right" | "down";
   width?: string | number;
   height?: number;
   count?: number;
@@ -170,36 +171,36 @@ interface ParticleBeamProps {
 }
 
 function ParticleBeam({
-  direction = 'right',
-  width = '100%',
+  direction = "right",
+  width = "100%",
   height = 40,
   count = 7,
   speed = 1.6,
   color = C.cyan,
   style = {},
 }: ParticleBeamProps) {
-  const isH = direction === 'right';
-  const animName = isH ? 'sp-streamRight' : 'sp-streamDown';
+  const isH = direction === "right";
+  const animName = isH ? "sp-streamRight" : "sp-streamDown";
 
   return (
     <div
       style={{
-        position: 'relative',
+        position: "relative",
         width: isH ? width : 2,
         height: isH ? 2 : height,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         ...style,
       }}
     >
       {/* Track line */}
       <div
         style={{
-          position: 'absolute',
-          width: isH ? '100%' : 2,
-          height: isH ? 2 : '100%',
-          background: `linear-gradient(${isH ? '90deg' : '180deg'}, transparent, ${C.cyanDim}, transparent)`,
+          position: "absolute",
+          width: isH ? "100%" : 2,
+          height: isH ? 2 : "100%",
+          background: `linear-gradient(${isH ? "90deg" : "180deg"}, transparent, ${C.cyanDim}, transparent)`,
           borderRadius: 1,
         }}
       />
@@ -208,17 +209,15 @@ function ParticleBeam({
         <div
           key={i}
           style={{
-            position: 'absolute',
+            position: "absolute",
             width: 6,
             height: 6,
-            borderRadius: '50%',
+            borderRadius: "50%",
             background: color,
             boxShadow: `0 0 8px ${color}, 0 0 16px ${color}`,
             opacity: 0,
             animation: `${animName} ${speed}s linear ${(i * speed) / count}s infinite`,
-            ...(isH
-              ? { top: '50%', transform: 'translateY(-50%)' }
-              : { left: '50%', transform: 'translateX(-50%)' }),
+            ...(isH ? { top: "50%", transform: "translateY(-50%)" } : { left: "50%", transform: "translateX(-50%)" }),
           }}
         />
       ))}
@@ -230,13 +229,49 @@ function ParticleBeam({
 function CircuitTraces({ opacity = 0.08 }: { opacity?: number }) {
   return (
     <svg
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity }}
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity }}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <line x1="10%" y1="20%" x2="40%" y2="20%" stroke={C.cyan} strokeWidth="0.5" strokeDasharray="4 4" style={{ animation: 'sp-dataFlow 3s linear infinite' }} />
-      <line x1="60%" y1="30%" x2="90%" y2="30%" stroke={C.cyan} strokeWidth="0.5" strokeDasharray="4 4" style={{ animation: 'sp-dataFlow 3s linear 0.5s infinite' }} />
-      <line x1="20%" y1="70%" x2="50%" y2="70%" stroke={C.cyan} strokeWidth="0.5" strokeDasharray="4 4" style={{ animation: 'sp-dataFlow 3s linear 1s infinite' }} />
-      <line x1="70%" y1="80%" x2="95%" y2="80%" stroke={C.cyan} strokeWidth="0.5" strokeDasharray="4 4" style={{ animation: 'sp-dataFlow 3s linear 1.5s infinite' }} />
+      <line
+        x1="10%"
+        y1="20%"
+        x2="40%"
+        y2="20%"
+        stroke={C.cyan}
+        strokeWidth="0.5"
+        strokeDasharray="4 4"
+        style={{ animation: "sp-dataFlow 3s linear infinite" }}
+      />
+      <line
+        x1="60%"
+        y1="30%"
+        x2="90%"
+        y2="30%"
+        stroke={C.cyan}
+        strokeWidth="0.5"
+        strokeDasharray="4 4"
+        style={{ animation: "sp-dataFlow 3s linear 0.5s infinite" }}
+      />
+      <line
+        x1="20%"
+        y1="70%"
+        x2="50%"
+        y2="70%"
+        stroke={C.cyan}
+        strokeWidth="0.5"
+        strokeDasharray="4 4"
+        style={{ animation: "sp-dataFlow 3s linear 1s infinite" }}
+      />
+      <line
+        x1="70%"
+        y1="80%"
+        x2="95%"
+        y2="80%"
+        stroke={C.cyan}
+        strokeWidth="0.5"
+        strokeDasharray="4 4"
+        style={{ animation: "sp-dataFlow 3s linear 1.5s infinite" }}
+      />
       <circle cx="10%" cy="20%" r="2" fill={C.cyan} opacity="0.4" />
       <circle cx="90%" cy="30%" r="2" fill={C.cyan} opacity="0.4" />
     </svg>
@@ -248,17 +283,17 @@ function ForensicBadge({ isMobile }: { isMobile: boolean }) {
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        alignItems: "center",
+        justifyContent: "center",
         gap: isMobile ? 8 : 16,
         marginBottom: isMobile ? 16 : 24,
-        textAlign: 'center',
+        textAlign: "center",
       }}
     >
       {/* Hexagon icon */}
-      <div style={{ position: 'relative', width: 40, height: 40, flexShrink: 0 }}>
+      <div style={{ position: "relative", width: 40, height: 40, flexShrink: 0 }}>
         <svg viewBox="0 0 40 40" width="40" height="40">
           <polygon
             points="20,2 36,11 36,29 20,38 4,29 4,11"
@@ -288,7 +323,9 @@ function ForensicBadge({ isMobile }: { isMobile: boolean }) {
               />
             );
           })}
-          <text x="20" y="23" textAnchor="middle" fill={C.cyan} fontSize="10" fontWeight="700">AI</text>
+          <text x="20" y="23" textAnchor="middle" fill={C.cyan} fontSize="10" fontWeight="700">
+            AI
+          </text>
         </svg>
       </div>
       {/* Text */}
@@ -298,8 +335,8 @@ function ForensicBadge({ isMobile }: { isMobile: boolean }) {
             fontSize: isMobile ? 13 : 15,
             fontWeight: 700,
             color: C.cyan,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase' as const,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase" as const,
           }}
         >
           FORENSIC ALLY
@@ -308,8 +345,8 @@ function ForensicBadge({ isMobile }: { isMobile: boolean }) {
           style={{
             fontSize: isMobile ? 9 : 10,
             color: C.whiteDim,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase' as const,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase" as const,
             marginTop: 2,
           }}
         >
@@ -326,15 +363,25 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
   const docH = isMobile ? 72 : 84;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: isMobile ? '16px 8px' : '20px 12px', position: 'relative' }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        padding: isMobile ? "16px 8px" : "20px 12px",
+        position: "relative",
+      }}
+    >
       {/* Document illustration */}
-      <div style={{ position: 'relative', width: docW + 24, height: docH + 10, marginBottom: 12 }}>
+      <div style={{ position: "relative", width: docW + 24, height: docH + 10, marginBottom: 12 }}>
         {/* Shadow copies */}
         {[2, 1].map((i) => (
           <div
             key={i}
             style={{
-              position: 'absolute',
+              position: "absolute",
               width: docW,
               height: docH,
               borderRadius: 4,
@@ -349,18 +396,28 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
         {/* Main document */}
         <div
           style={{
-            position: 'relative',
+            position: "relative",
             width: docW,
             height: docH,
             borderRadius: 4,
             background: `linear-gradient(180deg, ${C.bgCard}, hsl(var(--sp-bg)))`,
             border: `1px solid ${C.cyanMid}`,
             left: 8,
-            overflow: 'hidden',
+            overflow: "hidden",
           }}
         >
           {/* PDF label */}
-          <div style={{ fontSize: isMobile ? 7 : 8, fontWeight: 700, color: C.cyan, textAlign: 'center', marginTop: 5, letterSpacing: '0.1em', fontFamily: 'monospace' }}>
+          <div
+            style={{
+              fontSize: isMobile ? 7 : 8,
+              fontWeight: 700,
+              color: C.cyan,
+              textAlign: "center",
+              marginTop: 5,
+              letterSpacing: "0.1em",
+              fontFamily: "monospace",
+            }}
+          >
             PDF
           </div>
           {/* Text lines */}
@@ -368,8 +425,8 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
             <div
               key={i}
               style={{
-                position: 'absolute',
-                left: '15%',
+                position: "absolute",
+                left: "15%",
                 top: `${y}%`,
                 width: `${55 + (i % 3) * 10}%`,
                 height: 2,
@@ -382,13 +439,13 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
           {/* Scan line */}
           <div
             style={{
-              position: 'absolute',
+              position: "absolute",
               left: 0,
-              width: '100%',
+              width: "100%",
               height: 2,
               background: `linear-gradient(90deg, transparent, ${C.cyanBright}, transparent)`,
               boxShadow: `0 0 8px ${C.cyan}`,
-              animation: 'sp-scanLine 2.5s ease-in-out infinite',
+              animation: "sp-scanLine 2.5s ease-in-out infinite",
               top: 0,
             }}
           />
@@ -396,7 +453,7 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
       </div>
 
       {/* Extracted data fragments */}
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 8 }}>
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", marginBottom: 8 }}>
         {[0, 1, 2, 3, 4].map((i) => (
           <div
             key={i}
@@ -409,18 +466,29 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
               animation: `sp-breathe 2s ease ${i * 0.2}s infinite`,
             }}
           >
-            <div style={{ width: '60%', height: 2, background: C.cyan, borderRadius: 1, margin: '3px auto 0', opacity: 0.5 }} />
+            <div
+              style={{
+                width: "60%",
+                height: 2,
+                background: C.cyan,
+                borderRadius: 1,
+                margin: "3px auto 0",
+                opacity: 0.5,
+              }}
+            />
           </div>
         ))}
       </div>
 
       {/* Labels */}
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: C.cyan, letterSpacing: '0.05em' }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: C.cyan, letterSpacing: "0.05em" }}>
           EXTRACTION
         </div>
         <div style={{ fontSize: isMobile ? 8 : 9, color: C.whiteDim, marginTop: 2, lineHeight: 1.3 }}>
-          Raw PDF/text parsed<br />into structured JSON
+          Raw PDF/text parsed
+          <br />
+          into structured JSON
         </div>
       </div>
     </div>
@@ -435,19 +503,29 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
   const chipSize = isMobile ? 50 : 60;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: isMobile ? '16px 8px' : '20px 12px', position: 'relative' }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        padding: isMobile ? "16px 8px" : "20px 12px",
+        position: "relative",
+      }}
+    >
       {/* Outer orbit ring */}
       <div
         style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
+          position: "absolute",
+          top: "50%",
+          left: "50%",
           width: outerR,
           height: outerR,
-          borderRadius: '50%',
+          borderRadius: "50%",
           border: `1px solid ${C.cyanDim}`,
-          animation: 'sp-rotate 20s linear infinite',
-          transform: 'translate(-50%, -50%)',
+          animation: "sp-rotate 20s linear infinite",
+          transform: "translate(-50%, -50%)",
         }}
       >
         {Array.from({ length: nodes }).map((_, i) => {
@@ -457,10 +535,10 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
             <div
               key={i}
               style={{
-                position: 'absolute',
+                position: "absolute",
                 width: 4,
                 height: 4,
-                borderRadius: '50%',
+                borderRadius: "50%",
                 background: C.cyan,
                 opacity: 0.5,
                 top: `calc(50% + ${Math.sin(a) * r}px - 2px)`,
@@ -475,15 +553,15 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
       {/* Inner orbit ring */}
       <div
         style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
+          position: "absolute",
+          top: "50%",
+          left: "50%",
           width: innerR,
           height: innerR,
-          borderRadius: '50%',
+          borderRadius: "50%",
           border: `1px dashed ${C.cyanDim}`,
-          animation: 'sp-rotateReverse 15s linear infinite',
-          transform: 'translate(-50%, -50%)',
+          animation: "sp-rotateReverse 15s linear infinite",
+          transform: "translate(-50%, -50%)",
         }}
       >
         {Array.from({ length: 8 }).map((_, i) => {
@@ -493,10 +571,10 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
             <div
               key={i}
               style={{
-                position: 'absolute',
+                position: "absolute",
                 width: 3,
                 height: 3,
-                borderRadius: '50%',
+                borderRadius: "50%",
                 background: C.cyanGlow,
                 top: `calc(50% + ${Math.sin(a) * r}px - 1.5px)`,
                 left: `calc(50% + ${Math.cos(a) * r}px - 1.5px)`,
@@ -509,18 +587,18 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
       {/* Central chip */}
       <div
         style={{
-          position: 'relative',
+          position: "relative",
           zIndex: 2,
           width: chipSize,
           height: chipSize,
           borderRadius: 10,
           background: `linear-gradient(135deg, ${C.bgCard}, hsl(var(--sp-bg)))`,
           border: `1.5px solid ${C.cyanMid}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          animation: 'sp-coreGlow 3s ease-in-out infinite',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          animation: "sp-coreGlow 3s ease-in-out infinite",
         }}
       >
         <svg viewBox="0 0 20 20" width={isMobile ? 16 : 20} height={isMobile ? 16 : 20}>
@@ -528,16 +606,20 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
           <circle cx="10" cy="10" r="3" fill={C.cyanDim} stroke={C.cyan} strokeWidth="0.5" />
           <line x1="10" y1="3" x2="10" y2="7" stroke={C.cyan} strokeWidth="0.5" opacity="0.6" />
         </svg>
-        <div style={{ fontSize: isMobile ? 7 : 8, fontWeight: 700, color: C.cyan, marginTop: 2, fontFamily: 'monospace' }}>AI</div>
+        <div
+          style={{ fontSize: isMobile ? 7 : 8, fontWeight: 700, color: C.cyan, marginTop: 2, fontFamily: "monospace" }}
+        >
+          AI
+        </div>
         {/* Sonar ping */}
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: -4,
             borderRadius: 14,
             border: `1px solid ${C.cyan}`,
             opacity: 0,
-            animation: 'sp-sonarPing 2.5s ease-out infinite',
+            animation: "sp-sonarPing 2.5s ease-out infinite",
           }}
         />
       </div>
@@ -558,7 +640,7 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
         <div
           key={i}
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: `calc(50% + ${t.y}px)`,
             left: `calc(50% + ${t.x}px)`,
             width: t.w,
@@ -570,22 +652,28 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
       ))}
 
       {/* Labels */}
-      <div style={{ position: 'absolute', bottom: isMobile ? 12 : 16, left: 0, right: 0, textAlign: 'center', zIndex: 3 }}>
-        <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: C.cyan, letterSpacing: '0.05em' }}>
+      <div
+        style={{ position: "absolute", bottom: isMobile ? 12 : 16, left: 0, right: 0, textAlign: "center", zIndex: 3 }}
+      >
+        <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: C.cyan, letterSpacing: "0.05em" }}>
           CONTEXT INJECTION
         </div>
         <div style={{ fontSize: isMobile ? 7 : 8, color: C.whiteDim, marginTop: 2, lineHeight: 1.3 }}>
-          AI cross-references against<br />Ground Truth database
+          AI cross-references against
+          <br />
+          Ground Truth database
         </div>
       </div>
 
       {/* Secondary label */}
-      <div style={{ position: 'absolute', top: isMobile ? 12 : 16, left: 0, right: 0, textAlign: 'center', zIndex: 3 }}>
-        <div style={{ fontSize: isMobile ? 9 : 11, fontWeight: 600, color: C.red, letterSpacing: '0.05em' }}>
+      <div style={{ position: "absolute", top: isMobile ? 12 : 16, left: 0, right: 0, textAlign: "center", zIndex: 3 }}>
+        <div style={{ fontSize: isMobile ? 9 : 11, fontWeight: 600, color: C.red, letterSpacing: "0.05em" }}>
           ANOMALY DETECTION
         </div>
         <div style={{ fontSize: isMobile ? 7 : 8, color: C.whiteDim, marginTop: 1, lineHeight: 1.3 }}>
-          Flags &quot;Red Flags&quot; like<br />bundled labor costs
+          Flags &quot;Red Flags&quot; like
+          <br />
+          bundled labor costs
         </div>
       </div>
     </div>
@@ -598,18 +686,36 @@ function DatabaseScene({ isMobile }: { isMobile: boolean }) {
   const dbH = isMobile ? 78 : 92;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: isMobile ? '16px 8px' : '20px 12px', position: 'relative' }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        padding: isMobile ? "16px 8px" : "20px 12px",
+        position: "relative",
+      }}
+    >
       {/* Database cylinder */}
-      <div style={{ position: 'relative', width: dbW, height: dbH, margin: '0 auto 12px', animation: 'sp-dbPulse 3s ease-in-out infinite' }}>
+      <div
+        style={{
+          position: "relative",
+          width: dbW,
+          height: dbH,
+          margin: "0 auto 12px",
+          animation: "sp-dbPulse 3s ease-in-out infinite",
+        }}
+      >
         {/* Top ellipse */}
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             width: dbW,
             height: dbW * 0.35,
-            borderRadius: '50%',
+            borderRadius: "50%",
             background: `linear-gradient(180deg, ${C.cyanMid}, ${C.cyanDim})`,
             border: `1px solid ${C.cyanMid}`,
             zIndex: 2,
@@ -618,7 +724,7 @@ function DatabaseScene({ isMobile }: { isMobile: boolean }) {
         {/* Body */}
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: dbW * 0.175,
             left: 0,
             width: dbW,
@@ -633,10 +739,10 @@ function DatabaseScene({ isMobile }: { isMobile: boolean }) {
             <div
               key={i}
               style={{
-                position: 'absolute',
-                left: '12%',
+                position: "absolute",
+                left: "12%",
                 top: `${y}%`,
-                width: '76%',
+                width: "76%",
                 height: 3,
                 background: `linear-gradient(90deg, ${C.cyanDim}, ${C.cyanMid}, ${C.cyanDim})`,
                 borderRadius: 1,
@@ -648,12 +754,12 @@ function DatabaseScene({ isMobile }: { isMobile: boolean }) {
         {/* Bottom ellipse */}
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             bottom: 0,
             left: 0,
             width: dbW,
             height: dbW * 0.35,
-            borderRadius: '50%',
+            borderRadius: "50%",
             background: `linear-gradient(180deg, ${C.cyanDim}, hsl(var(--sp-bg)))`,
             border: `1px solid ${C.cyanDim}`,
           }}
@@ -661,17 +767,17 @@ function DatabaseScene({ isMobile }: { isMobile: boolean }) {
         {/* Glow */}
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: -8,
-            borderRadius: '50%',
+            borderRadius: "50%",
             background: `radial-gradient(circle, ${C.cyanDim} 0%, transparent 70%)`,
-            animation: 'sp-breathe 3s ease infinite',
+            animation: "sp-breathe 3s ease infinite",
           }}
         />
       </div>
 
       {/* Data fragments */}
-      <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 8 }}>
+      <div style={{ display: "flex", gap: 4, justifyContent: "center", marginBottom: 8 }}>
         {[0, 1, 2, 3, 4].map((i) => (
           <div
             key={i}
@@ -683,7 +789,16 @@ function DatabaseScene({ isMobile }: { isMobile: boolean }) {
               animation: `sp-breathe 2s ease ${i * 0.15}s infinite`,
             }}
           >
-            <div style={{ width: '50%', height: 1.5, background: C.cyan, borderRadius: 1, margin: '2px auto 0', opacity: 0.4 }} />
+            <div
+              style={{
+                width: "50%",
+                height: 1.5,
+                background: C.cyan,
+                borderRadius: 1,
+                margin: "2px auto 0",
+                opacity: 0.4,
+              }}
+            />
           </div>
         ))}
       </div>
@@ -696,34 +811,65 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
   const w = isMobile ? 160 : 140;
   const h = isMobile ? 175 : 170;
   const items = [
-    { type: 'flag', label: 'Bundled labor', y: 34 },
-    { type: 'check', label: 'Impact rating', y: 56 },
-    { type: 'flag', label: 'Hidden markup', y: 78 },
-    { type: 'check', label: 'Permit fees', y: 100 },
-    { type: 'warn', label: 'Missing NOA', y: 122 },
+    { type: "flag", label: "Bundled labor", y: 34 },
+    { type: "check", label: "Impact rating", y: 56 },
+    { type: "flag", label: "Hidden markup", y: 78 },
+    { type: "check", label: "Permit fees", y: 100 },
+    { type: "warn", label: "Missing NOA", y: 122 },
   ] as const;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: isMobile ? '16px 8px' : '20px 12px', position: 'relative' }}>
-      <div style={{ position: 'relative', width: w, height: h }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        padding: isMobile ? "16px 8px" : "20px 12px",
+        position: "relative",
+      }}
+    >
+      <div style={{ position: "relative", width: w, height: h }}>
         {/* Report card */}
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
             borderRadius: 8,
             background: `linear-gradient(180deg, ${C.bgCard}, hsl(var(--sp-bg)))`,
             border: `1px solid ${C.redDim}`,
-            overflow: 'hidden',
+            overflow: "hidden",
           }}
         >
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 10px', borderBottom: `1px solid ${C.redDim}` }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" style={{ animation: 'sp-flagWave 2s ease-in-out infinite', transformOrigin: 'bottom left' }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "8px 10px",
+              borderBottom: `1px solid ${C.redDim}`,
+            }}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              style={{ animation: "sp-flagWave 2s ease-in-out infinite", transformOrigin: "bottom left" }}
+            >
               <rect x="1" y="0" width="1.5" height="12" fill={C.red} />
               <path d="M2.5,0 L11,0 L9,3 L11,6 L2.5,6 Z" fill={C.red} opacity="0.8" />
             </svg>
-            <span style={{ fontSize: isMobile ? 7 : 8, fontWeight: 700, color: C.red, letterSpacing: '0.08em', fontFamily: 'monospace' }}>
+            <span
+              style={{
+                fontSize: isMobile ? 7 : 8,
+                fontWeight: 700,
+                color: C.red,
+                letterSpacing: "0.08em",
+                fontFamily: "monospace",
+              }}
+            >
               RED FLAG REPORT
             </span>
           </div>
@@ -733,32 +879,71 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
             <div
               key={i}
               style={{
-                position: 'absolute',
+                position: "absolute",
                 left: 10,
                 top: item.y,
-                display: 'flex',
-                alignItems: 'center',
+                display: "flex",
+                alignItems: "center",
                 gap: 6,
                 animation: `sp-checkPop 0.4s ease ${0.5 + i * 0.15}s both`,
               }}
             >
-              {item.type === 'flag' ? (
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: C.redDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="6" height="6" viewBox="0 0 6 6"><path d="M0.5,0 L0.5,6 M0.5,0 L5,0 L4,1.5 L5,3 L0.5,3" stroke={C.red} strokeWidth="0.8" fill="none" /></svg>
+              {item.type === "flag" ? (
+                <div
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    background: C.redDim,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <svg width="6" height="6" viewBox="0 0 6 6">
+                    <path
+                      d="M0.5,0 L0.5,6 M0.5,0 L5,0 L4,1.5 L5,3 L0.5,3"
+                      stroke={C.red}
+                      strokeWidth="0.8"
+                      fill="none"
+                    />
+                  </svg>
                 </div>
-              ) : item.type === 'check' ? (
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: C.greenDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="6" height="6" viewBox="0 0 6 6"><path d="M1,3 L2.5,4.5 L5,1.5" stroke={C.green} strokeWidth="1" fill="none" /></svg>
+              ) : item.type === "check" ? (
+                <div
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    background: C.greenDim,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <svg width="6" height="6" viewBox="0 0 6 6">
+                    <path d="M1,3 L2.5,4.5 L5,1.5" stroke={C.green} strokeWidth="1" fill="none" />
+                  </svg>
                 </div>
               ) : (
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(251,191,36,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    background: "rgba(251,191,36,0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
                   <svg width="6" height="6" viewBox="0 0 6 6">
                     <path d="M3,0.5 L5.5,5 L0.5,5 Z" stroke="#fbbf24" strokeWidth="0.8" fill="none" />
                     <line x1="3" y1="2.5" x2="3" y2="3.5" stroke="#fbbf24" strokeWidth="0.8" />
                   </svg>
                 </div>
               )}
-              <span style={{ fontSize: isMobile ? 8 : 9, color: C.whiteDim, fontFamily: 'monospace' }}>
+              <span style={{ fontSize: isMobile ? 8 : 9, color: C.whiteDim, fontFamily: "monospace" }}>
                 {item.label}
               </span>
             </div>
@@ -769,13 +954,19 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
             <div
               key={side}
               style={{
-                position: 'absolute',
+                position: "absolute",
                 bottom: 8,
-                [side === -1 ? 'left' : 'right']: 8,
+                [side === -1 ? "left" : "right"]: 8,
               }}
             >
               <svg width="12" height="12" viewBox="0 0 12 12">
-                <path d={side === -1 ? 'M0,12 L0,4 L4,0' : 'M12,12 L12,4 L8,0'} stroke={C.red} strokeWidth="0.5" fill="none" opacity="0.3" />
+                <path
+                  d={side === -1 ? "M0,12 L0,4 L4,0" : "M12,12 L12,4 L8,0"}
+                  stroke={C.red}
+                  strokeWidth="0.5"
+                  fill="none"
+                  opacity="0.3"
+                />
                 <circle cx={side === -1 ? 0 : 12} cy="12" r="1.5" fill={C.red} opacity="0.3" />
               </svg>
             </div>
@@ -792,10 +983,10 @@ function VerticalBeam({ color = C.cyan, visible }: { color?: string; visible: bo
     <div
       style={{
         height: 44,
-        display: 'flex',
-        justifyContent: 'center',
+        display: "flex",
+        justifyContent: "center",
         opacity: visible ? 1 : 0,
-        transition: 'opacity 0.6s ease',
+        transition: "opacity 0.6s ease",
       }}
     >
       <ParticleBeam direction="down" height={44} count={5} speed={1.2} color={color} />
@@ -810,8 +1001,7 @@ export function ScanPipelineStrip() {
   const isMobile = useIsMobile();
 
   const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // IntersectionObserver scroll-trigger
   useEffect(() => {
@@ -828,20 +1018,20 @@ export function ScanPipelineStrip() {
           obs.disconnect();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, [prefersReducedMotion]);
 
   const cell = (delay: number, borderOverride?: string): CSSProperties => ({
-    position: 'relative',
+    position: "relative",
     background: C.bgCard,
     borderRadius: 16,
     border: `1px solid ${borderOverride || C.cyanDim}`,
-    overflow: 'hidden',
+    overflow: "hidden",
     opacity: visible ? 1 : 0,
-    transform: visible ? 'translateY(0)' : 'translateY(20px)',
+    transform: visible ? "translateY(0)" : "translateY(20px)",
     transition: `opacity 0.6s ${delay}s ease, transform 0.6s ${delay}s ease`,
   });
 
@@ -851,7 +1041,7 @@ export function ScanPipelineStrip() {
 
       <div
         className="bg-muted/50 dark:bg-background/40 rounded-[20px] relative overflow-hidden max-w-[960px] mx-auto"
-        style={{ padding: isMobile ? '24px 12px' : '32px 28px' }}
+        style={{ padding: isMobile ? "24px 12px" : "32px 28px" }}
       >
         <CircuitTraces />
 
@@ -860,7 +1050,7 @@ export function ScanPipelineStrip() {
 
         {isMobile ? (
           /* ━━━ MOBILE: VERTICAL STACK ━━━ */
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch" }}>
             <div style={{ ...cell(0.1), height: 220 }}>
               <CircuitTraces opacity={0.05} />
               <ExtractionScene isMobile={isMobile} />
@@ -890,9 +1080,9 @@ export function ScanPipelineStrip() {
           /* ━━━ DESKTOP: HORIZONTAL GRID ━━━ */
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr auto 1.3fr auto 0.8fr auto 1fr',
-              alignItems: 'center',
+              display: "grid",
+              gridTemplateColumns: "1fr auto 1.3fr auto 0.8fr auto 1fr",
+              alignItems: "center",
               gap: 0,
             }}
           >
@@ -901,7 +1091,7 @@ export function ScanPipelineStrip() {
               <ExtractionScene isMobile={false} />
             </div>
 
-            <div style={{ padding: '0 4px', display: 'flex', alignItems: 'center', width: 60 }}>
+            <div style={{ padding: "0 4px", display: "flex", alignItems: "center", width: 60 }}>
               <ParticleBeam direction="right" count={5} speed={1.8} />
             </div>
 
@@ -910,7 +1100,7 @@ export function ScanPipelineStrip() {
               <AIBrainScene isMobile={false} />
             </div>
 
-            <div style={{ padding: '0 4px', display: 'flex', alignItems: 'center', width: 60 }}>
+            <div style={{ padding: "0 4px", display: "flex", alignItems: "center", width: 60 }}>
               <ParticleBeam direction="right" count={5} speed={1.8} />
             </div>
 
@@ -919,7 +1109,7 @@ export function ScanPipelineStrip() {
               <DatabaseScene isMobile={false} />
             </div>
 
-            <div style={{ padding: '0 4px', display: 'flex', alignItems: 'center', width: 60 }}>
+            <div style={{ padding: "0 4px", display: "flex", alignItems: "center", width: 60 }}>
               <ParticleBeam direction="right" count={5} speed={1.8} color={C.red} />
             </div>
 
