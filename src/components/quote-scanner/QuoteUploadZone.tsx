@@ -277,7 +277,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
       </div>
 
       {/* Helper text */}
-      <p className="text-center text-muted-foreground text-sm md:text-base">
+      <p className="text-center text-foreground text-base md:text-lg">
         Contractors often hand you numbers, jargon, and tiny fine print. 
         You're expected to just trust it.
       </p>
