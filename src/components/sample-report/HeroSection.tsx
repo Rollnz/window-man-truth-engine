@@ -3,11 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Upload, Shield, Check, ArrowRight } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 import { useSectionTracking } from '@/hooks/useSectionTracking';
+import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
+
 interface HeroSectionProps {
   firstName?: string;
   onOpenLeadModal?: (ctaSource: string) => void;
   onOpenPreQuoteModal?: (ctaSource: string) => void;
 }
+
 function AnimatedScore({
   targetScore,
   isVisible
@@ -33,6 +36,7 @@ function AnimatedScore({
   }, [targetScore, isVisible]);
   return <span>{score}</span>;
 }
+
 const PreviewBars = ({
   isVisible
 }: {
@@ -74,6 +78,7 @@ const PreviewBars = ({
         </div>)}
     </div>;
 };
+
 export function HeroSection({
   firstName,
   onOpenLeadModal,
@@ -107,88 +112,100 @@ export function HeroSection({
         <div className="grid lg:grid-cols-5 gap-8 lg:gap-12 items-center">
           <div className="lg:col-span-3 space-y-6">
             
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-              <Shield className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Sample AI Audit Report</span>
-            </div>
+            <AnimateOnScroll duration={700} delay={0}>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                <Shield className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-primary">Sample AI Audit Report</span>
+              </div>
+            </AnimateOnScroll>
 
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
-              {safeFirstName && safeFirstName.length >= 2 ? (
-                <>
-                  <span className="text-primary">{safeFirstName}</span>, See Exactly What Your AI Audit Looks Like
-                </>
-              ) : (
-                <>See Exactly What Your AI Audit Looks Like</>
-              )}
-              <span className="block text-primary">Before You Upload Anything</span>
-            </h1>
+            <AnimateOnScroll duration={700} delay={100}>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
+                {safeFirstName && safeFirstName.length >= 2 ? (
+                  <>
+                    <span className="text-primary">{safeFirstName}</span>, See Exactly What Your AI Audit Looks Like
+                  </>
+                ) : (
+                  <>See Exactly What Your AI Audit Looks Like</>
+                )}
+                <span className="block text-primary">Before You Upload Anything</span>
+              </h1>
+            </AnimateOnScroll>
 
-            <p className="text-lg md:text-xl text-muted-foreground max-w-xl">
-              This is a real-world example of the same report you'll receive: scorecard, risk flags, and plain-English findings.
-            </p>
+            <AnimateOnScroll duration={700} delay={200}>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-xl">
+                This is a real-world example of the same report you'll receive: scorecard, risk flags, and plain-English findings.
+              </p>
+            </AnimateOnScroll>
 
-            <div className="flex flex-wrap gap-3">
-              {['No charge', 'No obligation', 'You stay in control'].map(chip => <span key={chip} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-border/50 text-sm text-muted-foreground">
-                  <Check className="w-3.5 h-3.5 text-primary" />
-                  {chip}
-                </span>)}
-            </div>
+            <AnimateOnScroll duration={700} delay={250}>
+              <div className="flex flex-wrap gap-3">
+                {['No charge', 'No obligation', 'You stay in control'].map(chip => <span key={chip} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-border/50 text-sm text-muted-foreground">
+                    <Check className="w-3.5 h-3.5 text-primary" />
+                    {chip}
+                  </span>)}
+              </div>
+            </AnimateOnScroll>
 
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button variant="cta" size="lg" className="group" onClick={handleNoQuoteClick}>
-                Don't Have a Quote Yet? Get Ready
-                <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
-              </Button>
-              <Button variant="outline" size="lg" className="group" onClick={handleUploadClick}>
-                <Upload className="w-5 h-5 mr-2" />
-                Upload My Quote
-                <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </div>
+            <AnimateOnScroll duration={700} delay={300}>
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Button variant="cta" size="lg" className="group" onClick={handleNoQuoteClick}>
+                  Don't Have a Quote Yet? Get Ready
+                  <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+                </Button>
+                <Button variant="outline" size="lg" className="group" onClick={handleUploadClick}>
+                  <Upload className="w-5 h-5 mr-2" />
+                  Upload My Quote
+                  <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </div>
 
-            <p className="text-xs text-muted-foreground pt-2">
-              PNG, JPEG. PDF Works Best for Multi-Page Uploads                
-            </p>
+              <p className="text-xs text-muted-foreground pt-2">
+                PNG, JPEG. PDF Works Best for Multi-Page Uploads                
+              </p>
+            </AnimateOnScroll>
           </div>
 
           <div className="lg:col-span-2">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-[hsl(var(--secondary)/0.1)] rounded-2xl blur-2xl" />
-              <div className="relative bg-card/80 backdrop-blur-lg border border-border/50 rounded-2xl p-6 shadow-2xl">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-primary" />
-                    <span className="font-semibold text-foreground">Quote Safety Score</span>
+            <AnimateOnScroll direction="right" duration={800} delay={200}>
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-[hsl(var(--secondary)/0.1)] rounded-2xl blur-2xl" />
+                <div className="relative bg-card/80 backdrop-blur-lg border border-border/50 rounded-2xl p-6 shadow-2xl">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-primary" />
+                      <span className="font-semibold text-foreground">Quote Safety Score</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">SAMPLE</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">SAMPLE</span>
-                </div>
 
-                <div className="flex items-center justify-center mb-6">
-                  <div className="relative w-32 h-32">
-                    <svg className="w-full h-full transform -rotate-90">
-                      <circle cx="64" cy="64" r="56" stroke="hsl(var(--muted))" strokeWidth="12" fill="none" />
-                      <circle cx="64" cy="64" r="56" stroke="hsl(var(--primary))" strokeWidth="12" fill="none" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={isVisible ? offset : circumference} className="transition-all duration-[1500ms] ease-out" />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-bold text-foreground">
-                        <AnimatedScore targetScore={62} isVisible={isVisible} />
-                      </span>
-                      <span className="text-xs text-muted-foreground">/ 100</span>
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="relative w-32 h-32">
+                      <svg className="w-full h-full transform -rotate-90">
+                        <circle cx="64" cy="64" r="56" stroke="hsl(var(--muted))" strokeWidth="12" fill="none" />
+                        <circle cx="64" cy="64" r="56" stroke="hsl(var(--primary))" strokeWidth="12" fill="none" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={isVisible ? offset : circumference} className="transition-all duration-[1500ms] ease-out" />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-3xl font-bold text-foreground">
+                          <AnimatedScore targetScore={62} isVisible={isVisible} />
+                        </span>
+                        <span className="text-xs text-muted-foreground">/ 100</span>
+                      </div>
                     </div>
                   </div>
+
+                  <p className="text-sm text-center text-muted-foreground mb-6">
+                    Not a bad quote — a quote with <span className="text-[hsl(var(--secondary))] font-medium">avoidable risk</span>.
+                  </p>
+
+                  <PreviewBars isVisible={isVisible} />
+
+                  <p className="text-[10px] text-muted-foreground text-center mt-4 pt-4 border-t border-border/50">
+                    Scores reflect completeness and protection — not brand names.
+                  </p>
                 </div>
-
-                <p className="text-sm text-center text-muted-foreground mb-6">
-                  Not a bad quote — a quote with <span className="text-[hsl(var(--secondary))] font-medium">avoidable risk</span>.
-                </p>
-
-                <PreviewBars isVisible={isVisible} />
-
-                <p className="text-[10px] text-muted-foreground text-center mt-4 pt-4 border-t border-border/50">
-                  Scores reflect completeness and protection — not brand names.
-                </p>
               </div>
-            </div>
+            </AnimateOnScroll>
           </div>
         </div>
       </div>
