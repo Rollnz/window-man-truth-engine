@@ -832,7 +832,7 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
             </svg>
             <span
               style={{
-                fontSize: isMobile ? 16 : 12,
+                fontSize: isMobile ? "clamp(14px, 4vw, 18px)" : "clamp(11px, 1.2vw, 14px)",
                 whiteSpace: "nowrap",
                 fontWeight: 700,
                 color: C.red,
@@ -913,7 +913,7 @@ function RedFlagScene({ isMobile }: { isMobile: boolean }) {
                   </svg>
                 </div>
               )}
-              <span style={{ fontSize: isMobile ? 18 : 14, color: C.whiteDim, fontFamily: "monospace" }}>
+              <span style={{ fontSize: isMobile ? "clamp(10px, 3vw, 13px)" : "clamp(8px, 0.9vw, 11px)", color: C.whiteDim, fontFamily: "monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "calc(100% - 20px)" }}>
                 {item.label}
               </span>
             </div>
