@@ -312,7 +312,7 @@ Deno.serve(async (req) => {
     if (claimError) {
       console.error('[Dispatcher] Failed to claim calls:', claimError);
       return new Response(
-        JSON.stringify({ error: 'Failed to claim calls', details: claimError.message }),
+        JSON.stringify({ error: 'Failed to claim calls' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
