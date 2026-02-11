@@ -103,7 +103,7 @@ export function UrgencyTicker({
         {/* Left: Total Count */}
         <div className={cn('flex items-center gap-1.5 sm:gap-2 flex-shrink-0', sizes.padding)}>
           <Shield className={cn(sizes.iconSize, styles.icon)} />
-          <span className={cn('font-bold tabular-nums', sizes.text, styles.count)}>
+          <span className={cn("font-bold tabular-nums shadow-2xl", sizes.text, styles.count)}>
             {totalCount.toLocaleString()}
           </span>
           <span className={cn(sizes.label, styles.label)}>quotes scanned</span>
