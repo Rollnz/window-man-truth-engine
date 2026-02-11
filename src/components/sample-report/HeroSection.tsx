@@ -115,7 +115,7 @@ export function HeroSection({
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
               {safeFirstName && safeFirstName.length >= 2 ? (
                 <>
-                  <span className="text-primary">{safeFirstName}</span>, see exactly what your AI audit looks like
+                  <span className="text-primary">{safeFirstName}</span>, See Exactly What Your AI Audit Looks Like
                 </>
               ) : (
                 <>See Exactly What Your AI Audit Looks Like</>
