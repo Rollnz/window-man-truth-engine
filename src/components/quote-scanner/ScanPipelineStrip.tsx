@@ -667,7 +667,7 @@ function AIBrainScene({ isMobile }: { isMobile: boolean }) {
 
       {/* Secondary label */}
       <div style={{ position: "absolute", top: isMobile ? 12 : 16, left: 0, right: 0, textAlign: "center", zIndex: 3 }}>
-        <div style={{ fontSize: isMobile ? 9 : 11, fontWeight: 600, color: C.red, letterSpacing: "0.05em" }}>
+        <div style={{ fontSize: isMobile ? 18 : 11, fontWeight: 600, color: C.red, letterSpacing: "0.05em" }}>
           ANOMALY DETECTION
         </div>
         <div style={{ fontSize: isMobile ? 14 : 8, color: C.whiteDim, marginTop: 1, lineHeight: 1.3 }}>
