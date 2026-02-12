@@ -177,7 +177,7 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
         </form>
 
         <p className="text-xs text-muted-foreground text-center mt-4">
-          Window GUY respects your privacy. No spam, ever.
+          Window Man respects your privacy. No spam, ever.
         </p>
       </div>
     </div>
