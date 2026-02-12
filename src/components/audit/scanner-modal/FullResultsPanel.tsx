@@ -537,7 +537,7 @@ export function FullResultsPanel({ result }: FullResultsPanelProps) {
         <div className="text-center space-y-4">
           <div>
             <p className="text-lg font-semibold text-white mb-1">
-              Want a better quote? Talk to an expert.
+              Want a Better Quote? Talk to an Expert.
             </p>
             <p className="text-sm text-slate-400">
               Our Florida window specialists are standing by.
