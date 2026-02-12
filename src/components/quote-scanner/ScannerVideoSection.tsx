@@ -5,11 +5,11 @@ interface NavigatorConnection {
   saveData?: boolean;
 }
 
-function PlayButtonOverlay({ onClick }: { onClick: () => void }) {
+function PlayButtonOverlay({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   return (
     <button
       onClick={onClick}
-      className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer group"
+      className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer group z-10"
       aria-label="Play video"
     >
       <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/90 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
@@ -24,8 +24,11 @@ export function ScannerVideoSection() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [showPlayButton, setShowPlayButton] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [showFlash, setShowFlash] = useState(false);
+  const flashTimeout = useRef<ReturnType<typeof setTimeout>>();
 
-  const handlePlay = useCallback(() => {
+  const handlePlay = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
     const video = videoRef.current;
     if (!video) return;
     video.preload = 'auto';
@@ -38,6 +41,15 @@ export function ScannerVideoSection() {
     if (!video) return;
     video.muted = !video.muted;
     setIsMuted(video.muted);
+
+    // Flash indicator
+    clearTimeout(flashTimeout.current);
+    setShowFlash(true);
+    flashTimeout.current = setTimeout(() => setShowFlash(false), 600);
+  }, []);
+
+  useEffect(() => {
+    return () => clearTimeout(flashTimeout.current);
   }, []);
 
   useEffect(() => {
@@ -80,7 +92,12 @@ export function ScannerVideoSection() {
         </p>
       </div>
       <div ref={wrapperRef} className="w-full px-4 md:px-8 lg:px-16">
-        <div className="relative rounded-xl overflow-hidden">
+        <div
+          className="relative rounded-xl overflow-hidden cursor-pointer"
+          onClick={toggleMute}
+          role="button"
+          aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+        >
           <video
             ref={videoRef}
             poster="https://itswindowman-videos.b-cdn.net/scanner-poster.webp"
@@ -96,14 +113,23 @@ export function ScannerVideoSection() {
             <source src="https://itswindowman-videos.b-cdn.net/Windowmanscanner.webm" type="video/webm" />
             <source src="https://itswindowman-videos.b-cdn.net/Windowmanscanner.mp4" type="video/mp4" />
           </video>
+
           {showPlayButton && <PlayButtonOverlay onClick={handlePlay} />}
-          <button
-            onClick={toggleMute}
-            className="absolute bottom-4 right-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-colors duration-200"
-            aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+
+          {/* Center flash indicator */}
+          <div
+            className="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-300"
+            style={{ opacity: showFlash ? 1 : 0 }}
           >
+            <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center">
+              {isMuted ? <VolumeX className="w-8 h-8 text-white" /> : <Volume2 className="w-8 h-8 text-white" />}
+            </div>
+          </div>
+
+          {/* Corner status indicator (non-interactive) */}
+          <div className="absolute bottom-4 right-4 pointer-events-none w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
             {isMuted ? <VolumeX className="w-5 h-5 text-white" /> : <Volume2 className="w-5 h-5 text-white" />}
-          </button>
+          </div>
         </div>
       </div>
     </section>
