@@ -5,7 +5,7 @@ This document is a code-verified inventory of every known form/modal that can ca
 ## 1) Shared Conversion Modal
 
 ### `LeadCaptureModal`
-- File: `src/components/conversion/LeadCaptureModal.tsx`
+- File: [`src/components/conversion/LeadCaptureModal.tsx`](/src/components/conversion/LeadCaptureModal.tsx)
 - Captures: Always email, plus first name + phone when `sourceTool === 'quote-scanner'`
 - CTA copy is source-tool-aware for:
   - `quote-scanner`
