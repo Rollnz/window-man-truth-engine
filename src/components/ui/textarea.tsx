@@ -27,7 +27,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       <textarea
         className={cn(
           // Base styles - CRITICAL: text-base prevents iOS auto-zoom on focus
-          "flex min-h-[80px] w-full rounded-md border px-3 py-2 text-base md:text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          "flex min-h-[80px] w-full rounded-md border px-3 py-2 text-base md:text-sm ring-offset-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
           // Variant-specific styles
           variantStyles,
           // Allow className overrides

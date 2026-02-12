@@ -132,7 +132,6 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
           className={errors.email ? 'border-destructive' : ''}
           aria-invalid={!!errors.email}
           aria-describedby={errors.email ? 'email-error' : 'email-hint'}
-          tabIndex={0}
         />
         {errors.email ? (
           <p id="email-error" className="text-sm text-destructive" role="alert">{errors.email}</p>
@@ -157,7 +156,6 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
           className={errors.phone ? 'border-destructive' : ''}
           aria-invalid={!!errors.phone}
           aria-describedby={errors.phone ? 'phone-error' : 'phone-hint'}
-          tabIndex={0}
         />
         {errors.phone ? (
           <p id="phone-error" className="text-sm text-destructive" role="alert">{errors.phone}</p>

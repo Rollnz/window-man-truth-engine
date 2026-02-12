@@ -97,7 +97,6 @@ export function ScannerStep2Project({
           className={phoneError ? 'border-destructive focus-visible:ring-destructive' : ''}
           aria-invalid={!!phoneError}
           aria-describedby={phoneError ? 'scanner-phone-error' : 'scanner-phone-hint'}
-          tabIndex={0}
         />
         {phoneError ? (
           <p id="scanner-phone-error" className="text-xs text-destructive" role="alert">

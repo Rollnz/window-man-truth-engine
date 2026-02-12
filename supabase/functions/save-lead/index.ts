@@ -88,6 +88,7 @@ const aiContextSchema = z.object({
 
 // Main lead schema
 const leadSchema = z.object({
+  csrfToken: z.string().uuid('Invalid CSRF token').optional().nullable(),
   email: z.string().trim().email('Invalid email format').max(255, 'Email too long'),
   // Split name fields for Meta EMQ optimization
   firstName: z.string().trim().max(50, 'First name too long').optional().nullable(),
@@ -443,7 +444,7 @@ async function sendStapeGTMEvent(payload: StapeGTMPayload): Promise<void> {
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-csrf-token',
 };
 
 serve(async (req) => {
@@ -528,9 +529,22 @@ serve(async (req) => {
     }
 
     const { 
-      email, firstName, lastName, name, phone, sourceTool, sessionData, chatHistory, consultation,
+      csrfToken, email, firstName, lastName, name, phone, sourceTool, sessionData, chatHistory, consultation,
       attribution, aiContext, lastNonDirect, leadId: providedLeadId, sessionId, quoteFileId 
     } = parseResult.data;
+
+    // ============= CSRF Protection (Double Submit Token) =============
+    const csrfHeader = req.headers.get('x-csrf-token');
+    if (!csrfToken || !csrfHeader || csrfToken !== csrfHeader) {
+      console.warn('[save-lead] CSRF validation failed');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Security validation failed. Please refresh and try again.',
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     // Normalize first/last name: prefer explicit fields, fall back to splitting legacy name
     const normalizedFirstName = firstName?.trim() || (name?.includes(' ') ? name.split(' ')[0] : name) || null;
