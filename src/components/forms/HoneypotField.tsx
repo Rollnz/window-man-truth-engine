@@ -22,6 +22,7 @@ export function HoneypotField({ value, onChange }: HoneypotFieldProps) {
   return (
     <div
       aria-hidden="true"
+      tabIndex={-1}
       style={{
         position: 'absolute',
         left: '-9999px',
@@ -29,7 +30,6 @@ export function HoneypotField({ value, onChange }: HoneypotFieldProps) {
         opacity: 0,
         height: 0,
         overflow: 'hidden',
-        tabIndex: -1,
       }}
     >
       <label htmlFor="website_url">Website</label>
