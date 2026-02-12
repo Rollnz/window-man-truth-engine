@@ -17,7 +17,10 @@ import { getLeadQuality } from '@/lib/leadQuality';
 import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { setExplicitSubmission } from '@/lib/consent';
 import { setLeadAnchor } from '@/lib/leadAnchor';
+import { getCsrfToken, sanitizePayload, sanitizeUserInput, withTimeout } from '@/lib/security';
 import type { SourceTool } from '@/types/sourceTool';
+
+const LEAD_SUBMIT_TIMEOUT_MS = 10000;
 
 export interface LeadFormData {
   email: string;
@@ -115,6 +118,7 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
 
       // Normalize field names (firstName → name)
       const normalizedName = data.name || data.firstName || undefined;
+      const csrfToken = getCsrfToken();
 
       // Get or generate sessionId for Golden Thread
       const sessionId = sessionData.claimVaultSessionId || crypto.randomUUID();
@@ -126,16 +130,17 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       const clientId = getOrCreateAnonId();
       
       const payload: Record<string, unknown> = {
-        email: data.email.trim(),
+        email: sanitizeUserInput(data.email),
+        csrfToken,
         sourceTool,
         // Phase 1B: Include all three attribution tiers
         attribution: fullAttribution.last_touch,
         first_touch: fullAttribution.first_touch,
         last_non_direct: fullAttribution.last_non_direct,
-        aiContext: {
+        aiContext: sanitizePayload({
           source_form: formLocation ? `${sourceTool}-${formLocation}` : sourceTool,
           ...aiContext,
-        },
+        }),
         // Golden Thread: Pass sessionId for attribution tracking
         sessionId,
         // Pass clientId in sessionData for ownership validation (fixes 403 error)
@@ -146,10 +151,10 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
 
       // Add optional fields
       if (normalizedName) {
-        payload.name = normalizedName.trim();
+        payload.name = sanitizeUserInput(normalizedName);
       }
       if (data.phone) {
-        payload.phone = data.phone.trim();
+        payload.phone = sanitizeUserInput(data.phone);
       }
       if (existingLeadId) {
         payload.leadId = existingLeadId;
@@ -159,9 +164,16 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       }
 
       // Submit to API
-      const { data: responseData, error: apiError } = await supabase.functions.invoke('save-lead', {
-        body: payload,
-      });
+      const { data: responseData, error: apiError } = await withTimeout(
+        supabase.functions.invoke('save-lead', {
+          body: payload,
+          headers: {
+            'X-CSRF-Token': csrfToken,
+          },
+        }),
+        LEAD_SUBMIT_TIMEOUT_MS,
+        'Request timed out. Please check your connection and try again.',
+      );
 
       if (apiError) throw apiError;
 

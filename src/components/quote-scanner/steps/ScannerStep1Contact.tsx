@@ -102,7 +102,6 @@ export function ScannerStep1Contact({
           className={emailError ? 'border-destructive focus-visible:ring-destructive' : ''}
           aria-invalid={!!emailError}
           aria-describedby={emailError ? 'scanner-email-error' : 'scanner-email-hint'}
-          tabIndex={0}
         />
         {emailError ? (
           <p id="scanner-email-error" className="text-xs text-destructive" role="alert">
