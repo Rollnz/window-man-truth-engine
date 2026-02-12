@@ -21,8 +21,8 @@ import {
   Copy,
   Check,
   Phone,
-  Scale,
-} from "lucide-react";
+  Scale } from
+"lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -30,11 +30,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { AuditAnalysisResult } from "@/types/audit";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { RiskLevelMeter } from "./RiskLevelMeter";
-import { 
-  parseCitation, 
+import {
+  parseCitation,
   MY_FLORIDA_LICENSE_URL,
-  FLORIDA_BUILDING_URL 
-} from "@/lib/statuteLinks";
+  FLORIDA_BUILDING_URL } from
+"@/lib/statuteLinks";
 import { toast } from "@/hooks/use-toast";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -54,7 +54,7 @@ const STAGGER_DELAYS = {
   warnings: 850,
   missingItems: 900,
   cta: 950,
-  disclaimer: 1000,
+  disclaimer: 1000
 } as const;
 
 interface FullResultsPanelProps {
@@ -115,11 +115,11 @@ function FullScoreRow({ label, score, icon, description, whyItMatters }: FullSco
           <span className="font-medium text-white">{label}</span>
         </div>
         <div className="flex items-center gap-2">
-          {isGood ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          ) : (
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
-          )}
+          {isGood ?
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" /> :
+
+          <AlertTriangle className="w-4 h-4 text-amber-400" />
+          }
           <span className={cn("font-mono font-bold", getScoreColor(score))}>{score}/100</span>
         </div>
       </div>
@@ -128,8 +128,8 @@ function FullScoreRow({ label, score, icon, description, whyItMatters }: FullSco
       <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
         <div
           className={cn("h-full rounded-full transition-all duration-500", getScoreBarColor(score))}
-          style={{ width: `${score}%` }}
-        />
+          style={{ width: `${score}%` }} />
+
       </div>
 
       {/* Description - fully visible */}
@@ -140,8 +140,8 @@ function FullScoreRow({ label, score, icon, description, whyItMatters }: FullSco
         <p className="text-xs text-primary font-medium mb-1">Why this matters in Florida:</p>
         <p className="text-xs text-slate-400 leading-relaxed">{whyItMatters}</p>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -158,24 +158,24 @@ export function FullResultsPanel({ result }: FullResultsPanelProps) {
   // Copy questions to clipboard
   const handleCopyQuestions = async () => {
     if (!forensic?.questionsToAsk?.length) return;
-    
-    const questionsText = forensic.questionsToAsk
-      .map((q, i) => `${i + 1}. ${q}`)
-      .join('\n');
-    
+
+    const questionsText = forensic.questionsToAsk.
+    map((q, i) => `${i + 1}. ${q}`).
+    join('\n');
+
     try {
       await navigator.clipboard.writeText(questionsText);
       setCopiedQuestions(true);
       toast({
         title: "Copied to clipboard",
-        description: "Questions ready to paste into your notes or email.",
+        description: "Questions ready to paste into your notes or email."
       });
       setTimeout(() => setCopiedQuestions(false), 3000);
     } catch {
       toast({
         title: "Copy failed",
         description: "Please select and copy manually.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -183,10 +183,10 @@ export function FullResultsPanel({ result }: FullResultsPanelProps) {
   return (
     <div className="space-y-6 px-4 py-6 overflow-y-auto max-h-[70vh]">
       {/* Success Banner */}
-      <div 
+      <div
         className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-4 flex items-center gap-3 animate-fade-in opacity-0"
-        style={{ animationDelay: `${STAGGER_DELAYS.successBanner}ms`, animationFillMode: 'forwards' }}
-      >
+        style={{ animationDelay: `${STAGGER_DELAYS.successBanner}ms`, animationFillMode: 'forwards' }}>
+
         <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
         <div>
           <p className="text-sm font-medium text-emerald-400">Full Report Unlocked</p>
@@ -195,11 +195,11 @@ export function FullResultsPanel({ result }: FullResultsPanelProps) {
       </div>
 
       {/* Hard Cap Alert Banner */}
-      {forensic?.hardCapApplied && (
-        <div
-          className="animate-fade-in opacity-0"
-          style={{ animationDelay: `${STAGGER_DELAYS.hardCapAlert}ms`, animationFillMode: 'forwards' }}
-        >
+      {forensic?.hardCapApplied &&
+      <div
+        className="animate-fade-in opacity-0"
+        style={{ animationDelay: `${STAGGER_DELAYS.hardCapAlert}ms`, animationFillMode: 'forwards' }}>
+
           <Alert className="border-rose-500/50 bg-rose-500/10 [&>svg]:text-rose-400">
             <Scale className="h-5 w-5" />
             <AlertTitle className="text-rose-400 font-semibold">
@@ -207,22 +207,22 @@ export function FullResultsPanel({ result }: FullResultsPanelProps) {
             </AlertTitle>
             <AlertDescription className="text-slate-100 text-sm mt-1">
               <span className="font-medium">Reason:</span> {forensic.hardCapReason}
-              {forensic.hardCapStatute && (
-                <span className="block sm:inline sm:ml-1 text-rose-300 font-mono text-xs">
+              {forensic.hardCapStatute &&
+            <span className="block sm:inline sm:ml-1 text-rose-300 font-mono text-xs">
                   ({forensic.hardCapStatute})
                 </span>
-              )}
+            }
             </AlertDescription>
           </Alert>
         </div>
-      )}
+      }
 
       {/* Contractor Identity Card - WITH LASER SCAN */}
-      {identity && (identity.contractorName || identity.licenseNumber || identity.noaNumbers?.length > 0) && (
-        <div
-          className="animate-fade-in opacity-0"
-          style={{ animationDelay: `${STAGGER_DELAYS.identityCard}ms`, animationFillMode: 'forwards' }}
-        >
+      {identity && (identity.contractorName || identity.licenseNumber || identity.noaNumbers?.length > 0) &&
+      <div
+        className="animate-fade-in opacity-0"
+        style={{ animationDelay: `${STAGGER_DELAYS.identityCard}ms`, animationFillMode: 'forwards' }}>
+
           <Card className="border-slate-600/50 bg-slate-800/50 identity-card-scanner">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
@@ -231,76 +231,76 @@ export function FullResultsPanel({ result }: FullResultsPanelProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 space-y-2">
-              {identity.contractorName && (
-                <div className="flex items-center justify-between text-sm">
+              {identity.contractorName &&
+            <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-400">Name:</span>
                   <span className="text-white font-medium">{identity.contractorName}</span>
                 </div>
-              )}
-              {identity.licenseNumber && (
-                <div className="flex items-center justify-between text-sm gap-2">
+            }
+              {identity.licenseNumber &&
+            <div className="flex items-center justify-between text-sm gap-2">
                   <span className="text-slate-400">License:</span>
                   <div className="flex items-center gap-2">
                     <span className="text-white font-mono text-xs">{identity.licenseNumber}</span>
                     <a
-                      href={MY_FLORIDA_LICENSE_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
-                    >
+                  href={MY_FLORIDA_LICENSE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors">
+
                       Verify <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
                 </div>
-              )}
-              {identity.noaNumbers?.length > 0 && (
-                <div className="flex items-center justify-between text-sm gap-2">
+            }
+              {identity.noaNumbers?.length > 0 &&
+            <div className="flex items-center justify-between text-sm gap-2">
                   <span className="text-slate-400">NOA:</span>
                   <div className="flex items-center gap-2 flex-wrap justify-end">
-                    {identity.noaNumbers.map((noa, idx) => (
-                      <span key={idx} className="text-white font-mono text-xs">{noa}</span>
-                    ))}
+                    {identity.noaNumbers.map((noa, idx) =>
+                <span key={idx} className="text-white font-mono text-xs">{noa}</span>
+                )}
                     <a
-                      href={FLORIDA_BUILDING_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
-                    >
+                  href={FLORIDA_BUILDING_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors">
+
                       Check <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
                 </div>
-              )}
+            }
             </CardContent>
           </Card>
         </div>
-      )}
+      }
 
       {/* Risk Level Meter */}
-      {forensic?.riskLevel && (
-        <div
-          className="animate-fade-in opacity-0"
-          style={{ animationDelay: `${STAGGER_DELAYS.riskMeter}ms`, animationFillMode: 'forwards' }}
-        >
+      {forensic?.riskLevel &&
+      <div
+        className="animate-fade-in opacity-0"
+        style={{ animationDelay: `${STAGGER_DELAYS.riskMeter}ms`, animationFillMode: 'forwards' }}>
+
           <RiskLevelMeter riskLevel={forensic.riskLevel as 'critical' | 'high' | 'moderate' | 'acceptable'} />
         </div>
-      )}
+      }
 
       {/* Overall Score Card - WITH ANIMATED NUMBER */}
-      <div 
+      <div
         className={cn(
-          "rounded-lg border-2 p-6 text-center animate-fade-in opacity-0", 
+          "rounded-lg border-2 p-6 text-center animate-fade-in opacity-0",
           getOverallBorderColor(result.overallScore)
         )}
-        style={{ animationDelay: `${STAGGER_DELAYS.scoreCard}ms`, animationFillMode: 'forwards' }}
-      >
+        style={{ animationDelay: `${STAGGER_DELAYS.scoreCard}ms`, animationFillMode: 'forwards' }}>
+
         <p className="text-xs uppercase tracking-wider text-slate-400 mb-1">Quote Safety Score</p>
         <div className="flex items-baseline justify-center gap-2 mb-2">
           <AnimatedNumber
             value={result.overallScore}
             duration={1500}
-            className={cn("text-5xl font-bold font-mono", getScoreColor(result.overallScore))}
-          />
+            className={cn("text-5xl font-bold font-mono", getScoreColor(result.overallScore))} />
+
           <span className="text-slate-400">/ 100</span>
         </div>
         <p className={cn("text-sm font-medium mb-3", getScoreColor(result.overallScore))}>
@@ -312,11 +312,11 @@ export function FullResultsPanel({ result }: FullResultsPanelProps) {
       </div>
 
       {/* Statute Citations Card - Clickable Links */}
-      {forensic?.statuteCitations && forensic.statuteCitations.length > 0 && (
-        <div
-          className="animate-fade-in opacity-0"
-          style={{ animationDelay: `${STAGGER_DELAYS.statuteCard}ms`, animationFillMode: 'forwards' }}
-        >
+      {forensic?.statuteCitations && forensic.statuteCitations.length > 0 &&
+      <div
+        className="animate-fade-in opacity-0"
+        style={{ animationDelay: `${STAGGER_DELAYS.statuteCard}ms`, animationFillMode: 'forwards' }}>
+
           <Card className="border-amber-500/30 bg-amber-500/5">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
@@ -327,46 +327,46 @@ export function FullResultsPanel({ result }: FullResultsPanelProps) {
             <CardContent className="pt-0">
               <ul className="space-y-2">
                 {forensic.statuteCitations.map((citation, idx) => {
-                  const parsed = parseCitation(citation);
-                  return (
-                    <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
+                const parsed = parseCitation(citation);
+                return (
+                  <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
                       <span className="text-amber-400 font-mono text-xs mt-0.5 shrink-0">
                         {idx + 1}.
                       </span>
                       <span>
-                        {parsed.url ? (
-                          <>
+                        {parsed.url ?
+                      <>
                             <a
-                              href={parsed.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-amber-400 hover:text-amber-300 underline underline-offset-2 font-medium transition-colors"
-                            >
+                          href={parsed.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-amber-400 hover:text-amber-300 underline underline-offset-2 font-medium transition-colors">
+
                               {parsed.statuteRef || 'View Source'}
                             </a>
-                            {parsed.description && (
-                              <span className="text-slate-300"> - {parsed.description}</span>
-                            )}
-                          </>
-                        ) : (
-                          citation
-                        )}
+                            {parsed.description &&
+                        <span className="text-slate-300"> - {parsed.description}</span>
+                        }
+                          </> :
+
+                      citation
+                      }
                       </span>
-                    </li>
-                  );
-                })}
+                    </li>);
+
+              })}
               </ul>
             </CardContent>
           </Card>
         </div>
-      )}
+      }
 
       {/* Questions to Ask Card - Copy Button */}
-      {forensic?.questionsToAsk && forensic.questionsToAsk.length > 0 && (
-        <div
-          className="animate-fade-in opacity-0"
-          style={{ animationDelay: `${STAGGER_DELAYS.questionsCard}ms`, animationFillMode: 'forwards' }}
-        >
+      {forensic?.questionsToAsk && forensic.questionsToAsk.length > 0 &&
+      <div
+        className="animate-fade-in opacity-0"
+        style={{ animationDelay: `${STAGGER_DELAYS.questionsCard}ms`, animationFillMode: 'forwards' }}>
+
           <Card className="border-primary/30 bg-primary/5">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -375,46 +375,46 @@ export function FullResultsPanel({ result }: FullResultsPanelProps) {
                   Questions to Ask Before Signing
                 </CardTitle>
                 <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopyQuestions}
-                  className="h-8 px-2 text-xs text-slate-400 hover:text-white hover:bg-slate-700/50"
-                >
-                  {copiedQuestions ? (
-                    <>
+                variant="ghost"
+                size="sm"
+                onClick={handleCopyQuestions}
+                className="h-8 px-2 text-xs text-slate-400 hover:text-white hover:bg-slate-700/50">
+
+                  {copiedQuestions ?
+                <>
                       <Check className="w-3 h-3 mr-1 text-emerald-400" />
                       Copied
-                    </>
-                  ) : (
-                    <>
+                    </> :
+
+                <>
                       <Copy className="w-3 h-3 mr-1" />
                       Copy All
                     </>
-                  )}
+                }
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
               <ol className="space-y-2">
-                {forensic.questionsToAsk.map((question, idx) => (
-                  <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
+                {forensic.questionsToAsk.map((question, idx) =>
+              <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
                     <span className="text-primary font-semibold min-w-[20px] shrink-0">
                       {idx + 1}.
                     </span>
                     <span>{question}</span>
                   </li>
-                ))}
+              )}
               </ol>
             </CardContent>
           </Card>
         </div>
-      )}
+      }
 
       {/* Full Category Breakdown (UNLOCKED) */}
-      <div 
+      <div
         className="space-y-4 animate-fade-in opacity-0"
-        style={{ animationDelay: `${STAGGER_DELAYS.breakdown}ms`, animationFillMode: 'forwards' }}
-      >
+        style={{ animationDelay: `${STAGGER_DELAYS.breakdown}ms`, animationFillMode: 'forwards' }}>
+
         <h3 className="text-sm font-semibold text-white">Detailed Breakdown</h3>
 
         <FullScoreRow
@@ -422,50 +422,50 @@ export function FullResultsPanel({ result }: FullResultsPanelProps) {
           score={result.safetyScore}
           icon={<ShieldCheck className="w-4 h-4 text-primary" />}
           description="Checks for impact ratings and design pressures meeting Florida building code."
-          whyItMatters="Florida requires windows to meet specific impact ratings and design pressures for hurricane zones. Missing certifications can mean your windows won't protect your home during a storm—and your insurance may not cover damage."
-        />
+          whyItMatters="Florida requires windows to meet specific impact ratings and design pressures for hurricane zones. Missing certifications can mean your windows won't protect your home during a storm—and your insurance may not cover damage." />
+
 
         <FullScoreRow
           label="Install & Scope"
           score={result.scopeScore}
           icon={<FileSearch className="w-4 h-4 text-primary" />}
           description={
-            result.missingItems.length ? `Missing: ${result.missingItems.join(", ")}` : "Scope appears comprehensive."
+          result.missingItems.length ? `Missing: ${result.missingItems.join(", ")}` : "Scope appears comprehensive."
           }
-          whyItMatters="Incomplete scope often leads to surprise change orders. Common Florida issues include improper flashing around stucco, missing NOA documentation, and permit fees not included in quotes."
-        />
+          whyItMatters="Incomplete scope often leads to surprise change orders. Common Florida issues include improper flashing around stucco, missing NOA documentation, and permit fees not included in quotes." />
+
 
         <FullScoreRow
           label="Price Fairness"
           score={result.priceScore}
           icon={<DollarSign className="w-4 h-4 text-primary" />}
           description={`Est. price per opening: ${result.pricePerOpening}`}
-          whyItMatters="Florida window pricing varies significantly by region and product. We compare against thousands of local quotes to identify if you're paying a fair market rate or being overcharged."
-        />
+          whyItMatters="Florida window pricing varies significantly by region and product. We compare against thousands of local quotes to identify if you're paying a fair market rate or being overcharged." />
+
 
         <FullScoreRow
           label="Fine Print"
           score={result.finePrintScore}
           icon={<FileWarning className="w-4 h-4 text-primary" />}
           description={result.warnings.length ? `Warnings: ${result.warnings.join("; ")}` : "No major red flags found."}
-          whyItMatters="Watch for clauses that allow price increases after signing, require full payment upfront, or limit your ability to hold contractors accountable for delays or defects."
-        />
+          whyItMatters="Watch for clauses that allow price increases after signing, require full payment upfront, or limit your ability to hold contractors accountable for delays or defects." />
+
 
         <FullScoreRow
           label="Warranty Coverage"
           score={result.warrantyScore}
           icon={<BadgeCheck className="w-4 h-4 text-primary" />}
           description="Evaluates product vs. labor coverage duration and transferability."
-          whyItMatters="In Florida's climate, warranty coverage is critical. Product warranties should be 20+ years; labor warranties should be 5+ years. Transferable warranties add resale value to your home."
-        />
+          whyItMatters="In Florida's climate, warranty coverage is critical. Product warranties should be 20+ years; labor warranties should be 5+ years. Transferable warranties add resale value to your home." />
+
       </div>
 
       {/* Positive Findings Card - After breakdown for B+ quotes */}
-      {forensic?.positiveFindings && forensic.positiveFindings.length > 0 && (
-        <div
-          className="animate-fade-in opacity-0"
-          style={{ animationDelay: `${STAGGER_DELAYS.positiveFindings}ms`, animationFillMode: 'forwards' }}
-        >
+      {forensic?.positiveFindings && forensic.positiveFindings.length > 0 &&
+      <div
+        className="animate-fade-in opacity-0"
+        style={{ animationDelay: `${STAGGER_DELAYS.positiveFindings}ms`, animationFillMode: 'forwards' }}>
+
           <Card className="border-emerald-500/30 bg-emerald-500/5">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
@@ -475,65 +475,65 @@ export function FullResultsPanel({ result }: FullResultsPanelProps) {
             </CardHeader>
             <CardContent className="pt-0">
               <ul className="space-y-2">
-                {forensic.positiveFindings.map((finding, idx) => (
-                  <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
+                {forensic.positiveFindings.map((finding, idx) =>
+              <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
                     <span>{finding}</span>
                   </li>
-                ))}
+              )}
               </ul>
             </CardContent>
           </Card>
         </div>
-      )}
+      }
 
       {/* Warnings Section (if any) */}
-      {warningsCount > 0 && (
-        <div 
-          className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-4 animate-fade-in opacity-0"
-          style={{ animationDelay: `${STAGGER_DELAYS.warnings}ms`, animationFillMode: 'forwards' }}
-        >
+      {warningsCount > 0 &&
+      <div
+        className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-4 animate-fade-in opacity-0"
+        style={{ animationDelay: `${STAGGER_DELAYS.warnings}ms`, animationFillMode: 'forwards' }}>
+
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-4 h-4 text-rose-400" />
             <span className="text-sm font-medium text-rose-400">Red Flags Found ({warningsCount})</span>
           </div>
           <ul className="space-y-2">
-            {result.warnings.map((warning, idx) => (
-              <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
+            {result.warnings.map((warning, idx) =>
+          <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
                 <span className="text-rose-500 mt-0.5">•</span>
                 {warning}
               </li>
-            ))}
+          )}
           </ul>
         </div>
-      )}
+      }
 
       {/* Missing Items (expanded) */}
-      {missingCount > 0 && (
-        <div 
-          className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 animate-fade-in opacity-0"
-          style={{ animationDelay: `${STAGGER_DELAYS.missingItems}ms`, animationFillMode: 'forwards' }}
-        >
+      {missingCount > 0 &&
+      <div
+        className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 animate-fade-in opacity-0"
+        style={{ animationDelay: `${STAGGER_DELAYS.missingItems}ms`, animationFillMode: 'forwards' }}>
+
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
             <span className="text-sm font-medium text-amber-400">Missing from Quote ({missingCount})</span>
           </div>
           <ul className="space-y-2">
-            {result.missingItems.map((item, idx) => (
-              <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
+            {result.missingItems.map((item, idx) =>
+          <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
                 <span className="text-amber-500 mt-0.5">•</span>
                 {item}
               </li>
-            ))}
+          )}
           </ul>
         </div>
-      )}
+      }
 
       {/* Simple Click-to-Call CTA */}
-      <div 
+      <div
         className="pt-6 border-t border-slate-700/50 animate-fade-in opacity-0"
-        style={{ animationDelay: `${STAGGER_DELAYS.cta}ms`, animationFillMode: 'forwards' }}
-      >
+        style={{ animationDelay: `${STAGGER_DELAYS.cta}ms`, animationFillMode: 'forwards' }}>
+
         <div className="text-center space-y-4">
           <div>
             <p className="text-lg font-semibold text-white mb-1">
@@ -546,48 +546,48 @@ export function FullResultsPanel({ result }: FullResultsPanelProps) {
           
           <a
             href="tel:5614685571"
-            className="inline-flex items-center justify-center w-full sm:w-auto px-8 h-14 rounded-lg bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
+            className="inline-flex items-center justify-center w-full sm:w-auto px-8 h-14 rounded-lg bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl">
+
             <Phone className="w-5 h-5 mr-3" />
             Call Window Man: 561-468-5571
           </a>
           
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-primary-foreground">
             Free consultation • No obligation
           </p>
         </div>
       </div>
 
       {/* Legal Disclaimer - P0 Compliance Requirement */}
-      <div 
+      <div
         className="pt-4 border-t border-slate-700/30 animate-fade-in opacity-0"
-        style={{ animationDelay: `${STAGGER_DELAYS.disclaimer}ms`, animationFillMode: 'forwards' }}
-      >
+        style={{ animationDelay: `${STAGGER_DELAYS.disclaimer}ms`, animationFillMode: 'forwards' }}>
+
         <p className="text-xs text-slate-500 leading-relaxed">
           <span className="text-slate-400">⚖️ Disclaimer:</span> This analysis is an educational guide, not legal or professional advice. 
           Always verify contractor license numbers at{' '}
-          <a 
+          <a
             href={MY_FLORIDA_LICENSE_URL}
-            target="_blank" 
+            target="_blank"
             rel="noopener noreferrer"
-            className="text-primary/70 hover:text-primary underline underline-offset-2"
-          >
+            className="text-primary/70 hover:text-primary underline underline-offset-2">
+
             myfloridalicense.com
           </a>
           {' '}and product approvals at{' '}
-          <a 
+          <a
             href={FLORIDA_BUILDING_URL}
-            target="_blank" 
+            target="_blank"
             rel="noopener noreferrer"
-            className="text-primary/70 hover:text-primary underline underline-offset-2"
-          >
+            className="text-primary/70 hover:text-primary underline underline-offset-2">
+
             floridabuilding.org
           </a>
           {' '}before signing any contract.
         </p>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 export default FullResultsPanel;
