@@ -1,33 +1,40 @@
 
 
-# Make Video Container Fully Clickable for Mute Toggle
+# Fix Plan: CSRF Removal + Build Errors
 
-## What Changes
+## Priority 1: Remove False CSRF Gate from save-lead (Critical -- leads are being lost)
 
-**File:** `src/components/quote-scanner/ScannerVideoSection.tsx`
+**Problem:** 11 of 12 `save-lead` callers do NOT send CSRF tokens, causing 403 rejections. The CSRF pattern itself is security theater (client-generated tokens checked against themselves).
 
-### 1. Remove the standalone mute button
-Delete the `<button>` element at lines 100-106 that currently handles mute toggling.
+**Fix:**
+- **`supabase/functions/save-lead/index.ts`** (lines 536-547): Delete the entire CSRF validation block. CORS preflight + custom headers already protect this JSON API endpoint.
+- **`src/hooks/useLeadFormSubmit.ts`**: Remove `getCsrfToken()` call, remove `csrfToken` from the payload body, and remove the `X-CSRF-Token` header from the request.
+- **`src/lib/security.ts`**: Keep `getCsrfToken()` function for now (no breaking changes elsewhere), but it becomes unused by save-lead.
+- **`supabase/functions/save-lead/index.ts`** line 91: Change `csrfToken` in the Zod schema from validated UUID to just `.optional().nullable()` so old payloads that accidentally include it don't fail validation.
+- **CORS header** (line 447): Remove `x-csrf-token` from `Access-Control-Allow-Headers` since it's no longer needed.
 
-### 2. Make the entire video container clickable
-Add an `onClick={toggleMute}` handler to the `<div className="relative rounded-xl overflow-hidden">` wrapper (line 83), along with `cursor-pointer` styling. This makes the full video area a tap/click target on both mobile and desktop.
+**Impact:** All 12 lead capture flows will work again. No security is lost -- CORS + Content-Type enforcement is the actual protection layer.
 
-### 3. Keep corner icon as a visual indicator (non-interactive)
-Replace the old button with a passive `<div>` in the bottom-right corner showing the VolumeX/Volume2 icon. It will have:
-- `pointer-events-none` so it doesn't intercept clicks
-- Semi-transparent dark background pill for visibility over any video frame
+## Priority 2: Fix HoneypotField TypeScript Error
 
-### 4. Add a center flash indicator on toggle (UX enhancement)
-When the user taps anywhere on the video:
-- A large mute/unmute icon briefly appears in the center of the video
-- It fades out after ~600ms using a CSS opacity transition
-- This mimics the familiar YouTube/TikTok feedback pattern and eliminates confusion about whether a tap registered
+**File:** `src/components/forms/HoneypotField.tsx`
 
-### Technical Details
+**Fix:** Remove `tabIndex: -1` from the `style` object (line 32). The `div` element already doesn't need a `tabIndex` prop since it has `aria-hidden="true"` and is positioned off-screen.
 
-- New state: `showFlash` (boolean) + a `setTimeout` to clear it after 600ms
-- The flash icon uses `absolute inset-0 flex items-center justify-center` with a fading `opacity` transition
-- The `PlayButtonOverlay` click handler will use `e.stopPropagation()` to prevent the mute toggle from firing when clicking the play button (they share the same container)
-- No layout shift -- all additions are absolutely positioned overlays
-- Accessibility: the clickable container gets `role="button"` and a dynamic `aria-label`
+## Priority 3: Fix quote-scanner Deno Build Error
+
+**File:** `supabase/functions/quote-scanner/deps.ts`
+
+**Fix:** Change `npm:zod@3.22.4` imports to use `https://deno.land/x/zod@v3.22.4/mod.ts` (same pattern used successfully in `save-lead/index.ts`). This resolves the Deno module resolution failure.
+
+---
+
+## Technical Summary
+
+| File | Change |
+|------|--------|
+| `supabase/functions/save-lead/index.ts` | Remove CSRF check block (lines 536-547), relax csrfToken schema, clean CORS header |
+| `src/hooks/useLeadFormSubmit.ts` | Remove csrfToken generation, body field, and header |
+| `src/components/forms/HoneypotField.tsx` | Remove `tabIndex: -1` from style object |
+| `supabase/functions/quote-scanner/deps.ts` | Switch from `npm:` to `https://deno.land/x/` for zod import |
 
