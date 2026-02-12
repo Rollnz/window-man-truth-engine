@@ -22,6 +22,7 @@ import { getLeadAnchor } from '@/lib/leadAnchor';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
 import { SourceTool } from '@/types/sourceTool';
 import { TrustModal } from '@/components/forms/TrustModal';
+import { HoneypotField, useHoneypot } from '@/components/forms/HoneypotField';
 import { normalizeNameFields } from '@/components/ui/NameInputPair';
 
 export interface EbookConfig {
@@ -55,6 +56,9 @@ export function EbookLeadModal({
   
   // Form lock for double-submit protection
   const { isLocked, lockAndExecute } = useFormLock();
+
+  // Honeypot for spam prevention
+  const { honeypotProps, isBot } = useHoneypot();
 
   const { sessionData, updateFields } = useSessionData();
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
@@ -105,6 +109,9 @@ export function EbookLeadModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Silent spam rejection via honeypot
+    if (isBot()) return;
+
     if (!validateAll()) {
       toast({
         title: 'Required Fields Missing',
@@ -117,6 +124,9 @@ export function EbookLeadModal({
     await lockAndExecute(async () => {
       const normalizedNames = normalizeNameFields(values.firstName, lastName);
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`,
         {
@@ -125,6 +135,7 @@ export function EbookLeadModal({
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
+          signal: controller.signal,
           body: JSON.stringify({
             email: values.email.trim(),
             firstName: normalizedNames.firstName || null,
@@ -141,6 +152,8 @@ export function EbookLeadModal({
           }),
         }
       );
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -267,6 +280,7 @@ export function EbookLeadModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+            <HoneypotField {...honeypotProps} />
             {/* Row 1: First Name* | Last Name */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
@@ -284,9 +298,10 @@ export function EbookLeadModal({
                   onFocus={handleFirstFieldFocus}
                   className={hasError('firstName') ? 'border-destructive focus-visible:ring-destructive' : ''}
                   aria-invalid={hasError('firstName')}
+                  aria-describedby={hasError('firstName') ? 'ebook-firstName-error' : undefined}
                 />
                 {hasError('firstName') && (
-                  <p className="text-xs text-destructive">{getError('firstName')}</p>
+                  <p id="ebook-firstName-error" className="text-xs text-destructive">{getError('firstName')}</p>
                 )}
               </div>
               
@@ -316,14 +331,19 @@ export function EbookLeadModal({
                   id="email"
                   type="email"
                   autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   placeholder="you@email.com"
                   {...getFieldProps('email')}
                   disabled={isLocked}
                   className={hasError('email') ? 'border-destructive focus-visible:ring-destructive' : ''}
                   aria-invalid={hasError('email')}
+                  aria-describedby={hasError('email') ? 'ebook-email-error' : undefined}
                 />
                 {hasError('email') && (
-                  <p className="text-xs text-destructive">{getError('email')}</p>
+                  <p id="ebook-email-error" className="text-xs text-destructive">{getError('email')}</p>
                 )}
               </div>
               

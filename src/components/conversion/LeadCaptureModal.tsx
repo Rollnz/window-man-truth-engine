@@ -18,6 +18,7 @@ import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution
 import { getLeadQuality } from '@/lib/leadQuality';
 import { SourceTool } from '@/types/sourceTool';
 import { TrustModal } from '@/components/forms/TrustModal';
+import { HoneypotField, useHoneypot } from '@/components/forms/HoneypotField';
 import { NameInputPair, normalizeNameFields } from '@/components/ui/NameInputPair';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -58,6 +59,9 @@ export function LeadCaptureModal({
   const { updateFields } = useSessionData();
   const { awardScore } = useCanonicalScore();
   const effectiveLeadId = leadId || hookLeadId;
+
+  // Honeypot for spam prevention
+  const { honeypotProps, isBot } = useHoneypot();
 
   // Form abandonment tracking (Phase 7)
   const { trackFieldEntry, resetTracking } = useFormAbandonment({
@@ -117,6 +121,9 @@ export function LeadCaptureModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Silent spam rejection via honeypot
+    if (isBot()) return;
+
     if (!validateAll()) {
       toast({
         title: 'Invalid Email',
@@ -140,6 +147,9 @@ export function LeadCaptureModal({
       // Normalize name fields - single source of truth from validation hook
       const normalizedNames = normalizeNameFields(values.firstName, values.lastName);
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-lead`,
         {
@@ -148,6 +158,7 @@ export function LeadCaptureModal({
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
+          signal: controller.signal,
           body: JSON.stringify({
             email: values.email.trim(),
             firstName: normalizedNames.firstName || null,
@@ -166,6 +177,7 @@ export function LeadCaptureModal({
           }),
         }
       );
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -387,6 +399,7 @@ export function LeadCaptureModal({
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              <HoneypotField {...honeypotProps} />
               {requiresFullContact && (
                 <NameInputPair
                   firstName={values.firstName}
@@ -409,6 +422,10 @@ export function LeadCaptureModal({
                   name="email"
                   type="email"
                   autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   placeholder="you@example.com"
                   {...emailProps}
                   disabled={isLocked}
@@ -483,7 +500,11 @@ export function LeadCaptureModal({
               {/* Footer text for quote-scanner */}
               {isQuoteScanner && (
                 <p className="text-xs text-muted-foreground text-center">
-                  By submitting, you agree to our Terms of Service and Privacy Policy. We'll send your analysis to this email.
+                  By submitting, you agree to our{' '}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Terms of Service</a>
+                  {' '}and{' '}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Privacy Policy</a>.
+                  {' '}We'll send your analysis to this email.
                 </p>
               )}
             </form>

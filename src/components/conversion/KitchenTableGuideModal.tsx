@@ -297,40 +297,45 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
         {/* Row 1: First Name | Last Name */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Input 
-              id="modal-firstName" 
-              {...getFieldProps('firstName')} 
-              placeholder="First name" 
+            <Label htmlFor="modal-firstName" className="sr-only">First Name</Label>
+            <Input
+              id="modal-firstName"
+              {...getFieldProps('firstName')}
+              placeholder="First name"
               className={`${inputBaseClass} border-black ${hasError('firstName') ? 'border-destructive' : ''}`}
-              disabled={isSubmitting} 
-              autoComplete="given-name" 
+              disabled={isSubmitting}
+              autoComplete="given-name"
+              aria-invalid={hasError('firstName')}
+              aria-describedby={hasError('firstName') ? 'modal-firstName-error' : undefined}
             />
-            {hasError('firstName') && <p className="text-xs text-destructive mt-1">{getError('firstName')}</p>}
+            {hasError('firstName') && <p id="modal-firstName-error" className="text-xs text-destructive mt-1">{getError('firstName')}</p>}
           </div>
           <div>
-            <Input 
-              id="modal-lastName" 
-              {...getFieldProps('lastName')} 
-              placeholder="Last name" 
+            <Label htmlFor="modal-lastName" className="sr-only">Last Name</Label>
+            <Input
+              id="modal-lastName"
+              {...getFieldProps('lastName')}
+              placeholder="Last name"
               className={`${inputBaseClass} ${lastNameNudge ? 'border-red-500 border-2' : 'border-black'}`}
-              disabled={isSubmitting} 
-              autoComplete="family-name" 
+              disabled={isSubmitting}
+              autoComplete="family-name"
             />
           </div>
         </div>
-        
+
         {/* Row 2: Email | Phone */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Input 
-              id="modal-email" 
-              type="email" 
+            <Label htmlFor="modal-email" className="sr-only">Email Address</Label>
+            <Input
+              id="modal-email"
+              type="email"
               inputMode="email"
               autoCapitalize="off"
               autoCorrect="off"
               spellCheck={false}
-              {...getFieldProps('email')} 
-              placeholder="Email address" 
+              {...getFieldProps('email')}
+              placeholder="Email address"
               className={`${inputBaseClass} border-black ${hasError('email') ? 'border-destructive' : ''}`}
               onFocus={() => {
                 // Nudge last name if empty
@@ -338,21 +343,24 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
                   setLastNameNudge(true);
                 }
               }}
-              disabled={isSubmitting} 
-              autoComplete="email" 
+              disabled={isSubmitting}
+              autoComplete="email"
+              aria-invalid={hasError('email')}
+              aria-describedby={hasError('email') ? 'modal-email-error' : undefined}
             />
-            {hasError('email') && <p className="text-xs text-destructive mt-1">{getError('email')}</p>}
+            {hasError('email') && <p id="modal-email-error" className="text-xs text-destructive mt-1">{getError('email')}</p>}
           </div>
           <div>
-            <Input 
-              id="modal-phone" 
-              type="tel" 
+            <Label htmlFor="modal-phone" className="sr-only">Phone Number</Label>
+            <Input
+              id="modal-phone"
+              type="tel"
               inputMode="tel"
-              {...getFieldProps('phone')} 
-              placeholder="Phone" 
+              {...getFieldProps('phone')}
+              placeholder="Phone"
               className={`${inputBaseClass} border-black placeholder:text-slate-500`}
-              disabled={isSubmitting} 
-              autoComplete="tel" 
+              disabled={isSubmitting}
+              autoComplete="tel"
             />
           </div>
         </div>
@@ -724,9 +732,9 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
         style={{ 
           background: 'linear-gradient(135deg, #d0e4f7 0%, #73b1e7 16%, #0a77d5 34%, #539fe1 61%, #539fe1 61%, #87bcea 100%)'
         }}
-        onInteractOutside={(e) => e.preventDefault()}
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        onInteractOutside={(e) => { if (step !== 'form') e.preventDefault(); }}
+        onPointerDownOutside={(e) => { if (step !== 'form') e.preventDefault(); }}
+        onEscapeKeyDown={(e) => { if (step !== 'form') e.preventDefault(); }}
       >
         <div className="p-6">
           <div 
