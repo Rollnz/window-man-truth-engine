@@ -9,5 +9,5 @@ export { createClient } from "npm:@supabase/supabase-js@2.39.7";
 export type { SupabaseClient } from "npm:@supabase/supabase-js@2.39.7";
 
 // Zod validation
-export { z } from "npm:zod@3.22.4";
-export type { ZodSchema, ZodError } from "npm:zod@3.22.4";
+export { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+export type { ZodSchema, ZodError } from "https://deno.land/x/zod@v3.22.4/mod.ts";

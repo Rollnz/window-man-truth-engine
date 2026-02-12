@@ -17,7 +17,7 @@ import { getLeadQuality } from '@/lib/leadQuality';
 import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { setExplicitSubmission } from '@/lib/consent';
 import { setLeadAnchor } from '@/lib/leadAnchor';
-import { getCsrfToken, sanitizePayload, sanitizeUserInput, withTimeout } from '@/lib/security';
+import { sanitizePayload, sanitizeUserInput, withTimeout } from '@/lib/security';
 import type { SourceTool } from '@/types/sourceTool';
 
 const LEAD_SUBMIT_TIMEOUT_MS = 10000;
@@ -118,7 +118,6 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
 
       // Normalize field names (firstName → name)
       const normalizedName = data.name || data.firstName || undefined;
-      const csrfToken = getCsrfToken();
 
       // Get or generate sessionId for Golden Thread
       const sessionId = sessionData.claimVaultSessionId || crypto.randomUUID();
@@ -131,7 +130,6 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       
       const payload: Record<string, unknown> = {
         email: sanitizeUserInput(data.email),
-        csrfToken,
         sourceTool,
         // Phase 1B: Include all three attribution tiers
         attribution: fullAttribution.last_touch,
@@ -167,9 +165,6 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       const { data: responseData, error: apiError } = await withTimeout(
         supabase.functions.invoke('save-lead', {
           body: payload,
-          headers: {
-            'X-CSRF-Token': csrfToken,
-          },
         }),
         LEAD_SUBMIT_TIMEOUT_MS,
         'Request timed out. Please check your connection and try again.',

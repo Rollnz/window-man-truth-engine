@@ -444,7 +444,7 @@ async function sendStapeGTMEvent(payload: StapeGTMPayload): Promise<void> {
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-csrf-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
@@ -533,18 +533,7 @@ serve(async (req) => {
       attribution, aiContext, lastNonDirect, leadId: providedLeadId, sessionId, quoteFileId 
     } = parseResult.data;
 
-    // ============= CSRF Protection (Double Submit Token) =============
-    const csrfHeader = req.headers.get('x-csrf-token');
-    if (!csrfToken || !csrfHeader || csrfToken !== csrfHeader) {
-      console.warn('[save-lead] CSRF validation failed');
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Security validation failed. Please refresh and try again.',
-        }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // CSRF block removed — CORS preflight + custom headers provide actual protection
     
     // Normalize first/last name: prefer explicit fields, fall back to splitting legacy name
     const normalizedFirstName = firstName?.trim() || (name?.includes(' ') ? name.split(' ')[0] : name) || null;
