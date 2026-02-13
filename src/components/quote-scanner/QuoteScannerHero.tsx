@@ -1,6 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScanSearch } from 'lucide-react';
 import { ShimmerBadge } from '@/components/ui/ShimmerBadge';
+import { WarningCard } from './WarningCard';
+
+type ThreatCard = {
+  round: 1 | 2 | 3;
+  severity: 'critical' | 'warning';
+  label: string;
+  detail: string;
+  x: number;
+  y: number;
+};
+
+const WARNING_DATA: ThreatCard[] = [
+  // Round 1
+  { round: 1, severity: 'critical', label: 'PRICE ALERT',   detail: '15% Over Market',       x: 72, y: 18 },
+  { round: 1, severity: 'warning',  label: 'WARRANTY GAP',  detail: 'Labor Not Covered',      x: 10, y: 48 },
+  { round: 1, severity: 'critical', label: 'FINE PRINT',    detail: 'Hidden Disposal Fees',   x: 68, y: 80 },
+  // Round 2
+  { round: 2, severity: 'critical', label: 'MISSING',       detail: 'Permit Fees',            x: 10, y: 18 },
+  { round: 2, severity: 'warning',  label: 'SCOPE',         detail: 'Stucco Repair Excluded', x: 64, y: 52 },
+  { round: 2, severity: 'critical', label: 'UNVERIFIED',    detail: 'License # Invalid',      x: 40, y: 84 },
+  // Round 3
+  { round: 3, severity: 'critical', label: 'NON-COMPLIANT', detail: 'Wrong Wind Zone',        x: 40, y: 14 },
+  { round: 3, severity: 'critical', label: 'BAD CLAUSE',    detail: 'Subject to Remeasure',   x: 30, y: 42 },
+  { round: 3, severity: 'warning',  label: 'DELAY RISK',    detail: 'No Completion Date',     x: 10, y: 78 },
+];
 
 const ROUND_DURATION = 8000; // ms per round
 const TOTAL_CYCLE = ROUND_DURATION * 3; // 24000ms for 3 rounds
@@ -66,8 +91,31 @@ export function QuoteScannerHero() {
         aria-hidden="true"
       />
 
-      {/* Layer 2: Threat Container (empty — Prompt 2 mounts WarningCards here) */}
-      <div className="absolute inset-0 z-[5]" aria-hidden="true" />
+      {/* Layer 2: Threat Container — cards revealed by scan line */}
+      <div className="absolute inset-0 z-[5]" aria-hidden="true">
+        {WARNING_DATA
+          .filter(card => card.round === scanRound)
+          .map(card => {
+            const clampedX = Math.max(6, Math.min(94, card.x));
+            const clampedY = Math.max(10, Math.min(90, card.y));
+            return (
+              <WarningCard
+                key={`${card.round}-${card.label}`}
+                severity={card.severity}
+                label={card.label}
+                detail={card.detail}
+                visible={scanProgress >= card.y / 100}
+                reducedMotion={prefersReducedMotion}
+                style={{
+                  position: 'absolute',
+                  top: `${clampedY}%`,
+                  left: `${clampedX}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              />
+            );
+          })}
+      </div>
 
       {/* Layer 3: Frosted Window (clip-path driven by scanProgress) */}
       <div

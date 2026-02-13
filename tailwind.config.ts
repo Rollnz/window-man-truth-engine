@@ -218,6 +218,13 @@ export default {
           "90%": { opacity: "1", transform: "translateY(0)" },
           "100%": { opacity: "0", transform: "translateY(-8px)" },
         },
+        "glitch-pop": {
+          "0%":   { opacity: "0", transform: "scale(0.85)" },
+          "40%":  { opacity: "1", transform: "scale(1.05)" },
+          "50%":  { opacity: "0.7", transform: "scale(1.02)" },
+          "60%":  { opacity: "1", transform: "scale(1)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -231,6 +238,7 @@ export default {
         "glow-pulse": "glow-pulse 3s ease-in-out infinite",
         "border-shimmer": "border-shimmer 3s ease-in-out infinite",
         "trivia-fade": "trivia-fade 3.5s ease-in-out",
+        "glitch-pop": "glitch-pop 400ms ease-out forwards",
       },
     },
   },
