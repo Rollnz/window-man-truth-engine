@@ -6,43 +6,59 @@ import { PriceAnalysis } from '@/lib/fairPriceCalculations';
 import { gradeConfig } from '@/data/fairPriceQuizData';
 import { z } from 'zod';
 import { FormSurfaceProvider } from '@/components/forms/FormSurfaceProvider';
+import { formatPhoneNumber } from '@/hooks/useFormValidation';
+import { useFormLock } from '@/hooks/forms';
+import { useTickerStats } from '@/hooks/useTickerStats';
 
 interface BlurGateProps {
   analysis: PriceAnalysis;
-  onSubmit: (name: string, email: string) => void;
+  onSubmit: (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  }) => Promise<void>;
 }
 
 const formSchema = z.object({
-  firstName: z.string().min(2, 'Name must be at least 2 characters'),
+  firstName: z.string().min(2, 'First name must be at least 2 characters'),
+  lastName: z.string().max(50, 'Last name is too long').optional().or(z.literal('')),
   email: z.string().email('Please enter a valid email'),
+  phone: z.string().refine(
+    (val) => val === '' || val.replace(/\D/g, '').length === 10,
+    { message: 'Please enter a valid 10-digit phone number' }
+  ),
 });
 
 export function BlurGate({ analysis, onSubmit }: BlurGateProps) {
   const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [errors, setErrors] = useState<{ firstName?: string; email?: string }>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const { isLocked, lockAndExecute } = useFormLock();
+  const { total } = useTickerStats();
   const gradeInfo = gradeConfig[analysis.grade];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-    setIsSubmitting(true);
 
-    const result = formSchema.safeParse({ firstName, email });
+    const result = formSchema.safeParse({ firstName, lastName, email, phone });
     if (!result.success) {
-      const fieldErrors: { firstName?: string; email?: string } = {};
+      const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
-        if (err.path[0] === 'firstName') fieldErrors.firstName = err.message;
-        if (err.path[0] === 'email') fieldErrors.email = err.message;
+        const field = String(err.path[0]);
+        if (!fieldErrors[field]) fieldErrors[field] = err.message;
       });
       setErrors(fieldErrors);
-      setIsSubmitting(false);
       return;
     }
 
-    onSubmit(firstName, email);
+    await lockAndExecute(async () => {
+      await onSubmit({ firstName, lastName, email, phone });
+    });
   };
 
   return (
@@ -83,29 +99,47 @@ export function BlurGate({ analysis, onSubmit }: BlurGateProps) {
           🎯 Your Fair Price Analysis is Ready
         </h2>
         <p className="text-slate-600 text-center mb-6">
-          Enter your name and email to see your detailed breakdown
+          Enter your details to see your detailed breakdown
         </p>
 
         {/* Wrap form in FormSurfaceProvider for automatic trust styling */}
         <FormSurfaceProvider surface="trust">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="firstName" className="font-semibold text-slate-900">First Name</Label>
-              <Input
-                id="firstName"
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Your first name"
-                className={errors.firstName ? 'border-destructive' : ''}
-              />
-              {errors.firstName && (
-                <p className="text-sm text-destructive mt-1">{errors.firstName}</p>
-              )}
+            {/* Row 1: First Name + Last Name */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="firstName" className="font-semibold text-slate-900">First Name *</Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="First name"
+                  className={errors.firstName ? 'border-destructive' : ''}
+                />
+                {errors.firstName && (
+                  <p className="text-sm text-destructive mt-1">{errors.firstName}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="lastName" className="font-semibold text-slate-900">Last Name</Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Last name"
+                  className={errors.lastName ? 'border-destructive' : ''}
+                />
+                {errors.lastName && (
+                  <p className="text-sm text-destructive mt-1">{errors.lastName}</p>
+                )}
+              </div>
             </div>
 
+            {/* Row 2: Email */}
             <div>
-              <Label htmlFor="email" className="font-semibold text-slate-900">Email</Label>
+              <Label htmlFor="email" className="font-semibold text-slate-900">Email *</Label>
               <Input
                 id="email"
                 type="email"
@@ -119,13 +153,32 @@ export function BlurGate({ analysis, onSubmit }: BlurGateProps) {
               )}
             </div>
 
+            {/* Row 3: Phone (optional) */}
+            <div>
+              <Label htmlFor="phone" className="font-semibold text-slate-900">Phone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
+                placeholder="(555) 123-4567"
+                className={errors.phone ? 'border-destructive' : ''}
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Phone optional — only needed if you want a 5-minute callback
+              </p>
+              {errors.phone && (
+                <p className="text-sm text-destructive mt-1">{errors.phone}</p>
+              )}
+            </div>
+
             <Button
               type="submit"
               variant="cta"
               className="w-full text-lg py-6"
-              disabled={isSubmitting}
+              disabled={isLocked}
             >
-              {isSubmitting ? 'Loading...' : 'See My Results →'}
+              {isLocked ? 'Loading...' : 'See My Results →'}
             </Button>
           </form>
         </FormSurfaceProvider>
@@ -134,9 +187,9 @@ export function BlurGate({ analysis, onSubmit }: BlurGateProps) {
           We'll also email you a copy for your records
         </p>
 
-        {/* Social proof */}
+        {/* Social proof - live ticker */}
         <p className="text-sm text-slate-600 text-center mt-6">
-          ✓ 2,847 homeowners analyzed their quotes this month
+          ✓ {total.toLocaleString()} homeowners analyzed their quotes this month
         </p>
       </div>
     </div>
