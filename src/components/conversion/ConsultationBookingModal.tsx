@@ -326,7 +326,7 @@ export function ConsultationBookingModal({
       <TrustModal 
         className="sm:max-w-md p-5"
         modalTitle={isSuccess ? undefined : "Schedule a Free Consultation"}
-        modalDescription={isSuccess ? undefined : "Get personalized advice from a local window expert at no cost."}
+        modalDescription={isSuccess ? undefined : "Get Your Precision Quote & Expert 10-Year Savings Plan."}
         headerAlign="center"
       >
         {isSuccess ? (
