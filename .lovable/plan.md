@@ -1,200 +1,168 @@
 
 
-# Modernize Fair Price Quiz Form -- V3 Final (Phone Optional at Gate)
+# GTM Web Container Restoration & Meta Pixel Repair
 
-## Summary
+## Problem
 
-Upgrade BlurGate from a 2-field form (firstName, email) to a 4-field form (firstName, lastName, email, phone) and refactor the save-lead payload to match the V2 contract. Critically, only firstName and email are required to see results -- lastName and phone are optional at the gate to avoid adding friction to a quiz funnel.
+The GTM web container (GTM-NHVFR5QZ) is **not loading in the browser**. The current `index.html` uses a Stape obfuscated loader (`lunaa.itswindowman.com/76bwidfqcvb.js`) that is deferred until `window.load + 2 seconds`. This means:
 
----
+1. No `gtm.js` request appears in DevTools Network tab
+2. GTM Preview / Tag Assistant cannot connect
+3. Meta Pixel browser events never fire (no "Browser" integration in Events Manager)
+4. Early pageviews are missed entirely
+5. EMQ is 4-6/10 because only server-side events work
 
-## Critical Design Decision: Phone is Optional at Gate
+## Root Cause
 
-The Fair Price Quiz funnel already has a post-results phone capture flow via `QuizResults` and `handlePhoneSubmit`. Making phone required at the BlurGate would add unnecessary friction and conflict with the existing funnel architecture. Instead:
+In `index.html` (lines 87-109), the GTM loader:
+- Uses a Stape power-up obfuscated URL instead of the standard `googletagmanager.com/gtm.js` endpoint
+- Is wrapped in a `setTimeout(loadGTM, 2000)` after `window.load`
+- The obfuscated script likely fails to load or does not bootstrap the full web container (no `window.google_tag_manager`)
 
-- **Required to see results:** firstName, email
-- **Optional at gate:** lastName, phone
-- **Validation rule:** If phone is provided, it must be a valid 10-digit US number. If blank, submit proceeds without it.
+## Solution
+
+Replace the Stape obfuscated loader with the **standard GTM snippet** that loads `gtm.js` directly from `googletagmanager.com`. Keep the Stape server-side endpoint (`lunaa.itswindowman.com/data`) for CAPI -- that is a separate server-side GTM container and is unaffected.
 
 ---
 
 ## Changes
 
-### 1. Update `src/components/fair-price-quiz/BlurGate.tsx`
+### 1. `index.html` -- Replace GTM loader
 
-**Signature change:**
+**Remove (lines 82-109):** The entire deferred GTM block including:
+- The `loadGTM()` function that creates a script element pointing to `lunaa.itswindowman.com/76bwidfqcvb.js`
+- The `window.load + 2s` delay logic
+- The production domain gating (keep this -- see below)
 
-```text
-// OLD
-onSubmit: (name: string, email: string) => void
+**Replace with:** Standard GTM snippet (production-gated):
 
-// NEW
-onSubmit: (data: {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;  // formatted or empty string
-}) => void
+```html
+<!-- Google Tag Manager (Production Only) -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  
+  var productionDomain = 'itswindowman.com';
+  var isProduction = window.location.hostname === productionDomain || 
+                     window.location.hostname === 'www.' + productionDomain;
+  
+  if (isProduction) {
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-NHVFR5QZ');
+  } else {
+    console.log('[GTM] Blocked on non-production domain:', window.location.hostname);
+  }
+</script>
+<!-- End Google Tag Manager -->
 ```
 
-**Zod schema (phone optional):**
+Key differences from current implementation:
+- Loads `async` immediately during HTML parse (no 2-second delay)
+- Uses standard `googletagmanager.com` URL (GTM Preview will connect)
+- `window.dataLayer` is already initialized by the early attribution script above
+- Still production-gated (no tracking on preview/dev domains)
 
-```text
-const formSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().max(50, 'Last name is too long').optional().or(z.literal('')),
-  email: z.string().email('Please enter a valid email'),
-  phone: z.string().refine(
-    (val) => val === '' || val.replace(/\D/g, '').length === 10,
-    { message: 'Please enter a valid 10-digit phone number' }
-  ),
-});
+**Add after `<body>` tag (line 121):** The `<noscript>` fallback iframe:
+
+```html
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NHVFR5QZ"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 ```
 
-This means: empty phone passes validation. Non-empty phone must have exactly 10 digits after stripping formatting.
+Note: The `<noscript>` is also production-only by nature (GTM will handle it). But since it's inside noscript, it won't affect non-production environments in practice (no JS means no SPA anyway). If strict gating is needed, it can be omitted -- but standard GTM documentation includes it.
 
-**Form fields (4 total, new layout):**
+### 2. `index.html` -- Keep existing early attribution script
 
-- Row 1: First Name + Last Name (`grid grid-cols-2 gap-3`)
-- Row 2: Email (full width)
-- Row 3: Phone (full width) with helper text: "Phone optional -- only needed if you want a 5-minute callback"
+The synchronous attribution capture script (lines 31-79) stays exactly as-is. It initializes `window.dataLayer` and pushes `attribution_captured` before GTM loads. Since the standard GTM snippet also references `window.dataLayer`, events queued before GTM loads will be processed when GTM initializes -- this is standard GTM behavior.
 
-**Phone formatting:** Import `formatPhoneNumber` from `@/hooks/useFormValidation`. Apply during onChange to display `(XXX) XXX-XXXX` as user types.
+### 3. `index.html` -- Update preconnect hint
 
-**Form lock:** Replace naive `useState(false)` isSubmitting with `useFormLock` from `@/hooks/forms`:
-- `isLocked` drives button disabled state
-- `lockAndExecute` wraps the submit handler
-- Auto-unlocks on error so user can retry
+Change the preconnect for `lunaa.itswindowman.com` to `www.googletagmanager.com`:
 
-**Ticker stats integration:**
-- Import `useTickerStats` from `@/hooks/useTickerStats`
-- Hook returns `{ total, today, isLoading, isFromServer }` -- use `total`
-- Replace static "2,847 homeowners" with: `{total.toLocaleString()} homeowners analyzed their quotes this month`
-- No manual fallback needed -- the hook provides a deterministic client-side fallback on mount (never returns 0)
-
-**Subtitle text update:** Change from "Enter your name and email to see your detailed breakdown" to "Enter your details to see your detailed breakdown"
-
-### 2. Update `src/pages/FairPriceQuiz.tsx`
-
-**State changes:**
-- Replace `userName` (line 38) with `userFirstName` and `userLastName`
-- Add `userPhone` state
-- Keep `userEmail` as-is
-
-**handleBlurGateSubmit refactor:**
-
-Accept the new 4-field object. Build V2 payload:
-
-```text
-const clientId = getOrCreateAnonId();    // canonical Golden Thread FID
-const sessionId = getOrCreateSessionId();
-const attribution = getAttributionData();
-const lastNonDirect = getLastNonDirectAttribution();
-const phoneDigits = phone ? phone.replace(/\D/g, '') : '';
-
-body: {
-  email,
-  firstName,
-  lastName,
-  phone: phoneDigits || null,              // null if empty, NOT empty string
-  leadId: hookLeadId,                       // Golden Thread upsert
-  sourceTool: 'fair-price-quiz',            // camelCase (V2 contract)
-  flowVersion: 'fair_price_v2',
-  sourcePage: window.location.pathname,
-  sessionId,
-  sessionData: {
-    clientId,
-    client_id: clientId,                    // save-lead checks both (line 549-552)
-    ctaSource: 'fair-price-result',
-    quizAnswers,
-    analysis,
-    leadScore,
-  },
-  attribution,                              // nested object, NOT spread
-  lastNonDirect,                            // pass directly from helper, NO fbc->fbclid remap
-  window_count: quizAnswers.windowCount,
-}
+```html
+<link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
 ```
 
-**New imports to add:**
-- `getOrCreateSessionId` from `@/lib/tracking`
-- `getLastNonDirectAttribution` from `@/lib/attribution`
-- `trackLeadSubmissionSuccess` from `@/lib/gtm`
-- `getOrCreateAnonId` from `@/hooks/useCanonicalScore`
+Keep `lunaa.itswindowman.com` preconnect as well since the server-side GTM container (Stape) still uses it for CAPI from the edge function.
 
-**Phase transition gate (critical fix):**
+### 4. No changes to `src/lib/gtm.ts`
 
-Currently `setPhase('results')` fires unconditionally on line 179, even if save-lead fails. Fix:
+The `trackEvent()` function pushes to `window.dataLayer` -- this works regardless of how GTM is loaded. No changes needed.
 
-- Only call `setPhase('results')` inside the success branch (when `data?.leadId` exists)
-- On error: show destructive toast via sonner, do NOT transition
-- `useFormLock` auto-unlocks on error so user can retry
+### 5. No changes to `src/main.tsx` or deferred init
 
-**Tracking (after successful save-lead, non-blocking):**
+The deferred init system (`scheduleWhenIdle`) handles attribution, bot detection, and identity reconciliation -- none of these relate to GTM script loading. They remain as-is.
 
-```text
-await Promise.allSettled([
-  trackLeadCapture(
-    { leadId: newLeadId, sourceTool: 'fair_price_quiz', conversionAction: 'form_submit' },
-    email,
-    undefined,
-    { hasName: true, hasPhone: !!phoneDigits, hasProjectDetails: !!quizAnswers.windowCount }
-  ),
-  trackLeadSubmissionSuccess({
-    leadId: newLeadId,
-    email,
-    phone: phoneDigits || undefined,
-    firstName,
-    lastName: lastName || undefined,
-    sourceTool: 'fair-price-quiz',
-    eventId: newLeadId,               // raw UUID for Meta CAPI dedup (matches server-side)
-    value: 100,                        // Tier 5 VBB
-  }),
-]);
-```
+---
 
-**eventId rationale:** Use raw `leadId` UUID as `eventId`, per the Meta deduplication standard (no prefix).
+## Deduplication Architecture (Already Correct)
 
-**handlePhoneSubmit update (line 182-243):**
-- Use `userPhone` as default if already captured at gate
-- Update its internal save-lead call to use `sourceTool` (camelCase) instead of legacy `source_tool`
+The codebase already generates unique `event_id` values per event instance via `generateEventId()` (which calls `crypto.randomUUID()`). These are pushed to `dataLayer` and available to GTM tags. The server-side CAPI (via `save-lead` edge function) generates its own `event_id` or receives one in the payload.
 
-**Downstream userName references:**
-- `QuizResults` receives `userName` prop -- pass `userFirstName` instead
-- Session `updateFields` call: pass `name: firstName` (keeps backward compat with session schema)
+For browser+server dedup to work:
+- The GTM web container's Meta Pixel tag must read `{{DLV - event_id}}` and pass it as the `eventID` parameter to `fbq()`
+- The server-side CAPI must use the same `event_id`
+- This is a **GTM container configuration** concern, not a code concern
 
-### 3. lastNonDirect / fbclid note
+The `lead_submission_success` event already includes `event_id` in its dataLayer push (line 589 of gtm.ts). The `trackLeadSubmissionSuccess` function generates a fresh UUID per call via `generateEventId()`.
 
-`getLastNonDirectAttribution()` returns an `AttributionData` object which has `fbc` (not `fbclid`). The save-lead Zod schema expects `lastNonDirect.fbclid`. By passing `lastNonDirect` directly without remapping, `fbc` will be stripped by Zod and `fbclid` will be undefined. This is acceptable -- we do not fabricate `fbclid` from `fbc` since they are semantically different Facebook identifiers. The `fbc` value is already captured separately in the root `attribution` object.
+---
+
+## Event Name Consistency
+
+The codebase uses `page_view` (via `trackPageView` in gtm.ts line 403). This aligns with GA4 conventions. Meta uses `PageView`. These are different systems and do not conflict -- GTM maps events to each platform's expected format via tag configuration.
+
+No `PageView` vs `page_view` fragmentation exists in the code. The GTM container handles mapping.
 
 ---
 
 ## Files Changed
 
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/components/fair-price-quiz/BlurGate.tsx` | Update: 4 fields (phone optional), useFormLock, formatPhoneNumber, useTickerStats, new onSubmit signature |
-| `src/pages/FairPriceQuiz.tsx` | Update: V2 payload with nested attribution/lastNonDirect, split name state, phone-optional logic, error-gated phase transition, trackLeadSubmissionSuccess |
+| `index.html` | Replace Stape obfuscated loader with standard GTM snippet; add noscript fallback; add googletagmanager.com preconnect |
 
-No new files. No new dependencies. No database changes.
+One file. No new dependencies. No database changes. No edge function changes.
 
 ---
 
 ## Verification Checklist
 
-After implementation, confirm:
+### Network Checks
+1. Open Chrome DevTools > Network tab on production domain
+2. Filter by "gtm" -- confirm request to `https://www.googletagmanager.com/gtm.js?id=GTM-NHVFR5QZ` with status 200
+3. Confirm the request fires within the first few seconds (not delayed by 2s+)
 
-1. Form submits successfully with only firstName + email (phone blank)
-2. Form submits successfully with all 4 fields filled
-3. Phone validation rejects partial input (e.g. 7 digits) but allows empty
-4. save-lead payload has `attribution` as nested object (not spread at root)
-5. save-lead payload has `lastNonDirect` as nested object (no fbc->fbclid remap)
-6. save-lead payload has `phone: null` when phone is empty (not empty string)
-7. `sourceTool` is camelCase `'fair-price-quiz'` (not snake_case `source_tool`)
-8. `flowVersion: 'fair_price_v2'` appears in payload
-9. Phase transition only happens on successful save-lead response
-10. Form re-enables on error (useFormLock auto-unlock)
-11. Ticker shows live count (not static "2,847")
-12. `hasPhone` in trackLeadCapture is `true` only when phone was provided
-13. `eventId` in trackLeadSubmissionSuccess is raw leadId UUID (no prefix)
+### Console Checks
+1. Open Chrome DevTools > Console on production domain
+2. Run: `window.google_tag_manager` -- should exist and contain `GTM-NHVFR5QZ`
+3. Run: `window.dataLayer` -- should contain queued events including `attribution_captured` (if UTMs present) and `gtm.start`
+
+### GTM Preview
+1. Open GTM > Preview > Enter production URL
+2. Tag Assistant should connect and show container `GTM-NHVFR5QZ`
+3. Verify tags fire on page load (GA4 Config, Meta Pixel PageView, etc.)
+
+### Meta Test Events
+1. In Meta Events Manager > Test Events > Open production site
+2. Confirm `PageView` appears with Integration = "Browser" (not just "Server")
+3. Submit a test lead form -- confirm `Lead` or `lead_submission_success` appears with Integration = "Browser" alongside the server event
+4. Verify both browser and server events share the same `event_id` for deduplication
+
+### Non-Production Safety
+1. Open the Lovable preview URL
+2. Confirm NO request to `googletagmanager.com` in Network tab
+3. Confirm console shows: `[GTM] Blocked on non-production domain:`
+
+---
+
+## Remaining Notes
+
+- **Stape server-side GTM** (`lunaa.itswindowman.com/data`) is unaffected -- it's called from edge functions, not from the browser GTM loader
+- **The obfuscated loader** (`76bwidfqcvb.js`) was likely a Stape "power-up" that proxied GTM through a custom domain. This may have been set up to avoid ad-blocker detection. By switching to the standard GTM URL, ad-blockers may block GTM. If this is a concern, the Stape custom loader can be re-evaluated after confirming the standard snippet works
+- **Meta Pixel tag configuration** inside the GTM container must be verified separately (this is GTM UI work, not code). Ensure the Meta Pixel tag reads `event_id` from `{{DLV - event_id}}` data layer variable
 
