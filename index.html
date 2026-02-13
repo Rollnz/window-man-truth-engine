@@ -14,6 +14,7 @@
 
     <!-- Resource Hints for Critical Third-Party Domains -->
     <link rel="preconnect" href="https://uzulqexlgavggcyizabf.supabase.co" crossorigin />
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
     <link rel="preconnect" href="https://lunaa.itswindowman.com" crossorigin />
     <!-- Note: Facebook/Clarity preconnects removed - GTM now loads deferred, will establish connections when needed -->
     
@@ -76,41 +77,22 @@
     </script>
     <!-- End Early Attribution Capture -->
 
-    <!-- Google Tag Manager (Production Only - Deferred for Performance) -->
+    <!-- Google Tag Manager (Production Only) -->
     <script>
-      // Initialize dataLayer early so events queue before GTM loads
       window.dataLayer = window.dataLayer || [];
       
       var productionDomain = 'itswindowman.com';
       var isProduction = window.location.hostname === productionDomain || 
                          window.location.hostname === 'www.' + productionDomain;
       
-      if (!isProduction) {
-        console.log('[GTM] Blocked on non-production domain:', window.location.hostname);
-      }
-      
-      // Defer GTM injection to after page is interactive
-      function loadGTM() {
-        if (!isProduction) return;
-        
-        // Standard GTM snippet - now runs post-LCP
-        window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-        var j = document.createElement('script');
-        j.async = true;
-        j.src = 'https://lunaa.itswindowman.com/76bwidfqcvb.js?dwjnsf8=CxJeNjIpRDkqICUjUzUzURRLUV9XQg0ZXx8XAhENBxMNAQ4QCEoKGA8%3D';
-        document.head.appendChild(j);
-        
-        console.log('[GTM] Loaded (deferred, post-interactive)');
-      }
-      
-      // Strategy: Wait for window load, then add 2s buffer
-      // This ensures: DOM complete, critical resources loaded, React mounted, hydration complete
-      if (document.readyState === 'complete') {
-        setTimeout(loadGTM, 2000);
+      if (isProduction) {
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-NHVFR5QZ');
       } else {
-        window.addEventListener('load', function() {
-          setTimeout(loadGTM, 2000);
-        }, { once: true });
+        console.log('[GTM] Blocked on non-production domain:', window.location.hostname);
       }
     </script>
     <!-- End Google Tag Manager -->
@@ -140,6 +122,10 @@
   </head>
 
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NHVFR5QZ"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
     <!-- Skip to main content link for keyboard users -->
     <a href="#main-content" class="skip-to-content">Skip to main content</a>
     <div id="root"></div>
