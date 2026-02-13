@@ -243,7 +243,8 @@ export default function FairPriceQuiz() {
           phone: phone || userPhone,
           name: userFirstName,
           email: userEmail,
-          quizContext: {
+          sourceTool: 'fair-price-quiz',
+          context: {
             propertyType: quizAnswers.propertyType,
             sqft: quizAnswers.sqft,
             windowCount: quizAnswers.windowCount,
