@@ -1,122 +1,105 @@
 
 
-# X-Ray Scan Reveal Hero -- Final Implementation Plan
+# Prompt 1: Build the Scanner Engine & 3-Round Logic
 
-## Summary
+## Overview
 
-Rewrite `QuoteScannerHero.tsx` with a dual-layer background X-ray reveal animation, preserving all existing content. Address the two identified risks (mobile image cropping and CTA button contrast) explicitly.
+Refactor `QuoteScannerHero.tsx` from a pure-CSS animation into a JS-driven "Scanner Engine" with a `scanRound` state (1-2-3 cycle) and `scanProgress` (0.0 to 1.0) derived from `performance.now()`. This replaces `setInterval`-based timing with a drift-proof `requestAnimationFrame` loop. The existing text content stays untouched.
 
-## What Stays Exactly the Same
+## Architecture
 
-- ShimmerBadge ("AI - Powered by GEMINI-3-FLASH")
-- ScanSearch icon in rounded container
-- h1: "Is Your Window Quote Fair? AI Analysis in 60 Seconds"
-- Subtext: "Stop guessing. Upload a photo..."
-- CTA line: "See what our AI finds in seconds"
-
-## Visual Effect
-
-Two background images stacked via absolute-positioned divs:
+The component will use a single `useEffect` with `requestAnimationFrame` as the animation driver:
 
 ```text
-+-----------------------------------------------+
-|  Bottom: warnings_xray.webp  (z-0, always visible) |
-|  Top: window_background.jpg  (z-10, clip-path animated) |
-|  Dark overlay                (z-20, bg-black/40)       |
-|  Red scan line               (z-30, 2px + red glow)    |
-|  Content (text/badges)       (z-40)                    |
-+-----------------------------------------------+
+scanStartTime = useRef(performance.now())
+
+Every frame:
+  elapsed = (now - scanStartTime) % 24000   // 3 rounds x 8000ms
+  scanRound = Math.floor(elapsed / 8000) + 1  // 1, 2, or 3
+  scanProgress = (elapsed % 8000) / 8000       // 0.0 -> 1.0
 ```
 
-The top layer animates `clip-path: inset(X% 0 0 0)` from 0% to 100% over 8 seconds, then resets (2s pause). This "erases" the frosted window from top to bottom, revealing the warnings image underneath. A 2px red scan line with `box-shadow: 0 0 20px red` tracks the reveal edge.
+Both `scanRound` and `scanProgress` are derived from elapsed time -- no accumulated ticks, no drift when the browser tab is throttled.
 
-## Risk Mitigations
+## Layer Stack (bottom to top)
 
-### Mobile Image Cropping
+| Z-Index | Layer | Content |
+|---------|-------|---------|
+| z-0 | Layer 1: Dark Grid | Dark background with subtle CSS hex/grid pattern |
+| z-[5] | Layer 2: Threat Container | Empty `div` for Prompt 2's WarningCards |
+| z-[10] | Layer 3: Frosted Window | `window_background.jpg` with JS-driven `clip-path` |
+| z-[20] | Layer 4: Dark Overlay | `bg-black/40` for text readability |
+| z-[30] | Layer 5: Scan Line | 2px red glow, positioned via `top: {scanProgress * 100}%` |
+| z-[40] | Layer 6: Content | Existing headline, badge, subtext (unchanged) |
 
-Both background divs will use `background-position: center` and `background-size: cover`. Additionally, the warnings image will get `background-position: center 40%` on mobile (`sm:background-position: center`) to bias toward the upper-center where the red flags are concentrated. This ensures the "scary stuff" stays visible on portrait viewports.
+## Key Changes from Current Implementation
 
-### CTA Button Contrast
+### 1. Replace CSS `@keyframes` with JS-driven inline styles
 
-The current hero has no button -- only text lines. However, to address future-proofing and the CTA text visibility:
+The current component uses CSS `animation: xray-reveal 10s` and `animation: xray-line 10s`. These will be replaced with inline `style` props driven by React state:
 
-- The h1 accent span will use `text-red-400` (not subtle primary) with heavy `drop-shadow` so it pops against both dark backgrounds
-- The CTA arrow line will use `text-orange-400 font-bold` (brand Safety Orange) instead of muted text, making it function as a visual call-to-action even without a button
-- If a CTA button is added later, the plan establishes that it must use the `cta` variant (which is brand orange with shadow) or a custom orange gradient matching the existing ScannerHeroWindow button style
+- **Frosted Window layer:** `style={{ clipPath: \`inset(\${scanProgress * 100}% 0 0 0)\` }}`
+- **Scan Line:** `style={{ top: \`\${scanProgress * 100}%\` }}`
 
-## Text Restyling
+This gives us programmatic control over the scan position, which Prompt 2 needs to sync card reveals to the laser position.
 
-| Element | Current | New |
-|---------|---------|-----|
-| h1 | `text-foreground font-bold` | `text-white font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]` |
-| h1 accent span | `text-primary` | `text-red-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]` |
-| Subtext | `text-muted-foreground` | `text-white/90 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]` |
-| CTA line | `text-muted-foreground/70` | `text-orange-400 font-bold drop-shadow-md uppercase` |
-| ScanSearch container | `bg-primary/10 border-primary/20` | `bg-white/10 border-white/20 backdrop-blur-sm` |
-| ScanSearch icon | `text-primary` | `text-white` |
+### 2. Add the `requestAnimationFrame` loop
 
-## CSS Keyframes
-
-Inline `style` tag in the component (no external CSS file needed):
-
-```css
-@keyframes xray-reveal {
-  0%     { clip-path: inset(0 0 0 0); }
-  80%    { clip-path: inset(100% 0 0 0); }
-  80.01%, 100% { clip-path: inset(0 0 0 0); }
-}
-
-@keyframes xray-line {
-  0%     { top: 0%; }
-  80%    { top: 100%; }
-  80.01%, 100% { top: 0%; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .xray-top-layer, .xray-scan-line {
-    animation: none !important;
-  }
-}
+```text
+useEffect:
+  if prefersReducedMotion -> return (no animation)
+  scanStartRef = performance.now()
+  rafId = requestAnimationFrame(tick)
+  
+  tick(now):
+    elapsed = (now - scanStartRef) % 24000
+    setScanProgress((elapsed % 8000) / 8000)
+    setScanRound(Math.floor(elapsed / 8000) + 1)
+    rafId = requestAnimationFrame(tick)
+  
+  cleanup: cancelAnimationFrame(rafId)
 ```
 
-Total cycle: 10 seconds (8s sweep + 2s reset pause).
+### 3. Add Layer 1: Dark Grid Background
 
-## Layout Change in `QuoteScanner.tsx`
+Replace the `warnings_xray.webp` bottom layer with a dark background featuring a subtle CSS grid pattern using `background-image: linear-gradient(...)` repeating lines. This creates the "data/HUD" feel without an image dependency.
 
-Move the UrgencyTicker out of the hero overlap:
+### 4. Add Layer 2: Empty Threat Container
 
-**Before (lines 126-132):**
+An empty `div` at `z-[5]` with `className="absolute inset-0"` -- this is the mount point for Prompt 2's `WarningCard` components. It sits above the dark grid but below the frosted window, so cards are "revealed" as the clip-path unmasks them.
+
+### 5. Mobile: Increase min-height
+
+Change `min-h-[420px] md:min-h-[500px]` to `min-h-[600px]` so the scan line has room to sweep on mobile screens.
+
+### 6. Reduced Motion Support
+
+The `prefers-reduced-motion` check moves from CSS to JS. When active, the `requestAnimationFrame` loop doesn't start, `scanProgress` stays at 0, and the frosted window is shown statically (no clip-path masking).
+
+## Console Logging
+
+During development, the round transitions will log to console:
 ```
-<QuoteScannerHero />
-<div className="container px-4 pb-6 -mt-6">
-  <UrgencyTicker />
-</div>
+[ScannerHero] Round 1 (progress: 0.00)
+[ScannerHero] Round 2 (progress: 0.00)
+[ScannerHero] Round 3 (progress: 0.00)
 ```
 
-**After:**
-```
-<QuoteScannerHero />
-<div className="container px-4 py-6">
-  <UrgencyTicker />
-</div>
-```
-
-Remove `-mt-6` so the pill sits cleanly below the hero with its own spacing. Flow becomes: Hero -> Quote Counter Pill -> ScanPipelineStrip.
+This uses a `useEffect` watching `scanRound` to log only on transitions (not every frame).
 
 ## Files Changed
 
 | File | Action |
 |------|--------|
-| `public/images/hero/window_background.jpg` | Add from uploaded asset |
-| `public/images/hero/warnings_xray.webp` | Add from uploaded asset |
-| `src/components/quote-scanner/QuoteScannerHero.tsx` | Rewrite with X-Ray reveal effect |
-| `src/pages/QuoteScanner.tsx` | Remove `-mt-6` from UrgencyTicker wrapper |
+| `src/components/quote-scanner/QuoteScannerHero.tsx` | Rewrite: replace CSS animation with rAF engine, add 4-layer stack, add scanRound/scanProgress state |
 
-## Performance
+No new files, no new dependencies, no changes to `QuoteScanner.tsx` (layout already correct from previous implementation).
 
-- Pure CSS `@keyframes` -- no JS animation loops, no `setInterval`, no `requestAnimationFrame`
-- `will-change: clip-path` on the top layer for GPU compositing
-- `prefers-reduced-motion: reduce` disables all animations (shows frosted image statically)
+## What This Does NOT Change
+
+- All text content (badge, headline, subtext, CTA) stays identical
+- The `ShimmerBadge` import and usage stays identical
+- The `ScanSearch` icon stays identical
+- The page layout (Hero -> UrgencyTicker -> ScanPipelineStrip) stays identical
 - No new dependencies
-- Background images referenced via CSS `background-image` URL from `/public` (not ES module imports)
 
