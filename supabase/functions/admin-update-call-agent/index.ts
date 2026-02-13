@@ -42,6 +42,10 @@ const VALID_SOURCE_TOOLS = new Set([
   "consultation-booking",
   "fair-price-quiz",
   "manual_dispatch",
+  // PreQuoteLeadModalV2 source tools (seeded in 20260213100000 migration)
+  "prequote-v2:sample-report",
+  "prequote-v2:audit",
+  "prequote-v2:ai-scanner-sample",
 ]);
 
 interface UpdateAgentRequest {

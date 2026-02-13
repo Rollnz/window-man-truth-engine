@@ -76,6 +76,16 @@ export interface CRMLead {
   qualified_at?: string | null;
   disqualified_at?: string | null;
   disqualification_reason?: DisqualificationReason | null;
+
+  // V2 Qualification (PreQuoteLeadModalV2)
+  flow_version?: string | null;
+  timeline?: string | null;
+  has_quote?: string | null;
+  homeowner?: boolean | null;
+  window_scope?: string | null;
+  lead_score?: number | null;
+  lead_segment?: 'HOT' | 'WARM' | 'NURTURE' | 'LOW' | null;
+  qualification_completed_at?: string | null;
 }
 
 export interface CRMColumn {

@@ -111,6 +111,9 @@ const leadSchema = z.object({
   sessionId: z.string().uuid('Invalid session ID format').optional().nullable(),
   // Quote File linking: If provided, update the quote_files record to link to this lead
   quoteFileId: z.string().uuid('Invalid quote file ID format').optional().nullable(),
+  // V2 qualification flow fields
+  flowVersion: z.string().trim().max(50, 'Flow version too long').optional().nullable(),
+  sourcePage: z.string().trim().max(500, 'Source page too long').optional().nullable(),
 });
 
 // ============= Helper Functions =============
@@ -528,9 +531,10 @@ serve(async (req) => {
       );
     }
 
-    const { 
+    const {
       csrfToken, email, firstName, lastName, name, phone, sourceTool, sessionData, chatHistory, consultation,
-      attribution, aiContext, lastNonDirect, leadId: providedLeadId, sessionId, quoteFileId 
+      attribution, aiContext, lastNonDirect, leadId: providedLeadId, sessionId, quoteFileId,
+      flowVersion, sourcePage
     } = parseResult.data;
 
     // ============= CSRF Protection (Double Submit Token) =============
@@ -661,6 +665,9 @@ serve(async (req) => {
       zip: enrichedZip,
       // EMQ 9.5+: Device fingerprinting for server-side matching
       client_user_agent: clientUserAgent,
+      // V2 qualification flow fields (set on create; qualification fields set later via PATCH)
+      flow_version: flowVersion || null,
+      source_page: sourcePage || (sessionData as Record<string, unknown>)?.ctaSource as string || null,
     };
 
     // ═══════════════════════════════════════════════════════════════════════════
