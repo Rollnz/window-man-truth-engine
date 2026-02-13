@@ -171,14 +171,7 @@ export function PreQuoteLeadModalV2({
                 ctaSource,
               },
               attribution,
-              lastNonDirect: {
-                utm_source: lastNonDirect.utm_source,
-                utm_medium: lastNonDirect.utm_medium,
-                gclid: lastNonDirect.gclid,
-                fbclid: lastNonDirect.fbc || undefined,
-                channel: lastNonDirect.channel,
-                landing_page: lastNonDirect.landing_page,
-              },
+              lastNonDirect,
               sessionId,
             },
           }
