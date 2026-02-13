@@ -1133,7 +1133,7 @@ serve(async (req) => {
         const hashedLastName = normalizedLastName ? await hashName(normalizedLastName) : null;
 
         const eventLogPayload = {
-          event_id: crypto.randomUUID(),
+          event_id: leadId,
           event_name: 'lead_submission_success',
           event_type: 'conversion',
           event_time: new Date().toISOString(),
