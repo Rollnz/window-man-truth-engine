@@ -1,40 +1,122 @@
 
 
-# Fix Plan: CSRF Removal + Build Errors
+# X-Ray Scan Reveal Hero -- Final Implementation Plan
 
-## Priority 1: Remove False CSRF Gate from save-lead (Critical -- leads are being lost)
+## Summary
 
-**Problem:** 11 of 12 `save-lead` callers do NOT send CSRF tokens, causing 403 rejections. The CSRF pattern itself is security theater (client-generated tokens checked against themselves).
+Rewrite `QuoteScannerHero.tsx` with a dual-layer background X-ray reveal animation, preserving all existing content. Address the two identified risks (mobile image cropping and CTA button contrast) explicitly.
 
-**Fix:**
-- **`supabase/functions/save-lead/index.ts`** (lines 536-547): Delete the entire CSRF validation block. CORS preflight + custom headers already protect this JSON API endpoint.
-- **`src/hooks/useLeadFormSubmit.ts`**: Remove `getCsrfToken()` call, remove `csrfToken` from the payload body, and remove the `X-CSRF-Token` header from the request.
-- **`src/lib/security.ts`**: Keep `getCsrfToken()` function for now (no breaking changes elsewhere), but it becomes unused by save-lead.
-- **`supabase/functions/save-lead/index.ts`** line 91: Change `csrfToken` in the Zod schema from validated UUID to just `.optional().nullable()` so old payloads that accidentally include it don't fail validation.
-- **CORS header** (line 447): Remove `x-csrf-token` from `Access-Control-Allow-Headers` since it's no longer needed.
+## What Stays Exactly the Same
 
-**Impact:** All 12 lead capture flows will work again. No security is lost -- CORS + Content-Type enforcement is the actual protection layer.
+- ShimmerBadge ("AI - Powered by GEMINI-3-FLASH")
+- ScanSearch icon in rounded container
+- h1: "Is Your Window Quote Fair? AI Analysis in 60 Seconds"
+- Subtext: "Stop guessing. Upload a photo..."
+- CTA line: "See what our AI finds in seconds"
 
-## Priority 2: Fix HoneypotField TypeScript Error
+## Visual Effect
 
-**File:** `src/components/forms/HoneypotField.tsx`
+Two background images stacked via absolute-positioned divs:
 
-**Fix:** Remove `tabIndex: -1` from the `style` object (line 32). The `div` element already doesn't need a `tabIndex` prop since it has `aria-hidden="true"` and is positioned off-screen.
+```text
++-----------------------------------------------+
+|  Bottom: warnings_xray.webp  (z-0, always visible) |
+|  Top: window_background.jpg  (z-10, clip-path animated) |
+|  Dark overlay                (z-20, bg-black/40)       |
+|  Red scan line               (z-30, 2px + red glow)    |
+|  Content (text/badges)       (z-40)                    |
++-----------------------------------------------+
+```
 
-## Priority 3: Fix quote-scanner Deno Build Error
+The top layer animates `clip-path: inset(X% 0 0 0)` from 0% to 100% over 8 seconds, then resets (2s pause). This "erases" the frosted window from top to bottom, revealing the warnings image underneath. A 2px red scan line with `box-shadow: 0 0 20px red` tracks the reveal edge.
 
-**File:** `supabase/functions/quote-scanner/deps.ts`
+## Risk Mitigations
 
-**Fix:** Change `npm:zod@3.22.4` imports to use `https://deno.land/x/zod@v3.22.4/mod.ts` (same pattern used successfully in `save-lead/index.ts`). This resolves the Deno module resolution failure.
+### Mobile Image Cropping
 
----
+Both background divs will use `background-position: center` and `background-size: cover`. Additionally, the warnings image will get `background-position: center 40%` on mobile (`sm:background-position: center`) to bias toward the upper-center where the red flags are concentrated. This ensures the "scary stuff" stays visible on portrait viewports.
 
-## Technical Summary
+### CTA Button Contrast
 
-| File | Change |
+The current hero has no button -- only text lines. However, to address future-proofing and the CTA text visibility:
+
+- The h1 accent span will use `text-red-400` (not subtle primary) with heavy `drop-shadow` so it pops against both dark backgrounds
+- The CTA arrow line will use `text-orange-400 font-bold` (brand Safety Orange) instead of muted text, making it function as a visual call-to-action even without a button
+- If a CTA button is added later, the plan establishes that it must use the `cta` variant (which is brand orange with shadow) or a custom orange gradient matching the existing ScannerHeroWindow button style
+
+## Text Restyling
+
+| Element | Current | New |
+|---------|---------|-----|
+| h1 | `text-foreground font-bold` | `text-white font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]` |
+| h1 accent span | `text-primary` | `text-red-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]` |
+| Subtext | `text-muted-foreground` | `text-white/90 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]` |
+| CTA line | `text-muted-foreground/70` | `text-orange-400 font-bold drop-shadow-md uppercase` |
+| ScanSearch container | `bg-primary/10 border-primary/20` | `bg-white/10 border-white/20 backdrop-blur-sm` |
+| ScanSearch icon | `text-primary` | `text-white` |
+
+## CSS Keyframes
+
+Inline `style` tag in the component (no external CSS file needed):
+
+```css
+@keyframes xray-reveal {
+  0%     { clip-path: inset(0 0 0 0); }
+  80%    { clip-path: inset(100% 0 0 0); }
+  80.01%, 100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes xray-line {
+  0%     { top: 0%; }
+  80%    { top: 100%; }
+  80.01%, 100% { top: 0%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xray-top-layer, .xray-scan-line {
+    animation: none !important;
+  }
+}
+```
+
+Total cycle: 10 seconds (8s sweep + 2s reset pause).
+
+## Layout Change in `QuoteScanner.tsx`
+
+Move the UrgencyTicker out of the hero overlap:
+
+**Before (lines 126-132):**
+```
+<QuoteScannerHero />
+<div className="container px-4 pb-6 -mt-6">
+  <UrgencyTicker />
+</div>
+```
+
+**After:**
+```
+<QuoteScannerHero />
+<div className="container px-4 py-6">
+  <UrgencyTicker />
+</div>
+```
+
+Remove `-mt-6` so the pill sits cleanly below the hero with its own spacing. Flow becomes: Hero -> Quote Counter Pill -> ScanPipelineStrip.
+
+## Files Changed
+
+| File | Action |
 |------|--------|
-| `supabase/functions/save-lead/index.ts` | Remove CSRF check block (lines 536-547), relax csrfToken schema, clean CORS header |
-| `src/hooks/useLeadFormSubmit.ts` | Remove csrfToken generation, body field, and header |
-| `src/components/forms/HoneypotField.tsx` | Remove `tabIndex: -1` from style object |
-| `supabase/functions/quote-scanner/deps.ts` | Switch from `npm:` to `https://deno.land/x/` for zod import |
+| `public/images/hero/window_background.jpg` | Add from uploaded asset |
+| `public/images/hero/warnings_xray.webp` | Add from uploaded asset |
+| `src/components/quote-scanner/QuoteScannerHero.tsx` | Rewrite with X-Ray reveal effect |
+| `src/pages/QuoteScanner.tsx` | Remove `-mt-6` from UrgencyTicker wrapper |
+
+## Performance
+
+- Pure CSS `@keyframes` -- no JS animation loops, no `setInterval`, no `requestAnimationFrame`
+- `will-change: clip-path` on the top layer for GPU compositing
+- `prefers-reduced-motion: reduce` disables all animations (shows frosted image statically)
+- No new dependencies
+- Background images referenced via CSS `background-image` URL from `/public` (not ES module imports)
 
