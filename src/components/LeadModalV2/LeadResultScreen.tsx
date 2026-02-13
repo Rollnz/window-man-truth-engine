@@ -150,22 +150,15 @@ export function LeadResultScreen({
       <div className="mb-4">
         <span
           className={`inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${
-            segment === 'HOT'
-              ? 'bg-red-100 text-red-700'
-              : segment === 'WARM'
-              ? 'bg-orange-100 text-orange-700'
-              : segment === 'NURTURE'
-              ? 'bg-yellow-100 text-yellow-700'
-              : 'bg-gray-100 text-gray-600'
+            {
+              HOT: 'bg-red-100 text-red-700',
+              WARM: 'bg-orange-100 text-orange-700',
+              NURTURE: 'bg-yellow-100 text-yellow-700',
+              LOW: 'bg-gray-100 text-gray-600',
+            }[segment]
           }`}
         >
-          {segment === 'HOT'
-            ? 'Ready to Act'
-            : segment === 'WARM'
-            ? 'Almost Ready'
-            : segment === 'NURTURE'
-            ? 'Planning Ahead'
-            : 'Early Stage'}
+          {{ HOT: 'Ready to Act', WARM: 'Almost Ready', NURTURE: 'Planning Ahead', LOW: 'Early Stage' }[segment]}
         </span>
       </div>
 

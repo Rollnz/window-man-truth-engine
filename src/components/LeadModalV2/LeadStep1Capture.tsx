@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,20 +63,25 @@ export function LeadStep1Capture({ onSubmit, isSubmitting }: LeadStep1CapturePro
     }
   };
 
-  const validate = (): boolean => {
+  const getValidationErrors = (data: ContactData): ContactFormErrors => {
     const newErrors: ContactFormErrors = {};
-    if (!formData.firstName || formData.firstName.length < 2) {
+    if (!data.firstName || data.firstName.length < 2) {
       newErrors.firstName = 'Please enter your first name';
     }
-    if (!formData.lastName || formData.lastName.length < 2) {
+    if (!data.lastName || data.lastName.length < 2) {
       newErrors.lastName = 'Please enter your last name';
     }
-    if (!formData.email || !validateEmail(formData.email)) {
+    if (!data.email || !validateEmail(data.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    if (!formData.phone || !validatePhone(formData.phone)) {
+    if (!data.phone || !validatePhone(data.phone)) {
       newErrors.phone = 'Please enter a valid 10-digit phone number';
     }
+    return newErrors;
+  };
+
+  const validate = (): boolean => {
+    const newErrors = getValidationErrors(formData);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -87,11 +92,10 @@ export function LeadStep1Capture({ onSubmit, isSubmitting }: LeadStep1CapturePro
     await onSubmit(formData);
   };
 
-  const isFormValid =
-    formData.firstName.length >= 2 &&
-    formData.lastName.length >= 2 &&
-    validateEmail(formData.email) &&
-    validatePhone(formData.phone);
+  const isFormValid = useMemo(
+    () => Object.keys(getValidationErrors(formData)).length === 0,
+    [formData]
+  );
 
   return (
     <div className="p-6 sm:p-8">

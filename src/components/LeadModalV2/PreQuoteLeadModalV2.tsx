@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -92,10 +91,6 @@ export function PreQuoteLeadModalV2({
 }: PreQuoteLeadModalV2Props) {
   const { toast } = useToast();
 
-  // UI-only test mode: ?v2ui=1 skips all backend calls
-  const [searchParams] = useSearchParams();
-  const uiOnly = searchParams.get('v2ui') === '1';
-
   // Step machine
   const [step, setStep] = useState<StepType>('capture');
 
@@ -126,9 +121,9 @@ export function PreQuoteLeadModalV2({
       // But reset to capture step if qualification not completed
       setTimeout(() => {
         if (step !== 'result') {
-          // If they haven't completed, reset to step 1 on re-open
-          // Lead already exists from Step 1, but modal resets
-          if (!leadId) {
+          if (leadId) {
+            setStep('timeline');
+          } else {
             setStep('capture');
           }
         }
@@ -149,18 +144,6 @@ export function PreQuoteLeadModalV2({
   const handleStep1Submit = useCallback(
     async (data: ContactData) => {
       setIsSubmitting(true);
-
-      // UI_ONLY mode: skip save-lead, generate fake leadId
-      if (uiOnly) {
-        const fakeId = crypto.randomUUID();
-        console.info('[V2 UI_ONLY] Skipping save-lead, using fake leadId:', fakeId);
-        setLeadId(fakeId);
-        storeLeadId(fakeId);
-        setContactData(data);
-        setIsSubmitting(false);
-        setStep('timeline');
-        return;
-      }
 
       try {
         const clientId = getOrCreateClientId();
@@ -192,7 +175,7 @@ export function PreQuoteLeadModalV2({
                 utm_source: lastNonDirect.utm_source,
                 utm_medium: lastNonDirect.utm_medium,
                 gclid: lastNonDirect.gclid,
-                fbclid: (lastNonDirect as Record<string, unknown>).fbc as string || undefined,
+                fbclid: lastNonDirect.fbc || undefined,
                 channel: lastNonDirect.channel,
                 landing_page: lastNonDirect.landing_page,
               },
@@ -249,7 +232,7 @@ export function PreQuoteLeadModalV2({
         setIsSubmitting(false);
       }
     },
-    [ctaSource, sourcePage, onSuccess, toast, uiOnly]
+    [ctaSource, sourcePage, onSuccess, toast]
   );
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -282,13 +265,6 @@ export function PreQuoteLeadModalV2({
       // Compute score
       const result = calculateLeadScore(finalQualification);
       setScoringResult(result);
-
-      // UI_ONLY mode: skip all backend calls, show result directly
-      if (uiOnly) {
-        console.info('[V2 UI_ONLY] Skipping PATCH + enqueue, score:', result.score, 'segment:', result.segment);
-        setStep('result');
-        return;
-      }
 
       // PATCH lead with qualification data (non-blocking for UI)
       if (leadId) {
@@ -338,7 +314,7 @@ export function PreQuoteLeadModalV2({
       // Transition to result screen
       setStep('result');
     },
-    [qualification, leadId, ctaSource, uiOnly]
+    [qualification, leadId, ctaSource]
   );
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -437,10 +413,8 @@ export function PreQuoteLeadModalV2({
     }
   }, [step]);
 
-  const canGoBack =
+  const showBack =
     step !== 'capture' && step !== 'timeline' && step !== 'result';
-  // Allow back from timeline to capture only if leadId not yet set
-  const showBack = step !== 'capture' && step !== 'result';
 
   // ═══════════════════════════════════════════════════════════════════════
   // Render
