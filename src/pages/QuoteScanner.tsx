@@ -125,7 +125,7 @@ export default function QuoteScanner() {
       <main className="pt-20">
         <QuoteScannerHero />
 
-        <div className="container px-4 pb-6 -mt-6">
+        <div className="container px-4 py-6">
           <UrgencyTicker />
         </div>
 
