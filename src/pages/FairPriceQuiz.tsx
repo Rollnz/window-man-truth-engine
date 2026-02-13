@@ -12,11 +12,14 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
-import { trackEvent, trackLeadCapture, trackToolCompletion } from '@/lib/gtm';
+import { trackEvent, trackLeadCapture, trackToolCompletion, trackLeadSubmissionSuccess } from '@/lib/gtm';
 import { supabase } from '@/integrations/supabase/client';
-import { getAttributionData } from '@/lib/attribution';
+import { getAttributionData, getLastNonDirectAttribution } from '@/lib/attribution';
+import { getOrCreateSessionId } from '@/lib/tracking';
+import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
+import { toast } from 'sonner';
 
 import { ExitIntentModal } from '@/components/authority';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
@@ -35,8 +38,10 @@ export default function FairPriceQuiz() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string | number | string[]>>({});
   const [analysis, setAnalysis] = useState<PriceAnalysis | null>(null);
-  const [userName, setUserName] = useState('');
+  const [userFirstName, setUserFirstName] = useState('');
+  const [userLastName, setUserLastName] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [userPhone, setUserPhone] = useState('');
 
   const totalQuestions = quizQuestions.length;
   const currentQuestion = quizQuestions[currentStep];
@@ -52,7 +57,6 @@ export default function FairPriceQuiz() {
     const newAnswers = { ...answers, [currentStep]: value };
     setAnswers(newAnswers);
 
-    // Track question completion
     trackEvent('quiz_question_completed', {
       tool_name: 'fair-price-quiz',
       question_number: currentStep + 1,
@@ -62,7 +66,6 @@ export default function FairPriceQuiz() {
     if (currentStep < totalQuestions - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Quiz complete, build answers object and show analysis theater
       const quizAnswers: QuizAnswers = {
         propertyType: newAnswers[0] as string,
         sqft: newAnswers[1] as string,
@@ -73,11 +76,9 @@ export default function FairPriceQuiz() {
         otherQuotes: newAnswers[6] as string,
       };
 
-      // Calculate analysis
       const priceAnalysis = calculatePriceAnalysis(quizAnswers);
       setAnalysis(priceAnalysis);
 
-      // Save to session
       updateFields({
         windowCount: quizAnswers.windowCount,
       });
@@ -96,9 +97,18 @@ export default function FairPriceQuiz() {
     setPhase('blur-gate');
   };
 
-  const handleBlurGateSubmit = async (name: string, email: string) => {
-    setUserName(name);
+  const handleBlurGateSubmit = async (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  }) => {
+    const { firstName, lastName, email, phone } = data;
+
+    setUserFirstName(firstName);
+    setUserLastName(lastName);
     setUserEmail(email);
+    setUserPhone(phone);
 
     // Build quiz answers object
     const quizAnswers: QuizAnswers = {
@@ -112,75 +122,108 @@ export default function FairPriceQuiz() {
     };
 
     const leadScore = calculateLeadScore(quizAnswers, false);
+    const phoneDigits = phone ? phone.replace(/\D/g, '') : '';
+
+    // V2 payload: nested attribution, lastNonDirect, sessionData
+    const clientId = getOrCreateAnonId();
+    const sessionId = getOrCreateSessionId();
     const attribution = getAttributionData();
+    const lastNonDirect = getLastNonDirectAttribution();
 
     // Persist to session for Vault sync
     updateFields({
       email,
-      name,
+      name: firstName,
       windowCount: quizAnswers.windowCount,
     });
 
-    // Save lead to database
+    // Save lead to database with V2 contract
     try {
-      const { data, error } = await supabase.functions.invoke('save-lead', {
+      const { data: responseData, error } = await supabase.functions.invoke('save-lead', {
         body: {
           email,
-          name,
-          leadId: hookLeadId, // Golden Thread: pass existing leadId for upsert
-          source_tool: 'fair-price-quiz' satisfies SourceTool,
-          source_form: 'blur-gate',
-          session_data: {
+          firstName,
+          lastName,
+          phone: phoneDigits || null,
+          leadId: hookLeadId,
+          sourceTool: 'fair-price-quiz' satisfies SourceTool,
+          flowVersion: 'fair_price_v2',
+          sourcePage: window.location.pathname,
+          sessionId,
+          sessionData: {
+            clientId,
+            client_id: clientId,
+            ctaSource: 'fair-price-result',
             quizAnswers,
             analysis,
             leadScore,
           },
+          attribution,
+          lastNonDirect,
           window_count: quizAnswers.windowCount,
-          ...attribution,
         },
       });
 
-      // Golden Thread: persist leadId for cross-tool tracking
-      if (data?.leadId) {
-        setLeadId(data.leadId);
-        updateFields({ leadId: data.leadId });
+      if (error) {
+        console.error('Failed to save lead:', error);
+        toast.error('Something went wrong. Please try again.');
+        throw error;
       }
 
-      // Track lead capture via GTM with full metadata (Phase 4)
-      await trackLeadCapture(
-        {
-          leadId: data?.leadId,
-          sourceTool: 'fair_price_quiz',
-          conversionAction: 'form_submit',
-        },
-        email,
-        undefined,
-        {
-          hasName: !!name.trim(),
-          hasPhone: false,
-          hasProjectDetails: !!quizAnswers.windowCount,
-        }
-      );
+      const newLeadId = responseData?.leadId;
 
-      // NOTE: Duplicate trackEvent('lead_captured') removed - trackLeadCapture above 
-      // already handles EMQ-compliant event with hashed PII and value-based bidding
+      // Golden Thread: persist leadId for cross-tool tracking
+      if (newLeadId) {
+        setLeadId(newLeadId);
+        updateFields({ leadId: newLeadId });
+      }
+
+      // Non-blocking tracking (after successful save)
+      Promise.allSettled([
+        trackLeadCapture(
+          {
+            leadId: newLeadId,
+            sourceTool: 'fair_price_quiz',
+            conversionAction: 'form_submit',
+          },
+          email,
+          phoneDigits || undefined,
+          {
+            hasName: true,
+            hasPhone: !!phoneDigits,
+            hasProjectDetails: !!quizAnswers.windowCount,
+          }
+        ),
+        trackLeadSubmissionSuccess({
+          leadId: newLeadId,
+          email,
+          phone: phoneDigits || undefined,
+          firstName,
+          lastName: lastName || undefined,
+          sourceTool: 'fair-price-quiz',
+          eventId: newLeadId,
+          value: 100,
+        }),
+      ]);
+
+      // Track tool completion with delta value for value-based bidding
+      trackToolComplete('fair-price-quiz', {
+        grade: analysis?.grade,
+        quote_amount: analysis?.quoteAmount,
+        score: leadScore,
+      });
+
+      markToolCompleted('fair-price-quiz');
+
+      // Phase transition ONLY on success
+      setPhase('results');
     } catch (error) {
       console.error('Failed to save lead:', error);
+      // useFormLock auto-unlocks on error — user can retry
     }
-
-    // Track tool completion with delta value for value-based bidding
-    trackToolComplete('fair-price-quiz', {
-      grade: analysis?.grade,
-      quote_amount: analysis?.quoteAmount,
-      score: calculateLeadScore(quizAnswers, false),
-    });
-    
-    markToolCompleted('fair-price-quiz');
-    setPhase('results');
   };
 
   const handlePhoneSubmit = async (phone: string) => {
-    // Build quiz answers object for webhook
     const quizAnswers: QuizAnswers = {
       propertyType: answers[0] as string,
       sqft: answers[1] as string,
@@ -197,11 +240,10 @@ export default function FairPriceQuiz() {
     try {
       await supabase.functions.invoke('trigger-phone-call', {
         body: {
-          phone,
-          name: userName,
+          phone: phone || userPhone,
+          name: userFirstName,
           email: userEmail,
           quizContext: {
-            // All quiz answers included
             propertyType: quizAnswers.propertyType,
             sqft: quizAnswers.sqft,
             windowCount: quizAnswers.windowCount,
@@ -209,7 +251,6 @@ export default function FairPriceQuiz() {
             quoteAmount: quizAnswers.quoteAmount,
             quoteDate: quizAnswers.quoteDate,
             otherQuotes: quizAnswers.otherQuotes,
-            // Analysis results
             grade: analysis?.grade,
             verdict: analysis?.verdict,
             fairMarketValueLow: analysis?.fairMarketValue.low,
@@ -222,13 +263,13 @@ export default function FairPriceQuiz() {
         },
       });
 
-      // Update lead with phone in DB
+      // Update lead with phone in DB (V2 field names)
       await supabase.functions.invoke('save-lead', {
         body: {
           email: userEmail,
-          phone,
-          source_tool: 'fair-price-quiz' satisfies SourceTool,
-          source_form: 'phone-capture',
+          phone: phone.replace(/\D/g, '') || null,
+          sourceTool: 'fair-price-quiz' satisfies SourceTool,
+          flowVersion: 'fair_price_v2',
         },
       });
 
@@ -295,7 +336,7 @@ export default function FairPriceQuiz() {
           <QuizResults
             analysis={analysis}
             answers={getQuizAnswers()}
-            userName={userName}
+            userName={userFirstName}
             userEmail={userEmail}
             onPhoneSubmit={handlePhoneSubmit}
             leadId={hookLeadId}
