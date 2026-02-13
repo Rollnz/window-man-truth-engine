@@ -20,7 +20,7 @@ import { CloserSection } from '@/components/sample-report/CloserSection';
 import { FAQSection } from '@/components/sample-report/FAQSection';
 import { SampleReportLeadModal } from '@/components/sample-report/SampleReportLeadModal';
 import { UrgencyTicker } from '@/components/social-proof';
-import { PreQuoteLeadModal } from '@/components/sample-report/PreQuoteLeadModal';
+import { PreQuoteLeadModalV2 } from '@/components/LeadModalV2';
 import { FairPriceImageSection } from '@/components/sample-report/FairPriceImageSection';
 
 const SampleReport = () => {
@@ -132,12 +132,13 @@ const SampleReport = () => {
         ctaSource={modalCtaSource}
       />
       
-      {/* Pre-Quote Lead Modal - for users without quotes */}
-      <PreQuoteLeadModal
+      {/* Pre-Quote Lead Modal V2 - multi-step qualification for users without quotes */}
+      <PreQuoteLeadModalV2
         isOpen={showPreQuoteModal}
         onClose={() => setShowPreQuoteModal(false)}
         onSuccess={handlePreQuoteSuccess}
         ctaSource={preQuoteCtaSource}
+        sourcePage="sample-report"
       />
 
       {/* Main Content */}
