@@ -37,6 +37,7 @@ export default function CRMDashboard() {
   });
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [showHighTouchOnly, setShowHighTouchOnly] = useState(false);
+  const [v2SegmentFilter, setV2SegmentFilter] = useState<string>('all');
 
   const { 
     leads, 
@@ -55,15 +56,21 @@ export default function CRMDashboard() {
 
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
 
-  // Filter for high-touch leads (both gclid AND fbclid)
+  // Filter for high-touch leads (both gclid AND fbclid) and V2 segment
   const filteredLeads = useMemo(() => {
-    if (!showHighTouchOnly) return leads;
-    return leads.filter(lead => {
-      const hasGoogle = !!(lead as any).gclid;
-      const hasMeta = !!(lead as any).fbclid;
-      return hasGoogle && hasMeta;
-    });
-  }, [leads, showHighTouchOnly]);
+    let result = leads;
+    if (showHighTouchOnly) {
+      result = result.filter(lead => {
+        const hasGoogle = !!(lead as any).gclid;
+        const hasMeta = !!(lead as any).fbclid;
+        return hasGoogle && hasMeta;
+      });
+    }
+    if (v2SegmentFilter !== 'all') {
+      result = result.filter(lead => lead.lead_segment === v2SegmentFilter);
+    }
+    return result;
+  }, [leads, showHighTouchOnly, v2SegmentFilter]);
 
   const highTouchCount = useMemo(() => {
     return leads.filter(lead => {
@@ -155,7 +162,8 @@ export default function CRMDashboard() {
                 <h1 className="text-2xl font-bold">Lead Warehouse</h1>
                 <p className="text-sm text-muted-foreground">
                   CRM Kanban Board • {filteredLeads.length} leads
-                  {showHighTouchOnly && ` (filtered from ${leads.length})`}
+                  {(showHighTouchOnly || v2SegmentFilter !== 'all') && ` (filtered from ${leads.length})`}
+                  {v2SegmentFilter !== 'all' && ` • Segment: ${v2SegmentFilter}`}
                 </p>
               </div>
             </div>
@@ -180,6 +188,25 @@ export default function CRMDashboard() {
                     </Badge>
                   )}
                 </Label>
+              </div>
+
+              {/* V2 Segment Filter */}
+              <div className="flex items-center gap-2 px-3 py-1.5 border border-border/50 rounded-lg bg-card/50">
+                <Label htmlFor="v2-segment-filter" className="text-sm text-muted-foreground whitespace-nowrap">
+                  V2 Segment
+                </Label>
+                <select
+                  id="v2-segment-filter"
+                  value={v2SegmentFilter}
+                  onChange={(e) => setV2SegmentFilter(e.target.value)}
+                  className="text-sm bg-transparent border-none outline-none cursor-pointer text-foreground"
+                >
+                  <option value="all">All</option>
+                  <option value="HOT">HOT</option>
+                  <option value="WARM">WARM</option>
+                  <option value="NURTURE">NURTURE</option>
+                  <option value="LOW">LOW</option>
+                </select>
               </div>
 
               <DateRangePicker
@@ -246,8 +273,8 @@ export default function CRMDashboard() {
       <main className="p-4 space-y-6">
         {/* Summary Cards */}
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {Array(6).fill(0).map((_, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            {Array(7).fill(0).map((_, i) => (
               <Skeleton key={i} className="h-[80px]" />
             ))}
           </div>

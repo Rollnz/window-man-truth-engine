@@ -53,7 +53,9 @@ export function useAdminDashboard(): AdminDashboardData {
       today.setHours(0, 0, 0, 0);
 
       const totalLeads = leads.length;
-      const hotLeads = leads.filter((l: { engagement_score: number }) => l.engagement_score >= 150).length;
+      const hotLeads = leads.filter((l: { engagement_score: number; lead_segment?: string | null }) =>
+        l.engagement_score >= 150 || l.lead_segment === 'HOT'
+      ).length;
       const newLeadsToday = leads.filter((l: { created_at: string }) => 
         new Date(l.created_at) >= today
       ).length;

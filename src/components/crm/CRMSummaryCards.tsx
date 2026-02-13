@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Users, DollarSign, TrendingUp, Target, Flame, Snowflake } from 'lucide-react';
+import { Users, DollarSign, TrendingUp, Target, Flame, Snowflake, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { CRMLead, LEAD_STATUS_CONFIG } from '@/types/crm';
 
@@ -17,9 +17,12 @@ export function CRMSummaryCards({ leads }: CRMSummaryCardsProps) {
       .filter(l => l.status === 'closed_won')
       .reduce((sum, lead) => sum + (lead.actual_deal_value || 0), 0);
 
-    const hotLeads = leads.filter(l => l.lead_quality === 'hot' || l.lead_quality === 'qualified').length;
+    const hotLeads = leads.filter(l =>
+      l.lead_quality === 'hot' || l.lead_quality === 'qualified' || l.lead_segment === 'HOT'
+    ).length;
     const newLeads = leads.filter(l => l.status === 'new').length;
     const appointmentsSet = leads.filter(l => l.status === 'appointment_set' || l.status === 'sat').length;
+    const v2Qualified = leads.filter(l => !!l.qualification_completed_at).length;
 
     return {
       total: leads.length,
@@ -28,6 +31,7 @@ export function CRMSummaryCards({ leads }: CRMSummaryCardsProps) {
       hotLeads,
       newLeads,
       appointmentsSet,
+      v2Qualified,
     };
   }, [leads]);
 
@@ -68,6 +72,13 @@ export function CRMSummaryCards({ leads }: CRMSummaryCardsProps) {
       bgColor: 'bg-amber-500/10',
     },
     {
+      title: 'V2 Qualified',
+      value: stats.v2Qualified,
+      icon: CheckCircle2,
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-500/10',
+    },
+    {
       title: 'Closed Won',
       value: `$${stats.closedWonValue.toLocaleString()}`,
       icon: DollarSign,
@@ -77,7 +88,7 @@ export function CRMSummaryCards({ leads }: CRMSummaryCardsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
       {cards.map((card) => (
         <Card key={card.title} className="border-border/50">
           <CardContent className="p-4">
