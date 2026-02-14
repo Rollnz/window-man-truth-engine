@@ -96,7 +96,7 @@ const createOrRefreshSession = async (): Promise<string> => {
   try {
     const { error } = await supabase
       .from('wm_sessions')
-      .insert({
+      .upsert({
         id: newSessionId,
         anonymous_id: anonymousId,
         landing_page: window.location.pathname,
@@ -107,7 +107,7 @@ const createOrRefreshSession = async (): Promise<string> => {
         utm_campaign: attribution.utm_campaign,
         utm_term: attribution.utm_term,
         utm_content: attribution.utm_content,
-      });
+      }, { onConflict: 'id', ignoreDuplicates: true });
 
     if (error) {
       console.warn("[wm] session insert failed", error);
