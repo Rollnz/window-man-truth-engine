@@ -65,39 +65,17 @@ const createOrRefreshSession = async (): Promise<string> => {
   const existing = readSessionId();
   const attribution = getAttributionParams();
 
-  // If we already have a session ID, verify it exists in DB or create it
-  if (existing) {
-    try {
-      // Check if session exists
-      const { data: existingSession } = await supabase
-        .from('wm_sessions')
-        .select('id')
-        .eq('id', existing)
-        .maybeSingle();
-
-      if (existingSession) {
-        // Session exists, just update timestamp
-        await supabase
-          .from('wm_sessions')
-          .update({ updated_at: new Date().toISOString() })
-          .eq('id', existing);
-        return existing;
-      }
-    } catch (error) {
-      console.warn("[wm] session verification failed, will create new", error);
-    }
-  }
-
-  // Create new session in database
-  const newSessionId = existing || crypto.randomUUID();
-  // Use Golden Thread ID for visitor identity (ensures leads.client_id matches wm_sessions.anonymous_id)
+  const sessionId = existing || crypto.randomUUID();
   const anonymousId = getGoldenThreadId();
+
+  // Always save locally first so downstream code works immediately
+  saveSessionId(sessionId);
 
   try {
     const { error } = await supabase
       .from('wm_sessions')
-      .upsert({
-        id: newSessionId,
+      .insert({
+        id: sessionId,
         anonymous_id: anonymousId,
         landing_page: window.location.pathname,
         user_agent: navigator.userAgent,
@@ -107,27 +85,23 @@ const createOrRefreshSession = async (): Promise<string> => {
         utm_campaign: attribution.utm_campaign,
         utm_term: attribution.utm_term,
         utm_content: attribution.utm_content,
-      }, { onConflict: 'id', ignoreDuplicates: true });
+      });
 
     if (error) {
-      console.warn("[wm] session insert failed", error);
-      // Fallback: return local UUID anyway so downstream calls work
-      const localId = existing || crypto.randomUUID();
-      saveSessionId(localId);
-      return localId;
+      // 23505 = duplicate key (session already exists) -- this is fine
+      if (error.code === '23505') {
+        console.log("[wm] session already registered:", sessionId);
+      } else {
+        console.warn("[wm] session insert failed", error);
+      }
+    } else {
+      console.log("[wm] session registered:", sessionId);
     }
-
-    saveSessionId(newSessionId);
-    console.log("[wm] session registered:", newSessionId);
-    return newSessionId;
   } catch (error) {
     console.warn("[wm] session bootstrap failed", error);
   }
 
-  // Fallback: keep using existing client-side ID or mint a local UUID
-  const localId = existing || crypto.randomUUID();
-  saveSessionId(localId);
-  return localId;
+  return sessionId;
 };
 
 let sessionPromise: Promise<string | undefined> | null = null;
