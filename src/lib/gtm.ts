@@ -578,7 +578,7 @@ export const trackLeadSubmissionSuccess = async (params: LeadSubmissionSuccessIn
     });
 
     // Generate unique event ID for CAPI deduplication
-    const eventId = params.eventId || generateEventId();
+    const eventId = params.eventId || params.leadId || generateEventId();
 
     // Get page location for event context
     const pageLocation = typeof window !== 'undefined' ? window.location.href : undefined;
