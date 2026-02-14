@@ -655,7 +655,6 @@ serve(async (req) => {
       // EMQ 9.5+: Device fingerprinting for server-side matching
       client_user_agent: clientUserAgent,
       // V2 qualification flow fields (set on create; qualification fields set later via PATCH)
-      flow_version: flowVersion || null,
       source_page: sourcePage || (sessionData as Record<string, unknown>)?.ctaSource as string || null,
     };
 
@@ -1133,7 +1132,7 @@ serve(async (req) => {
         const hashedLastName = normalizedLastName ? await hashName(normalizedLastName) : null;
 
         const eventLogPayload = {
-          event_id: leadId,
+          event_id: crypto.randomUUID(),
           event_name: 'lead_submission_success',
           event_type: 'conversion',
           event_time: new Date().toISOString(),
