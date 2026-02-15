@@ -298,7 +298,8 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
           areaName: 'Florida',
           sessionId,
           leadId: capturedLeadId || undefined,
-        }
+        },
+        { timeoutMs: 60000 }
       );
 
       if (requestError) throw requestError;
