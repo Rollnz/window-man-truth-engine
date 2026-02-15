@@ -463,9 +463,8 @@ export function PreQuoteLeadModalV2({
             ctaSource
           );
 
-          if (hideAfterCompletion) {
-            markCompletedInSession();
-          }
+          // Mark completed AFTER result screen is shown (deferred to onClose)
+          // — moved to result screen dismiss handler below
         }
 
         // Transition to result screen
@@ -496,6 +495,13 @@ export function PreQuoteLeadModalV2({
       setStep(STEP_ORDER[currentIndex - 1]);
     }
   }, [step]);
+
+  const handleResultClose = useCallback(() => {
+    if (hideAfterCompletion) {
+      markCompletedInSession();
+    }
+    onClose();
+  }, [hideAfterCompletion, onClose]);
 
   const showBack =
     step !== 'capture' && step !== 'timeline' && step !== 'result';
@@ -566,7 +572,7 @@ export function PreQuoteLeadModalV2({
             leadId={leadId}
             firstName={contactData?.firstName || ''}
             leadScore={scoringResult.score}
-            onClose={onClose}
+            onClose={handleResultClose}
             ctaSource={ctaSource}
           />
         )}

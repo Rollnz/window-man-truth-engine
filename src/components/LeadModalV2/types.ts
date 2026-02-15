@@ -113,7 +113,7 @@ export const DEFAULT_PREQUOTE_CONTEXT: PreQuoteLeadModalContextConfig = {
   sourceTool: 'sample-report',
   trackingSourceTool: 'sample_report',
   conversionAction: 'prequote_v2_signup',
-  leadValue: 75,
+  leadValue: 100,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
