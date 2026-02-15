@@ -221,12 +221,9 @@ Deno.serve(async (req) => {
   const apiKeyHeader = req.headers.get("apikey");
   
   const expectedAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const knownAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6dWxxZXhsZ2F2Z2djeWl6YWJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwODQwNjgsImV4cCI6MjA4MjY2MDA2OH0.QvwUD5ScBk2DrD8yKiS3NBSeOuGAikQ3XT5TKn6Hf5U";
-  
   const secretValid = expectedSecret && providedSecret && providedSecret === expectedSecret;
   const anonKeyValid = (
-    (expectedAnonKey && (apiKeyHeader === expectedAnonKey || authHeader === `Bearer ${expectedAnonKey}`)) ||
-    (apiKeyHeader === knownAnonKey || authHeader === `Bearer ${knownAnonKey}`)
+    expectedAnonKey && (apiKeyHeader === expectedAnonKey || authHeader === `Bearer ${expectedAnonKey}`)
   );
   
   if (!secretValid && !anonKeyValid) {
