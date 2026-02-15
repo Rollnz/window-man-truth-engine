@@ -272,7 +272,7 @@ export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHer
           {/* Manufacturer Badge */}
           <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-slate-800/80 backdrop-blur-sm rounded-full border border-slate-700/50 shadow-lg">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-xs text-slate-400">Powered by AI • Built for Florida</span>
+            <span className="text-xs text-primary-foreground">Powered by Gemini 3 Flash       </span>
           </div>
         </div>
       </div>
