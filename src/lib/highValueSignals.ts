@@ -176,26 +176,22 @@ export async function logHighValueSignal(params: LogSignalParams): Promise<void>
       ingested_by: 'high-value-signal',
     };
 
-    // Get the log secret from environment (only works if embedded at build time)
+    // Deterministic auth header assembly
     const logSecret = import.meta.env.VITE_WM_LOG_SECRET as string | undefined;
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
     
-    // Build headers - prefer secret header, fallback to anon key
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
     
     if (logSecret) {
       headers['X-WM-LOG-SECRET'] = logSecret;
+    } else if (anonKey) {
+      headers['apikey'] = anonKey;
+      headers['Authorization'] = `Bearer ${anonKey}`;
     } else {
-      // Fallback: Use Supabase anon key auth pattern
-      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-      if (anonKey) {
-        headers['apikey'] = anonKey;
-        headers['Authorization'] = `Bearer ${anonKey}`;
-      } else {
-        console.warn('[highValueSignals] No auth available, skipping signal:', eventName);
-        return;
-      }
+      console.error('[highValueSignals] CRITICAL: No auth key available. Signal dropped:', eventName);
+      return;
     }
 
     // Send to log-event with keepalive for reliability on page unload
