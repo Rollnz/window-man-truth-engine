@@ -317,91 +317,6 @@ export function PreQuoteLeadModalV2({
     setStep('windowCount');
   }, []);
 
-  // Step 5 is special: after selection, compute score, PATCH, then show result
-  const handleWindowScopeSelect = useCallback(
-    async (value: WindowScope) => {
-      // Guard against rapid repeat clicks causing duplicate PATCH/tracking side-effects.
-      if (isQualificationSubmitting) return;
-      setIsQualificationSubmitting(true);
-
-      try {
-        const finalQualification: QualificationData = {
-          ...qualification,
-          windowScope: value,
-        };
-        setQualification(finalQualification);
-
-        // Compute score
-        const result = calculateLeadScore(finalQualification);
-        setScoringResult(result);
-
-        // PATCH lead with qualification data (non-blocking for UI)
-        if (leadId) {
-          const clientId = getOrCreateClientId();
-          const sessionId = getOrCreateSessionId();
-
-          // PATCH lead via update-lead-qualification
-          try {
-            const { error: patchError } = await supabase.functions.invoke(
-              'update-lead-qualification',
-              {
-                body: {
-                  leadId,
-                  timeline: finalQualification.timeline,
-                  hasQuote: finalQualification.hasQuote,
-                  homeowner: finalQualification.homeowner,
-                  windowScope: value,
-                  leadScore: result.score,
-                  leadSegment: result.segment,
-                  sessionId,
-                  clientId,
-                  sourceTool: resolvedContextConfig.sourceTool,
-                },
-              }
-            );
-
-            if (patchError) {
-              console.error('[V2] Qualification PATCH failed:', patchError);
-              // Non-fatal: show result anyway
-            }
-          } catch (err) {
-            console.error('[V2] Qualification PATCH exception:', err);
-          }
-
-          // Fire segment-specific GTM events (ONLY after PATCH)
-          fireSegmentEvents(result.segment, result.score, leadId);
-
-          // Enqueue phone call for HOT leads (fire-and-forget)
-          enqueuePhoneCallIfEligible(
-            result.segment,
-            finalQualification,
-            leadId,
-            ctaSource
-          );
-
-          if (hideAfterCompletion) {
-            markCompletedInSession();
-          }
-        }
-
-        // Transition to result screen
-        setStep('result');
-      } finally {
-        setIsQualificationSubmitting(false);
-      }
-    },
-    [
-      qualification,
-      leadId,
-      ctaSource,
-      hideAfterCompletion,
-      resolvedContextConfig,
-      fireSegmentEvents,
-      enqueuePhoneCallIfEligible,
-      isQualificationSubmitting,
-    ]
-  );
-
   // ═══════════════════════════════════════════════════════════════════════
   // GTM segment events (CRITICAL: only fire after PATCH and segment known)
   // ═══════════════════════════════════════════════════════════════════════
@@ -486,6 +401,90 @@ export function PreQuoteLeadModalV2({
         console.warn('[V2] Phone enqueue failed (non-blocking):', err)
       );
   }, [contactData, scoringResult?.score]);
+
+  // Step 5 is special: after selection, compute score, PATCH, then show result
+  const handleWindowScopeSelect = useCallback(
+    async (value: WindowScope) => {
+      // Guard against rapid repeat clicks causing duplicate PATCH/tracking side-effects.
+      if (isQualificationSubmitting) return;
+      setIsQualificationSubmitting(true);
+
+      try {
+        const finalQualification: QualificationData = {
+          ...qualification,
+          windowScope: value,
+        };
+        setQualification(finalQualification);
+
+        // Compute score
+        const result = calculateLeadScore(finalQualification);
+        setScoringResult(result);
+
+        // PATCH lead with qualification data (non-blocking for UI)
+        if (leadId) {
+          const clientId = getOrCreateClientId();
+          const sessionId = getOrCreateSessionId();
+
+          // PATCH lead via update-lead-qualification
+          try {
+            const { error: patchError } = await supabase.functions.invoke(
+              'update-lead-qualification',
+              {
+                body: {
+                  leadId,
+                  timeline: finalQualification.timeline,
+                  hasQuote: finalQualification.hasQuote,
+                  homeowner: finalQualification.homeowner,
+                  windowScope: value,
+                  leadScore: result.score,
+                  leadSegment: result.segment,
+                  sessionId,
+                  clientId,
+                  sourceTool: resolvedContextConfig.sourceTool,
+                },
+              }
+            );
+
+            if (patchError) {
+              console.error('[V2] Qualification PATCH failed:', patchError);
+            }
+          } catch (err) {
+            console.error('[V2] Qualification PATCH exception:', err);
+          }
+
+          // Fire segment-specific GTM events (ONLY after PATCH)
+          fireSegmentEvents(result.segment, result.score, leadId);
+
+          // Enqueue phone call for HOT leads (fire-and-forget)
+          enqueuePhoneCallIfEligible(
+            result.segment,
+            finalQualification,
+            leadId,
+            ctaSource
+          );
+
+          if (hideAfterCompletion) {
+            markCompletedInSession();
+          }
+        }
+
+        // Transition to result screen
+        setStep('result');
+      } finally {
+        setIsQualificationSubmitting(false);
+      }
+    },
+    [
+      qualification,
+      leadId,
+      ctaSource,
+      hideAfterCompletion,
+      resolvedContextConfig,
+      fireSegmentEvents,
+      enqueuePhoneCallIfEligible,
+      isQualificationSubmitting,
+    ]
+  );
 
   // ═══════════════════════════════════════════════════════════════════════
   // Back navigation
