@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -131,6 +132,7 @@ export function PreQuoteLeadModalV2({
     [contextConfig]
   );
   const hasCompletedLead = hasCompletedInSession();
+  const suppressOpen = hideAfterCompletion && hasCompletedLead;
 
   // Step machine
   const [step, setStep] = useState<StepType>('capture');
@@ -159,12 +161,6 @@ export function PreQuoteLeadModalV2({
   // Reset on close
   // ═══════════════════════════════════════════════════════════════════════
   useEffect(() => {
-    if (isOpen && hideAfterCompletion && hasCompletedLead) {
-      // Global-session suppression: once completed, don't keep reopening in the same session.
-      onClose();
-      return;
-    }
-
     if (!isOpen) {
       // Clear any stale timer before scheduling another reset.
       if (closeResetTimerRef.current) {
@@ -196,7 +192,7 @@ export function PreQuoteLeadModalV2({
         window.clearTimeout(closeResetTimerRef.current);
       }
     };
-  }, [isOpen, step, leadId, onClose, hideAfterCompletion, hasCompletedLead]);
+  }, [isOpen, step, leadId]);
 
   // ═══════════════════════════════════════════════════════════════════════
   // Step 1: Create lead via save-lead
@@ -510,11 +506,15 @@ export function PreQuoteLeadModalV2({
   // Render
   // ═══════════════════════════════════════════════════════════════════════
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen && !suppressOpen} onOpenChange={onClose}>
       <DialogContent
         className="sm:max-w-[480px] p-0 overflow-hidden"
-        aria-labelledby="v2-modal-title"
+        aria-describedby={undefined}
       >
+        <VisuallyHidden>
+          <DialogTitle>Lead Qualification</DialogTitle>
+        </VisuallyHidden>
+
         {/* Progress bar */}
         <StepProgress currentStep={step} />
 
