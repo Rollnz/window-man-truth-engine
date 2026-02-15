@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 export function WelcomeToast() {
   const { showToast, dismissToast } = useWelcomeToast();
   const hasTrackedImpression = useRef(false);
-  
+
   // Track impression when toast becomes visible
   useEffect(() => {
     if (showToast && !hasTrackedImpression.current) {
@@ -20,10 +20,10 @@ export function WelcomeToast() {
       trackEngagement('toast_impression', 0, 'welcome');
     }
   }, [showToast]);
-  
+
   const handleStartScoring = () => {
     trackEngagement('toast_click', 0, 'welcome');
-    
+
     // Scroll to tool grid with fallback
     const toolGrid = document.getElementById('tool-grid');
     if (toolGrid) {
@@ -37,17 +37,17 @@ export function WelcomeToast() {
       // Fallback: scroll to approximate fold
       window.scrollTo({ top: 600, behavior: 'smooth' });
     }
-    
+
     dismissToast();
   };
-  
+
   const handleDismiss = () => {
     trackEngagement('toast_dismiss', 0, 'welcome');
     dismissToast();
   };
-  
+
   if (!showToast) return null;
-  
+
   return (
     <div
       className={cn(
@@ -59,8 +59,8 @@ export function WelcomeToast() {
         "sm:bottom-6 sm:left-1/2 sm:-translate-x-1/2",
         // Animation
         "animate-in slide-in-from-bottom-4 fade-in duration-500"
-      )}
-    >
+      )}>
+
       {/* Gradient Border Wrapper - the "Journey" pill with shimmer */}
       <div
         className={cn(
@@ -71,8 +71,8 @@ export function WelcomeToast() {
           "bg-[length:200%_100%]",
           "animate-border-shimmer",
           "shadow-2xl shadow-primary/20"
-        )}
-      >
+        )}>
+
         {/* Inner Glass Container */}
         <div
           className={cn(
@@ -81,8 +81,8 @@ export function WelcomeToast() {
             "bg-background/90 backdrop-blur-xl",
             // Padding - more horizontal for pill shape
             "px-5 py-4 sm:px-6 sm:py-5"
-          )}
-        >
+          )}>
+
           {/* Close button */}
           <button
             onClick={handleDismiss}
@@ -91,8 +91,8 @@ export function WelcomeToast() {
               "text-muted-foreground hover:text-foreground",
               "hover:bg-muted/50 transition-colors"
             )}
-            aria-label="Dismiss"
-          >
+            aria-label="Dismiss">
+
             <X className="h-4 w-4" />
           </button>
           
@@ -102,7 +102,7 @@ export function WelcomeToast() {
             <div className="flex items-center gap-2 pr-6">
               <Sparkles className="h-5 w-5 text-primary shrink-0" />
               <h3 className="font-semibold text-foreground">
-                Welcome to the Window Truth Engine 🛡️
+                Window Man The Truth Report🛡️
               </h3>
             </div>
             
@@ -117,13 +117,13 @@ export function WelcomeToast() {
               onClick={handleStartScoring}
               variant="cta"
               size="sm"
-              className="w-full sm:w-auto mt-1"
-            >
+              className="w-full sm:w-auto mt-1">
+
               Start Scoring Points
             </Button>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
