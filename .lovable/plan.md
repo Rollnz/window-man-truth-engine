@@ -1,55 +1,38 @@
 
 
-## Fix: PreQuoteLeadModalV2 Flash-Close Regression
+## Add Background Scanning Video to "X-Ray Vision for Your Wallet" Section
 
-### Root Cause
+### What Changes
 
-The modal opens visually (`open={isOpen}` on the Dialog), and then a `useEffect` notices the session-completion flag and calls `onClose()` one frame later. This creates the open-then-immediately-close flash seen in the session replay.
+Modify `src/components/audit/HowItWorksXRay.tsx` to add a full-bleed looping video behind the entire section. The video will be heavily blurred and darkened so the foreground content remains crisp and readable.
 
-The sequence:
-1. User clicks CTA, parent sets `showPreQuoteModal = true`
-2. Dialog renders with `open={true}` — modal appears on screen
-3. React commits, effects run
-4. `useEffect` reads `hasCompletedInSession() === true` and calls `onClose()`
-5. Parent sets `showPreQuoteModal = false` — modal disappears (flash)
+### How It Works
 
-### Fix (2 changes in PreQuoteLeadModalV2.tsx)
+- A `<video>` element is placed inside the existing background `div` (lines 47-50), sitting behind the gradient blobs
+- The video uses `preload="none"` and an `IntersectionObserver` (threshold 0.25) to begin playback only when the section scrolls into view -- identical pattern to the existing `ScannerVideoSection`
+- Heavy blur (`blur-[24px]`) plus a dark overlay (`bg-slate-950/70`) ensure text contrast is unaffected
+- `prefers-reduced-motion` check: if enabled, the video never loads or plays -- the current static gradient blobs remain as the sole background
+- Video pauses when scrolled out of view (IntersectionObserver disconnect pattern)
+- `muted`, `loop`, `playsInline` attributes for silent autoplay compliance on all browsers
 
-**Change 1 — Prevent Dialog from opening when suppressed (line 513)**
+### Technical Details
 
-Replace:
-```
-<Dialog open={isOpen} onOpenChange={onClose}>
-```
-With:
-```
-const suppressOpen = hideAfterCompletion && hasCompletedLead;
+**File:** `src/components/audit/HowItWorksXRay.tsx`
 
-<Dialog open={isOpen && !suppressOpen} onOpenChange={onClose}>
-```
+1. Add `useRef`, `useState`, `useEffect` imports from React
+2. Add a `videoRef` and a `sectionRef`
+3. Add a `useEffect` that:
+   - Checks `prefers-reduced-motion` -- if true, skips everything
+   - Creates an `IntersectionObserver` on the section
+   - On intersection: sets `video.preload = 'auto'` then calls `video.play()` (with `.catch()` fallback)
+   - On exit: calls `video.pause()`
+4. Insert a `<video>` element inside the existing background `div`:
+   - Source: `https://itswindowman-videos.b-cdn.net/window_estimate_ai_scan_animated.mp4`
+   - Classes: `absolute inset-0 w-full h-full object-cover blur-[24px] scale-110 opacity-30`
+   - The `scale-110` prevents blur edge artifacts from showing
+   - A sibling overlay `div` with `bg-slate-950/70` darkens the video further
+5. Existing gradient blobs remain on top of the video layer for added depth
+6. All foreground content stays at `relative z-10` (already the case via the `container relative` div)
 
-This ensures the Dialog never visually opens when the session flag is set, eliminating the flash entirely.
-
-**Change 2 — Remove the redundant useEffect suppression branch (lines 162-166)**
-
-Remove:
-```
-if (isOpen && hideAfterCompletion && hasCompletedLead) {
-  onClose();
-  return;
-}
-```
-
-This branch is no longer needed since the Dialog itself will never open. Removing it also eliminates the `onClose` dependency from the effect, which was causing unnecessary effect re-runs.
-
-**Change 3 — Add accessibility attributes to fix console errors**
-
-Add `DialogTitle` (visually hidden) and `aria-describedby={undefined}` to the `DialogContent` to resolve the Radix accessibility warnings showing in the console.
-
-### Verification
-
-After the fix:
-- Clean slate (clear sessionStorage): modal opens normally, stays open through all 5 steps, only suppresses after result screen dismiss
-- Dirty slate (completion flag set): modal never flashes — Dialog stays closed
-- No console errors from missing DialogTitle
+**No other files are modified.** No new dependencies. No performance regression -- the video is lazy-loaded, paused when off-screen, and skipped entirely for reduced-motion users.
 
