@@ -6,13 +6,13 @@ import { ConsultationForm } from '@/components/consultation/ConsultationForm';
 import { SubmissionConfirmation } from '@/components/consultation/SubmissionConfirmation';
 import { ConsultationFormData, ConsultationSubmission } from '@/types/consultation';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ShieldAlert, 
-  Clock, 
+import {
+  ShieldAlert,
+  Clock,
   CheckCircle2,
   UserCheck,
-  BadgeDollarSign,
-} from 'lucide-react';
+  BadgeDollarSign } from
+'lucide-react';
 import { ConsultationSchema } from '@/components/consultation/ConsultationSchema';
 import { supabase } from '@/integrations/supabase/client';
 import { trackLeadSubmissionSuccess, trackEvent } from '@/lib/gtm';
@@ -23,25 +23,25 @@ export default function Consultation() {
   const navigate = useNavigate();
   usePageTracking('consultation');
   const { awardScore } = useCanonicalScore();
-  
+
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedFirstName, setSubmittedFirstName] = useState('');
 
   // Handle form start tracking
   const handleFormStart = useCallback(() => {
     trackEvent('form_start', {
-      source: 'consultation',
+      source: 'consultation'
     });
   }, []);
 
   // Handle form submission - integrated with Supabase
   const handleSubmit = async (data: ConsultationFormData) => {
     const clientId = getOrCreateAnonId();
-    
+
     const submission: ConsultationSubmission = {
       ...data,
       source: 'consultation',
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toISOString()
     };
 
     try {
@@ -63,9 +63,9 @@ export default function Consultation() {
             quoteCount: data.quoteCount,
             windowTypes: data.windowTypes,
             concern: data.concern,
-            quoteDetails: data.quoteDetails,
-          },
-        },
+            quoteDetails: data.quoteDetails
+          }
+        }
       });
 
       if (leadError) {
@@ -74,7 +74,7 @@ export default function Consultation() {
       }
 
       const leadId = leadData?.leadId || leadData?.lead_id;
-      
+
       if (!leadId) {
         console.error('[Consultation] No leadId returned from save-lead');
         throw new Error('Failed to create lead');
@@ -82,23 +82,23 @@ export default function Consultation() {
 
       // Best-effort telemetry: fire scoring and tracking in parallel, don't block success
       await Promise.allSettled([
-        awardScore({
-          eventType: 'LEAD_CAPTURED',
-          sourceEntityType: 'lead',
-          sourceEntityId: leadId,
-        }),
-        trackLeadSubmissionSuccess({
-          leadId,
-          email: data.email,
-          phone: data.phone,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          city: data.cityZip,
-          sourceTool: 'consultation',
-          eventId: leadId,
-          value: 100,
-        }),
-      ]);
+      awardScore({
+        eventType: 'LEAD_CAPTURED',
+        sourceEntityType: 'lead',
+        sourceEntityId: leadId
+      }),
+      trackLeadSubmissionSuccess({
+        leadId,
+        email: data.email,
+        phone: data.phone,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        city: data.cityZip,
+        sourceTool: 'consultation',
+        eventId: leadId,
+        value: 100
+      })]
+      );
 
       // Track consultation booked event (non-blocking)
       trackEvent('consultation_booked', {
@@ -106,23 +106,23 @@ export default function Consultation() {
         propertyType: data.propertyType,
         windowCount: data.windowCount,
         hasQuote: data.hasQuote,
-        lead_id: leadId,
+        lead_id: leadId
       });
 
       setSubmittedFirstName(data.firstName);
       setIsSubmitted(true);
-      
+
       // Scroll to top to show confirmation
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      
+
     } catch (error) {
       console.error('[Consultation] Submission error:', error);
-      
+
       trackEvent('form_submit_error', {
         source: 'consultation',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
-      
+
       toast.error('Unable to submit. Please try again.');
       throw error;
     }
@@ -145,11 +145,11 @@ export default function Consultation() {
             source="consultation"
             nextStep="text"
             expectedTime="5 minutes"
-            onContinueBrowsing={handleContinueBrowsing}
-          />
+            onContinueBrowsing={handleContinueBrowsing} />
+
         </div>
-      </>
-    );
+      </>);
+
   }
 
   return (
@@ -160,21 +160,21 @@ export default function Consultation() {
       <div className="min-h-screen bg-background pt-16">
         
         {/* ============================================
-            SECTION 1: HERO - PRE-FRAME DISRUPTOR
-            ============================================ */}
+             SECTION 1: HERO - PRE-FRAME DISRUPTOR
+             ============================================ */}
         <section className="relative overflow-hidden bg-primary text-primary-foreground">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
             }} />
           </div>
           
           <div className="relative max-w-4xl mx-auto px-4 py-12 sm:py-16 text-center">
-            <Badge 
-              variant="outline" 
-              className="mb-6 border-amber-500/50 bg-amber-500/10 text-amber-300 px-4 py-1.5"
-            >
+            <Badge
+              variant="outline"
+              className="mb-6 border-amber-500/50 bg-amber-500/10 text-amber-300 px-4 py-1.5">
+
               <ShieldAlert className="w-4 h-4 mr-2" />
               Before You Sign Anything
             </Badge>
@@ -211,13 +211,13 @@ export default function Consultation() {
 
 
         {/* ============================================
-            SECTION 2: THE BOOKING FORM
-            ============================================ */}
+             SECTION 2: THE BOOKING FORM
+             ============================================ */}
         <section id="book" className="py-12 sm:py-16 bg-background">
           <div className="max-w-3xl mx-auto px-4">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
-                Request Your Truth Engine Strategy Call
+                Get The Truth From Window Man     
               </h2>
               
               <p className="text-muted-foreground max-w-xl mx-auto">
@@ -226,17 +226,17 @@ export default function Consultation() {
               </p>
             </div>
 
-            <ConsultationForm 
+            <ConsultationForm
               onSubmit={handleSubmit}
-              onFormStart={handleFormStart}
-            />
+              onFormStart={handleFormStart} />
+
           </div>
         </section>
 
 
         {/* ============================================
-            SECTION 3: REASSURANCE BLOCK
-            ============================================ */}
+             SECTION 3: REASSURANCE BLOCK
+             ============================================ */}
         <section className="py-12 bg-muted border-t border-border">
           <div className="max-w-3xl mx-auto px-4">
             <h3 className="text-center text-sm font-semibold text-foreground mb-6">
@@ -269,6 +269,6 @@ export default function Consultation() {
         </section>
 
       </div>
-    </>
-  );
+    </>);
+
 }
