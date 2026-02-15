@@ -90,7 +90,31 @@ export interface PreQuoteLeadModalV2Props {
   ctaSource?: string;
   /** Override source_page (defaults to window.location.pathname) */
   sourcePage?: string;
+  /** Context key used for analytics + CTA segmentation (Homepage, Service Page, Exit Intent, etc.). */
+  contextKey?: string;
+  /** Optional per-context behavior overrides so one modal can be reused across pages without forks. */
+  contextConfig?: Partial<PreQuoteLeadModalContextConfig>;
+  /** Hide modal globally in the current browser session after a successful completion. */
+  hideAfterCompletion?: boolean;
 }
+
+export interface PreQuoteLeadModalContextConfig {
+  /** Source tool sent to save-lead + qualification patch */
+  sourceTool: string;
+  /** Source tool used by browser GTM events */
+  trackingSourceTool: string;
+  /** Conversion action label for lead_capture event */
+  conversionAction: string;
+  /** Lead conversion value for lead_submission_success */
+  leadValue: number;
+}
+
+export const DEFAULT_PREQUOTE_CONTEXT: PreQuoteLeadModalContextConfig = {
+  sourceTool: 'sample-report',
+  trackingSourceTool: 'sample_report',
+  conversionAction: 'prequote_v2_signup',
+  leadValue: 75,
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // V2 Source Tool naming for phone dispatch
