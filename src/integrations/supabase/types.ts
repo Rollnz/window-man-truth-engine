@@ -426,6 +426,8 @@ export type Database = {
           first_name: string | null
           first_touch: Json | null
           gclid: string | null
+          has_quote: string | null
+          homeowner: boolean | null
           id: string
           identity_version: number | null
           insurance_carrier: string | null
@@ -441,14 +443,17 @@ export type Database = {
           last_non_direct_utm_medium: string | null
           last_non_direct_utm_source: string | null
           last_touch: Json | null
+          lead_score: number | null
           lead_score_last_7d: number | null
           lead_score_total: number | null
+          lead_segment: string | null
           lead_status: string | null
           lead_type: string | null
           msclkid: string | null
           name: string | null
           original_session_id: string | null
           phone: string | null
+          qualification_completed_at: string | null
           referrer: string | null
           session_data: Json | null
           source_form: string | null
@@ -456,6 +461,7 @@ export type Database = {
           source_tool: string
           specific_detail: string | null
           state: string | null
+          timeline: string | null
           updated_at: string | null
           urgency_level: string | null
           user_id: string | null
@@ -465,6 +471,7 @@ export type Database = {
           utm_source: string | null
           utm_term: string | null
           window_count: number | null
+          window_scope: string | null
           zip: string | null
         }
         Insert: {
@@ -483,6 +490,8 @@ export type Database = {
           first_name?: string | null
           first_touch?: Json | null
           gclid?: string | null
+          has_quote?: string | null
+          homeowner?: boolean | null
           id?: string
           identity_version?: number | null
           insurance_carrier?: string | null
@@ -498,14 +507,17 @@ export type Database = {
           last_non_direct_utm_medium?: string | null
           last_non_direct_utm_source?: string | null
           last_touch?: Json | null
+          lead_score?: number | null
           lead_score_last_7d?: number | null
           lead_score_total?: number | null
+          lead_segment?: string | null
           lead_status?: string | null
           lead_type?: string | null
           msclkid?: string | null
           name?: string | null
           original_session_id?: string | null
           phone?: string | null
+          qualification_completed_at?: string | null
           referrer?: string | null
           session_data?: Json | null
           source_form?: string | null
@@ -513,6 +525,7 @@ export type Database = {
           source_tool?: string
           specific_detail?: string | null
           state?: string | null
+          timeline?: string | null
           updated_at?: string | null
           urgency_level?: string | null
           user_id?: string | null
@@ -522,6 +535,7 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           window_count?: number | null
+          window_scope?: string | null
           zip?: string | null
         }
         Update: {
@@ -540,6 +554,8 @@ export type Database = {
           first_name?: string | null
           first_touch?: Json | null
           gclid?: string | null
+          has_quote?: string | null
+          homeowner?: boolean | null
           id?: string
           identity_version?: number | null
           insurance_carrier?: string | null
@@ -555,14 +571,17 @@ export type Database = {
           last_non_direct_utm_medium?: string | null
           last_non_direct_utm_source?: string | null
           last_touch?: Json | null
+          lead_score?: number | null
           lead_score_last_7d?: number | null
           lead_score_total?: number | null
+          lead_segment?: string | null
           lead_status?: string | null
           lead_type?: string | null
           msclkid?: string | null
           name?: string | null
           original_session_id?: string | null
           phone?: string | null
+          qualification_completed_at?: string | null
           referrer?: string | null
           session_data?: Json | null
           source_form?: string | null
@@ -570,6 +589,7 @@ export type Database = {
           source_tool?: string
           specific_detail?: string | null
           state?: string | null
+          timeline?: string | null
           updated_at?: string | null
           urgency_level?: string | null
           user_id?: string | null
@@ -579,6 +599,7 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           window_count?: number | null
+          window_scope?: string | null
           zip?: string | null
         }
         Relationships: []
