@@ -99,8 +99,7 @@ export function WelcomeToast() {
           {/* Content */}
           <div className="relative space-y-3">
             {/* Headline */}
-            <div className="flex items-center gap-2 pr-6">
-              <Sparkles className="h-5 w-5 text-primary shrink-0" />
+            <div className="flex items-center pr-6">
               <h3 className="font-semibold text-foreground">
                 Window Man The Truth Report🛡️
               </h3>
