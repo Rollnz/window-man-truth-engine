@@ -1,92 +1,55 @@
 
 
-# Fix: wm_sessions 403 RLS Violation on Upsert
+## Fix: PreQuoteLeadModalV2 Flash-Close Regression
 
-## Root Cause
+### Root Cause
 
-The `wm_sessions` table RLS only allows **INSERT**. SELECT, UPDATE, and DELETE are all denied. PostgREST's `upsert` (INSERT ... ON CONFLICT) requires SELECT permission internally, so it returns 403 even though INSERT is allowed.
+The modal opens visually (`open={isOpen}` on the Dialog), and then a `useEffect` notices the session-completion flag and calls `onClose()` one frame later. This creates the open-then-immediately-close flash seen in the session replay.
 
-The previous change from `insert` to `upsert` made the 409 error *worse* (now 403).
+The sequence:
+1. User clicks CTA, parent sets `showPreQuoteModal = true`
+2. Dialog renders with `open={true}` — modal appears on screen
+3. React commits, effects run
+4. `useEffect` reads `hasCompletedInSession() === true` and calls `onClose()`
+5. Parent sets `showPreQuoteModal = false` — modal disappears (flash)
 
-## Fix Strategy
+### Fix (2 changes in PreQuoteLeadModalV2.tsx)
 
-**Change the code to use plain `.insert()` and silently ignore duplicate key errors (Postgres error code 23505).** This is the most secure approach -- no RLS changes needed, the table stays insert-only from the client.
+**Change 1 — Prevent Dialog from opening when suppressed (line 513)**
 
-## Code Changes
+Replace:
+```
+<Dialog open={isOpen} onOpenChange={onClose}>
+```
+With:
+```
+const suppressOpen = hideAfterCompletion && hasCompletedLead;
 
-**File:** `src/lib/windowTruthClient.ts`
-
-Replace the entire `createOrRefreshSession` function (lines 64-131) with a simplified version:
-
-```typescript
-const createOrRefreshSession = async (): Promise<string> => {
-  const existing = readSessionId();
-  const attribution = getAttributionParams();
-
-  const sessionId = existing || crypto.randomUUID();
-  const anonymousId = getGoldenThreadId();
-
-  // Always save locally first so downstream code works immediately
-  saveSessionId(sessionId);
-
-  try {
-    const { error } = await supabase
-      .from('wm_sessions')
-      .insert({
-        id: sessionId,
-        anonymous_id: anonymousId,
-        landing_page: window.location.pathname,
-        user_agent: navigator.userAgent,
-        referrer: attribution.referrer,
-        utm_source: attribution.utm_source,
-        utm_medium: attribution.utm_medium,
-        utm_campaign: attribution.utm_campaign,
-        utm_term: attribution.utm_term,
-        utm_content: attribution.utm_content,
-      });
-
-    if (error) {
-      // 23505 = duplicate key (session already exists) -- this is fine
-      if (error.code === '23505') {
-        console.log("[wm] session already registered:", sessionId);
-      } else {
-        console.warn("[wm] session insert failed", error);
-      }
-    } else {
-      console.log("[wm] session registered:", sessionId);
-    }
-  } catch (error) {
-    console.warn("[wm] session bootstrap failed", error);
-  }
-
-  return sessionId;
-};
+<Dialog open={isOpen && !suppressOpen} onOpenChange={onClose}>
 ```
 
-### What changed and why
+This ensures the Dialog never visually opens when the session flag is set, eliminating the flash entirely.
 
-| Before | After | Reason |
-|--------|-------|--------|
-| SELECT to check if session exists (line 72-76) | Removed | Blocked by RLS (returns empty, wastes a request) |
-| UPDATE timestamp if exists (line 80-83) | Removed | Blocked by RLS (always fails silently) |
-| `.upsert()` with `onConflict` (line 97-110) | `.insert()` | upsert requires SELECT permission; plain insert only needs INSERT |
-| 409/403 on duplicate | Caught as error code 23505 | Graceful no-op when session already exists |
-| Multiple fallback UUID generation paths | Single path | Simplified: generate once, save locally first, then try DB |
+**Change 2 — Remove the redundant useEffect suppression branch (lines 162-166)**
 
-### What stays the same
+Remove:
+```
+if (isOpen && hideAfterCompletion && hasCompletedLead) {
+  onClose();
+  return;
+}
+```
 
-- Session ID is still persisted in localStorage + cookie
-- Golden Thread ID used as anonymous_id
-- Attribution params captured on first visit
-- All errors are non-fatal (warn + continue)
-- `logEvent()` function unchanged
-- No RLS policy changes needed
+This branch is no longer needed since the Dialog itself will never open. Removing it also eliminates the `onClose` dependency from the effect, which was causing unnecessary effect re-runs.
 
-## End-to-End Test Plan (after fix)
+**Change 3 — Add accessibility attributes to fix console errors**
 
-After implementing, navigate to `/ai-scanner` and verify:
-1. `POST wm_sessions` returns 201 (new session) or catches 23505 silently (existing session)
-2. No 403 or 409 errors in network logs
-3. Submit a lead form and verify `save-lead` returns 200 with a `leadId`
-4. Check that `dataLayer` receives `lead_submission_success` event with `event_id` matching the `leadId`
+Add `DialogTitle` (visually hidden) and `aria-describedby={undefined}` to the `DialogContent` to resolve the Radix accessibility warnings showing in the console.
+
+### Verification
+
+After the fix:
+- Clean slate (clear sessionStorage): modal opens normally, stays open through all 5 steps, only suppresses after result screen dismiss
+- Dirty slate (completion flag set): modal never flashes — Dialog stays closed
+- No console errors from missing DialogTitle
 
