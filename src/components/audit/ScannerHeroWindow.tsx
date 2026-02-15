@@ -245,7 +245,7 @@ export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHer
                       <Button
                         variant="outline"
                         onClick={onViewSampleClick}
-                        className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white px-6 py-2"
+                        className="border-[#1E52F1]/40 text-[#1E52F1] hover:bg-[#1E52F1]/10 hover:text-[#1E52F1] px-6 py-2"
                       >
                         {AUDIT_CONFIG.hero.sampleCtaLabel}
                       </Button>
