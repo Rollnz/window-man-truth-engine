@@ -160,8 +160,8 @@ export default function Consultation() {
       <div className="min-h-screen bg-background pt-16">
         
         {/* ============================================
-             SECTION 1: HERO - PRE-FRAME DISRUPTOR
-             ============================================ */}
+              SECTION 1: HERO - PRE-FRAME DISRUPTOR
+              ============================================ */}
         <section className="relative overflow-hidden bg-primary text-primary-foreground">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
@@ -211,8 +211,8 @@ export default function Consultation() {
 
 
         {/* ============================================
-             SECTION 2: THE BOOKING FORM
-             ============================================ */}
+              SECTION 2: THE BOOKING FORM
+              ============================================ */}
         <section id="book" className="py-12 sm:py-16 bg-background">
           <div className="max-w-3xl mx-auto px-4">
             <div className="text-center mb-10">
@@ -220,9 +220,9 @@ export default function Consultation() {
                 Get The Truth From Window Man     
               </h2>
               
-              <p className="text-muted-foreground max-w-xl mx-auto">
-                This takes about 2 minutes. The more accurate your details, the more useful 
-                your call will be.
+              <p className="max-w-xl mx-auto text-primary-foreground">
+                The more accurate your details, the more useful your call will be.
+              
               </p>
             </div>
 
@@ -235,8 +235,8 @@ export default function Consultation() {
 
 
         {/* ============================================
-             SECTION 3: REASSURANCE BLOCK
-             ============================================ */}
+              SECTION 3: REASSURANCE BLOCK
+              ============================================ */}
         <section className="py-12 bg-muted border-t border-border">
           <div className="max-w-3xl mx-auto px-4">
             <h3 className="text-center text-sm font-semibold text-foreground mb-6">
