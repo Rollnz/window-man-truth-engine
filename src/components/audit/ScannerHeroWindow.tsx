@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { Shield, Scan, Lock, Sparkles } from "lucide-react";
 import { AUDIT_CONFIG } from "@/config/auditConfig";
 import { useTickerStats } from "@/hooks/useTickerStats";
-import { UrgencyTicker } from "@/components/social-proof";
 
 interface ScannerHeroWindowProps {
   onScanClick: () => void;
@@ -220,8 +219,8 @@ export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHer
                     isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
                   )}
                 >
-                  {/* Live Urgency Ticker */}
-                  <UrgencyTicker />
+                  {/* Urgency Line */}
+                  <p className="text-slate-400 text-sm text-center max-w-md">{AUDIT_CONFIG.hero.urgencyLine}</p>
 
                   {/* Primary CTA */}
                   <Button
@@ -249,12 +248,10 @@ export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHer
                       >
                         {AUDIT_CONFIG.hero.sampleCtaLabel}
                       </Button>
-                      
+
                       {/* Optional subline */}
                       {AUDIT_CONFIG.hero.sampleCtaSubline && (
-                        <p className="text-slate-500 text-xs">
-                          {AUDIT_CONFIG.hero.sampleCtaSubline}
-                        </p>
+                        <p className="text-slate-100 text-xs">{AUDIT_CONFIG.hero.sampleCtaSubline}</p>
                       )}
                     </div>
                   )}
