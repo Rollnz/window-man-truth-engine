@@ -13,9 +13,11 @@
  */
 
 export { PreQuoteLeadModalV2 } from './PreQuoteLeadModalV2';
+export { ScannerAllSetScreen } from './ScannerAllSetScreen';
 export { calculateLeadScore, getSegment } from './useLeadScoring';
 export type {
   PreQuoteLeadModalV2Props,
+  ResultScreenRenderProps,
   StepType,
   QualificationData,
   ContactData,

@@ -5,6 +5,8 @@
  * All enum-like values are strict union types to prevent drift.
  */
 
+import type React from 'react';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Step Machine
 // ═══════════════════════════════════════════════════════════════════════════
@@ -82,6 +84,16 @@ export interface ContactFormErrors {
 // Modal Props
 // ═══════════════════════════════════════════════════════════════════════════
 
+/** Props passed to a custom result screen renderer */
+export interface ResultScreenRenderProps {
+  segment: LeadSegment;
+  leadId: string;
+  firstName: string;
+  leadScore: number;
+  onClose: () => void;
+  ctaSource?: string;
+}
+
 export interface PreQuoteLeadModalV2Props {
   isOpen: boolean;
   onClose: () => void;
@@ -96,6 +108,8 @@ export interface PreQuoteLeadModalV2Props {
   contextConfig?: Partial<PreQuoteLeadModalContextConfig>;
   /** Hide modal globally in the current browser session after a successful completion. */
   hideAfterCompletion?: boolean;
+  /** Optional custom renderer for the result screen. Replaces the default LeadResultScreen when provided. */
+  renderResultScreen?: (props: ResultScreenRenderProps) => React.ReactNode;
 }
 
 export interface PreQuoteLeadModalContextConfig {

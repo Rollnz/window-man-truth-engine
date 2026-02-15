@@ -27,7 +27,7 @@ import { WindowCalculatorTeaser } from '@/components/quote-scanner/WindowCalcula
 import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChecklist';
 // Vault Pivot Conversion Engine
 import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
-import { PreQuoteLeadModal } from '@/components/sample-report/PreQuoteLeadModal';
+import { PreQuoteLeadModalV2, ScannerAllSetScreen } from '@/components/LeadModalV2';
 import { AIComparisonSection } from '@/components/quote-scanner/AIComparisonSection';
 import { UrgencyTicker } from '@/components/social-proof';
 import { ScanPipelineStrip } from '@/components/quote-scanner/ScanPipelineStrip';
@@ -310,10 +310,19 @@ export default function QuoteScanner() {
         sessionData={sessionData}
       />
 
-      <PreQuoteLeadModal
+      <PreQuoteLeadModalV2
         isOpen={preQuoteOpen}
         onClose={() => setPreQuoteOpen(false)}
         ctaSource="scanner_download_sample"
+        sourcePage="/ai-scanner"
+        contextKey="ai-scanner"
+        contextConfig={{
+          sourceTool: 'ai-scanner',
+          trackingSourceTool: 'ai_scanner',
+          conversionAction: 'prequote_v2_scanner_signup',
+          leadValue: 75,
+        }}
+        renderResultScreen={(props) => <ScannerAllSetScreen {...props} />}
       />
     </div>
   );

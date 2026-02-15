@@ -124,6 +124,7 @@ export function PreQuoteLeadModalV2({
   contextKey = 'default',
   contextConfig,
   hideAfterCompletion = true,
+  renderResultScreen,
 }: PreQuoteLeadModalV2Props) {
   const { toast } = useToast();
   const resolvedContextConfig = useMemo(
@@ -561,14 +562,23 @@ export function PreQuoteLeadModalV2({
         )}
 
         {step === 'result' && scoringResult && leadId && (
-          <LeadResultScreen
-            segment={scoringResult.segment}
-            leadId={leadId}
-            firstName={contactData?.firstName || ''}
-            leadScore={scoringResult.score}
-            onClose={onClose}
-            ctaSource={ctaSource}
-          />
+          renderResultScreen
+            ? renderResultScreen({
+                segment: scoringResult.segment,
+                leadId,
+                firstName: contactData?.firstName || '',
+                leadScore: scoringResult.score,
+                onClose,
+                ctaSource,
+              })
+            : <LeadResultScreen
+                segment={scoringResult.segment}
+                leadId={leadId}
+                firstName={contactData?.firstName || ''}
+                leadScore={scoringResult.score}
+                onClose={onClose}
+                ctaSource={ctaSource}
+              />
         )}
       </DialogContent>
     </Dialog>
