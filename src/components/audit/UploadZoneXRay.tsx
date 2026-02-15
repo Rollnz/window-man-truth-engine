@@ -370,7 +370,7 @@ export function UploadZoneXRay({
                 <Eye className="w-10 h-10 text-primary" />
               </div>
               <p className="text-white font-semibold text-lg">See Your Gradecard</p>
-              <p className="text-slate-400 text-sm mb-6">Upload your quote to reveal your score</p>
+              <p className="text-sm mb-6 text-primary-foreground">Upload your quote to reveal your score</p>
               <Button className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-900 font-bold rounded-xl shadow-lg shadow-orange-500/25">
                 <Upload className="w-5 h-5 mr-2" />
                 Upload Quote for Free Gradecard
