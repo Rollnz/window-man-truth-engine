@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -42,9 +43,51 @@ const STEPS = [{
 export function HowItWorksXRay({
   onScanClick
 }: HowItWorksXRayProps) {
-  return <section className="relative py-20 md:py-28 bg-slate-950 overflow-hidden">
+  const sectionRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    const video = videoRef.current;
+    if (!section || !video) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          video.preload = 'auto';
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.25 }
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
+  return <section ref={sectionRef} className="relative py-20 md:py-28 bg-slate-950 overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0">
+        {/* Background video - blurred and darkened */}
+        <video
+          ref={videoRef}
+          muted
+          loop
+          playsInline
+          preload="none"
+          className="absolute inset-0 w-full h-full object-cover blur-[24px] scale-110 opacity-30"
+          aria-hidden="true"
+        >
+          <source src="https://itswindowman-videos.b-cdn.net/window_estimate_ai_scan_animated.mp4" type="video/mp4" />
+        </video>
+        {/* Dark overlay on top of video */}
+        <div className="absolute inset-0 bg-slate-950/70" />
+        {/* Gradient blobs on top for depth */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
       </div>
