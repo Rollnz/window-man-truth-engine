@@ -108,7 +108,7 @@ export default function QuoteScanner() {
               onReset={() => window.location.reload()}
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                {/* Left column - Upload */}
+              {/* Left column - Before */}
                 <div className="space-y-6">
                   {/* Recovery message from Safari refresh */}
                   {gated.recoveryMessage && gated.phase === 'idle' && (
@@ -117,7 +117,7 @@ export default function QuoteScanner() {
                     </div>
                   )}
 
-                  {/* Upload zone: only in idle or when locked (re-upload visible behind overlay) */}
+                  {/* idle / uploaded: Upload zone */}
                   {(gated.phase === 'idle' || gated.phase === 'uploaded') && (
                     <QuoteUploadZone
                       ref={uploadRef}
@@ -129,40 +129,23 @@ export default function QuoteScanner() {
                     />
                   )}
 
-                  {/* Locked overlay */}
-                  {gated.phase === 'locked' && (
+                  {/* locked / analyzing: Blurred file preview (static) */}
+                  {(gated.phase === 'locked' || gated.phase === 'analyzing') && (
                     <div className="relative rounded-xl border border-border overflow-hidden">
-                      {/* Blurred preview */}
-                      {gated.filePreviewUrl && (
+                      {gated.filePreviewUrl ? (
                         <img
                           src={gated.filePreviewUrl}
                           alt="Uploaded quote preview"
                           className="w-full h-64 object-cover blur-xl scale-110"
                         />
+                      ) : (
+                        <div className="w-full h-64 bg-muted" />
                       )}
-                      <div className="absolute inset-0 bg-background/70 flex flex-col items-center justify-center gap-4 p-6">
-                        <Lock className="w-10 h-10 text-muted-foreground" />
-                        <p className="text-lg font-semibold text-foreground text-center">Your report is ready to unlock</p>
-                        <Button onClick={gated.reopenModal} size="lg">
-                          Unlock Your Report
-                        </Button>
-                        <button
-                          onClick={gated.reset}
-                          className="text-sm text-muted-foreground hover:text-foreground underline transition-colors"
-                        >
-                          <Upload className="w-3.5 h-3.5 inline mr-1" />
-                          Upload a Different Quote
-                        </button>
-                      </div>
+                      <div className="absolute inset-0 bg-background/60" />
                     </div>
                   )}
 
-                  {/* Analysis theater */}
-                  {gated.phase === 'analyzing' && (
-                    <AnalysisTheaterScreen previewUrl={gated.filePreviewUrl} />
-                  )}
-
-                  {/* Revealed: show the upload zone with preview */}
+                  {/* revealed: Upload zone with full image preview */}
                   {gated.phase === 'revealed' && gated.analysisResult && (
                     <QuoteUploadZone
                       ref={uploadRef}
@@ -181,9 +164,9 @@ export default function QuoteScanner() {
                   )}
                 </div>
 
-                {/* Right column - Results (ONLY when revealed) */}
-                <div className="space-y-6">
-                  {/* Error display */}
+                {/* Right column - After (always rendered, content swaps by phase) */}
+                <div className="rounded-xl border border-border bg-card min-h-[400px] p-6 space-y-6">
+                  {/* Error display (any phase) */}
                   {gated.error && !gated.isLoading && (
                     <AIErrorFallback
                       errorType={getAIErrorType(gated.error)}
@@ -193,10 +176,54 @@ export default function QuoteScanner() {
                     />
                   )}
 
-                  {/* Authority Report — ONLY when phase === 'revealed' */}
+                  {/* Phase: idle — placeholder shell */}
+                  {gated.phase === 'idle' && (
+                    <div className="flex flex-col items-center justify-center h-full min-h-[350px] gap-4">
+                      <Lock className="w-10 h-10 text-muted-foreground/50" />
+                      <p className="text-muted-foreground text-center text-sm">
+                        Upload your quote to get started
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Phase: uploaded — locked, modal is open */}
+                  {gated.phase === 'uploaded' && (
+                    <div className="flex flex-col items-center justify-center h-full min-h-[350px] gap-4 animate-pulse">
+                      <Lock className="w-10 h-10 text-muted-foreground" />
+                      <p className="text-foreground font-semibold text-center">
+                        Your report is being prepared...
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Phase: locked — modal dismissed, unlock CTAs */}
+                  {gated.phase === 'locked' && (
+                    <div className="flex flex-col items-center justify-center h-full min-h-[350px] gap-4">
+                      <Lock className="w-10 h-10 text-muted-foreground" />
+                      <p className="text-lg font-semibold text-foreground text-center">
+                        Your report is ready to unlock
+                      </p>
+                      <Button onClick={gated.reopenModal} size="lg">
+                        Unlock Your Report
+                      </Button>
+                      <button
+                        onClick={gated.reset}
+                        className="text-sm text-muted-foreground hover:text-foreground underline transition-colors"
+                      >
+                        <Upload className="w-3.5 h-3.5 inline mr-1" />
+                        Upload a Different Quote
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Phase: analyzing — theater stepper */}
+                  {gated.phase === 'analyzing' && (
+                    <AnalysisTheaterScreen previewUrl={gated.filePreviewUrl} />
+                  )}
+
+                  {/* Phase: revealed — full authority report */}
                   {gated.phase === 'revealed' && gated.analysisResult && (
                     <>
-                      {/* Section 1: Report Header */}
                       <div className="space-y-2">
                         <h2 className="text-2xl font-bold text-foreground">Your Quote Intelligence Report</h2>
                         {gated.analysisResult.forensic?.headline && (
@@ -204,7 +231,6 @@ export default function QuoteScanner() {
                         )}
                       </div>
 
-                      {/* Section 2: Executive Summary */}
                       {gated.analysisResult.summary && (
                         <div className="rounded-lg border border-border bg-muted/30 p-4">
                           <p className="text-sm text-foreground leading-relaxed">
@@ -213,17 +239,14 @@ export default function QuoteScanner() {
                         </div>
                       )}
 
-                      {/* Section 3: Findings */}
                       <QuoteAnalysisResults
                         result={gated.analysisResult}
                         isLocked={false}
                         hasImage={!!gated.imageBase64}
                       />
 
-                      {/* Section 4: Primary CTA - Phone */}
                       <TalkToExpertCTA leadId={gated.leadId} />
 
-                      {/* Section 5: Secondary CTA - Q&A */}
                       <QuoteQA
                         answer={qaAnswer}
                         isAsking={isAskingQuestion}
