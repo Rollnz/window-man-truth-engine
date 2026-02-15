@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,14 +26,21 @@ import type {
   WindowScope,
   LeadSegment,
   ScoringResult,
+  PreQuoteLeadModalContextConfig,
 } from './types';
-import { STEP_ORDER, QUALIFICATION_STEPS, getV2PhoneSourceTool } from './types';
+import {
+  STEP_ORDER,
+  QUALIFICATION_STEPS,
+  getV2PhoneSourceTool,
+  DEFAULT_PREQUOTE_CONTEXT,
+} from './types';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Session storage key for lead ID persistence
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SESSION_KEY = 'wm_prequote_v2_lead_id';
+const COMPLETION_SESSION_KEY = 'wm_prequote_v2_completed';
 
 function getStoredLeadId(): string | null {
   try {
@@ -49,6 +56,32 @@ function storeLeadId(id: string): void {
   } catch {
     // Non-critical
   }
+}
+
+
+function hasCompletedInSession(): boolean {
+  try {
+    return sessionStorage.getItem(COMPLETION_SESSION_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function markCompletedInSession(): void {
+  try {
+    sessionStorage.setItem(COMPLETION_SESSION_KEY, '1');
+  } catch {
+    // Non-critical
+  }
+}
+
+function buildContextConfig(
+  overrides?: Partial<PreQuoteLeadModalContextConfig>
+): PreQuoteLeadModalContextConfig {
+  return {
+    ...DEFAULT_PREQUOTE_CONTEXT,
+    ...overrides,
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -88,8 +121,16 @@ export function PreQuoteLeadModalV2({
   onSuccess,
   ctaSource = 'unknown',
   sourcePage,
+  contextKey = 'default',
+  contextConfig,
+  hideAfterCompletion = true,
 }: PreQuoteLeadModalV2Props) {
   const { toast } = useToast();
+  const resolvedContextConfig = useMemo(
+    () => buildContextConfig(contextConfig),
+    [contextConfig]
+  );
+  const hasCompletedLead = hasCompletedInSession();
 
   // Step machine
   const [step, setStep] = useState<StepType>('capture');
@@ -97,6 +138,7 @@ export function PreQuoteLeadModalV2({
   // Lead identity (persisted after Step 1)
   const [leadId, setLeadId] = useState<string | null>(getStoredLeadId);
   const [contactData, setContactData] = useState<ContactData | null>(null);
+  const closeResetTimerRef = useRef<number | null>(null);
 
   // Qualification data (in-memory until Step 5)
   const [qualification, setQualification] = useState<QualificationData>({
@@ -111,15 +153,27 @@ export function PreQuoteLeadModalV2({
 
   // Loading
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isQualificationSubmitting, setIsQualificationSubmitting] = useState(false);
 
   // ═══════════════════════════════════════════════════════════════════════
   // Reset on close
   // ═══════════════════════════════════════════════════════════════════════
   useEffect(() => {
+    if (isOpen && hideAfterCompletion && hasCompletedLead) {
+      // Global-session suppression: once completed, don't keep reopening in the same session.
+      onClose();
+      return;
+    }
+
     if (!isOpen) {
+      // Clear any stale timer before scheduling another reset.
+      if (closeResetTimerRef.current) {
+        window.clearTimeout(closeResetTimerRef.current);
+      }
+
       // Don't clear leadId (persists in sessionStorage)
       // But reset to capture step if qualification not completed
-      setTimeout(() => {
+      closeResetTimerRef.current = window.setTimeout(() => {
         if (step !== 'result') {
           if (leadId) {
             setStep('timeline');
@@ -136,13 +190,20 @@ export function PreQuoteLeadModalV2({
         setScoringResult(null);
       }, 300);
     }
-  }, [isOpen]);
+
+    return () => {
+      if (closeResetTimerRef.current) {
+        window.clearTimeout(closeResetTimerRef.current);
+      }
+    };
+  }, [isOpen, step, leadId, onClose, hideAfterCompletion, hasCompletedLead]);
 
   // ═══════════════════════════════════════════════════════════════════════
   // Step 1: Create lead via save-lead
   // ═══════════════════════════════════════════════════════════════════════
   const handleStep1Submit = useCallback(
     async (data: ContactData) => {
+      if (isSubmitting) return;
       setIsSubmitting(true);
 
       try {
@@ -162,13 +223,14 @@ export function PreQuoteLeadModalV2({
               firstName: data.firstName,
               lastName: data.lastName,
               phone: data.phone.replace(/\D/g, ''),
-              sourceTool: 'sample-report',
+              sourceTool: resolvedContextConfig.sourceTool,
               flowVersion: 'prequote_v2',
               sourcePage: resolvedSourcePage,
               sessionData: {
                 clientId,
                 client_id: clientId,
                 ctaSource,
+                contextKey,
               },
               attribution,
               lastNonDirect,
@@ -190,8 +252,8 @@ export function PreQuoteLeadModalV2({
             trackLeadCapture(
               {
                 leadId: newLeadId,
-                sourceTool: 'sample_report',
-                conversionAction: 'prequote_v2_signup',
+                sourceTool: resolvedContextConfig.trackingSourceTool,
+                conversionAction: resolvedContextConfig.conversionAction,
               },
               data.email,
               data.phone,
@@ -203,9 +265,10 @@ export function PreQuoteLeadModalV2({
               phone: data.phone.replace(/\D/g, ''),
               firstName: data.firstName,
               lastName: data.lastName,
-              sourceTool: 'sample-report',
-              eventId: `prequote_v2_lead:${newLeadId}`,
-              value: 75,
+              sourceTool: resolvedContextConfig.sourceTool,
+              // Deduplication guard: keep browser event_id == leadId for parity with server CAPI.
+              eventId: newLeadId,
+              value: resolvedContextConfig.leadValue,
             }),
           ]).catch((err) =>
             console.warn('[V2] Non-fatal tracking error:', err)
@@ -225,7 +288,15 @@ export function PreQuoteLeadModalV2({
         setIsSubmitting(false);
       }
     },
-    [ctaSource, sourcePage, onSuccess, toast]
+    [
+      ctaSource,
+      sourcePage,
+      onSuccess,
+      toast,
+      isSubmitting,
+      contextKey,
+      resolvedContextConfig,
+    ]
   );
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -249,71 +320,89 @@ export function PreQuoteLeadModalV2({
   // Step 5 is special: after selection, compute score, PATCH, then show result
   const handleWindowScopeSelect = useCallback(
     async (value: WindowScope) => {
-      const finalQualification: QualificationData = {
-        ...qualification,
-        windowScope: value,
-      };
-      setQualification(finalQualification);
+      setIsQualificationSubmitting(true);
 
-      // Compute score
-      const result = calculateLeadScore(finalQualification);
-      setScoringResult(result);
+      try {
+        const finalQualification: QualificationData = {
+          ...qualification,
+          windowScope: value,
+        };
+        setQualification(finalQualification);
 
-      // PATCH lead with qualification data (non-blocking for UI)
-      if (leadId) {
-        const clientId = getOrCreateClientId();
-        const sessionId = getOrCreateSessionId();
+        // Compute score
+        const result = calculateLeadScore(finalQualification);
+        setScoringResult(result);
 
-        // PATCH lead via update-lead-qualification
-        try {
-          const { error: patchError } = await supabase.functions.invoke(
-            'update-lead-qualification',
-            {
-              body: {
-                leadId,
-                timeline: finalQualification.timeline,
-                hasQuote: finalQualification.hasQuote,
-                homeowner: finalQualification.homeowner,
-                windowScope: value,
-                leadScore: result.score,
-                leadSegment: result.segment,
-                sessionId,
-                clientId,
-                sourceTool: 'sample-report',
-              },
+        // PATCH lead with qualification data (non-blocking for UI)
+        if (leadId) {
+          const clientId = getOrCreateClientId();
+          const sessionId = getOrCreateSessionId();
+
+          // PATCH lead via update-lead-qualification
+          try {
+            const { error: patchError } = await supabase.functions.invoke(
+              'update-lead-qualification',
+              {
+                body: {
+                  leadId,
+                  timeline: finalQualification.timeline,
+                  hasQuote: finalQualification.hasQuote,
+                  homeowner: finalQualification.homeowner,
+                  windowScope: value,
+                  leadScore: result.score,
+                  leadSegment: result.segment,
+                  sessionId,
+                  clientId,
+                  sourceTool: resolvedContextConfig.sourceTool,
+                },
+              }
+            );
+
+            if (patchError) {
+              console.error('[V2] Qualification PATCH failed:', patchError);
+              // Non-fatal: show result anyway
             }
+          } catch (err) {
+            console.error('[V2] Qualification PATCH exception:', err);
+          }
+
+          // Fire segment-specific GTM events (ONLY after PATCH)
+          fireSegmentEvents(result.segment, result.score, leadId);
+
+          // Enqueue phone call for HOT leads (fire-and-forget)
+          enqueuePhoneCallIfEligible(
+            result.segment,
+            finalQualification,
+            leadId,
+            ctaSource
           );
 
-          if (patchError) {
-            console.error('[V2] Qualification PATCH failed:', patchError);
-            // Non-fatal: show result anyway
+          if (hideAfterCompletion) {
+            markCompletedInSession();
           }
-        } catch (err) {
-          console.error('[V2] Qualification PATCH exception:', err);
         }
 
-        // Fire segment-specific GTM events (ONLY after PATCH)
-        fireSegmentEvents(result.segment, result.score, leadId);
-
-        // Enqueue phone call for HOT leads (fire-and-forget)
-        enqueuePhoneCallIfEligible(
-          result.segment,
-          finalQualification,
-          leadId,
-          ctaSource
-        );
+        // Transition to result screen
+        setStep('result');
+      } finally {
+        setIsQualificationSubmitting(false);
       }
-
-      // Transition to result screen
-      setStep('result');
     },
-    [qualification, leadId, ctaSource]
+    [
+      qualification,
+      leadId,
+      ctaSource,
+      hideAfterCompletion,
+      resolvedContextConfig,
+      fireSegmentEvents,
+      enqueuePhoneCallIfEligible,
+    ]
   );
 
   // ═══════════════════════════════════════════════════════════════════════
   // GTM segment events (CRITICAL: only fire after PATCH and segment known)
   // ═══════════════════════════════════════════════════════════════════════
-  const fireSegmentEvents = (
+  const fireSegmentEvents = useCallback((
     segment: LeadSegment,
     score: number,
     currentLeadId: string
@@ -323,7 +412,7 @@ export function PreQuoteLeadModalV2({
         lead_id: currentLeadId,
         lead_score: score,
         lead_segment: segment,
-        source: 'prequote-v2',
+        source: `prequote-v2:${contextKey}`,
         value: 150,
         currency: 'USD',
       });
@@ -332,7 +421,7 @@ export function PreQuoteLeadModalV2({
         lead_id: currentLeadId,
         lead_score: score,
         lead_segment: segment,
-        source: 'prequote-v2',
+        source: `prequote-v2:${contextKey}`,
         value: 50,
         currency: 'USD',
       });
@@ -341,15 +430,15 @@ export function PreQuoteLeadModalV2({
         lead_id: currentLeadId,
         lead_score: score,
         lead_segment: segment,
-        source: 'prequote-v2',
+        source: `prequote-v2:${contextKey}`,
       });
     }
-  };
+  }, [contextKey]);
 
   // ═══════════════════════════════════════════════════════════════════════
   // Phone call enqueue (fire-and-forget, non-blocking)
   // ═══════════════════════════════════════════════════════════════════════
-  const enqueuePhoneCallIfEligible = (
+  const enqueuePhoneCallIfEligible = useCallback((
     segment: LeadSegment,
     qual: QualificationData,
     currentLeadId: string,
@@ -393,7 +482,7 @@ export function PreQuoteLeadModalV2({
       .catch((err) =>
         console.warn('[V2] Phone enqueue failed (non-blocking):', err)
       );
-  };
+  }, [contactData, scoringResult?.score]);
 
   // ═══════════════════════════════════════════════════════════════════════
   // Back navigation
@@ -434,10 +523,10 @@ export function PreQuoteLeadModalV2({
         )}
 
         {/* Step content */}
-        {step === 'capture' && (
+        {step === 'capture' && !(hideAfterCompletion && hasCompletedLead) && (
           <LeadStep1Capture
             onSubmit={handleStep1Submit}
-            isSubmitting={isSubmitting}
+            isSubmitting={isSubmitting || isQualificationSubmitting}
           />
         )}
 
