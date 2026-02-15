@@ -83,18 +83,6 @@ export function WelcomeToast() {
             "px-5 py-4 sm:px-6 sm:py-5"
           )}>
 
-          {/* Close button */}
-          <button
-            onClick={handleDismiss}
-            className={cn(
-              "absolute top-3 right-4 p-1 rounded-full",
-              "text-muted-foreground hover:text-foreground",
-              "hover:bg-muted/50 transition-colors"
-            )}
-            aria-label="Dismiss">
-
-            <X className="h-4 w-4" />
-          </button>
           
           {/* Content */}
           <div className="relative space-y-3">
