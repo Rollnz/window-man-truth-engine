@@ -320,6 +320,8 @@ export function PreQuoteLeadModalV2({
   // Step 5 is special: after selection, compute score, PATCH, then show result
   const handleWindowScopeSelect = useCallback(
     async (value: WindowScope) => {
+      // Guard against rapid repeat clicks causing duplicate PATCH/tracking side-effects.
+      if (isQualificationSubmitting) return;
       setIsQualificationSubmitting(true);
 
       try {
@@ -396,6 +398,7 @@ export function PreQuoteLeadModalV2({
       resolvedContextConfig,
       fireSegmentEvents,
       enqueuePhoneCallIfEligible,
+      isQualificationSubmitting,
     ]
   );
 
