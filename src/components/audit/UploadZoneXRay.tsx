@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import type { GatedScannerPhase } from "@/hooks/audit";
 import type { AuditAnalysisResult } from "@/types/audit";
 import { AnalyzingState, FullResultsPanel } from "./scanner-modal";
 import { XRayScannerBackground } from "@/components/ui/XRayScannerBackground";
+import { PreQuoteLeadModalV2 } from "@/components/LeadModalV2/PreQuoteLeadModalV2";
 
 const XRAY_CALLOUTS = [
 {
@@ -104,6 +105,8 @@ export function UploadZoneXRay({
 }: UploadZoneXRayProps) {
   const [visibleCallouts, setVisibleCallouts] = useState<number[]>([]);
   const [isHoveringPreview, setIsHoveringPreview] = useState(false);
+  const [showPreQuoteModal, setShowPreQuoteModal] = useState(false);
+  const rightPanelFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Only animate callouts when in idle phase
@@ -371,7 +374,17 @@ export function UploadZoneXRay({
               </div>
               <p className="text-white font-semibold text-lg">See Your Gradecard</p>
               <p className="text-sm mb-6 text-primary-foreground">Upload your quote to reveal your score</p>
-              <Button className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-900 font-bold rounded-xl shadow-lg shadow-orange-500/25">
+              <input
+                type="file"
+                ref={rightPanelFileRef}
+                className="hidden"
+                accept="image/*,.pdf"
+                onChange={handleFileInput}
+              />
+              <Button
+                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-900 font-bold rounded-xl shadow-lg shadow-orange-500/25"
+                onClick={() => rightPanelFileRef.current?.click()}
+              >
                 <Upload className="w-5 h-5 mr-2" />
                 Upload Quote for Free Gradecard
               </Button>
@@ -379,6 +392,13 @@ export function UploadZoneXRay({
                 <Lock className="w-3 h-3" />
                 Instant analysis via Gemini 3 OCR Flash
               </p>
+              <Button
+                className="mt-4 px-6 py-3 bg-primary text-white hover:bg-primary/90 hover:text-white font-bold rounded-xl shadow-lg"
+                onClick={() => setShowPreQuoteModal(true)}
+              >
+                <FileText className="w-5 h-5 mr-2" />
+                No Quote Yet? View a Sample Audit
+              </Button>
             </div>
           </Card>);
 
@@ -386,6 +406,7 @@ export function UploadZoneXRay({
   };
 
   return (
+    <>
     <XRayScannerBackground
       className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950"
       padding="py-16 md:py-24">
@@ -458,6 +479,13 @@ export function UploadZoneXRay({
           </div>
         }
       </div>
-    </XRayScannerBackground>);
+    </XRayScannerBackground>
+
+    <PreQuoteLeadModalV2
+      isOpen={showPreQuoteModal}
+      onClose={() => setShowPreQuoteModal(false)}
+      ctaSource="audit-gradecard-no-quote"
+    />
+    </>);
 
 }
