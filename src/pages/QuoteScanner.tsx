@@ -320,7 +320,7 @@ export default function QuoteScanner() {
           sourceTool: 'ai-scanner',
           trackingSourceTool: 'ai_scanner',
           conversionAction: 'prequote_v2_scanner_signup',
-          leadValue: 75,
+          leadValue: 100,
         }}
         renderResultScreen={(props) => <ScannerAllSetScreen {...props} />}
       />
