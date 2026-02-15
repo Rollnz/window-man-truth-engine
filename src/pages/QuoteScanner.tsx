@@ -5,20 +5,19 @@ import { QuoteScannerHero } from '@/components/quote-scanner/QuoteScannerHero';
 import { QuoteUploadZone } from '@/components/quote-scanner/QuoteUploadZone';
 import { QuoteAnalysisResults } from '@/components/quote-scanner/QuoteAnalysisResults';
 import { QuoteQA } from '@/components/quote-scanner/QuoteQA';
-import { LeadCaptureModal } from '@/components/conversion/LeadCaptureModal';
+import { QuoteUploadGateModal } from '@/components/audit/QuoteUploadGateModal';
 
+import { useGatedAIScanner } from '@/hooks/useGatedAIScanner';
 import { useQuoteScanner } from '@/hooks/useQuoteScanner';
-import type { SourceTool } from '@/types/sourceTool';
 import { useSessionData } from '@/hooks/useSessionData';
 import { usePageTracking } from '@/hooks/usePageTracking';
-import { trackScannerUploadCompleted } from '@/lib/secondarySignalEvents';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { ErrorBoundary } from '@/components/error';
 import { AIErrorFallback, getAIErrorType } from '@/components/error';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { ToolFAQSection } from '@/components/seo';
 import { getToolFAQs } from '@/data/toolFAQs';
-// New supporting sections
+// Supporting sections
 import { ScannerVideoSection } from '@/components/quote-scanner/ScannerVideoSection';
 import { ScannerSocialProof } from '@/components/quote-scanner/ScannerSocialProof';
 import { ScannerFAQSection } from '@/components/quote-scanner/ScannerFAQSection';
@@ -32,6 +31,9 @@ import { AIComparisonSection } from '@/components/quote-scanner/AIComparisonSect
 import { UrgencyTicker } from '@/components/social-proof';
 import { ScanPipelineStrip } from '@/components/quote-scanner/ScanPipelineStrip';
 import { TestimonialCards } from '@/components/TestimonialCards';
+// New gated flow components
+import { TalkToExpertCTA } from '@/components/quote-scanner/TalkToExpertCTA';
+import { AnalysisTheaterScreen } from '@/components/quote-scanner/AnalysisTheaterScreen';
 // Attribution & tracking for NoQuotePivotSection handler
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -40,22 +42,24 @@ import { getAttributionData } from '@/lib/attribution';
 import { trackLeadCapture, trackLeadSubmissionSuccess } from '@/lib/gtm';
 // Session registration for database FK compliance
 import { getSessionId as getRegisteredSessionId } from '@/lib/windowTruthClient';
+import { Lock, Upload } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function QuoteScanner() {
   usePageTracking('quote-scanner');
   const { toast } = useToast();
+
+  // ── Gated scanner hook (primary flow driver) ────────────────────────
+  const gated = useGatedAIScanner();
+
+  // ── Secondary hook for email draft, phone script, Q&A ───────────────
   const {
-    isAnalyzing,
     isDraftingEmail,
     isDraftingPhoneScript,
     isAskingQuestion,
-    analysisResult,
     emailDraft,
     phoneScript,
     qaAnswer,
-    imageBase64,
-    mimeType,
-    analyzeQuote,
     generateEmailDraft,
     generatePhoneScript,
     askQuestion,
@@ -63,54 +67,19 @@ export default function QuoteScanner() {
 
   const { sessionData, updateField } = useSessionData();
   const { leadId, setLeadId } = useLeadIdentity();
-  const [showLeadCapture, setShowLeadCapture] = useState(false);
-  const [hasUnlockedResults, setHasUnlockedResults] = useState(!!sessionData.email);
   const [isNoQuoteSubmitting, setIsNoQuoteSubmitting] = useState(false);
   const [isNoQuoteSubmitted, setIsNoQuoteSubmitted] = useState(false);
   const [preQuoteOpen, setPreQuoteOpen] = useState(false);
   const [registeredSessionId, setRegisteredSessionId] = useState<string>('');
   
-  // Ref for scroll-to-upload functionality
   const uploadRef = useRef<HTMLDivElement>(null);
 
-
-  // CRITICAL: Register session with wm_sessions table on mount
-  // This ensures the sessionId exists in the database before save-lead is called
+  // Register session with wm_sessions table on mount
   useEffect(() => {
     getRegisteredSessionId().then((id) => {
       if (id) setRegisteredSessionId(id);
     });
   }, []);
-
-  const handleFileSelect = async (file: File) => {
-    const startTime = Date.now();
-    await analyzeQuote(file);
-    const duration = Math.round((Date.now() - startTime) / 1000);
-
-    // Track secondary signal: Scanner Upload Completed (Phase 4)
-    trackScannerUploadCompleted({
-      leadId: leadId || undefined,
-      file_size: file.size,
-      upload_duration: duration * 1000, // convert to milliseconds
-    });
-
-    // Show lead capture after analysis if user hasn't provided email
-    if (!sessionData.email) {
-      setShowLeadCapture(true);
-    }
-  };
-
-  const handleLeadCaptureSuccess = (leadId: string) => {
-    setHasUnlockedResults(true);
-    setShowLeadCapture(false);
-    updateField('leadId', leadId);
-  };
-
-  const isUnlocked = hasUnlockedResults || !!sessionData.email;
-  const hasImage = !!imageBase64;
-
-  // Get hook error for inline display
-  const hookError = useQuoteScanner().error;
 
   return (
     <div className="min-h-screen bg-background">
@@ -141,57 +110,127 @@ export default function QuoteScanner() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                 {/* Left column - Upload */}
                 <div className="space-y-6">
-                  <QuoteUploadZone
-                    ref={uploadRef}
-                    onFileSelect={handleFileSelect}
-                    isAnalyzing={isAnalyzing}
-                    hasResult={!!analysisResult}
-                    imagePreview={imageBase64}
-                    mimeType={mimeType}
-                    analysisResult={analysisResult}
-                    onWarningSelect={(key) => {
-                      const el = document.getElementById(`score-row-${key}`);
-                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }}
-                    onNoQuoteClick={() => setPreQuoteOpen(true)}
-                  />
+                  {/* Recovery message from Safari refresh */}
+                  {gated.recoveryMessage && gated.phase === 'idle' && (
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-foreground">
+                      {gated.recoveryMessage}
+                    </div>
+                  )}
+
+                  {/* Upload zone: only in idle or when locked (re-upload visible behind overlay) */}
+                  {(gated.phase === 'idle' || gated.phase === 'uploaded') && (
+                    <QuoteUploadZone
+                      ref={uploadRef}
+                      onFileSelect={gated.handleFileSelect}
+                      isAnalyzing={false}
+                      hasResult={false}
+                      imagePreview={null}
+                      onNoQuoteClick={() => setPreQuoteOpen(true)}
+                    />
+                  )}
+
+                  {/* Locked overlay */}
+                  {gated.phase === 'locked' && (
+                    <div className="relative rounded-xl border border-border overflow-hidden">
+                      {/* Blurred preview */}
+                      {gated.filePreviewUrl && (
+                        <img
+                          src={gated.filePreviewUrl}
+                          alt="Uploaded quote preview"
+                          className="w-full h-64 object-cover blur-xl scale-110"
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-background/70 flex flex-col items-center justify-center gap-4 p-6">
+                        <Lock className="w-10 h-10 text-muted-foreground" />
+                        <p className="text-lg font-semibold text-foreground text-center">Your report is ready to unlock</p>
+                        <Button onClick={gated.reopenModal} size="lg">
+                          Unlock Your Report
+                        </Button>
+                        <button
+                          onClick={gated.reset}
+                          className="text-sm text-muted-foreground hover:text-foreground underline transition-colors"
+                        >
+                          <Upload className="w-3.5 h-3.5 inline mr-1" />
+                          Upload a Different Quote
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Analysis theater */}
+                  {gated.phase === 'analyzing' && (
+                    <AnalysisTheaterScreen previewUrl={gated.filePreviewUrl} />
+                  )}
+
+                  {/* Revealed: show the upload zone with preview */}
+                  {gated.phase === 'revealed' && gated.analysisResult && (
+                    <QuoteUploadZone
+                      ref={uploadRef}
+                      onFileSelect={gated.handleFileSelect}
+                      isAnalyzing={false}
+                      hasResult={true}
+                      imagePreview={gated.imageBase64}
+                      mimeType={gated.mimeType}
+                      analysisResult={gated.analysisResult}
+                      onWarningSelect={(key) => {
+                        const el = document.getElementById(`score-row-${key}`);
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                      onNoQuoteClick={() => setPreQuoteOpen(true)}
+                    />
+                  )}
                 </div>
 
-                {/* Right column - Results */}
+                {/* Right column - Results (ONLY when revealed) */}
                 <div className="space-y-6">
-                  {/* Show error fallback if there's an error */}
-                  {hookError && !isAnalyzing && (
+                  {/* Error display */}
+                  {gated.error && !gated.isLoading && (
                     <AIErrorFallback
-                      errorType={getAIErrorType(hookError)}
-                      message={hookError}
+                      errorType={getAIErrorType(gated.error)}
+                      message={gated.error}
                       onRetry={() => window.location.reload()}
                       compact
                     />
                   )}
 
-                  <QuoteAnalysisResults 
-                    result={analysisResult} 
-                    isLocked={!isUnlocked}
-                    hasImage={hasImage}
-                  />
+                  {/* Authority Report — ONLY when phase === 'revealed' */}
+                  {gated.phase === 'revealed' && gated.analysisResult && (
+                    <>
+                      {/* Section 1: Report Header */}
+                      <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-foreground">Your Quote Intelligence Report</h2>
+                        {gated.analysisResult.forensic?.headline && (
+                          <p className="text-base text-muted-foreground">{gated.analysisResult.forensic.headline}</p>
+                        )}
+                      </div>
 
-                  {isUnlocked && analysisResult && (
-                    <QuoteQA
-                      answer={qaAnswer}
-                      isAsking={isAskingQuestion}
-                      onAsk={askQuestion}
-                      disabled={!analysisResult}
-                    />
-                  )}
+                      {/* Section 2: Executive Summary */}
+                      {gated.analysisResult.summary && (
+                        <div className="rounded-lg border border-border bg-muted/30 p-4">
+                          <p className="text-sm text-foreground leading-relaxed">
+                            {gated.analysisResult.summary}
+                          </p>
+                        </div>
+                      )}
 
-                  {/* Unlock button when locked with results */}
-                  {!isUnlocked && hasImage && analysisResult && (
-                    <button
-                      onClick={() => setShowLeadCapture(true)}
-                      className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-                    >
-                      Unlock Full Report
-                    </button>
+                      {/* Section 3: Findings */}
+                      <QuoteAnalysisResults
+                        result={gated.analysisResult}
+                        isLocked={false}
+                        hasImage={!!gated.imageBase64}
+                      />
+
+                      {/* Section 4: Primary CTA - Phone */}
+                      <TalkToExpertCTA leadId={gated.leadId} />
+
+                      {/* Section 5: Secondary CTA - Q&A */}
+                      <QuoteQA
+                        answer={qaAnswer}
+                        isAsking={isAskingQuestion}
+                        onAsk={askQuestion}
+                        disabled={false}
+                      />
+                    </>
                   )}
                 </div>
               </div>
@@ -201,7 +240,7 @@ export default function QuoteScanner() {
 
         <ScannerVideoSection />
 
-        {/* Vault Pivot Conversion Engine - Primary lead capture for no-quote visitors */}
+        {/* Vault Pivot Conversion Engine */}
         <section className="py-8 md:py-12">
           <div className="container px-4">
             <SoftInterceptionAnchor />
@@ -209,13 +248,11 @@ export default function QuoteScanner() {
               isLoading={isNoQuoteSubmitting}
               isSubmitted={isNoQuoteSubmitted}
               onGoogleAuth={() => {
-                // TODO: Wire to real Supabase Google OAuth
                 console.log('Google OAuth clicked - will redirect to /vault');
               }}
               onEmailSubmit={async (data) => {
                 setIsNoQuoteSubmitting(true);
                 try {
-                  // Use the registered session ID (from wm_sessions table) to avoid FK violations
                   const sessionId = registeredSessionId || await getRegisteredSessionId();
                   
                   const { data: result, error } = await supabase.functions.invoke('save-lead', {
@@ -238,7 +275,6 @@ export default function QuoteScanner() {
                     updateField('leadId', result.leadId);
                     setLeadId(result.leadId);
 
-                    // CRITICAL: Track lead capture for attribution (EMQ 9.5+)
                     await trackLeadCapture(
                       {
                         leadId: result.leadId,
@@ -246,14 +282,13 @@ export default function QuoteScanner() {
                         conversionAction: 'form_submit',
                       },
                       data.email,
-                      undefined, // No phone in NoQuote flow
+                      undefined,
                       {
                         hasName: !!(data.firstName || data.lastName),
                         hasPhone: false,
                       }
                     );
 
-                    // Track enhanced conversion with value-based bidding ($100)
                     await trackLeadSubmissionSuccess({
                       leadId: result.leadId,
                       email: data.email,
@@ -264,7 +299,6 @@ export default function QuoteScanner() {
                       value: 100,
                     });
 
-                    // Trigger success state instead of toast
                     setIsNoQuoteSubmitted(true);
                   }
                 } catch (err) {
@@ -290,7 +324,6 @@ export default function QuoteScanner() {
         <WindowCalculatorTeaser />
         <NoQuotePathway />
 
-        {/* PRD-Compliant FAQ Section */}
         <ToolFAQSection
           toolPath="/ai-scanner"
           faqs={getToolFAQs('quote-scanner')}
@@ -298,16 +331,16 @@ export default function QuoteScanner() {
           description="How our AI analyzes your window quotes"
         />
 
-        {/* Legacy FAQ section - can be removed later */}
         <ScannerFAQSection uploadRef={uploadRef} />
       </main>
 
-      <LeadCaptureModal
-        isOpen={showLeadCapture}
-        onClose={() => setShowLeadCapture(false)}
-        onSuccess={handleLeadCaptureSuccess}
-        sourceTool={'quote-scanner' satisfies SourceTool}
-        sessionData={sessionData}
+      {/* Lead gate modal — only when phase === 'uploaded' && modal open */}
+      <QuoteUploadGateModal
+        isOpen={gated.phase === 'uploaded' && gated.isModalOpen}
+        onClose={gated.closeModal}
+        onSubmit={gated.captureLead}
+        isLoading={gated.isLoading}
+        returnFocusRef={uploadRef}
       />
 
       <PreQuoteLeadModal
