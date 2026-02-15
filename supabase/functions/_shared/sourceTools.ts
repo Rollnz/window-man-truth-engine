@@ -35,6 +35,7 @@ export const SOURCE_TOOLS = [
   'consultation',
   'sample-report',
   'audit-sample-report',
+  'ai-scanner',
 ] as const;
 
 export type SourceTool = typeof SOURCE_TOOLS[number];
