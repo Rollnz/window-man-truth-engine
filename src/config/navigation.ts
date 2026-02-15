@@ -66,6 +66,9 @@ export const ROUTES = {
 
   // Analytics (Admin)
   ANALYTICS: '/analytics',
+
+  // Conversion
+  THANK_YOU: '/thank-you',
 } as const;
 
 /**
@@ -101,6 +104,7 @@ export const FUNNEL_ROUTES = [
   '/ai-scanner',
   '/sample-report',
   '/beat-your-quote',
+  '/thank-you',
 ] as const;
 
 export const ROUTE_REDIRECTS = {
