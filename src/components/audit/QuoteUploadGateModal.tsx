@@ -37,7 +37,7 @@ export function QuoteUploadGateModal({
   onClose,
   onSubmit,
   isLoading = false,
-  returnFocusRef,
+  returnFocusRef
 }: QuoteUploadGateModalProps) {
   const firstInputRef = useRef<HTMLInputElement>(null);
   const openTimeRef = useRef<number | null>(null);
@@ -49,17 +49,17 @@ export function QuoteUploadGateModal({
       firstName: '',
       lastName: '',
       email: '',
-      phone: '',
+      phone: ''
     },
     schemas: {
       firstName: commonSchemas.firstName,
       lastName: commonSchemas.lastName,
       email: commonSchemas.email,
-      phone: commonSchemas.phone,
+      phone: commonSchemas.phone
     },
     formatters: {
-      phone: formatPhoneNumber,
-    },
+      phone: formatPhoneNumber
+    }
   });
 
   // Track modal open + focus first input
@@ -68,9 +68,9 @@ export function QuoteUploadGateModal({
       openTimeRef.current = Date.now();
       trackModalOpen({ modalName: 'quote_upload_gate' });
       trackEvent('quote_upload_gate_open', {
-        source: 'file_upload',
+        source: 'file_upload'
       });
-      
+
       // Auto-focus first input after animation
       const timer = setTimeout(() => {
         firstInputRef.current?.focus();
@@ -87,7 +87,7 @@ export function QuoteUploadGateModal({
           firstName: '',
           lastName: '',
           email: '',
-          phone: '',
+          phone: ''
         });
         clearErrors();
         setSmsConsent(false);
@@ -106,12 +106,12 @@ export function QuoteUploadGateModal({
   // Handle close with tracking
   const handleOpenChange = useCallback((open: boolean) => {
     if (!open) {
-      const timeOpenMs = openTimeRef.current 
-        ? Date.now() - openTimeRef.current 
-        : 0;
+      const timeOpenMs = openTimeRef.current ?
+      Date.now() - openTimeRef.current :
+      0;
       trackEvent('quote_upload_gate_close', {
         time_open_ms: timeOpenMs,
-        submitted: false,
+        submitted: false
       });
       onClose();
     }
@@ -120,29 +120,29 @@ export function QuoteUploadGateModal({
   // Form submission
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const isValid = validateAll();
     if (!isValid) return;
 
     trackEvent('quote_upload_gate_submit', {
       has_all_fields: true,
-      sms_consent: smsConsent,
+      sms_consent: smsConsent
     });
 
     await onSubmit({
       firstName: values.firstName,
       lastName: values.lastName,
       email: values.email,
-      phone: values.phone,
+      phone: values.phone
     });
   }, [values, validateAll, onSubmit, smsConsent]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent 
+      <DialogContent
         className="sm:max-w-md bg-[#e5e5e5] border-slate-200 text-slate-900 p-0 overflow-hidden"
-        onPointerDownOutside={(e) => e.preventDefault()}
-      >
+        onPointerDownOutside={(e) => e.preventDefault()}>
+
         {/* Header */}
         <div className="px-6 pt-6 pb-2">
           <div className="flex items-center gap-2 mb-2">
@@ -188,13 +188,13 @@ export function QuoteUploadGateModal({
                   "h-10 bg-white text-slate-900 border-slate-300",
                   errors.firstName && "border-destructive focus-visible:ring-destructive"
                 )}
-                aria-describedby={errors.firstName ? 'firstName-error' : undefined}
-              />
-              {errors.firstName && (
-                <p id="firstName-error" className="text-destructive text-xs" role="alert">
+                aria-describedby={errors.firstName ? 'firstName-error' : undefined} />
+
+              {errors.firstName &&
+              <p id="firstName-error" className="text-destructive text-xs" role="alert">
                   {errors.firstName}
                 </p>
-              )}
+              }
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="gate-lastName" className="text-slate-800 font-medium text-sm">
@@ -212,13 +212,13 @@ export function QuoteUploadGateModal({
                   "h-10 bg-white text-slate-900 border-slate-300",
                   errors.lastName && "border-destructive focus-visible:ring-destructive"
                 )}
-                aria-describedby={errors.lastName ? 'lastName-error' : undefined}
-              />
-              {errors.lastName && (
-                <p id="lastName-error" className="text-destructive text-xs" role="alert">
+                aria-describedby={errors.lastName ? 'lastName-error' : undefined} />
+
+              {errors.lastName &&
+              <p id="lastName-error" className="text-destructive text-xs" role="alert">
                   {errors.lastName}
                 </p>
-              )}
+              }
             </div>
           </div>
 
@@ -241,13 +241,13 @@ export function QuoteUploadGateModal({
                 "h-10 bg-white text-slate-900 border-slate-300",
                 errors.email && "border-destructive focus-visible:ring-destructive"
               )}
-              aria-describedby={errors.email ? 'email-error' : undefined}
-            />
-            {errors.email && (
-              <p id="email-error" className="text-destructive text-xs" role="alert">
+              aria-describedby={errors.email ? 'email-error' : undefined} />
+
+            {errors.email &&
+            <p id="email-error" className="text-destructive text-xs" role="alert">
                 {errors.email}
               </p>
-            )}
+            }
           </div>
 
           {/* Phone */}
@@ -270,13 +270,13 @@ export function QuoteUploadGateModal({
                 "h-10 bg-white text-slate-900 border-slate-300",
                 errors.phone && "border-destructive focus-visible:ring-destructive"
               )}
-              aria-describedby={errors.phone ? 'phone-error' : undefined}
-            />
-            {errors.phone && (
-              <p id="phone-error" className="text-destructive text-xs" role="alert">
+              aria-describedby={errors.phone ? 'phone-error' : undefined} />
+
+            {errors.phone &&
+            <p id="phone-error" className="text-destructive text-xs" role="alert">
                 {errors.phone}
               </p>
-            )}
+            }
           </div>
 
           {/* SMS Consent Checkbox */}
@@ -285,8 +285,8 @@ export function QuoteUploadGateModal({
               id="sms-consent"
               checked={smsConsent}
               onCheckedChange={(checked) => setSmsConsent(checked === true)}
-              className="mt-0.5"
-            />
+              className="mt-0.5" />
+
             <label htmlFor="sms-consent" className="text-xs text-slate-600 leading-relaxed cursor-pointer">
               I agree to receive SMS updates about my quote analysis. Message &amp; data rates may apply. Reply STOP to unsubscribe.
             </label>
@@ -296,29 +296,29 @@ export function QuoteUploadGateModal({
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base"
-          >
-            {isLoading ? (
-              <>
+            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base">
+
+            {isLoading ?
+            <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Starting Analysis...
-              </>
-            ) : (
-              <>
+              </> :
+
+            <>
                 <Lock className="w-4 h-4 mr-2" />
                 Unlock My Score Now
               </>
-            )}
+            }
           </Button>
 
           {/* Footer */}
           <p className="text-center text-xs text-slate-500">
-            By submitting, you agree to our Terms of Service and Privacy Policy. We'll send your analysis to this email.
+            By submitting, you agree to our Terms of Service and Privacy Policy. 
           </p>
         </form>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>);
+
 }
 
 export default QuoteUploadGateModal;
