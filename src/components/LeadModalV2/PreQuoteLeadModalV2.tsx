@@ -529,7 +529,7 @@ export function PreQuoteLeadModalV2({
         {step === 'capture' && !(hideAfterCompletion && hasCompletedLead) && (
           <LeadStep1Capture
             onSubmit={handleStep1Submit}
-            isSubmitting={isSubmitting || isQualificationSubmitting}
+            isSubmitting={isSubmitting}
           />
         )}
 
