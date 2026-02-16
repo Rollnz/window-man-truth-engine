@@ -1,72 +1,159 @@
 
 
-# Playwright E2E Test Suite: Scanner Flow and Log Event Fixes
+# Fix Broken "Before" Card: Smart FilePreviewCard (Revised)
 
-## Overview
+## Summary
 
-Create `e2e/scanner-flow.spec.ts` with 4 test scenarios verifying the gated scanner funnel, log-event 401 fix, gating security, state cleanup, and 409 session conflict handling.
+Replace raw `<img>` tags that break on PDF uploads with a smart `FilePreviewCard` component across all three render sites: the locked/analyzing "Before" block in QuoteScanner, the AnalysisTheaterScreen, and the UploadZoneXRay left panel on /audit.
 
-## Test Architecture
+---
 
-All tests target `/ai-scanner` (the QuoteScanner page). The page uses a state machine with phases: `idle` -> `uploaded` -> `locked` -> `analyzing` -> `revealed`. Key UI selectors are derived from the existing page markup (Lock icon, "Upload a Different Quote" link, lead modal, etc.).
+## All 6 Gaps Addressed
 
-A dummy PDF will be generated inline using a minimal valid PDF buffer (no external fixture files needed).
+### Gap 1: AnalysisTheaterScreen (third blob preview)
 
-## Test Scenarios
+`AnalysisTheaterScreen` (line 35-39) renders `previewUrl` in an `<img>` -- breaks for PDFs. Will update its props to accept `fileName` and `fileType`, and replace the `<img>` with `FilePreviewCard`. QuoteScanner.tsx line 221 will pass the new props.
 
-### Test 1: Happy Path (Log Event 200 Verification)
-- Navigate to `/ai-scanner`
-- Generate a minimal dummy PDF in-memory and upload via the file input
-- Wait for the lead modal to appear (look for the modal content/form)
-- Fill in First Name, Last Name, Email, Phone fields
-- Check the SMS consent checkbox
-- Submit the form
-- Use `page.waitForResponse` to intercept the `log-event` call and assert status 200
-- Assert that a `quote-scanner` network call is made exactly once after submission
+### Gap 2: File size after refresh
 
-### Test 2: Security Check (No Analysis Before Lead Capture)
-- Navigate to `/ai-scanner`
-- Set up a request listener for `quote-scanner` calls
-- Upload a dummy PDF
-- Wait for modal to appear
-- Assert zero `quote-scanner` requests were made
-- Close the modal (click the X or "No thanks" link)
-- Assert the "locked" phase UI is visible: "Your report is ready to unlock" text and the blurred preview container
+`fileSize` will be persisted alongside `fileName`/`fileType` in sessionStorage. `FilePreviewCard` accepts an optional `fileSize?: number` prop so it can display size even when the `File` object is gone.
 
-### Test 3: Abandon and Reset
-- Upload a file, close modal to reach "locked" state
-- Click "Upload a Different Quote" link
-- Assert the UI returns to idle state (upload zone visible, Lock placeholder with "Upload your quote to get started")
-- Upload a second file
-- Assert the lead modal reopens
+### Gap 3: Post-refresh placeholder location
 
-### Test 4: Session Conflict (409 Suppression)
-- Listen to `page.on('console')` for any messages containing "409" or "duplicate key"
-- Navigate to `/ai-scanner`
-- Wait for page to fully load and settle (network idle)
-- Assert no console errors contain 409-related messages (the 409 from `wm_sessions` INSERT is expected but should be handled gracefully without console.error)
+On refresh, `useGatedAIScanner` sets phase to `idle` and shows `recoveryMessage`. The upload zone is shown in idle phase, so there's no "Before" card rendered. Decision: **no placeholder card is shown after refresh** -- the recovery message text strip (lines 114-118 in QuoteScanner.tsx) is sufficient. The persisted `fileName`/`fileType` will be used to enrich the recovery message text (e.g. "We lost your upload of **window-quote.pdf** due to a browser refresh.") instead of rendering a separate card.
+
+### Gap 4: Backward compatibility for persisted state
+
+`readPersistedState()` will read with fallbacks: `fileName ?? null`, `fileType ?? null`, `fileSize ?? null`. Old payloads without these keys will not break.
+
+### Gap 5: Image detection when File is missing
+
+The component uses `fileType` (string prop) as the source of truth when `file` is null. Logic: `const isImage = (file?.type || fileType || '').startsWith('image/') && !!previewUrl && !imageError`. Explicit and unambiguous.
+
+### Gap 6: Accessibility
+
+The document placeholder will have `role="img"` and `aria-label="Document preview: {filename}"`. The `<img>` tag already has `alt` text.
+
+---
+
+## Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/ui/FilePreviewCard.tsx` | **New** -- smart preview component |
+| `src/hooks/useGatedAIScanner.ts` | Add `fileName`, `fileType`, `fileSize` to state + persistence + recovery |
+| `src/hooks/audit/useGatedScanner.ts` | Expose `fileName`, `fileType`, `fileSize` from state (no persistence) |
+| `src/components/quote-scanner/AnalysisTheaterScreen.tsx` | Accept `fileName`/`fileType`/`fileSize` props, use `FilePreviewCard` |
+| `src/pages/QuoteScanner.tsx` | Pass new props to AnalysisTheaterScreen + use FilePreviewCard in locked/analyzing block + enrich recovery message |
+| `src/components/audit/UploadZoneXRay.tsx` | Accept `fileName`/`fileType`/`fileSize` props, use `FilePreviewCard` in left panel |
+| `src/pages/Audit.tsx` | Pass `scanner.fileName`, `scanner.fileType`, `scanner.fileSize` to UploadZoneXRay |
+
+---
 
 ## Technical Details
 
-### File: `e2e/scanner-flow.spec.ts`
+### FilePreviewCard.tsx
 
-Dependencies: `@playwright/test` (already installed)
+```text
+Props:
+  file?: File | null          -- live File object (if available)
+  previewUrl?: string | null  -- blob URL
+  fileName?: string           -- fallback from sessionStorage
+  fileType?: string           -- fallback MIME type
+  fileSize?: number           -- fallback size in bytes
+  className?: string
 
-Helpers:
-- `createDummyPDF()`: Returns a `Buffer` with a minimal valid PDF (header + empty page + xref + trailer) -- roughly 200 bytes
-- `uploadFile(page, buffer, filename)`: Uses `page.setInputFiles` on the file input with the buffer
-- `fillLeadForm(page, data)`: Fills the modal form fields and submits
+Behavior:
+  name = file?.name || fileName || "Document"
+  type = file?.type || fileType || ""
+  size = file?.size || fileSize || 0
+  isImage = type.startsWith("image/") && !!previewUrl && !imageError
 
-Network interception:
-- `page.waitForResponse(url => url.includes('log-event'))` for log-event assertions
-- `page.route('**/quote-scanner', ...)` or request counting for security check
+  Image path: <img> with onError -> setImageError(true) -> falls back to document path
+  Document path: portrait container (aspect-[3/4]), FileText icon (cyan-400),
+                 truncated filename, type badge + size
+  Accessibility: role="img", aria-label="Document preview: {name}"
+```
 
-Timeouts: 30s default per test (scanner analysis can take up to 60s, but tests 2-4 don't wait for analysis completion).
+### useGatedAIScanner.ts changes
 
-### Key Selectors (from page source)
-- Upload zone file input: `input[type="file"]` or `[data-testid]` if available
-- Lead modal: Dialog content with form fields
-- "Upload a Different Quote": `button` or `a` containing that text
-- Locked state: Text "Your report is ready to unlock"
-- Idle state: Text "Upload your quote to get started"
+1. Extend `PersistedState` interface:
+   ```text
+   interface PersistedState {
+     phase: 'locked' | 'analyzing';
+     leadId: string | null;
+     scanAttemptId: string;
+     fileName?: string | null;   // NEW
+     fileType?: string | null;   // NEW
+     fileSize?: number | null;   // NEW
+   }
+   ```
+
+2. Extend `GatedAIScannerState`:
+   ```text
+   fileName: string | null;
+   fileType: string | null;
+   fileSize: number | null;
+   ```
+
+3. In `handleFileSelect`: populate from `file.name`, `file.type`, `file.size`.
+
+4. In `persistState` calls (closeModal + captureLead): include `fileName`, `fileType`, `fileSize` from state.
+
+5. In mount recovery `useEffect`: read with fallbacks (`persisted.fileName ?? null`). Enrich `recoveryMessage` with filename if available: `"We lost your upload of {fileName}..."`.
+
+6. Expose `fileName`, `fileType`, `fileSize` in return type.
+
+### useGatedScanner.ts changes (audit hook)
+
+1. Add `fileName: string | null`, `fileType: string | null`, `fileSize: number | null` to `GatedScannerState`.
+2. Populate in `handleFileSelect` from `file.name`, `file.type`, `file.size`.
+3. Add to `INITIAL_STATE` as `null`.
+4. Expose in return. No sessionStorage persistence (audit hook doesn't use it).
+
+### AnalysisTheaterScreen.tsx changes
+
+1. Extend props:
+   ```text
+   interface AnalysisTheaterScreenProps {
+     previewUrl?: string | null;
+     fileName?: string;
+     fileType?: string;
+     fileSize?: number;
+   }
+   ```
+
+2. Replace lines 33-41 (the `<img>` block) with `<FilePreviewCard>` passing all props. Keep the outer wrapper div with blur + overlay.
+
+### QuoteScanner.tsx changes
+
+1. **Lines 133-146** (locked/analyzing block): Replace raw `<img>` with `<FilePreviewCard file={gated.file} previewUrl={gated.filePreviewUrl} fileName={gated.fileName} fileType={gated.fileType} fileSize={gated.fileSize} className="w-full h-64" />`.
+
+2. **Line 221** (AnalysisTheaterScreen): Add props `fileName={gated.fileName} fileType={gated.fileType} fileSize={gated.fileSize}`.
+
+3. **Lines 114-118** (recovery message): If `gated.fileName` exists, include it in the message: "We lost your upload of **{fileName}**...".
+
+### UploadZoneXRay.tsx changes
+
+1. Add to props interface: `fileName?: string`, `fileType?: string`, `fileSize?: number`.
+
+2. In `renderLeftPanel()` lines 148-155: Replace raw `<img>` with `<FilePreviewCard previewUrl={filePreviewUrl} fileName={fileName} fileType={fileType} fileSize={fileSize} />`. Keep existing blur/overlay logic on the wrapper.
+
+### Audit.tsx changes
+
+1. Pass three new props to `UploadZoneXRay`: `fileName={scanner.fileName}`, `fileType={scanner.fileType}`, `fileSize={scanner.fileSize}`.
+
+---
+
+## Edge Cases
+
+| Scenario | Behavior |
+|----------|----------|
+| PDF upload | Document placeholder with icon, filename, size badge |
+| Image upload | Normal `<img>` (existing behavior preserved) |
+| Blob URL revoked | `onError` fires, auto-fallback to document placeholder |
+| Page refresh (File lost) | `fileName`/`fileType`/`fileSize` restored from sessionStorage; recovery message includes filename; no card rendered (idle phase shows upload zone) |
+| Old sessionStorage payload missing new keys | Read with `?? null` fallback; recovery works with generic "your upload" text |
+| AnalysisTheaterScreen with PDF | Document placeholder inside blur container (no broken image) |
+| Very long filename | Truncated with `truncate` class |
 
