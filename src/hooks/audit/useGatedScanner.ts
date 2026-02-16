@@ -32,6 +32,9 @@ interface GatedScannerState {
   phase: GatedScannerPhase;
   file: File | null;
   filePreviewUrl: string | null;
+  fileName: string | null;
+  fileType: string | null;
+  fileSize: number | null;
   result: AuditAnalysisResult | null;
   leadId: string | null;
   isLeadCaptured: boolean;
@@ -122,6 +125,9 @@ const INITIAL_STATE: GatedScannerState = {
   phase: 'idle',
   file: null,
   filePreviewUrl: null,
+  fileName: null,
+  fileType: null,
+  fileSize: null,
   result: null,
   leadId: null,
   isLeadCaptured: false,
@@ -169,6 +175,9 @@ export function useGatedScanner(): UseGatedScannerReturn {
       phase: 'uploaded',
       file,
       filePreviewUrl: previewUrl,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
       scanAttemptId,
       isModalOpen: true, // IMMEDIATELY open lead modal
     });

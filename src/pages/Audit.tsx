@@ -84,6 +84,9 @@ export default function Audit() {
             scannerError={scanner.error}
             isLoading={scanner.isLoading}
             filePreviewUrl={scanner.filePreviewUrl}
+            fileName={scanner.fileName ?? undefined}
+            fileType={scanner.fileType ?? undefined}
+            fileSize={scanner.fileSize ?? undefined}
             onReopenModal={scanner.reopenModal}
             onReset={scanner.reset}
           />

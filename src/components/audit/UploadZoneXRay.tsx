@@ -9,6 +9,7 @@ import type { AuditAnalysisResult } from "@/types/audit";
 import { AnalyzingState, FullResultsPanel } from "./scanner-modal";
 import { XRayScannerBackground } from "@/components/ui/XRayScannerBackground";
 import { PreQuoteLeadModalV2 } from "@/components/LeadModalV2/PreQuoteLeadModalV2";
+import { FilePreviewCard } from "@/components/ui/FilePreviewCard";
 
 const XRAY_CALLOUTS = [
 {
@@ -87,6 +88,10 @@ interface UploadZoneXRayProps {
   isLoading?: boolean;
   /** URL of uploaded file for blurred preview */
   filePreviewUrl?: string | null;
+  /** File metadata for smart preview */
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
   /** Callback to reopen lead modal */
   onReopenModal?: () => void;
   onReset?: () => void;
@@ -100,6 +105,9 @@ export function UploadZoneXRay({
   scannerError = null,
   isLoading = false,
   filePreviewUrl = null,
+  fileName,
+  fileType,
+  fileSize,
   onReopenModal,
   onReset
 }: UploadZoneXRayProps) {
@@ -143,16 +151,18 @@ export function UploadZoneXRay({
         <Card
           className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-visible">
 
-          {/* Blurred/Clear uploaded image */}
+          {/* Blurred/Clear uploaded file */}
           <div className="relative w-full h-full min-h-[450px] rounded-lg overflow-hidden">
-            <img
-              src={filePreviewUrl}
-              alt="Your uploaded quote"
+            <FilePreviewCard
+              previewUrl={filePreviewUrl}
+              fileName={fileName}
+              fileType={fileType}
+              fileSize={fileSize}
               className={cn(
                 "w-full h-full object-contain transition-all duration-1000",
-                // Heavy blur until revealed
-                isRevealed ? "blur-none" : "blur-lg"
-              )} />
+                isRevealed ? "" : "blur-lg"
+              )}
+            />
 
             
             {/* Overlay for uploaded state (before reveal) */}

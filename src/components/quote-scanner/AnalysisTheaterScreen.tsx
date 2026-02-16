@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Loader2, CheckCircle2, FileSearch, BarChart3, FileText } from 'lucide-react';
+import { FilePreviewCard } from '@/components/ui/FilePreviewCard';
 
 interface AnalysisTheaterScreenProps {
   previewUrl?: string | null;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
 }
 
 const STAGES = [
@@ -11,7 +15,7 @@ const STAGES = [
   { label: 'Building Report', icon: FileText, durationMs: 0 },
 ] as const;
 
-export function AnalysisTheaterScreen({ previewUrl }: AnalysisTheaterScreenProps) {
+export function AnalysisTheaterScreen({ previewUrl, fileName, fileType, fileSize }: AnalysisTheaterScreenProps) {
   const [activeStage, setActiveStage] = useState(0);
 
   useEffect(() => {
@@ -19,7 +23,7 @@ export function AnalysisTheaterScreen({ previewUrl }: AnalysisTheaterScreenProps
     let elapsed = 0;
 
     STAGES.forEach((stage, i) => {
-      if (i === 0) return; // starts at 0
+      if (i === 0) return;
       elapsed += STAGES[i - 1].durationMs;
       timers.push(setTimeout(() => setActiveStage(i), elapsed));
     });
@@ -30,11 +34,13 @@ export function AnalysisTheaterScreen({ previewUrl }: AnalysisTheaterScreenProps
   return (
     <div className="flex flex-col items-center justify-center py-12 space-y-8">
       {/* Blurred preview */}
-      {previewUrl && (
+      {(previewUrl || fileName) && (
         <div className="relative w-48 h-48 rounded-lg overflow-hidden border border-border/40">
-          <img
-            src={previewUrl}
-            alt="Uploaded quote preview"
+          <FilePreviewCard
+            previewUrl={previewUrl}
+            fileName={fileName}
+            fileType={fileType}
+            fileSize={fileSize}
             className="w-full h-full object-cover blur-lg scale-110"
           />
           <div className="absolute inset-0 bg-background/60" />
@@ -68,7 +74,7 @@ export function AnalysisTheaterScreen({ previewUrl }: AnalysisTheaterScreenProps
               ) : (
                 <Icon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               )}
-              <span className={`text-sm font-medium ${isActive ? 'text-foreground' : isComplete ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
+              <span className={`text-sm font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
                 {stage.label}
               </span>
             </div>
