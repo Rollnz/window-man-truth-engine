@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Sparkles, Upload, CheckCircle2, AlertTriangle, Eye, FileText, Lock, Loader2 } from "lucide-react";
+import { RotatingValueProp } from "@/components/ui/RotatingValueProp";
 import type { GatedScannerPhase } from "@/hooks/audit";
 import type { AuditAnalysisResult } from "@/types/audit";
 import { AnalyzingState, FullResultsPanel } from "./scanner-modal";
@@ -447,6 +448,8 @@ export function UploadZoneXRay({
             Stop guessing. Our AI-assisted quote scanner reads the fine print, flags hidden risks, and shows you where
             you're overpaying — before you sign.
           </p>
+
+          <RotatingValueProp active={true} variant="dark" showDots />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 max-w-6xl mx-auto">
