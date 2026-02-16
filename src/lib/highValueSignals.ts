@@ -184,12 +184,19 @@ export async function logHighValueSignal(params: LogSignalParams): Promise<void>
       'Content-Type': 'application/json',
     };
     
-    if (logSecret) {
-      headers['X-WM-LOG-SECRET'] = logSecret;
-    } else if (anonKey) {
+    // Always attach apikey if available (belt and suspenders)
+    if (anonKey) {
       headers['apikey'] = anonKey;
       headers['Authorization'] = `Bearer ${anonKey}`;
-    } else {
+    }
+    
+    // Also attach secret header if available (preferred auth path)
+    if (logSecret) {
+      headers['X-WM-LOG-SECRET'] = logSecret;
+    }
+    
+    // If neither key is available, drop the signal
+    if (!anonKey && !logSecret) {
       console.error('[highValueSignals] CRITICAL: No auth key available. Signal dropped:', eventName);
       return;
     }
