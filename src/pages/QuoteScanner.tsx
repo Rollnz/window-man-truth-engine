@@ -44,6 +44,7 @@ import { trackLeadCapture, trackLeadSubmissionSuccess } from '@/lib/gtm';
 import { getSessionId as getRegisteredSessionId } from '@/lib/windowTruthClient';
 import { Lock, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FilePreviewCard } from '@/components/ui/FilePreviewCard';
 
 export default function QuoteScanner() {
   usePageTracking('quote-scanner');
@@ -132,15 +133,14 @@ export default function QuoteScanner() {
                   {/* locked / analyzing: Blurred file preview (static) */}
                   {(gated.phase === 'locked' || gated.phase === 'analyzing') && (
                     <div className="relative rounded-xl border border-border overflow-hidden">
-                      {gated.filePreviewUrl ? (
-                        <img
-                          src={gated.filePreviewUrl}
-                          alt="Uploaded quote preview"
-                          className="w-full h-64 object-cover blur-xl scale-110"
-                        />
-                      ) : (
-                        <div className="w-full h-64 bg-muted" />
-                      )}
+                      <FilePreviewCard
+                        file={gated.file}
+                        previewUrl={gated.filePreviewUrl}
+                        fileName={gated.fileName ?? undefined}
+                        fileType={gated.fileType ?? undefined}
+                        fileSize={gated.fileSize ?? undefined}
+                        className="w-full h-64 blur-xl scale-110"
+                      />
                       <div className="absolute inset-0 bg-background/60" />
                     </div>
                   )}
@@ -218,7 +218,12 @@ export default function QuoteScanner() {
 
                   {/* Phase: analyzing — theater stepper */}
                   {gated.phase === 'analyzing' && (
-                    <AnalysisTheaterScreen previewUrl={gated.filePreviewUrl} />
+                    <AnalysisTheaterScreen
+                      previewUrl={gated.filePreviewUrl}
+                      fileName={gated.fileName ?? undefined}
+                      fileType={gated.fileType ?? undefined}
+                      fileSize={gated.fileSize ?? undefined}
+                    />
                   )}
 
                   {/* Phase: revealed — full authority report */}

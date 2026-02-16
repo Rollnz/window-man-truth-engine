@@ -30,12 +30,18 @@ interface PersistedState {
   phase: 'locked' | 'analyzing';
   leadId: string | null;
   scanAttemptId: string;
+  fileName?: string | null;
+  fileType?: string | null;
+  fileSize?: number | null;
 }
 
 interface GatedAIScannerState {
   phase: AIScannerPhase;
   file: File | null;
   filePreviewUrl: string | null;
+  fileName: string | null;
+  fileType: string | null;
+  fileSize: number | null;
   analysisResult: QuoteAnalysisResult | null;
   leadId: string | null;
   isModalOpen: boolean;
@@ -114,6 +120,9 @@ const INITIAL_STATE: GatedAIScannerState = {
   phase: 'idle',
   file: null,
   filePreviewUrl: null,
+  fileName: null,
+  fileType: null,
+  fileSize: null,
   analysisResult: null,
   leadId: null,
   isModalOpen: false,
@@ -172,13 +181,18 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
     if (!persisted) return;
 
     if (persisted.phase === 'analyzing' && persisted.leadId) {
+      const recoveredName = persisted.fileName ?? null;
+      const nameSnippet = recoveredName ? ` of **${recoveredName}**` : '';
       // Lost file on refresh but have lead — show re-upload message
       setState(prev => ({
         ...prev,
         phase: 'idle',
         leadId: persisted.leadId,
         scanAttemptId: persisted.scanAttemptId,
-        recoveryMessage: 'We lost your upload due to a browser refresh. Please re-upload to regenerate your report.',
+        fileName: recoveredName,
+        fileType: persisted.fileType ?? null,
+        fileSize: persisted.fileSize ?? null,
+        recoveryMessage: `We lost your upload${nameSnippet} due to a browser refresh. Please re-upload to regenerate your report.`,
       }));
     } else {
       // Locked with no lead or unknown — clean idle
@@ -197,6 +211,9 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
       phase: 'uploaded',
       file,
       filePreviewUrl: previewUrl,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
       scanAttemptId,
       isModalOpen: true,
     });
@@ -218,7 +235,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
     }));
 
     if (state.scanAttemptId) {
-      persistState({ phase: 'locked', leadId: null, scanAttemptId: state.scanAttemptId });
+      persistState({ phase: 'locked', leadId: null, scanAttemptId: state.scanAttemptId, fileName: state.fileName, fileType: state.fileType, fileSize: state.fileSize });
     }
 
     trackEvent('quote_upload_gate_dismissed', {
@@ -264,7 +281,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
 
       // 2. Persist before analysis (Safari resilience)
       if (state.scanAttemptId) {
-        persistState({ phase: 'analyzing', leadId: capturedLeadId, scanAttemptId: state.scanAttemptId });
+        persistState({ phase: 'analyzing', leadId: capturedLeadId, scanAttemptId: state.scanAttemptId, fileName: state.fileName, fileType: state.fileType, fileSize: state.fileSize });
       }
 
       // 3. Transition to analyzing
