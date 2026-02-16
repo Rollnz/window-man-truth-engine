@@ -159,7 +159,7 @@ export function UploadZoneXRay({
               fileType={fileType}
               fileSize={fileSize}
               className={cn(
-                "w-full h-full object-contain transition-all duration-1000",
+                "h-full max-h-[420px] w-auto aspect-[3/4] mx-auto transition-all duration-1000",
                 isRevealed ? "" : "blur-lg"
               )}
             />
@@ -299,7 +299,7 @@ export function UploadZoneXRay({
       case 'revealed':
         // Full results visible
         return (
-          <Card className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-auto">
+          <Card className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-visible">
             {scannerResult && <FullResultsPanel result={scannerResult} />}
           </Card>);
 
@@ -462,7 +462,7 @@ export function UploadZoneXRay({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto items-start">
           {/* LEFT: Quote with Callouts / Blurred Upload */}
           <div className="relative">
             {renderLeftPanel()}
