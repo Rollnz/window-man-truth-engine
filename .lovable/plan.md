@@ -1,134 +1,72 @@
 
 
-# Fix log-event 401: Server-Side Auth Mismatch
+# Playwright E2E Test Suite: Scanner Flow and Log Event Fixes
 
-## Root Cause (NOT what the Stack Overflow suggestion says)
+## Overview
 
-The client-side header logic is already correct. The 401 happens **server-side** in `supabase/functions/log-event/index.ts`.
+Create `e2e/scanner-flow.spec.ts` with 4 test scenarios verifying the gated scanner funnel, log-event 401 fix, gating security, state cleanup, and 409 session conflict handling.
 
-At line 223, the server does:
-```
-const expectedAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-```
+## Test Architecture
 
-Then compares it to the `apikey` header. This comparison fails because the manually-set `SUPABASE_ANON_KEY` secret likely doesn't match the actual project anon key. Direct testing confirms: sending the correct anon key in both `apikey` and `Authorization` headers still returns 401.
+All tests target `/ai-scanner` (the QuoteScanner page). The page uses a state machine with phases: `idle` -> `uploaded` -> `locked` -> `analyzing` -> `revealed`. Key UI selectors are derived from the existing page markup (Lock icon, "Upload a Different Quote" link, lead modal, etc.).
 
-## Fix (Two Parts)
+A dummy PDF will be generated inline using a minimal valid PDF buffer (no external fixture files needed).
 
-### Part 1: Server-side (the actual fix)
+## Test Scenarios
 
-**File: `supabase/functions/log-event/index.ts`** (lines 218-241)
+### Test 1: Happy Path (Log Event 200 Verification)
+- Navigate to `/ai-scanner`
+- Generate a minimal dummy PDF in-memory and upload via the file input
+- Wait for the lead modal to appear (look for the modal content/form)
+- Fill in First Name, Last Name, Email, Phone fields
+- Check the SMS consent checkbox
+- Submit the form
+- Use `page.waitForResponse` to intercept the `log-event` call and assert status 200
+- Assert that a `quote-scanner` network call is made exactly once after submission
 
-Make the anon key validation more robust. Instead of only comparing against `SUPABASE_ANON_KEY`, also try creating a Supabase client with the provided key to verify it works. This eliminates the fragile env-var-mismatch problem.
+### Test 2: Security Check (No Analysis Before Lead Capture)
+- Navigate to `/ai-scanner`
+- Set up a request listener for `quote-scanner` calls
+- Upload a dummy PDF
+- Wait for modal to appear
+- Assert zero `quote-scanner` requests were made
+- Close the modal (click the X or "No thanks" link)
+- Assert the "locked" phase UI is visible: "Your report is ready to unlock" text and the blurred preview container
 
-Replace the auth block with:
+### Test 3: Abandon and Reset
+- Upload a file, close modal to reach "locked" state
+- Click "Upload a Different Quote" link
+- Assert the UI returns to idle state (upload zone visible, Lock placeholder with "Upload your quote to get started")
+- Upload a second file
+- Assert the lead modal reopens
 
-```text
-const providedSecret = req.headers.get("x-wm-log-secret");
-const expectedSecret = Deno.env.get("WM_LOG_SECRET");
-const authHeader = req.headers.get("authorization");
-const apiKeyHeader = req.headers.get("apikey");
+### Test 4: Session Conflict (409 Suppression)
+- Listen to `page.on('console')` for any messages containing "409" or "duplicate key"
+- Navigate to `/ai-scanner`
+- Wait for page to fully load and settle (network idle)
+- Assert no console errors contain 409-related messages (the 409 from `wm_sessions` INSERT is expected but should be handled gracefully without console.error)
 
-const expectedAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+## Technical Details
 
-const secretValid = expectedSecret && providedSecret && providedSecret === expectedSecret;
+### File: `e2e/scanner-flow.spec.ts`
 
-// Primary check: exact match with env var
-let anonKeyValid = !!(
-  expectedAnonKey && (apiKeyHeader === expectedAnonKey || authHeader === `Bearer ${expectedAnonKey}`)
-);
+Dependencies: `@playwright/test` (already installed)
 
-// Fallback: if env var comparison fails, verify the provided key
-// can create a valid Supabase client (handles stale/mismatched secrets)
-if (!anonKeyValid && apiKeyHeader) {
-  try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    if (supabaseUrl) {
-      const testClient = createClient(supabaseUrl, apiKeyHeader);
-      // If createClient doesn't throw, the key format is valid
-      // Verify it's actually the project's anon key by making a lightweight query
-      const { error } = await testClient.from("wm_sessions").select("id").limit(0);
-      anonKeyValid = !error;
-    }
-  } catch {
-    // Key is invalid, anonKeyValid stays false
-  }
-}
+Helpers:
+- `createDummyPDF()`: Returns a `Buffer` with a minimal valid PDF (header + empty page + xref + trailer) -- roughly 200 bytes
+- `uploadFile(page, buffer, filename)`: Uses `page.setInputFiles` on the file input with the buffer
+- `fillLeadForm(page, data)`: Fills the modal form fields and submits
 
-if (!secretValid && !anonKeyValid) {
-  console.warn("[log-event] Auth failed:", {
-    hasSecretHeader: !!providedSecret,
-    hasApiKey: !!apiKeyHeader,
-    hasAuthHeader: !!authHeader,
-    expectedAnonKeySet: !!expectedAnonKey,
-    apiKeyMatchesExpected: apiKeyHeader === expectedAnonKey,
-  });
-  return new Response(JSON.stringify({ error: "Unauthorized" }), {
-    status: 401,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-```
+Network interception:
+- `page.waitForResponse(url => url.includes('log-event'))` for log-event assertions
+- `page.route('**/quote-scanner', ...)` or request counting for security check
 
-Key changes:
-- Added fallback validation: if the env var comparison fails, verify the key by attempting a real (no-cost) query
-- Enhanced logging: added `expectedAnonKeySet` and `apiKeyMatchesExpected` to diagnose mismatches
-- This makes the auth resilient to secret-value drift
+Timeouts: 30s default per test (scanner analysis can take up to 60s, but tests 2-4 don't wait for analysis completion).
 
-### Part 2: Client-side (defensive improvement)
-
-**File: `src/lib/highValueSignals.ts`** (lines 179-195)
-
-Change from either/or to always-send-apikey. This way if `WM_LOG_SECRET` is ever configured client-side, it sends BOTH auth methods:
-
-```text
-const logSecret = import.meta.env.VITE_WM_LOG_SECRET as string | undefined;
-const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-
-const headers: Record<string, string> = {
-  'Content-Type': 'application/json',
-};
-
-// Always attach apikey if available (belt and suspenders)
-if (anonKey) {
-  headers['apikey'] = anonKey;
-  headers['Authorization'] = `Bearer ${anonKey}`;
-}
-
-// Also attach secret header if available (preferred auth path)
-if (logSecret) {
-  headers['X-WM-LOG-SECRET'] = logSecret;
-}
-
-// If neither key is available, drop the signal
-if (!anonKey && !logSecret) {
-  console.error('[highValueSignals] CRITICAL: No auth key available. Signal dropped:', eventName);
-  return;
-}
-```
-
-This ensures the apikey header is always sent, regardless of whether the log secret is also present.
-
-## Files Changed
-
-| File | Change |
-|------|--------|
-| `supabase/functions/log-event/index.ts` | Add fallback anon key validation + enhanced error logging |
-| `src/lib/highValueSignals.ts` | Send apikey unconditionally instead of either/or |
-
-## Why the Stack Overflow Suggestion Alone Is Insufficient
-
-The suggested fix only restructures the client-side header logic. But the client is already sending the correct headers (confirmed via network inspection). The 401 originates from the server rejecting a valid anon key because `Deno.env.get("SUPABASE_ANON_KEY")` returns a mismatched value.
-
-## Will This Restore Analytics Signals?
-
-Yes. Once the server-side auth accepts the valid anon key, all `logHighValueSignal` calls (scanner_upload_completed, booking_confirmed, voice_estimate_confirmed) will successfully write to `wm_event_log`.
-
-## Acceptance Test
-
-1. Deploy the updated `log-event` edge function
-2. Open /ai-scanner in incognito
-3. Upload a quote and submit lead form
-4. Check edge function logs: should show "Auth succeeded via: anon-key" (not 401)
-5. Verify `wm_event_log` has new entries via backend query
+### Key Selectors (from page source)
+- Upload zone file input: `input[type="file"]` or `[data-testid]` if available
+- Lead modal: Dialog content with form fields
+- "Upload a Different Quote": `button` or `a` containing that text
+- Locked state: Text "Your report is ready to unlock"
+- Idle state: Text "Upload your quote to get started"
 
