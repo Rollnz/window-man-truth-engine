@@ -1,159 +1,100 @@
 
 
-# Fix Broken "Before" Card: Smart FilePreviewCard (Revised)
+# Add "Ask the AI Expert" Chat to /audit Page (Post-Analysis)
 
-## Summary
+## Overview
 
-Replace raw `<img>` tags that break on PDF uploads with a smart `FilePreviewCard` component across all three render sites: the locked/analyzing "Before" block in QuoteScanner, the AnalysisTheaterScreen, and the UploadZoneXRay left panel on /audit.
+Add a multi-turn chat section to the `/audit` page that appears after the analysis is revealed. Positioned between the `UploadZoneXRay` (scanner grid) and the `HowItWorksXRay` section, it captures high-intent users who just received their report and have follow-up questions -- maximizing engagement and conversion before they scroll to lower-priority content.
 
----
+## What the User Sees
 
-## All 6 Gaps Addressed
+After uploading a quote, completing the lead form, and receiving their gradecard:
 
-### Gap 1: AnalysisTheaterScreen (third blob preview)
+1. A new full-width section fades in below the scanner grid: **"Got Questions About Your Report?"**
+2. Four context-aware suggested question chips (derived from their actual analysis results -- e.g., "What should I do about the red flags?" only appears if warnings exist)
+3. Clicking a chip or typing a question sends it to the AI, which responds with context from their specific quote
+4. Full message history is preserved in the thread (multi-turn, scrollable)
+5. The section is invisible in idle/uploaded/analyzing phases -- zero layout shift
 
-`AnalysisTheaterScreen` (line 35-39) renders `previewUrl` in an `<img>` -- breaks for PDFs. Will update its props to accept `fileName` and `fileType`, and replace the `<img>` with `FilePreviewCard`. QuoteScanner.tsx line 221 will pass the new props.
+## Technical Plan
 
-### Gap 2: File size after refresh
+### 1. Add Q&A to `useGatedScanner` hook
 
-`fileSize` will be persisted alongside `fileName`/`fileType` in sessionStorage. `FilePreviewCard` accepts an optional `fileSize?: number` prop so it can display size even when the `File` object is gone.
+The hook currently has no Q&A capability. The edge function already supports `mode: 'question'` with `analysisContext` + `imageBase64` + `mimeType`. Add:
 
-### Gap 3: Post-refresh placeholder location
+- `isAskingQuestion: boolean` state
+- `qaAnswer: string | null` state (latest answer, for the chat component to watch)
+- `imageBase64` + `mimeType` stored during analysis (currently discarded after the API call)
+- `askQuestion(question: string)` callback that calls `heavyAIRequest.sendRequest('quote-scanner', { mode: 'question', ... })`
 
-On refresh, `useGatedAIScanner` sets phase to `idle` and shows `recoveryMessage`. The upload zone is shown in idle phase, so there's no "Before" card rendered. Decision: **no placeholder card is shown after refresh** -- the recovery message text strip (lines 114-118 in QuoteScanner.tsx) is sufficient. The persisted `fileName`/`fileType` will be used to enrich the recovery message text (e.g. "We lost your upload of **window-quote.pdf** due to a browser refresh.") instead of rendering a separate card.
+This mirrors the existing pattern in `useQuoteScanner.ts` (lines 340-380).
 
-### Gap 4: Backward compatibility for persisted state
+### 2. New Component: `src/components/audit/AuditExpertChat.tsx`
 
-`readPersistedState()` will read with fallbacks: `fileName ?? null`, `fileType ?? null`, `fileSize ?? null`. Old payloads without these keys will not break.
+A self-contained chat section with:
 
-### Gap 5: Image detection when File is missing
+- **Props**: `onAsk`, `isAsking`, `latestAnswer`, `analysisResult` (for suggested questions)
+- **Internal state**: `messages: Array<{ role: 'user' | 'assistant'; content: string }>` -- accumulates conversation history
+- **Suggested questions**: 4 context-aware chips based on the analysis result:
+  - If `warnings.length > 0`: "What should I do about the red flags you found?"
+  - If `pricePerOpening` exists: "Is my price per window fair for my area?"
+  - If `missingItems.length > 0`: "What are the risks of these missing items?"
+  - Always: "How should I negotiate with this contractor?"
+- Chips disappear after first message (replaced by the growing thread)
+- Reuses `ChatMessage` from `src/components/expert/ChatMessage.tsx` for message bubbles
+- Reuses `ChatInput` pattern (Textarea + Send button) for the input bar
+- Auto-scrolls to bottom on new messages
+- Dark theme styling consistent with the /audit page (slate-900 bg, cyan/primary accents)
 
-The component uses `fileType` (string prop) as the source of truth when `file` is null. Logic: `const isImage = (file?.type || fileType || '').startsWith('image/') && !!previewUrl && !imageError`. Explicit and unambiguous.
+### 3. Update `src/pages/Audit.tsx`
 
-### Gap 6: Accessibility
+- Import `AuditExpertChat` (lazy loaded)
+- Place it between `UploadZoneXRay` and `HowItWorksXRay`
+- Conditionally render only when `scanner.phase === 'revealed'` and `scanner.result` exists
+- Pass `scanner.askQuestion`, `scanner.isAskingQuestion`, `scanner.qaAnswer`, `scanner.result`
 
-The document placeholder will have `role="img"` and `aria-label="Document preview: {filename}"`. The `<img>` tag already has `alt` text.
+## Layout (Post-Reveal)
 
----
+```text
+[UploadZoneXRay - Before/After scanner grid]
+              |
+  (only when phase === 'revealed')
+              |
+[====== Ask the AI Expert Section ======]
+|  "Got Questions About Your Report?"   |
+|  subtitle text                        |
+|                                       |
+|  [chip] [chip] [chip] [chip]         |
+|                                       |
+|  +--- Message Thread (scroll) ---+   |
+|  | [You] Is the permit included?  |  |
+|  | [Expert] Based on your quote...|  |
+|  +-------------------------------+   |
+|                                       |
+|  [ Ask about your quote...  [Send] ] |
+[=======================================]
+              |
+[HowItWorksXRay]
+[BeatOrValidateSection]
+...
+```
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/ui/FilePreviewCard.tsx` | **New** -- smart preview component |
-| `src/hooks/useGatedAIScanner.ts` | Add `fileName`, `fileType`, `fileSize` to state + persistence + recovery |
-| `src/hooks/audit/useGatedScanner.ts` | Expose `fileName`, `fileType`, `fileSize` from state (no persistence) |
-| `src/components/quote-scanner/AnalysisTheaterScreen.tsx` | Accept `fileName`/`fileType`/`fileSize` props, use `FilePreviewCard` |
-| `src/pages/QuoteScanner.tsx` | Pass new props to AnalysisTheaterScreen + use FilePreviewCard in locked/analyzing block + enrich recovery message |
-| `src/components/audit/UploadZoneXRay.tsx` | Accept `fileName`/`fileType`/`fileSize` props, use `FilePreviewCard` in left panel |
-| `src/pages/Audit.tsx` | Pass `scanner.fileName`, `scanner.fileType`, `scanner.fileSize` to UploadZoneXRay |
-
----
-
-## Technical Details
-
-### FilePreviewCard.tsx
-
-```text
-Props:
-  file?: File | null          -- live File object (if available)
-  previewUrl?: string | null  -- blob URL
-  fileName?: string           -- fallback from sessionStorage
-  fileType?: string           -- fallback MIME type
-  fileSize?: number           -- fallback size in bytes
-  className?: string
-
-Behavior:
-  name = file?.name || fileName || "Document"
-  type = file?.type || fileType || ""
-  size = file?.size || fileSize || 0
-  isImage = type.startsWith("image/") && !!previewUrl && !imageError
-
-  Image path: <img> with onError -> setImageError(true) -> falls back to document path
-  Document path: portrait container (aspect-[3/4]), FileText icon (cyan-400),
-                 truncated filename, type badge + size
-  Accessibility: role="img", aria-label="Document preview: {name}"
-```
-
-### useGatedAIScanner.ts changes
-
-1. Extend `PersistedState` interface:
-   ```text
-   interface PersistedState {
-     phase: 'locked' | 'analyzing';
-     leadId: string | null;
-     scanAttemptId: string;
-     fileName?: string | null;   // NEW
-     fileType?: string | null;   // NEW
-     fileSize?: number | null;   // NEW
-   }
-   ```
-
-2. Extend `GatedAIScannerState`:
-   ```text
-   fileName: string | null;
-   fileType: string | null;
-   fileSize: number | null;
-   ```
-
-3. In `handleFileSelect`: populate from `file.name`, `file.type`, `file.size`.
-
-4. In `persistState` calls (closeModal + captureLead): include `fileName`, `fileType`, `fileSize` from state.
-
-5. In mount recovery `useEffect`: read with fallbacks (`persisted.fileName ?? null`). Enrich `recoveryMessage` with filename if available: `"We lost your upload of {fileName}..."`.
-
-6. Expose `fileName`, `fileType`, `fileSize` in return type.
-
-### useGatedScanner.ts changes (audit hook)
-
-1. Add `fileName: string | null`, `fileType: string | null`, `fileSize: number | null` to `GatedScannerState`.
-2. Populate in `handleFileSelect` from `file.name`, `file.type`, `file.size`.
-3. Add to `INITIAL_STATE` as `null`.
-4. Expose in return. No sessionStorage persistence (audit hook doesn't use it).
-
-### AnalysisTheaterScreen.tsx changes
-
-1. Extend props:
-   ```text
-   interface AnalysisTheaterScreenProps {
-     previewUrl?: string | null;
-     fileName?: string;
-     fileType?: string;
-     fileSize?: number;
-   }
-   ```
-
-2. Replace lines 33-41 (the `<img>` block) with `<FilePreviewCard>` passing all props. Keep the outer wrapper div with blur + overlay.
-
-### QuoteScanner.tsx changes
-
-1. **Lines 133-146** (locked/analyzing block): Replace raw `<img>` with `<FilePreviewCard file={gated.file} previewUrl={gated.filePreviewUrl} fileName={gated.fileName} fileType={gated.fileType} fileSize={gated.fileSize} className="w-full h-64" />`.
-
-2. **Line 221** (AnalysisTheaterScreen): Add props `fileName={gated.fileName} fileType={gated.fileType} fileSize={gated.fileSize}`.
-
-3. **Lines 114-118** (recovery message): If `gated.fileName` exists, include it in the message: "We lost your upload of **{fileName}**...".
-
-### UploadZoneXRay.tsx changes
-
-1. Add to props interface: `fileName?: string`, `fileType?: string`, `fileSize?: number`.
-
-2. In `renderLeftPanel()` lines 148-155: Replace raw `<img>` with `<FilePreviewCard previewUrl={filePreviewUrl} fileName={fileName} fileType={fileType} fileSize={fileSize} />`. Keep existing blur/overlay logic on the wrapper.
-
-### Audit.tsx changes
-
-1. Pass three new props to `UploadZoneXRay`: `fileName={scanner.fileName}`, `fileType={scanner.fileType}`, `fileSize={scanner.fileSize}`.
-
----
+| `src/hooks/audit/useGatedScanner.ts` | Add `askQuestion`, `isAskingQuestion`, `qaAnswer`, persist `imageBase64`/`mimeType` from analysis |
+| `src/components/audit/AuditExpertChat.tsx` | **New** -- full chat section with message history, suggested questions, auto-scroll |
+| `src/pages/Audit.tsx` | Add lazy-loaded `AuditExpertChat` between scanner grid and HowItWorksXRay (revealed phase only) |
 
 ## Edge Cases
 
 | Scenario | Behavior |
 |----------|----------|
-| PDF upload | Document placeholder with icon, filename, size badge |
-| Image upload | Normal `<img>` (existing behavior preserved) |
-| Blob URL revoked | `onError` fires, auto-fallback to document placeholder |
-| Page refresh (File lost) | `fileName`/`fileType`/`fileSize` restored from sessionStorage; recovery message includes filename; no card rendered (idle phase shows upload zone) |
-| Old sessionStorage payload missing new keys | Read with `?? null` fallback; recovery works with generic "your upload" text |
-| AnalysisTheaterScreen with PDF | Document placeholder inside blur container (no broken image) |
-| Very long filename | Truncated with `truncate` class |
+| No analysis yet (idle/uploaded/analyzing) | Chat section not rendered |
+| Analysis has no warnings/missing items | Suggested questions fall back to generic set |
+| Error from AI | Toast shown (existing pattern), message not added to thread |
+| Mobile | Full-width, chips stack to single column, thread scrolls naturally |
+| Multiple questions | Full conversation history preserved in scrollable container |
+| Page refresh after reveal | Analysis result is in sessionStorage but imageBase64 is lost -- Q&A still works using `analysisContext` alone (image is optional for follow-up questions) |
 
