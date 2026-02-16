@@ -19,6 +19,7 @@ const NoQuoteEscapeHatch = lazy(() => import('@/components/audit/NoQuoteEscapeHa
 const VaultSection = lazy(() => import('@/components/audit/VaultSection').then(m => ({ default: m.VaultSection })));
 const TestimonialCards = lazy(() => import('@/components/TestimonialCards').then(m => ({ default: m.TestimonialCards })));
 const ProblemAgitationSection = lazy(() => import('@/components/audit/ProblemAgitationSection').then(m => ({ default: m.ProblemAgitationSection })));
+const AuditExpertChat = lazy(() => import('@/components/audit/AuditExpertChat').then(m => ({ default: m.AuditExpertChat })));
 
 export default function Audit() {
   const uploadRef = useRef<HTMLDivElement>(null);
@@ -91,6 +92,14 @@ export default function Audit() {
             onReset={scanner.reset}
           />
         </div>
+        {scanner.phase === 'revealed' && scanner.result && (
+          <AuditExpertChat
+            onAsk={scanner.askQuestion}
+            isAsking={scanner.isAskingQuestion}
+            latestAnswer={scanner.qaAnswer}
+            analysisResult={scanner.result}
+          />
+        )}
         <HowItWorksXRay onScanClick={scrollToUpload} />
         <BeatOrValidateSection />
         <RedFlagGallery />

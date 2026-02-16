@@ -42,6 +42,11 @@ interface GatedScannerState {
   isLoading: boolean;
   error: string | null;
   scanAttemptId: string | null;
+  // Q&A state
+  imageBase64: string | null;
+  imageMimeType: string | null;
+  isAskingQuestion: boolean;
+  qaAnswer: string | null;
 }
 
 interface UseGatedScannerReturn extends GatedScannerState {
@@ -53,6 +58,8 @@ interface UseGatedScannerReturn extends GatedScannerState {
   reopenModal: () => void;
   /** Capture lead and start analysis */
   captureLead: (data: ExplainScoreFormData) => Promise<void>;
+  /** Ask a follow-up question about the analysis */
+  askQuestion: (question: string) => Promise<void>;
   /** Reset to initial state */
   reset: () => void;
 }
@@ -135,6 +142,10 @@ const INITIAL_STATE: GatedScannerState = {
   isLoading: false,
   error: null,
   scanAttemptId: null,
+  imageBase64: null,
+  imageMimeType: null,
+  isAskingQuestion: false,
+  qaAnswer: null,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -320,12 +331,14 @@ export function useGatedScanner(): UseGatedScannerReturn {
       // Save result to session
       updateField('quoteAnalysisResult', resultWithTimestamp);
 
-      // 4. Transition to revealed phase
+      // 4. Transition to revealed phase + persist image for Q&A
       setState(prev => ({
         ...prev,
         phase: 'revealed',
         result: resultWithTimestamp,
         isLoading: false,
+        imageBase64: base64,
+        imageMimeType: mimeType,
       }));
 
     } catch (err) {
@@ -347,6 +360,45 @@ export function useGatedScanner(): UseGatedScannerReturn {
   }, [state.file, state.scanAttemptId, submitLead, sessionData.windowCount, sessionId, existingLeadId, awardScore, updateField, toast]);
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // ASK QUESTION (Q&A about the analysis)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const askQuestion = useCallback(async (question: string) => {
+    if (!state.result || !question.trim()) return;
+
+    setState(prev => ({ ...prev, isAskingQuestion: true, qaAnswer: null }));
+
+    try {
+      const { data, error: requestError } = await heavyAIRequest.sendRequest<{ content?: string; error?: string }>(
+        'quote-scanner',
+        {
+          mode: 'question',
+          question,
+          analysisContext: state.result,
+          imageBase64: state.imageBase64,
+          mimeType: state.imageMimeType,
+        }
+      );
+
+      if (requestError) throw requestError;
+      if (data?.error) throw new Error(data.error);
+
+      setState(prev => ({ ...prev, qaAnswer: data?.content || null, isAskingQuestion: false }));
+    } catch (err) {
+      console.error('Audit Q&A error:', err);
+      const message = getErrorMessage(err);
+
+      setState(prev => ({ ...prev, isAskingQuestion: false }));
+
+      toast({
+        title: message.includes('timed out') ? 'Request Timed Out' : 'Question Failed',
+        description: message,
+        variant: 'destructive',
+      });
+    }
+  }, [state.result, state.imageBase64, state.imageMimeType, toast]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // RESET
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -366,6 +418,7 @@ export function useGatedScanner(): UseGatedScannerReturn {
     closeModal,
     reopenModal,
     captureLead,
+    askQuestion,
     reset,
   };
 }
