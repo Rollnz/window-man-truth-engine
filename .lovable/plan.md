@@ -1,77 +1,95 @@
 
 
-# Fix Card Height Mismatch: Corrected CSS + Full-Height After Card
+# Add Rotating Value Props to /audit Scanner Section + 5 CRO Upgrades
 
-## Problem
+## Placement
 
-Two issues after upload + analysis:
+Inside `UploadZoneXRay.tsx`, between the subtitle paragraph (line 446-449) and the Before/After column labels grid (line 452). This is the "decision zone" -- the last thing a user reads before deciding whether to upload.
 
-1. **Left "Before" card inflates** -- `FilePreviewCard` renders a `<div>` (not an `<img>`) for PDF placeholders, so `object-contain` is ignored. The `w-full` + `aspect-[3/4]` combo forces the height to `width * 1.33` (~667px), blowing up the card.
-2. **Right "After" card is cramped** -- `overflow-auto` and `min-h-[500px]` force the results into a small scrollable box instead of letting the report flow naturally at full height.
+## 5 CRO Improvements Over the /ai-scanner Version
 
-## Fix 1: FilePreviewCard sizing in the left panel (lines 155-165)
+### 1. Urgency-First Ordering
+Reorder VALUE_PROPS so the highest-converting messages rotate first. Lead with loss aversion ("80% contain hidden errors"), then social proof ("only unbiased review"), then empowerment ("negotiate with facts"). Current order buries the strongest hooks.
 
-**Current (broken):**
+### 2. Audit-Specific Copy
+Swap generic scanner language for audit-specific phrasing that matches the page's "X-Ray" theme. E.g., "Translates Contractor Jargon" becomes "Our AI X-Ray decodes contractor jargon into plain English red flags." Matches the visual metaphor users already see.
+
+### 3. Icon-Enhanced Chips Instead of Plain Text
+Instead of a single rotating line of text, render the current value prop as a styled chip/badge with the emoji as a colored icon element (not raw emoji). This gives it visual weight and stops it from looking like a disclaimer. Chips feel clickable and premium.
+
+### 4. Fade-Up Entry Animation Tied to Scroll
+The current version only fades in/out on a timer. Add an initial `AnimateOnScroll` wrapper so the prop line fades up from invisible as the section enters the viewport -- giving it a "reveal" moment that draws the eye. After the initial reveal, the rotation timer kicks in.
+
+### 5. Progress Dots / Count Indicator
+Add small dot indicators below the text (like carousel dots) showing which of the 7 props is active. This creates implicit "there's more" curiosity and keeps users watching longer. Each dot lights up as the prop rotates, adding micro-interaction without distraction.
+
+## Technical Plan
+
+### Extract Shared Code
+Create `src/components/ui/RotatingValueProp.tsx` with `VALUE_PROPS`, `renderHighlighted`, and the `RotatingValueProp` component extracted from `ScanPipelineStrip.tsx`. Both pages import from the shared file. This avoids code duplication.
+
+The shared component accepts:
+- `active: boolean` -- controls timer start
+- `variant?: 'light' | 'dark'` -- light for /ai-scanner, dark for /audit (slate bg)
+- `showDots?: boolean` -- enables the progress dot indicators (CRO #5)
+
+### Update UploadZoneXRay.tsx
+
+Import `RotatingValueProp` and place it after the subtitle `<p>` tag (line 449) and before the Before/After labels grid (line 452):
+
 ```
-className="w-full h-full object-contain ..."
-```
+<p className="text-lg text-slate-400 ...">
+  Stop guessing... before you sign.
+</p>
 
-**Corrected:**
-```
-className="h-full max-h-[420px] w-auto aspect-[3/4] mx-auto ..."
-```
+{/* NEW: Rotating value propositions */}
+<RotatingValueProp active={true} variant="dark" showDots />
 
-Why this works:
-- `h-full max-h-[420px]` -- height fills parent but caps at 420px
-- `w-auto` -- width is calculated FROM the capped height via aspect ratio (420 * 0.75 = 315px)
-- `aspect-[3/4]` -- maintains the portrait document shape without distortion
-- `mx-auto` -- centers the narrower card in the column
-- `object-contain` removed -- it's a no-op on `<div>` elements
-
-## Fix 2: Right "After" card fully expands in revealed state (line 302)
-
-**Current:**
-```
-className="... min-h-[500px] overflow-auto"
-```
-
-**Changed to:**
-```
-className="... min-h-[500px] overflow-visible"
-```
-
-Remove internal scrolling. The card grows to fit ALL report content. The user scrolls the page normally from the browser scrollbar -- no awkward card-level scroll.
-
-## Fix 3: Grid alignment (line 465)
-
-Add `items-start` (not `items-stretch`) to the grid. This way:
-- The left "Before" card stays compact at its natural height
-- The right "After" card can grow taller than the left without forcing the left to match
-- No empty whitespace problem from stretching
-
-**Current:**
-```
-className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto"
+<div className="grid grid-cols-1 lg:grid-cols-2 ...">
+  {/* Before / After labels */}
 ```
 
-**Changed to:**
+### Update ScanPipelineStrip.tsx
+
+Replace the inline `VALUE_PROPS`, `renderHighlighted`, and `RotatingValueProp` with an import from the shared file. No visual change on /ai-scanner.
+
+### Updated VALUE_PROPS (Audit-Optimized Order + Copy)
+
+```typescript
+const VALUE_PROPS = [
+  "{80%} of quotes contain hidden errors. Find yours before you sign.",
+  "The only {unbiased}, non-commissioned review in the industry.",
+  "100% {Private} — Your contractor will never know you scanned this.",
+  "Our AI X-Ray decodes contractor jargon into plain English {red flags}.",
+  "Shift the power dynamic. Negotiate with {facts}, not feelings.",
+  "Faster (and more accurate) than getting a {second opinion}.",
+  "See exactly what your contractor is hoping you {won't notice}.",
+];
 ```
-className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto items-start"
+
+### Dot Indicators
+
+Below the rotating text, render 7 small circles. The active one uses `bg-primary`, the rest use `bg-slate-700`. Transition opacity on change. Total height: ~8px, no layout shift.
+
+```tsx
+<div className="flex justify-center gap-1.5 mt-2">
+  {VALUE_PROPS.map((_, i) => (
+    <div
+      key={i}
+      className={cn(
+        "w-1.5 h-1.5 rounded-full transition-colors duration-300",
+        i === index ? "bg-primary" : "bg-slate-700"
+      )}
+    />
+  ))}
+</div>
 ```
 
 ## Files Changed
 
-| File | Lines | Change |
-|------|-------|--------|
-| `src/components/audit/UploadZoneXRay.tsx` | 155-165 | Fix FilePreviewCard className: `h-full max-h-[420px] w-auto aspect-[3/4] mx-auto` (remove `w-full`, `object-contain`) |
-| `src/components/audit/UploadZoneXRay.tsx` | 302 | Change `overflow-auto` to `overflow-visible` on revealed Card |
-| `src/components/audit/UploadZoneXRay.tsx` | 465 | Add `items-start` to grid container |
-
-## Result
-
-| Before fix | After fix |
-|-----------|-----------|
-| Left card: ~667px (aspect ratio inflates uncapped width) | Left card: ~420px max, centered portrait shape |
-| Right card: fixed-height with internal scroll | Right card: expands fully, no internal scroll |
-| Grid columns: implicit stretch | Grid columns: `items-start`, each card at natural height |
+| File | Change |
+|------|--------|
+| `src/components/ui/RotatingValueProp.tsx` | **New** -- extracted shared component with VALUE_PROPS, renderHighlighted, dot indicators, dark/light variant |
+| `src/components/audit/UploadZoneXRay.tsx` | Import and place `RotatingValueProp` between subtitle and Before/After grid |
+| `src/components/quote-scanner/ScanPipelineStrip.tsx` | Replace inline VALUE_PROPS/RotatingValueProp with import from shared component |
 
