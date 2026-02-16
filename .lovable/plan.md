@@ -1,100 +1,77 @@
 
 
-# Add "Ask the AI Expert" Chat to /audit Page (Post-Analysis)
+# Fix Card Height Mismatch: Corrected CSS + Full-Height After Card
 
-## Overview
+## Problem
 
-Add a multi-turn chat section to the `/audit` page that appears after the analysis is revealed. Positioned between the `UploadZoneXRay` (scanner grid) and the `HowItWorksXRay` section, it captures high-intent users who just received their report and have follow-up questions -- maximizing engagement and conversion before they scroll to lower-priority content.
+Two issues after upload + analysis:
 
-## What the User Sees
+1. **Left "Before" card inflates** -- `FilePreviewCard` renders a `<div>` (not an `<img>`) for PDF placeholders, so `object-contain` is ignored. The `w-full` + `aspect-[3/4]` combo forces the height to `width * 1.33` (~667px), blowing up the card.
+2. **Right "After" card is cramped** -- `overflow-auto` and `min-h-[500px]` force the results into a small scrollable box instead of letting the report flow naturally at full height.
 
-After uploading a quote, completing the lead form, and receiving their gradecard:
+## Fix 1: FilePreviewCard sizing in the left panel (lines 155-165)
 
-1. A new full-width section fades in below the scanner grid: **"Got Questions About Your Report?"**
-2. Four context-aware suggested question chips (derived from their actual analysis results -- e.g., "What should I do about the red flags?" only appears if warnings exist)
-3. Clicking a chip or typing a question sends it to the AI, which responds with context from their specific quote
-4. Full message history is preserved in the thread (multi-turn, scrollable)
-5. The section is invisible in idle/uploaded/analyzing phases -- zero layout shift
+**Current (broken):**
+```
+className="w-full h-full object-contain ..."
+```
 
-## Technical Plan
+**Corrected:**
+```
+className="h-full max-h-[420px] w-auto aspect-[3/4] mx-auto ..."
+```
 
-### 1. Add Q&A to `useGatedScanner` hook
+Why this works:
+- `h-full max-h-[420px]` -- height fills parent but caps at 420px
+- `w-auto` -- width is calculated FROM the capped height via aspect ratio (420 * 0.75 = 315px)
+- `aspect-[3/4]` -- maintains the portrait document shape without distortion
+- `mx-auto` -- centers the narrower card in the column
+- `object-contain` removed -- it's a no-op on `<div>` elements
 
-The hook currently has no Q&A capability. The edge function already supports `mode: 'question'` with `analysisContext` + `imageBase64` + `mimeType`. Add:
+## Fix 2: Right "After" card fully expands in revealed state (line 302)
 
-- `isAskingQuestion: boolean` state
-- `qaAnswer: string | null` state (latest answer, for the chat component to watch)
-- `imageBase64` + `mimeType` stored during analysis (currently discarded after the API call)
-- `askQuestion(question: string)` callback that calls `heavyAIRequest.sendRequest('quote-scanner', { mode: 'question', ... })`
+**Current:**
+```
+className="... min-h-[500px] overflow-auto"
+```
 
-This mirrors the existing pattern in `useQuoteScanner.ts` (lines 340-380).
+**Changed to:**
+```
+className="... min-h-[500px] overflow-visible"
+```
 
-### 2. New Component: `src/components/audit/AuditExpertChat.tsx`
+Remove internal scrolling. The card grows to fit ALL report content. The user scrolls the page normally from the browser scrollbar -- no awkward card-level scroll.
 
-A self-contained chat section with:
+## Fix 3: Grid alignment (line 465)
 
-- **Props**: `onAsk`, `isAsking`, `latestAnswer`, `analysisResult` (for suggested questions)
-- **Internal state**: `messages: Array<{ role: 'user' | 'assistant'; content: string }>` -- accumulates conversation history
-- **Suggested questions**: 4 context-aware chips based on the analysis result:
-  - If `warnings.length > 0`: "What should I do about the red flags you found?"
-  - If `pricePerOpening` exists: "Is my price per window fair for my area?"
-  - If `missingItems.length > 0`: "What are the risks of these missing items?"
-  - Always: "How should I negotiate with this contractor?"
-- Chips disappear after first message (replaced by the growing thread)
-- Reuses `ChatMessage` from `src/components/expert/ChatMessage.tsx` for message bubbles
-- Reuses `ChatInput` pattern (Textarea + Send button) for the input bar
-- Auto-scrolls to bottom on new messages
-- Dark theme styling consistent with the /audit page (slate-900 bg, cyan/primary accents)
+Add `items-start` (not `items-stretch`) to the grid. This way:
+- The left "Before" card stays compact at its natural height
+- The right "After" card can grow taller than the left without forcing the left to match
+- No empty whitespace problem from stretching
 
-### 3. Update `src/pages/Audit.tsx`
+**Current:**
+```
+className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto"
+```
 
-- Import `AuditExpertChat` (lazy loaded)
-- Place it between `UploadZoneXRay` and `HowItWorksXRay`
-- Conditionally render only when `scanner.phase === 'revealed'` and `scanner.result` exists
-- Pass `scanner.askQuestion`, `scanner.isAskingQuestion`, `scanner.qaAnswer`, `scanner.result`
-
-## Layout (Post-Reveal)
-
-```text
-[UploadZoneXRay - Before/After scanner grid]
-              |
-  (only when phase === 'revealed')
-              |
-[====== Ask the AI Expert Section ======]
-|  "Got Questions About Your Report?"   |
-|  subtitle text                        |
-|                                       |
-|  [chip] [chip] [chip] [chip]         |
-|                                       |
-|  +--- Message Thread (scroll) ---+   |
-|  | [You] Is the permit included?  |  |
-|  | [Expert] Based on your quote...|  |
-|  +-------------------------------+   |
-|                                       |
-|  [ Ask about your quote...  [Send] ] |
-[=======================================]
-              |
-[HowItWorksXRay]
-[BeatOrValidateSection]
-...
+**Changed to:**
+```
+className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto items-start"
 ```
 
 ## Files Changed
 
-| File | Change |
-|------|--------|
-| `src/hooks/audit/useGatedScanner.ts` | Add `askQuestion`, `isAskingQuestion`, `qaAnswer`, persist `imageBase64`/`mimeType` from analysis |
-| `src/components/audit/AuditExpertChat.tsx` | **New** -- full chat section with message history, suggested questions, auto-scroll |
-| `src/pages/Audit.tsx` | Add lazy-loaded `AuditExpertChat` between scanner grid and HowItWorksXRay (revealed phase only) |
+| File | Lines | Change |
+|------|-------|--------|
+| `src/components/audit/UploadZoneXRay.tsx` | 155-165 | Fix FilePreviewCard className: `h-full max-h-[420px] w-auto aspect-[3/4] mx-auto` (remove `w-full`, `object-contain`) |
+| `src/components/audit/UploadZoneXRay.tsx` | 302 | Change `overflow-auto` to `overflow-visible` on revealed Card |
+| `src/components/audit/UploadZoneXRay.tsx` | 465 | Add `items-start` to grid container |
 
-## Edge Cases
+## Result
 
-| Scenario | Behavior |
-|----------|----------|
-| No analysis yet (idle/uploaded/analyzing) | Chat section not rendered |
-| Analysis has no warnings/missing items | Suggested questions fall back to generic set |
-| Error from AI | Toast shown (existing pattern), message not added to thread |
-| Mobile | Full-width, chips stack to single column, thread scrolls naturally |
-| Multiple questions | Full conversation history preserved in scrollable container |
-| Page refresh after reveal | Analysis result is in sessionStorage but imageBase64 is lost -- Q&A still works using `analysisContext` alone (image is optional for follow-up questions) |
+| Before fix | After fix |
+|-----------|-----------|
+| Left card: ~667px (aspect ratio inflates uncapped width) | Left card: ~420px max, centered portrait shape |
+| Right card: fixed-height with internal scroll | Right card: expands fully, no internal scroll |
+| Grid columns: implicit stretch | Grid columns: `items-start`, each card at natural height |
 
