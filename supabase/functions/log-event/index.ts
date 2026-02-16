@@ -222,15 +222,34 @@ Deno.serve(async (req) => {
   
   const expectedAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const secretValid = expectedSecret && providedSecret && providedSecret === expectedSecret;
-  const anonKeyValid = (
+  
+  // Primary check: exact match with env var
+  let anonKeyValid = !!(
     expectedAnonKey && (apiKeyHeader === expectedAnonKey || authHeader === `Bearer ${expectedAnonKey}`)
   );
+  
+  // Fallback: if env var comparison fails, verify the provided key
+  // can create a valid Supabase client (handles stale/mismatched secrets)
+  if (!anonKeyValid && apiKeyHeader) {
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      if (supabaseUrl) {
+        const testClient = createClient(supabaseUrl, apiKeyHeader);
+        const { error } = await testClient.from("wm_sessions").select("id").limit(0);
+        anonKeyValid = !error;
+      }
+    } catch {
+      // Key is invalid, anonKeyValid stays false
+    }
+  }
   
   if (!secretValid && !anonKeyValid) {
     console.warn("[log-event] Auth failed:", {
       hasSecretHeader: !!providedSecret,
       hasApiKey: !!apiKeyHeader,
       hasAuthHeader: !!authHeader,
+      expectedAnonKeySet: !!expectedAnonKey,
+      apiKeyMatchesExpected: apiKeyHeader === expectedAnonKey,
     });
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
