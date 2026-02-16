@@ -1,95 +1,96 @@
 
 
-# Add Rotating Value Props to /audit Scanner Section + 5 CRO Upgrades
+# Brighten Subtitle Text Across /audit Page
 
-## Placement
+## What You Asked For
 
-Inside `UploadZoneXRay.tsx`, between the subtitle paragraph (line 446-449) and the Before/After column labels grid (line 452). This is the "decision zone" -- the last thing a user reads before deciding whether to upload.
+Change all muted gray body/subtitle text (currently `text-slate-400`, `text-slate-300`, `text-gray-400`, `text-slate-500` used for descriptive copy) to a near-white `text-[#efefef]` so the text is actually readable against the dark backgrounds.
 
-## 5 CRO Improvements Over the /ai-scanner Version
+## Scope
 
-### 1. Urgency-First Ordering
-Reorder VALUE_PROPS so the highest-converting messages rotate first. Lead with loss aversion ("80% contain hidden errors"), then social proof ("only unbiased review"), then empowerment ("negotiate with facts"). Current order buries the strongest hooks.
+Only descriptive/subtitle text -- NOT headings (already white), NOT colored accents (orange/cyan/emerald), NOT intentionally dim metadata (timestamps, "2,847 users this week"), and NOT icon colors.
 
-### 2. Audit-Specific Copy
-Swap generic scanner language for audit-specific phrasing that matches the page's "X-Ray" theme. E.g., "Translates Contractor Jargon" becomes "Our AI X-Ray decodes contractor jargon into plain English red flags." Matches the visual metaphor users already see.
+## Every Line Being Changed (Top to Bottom)
 
-### 3. Icon-Enhanced Chips Instead of Plain Text
-Instead of a single rotating line of text, render the current value prop as a styled chip/badge with the emoji as a colored icon element (not raw emoji). This gives it visual weight and stops it from looking like a disclaimer. Chips feel clickable and premium.
+### 1. `ScannerHeroWindow.tsx` (Hero)
+| Line | Current | Text |
+|------|---------|------|
+| 187 | `text-slate-300/90` | "Contractors hide fees in the fine print." |
+| 263 | `text-slate-400` | Trust line ("Private. No spam. Instant results.") |
+| 287 | `text-slate-500` | Bottom trust signals ("5,000+ Quotes Scanned", etc.) |
 
-### 4. Fade-Up Entry Animation Tied to Scroll
-The current version only fades in/out on a timer. Add an initial `AnimateOnScroll` wrapper so the prop line fades up from invisible as the section enters the viewport -- giving it a "reveal" moment that draws the eye. After the initial reveal, the rotation timer kicks in.
+### 2. `ScannerIntelligenceBar.tsx` (4-badge bar)
+| Line | Current | Text |
+|------|---------|------|
+| 42 | `text-slate-400` | Badge descriptions (e.g., "Verifying Florida High-Velocity Hurricane Zone ratings") |
 
-### 5. Progress Dots / Count Indicator
-Add small dot indicators below the text (like carousel dots) showing which of the 7 props is active. This creates implicit "there's more" curiosity and keeps users watching longer. Each dot lights up as the prop rotates, adding micro-interaction without distraction.
+### 3. `ProblemAgitationSection.tsx` (Minefield section)
+| Line | Current | Text |
+|------|---------|------|
+| 90 | `text-slate-400` | "Contractors rely on your confusion to inflate their margins." |
+| 108 | `text-slate-400` | Each agitation bullet description (e.g., "Are you paying for 'miscellaneous' materials...") |
 
-## Technical Plan
+### 4. `UploadZoneXRay.tsx` (Before/After scanner grid)
+| Line | Current | Text |
+|------|---------|------|
+| 176 | `text-slate-400` | "Enter your details to unlock analysis" |
+| 283 | `text-slate-400` | "Complete the form to reveal your AI analysis" |
+| 284 | `text-slate-500` | "Waiting for your details..." |
+| 447 | `text-slate-400` | "Stop guessing. Our AI-assisted quote scanner reads the fine print..." |
 
-### Extract Shared Code
-Create `src/components/ui/RotatingValueProp.tsx` with `VALUE_PROPS`, `renderHighlighted`, and the `RotatingValueProp` component extracted from `ScanPipelineStrip.tsx`. Both pages import from the shared file. This avoids code duplication.
+### 5. `HowItWorksXRay.tsx` (X-Ray Vision section)
+| Line | Current | Text |
+|------|---------|------|
+| 98 | `text-slate-400` | "Most homeowners overpay by 30% because they don't speak 'Contractor.'..." |
+| 149 | `text-slate-400` | Each step description (e.g., "Snap a photo, drag a PDF, or paste text...") |
+| 165 | `text-gray-400` | "Stop Guessing. Start Auditing..." |
 
-The shared component accepts:
-- `active: boolean` -- controls timer start
-- `variant?: 'light' | 'dark'` -- light for /ai-scanner, dark for /audit (slate bg)
-- `showDots?: boolean` -- enables the progress dot indicators (CRO #5)
+### 6. `BeatOrValidateSection.tsx` (Validator/Negotiator)
+| Line | Current | Text |
+|------|---------|------|
+| 39 | `text-slate-400` | "Every scan ends with you winning. Period." |
+| 79 | `text-slate-400` | Validator bullet items ("Independent verification...", etc.) |
+| 128 | `text-slate-400` | Negotiator bullet items ("AI-generated negotiation scripts...", etc.) |
+| 160 | `text-slate-400` | "Cost to you: $0.00" |
 
-### Update UploadZoneXRay.tsx
+### 7. `RedFlagGallery.tsx` (Red flag carousel)
+| Line | Current | Text |
+|------|---------|------|
+| 143 | `text-slate-400` | "Here's what our AI finds hiding in quotes every single day." |
+| 202 | `text-slate-400` | Card excerpt text (italic quote snippets) |
+| 253 | `text-slate-500` | "Your quote might look fine on the surface." |
 
-Import `RotatingValueProp` and place it after the subtitle `<p>` tag (line 449) and before the Before/After labels grid (line 452):
+### 8. `NoQuoteEscapeHatch.tsx` (No Quote section)
+| Line | Current | Text |
+|------|---------|------|
+| 92 | `text-slate-400` | "You're smart to do research first..." |
+| 133 | `text-slate-400` | Each alternative card description |
+| 176 | `text-slate-500` | "Come back anytime with your quote..." |
 
-```
-<p className="text-lg text-slate-400 ...">
-  Stop guessing... before you sign.
-</p>
+### 9. `VaultSection.tsx` (Vault section)
+| Line | Current | Text |
+|------|---------|------|
+| 85 | `text-slate-300` | "This isn't a dashboard. It's your Digital Fortress..." |
+| 89 | `text-slate-400` | "The average window replacement sales cycle is 1-3 months..." |
+| 94-104 | `text-slate-400` | Trust indicators ("256-bit Encryption", "SOC 2 Compliant", "Your Data Never Shared") |
+| 169 | `text-slate-400` | Vault loot item descriptions |
+| 183 | `text-slate-400` | "Free forever. No credit card." |
+| 195 | `text-slate-400` | "Already scanned a quote? Your results are waiting..." |
 
-{/* NEW: Rotating value propositions */}
-<RotatingValueProp active={true} variant="dark" showDots />
+## What Is NOT Changing
 
-<div className="grid grid-cols-1 lg:grid-cols-2 ...">
-  {/* Before / After labels */}
-```
+- White headings (`text-white`) -- already bright
+- Colored accent text (`text-orange-400`, `text-cyan-400`, `text-emerald-400`, `text-red-400`)
+- Icon colors (`text-slate-400` on icons like Lock, Shield -- these stay dim intentionally)
+- Tiny metadata (`text-xs text-slate-500` for "2,847 users this week", step number indicators)
+- Button text colors
+- Badge text colors
+- The blurred preview teaser content inside UploadZoneXRay (behind blur, color irrelevant)
 
-### Update ScanPipelineStrip.tsx
+## Technical Details
 
-Replace the inline `VALUE_PROPS`, `renderHighlighted`, and `RotatingValueProp` with an import from the shared file. No visual change on /ai-scanner.
-
-### Updated VALUE_PROPS (Audit-Optimized Order + Copy)
-
-```typescript
-const VALUE_PROPS = [
-  "{80%} of quotes contain hidden errors. Find yours before you sign.",
-  "The only {unbiased}, non-commissioned review in the industry.",
-  "100% {Private} — Your contractor will never know you scanned this.",
-  "Our AI X-Ray decodes contractor jargon into plain English {red flags}.",
-  "Shift the power dynamic. Negotiate with {facts}, not feelings.",
-  "Faster (and more accurate) than getting a {second opinion}.",
-  "See exactly what your contractor is hoping you {won't notice}.",
-];
-```
-
-### Dot Indicators
-
-Below the rotating text, render 7 small circles. The active one uses `bg-primary`, the rest use `bg-slate-700`. Transition opacity on change. Total height: ~8px, no layout shift.
-
-```tsx
-<div className="flex justify-center gap-1.5 mt-2">
-  {VALUE_PROPS.map((_, i) => (
-    <div
-      key={i}
-      className={cn(
-        "w-1.5 h-1.5 rounded-full transition-colors duration-300",
-        i === index ? "bg-primary" : "bg-slate-700"
-      )}
-    />
-  ))}
-</div>
-```
-
-## Files Changed
-
-| File | Change |
-|------|--------|
-| `src/components/ui/RotatingValueProp.tsx` | **New** -- extracted shared component with VALUE_PROPS, renderHighlighted, dot indicators, dark/light variant |
-| `src/components/audit/UploadZoneXRay.tsx` | Import and place `RotatingValueProp` between subtitle and Before/After grid |
-| `src/components/quote-scanner/ScanPipelineStrip.tsx` | Replace inline VALUE_PROPS/RotatingValueProp with import from shared component |
+- **Replacement class**: `text-[#efefef]` (Tailwind arbitrary value)
+- **Files changed**: 9 component files
+- **Zero layout impact**: Only color classes swapped, no structural changes
+- All instances of `text-gray-400` also changed to `text-[#efefef]` (line 165 in HowItWorksXRay)
 
