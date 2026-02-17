@@ -266,7 +266,7 @@ export function UploadZoneXRay({
         )}
 
         {/* Upload Overlay */}
-        <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer z-30 bg-slate-900/80 hover:bg-slate-900/90 transition-colors rounded-lg">
+        <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer z-10 bg-slate-900/60 hover:bg-slate-900/80 transition-colors rounded-lg">
           <input type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileInput} />
           <div className="w-16 h-16 bg-cyan-500/20 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-cyan-500/50">
             <Upload className="w-8 h-8 text-cyan-400" />
