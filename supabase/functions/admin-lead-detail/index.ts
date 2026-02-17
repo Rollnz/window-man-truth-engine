@@ -341,7 +341,7 @@ serve(async (req) => {
 
       if (action === 'update_status') {
         const { status } = body;
-        const validStatuses = ['new', 'qualifying', 'mql', 'appointment_set', 'sat', 'closed_won', 'closed_lost', 'dead'];
+        const validStatuses = ['new', 'qualifying', 'mql', 'qualified', 'appointment_set', 'sat', 'closed_won', 'closed_lost', 'dead'];
         
         if (!validStatuses.includes(status as string)) {
           return errorResponse(400, 'invalid_status', `Invalid status. Must be one of: ${validStatuses.join(', ')}`);

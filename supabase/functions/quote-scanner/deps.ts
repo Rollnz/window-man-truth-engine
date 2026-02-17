@@ -5,8 +5,8 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Supabase client
-export { createClient } from "npm:@supabase/supabase-js@2.39.7";
-export type { SupabaseClient } from "npm:@supabase/supabase-js@2.39.7";
+export { createClient } from "npm:@supabase/supabase-js@2";
+export type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 // Zod validation
 export { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";

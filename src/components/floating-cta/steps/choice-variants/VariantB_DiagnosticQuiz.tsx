@@ -135,7 +135,7 @@ export function VariantB_DiagnosticQuiz({
       ) : (
         <div className="space-y-4">
           {/* Q1: Window Age */}
-          <div className={cn('space-y-2', quizStep >= 0 ? 'opacity-100' : 'opacity-40')}>
+          <div className={cn('space-y-2', (quizStep as number) >= 0 ? 'opacity-100' : 'opacity-40')}>
             <div className="flex items-center gap-2">
               {answers.windowAge ? (
                 <CheckCircle2 className="w-4 h-4 text-primary" />
