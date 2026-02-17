@@ -36,7 +36,7 @@ export function BeatOrValidateSection() {
             </span>
           </h2>
           
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+          <p className="text-lg text-[#efefef] max-w-2xl mx-auto">
             Every scan ends with you winning. Period.
           </p>
         </div>
@@ -76,7 +76,7 @@ export function BeatOrValidateSection() {
                   'Peace of mind before signing',
                   'Proof to show skeptical family members',
                 ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-slate-400">
+                  <li key={i} className="flex items-start gap-3 text-[#efefef]">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
                     <span>{item}</span>
                   </li>
@@ -125,7 +125,7 @@ export function BeatOrValidateSection() {
                   'Line-by-line price breakdown',
                   'Better offer from our contractor network',
                 ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-slate-400">
+                  <li key={i} className="flex items-start gap-3 text-[#efefef]">
                     <CheckCircle2 className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" />
                     <span>{item}</span>
                   </li>
@@ -157,7 +157,7 @@ export function BeatOrValidateSection() {
               <p className="text-white font-semibold text-lg">
                 Either way, you leave with certainty.
               </p>
-              <p className="text-slate-400">
+              <p className="text-[#efefef]">
                 Cost to you: <span className="text-emerald-400 font-bold">$0.00</span>
               </p>
             </div>

@@ -184,7 +184,7 @@ export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHer
 
                   <p
                     className={cn(
-                      "text-lg sm:text-xl md:text-2xl text-slate-300/90 max-w-2xl leading-relaxed transition-all duration-700 delay-400",
+                      "text-lg sm:text-xl md:text-2xl text-[#efefef] max-w-2xl leading-relaxed transition-all duration-700 delay-400",
                       isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                     )}>
 
@@ -260,7 +260,7 @@ export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHer
                   }
 
                   {/* Trust Line */}
-                  <div className="flex items-center gap-2 text-slate-400 text-sm">
+                  <div className="flex items-center gap-2 text-[#efefef] text-sm">
                     <Lock className="w-4 h-4 text-emerald-500" />
                     <span>{AUDIT_CONFIG.hero.trustLine}</span>
                   </div>
@@ -284,7 +284,7 @@ export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHer
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         )}>
 
-        <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500 px-4">
+        <div className="flex flex-wrap justify-center gap-6 text-sm text-[#efefef] px-4">
           <div className="flex items-center gap-2 bg-slate-900/50 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-800/50">
             <Shield className="w-4 h-4 text-emerald-500" />
             <span>{total.toLocaleString()}+ Quotes Scanned</span>

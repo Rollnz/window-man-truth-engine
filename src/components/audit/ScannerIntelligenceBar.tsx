@@ -39,7 +39,7 @@ function IntelligenceCard({ badge }: {badge: IntelligenceBadge;}) {
         <h3 className="text-sm font-semibold text-white mb-1">
           {badge.title}
         </h3>
-        <p className="text-xs text-slate-400 leading-relaxed">
+        <p className="text-xs text-[#efefef] leading-relaxed">
           {badge.description}
         </p>
       </div>

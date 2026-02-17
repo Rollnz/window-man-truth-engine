@@ -140,7 +140,7 @@ export function RedFlagGallery() {
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4">
             An Independent Standard Audit <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400">​</span>
           </h2>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+          <p className="text-lg text-[#efefef] max-w-2xl mx-auto">
             Here's what our AI finds hiding in quotes every single day.
             <span className="text-red-400 font-medium block mt-2">Don't let this be you.</span>
           </p>
@@ -199,7 +199,7 @@ export function RedFlagGallery() {
                   </div>
                   <h3 className="text-lg font-bold text-white mb-3 group-hover:text-red-400 transition-colors">{flag.title}</h3>
                   <div className="bg-slate-950/50 border border-slate-800 rounded-lg p-4 mb-4">
-                    <p className="text-slate-400 text-sm italic leading-relaxed">"{flag.excerpt}"</p>
+                    <p className="text-[#efefef] text-sm italic leading-relaxed">"{flag.excerpt}"</p>
                   </div>
                   <div className={cn("flex items-center gap-2 text-sm font-medium", flag.color)}>
                     <DollarSign className="w-4 h-4" />
@@ -250,7 +250,7 @@ export function RedFlagGallery() {
         </div>
 
         <div className="text-center mt-12">
-          <p className="text-slate-500 text-lg">
+          <p className="text-[#efefef] text-lg">
             Your quote might look fine on the surface.
             <span className="text-white font-medium block mt-1">Our AI sees what you can't.</span>
           </p>
