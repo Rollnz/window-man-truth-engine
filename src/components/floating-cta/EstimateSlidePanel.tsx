@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { Phone, FileText, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   SheetContent,
@@ -12,13 +12,18 @@ import { ProjectDetailsStep } from './steps/ProjectDetailsStep';
 import { ContactDetailsStep } from './steps/ContactDetailsStep';
 import { AddressDetailsStep } from './steps/AddressDetailsStep';
 import { SuccessStep } from './steps/SuccessStep';
+import { AiQaStep } from './steps/AiQaStep';
+import { ChoiceStepDispatcher } from './steps/choice-variants';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useEngagementScore } from '@/hooks/useEngagementScore';
+import { usePanelVariant } from '@/hooks/usePanelVariant';
+import { useLocationPersonalization } from '@/hooks/useLocationPersonalization';
 import { supabase } from '@/integrations/supabase/client';
 import { trackEvent, trackLeadCapture, generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
+import type { AiQaMode } from '@/lib/panelVariants';
 import type { SourceTool } from '@/types/sourceTool';
 
 // phonecall.bot number
@@ -55,7 +60,7 @@ const initialFormData: EstimateFormData = {
   zip: '',
 };
 
-type Step = 'choice' | 'project' | 'contact' | 'address' | 'success';
+type Step = 'choice' | 'ai-qa' | 'project' | 'contact' | 'address' | 'success';
 
 interface EstimateSlidePanelProps {
   onClose: () => void;
@@ -79,10 +84,14 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
   const [formData, setFormData] = useState<EstimateFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiQaMode, setAiQaMode] = useState<AiQaMode>('concierge');
+  const [aiQaInitialMessage, setAiQaInitialMessage] = useState<string | undefined>();
 
   const { leadId, setLeadId } = useLeadIdentity();
   const { sessionData, sessionId, updateFields } = useSessionData();
   const { score: engagementScore } = useEngagementScore();
+  const { variant: panelVariant } = usePanelVariant();
+  const { locationData, isLoading: locationLoading, resolveZip } = useLocationPersonalization();
 
   // Persist step in sessionStorage so user doesn't lose progress
   useEffect(() => {
@@ -138,6 +147,7 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
       source_tool: 'floating_slide_over',
       source_system: 'web',
       trigger_source: 'floating_cta',
+      panel_variant: panelVariant,
     });
   }, []);
 
@@ -267,6 +277,9 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
 
   const goBack = () => {
     switch (step) {
+      case 'ai-qa':
+        setStep('choice');
+        break;
       case 'project':
         setStep('choice');
         break;
@@ -282,7 +295,7 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
   };
 
   const renderStepIndicator = () => {
-    if (step === 'choice' || step === 'success') return null;
+    if (step === 'choice' || step === 'ai-qa' || step === 'success') return null;
     
     const steps = ['project', 'contact', 'address'];
     const currentIndex = steps.indexOf(step);
@@ -320,17 +333,19 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
             Back
           </Button>
         )}
-        
+
         <SheetTitle className="text-2xl font-bold text-foreground">
           {step === 'choice' && 'Get Your Free Estimate'}
+          {step === 'ai-qa' && 'Ask Window Man'}
           {step === 'project' && 'Project Details'}
           {step === 'contact' && 'Contact Information'}
           {step === 'address' && 'Property Address'}
           {step === 'success' && 'Request Submitted!'}
         </SheetTitle>
-        
+
         <SheetDescription className="text-muted-foreground">
           {step === 'choice' && 'Choose how you\'d like to connect with us.'}
+          {step === 'ai-qa' && 'Get instant answers about impact windows.'}
           {step === 'project' && 'Tell us about your window project.'}
           {step === 'contact' && 'How can we reach you?'}
           {step === 'address' && 'Where is the property located?'}
@@ -340,81 +355,43 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
 
       {renderStepIndicator()}
 
-      {/* Choice Screen */}
+      {/* Choice Screen — A/B variant dispatcher */}
       {step === 'choice' && (
-        <div className="space-y-6">
-          {/* Call Option - Prominent */}
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-5">
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-full bg-primary/10">
-                <Phone className="h-6 w-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg mb-1">
-                  Call for Instant Estimate
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Speak with our AI assistant now. Get answers in minutes, not days.
-                </p>
-                <Button 
-                  onClick={handleCallClick}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                  size="lg"
-                >
-                  <Phone className="h-4 w-4 mr-2" />
-                  Call Now
-                </Button>
-              </div>
-            </div>
-          </div>
+        <ChoiceStepDispatcher
+          variant={panelVariant}
+          onCallClick={handleCallClick}
+          onStartForm={() => {
+            fireLeadFormOpened('form_start');
+            setStep('project');
+          }}
+          onStartAiQa={(mode: AiQaMode, initialMsg?: string) => {
+            setAiQaMode(mode);
+            setAiQaInitialMessage(initialMsg);
+            setStep('ai-qa');
+          }}
+          locationData={locationData}
+          locationLoading={locationLoading}
+          onResolveZip={resolveZip}
+          engagementScore={engagementScore}
+        />
+      )}
 
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                or
-              </span>
-            </div>
-          </div>
-
-          {/* Form Option */}
-          <div className="bg-secondary/30 border border-border rounded-lg p-5">
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-full bg-secondary">
-                <FileText className="h-6 w-6 text-foreground" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg mb-1">
-                  Request an Estimate
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Fill out a quick form and we'll get back to you within 24 hours.
-                </p>
-                <Button 
-                  onClick={() => {
-                    fireLeadFormOpened('form_start');
-                    setStep('project');
-                  }}
-                  variant="outline"
-                  className="w-full"
-                  size="lg"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Start Request
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Trust indicator */}
-          <p className="text-center text-xs text-muted-foreground">
-            <CheckCircle2 className="h-3 w-3 inline mr-1" />
-            No spam. No pressure. Your data stays private.
-          </p>
-        </div>
+      {/* AI Q&A Mini-Flow */}
+      {step === 'ai-qa' && (
+        <AiQaStep
+          mode={aiQaMode}
+          initialMessage={aiQaInitialMessage}
+          locationData={locationData}
+          sessionData={sessionData}
+          formData={formData}
+          updateFormData={updateFormData}
+          onRouteToForm={() => {
+            fireLeadFormOpened('form_start');
+            setStep('project');
+          }}
+          onRouteToCall={handleCallClick}
+          panelVariant={panelVariant}
+        />
       )}
 
       {/* Step 1: Project Details */}

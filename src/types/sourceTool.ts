@@ -35,6 +35,7 @@ export const SOURCE_TOOLS = [
   'consultation', // Strategy call booking
   'sample-report', // Sample report access gate
   'audit-sample-report', // Audit page sample report gate
+  'slide-over-ai-qa', // Slide-over panel AI Q&A mini-flow
 ] as const;
 
 export type SourceTool = typeof SOURCE_TOOLS[number];
