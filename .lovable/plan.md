@@ -1,70 +1,116 @@
 
 
-# Add "Contractor Sales Tactics" Image to Sales Tactics Guide Hero
+# Improve the Before/After Section UX for CRO
 
-## What Changes (User Perspective)
+## Problem
 
-The red circular placeholder with a Target icon in the hero section gets replaced with the uploaded "Contractor Sales Tactics" brain image. The two overlay badges ("Contractor Playbook" pill and "Includes 11 Named Tactics" callout) stay exactly where they are. The image loads efficiently with lazy loading and proper optimization attributes.
+The screenshot reveals three issues with the Before/After two-column section:
 
-## Why This Is the Best Plan
+1. **No "After" header label.** The "Before" column has a styled red header ("BEFORE: Just a Confusing Estimate"), but the right column has zero header -- it's just a plain card with a lock icon and generic text.
+2. **No CTA in the "After" idle state.** When no quote has been uploaded, the right column shows only a lock icon and "Upload your quote to get started" -- no button, no action. This is a dead zone. Users who scan the page left-to-right see a call to action on the left but hit a wall on the right.
+3. **No value proposition teaser.** The "After" card doesn't communicate WHAT the user gets. There's no hint of scoring, risk flags, or a forensic report. It's just a locked box with no reason to care.
 
-1. **Minimal change, maximum impact.** Only one file is edited (SalesTacticsGuide.tsx) and one asset is copied. The overlays already look great -- we keep them untouched.
-2. **No layout breakage.** The current box uses a fixed `w-64 sm:w-80 h-80` div with a gradient background and a centered icon. We replace the gradient div with an `<img>` tag inside the same container, using `object-cover` to fill the space. The rounded corners and card border stay intact.
-3. **Aspect-ratio friendly.** The uploaded image is roughly 4:3. The current box is taller than wide (80x80 rem area inside a w-80 container). We adjust to `aspect-[4/3]` and let width drive height naturally, so the image isn't cropped awkwardly. The overlays remain absolutely positioned relative to the parent.
-4. **Performance.** The image is below-the-fold on mobile (the text column stacks first), so `loading="lazy"` is correct. We add `decoding="async"` and explicit `width`/`height` attributes to prevent layout shift (CLS).
-5. **Asset in `public/`.** Since this is a static content image (not a React component asset), placing it in `public/images/` follows the existing pattern used by other guide pages (`claim-kit-book.webp`, `defense-kit-book.webp`, etc.) and avoids unnecessary bundling.
+## What Makes This Better (CRO Rationale)
 
-## Technical Changes
+- **Visual symmetry drives comprehension.** When both columns have matching header labels, users instantly understand this is a transformation ("before your upload" vs "after our AI analyzes it"). This framing is a proven persuasion pattern.
+- **Every visible surface needs an action.** The idle "After" card is prime real estate. Adding a CTA ("Upload Your Quote") that triggers the same file picker as the left column gives users TWO places to start, reducing friction.
+- **Benefit preview reduces uncertainty.** Listing what the report includes (5 category scores, missing items, red flags, negotiation tools) gives users a reason to upload. This is the "show the reward" principle.
 
-### Step 1: Copy the uploaded image
+## Changes
 
-Copy `user-uploads://sales_tactics.webp` to `public/images/sales-tactics-brain.webp`
+### File: `src/pages/QuoteScanner.tsx`
 
-This follows the existing naming convention in `public/images/`.
+**Change 1: Add "After" header label above the right column card**
 
-### Step 2: Edit `src/pages/SalesTacticsGuide.tsx`
+Add a matching header above the right column (line 168) that mirrors the "Before" label style but in green/primary:
 
-**Replace lines 106-109** (the gradient placeholder div):
-
-Current:
 ```tsx
-<div className="relative bg-card rounded-xl shadow-2xl p-2 border border-border">
-  <div className="w-64 sm:w-80 h-80 bg-gradient-to-br from-destructive/20 to-primary/20 rounded-lg flex items-center justify-center">
-    <Target className="w-24 h-24 text-destructive/50" />
+{/* Right column - After */}
+<div className="space-y-6">
+  <div className="flex flex-col items-center md:flex-row md:items-center gap-1 md:gap-2 text-xs uppercase tracking-wider">
+    <ShieldCheck className="w-4 h-4 text-muted-foreground hidden md:block" />
+    <span className="font-bold font-sans text-primary text-base">After:</span>
+    <span className="font-bold font-sans text-primary text-base">Your AI Intelligence Report</span>
   </div>
+  <div className="rounded-xl border border-border bg-card min-h-[400px] p-6 space-y-6">
+    {/* ...existing phase-based content... */}
+  </div>
+</div>
 ```
 
-New:
+This adds a `ShieldCheck` icon import (from lucide-react) alongside the header text in the primary (blue) color -- contrasting with the red "Before" label to reinforce the transformation.
+
+**Change 2: Replace the empty idle state with a benefit preview + CTA**
+
+Replace the current idle state (lines 180-187) which only shows a lock icon and text, with a richer panel:
+
 ```tsx
-<div className="relative bg-card rounded-xl shadow-2xl p-2 border border-border">
-  <img
-    src="/images/sales-tactics-brain.webp"
-    alt="Contractor sales tactics brain map showing price inflation, fear-based upselling, and psychological pressure points"
-    className="w-64 sm:w-80 aspect-[4/3] object-cover rounded-lg"
-    loading="lazy"
-    decoding="async"
-    width={640}
-    height={480}
-  />
+{gated.phase === 'idle' && (
+  <div className="flex flex-col items-center justify-center h-full min-h-[350px] gap-5 text-center">
+    <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+      <ShieldCheck className="w-7 h-7 text-primary" />
+    </div>
+    <div className="space-y-1">
+      <h3 className="text-lg font-bold text-foreground">Your Report Will Include</h3>
+      <p className="text-sm text-muted-foreground">Upload a quote to unlock your full analysis</p>
+    </div>
+    <ul className="text-sm text-muted-foreground space-y-2 text-left max-w-xs">
+      <li className="flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+        5 category safety scores
+      </li>
+      <li className="flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+        Missing scope items flagged
+      </li>
+      <li className="flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+        Fine print and red flag alerts
+      </li>
+      <li className="flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+        Fair price per opening comparison
+      </li>
+      <li className="flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+        Negotiation email and phone scripts
+      </li>
+    </ul>
+    <Button
+      onClick={() => uploadRef.current?.querySelector('input[type="file"]')?.dispatchEvent(new MouseEvent('click'))}
+      className="gap-2 mt-2"
+      size="lg"
+    >
+      <Upload className="w-4 h-4" />
+      Upload Your Quote
+    </Button>
+  </div>
+)}
 ```
 
-**What stays the same:**
-- The "Contractor Playbook" red pill badge (lines 111-114) -- unchanged
-- The "Includes 11 Named Tactics" bottom-left callout (lines 117-120) -- unchanged
-- The blurred red background glow (line 103) -- unchanged
-- The outer positioning wrapper -- unchanged
+This replaces the dead lock icon with:
+- A benefit list showing exactly what they'll get (5 bullet points)
+- A primary CTA button that triggers the file picker (same as the left column)
+- A friendly ShieldCheck icon instead of an intimidating Lock
 
-**What's removed:**
-- The `Target` icon import can stay (it's still used in Section 3), so no import changes needed.
-- The gradient placeholder div and centered icon are replaced by the image.
+The `uploadRef` is already available in the component and points to the upload zone's container -- the button dispatches a click on the hidden file input.
 
-### Summary
+### Import Update
 
-| Item | Detail |
-|------|--------|
-| Files modified | 1 (`src/pages/SalesTacticsGuide.tsx`) |
-| Assets added | 1 (`public/images/sales-tactics-brain.webp`) |
-| Lines changed | 4 (replace gradient div + icon with img tag) |
-| Overlays affected | None -- both kept as-is |
-| Performance | `loading="lazy"`, `decoding="async"`, explicit dimensions for CLS prevention |
+Add `ShieldCheck` to the existing lucide-react import on line 45:
+
+```tsx
+import { Lock, Upload, ShieldCheck } from 'lucide-react';
+```
+
+## Summary
+
+| Change | File | Purpose |
+|--------|------|---------|
+| Add "After" header label | `QuoteScanner.tsx` | Visual symmetry, transformation framing |
+| Benefit list in idle state | `QuoteScanner.tsx` | Show the reward, reduce uncertainty |
+| CTA button in idle state | `QuoteScanner.tsx` | Second upload trigger, eliminates dead zone |
+| ShieldCheck icon import | `QuoteScanner.tsx` | Replace intimidating Lock with trust icon |
+
+Total: 1 file modified, ~30 lines changed. No new files, no new dependencies.
 
