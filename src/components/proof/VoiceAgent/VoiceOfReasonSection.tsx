@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Headphones, Shield, ChevronDown, ChevronUp, MessageSquare, Phone } from 'lucide-react';
+import { Headphones, Shield, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import { transcripts, topicLabels, type Transcript } from '@/data/proof/proofDat
 import { cn } from '@/lib/utils';
 
 interface VoiceOfReasonSectionProps {
-  onListenToCall: () => void;
+  
   onSectionView?: (sectionId: string) => void;
   onTranscriptOpen?: (transcriptId: string, topic: string) => void;
   onFilterChange?: (topic: string) => void;
@@ -19,7 +19,6 @@ interface VoiceOfReasonSectionProps {
  * Shows real transcripts demonstrating expertise
  */
 export function VoiceOfReasonSection({ 
-  onListenToCall, 
   onSectionView,
   onTranscriptOpen,
   onFilterChange,
@@ -236,17 +235,6 @@ export function VoiceOfReasonSection({
         </div>
       </div>
 
-      {/* CTA */}
-      <div className="wm-reveal wm-stagger-4 text-center">
-        <Button 
-          size="lg" 
-          onClick={onListenToCall}
-          className="gap-2 wm-btn-press"
-        >
-          <Phone className="w-5 h-5" />
-          Listen to a Real Call
-        </Button>
-      </div>
     </SectionFrame>
   );
 }

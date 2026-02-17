@@ -57,15 +57,6 @@ export default function Proof() {
     navigate('/ai-scanner');
   }, [navigate]);
 
-  const handleListenToCall = useCallback(() => {
-    trackCTAClick('listen_real_call', 'voice-agent', 'call_player', '/proof');
-    track('wm_proof_call_player_open', {
-      section_id: 'voice-agent',
-      page_path: '/proof',
-    });
-    // For now, navigate to expert page
-    navigate('/expert');
-  }, [navigate]);
 
   const handleTranscriptOpen = useCallback((transcriptId: string, topic: string) => {
     track('wm_proof_transcript_open', {
@@ -178,7 +169,6 @@ export default function Proof() {
 
       {/* Section II - The Voice of Reason */}
       <VoiceOfReasonSection 
-        onListenToCall={handleListenToCall}
         onSectionView={handleSectionView}
         onTranscriptOpen={handleTranscriptOpen}
         onFilterChange={handleTranscriptFilterChange}
