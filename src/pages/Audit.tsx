@@ -90,6 +90,8 @@ export default function Audit() {
             fileSize={scanner.fileSize ?? undefined}
             onReopenModal={scanner.reopenModal}
             onReset={scanner.reset}
+            scanAttemptId={scanner.scanAttemptId ?? undefined}
+            onCompletePreGate={scanner.completePreGate}
           />
         </div>
         {scanner.phase === 'revealed' && scanner.result && (
@@ -114,6 +116,7 @@ export default function Audit() {
         onClose={scanner.closeModal}
         onSubmit={scanner.captureLead}
         isLoading={scanner.isLoading}
+        scanAttemptId={scanner.scanAttemptId ?? undefined}
       />
 
       {/* Sample Report Gate Modal - for users without quotes */}

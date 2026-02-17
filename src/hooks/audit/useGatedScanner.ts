@@ -22,11 +22,12 @@ import type { AuditAnalysisResult, ExplainScoreFormData } from '@/types/audit';
 /**
  * Phases for the gated scanner flow:
  * - idle: No file uploaded
- * - uploaded: File uploaded, showing blurred preview, modal open
+ * - pre-gate: File uploaded, running pre-check interstitial animation
+ * - uploaded: Interstitial complete, modal open for lead capture
  * - analyzing: Lead captured, running AI analysis with theater
  * - revealed: Analysis complete, full results visible
  */
-export type GatedScannerPhase = 'idle' | 'uploaded' | 'analyzing' | 'revealed';
+export type GatedScannerPhase = 'idle' | 'pre-gate' | 'uploaded' | 'analyzing' | 'revealed';
 
 interface GatedScannerState {
   phase: GatedScannerPhase;
@@ -52,6 +53,8 @@ interface GatedScannerState {
 interface UseGatedScannerReturn extends GatedScannerState {
   /** Handle file selection - shows blurred preview + opens modal */
   handleFileSelect: (file: File) => void;
+  /** Complete the pre-gate interstitial and open the lead modal */
+  completePreGate: () => void;
   /** Close the lead modal (preserves file state) */
   closeModal: () => void;
   /** Re-open the lead modal */
@@ -183,14 +186,14 @@ export function useGatedScanner(): UseGatedScannerReturn {
 
     setState({
       ...INITIAL_STATE,
-      phase: 'uploaded',
+      phase: 'pre-gate',
       file,
       filePreviewUrl: previewUrl,
       fileName: file.name,
       fileType: file.type,
       fileSize: file.size,
       scanAttemptId,
-      isModalOpen: true, // IMMEDIATELY open lead modal
+      isModalOpen: false, // Modal opens AFTER interstitial completes
     });
 
     // Track file upload (pre-gate)
@@ -199,9 +202,31 @@ export function useGatedScanner(): UseGatedScannerReturn {
       file_type: file.type,
       file_size_kb: Math.round(file.size / 1024),
     });
+  }, []);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COMPLETE PRE-GATE INTERSTITIAL
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const completePreGate = useCallback(() => {
+    // Idempotent: only fires if still in pre-gate phase
+    setState(prev => {
+      if (prev.phase !== 'pre-gate') return prev;
+      return {
+        ...prev,
+        phase: 'uploaded',
+        isModalOpen: true,
+      };
+    });
+
+    trackEvent('pre_gate_interstitial_complete', {
+      scan_attempt_id: scanAttemptIdRef.current,
+      file_type: state.fileType,
+      file_size_kb: state.fileSize ? Math.round(state.fileSize / 1024) : null,
+    });
 
     trackModalOpen({ modalName: 'quote_upload_gate' });
-  }, []);
+  }, [state.fileType, state.fileSize]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MODAL CONTROLS
@@ -415,6 +440,7 @@ export function useGatedScanner(): UseGatedScannerReturn {
     ...state,
     isLoading: state.isLoading || isLeadSubmitting,
     handleFileSelect,
+    completePreGate,
     closeModal,
     reopenModal,
     captureLead,
