@@ -113,25 +113,32 @@ export function useTickerStats(): TickerStats {
 
     let isMounted = true;
 
-    fetchTickerStats().then((result) => {
-      if (!isMounted) return;
+    // Defer the edge function call until the browser is idle
+    // so it doesn't compete with LCP-critical resources
+    const doFetch = () => {
+      fetchTickerStats().then((result) => {
+        if (!isMounted) return;
 
-      if (result) {
-        setStats({
-          total: result.total,
-          today: result.today,
-          isLoading: false,
-          isFromServer: true,
-        });
-      } else {
-        // Keep fallback values, just mark as not loading
-        setStats((prev) => ({ ...prev, isLoading: false }));
-      }
-    });
-
-    return () => {
-      isMounted = false;
+        if (result) {
+          setStats({
+            total: result.total,
+            today: result.today,
+            isLoading: false,
+            isFromServer: true,
+          });
+        } else {
+          setStats((prev) => ({ ...prev, isLoading: false }));
+        }
+      });
     };
+
+    if ('requestIdleCallback' in window) {
+      const id = requestIdleCallback(() => doFetch(), { timeout: 3000 });
+      return () => { isMounted = false; cancelIdleCallback(id); };
+    } else {
+      const id = setTimeout(() => doFetch(), 2000);
+      return () => { isMounted = false; clearTimeout(id); };
+    }
   }, [fallback]);
 
   return stats;

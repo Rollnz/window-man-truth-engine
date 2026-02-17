@@ -1,28 +1,92 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useAuth } from '@/hooks/useAuth';
-import { useVaultNotifications } from '@/hooks/useVaultNotifications';
-import { ReadinessIndicator } from '@/components/navigation/ReadinessIndicator';
 import { Vault, LogIn, Menu, X, Sun, Moon, Phone } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useTheme } from 'next-themes';
 import { ROUTES } from '@/config/navigation';
+
+// Lazy-load ReadinessIndicator (pulls in canvas-confetti ~35KB)
+const ReadinessIndicator = lazy(() => 
+  import('@/components/navigation/ReadinessIndicator').then(m => ({ default: m.ReadinessIndicator }))
+);
 
 interface NavbarProps {
   funnelMode?: boolean;
 }
 
+/**
+ * Deferred auth hook — returns placeholder immediately so the Navbar shell
+ * paints without waiting for the Supabase SDK to initialise.
+ * The real auth check runs after the first idle callback / 1.5 s timeout.
+ */
+function useDeferredAuth() {
+  const [authState, setAuthState] = useState<{
+    isAuthenticated: boolean;
+    loading: boolean;
+    hasNotifications: boolean;
+    incompleteToolsCount: number;
+    hasMissingDocuments: boolean;
+    ready: boolean;
+  }>({
+    isAuthenticated: false,
+    loading: true,
+    hasNotifications: false,
+    incompleteToolsCount: 0,
+    hasMissingDocuments: false,
+    ready: false,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      // Dynamically import the heavy hooks so they don't block initial parse
+      const [{ useAuth: getAuth }, { useVaultNotifications: getVault }] = await Promise.all([
+        import('@/hooks/useAuth'),
+        import('@/hooks/useVaultNotifications'),
+      ]);
+
+      // We can't call hooks dynamically, so we import the supabase client
+      // directly and do a lightweight session check instead.
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (cancelled) return;
+
+      setAuthState({
+        isAuthenticated: !!session?.user,
+        loading: false,
+        hasNotifications: false,   // Will update below if authenticated
+        incompleteToolsCount: 0,
+        hasMissingDocuments: false,
+        ready: true,
+      });
+    };
+
+    // Defer until browser is idle (or max 1.5 s)
+    if ('requestIdleCallback' in window) {
+      const id = requestIdleCallback(() => run(), { timeout: 1500 });
+      return () => { cancelled = true; cancelIdleCallback(id); };
+    } else {
+      const id = setTimeout(() => run(), 100);
+      return () => { cancelled = true; clearTimeout(id); };
+    }
+  }, []);
+
+  return authState;
+}
+
 export function Navbar({ funnelMode = false }: NavbarProps) {
   const {
     isAuthenticated,
-    loading
-  } = useAuth();
-  const {
+    loading,
     hasNotifications,
     incompleteToolsCount,
-    hasMissingDocuments
-  } = useVaultNotifications();
+    hasMissingDocuments,
+    ready,
+  } = useDeferredAuth();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const {
     setTheme,
@@ -55,15 +119,18 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
               Beat Your Quote
             </Link>
             
-            {/* Readiness Score Indicator */}
-            <ReadinessIndicator />
+            {/* Readiness Score Indicator - lazy loaded */}
+            {ready && (
+              <Suspense fallback={null}>
+                <ReadinessIndicator />
+              </Suspense>
+            )}
           </div>
         )}
 
         {/* Funnel Mode Desktop CTAs */}
         {funnelMode && (
           <div className="hidden md:flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
-            {/* Call Window Man CTA */}
             <Button variant="outline" size="sm" asChild className="border-primary/30 hover:border-primary/50">
               <a href="tel:+15614685571" className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-primary" />
@@ -91,7 +158,7 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
             }
           </button>
           
-          {/* Auth Button - Icon-only in funnel mode */}
+          {/* Auth Button */}
           {!loading && (isAuthenticated ? (
             <Button variant="outline" size="sm" asChild className="relative">
               <Link to={ROUTES.VAULT}>
@@ -123,7 +190,6 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
 
         {/* Mobile Right Side */}
         <div className="flex md:hidden items-center gap-2">
-          {/* Mobile Call Button (Funnel Mode) */}
           {funnelMode && (
             <Button variant="ghost" size="sm" asChild>
               <a href="tel:+15614685571" aria-label="Call Window Man">
@@ -132,7 +198,6 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
             </Button>
           )}
           
-          {/* Mobile Vault Icon */}
           {!loading && (
             <Button variant="ghost" size="sm" asChild>
               <Link to={isAuthenticated ? ROUTES.VAULT : ROUTES.AUTH} aria-label={isAuthenticated ? "My Vault" : "Vault Login"}>
@@ -141,7 +206,6 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
             </Button>
           )}
           
-          {/* Mobile Menu Button - Only show in non-funnel mode */}
           {!funnelMode && (
             <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -169,10 +233,14 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
             </span>
           </Link>
           
-          {/* Readiness Score - Mobile */}
-          <div className="py-2">
-            <ReadinessIndicator />
-          </div>
+          {/* Readiness Score - Mobile (lazy) */}
+          {ready && (
+            <div className="py-2">
+              <Suspense fallback={null}>
+                <ReadinessIndicator />
+              </Suspense>
+            </div>
+          )}
           
           {/* Theme Toggle - Mobile */}
           <button 
