@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Shield, TrendingDown, Clock } from 'lucide-react';
+import { UrgencyTicker } from '@/components/social-proof';
 
 interface QuizHeroProps {
   onStart: () => void;
@@ -25,9 +26,15 @@ export function QuizHero({ onStart }: QuizHeroProps) {
         </h1>
 
         {/* Subheadline */}
-        <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-md mx-auto">
-          Compare your quote against 1,247 Florida installations in 60 seconds.
-        </p>
+        <div className="mb-8 max-w-md mx-auto space-y-4">
+          <p className="text-lg md:text-xl text-muted-foreground">
+            Compare your quote against
+          </p>
+          <UrgencyTicker variant="homepage" size="md" showToday={false} animated={true} />
+          <p className="text-lg md:text-xl text-muted-foreground">
+            in 60 seconds.
+          </p>
+        </div>
 
         {/* Value props */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
@@ -54,10 +61,6 @@ export function QuizHero({ onStart }: QuizHeroProps) {
           Analyze My Quote →
         </Button>
 
-        {/* Trust signal */}
-        <p className="mt-6 text-sm text-muted-foreground">
-          ✓ 2,847 homeowners analyzed their quotes this month
-        </p>
       </div>
     </div>
   );
