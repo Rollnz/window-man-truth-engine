@@ -197,37 +197,39 @@ export default function QuoteScanner() {
 
                     {/* Phase: idle — benefit preview + dual CTAs */}
                     {gated.phase === 'idle' && (
-                      <div className="flex-1 flex flex-col items-center text-center p-4">
-                        <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
-                          <ShieldCheck className="w-7 h-7 text-primary" />
+                      <div className="flex-1 flex flex-col items-center text-center border border-dashed border-border/60 rounded-xl p-6">
+                        <div className="flex-1 flex flex-col items-center justify-center">
+                          <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
+                            <ShieldCheck className="w-7 h-7 text-primary" />
+                          </div>
+                          <h3 className="text-lg font-bold text-foreground mb-1">Your Report Will Include</h3>
+                          <p className="text-sm text-muted-foreground mb-5">Upload a quote to unlock your full analysis</p>
+                          <ul className="text-sm text-muted-foreground space-y-2 text-left max-w-xs">
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                              5 category safety scores
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                              Missing scope items flagged
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                              Fine print and red flag alerts
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                              Fair price per opening comparison
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                              Negotiation email and phone scripts
+                            </li>
+                          </ul>
                         </div>
-                        <h3 className="text-lg font-bold text-foreground mb-1">Your Report Will Include</h3>
-                        <p className="text-sm text-muted-foreground mb-5">Upload a quote to unlock your full analysis</p>
-                        <ul className="text-sm text-muted-foreground space-y-2 text-left max-w-xs mb-6">
-                          <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                            5 category safety scores
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                            Missing scope items flagged
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                            Fine print and red flag alerts
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                            Fair price per opening comparison
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                            Negotiation email and phone scripts
-                          </li>
-                        </ul>
 
-                        {/* Dual CTAs — Upload + No Quote */}
-                        <div className="w-full max-w-xs space-y-3">
+                        {/* Dual CTAs — pinned toward bottom */}
+                        <div className="w-full max-w-xs space-y-3 mt-6">
                           <Button
                             onClick={() => uploadRef.current?.querySelector('input[type="file"]')?.dispatchEvent(new MouseEvent('click'))}
                             className="w-full gap-2"
