@@ -251,8 +251,8 @@ export function RedFlagGallery() {
 
         <div className="text-center mt-12">
           <p className="text-[#efefef] text-lg">
-            Your quote might look fine on the surface.
-            <span className="text-white font-medium block mt-1">Our AI sees what you can't.</span>
+            Your Quote Might Look Amazing at Face Value.
+            <span className="text-white font-medium block mt-1">Our AI Scan Sees What You Didn't Even Know to Look For 👀</span>
           </p>
         </div>
       </div>
