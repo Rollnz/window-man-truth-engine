@@ -95,7 +95,7 @@ export function HowItWorksXRay({
             </span>
           </h2>
           
-          <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-[#efefef] max-w-2xl mx-auto">
             Most homeowners overpay by 30% because they don't speak "Contractor."
             Our AI reads the messy handwriting, decodes the jargon, and spots the missing 
             scope items that cost you thousands later.
@@ -146,7 +146,7 @@ export function HowItWorksXRay({
 
               {/* Content */}
               <h3 className="text-lg font-bold text-white mb-2">{step.title}</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">{step.description}</p>
+              <p className="text-sm text-[#efefef] leading-relaxed">{step.description}</p>
 
               {/* Connector arrow (not on last item) */}
               {index < STEPS.length - 1 && <div className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 z-10">
@@ -162,7 +162,7 @@ export function HowItWorksXRay({
             Try It For Free
           </Button>
           
-          <p className="text-sm mt-4 text-gray-400">
+          <p className="text-sm mt-4 text-[#efefef]">
             Stop Guessing. Start Auditing. Use AI to find what your contractor "Missed"
           </p>
         </div>

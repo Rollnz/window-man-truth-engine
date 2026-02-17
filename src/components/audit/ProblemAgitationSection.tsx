@@ -87,7 +87,7 @@ export function ProblemAgitationSection() {
             </h2>
 
             {/* Subheadline */}
-            <p className="text-lg md:text-xl text-slate-400 leading-relaxed">
+            <p className="text-lg md:text-xl text-[#efefef] leading-relaxed">
               {PROBLEM_CONTENT.subheadline.split("Don't let them.")[0]}
               <span className="text-orange-400 font-medium">Don't let them.</span>
             </p>
@@ -105,7 +105,7 @@ export function ProblemAgitationSection() {
                     <span className="text-white font-semibold block">
                       {point.title}
                     </span>
-                    <span className="text-slate-400 text-sm">
+                    <span className="text-[#efefef] text-sm">
                       {point.description}
                     </span>
                   </div>

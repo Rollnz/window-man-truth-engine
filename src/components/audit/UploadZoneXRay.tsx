@@ -173,7 +173,7 @@ export function UploadZoneXRay({
                   <Lock className="w-8 h-8 text-orange-400" />
                 </div>
                 <p className="text-white font-semibold text-lg">Quote Uploaded</p>
-                <p className="text-slate-400 text-sm mb-4">Enter your details to unlock analysis</p>
+                <p className="text-[#efefef] text-sm mb-4">Enter your details to unlock analysis</p>
                 {onReopenModal &&
               <Button
                 onClick={onReopenModal}
@@ -280,8 +280,8 @@ export function UploadZoneXRay({
                 <Lock className="w-10 h-10 text-orange-400" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Your Gradecard is Ready</h3>
-              <p className="text-slate-400 text-sm mb-6">Complete the form to reveal your AI analysis</p>
-              <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+              <p className="text-[#efefef] text-sm mb-6">Complete the form to reveal your AI analysis</p>
+              <div className="flex items-center justify-center gap-2 text-xs text-[#efefef]">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Waiting for your details...</span>
               </div>
@@ -444,7 +444,7 @@ export function UploadZoneXRay({
               Your Quote
             </span>
           </h2>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+          <p className="text-lg text-[#efefef] max-w-2xl mx-auto">
             Stop guessing. Our AI-assisted quote scanner reads the fine print, flags hidden risks, and shows you where
             you're overpaying — before you sign.
           </p>

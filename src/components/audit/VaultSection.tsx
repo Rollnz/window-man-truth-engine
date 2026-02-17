@@ -82,24 +82,24 @@ export function VaultSection() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400">WindowMan Vault</span>
             </h2>
 
-            <p className="text-lg md:text-xl text-slate-300 mb-6 leading-relaxed">
+            <p className="text-lg md:text-xl text-[#efefef] mb-6 leading-relaxed">
               This isn't a dashboard. It's your <span className="text-cyan-400 font-semibold">Digital Fortress</span> for sensitive financial data. Your AI Audits, negotiation scripts, and market intelligence — encrypted and ready when you need them.
             </p>
 
-            <p className="text-slate-400 mb-8">
+            <p className="text-[#efefef] mb-8">
               The average window replacement sales cycle is <span className="text-white font-semibold">1-3 months</span>. Your Vault keeps everything organized so you can make the right decision on your timeline — not theirs.
             </p>
 
             <div className="flex flex-wrap gap-4 mb-8">
-              <div className="flex items-center gap-2 text-sm text-slate-400">
+              <div className="flex items-center gap-2 text-sm text-[#efefef]">
                 <Fingerprint className="w-4 h-4 text-cyan-400" />
                 <span>256-bit Encryption</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-slate-400">
+              <div className="flex items-center gap-2 text-sm text-[#efefef]">
                 <Shield className="w-4 h-4 text-emerald-400" />
                 <span>SOC 2 Compliant</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-slate-400">
+              <div className="flex items-center gap-2 text-sm text-[#efefef]">
                 <Lock className="w-4 h-4 text-amber-400" />
                 <span>Your Data Never Shared</span>
               </div>
@@ -166,7 +166,7 @@ export function VaultSection() {
                             <h4 className="text-white font-semibold text-sm">{item.title}</h4>
                             <Badge className={cn("text-[10px] px-2 py-0", item.badgeColor)}>{item.badge}</Badge>
                           </div>
-                          <p className="text-slate-400 text-xs leading-relaxed">{item.description}</p>
+                          <p className="text-[#efefef] text-xs leading-relaxed">{item.description}</p>
                         </div>
 
                         <Lock className="w-4 h-4 text-slate-600 flex-shrink-0" />
@@ -178,7 +178,7 @@ export function VaultSection() {
 
               <div className="mt-6 pt-6 border-t border-slate-700/50">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-slate-400 text-sm">
+                  <div className="flex items-center gap-2 text-[#efefef] text-sm">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     <span>Free forever. No credit card.</span>
                   </div>
@@ -192,7 +192,7 @@ export function VaultSection() {
         <div className="mt-16 text-center">
           <div className="inline-flex items-center gap-3 bg-slate-900/80 border border-slate-700/50 rounded-full px-6 py-3">
             <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-[#efefef]">
               <span className="text-amber-400 font-semibold">Already scanned a quote?</span>{' '}
               Your results are waiting in the Vault. Don't lose them.
             </p>
