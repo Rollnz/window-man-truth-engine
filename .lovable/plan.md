@@ -1,147 +1,75 @@
 
 
-# Hardened Pre-Gate Interstitial + Congruent Modal Copy
+# Unify "No Quote" CTAs to PreQuoteLeadModalV2
 
-## What This Does
+## What Changes
 
-Inserts a 2.5-second "pre-check" animation between file upload and the lead capture modal. Updates all modal copy to match reality. Adds a micro-tease curiosity hook in the modal.
-
----
-
-## File 1: NEW -- `src/components/audit/PreGateInterstitial.tsx`
-
-A 4-step sequential stepper rendered inside the right panel ("After" card) when phase is `'pre-gate'`.
-
-**Steps:**
-
-| # | Label | Icon | Base ms |
-|---|-------|------|---------|
-| 1 | "Creating document fingerprint..." | `Fingerprint` | 500 |
-| 2 | "Extracting line items and scope details..." | `FileText` | 700 |
-| 3 | "Detecting potential risk flags..." | `AlertTriangle` | 650 |
-| 4 | "Preparing scorecard vectors..." | `Sparkles` | 450 |
-
-**Deterministic jitter** seeded by `scanAttemptId` (not `Math.random()`):
-
-```text
-function getStepJitter(scanAttemptId: string, stepIndex: number): number {
-  let hash = 0;
-  const seed = scanAttemptId + String(stepIndex);
-  for (let i = 0; i < seed.length; i++) {
-    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
-  }
-  // Range: -80 to +120, then clamp per-step minimums
-  return (Math.abs(hash) % 201) - 80;
-}
-```
-
-Per-step minimum clamps: Step 2 min 620ms, Step 4 min 420ms (prevents too-snappy feel).
-
-**Completion sequence:**
-- After step 4 completes, 400ms pause
-- Green banner fades in: "[checkmark] Pre-check complete -- We found potential areas to review."
-- Banner visible 800ms, then fires `onComplete`
-
-**Safety:** `onComplete` guarded by a ref to fire exactly once. All timeouts cleaned up on unmount.
-
-**Props:**
-- `scanAttemptId: string` -- seed for jitter
-- `onComplete: () => void` -- opens the gate modal
+Replace the legacy `SampleReportGateModal` trigger on the NoQuoteEscapeHatch "View Sample Report" card with `PreQuoteLeadModalV2`. The blue "No Quote Yet?" button in UploadZoneXRay already does the right thing -- no change needed there.
 
 ---
 
-## File 2: `src/hooks/audit/useGatedScanner.ts`
+## File 1: `src/components/audit/NoQuoteEscapeHatch.tsx`
 
-**Phase type change:**
-```text
-'idle' | 'pre-gate' | 'uploaded' | 'analyzing' | 'revealed'
-```
+**Current behavior:** The first card ("View Sample Report") calls `onViewSampleClick()` which bubbles up to `Audit.tsx` and opens `SampleReportGateModal`.
 
-**`handleFileSelect` change:**
-- Sets `phase: 'pre-gate'` (was `'uploaded'`)
-- Sets `isModalOpen: false` (was `true`)
-- Everything else identical (preview URL, tracking, scanAttemptId generation)
+**New behavior:**
+- Add local state: `const [showLeadModal, setShowLeadModal] = useState(false)`
+- Make the entire first card clickable (wrap in a clickable container or add `onClick` to the Card)
+- The "Send me the Sample" button and the card itself both call `setShowLeadModal(true)`
+- Render `PreQuoteLeadModalV2` at the bottom of the component with `ctaSource="audit-no-quote-sample"` so attribution is tracked distinctly from the gradecard button
+- Remove the `onViewSampleClick` prop dependency for the first card (keep it as a fallback or remove entirely)
 
-**New `completePreGate` callback:**
-- Sets `phase: 'uploaded'`, `isModalOpen: true`
-- Fires `trackEvent('pre_gate_interstitial_complete', { scan_attempt_id, file_type, file_size_kb })`
-- Guarded: only fires if current phase is `'pre-gate'` (idempotent)
-
-**Expose** `completePreGate` and `scanAttemptId` in the return object.
-
-**Update `UseGatedScannerReturn` interface** to include `completePreGate` and `scanAttemptId`.
+**CTA improvement:** Make the entire first card act as a single clickable surface with `cursor-pointer` and a subtle hover lift, so users don't have to find the small button. The button label stays "Send Me the Sample" but the card itself is also clickable.
 
 ---
 
-## File 3: `src/hooks/audit/index.ts`
+## File 2: `src/pages/Audit.tsx`
 
-Update the `GatedScannerPhase` re-export -- no code change needed since it re-exports the type from useGatedScanner.
+**Cleanup:** The `SampleReportGateModal` and its state (`sampleGateOpen`, `sampleGateTriggerRef`, `openSampleGate`) can be removed since the NoQuoteEscapeHatch now self-manages its own modal. The `onViewSampleClick` prop passed to `NoQuoteEscapeHatch` becomes unnecessary.
 
----
+However, `ScannerHeroWindow` also uses `onViewSampleClick` for the hero "No quote yet?" link. That should also switch to opening `PreQuoteLeadModalV2`. Two options:
 
-## File 4: `src/components/audit/QuoteUploadGateModal.tsx`
+- **Option A (simpler):** Keep `openSampleGate` in Audit.tsx but have it open a `PreQuoteLeadModalV2` instead of `SampleReportGateModal`. This covers the hero CTA.
+- **Option B (cleaner):** Have `ScannerHeroWindow` manage its own modal internally, same pattern as NoQuoteEscapeHatch.
 
-**Copy changes (no structural UI changes):**
+**Recommended: Option A** -- keep a single `PreQuoteLeadModalV2` in Audit.tsx for the hero CTA, and let NoQuoteEscapeHatch manage its own instance. This avoids prop-drilling while keeping the hero wiring simple.
 
-| Element | Old | New |
-|---------|-----|-----|
-| Header icon | `Lock` | `Sparkles` |
-| Title | "Unlock Your Full Analysis" | "Your Quote Is Ready to Audit" |
-| Body | "Your quote has been analyzed. Enter your details to see the complete breakdown, warnings, and recommendations." | "Your quote is uploaded and ready. Enter your details to start the audit and unlock your full breakdown, warnings, and recommendations." |
-| Trust pill | "Your data is secure. And Saved in Your Vault." | "Your data is secure. Your report will be saved in your Vault." |
-| CTA label | "Unlock My Score Now" | "Start My Analysis" |
-| CTA icon | `Lock` | `Sparkles` |
-| Loading label | "Starting Analysis..." | "Running Analysis..." |
-
-**New element -- micro-tease pill** (between body text and trust banner):
-
-Amber-tinted pill with `AlertTriangle` icon. Rotates between 3 variants seeded by `scanAttemptId` (passed as new optional prop):
-
-1. "Pre-check: review areas may exist in scope / fine print."
-2. "Pre-check: potential omissions detected in scope wording."
-3. "Pre-check: contract clarity signals flagged for review."
-
-If no `scanAttemptId` prop, defaults to variant 1.
+Changes:
+- Replace `SampleReportGateModal` import and render with `PreQuoteLeadModalV2`
+- Replace `sampleGateOpen` / `setSampleGateOpen` state with the same pattern but targeting the new modal
+- Remove `sampleGateTriggerRef` (PreQuoteLeadModalV2 handles its own focus)
+- Remove `SampleReportGateModal` import
+- Keep `onViewSampleClick` on hero but wire it to the new modal
 
 ---
 
-## File 5: `src/components/audit/UploadZoneXRay.tsx`
+## File 3: `src/components/audit/ScannerHeroWindow.tsx`
 
-**New props added:**
-- `scanAttemptId?: string`
-- `onCompletePreGate?: () => void`
-
-**Right panel -- new `'pre-gate'` case** (before `'uploaded'` in the switch):
-- Renders a Card with `PreGateInterstitial` centered
-- Passes `scanAttemptId` and `onComplete={onCompletePreGate}`
-
-**Left panel:** `'pre-gate'` treated same as `'uploaded'` -- shows blurred file preview with Lock overlay, but **without** the "Unlock My Report" button (interstitial is still running).
+No changes needed -- it already calls `onViewSampleClick` which will now open `PreQuoteLeadModalV2` from Audit.tsx.
 
 ---
 
-## File 6: `src/pages/Audit.tsx`
+## Files NOT Changed
 
-Pass two new props to `UploadZoneXRay`:
-- `scanAttemptId={scanner.scanAttemptId ?? undefined}`
-- `onCompletePreGate={scanner.completePreGate}`
-
-Pass one new prop to `QuoteUploadGateModal`:
-- `scanAttemptId={scanner.scanAttemptId ?? undefined}`
+- `src/components/audit/SampleReportGateModal.tsx` -- kept in codebase (other pages may use it), just no longer rendered on `/audit`
+- `src/components/audit/UploadZoneXRay.tsx` -- already correct, "No Quote Yet?" button opens `PreQuoteLeadModalV2` with `ctaSource="audit-gradecard-no-quote"`
+- `PreQuoteLeadModalV2` component itself -- no changes needed
 
 ---
 
-## What Does NOT Change
+## CTA Improvements (bonus)
 
-- Form fields (First Name, Last Name, Email, Phone, SMS consent)
-- Locked-open modal UX (ESC/overlay click disabled)
-- Post-submit analysis flow (analyzing theater then revealed)
-- All existing tracking events
-- File compression, AI request logic, Q&A flow
-- Reset behavior
+For the NoQuoteEscapeHatch first card:
+- Make the entire card a clickable surface (`cursor-pointer`, `hover:scale-[1.02]` lift)
+- Change button label from config value ("Send Me the Sample") to something more action-oriented: "See What We Flag" or keep "Send Me the Sample" if that's tested well
+- Add a subtle pulse or glow on the card border to draw attention since it's the primary escape hatch for users without quotes
 
-## Risk Mitigations Applied
+---
 
-- **Risk A (Vault claim):** Step 1 says "Creating document fingerprint" not "Securing in Vault" -- truthful client-side operation
-- **Risk B (Jitter determinism):** Seeded by scanAttemptId, same upload = same timing. Per-step minimum clamps prevent sub-400ms snappiness. Range fixed to `% 201` for symmetric -80 to +120
-- **Risk C (Micro-tease fatigue):** 3 rotating variants seeded by scanAttemptId, no overclaiming
+## Summary of Files
+
+| File | Change |
+|------|--------|
+| `src/components/audit/NoQuoteEscapeHatch.tsx` | Add local `PreQuoteLeadModalV2` with `ctaSource="audit-no-quote-sample"`, make first card fully clickable |
+| `src/pages/Audit.tsx` | Replace `SampleReportGateModal` with `PreQuoteLeadModalV2` for hero CTA, remove legacy modal state |
 
