@@ -45,7 +45,7 @@ export function VariantD_UrgencyEvent({
   const isHighRisk = countyData && countyData.avgStormClaims > 600;
 
   return (
-    <div className="space-y-4 wm-reveal">
+    <div className="space-y-4">
       {/* Alert header */}
       <div
         className={cn(
@@ -73,7 +73,7 @@ export function VariantD_UrgencyEvent({
       </div>
 
       {/* CTA 3: Storm Readiness Check */}
-      <div className="wm-reveal wm-stagger-1">
+      <div>
         <CtaCard
           icon={<ShieldAlert className="h-5 w-5 text-destructive" />}
           label={config.thirdCtaLabel}
@@ -92,7 +92,7 @@ export function VariantD_UrgencyEvent({
       </div>
 
       {/* CTA 1: Call */}
-      <div className="wm-reveal wm-stagger-2">
+      <div>
         <CtaCard
           icon={<Phone className="h-5 w-5 text-primary" />}
           label={config.callCtaLabel}
@@ -103,7 +103,7 @@ export function VariantD_UrgencyEvent({
       </div>
 
       {/* CTA 2: Estimate */}
-      <div className="wm-reveal wm-stagger-3">
+      <div>
         <CtaCard
           icon={<FileText className="h-5 w-5 text-muted-foreground" />}
           label={config.estimateCtaLabel}

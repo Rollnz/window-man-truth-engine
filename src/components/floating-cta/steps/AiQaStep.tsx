@@ -310,7 +310,7 @@ export function AiQaStep({
 
       {/* Routing CTAs */}
       {showRouting && (
-        <div className="space-y-2 mb-4 wm-reveal">
+        <div className="space-y-2 mb-4">
           <p className="text-xs text-muted-foreground text-center">
             Ready to take the next step?
           </p>

@@ -41,7 +41,7 @@ export function VariantE_AiConcierge({
   };
 
   return (
-    <div className="space-y-5 wm-reveal">
+    <div className="space-y-5">
       {/* Window Man avatar */}
       <div className="flex flex-col items-center gap-2">
         <div
@@ -67,7 +67,7 @@ export function VariantE_AiConcierge({
       </div>
 
       {/* Primary CTA: Ask Me Anything */}
-      <div className="wm-reveal wm-stagger-1">
+      <div>
         <Button
           onClick={() => {
             trackEvent('choice_step_cta_clicked', {
@@ -90,7 +90,7 @@ export function VariantE_AiConcierge({
       </div>
 
       {/* Suggested question chips */}
-      <div className="space-y-2 wm-reveal wm-stagger-2">
+      <div className="space-y-2">
         <p className="text-xs text-muted-foreground text-center">
           Or try a quick question:
         </p>
@@ -114,7 +114,7 @@ export function VariantE_AiConcierge({
       </div>
 
       {/* Secondary CTAs */}
-      <div className="space-y-2 pt-2 wm-reveal wm-stagger-3">
+      <div className="space-y-2 pt-2">
         <Button
           onClick={onCallClick}
           variant="outline"

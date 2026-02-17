@@ -34,7 +34,7 @@ export function VariantC_IncentiveOffer({
       : 'This Week: Free Window Assessment ($299 Value)';
 
   return (
-    <div className="space-y-4 wm-reveal">
+    <div className="space-y-4">
       {/* Promotional banner */}
       <div
         className={cn(
@@ -56,7 +56,6 @@ export function VariantC_IncentiveOffer({
 
       {/* CTA 3: Unlock Savings Report (primary position) */}
       <div
-        className="wm-reveal wm-stagger-1"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -84,7 +83,7 @@ export function VariantC_IncentiveOffer({
       </div>
 
       {/* CTA 1: Call */}
-      <div className="wm-reveal wm-stagger-2">
+      <div>
         <CtaCard
           icon={<Phone className="h-5 w-5 text-primary" />}
           label={config.callCtaLabel}
@@ -95,7 +94,7 @@ export function VariantC_IncentiveOffer({
       </div>
 
       {/* CTA 2: Estimate */}
-      <div className="wm-reveal wm-stagger-3">
+      <div>
         <CtaCard
           icon={<FileText className="h-5 w-5 text-muted-foreground" />}
           label={config.estimateCtaLabel}

@@ -28,7 +28,7 @@ export function VariantA_ProofTransparency({
     : config.thirdCtaLabel;
 
   return (
-    <div className="space-y-4 wm-reveal">
+    <div className="space-y-4">
       {/* Header badge */}
       <div className="flex justify-center">
         <ShimmerBadge text="AI-Powered Truth Engine" />
@@ -47,52 +47,46 @@ export function VariantA_ProofTransparency({
       </div>
 
       {/* CTA 1: Call */}
-      <div className="wm-reveal wm-stagger-1">
-        <CtaCard
-          icon={<Phone className="h-5 w-5 text-primary" />}
-          label={config.callCtaLabel}
-          subtext={config.callCtaSubtext}
-          onClick={onCallClick}
-          variant="primary"
-        />
-      </div>
+      <CtaCard
+        icon={<Phone className="h-5 w-5 text-primary" />}
+        label={config.callCtaLabel}
+        subtext={config.callCtaSubtext}
+        onClick={onCallClick}
+        variant="primary"
+      />
 
       {/* CTA 3: See Real Results (Proof) */}
-      <div className="wm-reveal wm-stagger-2">
-        <CtaCard
-          icon={<BarChart3 className="h-5 w-5 text-primary" />}
-          label={countyLabel}
-          subtext={config.thirdCtaSubtext}
-          onClick={() => {
-            trackEvent('choice_step_cta_clicked', {
-              panel_variant: 'A',
-              cta_type: 'third_cta',
-              third_cta_category: 'proof',
-            });
-            onStartAiQa('proof');
-          }}
-          variant="secondary"
-        >
-          <div className="mt-2 flex justify-center">
-            <LocationBadge
-              locationData={locationData}
-              isLoading={locationLoading}
-              onResolveZip={onResolveZip}
-            />
-          </div>
-        </CtaCard>
-      </div>
+      <CtaCard
+        icon={<BarChart3 className="h-5 w-5 text-primary" />}
+        label={countyLabel}
+        subtext={config.thirdCtaSubtext}
+        onClick={() => {
+          trackEvent('choice_step_cta_clicked', {
+            panel_variant: 'A',
+            cta_type: 'third_cta',
+            third_cta_category: 'proof',
+          });
+          onStartAiQa('proof');
+        }}
+        variant="secondary"
+      >
+        <div className="mt-2 flex justify-center">
+          <LocationBadge
+            locationData={locationData}
+            isLoading={locationLoading}
+            onResolveZip={onResolveZip}
+          />
+        </div>
+      </CtaCard>
 
       {/* CTA 2: Request Estimate */}
-      <div className="wm-reveal wm-stagger-3">
-        <CtaCard
-          icon={<FileText className="h-5 w-5 text-muted-foreground" />}
-          label={config.estimateCtaLabel}
-          subtext={config.estimateCtaSubtext}
-          onClick={onStartForm}
-          variant="outline"
-        />
-      </div>
+      <CtaCard
+        icon={<FileText className="h-5 w-5 text-muted-foreground" />}
+        label={config.estimateCtaLabel}
+        subtext={config.estimateCtaSubtext}
+        onClick={onStartForm}
+        variant="outline"
+      />
 
       {/* Trust bar */}
       <MiniTrustBar />

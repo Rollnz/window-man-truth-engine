@@ -106,7 +106,7 @@ export function VariantB_DiagnosticQuiz({
   );
 
   return (
-    <div className="space-y-4 wm-reveal">
+    <div className="space-y-4 ">
       {/* Header stamp */}
       <div className="flex justify-center">
         <StampBadge variant="red">CASE FILE</StampBadge>
@@ -122,7 +122,7 @@ export function VariantB_DiagnosticQuiz({
 
       {/* Quiz or start button */}
       {!quizStarted ? (
-        <div className="wm-reveal wm-stagger-1">
+        <div>
           <Button
             onClick={startQuiz}
             variant="cta"
@@ -167,7 +167,7 @@ export function VariantB_DiagnosticQuiz({
 
           {/* Q2: Concern */}
           {(quizStep as number) >= 1 && (
-            <div className="space-y-2 wm-reveal">
+            <div className="space-y-2 ">
               <div className="flex items-center gap-2">
                 {answers.concern ? (
                   <CheckCircle2 className="w-4 h-4 text-primary" />
@@ -200,7 +200,7 @@ export function VariantB_DiagnosticQuiz({
 
           {/* Q3: Timeline */}
           {(quizStep as number) >= 2 && (
-            <div className="space-y-2 wm-reveal">
+            <div className="space-y-2 ">
               <div className="flex items-center gap-2">
                 {answers.timeline ? (
                   <CheckCircle2 className="w-4 h-4 text-primary" />
@@ -233,7 +233,7 @@ export function VariantB_DiagnosticQuiz({
 
           {/* Results */}
           {riskLevel && (
-            <div className="space-y-3 wm-reveal">
+            <div className="space-y-3 ">
               <div
                 className={cn(
                   'flex items-center justify-center gap-2 px-4 py-3 rounded-lg border font-semibold text-sm',
