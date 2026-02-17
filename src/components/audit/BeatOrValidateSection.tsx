@@ -93,6 +93,22 @@ export function BeatOrValidateSection() {
             </div>
           </Card>
 
+          {/* Mobile only: WindowMan divider */}
+          <div className="flex lg:hidden items-center gap-4 py-2">
+            <div className="flex-1 h-px bg-gradient-to-r from-emerald-500/40 to-transparent" />
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-16 h-20 rounded-xl overflow-hidden border-2 border-slate-600 shadow-lg">
+                <img
+                  src="/lovable-uploads/windowman_report.webp"
+                  alt="WindowMan holding your report"
+                  className="w-full h-full object-cover object-top"
+                />
+              </div>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">or</span>
+            </div>
+            <div className="flex-1 h-px bg-gradient-to-l from-cyan-500/40 to-transparent" />
+          </div>
+
           {/* Path B: The Negotiator */}
           <Card className="relative bg-gradient-to-br from-cyan-950/50 to-slate-900/50 border-cyan-500/20 p-8 overflow-hidden group hover:border-cyan-500/40 transition-all duration-300">
             {/* Decorative corner */}
@@ -143,10 +159,18 @@ export function BeatOrValidateSection() {
           </Card>
         </div>
 
-        {/* Center connector visual */}
-        <div className="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center justify-center">
-          <div className="w-20 h-20 bg-slate-800 border-2 border-slate-700 rounded-full flex items-center justify-center shadow-xl">
-            <span className="text-2xl font-bold text-white">OR</span>
+        {/* Desktop only: WindowMan replaces OR circle */}
+        <div className="hidden lg:flex absolute left-1/2 top-[45%] -translate-x-1/2 -translate-y-1/2 z-10 flex-col items-center gap-2">
+          <div className="absolute -inset-3 rounded-full bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 blur-xl" />
+          <div className="relative w-20 h-28 rounded-2xl overflow-hidden border-2 border-slate-600 shadow-2xl shadow-slate-900/80 ring-2 ring-emerald-500/20">
+            <img
+              src="/lovable-uploads/windowman_report.webp"
+              alt="WindowMan holding your report"
+              className="w-full h-full object-cover object-top"
+            />
+          </div>
+          <div className="relative px-3 py-1 bg-slate-800 border border-slate-700 rounded-full">
+            <span className="text-sm font-bold text-white">OR</span>
           </div>
         </div>
 
