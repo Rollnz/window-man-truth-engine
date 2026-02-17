@@ -70,6 +70,14 @@ export const INTENT_TIER_MAP: Record<string, ToolIntentMapping> = {
     interaction_type: 'form',
     description: 'Floating estimate request - mid-funnel engagement',
   },
+  'slide_over_ai_qa': {
+    lead_source: 'slide_over_ai_qa',
+    tool_name: 'Slide-Over AI Q&A',
+    intent_tier: 3,
+    funnel_stage: 'mid',
+    interaction_type: 'form',
+    description: 'AI Q&A mini-flow from slide-over panel',
+  },
 
   // Tier 4: Serious / Near Decision
   'quote_checker': {
