@@ -90,13 +90,6 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
 
   return (
     <div ref={ref} className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col items-center md:flex-row md:items-center gap-1 md:gap-2 text-xs uppercase tracking-wider">
-        <FileText className="w-4 h-4 text-muted-foreground hidden md:block" />
-        <span className="font-bold font-sans text-rose-600 dark:text-rose-400 text-base">Before:</span>
-        <span className="font-bold font-sans text-rose-600 dark:text-rose-400 text-base">Just a Confusing Estimate</span>
-      </div>
-
       {/* Upload Zone */}
       <div
         onDragOver={handleDragOver}
@@ -276,11 +269,6 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
         </div>
       </div>
 
-      {/* Helper text */}
-      <p className="text-center text-foreground text-base md:text-lg">
-        Contractors often hand you numbers, jargon, and tiny fine print. 
-        You're expected to just trust it.
-      </p>
     </div>
   );
 });
