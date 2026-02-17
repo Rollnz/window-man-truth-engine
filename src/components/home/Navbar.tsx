@@ -31,7 +31,7 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between relative">
         {/* Logo */}
         <Link to={ROUTES.HOME} className="flex items-center gap-2 font-bold text-lg">
           <img src="/icon-512.webp" alt="Its Window Man Logo" width={36} height={36} className="w-9 h-9 object-contain" />
@@ -62,7 +62,7 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
 
         {/* Funnel Mode Desktop CTAs */}
         {funnelMode && (
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
             {/* Call Window Man CTA */}
             <Button variant="outline" size="sm" asChild className="border-primary/30 hover:border-primary/50">
               <a href="tel:+15614685571" className="flex items-center gap-2">
