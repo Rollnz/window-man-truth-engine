@@ -1,96 +1,147 @@
 
 
-# Brighten Subtitle Text Across /audit Page
+# Hardened Pre-Gate Interstitial + Congruent Modal Copy
 
-## What You Asked For
+## What This Does
 
-Change all muted gray body/subtitle text (currently `text-slate-400`, `text-slate-300`, `text-gray-400`, `text-slate-500` used for descriptive copy) to a near-white `text-[#efefef]` so the text is actually readable against the dark backgrounds.
+Inserts a 2.5-second "pre-check" animation between file upload and the lead capture modal. Updates all modal copy to match reality. Adds a micro-tease curiosity hook in the modal.
 
-## Scope
+---
 
-Only descriptive/subtitle text -- NOT headings (already white), NOT colored accents (orange/cyan/emerald), NOT intentionally dim metadata (timestamps, "2,847 users this week"), and NOT icon colors.
+## File 1: NEW -- `src/components/audit/PreGateInterstitial.tsx`
 
-## Every Line Being Changed (Top to Bottom)
+A 4-step sequential stepper rendered inside the right panel ("After" card) when phase is `'pre-gate'`.
 
-### 1. `ScannerHeroWindow.tsx` (Hero)
-| Line | Current | Text |
-|------|---------|------|
-| 187 | `text-slate-300/90` | "Contractors hide fees in the fine print." |
-| 263 | `text-slate-400` | Trust line ("Private. No spam. Instant results.") |
-| 287 | `text-slate-500` | Bottom trust signals ("5,000+ Quotes Scanned", etc.) |
+**Steps:**
 
-### 2. `ScannerIntelligenceBar.tsx` (4-badge bar)
-| Line | Current | Text |
-|------|---------|------|
-| 42 | `text-slate-400` | Badge descriptions (e.g., "Verifying Florida High-Velocity Hurricane Zone ratings") |
+| # | Label | Icon | Base ms |
+|---|-------|------|---------|
+| 1 | "Creating document fingerprint..." | `Fingerprint` | 500 |
+| 2 | "Extracting line items and scope details..." | `FileText` | 700 |
+| 3 | "Detecting potential risk flags..." | `AlertTriangle` | 650 |
+| 4 | "Preparing scorecard vectors..." | `Sparkles` | 450 |
 
-### 3. `ProblemAgitationSection.tsx` (Minefield section)
-| Line | Current | Text |
-|------|---------|------|
-| 90 | `text-slate-400` | "Contractors rely on your confusion to inflate their margins." |
-| 108 | `text-slate-400` | Each agitation bullet description (e.g., "Are you paying for 'miscellaneous' materials...") |
+**Deterministic jitter** seeded by `scanAttemptId` (not `Math.random()`):
 
-### 4. `UploadZoneXRay.tsx` (Before/After scanner grid)
-| Line | Current | Text |
-|------|---------|------|
-| 176 | `text-slate-400` | "Enter your details to unlock analysis" |
-| 283 | `text-slate-400` | "Complete the form to reveal your AI analysis" |
-| 284 | `text-slate-500` | "Waiting for your details..." |
-| 447 | `text-slate-400` | "Stop guessing. Our AI-assisted quote scanner reads the fine print..." |
+```text
+function getStepJitter(scanAttemptId: string, stepIndex: number): number {
+  let hash = 0;
+  const seed = scanAttemptId + String(stepIndex);
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+  }
+  // Range: -80 to +120, then clamp per-step minimums
+  return (Math.abs(hash) % 201) - 80;
+}
+```
 
-### 5. `HowItWorksXRay.tsx` (X-Ray Vision section)
-| Line | Current | Text |
-|------|---------|------|
-| 98 | `text-slate-400` | "Most homeowners overpay by 30% because they don't speak 'Contractor.'..." |
-| 149 | `text-slate-400` | Each step description (e.g., "Snap a photo, drag a PDF, or paste text...") |
-| 165 | `text-gray-400` | "Stop Guessing. Start Auditing..." |
+Per-step minimum clamps: Step 2 min 620ms, Step 4 min 420ms (prevents too-snappy feel).
 
-### 6. `BeatOrValidateSection.tsx` (Validator/Negotiator)
-| Line | Current | Text |
-|------|---------|------|
-| 39 | `text-slate-400` | "Every scan ends with you winning. Period." |
-| 79 | `text-slate-400` | Validator bullet items ("Independent verification...", etc.) |
-| 128 | `text-slate-400` | Negotiator bullet items ("AI-generated negotiation scripts...", etc.) |
-| 160 | `text-slate-400` | "Cost to you: $0.00" |
+**Completion sequence:**
+- After step 4 completes, 400ms pause
+- Green banner fades in: "[checkmark] Pre-check complete -- We found potential areas to review."
+- Banner visible 800ms, then fires `onComplete`
 
-### 7. `RedFlagGallery.tsx` (Red flag carousel)
-| Line | Current | Text |
-|------|---------|------|
-| 143 | `text-slate-400` | "Here's what our AI finds hiding in quotes every single day." |
-| 202 | `text-slate-400` | Card excerpt text (italic quote snippets) |
-| 253 | `text-slate-500` | "Your quote might look fine on the surface." |
+**Safety:** `onComplete` guarded by a ref to fire exactly once. All timeouts cleaned up on unmount.
 
-### 8. `NoQuoteEscapeHatch.tsx` (No Quote section)
-| Line | Current | Text |
-|------|---------|------|
-| 92 | `text-slate-400` | "You're smart to do research first..." |
-| 133 | `text-slate-400` | Each alternative card description |
-| 176 | `text-slate-500` | "Come back anytime with your quote..." |
+**Props:**
+- `scanAttemptId: string` -- seed for jitter
+- `onComplete: () => void` -- opens the gate modal
 
-### 9. `VaultSection.tsx` (Vault section)
-| Line | Current | Text |
-|------|---------|------|
-| 85 | `text-slate-300` | "This isn't a dashboard. It's your Digital Fortress..." |
-| 89 | `text-slate-400` | "The average window replacement sales cycle is 1-3 months..." |
-| 94-104 | `text-slate-400` | Trust indicators ("256-bit Encryption", "SOC 2 Compliant", "Your Data Never Shared") |
-| 169 | `text-slate-400` | Vault loot item descriptions |
-| 183 | `text-slate-400` | "Free forever. No credit card." |
-| 195 | `text-slate-400` | "Already scanned a quote? Your results are waiting..." |
+---
 
-## What Is NOT Changing
+## File 2: `src/hooks/audit/useGatedScanner.ts`
 
-- White headings (`text-white`) -- already bright
-- Colored accent text (`text-orange-400`, `text-cyan-400`, `text-emerald-400`, `text-red-400`)
-- Icon colors (`text-slate-400` on icons like Lock, Shield -- these stay dim intentionally)
-- Tiny metadata (`text-xs text-slate-500` for "2,847 users this week", step number indicators)
-- Button text colors
-- Badge text colors
-- The blurred preview teaser content inside UploadZoneXRay (behind blur, color irrelevant)
+**Phase type change:**
+```text
+'idle' | 'pre-gate' | 'uploaded' | 'analyzing' | 'revealed'
+```
 
-## Technical Details
+**`handleFileSelect` change:**
+- Sets `phase: 'pre-gate'` (was `'uploaded'`)
+- Sets `isModalOpen: false` (was `true`)
+- Everything else identical (preview URL, tracking, scanAttemptId generation)
 
-- **Replacement class**: `text-[#efefef]` (Tailwind arbitrary value)
-- **Files changed**: 9 component files
-- **Zero layout impact**: Only color classes swapped, no structural changes
-- All instances of `text-gray-400` also changed to `text-[#efefef]` (line 165 in HowItWorksXRay)
+**New `completePreGate` callback:**
+- Sets `phase: 'uploaded'`, `isModalOpen: true`
+- Fires `trackEvent('pre_gate_interstitial_complete', { scan_attempt_id, file_type, file_size_kb })`
+- Guarded: only fires if current phase is `'pre-gate'` (idempotent)
+
+**Expose** `completePreGate` and `scanAttemptId` in the return object.
+
+**Update `UseGatedScannerReturn` interface** to include `completePreGate` and `scanAttemptId`.
+
+---
+
+## File 3: `src/hooks/audit/index.ts`
+
+Update the `GatedScannerPhase` re-export -- no code change needed since it re-exports the type from useGatedScanner.
+
+---
+
+## File 4: `src/components/audit/QuoteUploadGateModal.tsx`
+
+**Copy changes (no structural UI changes):**
+
+| Element | Old | New |
+|---------|-----|-----|
+| Header icon | `Lock` | `Sparkles` |
+| Title | "Unlock Your Full Analysis" | "Your Quote Is Ready to Audit" |
+| Body | "Your quote has been analyzed. Enter your details to see the complete breakdown, warnings, and recommendations." | "Your quote is uploaded and ready. Enter your details to start the audit and unlock your full breakdown, warnings, and recommendations." |
+| Trust pill | "Your data is secure. And Saved in Your Vault." | "Your data is secure. Your report will be saved in your Vault." |
+| CTA label | "Unlock My Score Now" | "Start My Analysis" |
+| CTA icon | `Lock` | `Sparkles` |
+| Loading label | "Starting Analysis..." | "Running Analysis..." |
+
+**New element -- micro-tease pill** (between body text and trust banner):
+
+Amber-tinted pill with `AlertTriangle` icon. Rotates between 3 variants seeded by `scanAttemptId` (passed as new optional prop):
+
+1. "Pre-check: review areas may exist in scope / fine print."
+2. "Pre-check: potential omissions detected in scope wording."
+3. "Pre-check: contract clarity signals flagged for review."
+
+If no `scanAttemptId` prop, defaults to variant 1.
+
+---
+
+## File 5: `src/components/audit/UploadZoneXRay.tsx`
+
+**New props added:**
+- `scanAttemptId?: string`
+- `onCompletePreGate?: () => void`
+
+**Right panel -- new `'pre-gate'` case** (before `'uploaded'` in the switch):
+- Renders a Card with `PreGateInterstitial` centered
+- Passes `scanAttemptId` and `onComplete={onCompletePreGate}`
+
+**Left panel:** `'pre-gate'` treated same as `'uploaded'` -- shows blurred file preview with Lock overlay, but **without** the "Unlock My Report" button (interstitial is still running).
+
+---
+
+## File 6: `src/pages/Audit.tsx`
+
+Pass two new props to `UploadZoneXRay`:
+- `scanAttemptId={scanner.scanAttemptId ?? undefined}`
+- `onCompletePreGate={scanner.completePreGate}`
+
+Pass one new prop to `QuoteUploadGateModal`:
+- `scanAttemptId={scanner.scanAttemptId ?? undefined}`
+
+---
+
+## What Does NOT Change
+
+- Form fields (First Name, Last Name, Email, Phone, SMS consent)
+- Locked-open modal UX (ESC/overlay click disabled)
+- Post-submit analysis flow (analyzing theater then revealed)
+- All existing tracking events
+- File compression, AI request logic, Q&A flow
+- Reset behavior
+
+## Risk Mitigations Applied
+
+- **Risk A (Vault claim):** Step 1 says "Creating document fingerprint" not "Securing in Vault" -- truthful client-side operation
+- **Risk B (Jitter determinism):** Seeded by scanAttemptId, same upload = same timing. Per-step minimum clamps prevent sub-400ms snappiness. Range fixed to `% 201` for symmetric -80 to +120
+- **Risk C (Micro-tease fatigue):** 3 rotating variants seeded by scanAttemptId, no overclaiming
 
