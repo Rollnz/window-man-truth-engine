@@ -1,62 +1,42 @@
 
-# Add Window Man Office Image Between "We Work for Homeowners" and "Radical Transparency"
+
+# Center Phone Number in Desktop Navigation
+
+## Summary
+
+Move the phone number CTA so it is visually centered in the navbar on desktop (funnel mode pages). Currently it sits in a `div` between the logo and right-side controls, but `justify-between` pushes it off-center. The fix uses `absolute` positioning so the phone number is perfectly centered regardless of left/right content widths.
 
 ## What Changes
 
-### 1. Copy the uploaded image into the project
-Copy `user-uploads://windowman_office.webp` to `src/assets/windowman-office.webp` so it can be imported as an ES6 module for proper bundling and optimization.
+### File: `src/components/home/Navbar.tsx` (lines 64-74)
 
-### 2. Insert the image in `WhoIsWindowManSection.tsx`
+**Current:** The funnel-mode phone number is a flex child inside the `justify-between` container, so it lands wherever the remaining space puts it -- not truly centered.
 
-Place the image between lines 127 ("We work for homeowners.") and 129 (the "RADICAL TRANSPARENCY" card), wrapped in the existing `AnimateOnScroll` component with a slide-up animation.
+**New:** Apply `absolute left-1/2 -translate-x-1/2` to the phone number wrapper so it centers within the navbar bar regardless of the logo or right-side icon widths. The parent container already has `relative` implicitly from being a positioned flex container, but we will add `relative` explicitly to ensure correctness.
 
-The image block will:
-- Use `AnimateOnScroll` with `direction="up"` and a ~500ms duration for the slide-up entrance
-- Apply `loading="lazy"` and `decoding="async"` for performance (matching the project's lazy-load standard)
-- Include explicit `width`/`height` attributes to prevent CLS (Cumulative Layout Shift)
-- Be centered with `max-w-2xl mx-auto` and rounded corners with a subtle border/shadow for visual polish
-- Have a descriptive `alt` tag for accessibility
-- Add vertical spacing (`my-10`) to breathe between the text and the Radical Transparency section
+### Changes at a glance
 
-### Improvements Beyond the Basic Addition
-- A subtle caption below the image: "Your advocate. Not your salesman." to reinforce the messaging
-- A soft gradient overlay at the bottom edge of the image for seamless blending into the section background
-- `will-change` cleanup after animation completes (handled automatically by `AnimateOnScroll`)
+| Line(s) | Change |
+|---------|--------|
+| 34 | Add `relative` to the inner `div` class so the absolutely-positioned phone number centers within it |
+| 64-74 | Replace the funnel-mode phone `div` with an absolutely-centered version: `absolute left-1/2 -translate-x-1/2` |
 
-## File Changes
+### Resulting markup (funnel mode, desktop)
 
-| File | Change |
-|------|--------|
-| `src/assets/windowman-office.webp` | New file (copied from upload) |
-| `src/components/home/WhoIsWindowManSection.tsx` | Import image + `AnimateOnScroll`, insert image block between lines 127-128 |
+```text
+<div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between relative">
+  [Logo - left]
 
-## Technical Details
-
-The inserted JSX (after line 127, before the Radical Transparency `div`):
-
-```tsx
-import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
-import windowmanOfficeImg from '@/assets/windowman-office.webp';
-
-// ... inside the component, after "We work for homeowners." paragraph:
-
-<AnimateOnScroll direction="up" duration={600} threshold={0.2} className="my-10">
-  <div className="max-w-2xl mx-auto">
-    <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-lg">
-      <img
-        src={windowmanOfficeImg}
-        alt="Window Man reviewing a quote report at his desk"
-        className="w-full h-auto"
-        loading="lazy"
-        decoding="async"
-        width={1456}
-        height={816}
-      />
-      <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-black/40 to-transparent" />
+  {funnelMode && (
+    <div className="hidden md:flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
+      <Button ...>
+        <Phone /> (561) 468-5571
+      </Button>
     </div>
-    <p className="text-center text-sm text-muted-foreground mt-3 italic">
-      Your advocate. Not your salesman.
-    </p>
-  </div>
-</AnimateOnScroll>
+  )}
+
+  [Theme toggle + vault icon - right]
+</div>
 ```
+
+No changes to mobile layout. Non-funnel mode (nav links) is unaffected.
