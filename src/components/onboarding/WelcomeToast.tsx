@@ -100,18 +100,19 @@ export function WelcomeToast() {
           <div className="relative space-y-3">
             {/* Headline */}
             <div className="flex items-center gap-2 pr-6">
+              <Sparkles className="h-5 w-5 text-primary shrink-0" />
               <h3 className="font-semibold text-foreground">The WindowMan Truth Engine</h3>
             </div>
 
             {/* Body */}
             <p className="text-sm text-muted-foreground leading-relaxed">
-              See your <span className="text-foreground font-medium">Score</span> in the header? Use tools to earn
-              points and unlock elite protection guides.
+              See your <span className="text-foreground font-medium">Readiness Score</span> Explore tools and Audit Your
+              Proposals
             </p>
 
             {/* CTA Button */}
             <Button onClick={handleStartScoring} variant="cta" size="sm" className="w-full sm:w-auto mt-1">
-              Start Scoring Points
+              Start Learning
             </Button>
           </div>
         </div>
