@@ -1,53 +1,55 @@
 
 
-# Fix "Missing Scope" Callout Layering on Mobile
+# E2E Test Suite: Selector Mismatches Found
 
 ## Problem
-The "Missing Scope" callout (id: 2) sits at `z-20`, which is above the upload overlay at `z-10`. On mobile, this callout's `left: -15%` position lands directly over the upload button, blocking clicks. The other two callouts ("Price Warning" at `top: 15%, right: -10%` and "Legal Alert" at `bottom: 15%, right: -5%`) do not overlap the button.
 
-## Fix: Conditional Z-Index on One Callout
+The Playwright tests in `e2e/scanner-flow.spec.ts` **will fail** because the text selectors don't match the actual modal content on `/ai-scanner`.
 
-Two changes in one file (`src/components/audit/UploadZoneXRay.tsx`):
+The tests reference text from `LeadCaptureModal` (a different component), but `/ai-scanner` actually renders `QuoteUploadGateModal`, which has different copy.
 
-### 1. Conditional z-index in the callout map loop (line 237)
+## Mismatches
 
-Currently all callouts share the same class:
-```
-"absolute z-20 transform transition-all duration-500"
-```
+| Test Selector | Expected By Test | Actual in QuoteUploadGateModal |
+|---|---|---|
+| Modal title | `"Unlock Your Full Analysis"` | `"Your Quote Is Ready to Audit"` |
+| Submit button | `"Unlock My Score Now"` | `"Start My Analysis"` |
 
-Change to:
-```
-"absolute transform transition-all duration-500",
-callout.id === 2 ? "z-0 lg:z-20" : "z-20"
-```
+These selectors appear in:
+- **Test 1** (happy path): line 57 + line 69
+- **Test 2** (security): line 134
+- **Test 3** (abandon & reset): lines 158, 172
 
-- **"Missing Scope" (id 2):** Gets `z-0` on mobile (behind the upload overlay at `z-10`), and `z-20` on desktop via `lg:z-20` (unchanged behavior).
-- **All other callouts:** Stay at `z-20` everywhere (unchanged).
+The locked-state selectors (`"Your report is ready to unlock"`, `"Upload a Different Quote"`) and the `#gate-*` input IDs are **correct** and match the actual code.
 
-### 2. Upload overlay stays at z-10 (line 269)
+## Fix: Update 4 Selectors
 
-No change needed. The label remains at `z-10`, which is between `z-0` (Missing Scope on mobile) and `z-20` (other callouts).
+In `e2e/scanner-flow.spec.ts`, make the following replacements:
 
-## Layering Summary
+### 1. `fillAndSubmitLeadForm` helper (lines 57, 69)
 
-```text
-Layer     Mobile                    Desktop
-------    ----------------------    ----------------------
-z-20      Price Warning, Legal      Price Warning, Legal,
-          Alert                     Missing Scope
-z-10      Upload Overlay            Upload Overlay
-z-0       Missing Scope             (not used)
-```
+| Line | Current | New |
+|------|---------|-----|
+| 57 | `text=Unlock Your Full Analysis` | `text=Your Quote Is Ready to Audit` |
+| 69 | `button:has-text("Unlock My Score Now")` | `button:has-text("Start My Analysis")` |
 
-## Result
-- **Mobile:** "Missing Scope" is visible but faded behind the semi-transparent upload overlay. It cannot block clicks. The other two callouts remain bright and on top.
-- **Desktop:** No change whatsoever. All three callouts float at `z-20` as they do today.
-- **No layout, design, or content changes.**
+### 2. Test 2 — security check (line 134)
 
-## File
+| Line | Current | New |
+|------|---------|-----|
+| 134 | `text=Unlock Your Full Analysis` | `text=Your Quote Is Ready to Audit` |
 
-| File | Change |
-|------|--------|
-| `src/components/audit/UploadZoneXRay.tsx` | Line 237: conditional `z-0 lg:z-20` for callout id 2, `z-20` for others |
+### 3. Test 3 — abandon and reset (lines 158, 172)
+
+| Line | Current | New |
+|------|---------|-----|
+| 158 | `text=Unlock Your Full Analysis` | `text=Your Quote Is Ready to Audit` |
+| 172 | `text=Unlock Your Full Analysis` | `text=Your Quote Is Ready to Audit` |
+
+## Summary
+
+- **4 locations** change from `"Unlock Your Full Analysis"` to `"Your Quote Is Ready to Audit"`
+- **1 location** changes from `"Unlock My Score Now"` to `"Start My Analysis"`
+- All other selectors (input IDs, locked state text, close button) are already correct
+- No logic changes needed -- only string literals
 
