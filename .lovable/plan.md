@@ -1,55 +1,45 @@
 
 
-# E2E Test Suite: Selector Mismatches Found
+# Update BeatOrValidateSection Headline Copy
 
-## Problem
+## What Changes
 
-The Playwright tests in `e2e/scanner-flow.spec.ts` **will fail** because the text selectors don't match the actual modal content on `/ai-scanner`.
+Replace the current headline and subline in `src/components/audit/BeatOrValidateSection.tsx`:
 
-The tests reference text from `LeadCaptureModal` (a different component), but `/ai-scanner` actually renders `QuoteUploadGateModal`, which has different copy.
+**Current:**
+- Headline: "We Don't Just Grade the Homework. We Fix the Grade."
+- Subline: "Every Scan ends with you Winning. Period."
 
-## Mismatches
+**New (first-person Window Man voice):**
+- Headline: "With Window Man, You Can't Lose."
+- Accent line: "I'll Either Verify Your Quote — Or Start a Bidding War."
+- Subline: "A 'Verified Fair' badge of confidence, or the price you actually deserve."
 
-| Test Selector | Expected By Test | Actual in QuoteUploadGateModal |
-|---|---|---|
-| Modal title | `"Unlock Your Full Analysis"` | `"Your Quote Is Ready to Audit"` |
-| Submit button | `"Unlock My Score Now"` | `"Start My Analysis"` |
+## Why This Structure
 
-These selectors appear in:
-- **Test 1** (happy path): line 57 + line 69
-- **Test 2** (security): line 134
-- **Test 3** (abandon & reset): lines 158, 172
+The user's quote is powerful but too long for a single headline. Splitting it preserves the punch while fitting the existing layout pattern (headline + gradient accent span + paragraph subline). The first-person voice aligns with the brand framing standard (Window Man as a character, not a faceless tool).
 
-The locked-state selectors (`"Your report is ready to unlock"`, `"Upload a Different Quote"`) and the `#gate-*` input IDs are **correct** and match the actual code.
+## Technical Detail
 
-## Fix: Update 4 Selectors
+**File:** `src/components/audit/BeatOrValidateSection.tsx`
 
-In `e2e/scanner-flow.spec.ts`, make the following replacements:
+Update lines inside the section header `div`:
 
-### 1. `fillAndSubmitLeadForm` helper (lines 57, 69)
+```tsx
+// Current
+<h2>
+  We Don't Just Grade the Homework.
+  <span className="...">We Fix the Grade.</span>
+</h2>
+<p>Every Scan ends with you Winning. Period.</p>
 
-| Line | Current | New |
-|------|---------|-----|
-| 57 | `text=Unlock Your Full Analysis` | `text=Your Quote Is Ready to Audit` |
-| 69 | `button:has-text("Unlock My Score Now")` | `button:has-text("Start My Analysis")` |
+// New
+<h2>
+  With Window Man, You Can't Lose.
+  <span className="...">I'll Either Verify Your Quote — Or Start a Bidding War.</span>
+</h2>
+<p>A "Verified Fair" badge of confidence, or the price you actually deserve.</p>
+```
 
-### 2. Test 2 — security check (line 134)
-
-| Line | Current | New |
-|------|---------|-----|
-| 134 | `text=Unlock Your Full Analysis` | `text=Your Quote Is Ready to Audit` |
-
-### 3. Test 3 — abandon and reset (lines 158, 172)
-
-| Line | Current | New |
-|------|---------|-----|
-| 158 | `text=Unlock Your Full Analysis` | `text=Your Quote Is Ready to Audit` |
-| 172 | `text=Unlock Your Full Analysis` | `text=Your Quote Is Ready to Audit` |
-
-## Summary
-
-- **4 locations** change from `"Unlock Your Full Analysis"` to `"Your Quote Is Ready to Audit"`
-- **1 location** changes from `"Unlock My Score Now"` to `"Start My Analysis"`
-- All other selectors (input IDs, locked state text, close button) are already correct
-- No logic changes needed -- only string literals
+No structural, styling, or component changes needed — only three string literals updated.
 
