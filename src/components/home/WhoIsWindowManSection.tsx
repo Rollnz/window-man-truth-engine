@@ -1,5 +1,7 @@
 import { ShieldCheck, Target, Zap, Scale, Eye, Users, BadgeCheck, DollarSign, Handshake } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
+import windowmanOfficeImg from "@/assets/windowman-office.webp";
 
 interface ValueCardProps {
   icon: React.ReactNode;
@@ -126,6 +128,25 @@ export function WhoIsWindowManSection() {
             <p className="text-xl font-semibold text-primary mt-2">We work for homeowners.</p>
           </div>
         </div>
+        <AnimateOnScroll direction="up" duration={600} threshold={0.2} className="my-10">
+          <div className="max-w-2xl mx-auto">
+            <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-lg">
+              <img
+                src={windowmanOfficeImg}
+                alt="Window Man reviewing a quote report at his desk"
+                className="w-full h-auto"
+                loading="lazy"
+                decoding="async"
+                width={1456}
+                height={816}
+              />
+              <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-background/0 to-background/60" />
+            </div>
+            <p className="text-center text-sm text-muted-foreground mt-3 italic">
+              Your advocate. Not your salesman.
+            </p>
+          </div>
+        </AnimateOnScroll>
         <div className="max-w-4xl mx-auto">
           <div className="p-8 md:p-12 rounded-2xl bg-card border border-border">
             <div className="text-center mb-10">
