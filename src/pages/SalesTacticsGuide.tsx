@@ -104,9 +104,15 @@ const SalesTacticsGuide = () => {
               
               <div className="relative">
                 <div className="relative bg-card rounded-xl shadow-2xl p-2 border border-border">
-                  <div className="w-64 sm:w-80 h-80 bg-gradient-to-br from-destructive/20 to-primary/20 rounded-lg flex items-center justify-center">
-                    <Target className="w-24 h-24 text-destructive/50" />
-                  </div>
+                  <img
+                    src="/images/sales-tactics-brain.webp"
+                    alt="Contractor sales tactics brain map showing price inflation, fear-based upselling, and psychological pressure points"
+                    className="w-64 sm:w-80 aspect-[4/3] object-cover rounded-lg"
+                    loading="lazy"
+                    decoding="async"
+                    width={640}
+                    height={480}
+                  />
                   
                   <div className="absolute top-4 right-4 bg-destructive text-destructive-foreground px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-lg">
                     <AlertTriangle className="w-3.5 h-3.5" />
