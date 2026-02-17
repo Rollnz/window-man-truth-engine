@@ -39,10 +39,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getOrCreateClientId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
-import { trackLeadCapture, trackLeadSubmissionSuccess } from '@/lib/gtm';
+import { trackLeadCapture, trackLeadSubmissionSuccess, trackEvent } from '@/lib/gtm';
 // Session registration for database FK compliance
 import { getSessionId as getRegisteredSessionId } from '@/lib/windowTruthClient';
-import { Lock, Upload, ShieldCheck, FileText } from 'lucide-react';
+import { Lock, Upload, ShieldCheck, FileText, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FilePreviewCard } from '@/components/ui/FilePreviewCard';
 
@@ -110,253 +110,228 @@ export default function QuoteScanner() {
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
               {/* ═══ Left column — BEFORE ═══ */}
-                <div className="rounded-xl border border-border bg-card/40 dark:bg-background/30 min-h-[560px] p-6 flex flex-col">
-                  {/* Header */}
-                  <div className="flex flex-col items-center md:flex-row md:items-center gap-1 md:gap-2 text-xs uppercase tracking-wider mb-4">
-                    <FileText className="w-4 h-4 text-muted-foreground hidden md:block" />
-                    <span className="font-bold font-sans text-rose-600 dark:text-rose-400 text-base">Before:</span>
-                    <span className="font-bold font-sans text-rose-600 dark:text-rose-400 text-base">Just a Confusing Estimate</span>
+                <div className="flex flex-col">
+                  {/* Header — outside the card */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                    <span className="font-bold text-xl text-rose-600 dark:text-rose-400">BEFORE:</span>
+                    <span className="font-semibold text-lg text-foreground">Just a Confusing Estimate</span>
                   </div>
 
-                  {/* Recovery message */}
-                  {gated.recoveryMessage && gated.phase === 'idle' && (
-                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-foreground mb-4">
-                      {gated.recoveryMessage}
-                    </div>
-                  )}
-
-                  {/* Inner content — flex-1 to fill */}
-                  <div className="flex-1">
-                    {(gated.phase === 'idle' || gated.phase === 'uploaded') && (
-                      <QuoteUploadZone
-                        ref={uploadRef}
-                        onFileSelect={gated.handleFileSelect}
-                        isAnalyzing={false}
-                        hasResult={false}
-                        imagePreview={null}
-                        onNoQuoteClick={() => setPreQuoteOpen(true)}
-                      />
-                    )}
-
-                    {(gated.phase === 'locked' || gated.phase === 'analyzing') && (
-                      <div className="relative rounded-xl border border-border overflow-hidden">
-                        <FilePreviewCard
-                          file={gated.file}
-                          previewUrl={gated.filePreviewUrl}
-                          fileName={gated.fileName ?? undefined}
-                          fileType={gated.fileType ?? undefined}
-                          fileSize={gated.fileSize ?? undefined}
-                          className="w-full h-64 blur-xl scale-110"
-                        />
-                        <div className="absolute inset-0 bg-background/60" />
+                  {/* Card — no border */}
+                  <div className="rounded-xl bg-card/40 dark:bg-background/30 min-h-[520px] p-6 flex flex-col">
+                    {/* Recovery message */}
+                    {gated.recoveryMessage && gated.phase === 'idle' && (
+                      <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-foreground mb-4">
+                        {gated.recoveryMessage}
                       </div>
                     )}
 
-                    {gated.phase === 'revealed' && gated.analysisResult && (
-                      <QuoteUploadZone
-                        ref={uploadRef}
-                        onFileSelect={gated.handleFileSelect}
-                        isAnalyzing={false}
-                        hasResult={true}
-                        imagePreview={gated.imageBase64}
-                        mimeType={gated.mimeType}
-                        analysisResult={gated.analysisResult}
-                        onWarningSelect={(key) => {
-                          const el = document.getElementById(`score-row-${key}`);
-                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }}
-                        onNoQuoteClick={() => setPreQuoteOpen(true)}
-                      />
-                    )}
-                  </div>
+                    {/* Inner content */}
+                    <div className="flex-1">
+                      {(gated.phase === 'idle' || gated.phase === 'uploaded') && (
+                        <QuoteUploadZone
+                          ref={uploadRef}
+                          onFileSelect={gated.handleFileSelect}
+                          isAnalyzing={false}
+                          hasResult={false}
+                          imagePreview={null}
+                          onNoQuoteClick={() => setPreQuoteOpen(true)}
+                        />
+                      )}
 
-                  {/* Caption */}
-                  <p className="mt-4 text-sm text-muted-foreground leading-relaxed text-center">
-                    Contractors often hand you numbers, jargon, and tiny fine print.
-                    You're expected to just trust it.
-                  </p>
+                      {(gated.phase === 'locked' || gated.phase === 'analyzing') && (
+                        <div className="relative rounded-xl border border-border overflow-hidden">
+                          <FilePreviewCard
+                            file={gated.file}
+                            previewUrl={gated.filePreviewUrl}
+                            fileName={gated.fileName ?? undefined}
+                            fileType={gated.fileType ?? undefined}
+                            fileSize={gated.fileSize ?? undefined}
+                            className="w-full h-64 blur-xl scale-110"
+                          />
+                          <div className="absolute inset-0 bg-background/60" />
+                        </div>
+                      )}
+
+                      {gated.phase === 'revealed' && gated.analysisResult && (
+                        <QuoteUploadZone
+                          ref={uploadRef}
+                          onFileSelect={gated.handleFileSelect}
+                          isAnalyzing={false}
+                          hasResult={true}
+                          imagePreview={gated.imageBase64}
+                          mimeType={gated.mimeType}
+                          analysisResult={gated.analysisResult}
+                          onWarningSelect={(key) => {
+                            const el = document.getElementById(`score-row-${key}`);
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }}
+                          onNoQuoteClick={() => setPreQuoteOpen(true)}
+                        />
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* ═══ Right column — AFTER ═══ */}
-                <div className="rounded-xl border border-border bg-card/40 dark:bg-background/30 min-h-[560px] p-6 flex flex-col">
-                  {/* Header */}
-                  <div className="flex flex-col items-center md:flex-row md:items-center gap-1 md:gap-2 text-xs uppercase tracking-wider mb-4">
-                    <ShieldCheck className="w-4 h-4 text-muted-foreground hidden md:block" />
-                    <span className="font-bold font-sans text-primary text-base">After:</span>
-                    <span className="font-bold font-sans text-primary text-base">Your AI Intelligence Report</span>
+                <div className="flex flex-col">
+                  {/* Header — outside the card */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <ShieldCheck className="w-5 h-5 text-primary" />
+                    <span className="font-bold text-xl text-primary">AFTER:</span>
+                    <span className="font-semibold text-lg text-foreground">Your AI Intelligence Report</span>
                   </div>
 
-                  {/* Error display (any phase) */}
-                  {gated.error && !gated.isLoading && (
-                    <AIErrorFallback
-                      errorType={getAIErrorType(gated.error)}
-                      message={gated.error}
-                      onRetry={() => window.location.reload()}
-                      compact
-                    />
-                  )}
+                  {/* Card — no border */}
+                  <div className="rounded-xl bg-card/40 dark:bg-background/30 min-h-[520px] p-6 flex flex-col">
+                    {/* Error display (any phase) */}
+                    {gated.error && !gated.isLoading && (
+                      <AIErrorFallback
+                        errorType={getAIErrorType(gated.error)}
+                        message={gated.error}
+                        onRetry={() => window.location.reload()}
+                        compact
+                      />
+                    )}
 
-                  {/* Phase: idle — inner report frame + benefit preview + CTA */}
-                  {gated.phase === 'idle' && (
-                    <div className="relative flex-1 rounded-xl border border-border/60 bg-muted/10 overflow-hidden flex flex-col">
-                      {/* Ghost report preview — decorative background */}
-                      <div className="absolute inset-0 pointer-events-none opacity-50 blur-[0.5px] p-6 space-y-4 overflow-hidden">
-                        {/* Report header bar */}
-                        <div className="bg-muted/20 rounded h-5 w-4/5" />
-                        <div className="bg-muted/15 rounded h-3 w-1/2" />
-                        {/* Score chips row */}
-                        <div className="flex gap-2 mt-4">
-                          {[1,2,3,4,5].map(i => (
-                            <div key={i} className="flex-1 h-8 rounded-md border border-border/30 bg-muted/15" />
-                          ))}
+                    {/* Phase: idle — benefit preview + dual CTAs */}
+                    {gated.phase === 'idle' && (
+                      <div className="flex-1 flex flex-col items-center text-center p-4">
+                        <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
+                          <ShieldCheck className="w-7 h-7 text-primary" />
                         </div>
-                        {/* Top Flags section */}
-                        <div className="mt-4 space-y-2.5">
-                          <div className="bg-muted/20 rounded h-3 w-1/3" />
-                          {[0.85, 0.7, 0.6].map((w, i) => (
-                            <div key={i} className="flex items-center gap-2.5">
-                              <div className="w-2.5 h-2.5 rounded-full bg-destructive/15 flex-shrink-0" />
-                              <div className="bg-muted/20 rounded h-2.5" style={{ width: `${w * 100}%` }} />
-                            </div>
-                          ))}
-                        </div>
-                        {/* Missing Items section */}
-                        <div className="mt-4 space-y-2">
-                          <div className="bg-muted/20 rounded h-3 w-2/5" />
-                          {[0.75, 0.55].map((w, i) => (
-                            <div key={i} className="flex items-center gap-2.5">
-                              <div className="w-2.5 h-2.5 rounded-full bg-primary/15 flex-shrink-0" />
-                              <div className="bg-muted/20 rounded h-2.5" style={{ width: `${w * 100}%` }} />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      {/* Vignette overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/0 to-background/60 pointer-events-none" />
+                        <h3 className="text-lg font-bold text-foreground mb-1">Your Report Will Include</h3>
+                        <p className="text-sm text-muted-foreground mb-5">Upload a quote to unlock your full analysis</p>
+                        <ul className="text-sm text-muted-foreground space-y-2 text-left max-w-xs mb-6">
+                          <li className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                            5 category safety scores
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                            Missing scope items flagged
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                            Fine print and red flag alerts
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                            Fair price per opening comparison
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                            Negotiation email and phone scripts
+                          </li>
+                        </ul>
 
-                      {/* Foreground content */}
-                      <div className="relative z-10 flex flex-col h-full p-6">
-                        <div className="flex flex-col items-center gap-5 text-center">
-                          <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                            <ShieldCheck className="w-7 h-7 text-primary" />
-                          </div>
-                          <div className="space-y-1">
-                            <h3 className="text-lg font-bold text-foreground">Your Report Will Include</h3>
-                            <p className="text-sm text-muted-foreground">Upload a quote to unlock your full analysis</p>
-                          </div>
-                          <ul className="text-sm text-muted-foreground space-y-2 text-left max-w-xs">
-                            <li className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                              5 category safety scores
-                            </li>
-                            <li className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                              Missing scope items flagged
-                            </li>
-                            <li className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                              Fine print and red flag alerts
-                            </li>
-                            <li className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                              Fair price per opening comparison
-                            </li>
-                            <li className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                              Negotiation email and phone scripts
-                            </li>
-                          </ul>
-                        </div>
-                        <div className="mt-auto pt-6 flex justify-center">
+                        {/* Dual CTAs — Upload + No Quote */}
+                        <div className="w-full max-w-xs space-y-3">
                           <Button
                             onClick={() => uploadRef.current?.querySelector('input[type="file"]')?.dispatchEvent(new MouseEvent('click'))}
-                            className="gap-2"
+                            className="w-full gap-2"
                             size="lg"
                           >
                             <Upload className="w-4 h-4" />
                             Start My Free Audit
                           </Button>
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-sm font-bold text-foreground">No Quote Yet?</span>
+                            <Button
+                              variant="outline"
+                              size="lg"
+                              className="w-full gap-2"
+                              onClick={() => {
+                                trackEvent('no_quote_sample_click', { location: 'after_card' });
+                                setPreQuoteOpen(true);
+                              }}
+                            >
+                              <FileDown className="w-4 h-4" />
+                              Get a Free Consultation
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Phase: uploaded — locked, modal is open */}
-                  {gated.phase === 'uploaded' && (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-4 animate-pulse">
-                      <Lock className="w-10 h-10 text-muted-foreground" />
-                      <p className="text-foreground font-semibold text-center">
-                        Your report is being prepared...
-                      </p>
-                    </div>
-                  )}
+                    {/* Phase: uploaded — locked, modal is open */}
+                    {gated.phase === 'uploaded' && (
+                      <div className="flex-1 flex flex-col items-center justify-center gap-4 animate-pulse">
+                        <Lock className="w-10 h-10 text-muted-foreground" />
+                        <p className="text-foreground font-semibold text-center">
+                          Your report is being prepared...
+                        </p>
+                      </div>
+                    )}
 
-                  {/* Phase: locked — modal dismissed, unlock CTAs */}
-                  {gated.phase === 'locked' && (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-4">
-                      <Lock className="w-10 h-10 text-muted-foreground" />
-                      <p className="text-lg font-semibold text-foreground text-center">
-                        Your report is ready to unlock
-                      </p>
-                      <Button onClick={gated.reopenModal} size="lg">
-                        Unlock Your Report
-                      </Button>
-                      <button
-                        onClick={gated.reset}
-                        className="text-sm text-muted-foreground hover:text-foreground underline transition-colors"
-                      >
-                        <Upload className="w-3.5 h-3.5 inline mr-1" />
-                        Upload a Different Quote
-                      </button>
-                    </div>
-                  )}
+                    {/* Phase: locked — modal dismissed, unlock CTAs */}
+                    {gated.phase === 'locked' && (
+                      <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                        <Lock className="w-10 h-10 text-muted-foreground" />
+                        <p className="text-lg font-semibold text-foreground text-center">
+                          Your report is ready to unlock
+                        </p>
+                        <Button onClick={gated.reopenModal} size="lg">
+                          Unlock Your Report
+                        </Button>
+                        <button
+                          onClick={gated.reset}
+                          className="text-sm text-muted-foreground hover:text-foreground underline transition-colors"
+                        >
+                          <Upload className="w-3.5 h-3.5 inline mr-1" />
+                          Upload a Different Quote
+                        </button>
+                      </div>
+                    )}
 
-                  {/* Phase: analyzing — theater stepper */}
-                  {gated.phase === 'analyzing' && (
-                    <div className="flex-1">
-                      <AnalysisTheaterScreen
-                        previewUrl={gated.filePreviewUrl}
-                        fileName={gated.fileName ?? undefined}
-                        fileType={gated.fileType ?? undefined}
-                        fileSize={gated.fileSize ?? undefined}
-                      />
-                    </div>
-                  )}
+                    {/* Phase: analyzing — theater stepper */}
+                    {gated.phase === 'analyzing' && (
+                      <div className="flex-1">
+                        <AnalysisTheaterScreen
+                          previewUrl={gated.filePreviewUrl}
+                          fileName={gated.fileName ?? undefined}
+                          fileType={gated.fileType ?? undefined}
+                          fileSize={gated.fileSize ?? undefined}
+                        />
+                      </div>
+                    )}
 
-                  {/* Phase: revealed — full authority report */}
-                  {gated.phase === 'revealed' && gated.analysisResult && (
-                    <div className="flex-1 space-y-6">
-                      <div className="space-y-2">
-                        <h2 className="text-2xl font-bold text-foreground">Your Quote Intelligence Report</h2>
-                        {gated.analysisResult.forensic?.headline && (
-                          <p className="text-base text-muted-foreground">{gated.analysisResult.forensic.headline}</p>
+                    {/* Phase: revealed — full authority report */}
+                    {gated.phase === 'revealed' && gated.analysisResult && (
+                      <div className="flex-1 space-y-6">
+                        <div className="space-y-2">
+                          <h2 className="text-2xl font-bold text-foreground">Your Quote Intelligence Report</h2>
+                          {gated.analysisResult.forensic?.headline && (
+                            <p className="text-base text-muted-foreground">{gated.analysisResult.forensic.headline}</p>
+                          )}
+                        </div>
+
+                        {gated.analysisResult.summary && (
+                          <div className="rounded-lg border border-border bg-muted/30 p-4">
+                            <p className="text-sm text-foreground leading-relaxed">
+                              {gated.analysisResult.summary}
+                            </p>
+                          </div>
                         )}
+
+                        <QuoteAnalysisResults
+                          result={gated.analysisResult}
+                          isLocked={false}
+                          hasImage={!!gated.imageBase64}
+                        />
+
+                        <TalkToExpertCTA leadId={gated.leadId} />
+
+                        <QuoteQA
+                          answer={qaAnswer}
+                          isAsking={isAskingQuestion}
+                          onAsk={askQuestion}
+                          disabled={false}
+                        />
                       </div>
-
-                      {gated.analysisResult.summary && (
-                        <div className="rounded-lg border border-border bg-muted/30 p-4">
-                          <p className="text-sm text-foreground leading-relaxed">
-                            {gated.analysisResult.summary}
-                          </p>
-                        </div>
-                      )}
-
-                      <QuoteAnalysisResults
-                        result={gated.analysisResult}
-                        isLocked={false}
-                        hasImage={!!gated.imageBase64}
-                      />
-
-                      <TalkToExpertCTA leadId={gated.leadId} />
-
-                      <QuoteQA
-                        answer={qaAnswer}
-                        isAsking={isAskingQuestion}
-                        onAsk={askQuestion}
-                        disabled={false}
-                      />
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </ErrorBoundary>
