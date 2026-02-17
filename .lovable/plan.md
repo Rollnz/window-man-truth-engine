@@ -1,62 +1,33 @@
 
 
-# Replace Static Number with Live UrgencyTicker
+# Fix: Enable "Today" count on Fair Price Quiz UrgencyTicker
 
-## File: `src/components/fair-price-quiz/QuizHero.tsx`
+## The Problem
+The UrgencyTicker on the Fair Price Quiz hero has `showToday={false}`, hiding the "+X today" pulsing indicator that every other page displays.
 
-### Change 1: Import UrgencyTicker
-Add `import { UrgencyTicker } from '@/components/social-proof';`
+## The Fix
+One prop change in `src/components/fair-price-quiz/QuizHero.tsx`:
 
-### Change 2: Replace the subheadline (line 28-30)
-
-**Current:**
+**Current (line ~34):**
 ```
-<p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-md mx-auto">
-  Compare your quote against 1,247 Florida installations in 60 seconds.
-</p>
+<UrgencyTicker variant="homepage" size="md" showToday={false} animated={true} />
 ```
 
 **New:**
 ```
-<div className="mb-8 max-w-md mx-auto space-y-4">
-  <p className="text-lg md:text-xl text-muted-foreground">
-    Compare your quote against
-  </p>
-  <UrgencyTicker variant="homepage" size="md" showToday={false} animated={true} />
-  <p className="text-lg md:text-xl text-muted-foreground">
-    in 60 seconds.
-  </p>
-</div>
+<UrgencyTicker variant="homepage" size="md" showToday={true} animated={true} />
 ```
 
-The ticker sits between the two text lines, centered, using the `homepage` variant (light bg, matches the quiz page aesthetic). `showToday={false}` keeps it clean -- just the total count with the Shield icon.
+That's it. One prop flip. The ticker already supports it — it was just turned off.
 
-### Change 3: Remove the static trust signal (line 57-59)
+## File Modified
 
-**Current:**
-```
-<p className="mt-6 text-sm text-muted-foreground">
-  ✓ 2,847 homeowners analyzed their quotes this month
-</p>
-```
+| File | Change |
+|------|--------|
+| `src/components/fair-price-quiz/QuizHero.tsx` | `showToday={false}` to `showToday={true}` |
 
-**Remove it.** The UrgencyTicker already provides live social proof above. Having a second static number below the CTA contradicts the live one and looks fake.
-
-### What does NOT change
+## What Does NOT Change
 - UrgencyTicker component (unchanged)
 - useTickerStats hook (unchanged)
-- Quiz logic, phases, answers, analytics (unchanged)
-- Value props grid (60 seconds, Spot overcharging, Free analysis) stays
-- CTA button stays
-- Badge stays
-- No other files touched
-
-### Result
-The hero flows as:
-1. Badge: "Fair Price Diagnostic"
-2. Headline: "Is Your Window Quote Fair?"
-3. "Compare your quote against"
-4. [Live UrgencyTicker: "3,847 quotes scanned"]
-5. "in 60 seconds."
-6. Value props grid
-7. CTA: "Analyze My Quote"
+- Quiz logic, phases, layout (unchanged)
+- Every other file (unchanged)
