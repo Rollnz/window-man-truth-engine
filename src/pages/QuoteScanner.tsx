@@ -111,9 +111,10 @@ export default function QuoteScanner() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
               {/* Left column - Before */}
                 <div className="space-y-6">
+                  <div className="rounded-xl border border-border bg-card min-h-[400px] p-6">
                   {/* Recovery message from Safari refresh */}
                   {gated.recoveryMessage && gated.phase === 'idle' && (
-                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-foreground">
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-foreground mb-4">
                       {gated.recoveryMessage}
                     </div>
                   )}
@@ -162,6 +163,7 @@ export default function QuoteScanner() {
                       onNoQuoteClick={() => setPreQuoteOpen(true)}
                     />
                   )}
+                  </div>
                 </div>
 
                 {/* Right column - After (always rendered, content swaps by phase) */}
@@ -171,7 +173,7 @@ export default function QuoteScanner() {
                     <span className="font-bold font-sans text-primary text-base">After:</span>
                     <span className="font-bold font-sans text-primary text-base">Your AI Intelligence Report</span>
                   </div>
-                <div className="rounded-xl border border-border bg-card min-h-[400px] p-6 space-y-6">
+                <div className="relative rounded-xl border border-border bg-card min-h-[400px] p-6 space-y-6">
                   {/* Error display (any phase) */}
                   {gated.error && !gated.isLoading && (
                     <AIErrorFallback
@@ -184,45 +186,70 @@ export default function QuoteScanner() {
 
                   {/* Phase: idle — benefit preview + CTA */}
                   {gated.phase === 'idle' && (
-                    <div className="flex flex-col items-center justify-center h-full min-h-[350px] gap-5 text-center">
-                      <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                        <ShieldCheck className="w-7 h-7 text-primary" />
+                    <>
+                      {/* Ghost report preview — decorative background */}
+                      <div className="absolute inset-0 opacity-40 blur-[1px] pointer-events-none p-6 space-y-4 overflow-hidden">
+                        <div className="bg-muted/40 rounded h-4 w-3/4" />
+                        <div className="bg-muted/30 rounded h-3 w-1/2 mt-2" />
+                        <div className="space-y-3 mt-6">
+                          {[0.6, 0.75, 0.5].map((w, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <div className="w-3 h-3 rounded-full bg-primary/20 flex-shrink-0" />
+                              <div className="bg-muted/40 rounded h-3" style={{ width: `${w * 100}%` }} />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 rounded border border-border/40 p-3 space-y-2">
+                          <div className="bg-muted/30 rounded h-3 w-5/6" />
+                          <div className="bg-muted/30 rounded h-3 w-2/3" />
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <h3 className="text-lg font-bold text-foreground">Your Report Will Include</h3>
-                        <p className="text-sm text-muted-foreground">Upload a quote to unlock your full analysis</p>
+
+                      {/* Foreground content */}
+                      <div className="relative z-10 flex flex-col h-full min-h-[350px] text-center">
+                        <div className="flex flex-col items-center gap-5">
+                          <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+                            <ShieldCheck className="w-7 h-7 text-primary" />
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="text-lg font-bold text-foreground">Your Report Will Include</h3>
+                            <p className="text-sm text-muted-foreground">Upload a quote to unlock your full analysis</p>
+                          </div>
+                          <ul className="text-sm text-muted-foreground space-y-2 text-left max-w-xs">
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                              5 category safety scores
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                              Missing scope items flagged
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                              Fine print and red flag alerts
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                              Fair price per opening comparison
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                              Negotiation email and phone scripts
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="mt-auto pt-6 flex justify-center">
+                          <Button
+                            onClick={() => uploadRef.current?.querySelector('input[type="file"]')?.dispatchEvent(new MouseEvent('click'))}
+                            className="gap-2"
+                            size="lg"
+                          >
+                            <Upload className="w-4 h-4" />
+                            See What I Flag
+                          </Button>
+                        </div>
                       </div>
-                      <ul className="text-sm text-muted-foreground space-y-2 text-left max-w-xs">
-                        <li className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                          5 category safety scores
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                          Missing scope items flagged
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                          Fine print and red flag alerts
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                          Fair price per opening comparison
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                          Negotiation email and phone scripts
-                        </li>
-                      </ul>
-                      <Button
-                        onClick={() => uploadRef.current?.querySelector('input[type="file"]')?.dispatchEvent(new MouseEvent('click'))}
-                        className="gap-2 mt-2"
-                        size="lg"
-                      >
-                        <Upload className="w-4 h-4" />
-                        Upload Your Quote
-                      </Button>
-                    </div>
+                    </>
                   )}
 
                   {/* Phase: uploaded — locked, modal is open */}
