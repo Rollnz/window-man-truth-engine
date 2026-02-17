@@ -96,10 +96,11 @@ export function HowItWorksXRay({
           </h2>
           
           <p className="text-lg sm:text-xl text-[#efefef] max-w-2xl mx-auto">
-            Most homeowners overpay by 30% because they don't speak "Contractor."
-            Our AI reads the messy handwriting, decodes the jargon, and spots the missing 
-            scope items that cost you thousands later.
-          </p>
+            You don’t speak contractor. I do.
+I break down the fine print, uncover what’s missing, and highlight the risks — so you know exactly what you’re signing before you commit.
+          
+
+        </p>
         </div>
 
         {/* Monitor Frame Video */}
@@ -117,15 +118,14 @@ export function HowItWorksXRay({
               </div>
             </div>
             {/* Video */}
-            <video
-              ref={videoRef}
-              muted
-              loop
-              playsInline
-              preload="none"
-              className="w-full aspect-video object-cover"
-              aria-label="AI scanning a window replacement quote"
-            >
+            <video ref={videoRef}
+          muted
+          loop
+          playsInline
+          preload="none"
+          className="w-full aspect-video object-cover"
+          aria-label="AI scanning a window replacement quote">
+
               <source src="https://itswindowman-videos.b-cdn.net/window_estimate_ai_scan_animated.mp4" type="video/mp4" />
             </video>
           </div>
