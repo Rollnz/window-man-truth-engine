@@ -164,7 +164,7 @@ export function RedFlagGallery() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400">​</span>
           </h2>
           <p className="text-lg text-[#efefef] max-w-2xl mx-auto">
-            Here's what our Scan finds hiding in quotes every single day.
+            Here's what our AI finds hiding in quotes every single day.
             <span className="text-red-400 font-medium block mt-2">Don't let this be you.</span>
           </p>
         </div>
@@ -288,7 +288,8 @@ export function RedFlagGallery() {
           <p className="text-[#efefef] text-lg">
             Your Quote Might Look Amazing at Face Value.
             <span className="text-white font-medium block mt-1">
-              Our AI Scan Sees What You Didn't Even Know to Look For 👀
+              "This scan uncovers the hidden traps you didn't know existed. It reveals exactly what you didn't know to
+              look for"
             </span>
           </p>
         </div>
