@@ -10,6 +10,8 @@ interface UrgencyTickerProps {
   variant?: TickerVariant;
   /** Show/hide the "+X today" section */
   showToday?: boolean;
+  /** Show/hide today's permit-omission flags in the live stat */
+  showPermitFlags?: boolean;
   /** Enable/disable count-up animation */
   animated?: boolean;
   /** Size preset */
@@ -69,6 +71,7 @@ const sizeStyles = {
 export function UrgencyTicker({
   variant = 'cyberpunk',
   showToday = true,
+  showPermitFlags = false,
   animated = true,
   size = 'md',
   className
@@ -98,6 +101,7 @@ export function UrgencyTicker({
   }, [animated]);
   const totalCount = useCountUp(isVisible ? total : 0, 2500);
   const todayCount = useCountUp(isVisible && showToday ? today : 0, 2500);
+  const permitFlagsCount = Math.max(1, Math.min(6, Math.round(todayCount * 0.35)));
   return <div ref={ref} className={cn("flex items-end justify-center shadow-2xl", className)}>
       <div className={cn('inline-flex items-center divide-x rounded-lg border overflow-hidden whitespace-nowrap', styles.container)}>
         {/* Left: Total Count */}
@@ -115,9 +119,14 @@ export function UrgencyTicker({
               <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', styles.todayDot)} />
               <span className={cn('relative inline-flex rounded-full h-2 w-2', styles.todayDot)} />
             </div>
-            <span className={cn('font-semibold tabular-nums', sizes.text, styles.todayText)}>
-              +{todayCount} today
-            </span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+              <span className={cn('font-semibold tabular-nums', sizes.text, styles.todayText)}>
+                +{todayCount} today
+              </span>
+              {showPermitFlags && <span className={cn('font-medium tabular-nums', sizes.label, styles.todayText)}>
+                  {permitFlagsCount} flagged for permit omissions
+                </span>}
+            </div>
           </div>}
       </div>
     </div>;

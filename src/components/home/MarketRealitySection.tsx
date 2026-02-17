@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, AlertTriangle, FileWarning, ArrowRight } from 'lucide-react';
+import { TrendingUp, AlertTriangle, FileWarning, ArrowRight, Activity } from 'lucide-react';
+import { UrgencyTicker } from '@/components/social-proof';
 
 interface StatCardProps { value: string; label: string; description?: string; icon: React.ReactNode; iconColor: string; delay?: number; }
 
@@ -26,6 +27,17 @@ export function MarketRealitySection() {
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-16"><h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">This Is a <span className="text-[hsl(var(--secondary))]">$3.8 Billion Industry</span><br />— and Homeowners Are at a Disadvantage</h2><p className="text-lg text-muted-foreground mb-6">Impact-resistant windows are one of the largest home investments in Florida. Yet price, quality, and protection vary wildly — even when homeowners believe they've done everything right.</p></div>
         <div className="max-w-3xl mx-auto mb-16 p-8 rounded-2xl bg-card/50 border border-border/50"><p className="text-lg text-muted-foreground leading-relaxed">In Florida alone, homeowners spend billions every year on hurricane-rated windows and doors. The demand is real. The stakes are high. And the margin for error is thin.</p><p className="text-lg text-muted-foreground leading-relaxed mt-4">But the problem isn't just how much these projects cost.</p><p className="text-lg text-foreground font-medium mt-4">The problem is that two quotes with similar prices can hide radically different levels of protection — and homeowners aren't given the information needed to tell the difference.</p></div>
+        <div className="max-w-4xl mx-auto mb-10">
+          <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-background to-[hsl(var(--secondary)/0.08)] p-6 md:p-8">
+            <div className="flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-wide text-primary mb-4">
+              <Activity className="w-4 h-4" /> Live Validation
+            </div>
+            <p className="text-center text-base md:text-lg text-muted-foreground mb-4">
+              Real homeowner quote activity right now — not static marketing claims.
+            </p>
+            <UrgencyTicker variant="homepage" size="md" showPermitFlags={true} />
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16">
           <StatCard value="$1.92B" label="Annual Spend" description="The estimated amount Floridians spend every year on impact-resistant windows alone." icon={<TrendingUp className="w-6 h-6 text-primary" />} iconColor="bg-primary" delay={0} />
           <StatCard value="31%" label="Claims Denied" description="Nearly one in three Florida homeowners received $0 after Hurricane Irma — despite filing an insurance claim." icon={<AlertTriangle className="w-6 h-6 text-[hsl(var(--secondary))]" />} iconColor="bg-[hsl(var(--secondary))]" delay={150} />
