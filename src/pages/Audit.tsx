@@ -8,7 +8,7 @@ import {
 } from '@/components/audit';
 import { LoadingSkeleton } from '@/components/audit/LoadingSkeleton';
 import { useGatedScanner } from '@/hooks/audit';
-import { SampleReportGateModal } from '@/components/audit/SampleReportGateModal';
+import { PreQuoteLeadModalV2 } from '@/components/LeadModalV2';
 
 // Lazy load below-the-fold components
 const UploadZoneXRay = lazy(() => import('@/components/audit/UploadZoneXRay').then(m => ({ default: m.UploadZoneXRay })));
@@ -24,9 +24,8 @@ const AuditExpertChat = lazy(() => import('@/components/audit/AuditExpertChat').
 export default function Audit() {
   const uploadRef = useRef<HTMLDivElement>(null);
   
-  // Sample gate modal state
-  const [sampleGateOpen, setSampleGateOpen] = useState(false);
-  const sampleGateTriggerRef = useRef<HTMLElement | null>(null);
+  // Hero "No quote yet?" modal state
+  const [heroSampleOpen, setHeroSampleOpen] = useState(false);
   
   // Initialize gated scanner (CRO-optimized: gate BEFORE analysis)
   const scanner = useGatedScanner();
@@ -35,10 +34,8 @@ export default function Audit() {
     uploadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
-  // Handler to open sample gate modal with focus tracking
-  const openSampleGate = useCallback(() => {
-    sampleGateTriggerRef.current = document.activeElement as HTMLElement;
-    setSampleGateOpen(true);
+  const openHeroSampleModal = useCallback(() => {
+    setHeroSampleOpen(true);
   }, []);
 
   return (
@@ -66,7 +63,7 @@ export default function Audit() {
       {/* Above the fold - loads immediately */}
       <ScannerHeroWindow 
         onScanClick={scrollToUpload} 
-        onViewSampleClick={openSampleGate}
+        onViewSampleClick={openHeroSampleModal}
       />
       <ScannerIntelligenceBar />
       
@@ -105,7 +102,7 @@ export default function Audit() {
         <HowItWorksXRay onScanClick={scrollToUpload} />
         <BeatOrValidateSection />
         <RedFlagGallery />
-        <NoQuoteEscapeHatch onViewSampleClick={openSampleGate} />
+        <NoQuoteEscapeHatch />
         <TestimonialCards variant="dark" />
         <VaultSection />
       </Suspense>
@@ -119,11 +116,11 @@ export default function Audit() {
         scanAttemptId={scanner.scanAttemptId ?? undefined}
       />
 
-      {/* Sample Report Gate Modal - for users without quotes */}
-      <SampleReportGateModal
-        isOpen={sampleGateOpen}
-        onClose={() => setSampleGateOpen(false)}
-        returnFocusRef={sampleGateTriggerRef}
+      {/* Hero "No quote yet?" lead modal */}
+      <PreQuoteLeadModalV2
+        isOpen={heroSampleOpen}
+        onClose={() => setHeroSampleOpen(false)}
+        ctaSource="audit-hero-no-quote"
       />
     </div>
   );

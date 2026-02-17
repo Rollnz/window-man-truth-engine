@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,10 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { MessageSquare, Calculator, FileQuestion, ArrowRight, Sparkles, Phone, FileText } from "lucide-react";
 import { AUDIT_CONFIG } from "@/config/auditConfig";
-
-interface NoQuoteEscapeHatchProps {
-  onViewSampleClick?: () => void;
-}
+import { PreQuoteLeadModalV2 } from "@/components/LeadModalV2";
 
 const ALTERNATIVES = [
   {
@@ -49,7 +47,9 @@ const ALTERNATIVES = [
   },
 ];
 
-export function NoQuoteEscapeHatch({ onViewSampleClick }: NoQuoteEscapeHatchProps) {
+export function NoQuoteEscapeHatch() {
+  const [showLeadModal, setShowLeadModal] = useState(false);
+
   return (
     <section className="relative py-20 md:py-28 bg-gradient-to-b from-slate-950 to-slate-900 overflow-hidden">
       {/* Background pattern */}
@@ -87,22 +87,10 @@ export function NoQuoteEscapeHatch({ onViewSampleClick }: NoQuoteEscapeHatchProp
 
         {/* Alternative Paths */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          {ALTERNATIVES.map((alt, index) => (
-            <Card
-              key={alt.title}
-              className={cn(
-                "relative bg-slate-900/80 border-slate-800 p-6 backdrop-blur-sm transition-all duration-300",
-                "hover:border-slate-700 hover:shadow-lg group overflow-hidden",
-              )}
-            >
-              {/* Hover glow effect */}
-              <div
-                className={cn(
-                  "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500",
-                  `bg-gradient-to-br ${alt.gradient}/5`,
-                )}
-              />
+          {ALTERNATIVES.map((alt, index) => {
+            const isModalCard = "action" in alt && alt.action === "modal";
 
+            const cardContent = (
               <div className="relative">
                 {/* Icon */}
                 <div
@@ -122,14 +110,14 @@ export function NoQuoteEscapeHatch({ onViewSampleClick }: NoQuoteEscapeHatchProp
                 <p className="text-[#efefef] text-sm leading-relaxed mb-6">{alt.description}</p>
 
                 {/* CTA */}
-                {"action" in alt && alt.action === "modal" && onViewSampleClick ? (
+                {isModalCard ? (
                   <Button
                     variant="outline"
-                    onClick={onViewSampleClick}
                     className={cn(
                       "w-full border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white transition-all",
                       "group-hover:border-slate-600",
                     )}
+                    tabIndex={-1}
                   >
                     {alt.cta}
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -149,13 +137,43 @@ export function NoQuoteEscapeHatch({ onViewSampleClick }: NoQuoteEscapeHatchProp
                   </Link>
                 ) : null}
               </div>
+            );
 
-              {/* Step indicator */}
-              <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
-                <span className="text-slate-500 text-sm font-bold">{index + 1}</span>
-              </div>
-            </Card>
-          ))}
+            return (
+              <Card
+                key={alt.title}
+                className={cn(
+                  "relative bg-slate-900/80 border-slate-800 p-6 backdrop-blur-sm transition-all duration-300",
+                  "hover:border-slate-700 hover:shadow-lg group overflow-hidden",
+                  isModalCard && "cursor-pointer hover:scale-[1.02]",
+                )}
+                onClick={isModalCard ? () => setShowLeadModal(true) : undefined}
+                role={isModalCard ? "button" : undefined}
+                tabIndex={isModalCard ? 0 : undefined}
+                onKeyDown={isModalCard ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setShowLeadModal(true);
+                  }
+                } : undefined}
+              >
+                {/* Hover glow effect */}
+                <div
+                  className={cn(
+                    "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500",
+                    `bg-gradient-to-br ${alt.gradient}/5`,
+                  )}
+                />
+
+                {cardContent}
+
+                {/* Step indicator */}
+                <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
+                  <span className="text-slate-500 text-sm font-bold">{index + 1}</span>
+                </div>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Bottom reassurance */}
@@ -166,6 +184,13 @@ export function NoQuoteEscapeHatch({ onViewSampleClick }: NoQuoteEscapeHatchProp
           </div>
         </div>
       </div>
+
+      {/* PreQuoteLeadModalV2 for sample report */}
+      <PreQuoteLeadModalV2
+        isOpen={showLeadModal}
+        onClose={() => setShowLeadModal(false)}
+        ctaSource="audit-no-quote-sample"
+      />
     </section>
   );
 }
