@@ -962,7 +962,9 @@ export function ScanPipelineStrip() {
           </div>
         )}
 
-        <RotatingValueProp active={visible} />
+        <div className="mt-10 md:mt-14">
+          <RotatingValueProp active={visible} />
+        </div>
       </div>
     </div>
   );
