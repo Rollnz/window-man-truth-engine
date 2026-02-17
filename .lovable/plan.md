@@ -1,33 +1,66 @@
 
 
-# Fix: Enable "Today" count on Fair Price Quiz UrgencyTicker
+# Remove "Listen to a Real Call" from /proof Page
 
-## The Problem
-The UrgencyTicker on the Fair Price Quiz hero has `showToday={false}`, hiding the "+X today" pulsing indicator that every other page displays.
+## What Gets Removed
 
-## The Fix
-One prop change in `src/components/fair-price-quiz/QuizHero.tsx`:
+The "Listen to a Real Call" button lives at the bottom of the `VoiceOfReasonSection` component (lines 239-249). It's the CTA that navigates to `/expert`. This button and its handler will be deleted.
 
-**Current (line ~34):**
+## Exact Changes
+
+### File 1: `src/components/proof/VoiceAgent/VoiceOfReasonSection.tsx`
+
+**Delete the CTA block at lines 239-249:**
 ```
-<UrgencyTicker variant="homepage" size="md" showToday={false} animated={true} />
+{/* CTA */}
+<div className="wm-reveal wm-stagger-4 text-center">
+  <Button 
+    size="lg" 
+    onClick={onListenToCall}
+    className="gap-2 wm-btn-press"
+  >
+    <Phone className="w-5 h-5" />
+    Listen to a Real Call
+  </Button>
+</div>
 ```
 
-**New:**
+**Remove `onListenToCall` from the interface and destructured props** (lines 11, 22):
+- Remove `onListenToCall: () => void;` from the interface
+- Remove `onListenToCall,` from the destructured props
+
+**Remove the `Phone` icon import** (line 2) since it is only used by this CTA.
+
+### File 2: `src/pages/Proof.tsx`
+
+**Remove the `handleListenToCall` callback** (lines 60-68):
 ```
-<UrgencyTicker variant="homepage" size="md" showToday={true} animated={true} />
+const handleListenToCall = useCallback(() => { ... }, [navigate]);
 ```
 
-That's it. One prop flip. The ticker already supports it — it was just turned off.
+**Remove the prop from the JSX** (line 181):
+```
+onListenToCall={handleListenToCall}
+```
 
-## File Modified
+### File 3: `src/components/proof/EvidenceHero/ProofHero.tsx`
+
+**No changes.** The hero has a separate "Watch the AI Voice Agent Expose a Quote" button that scrolls to the section. That button is unrelated and stays.
+
+## What Does NOT Change
+
+- The entire VoiceOfReasonSection (guardian block, transcript gallery, filters) stays -- only the bottom CTA button is removed
+- ProofHero -- untouched
+- TruthAuditSection, EconomicProofSection, CaseStudyVaultSection, GoldenThreadNextSteps -- untouched
+- Transcript open/filter handlers and their tracking -- untouched
+- The `proofData.ts` data file -- untouched
+- The `index.ts` barrel export -- untouched
+- No other pages or components affected
+
+## Files Modified
 
 | File | Change |
 |------|--------|
-| `src/components/fair-price-quiz/QuizHero.tsx` | `showToday={false}` to `showToday={true}` |
+| `src/components/proof/VoiceAgent/VoiceOfReasonSection.tsx` | Remove CTA block, `onListenToCall` prop, `Phone` import |
+| `src/pages/Proof.tsx` | Remove `handleListenToCall` callback and its prop pass-through |
 
-## What Does NOT Change
-- UrgencyTicker component (unchanged)
-- useTickerStats hook (unchanged)
-- Quiz logic, phases, layout (unchanged)
-- Every other file (unchanged)
