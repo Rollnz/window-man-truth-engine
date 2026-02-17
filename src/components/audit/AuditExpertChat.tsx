@@ -49,11 +49,11 @@ export function AuditExpertChat({ onAsk, isAsking, latestAnswer, analysisResult 
   // When latestAnswer changes and we have a pending question, append both to history
   useEffect(() => {
     if (latestAnswer && pendingQuestion) {
-      setMessages(prev => [
-        ...prev,
-        { role: 'user', content: pendingQuestion },
-        { role: 'assistant', content: latestAnswer },
-      ]);
+      setMessages((prev) => [
+      ...prev,
+      { role: 'user', content: pendingQuestion },
+      { role: 'assistant', content: latestAnswer }]
+      );
       setPendingQuestion(null);
     }
   }, [latestAnswer, pendingQuestion]);
@@ -75,7 +75,7 @@ export function AuditExpertChat({ onAsk, isAsking, latestAnswer, analysisResult 
     trackEvent('audit_expert_question', {
       question_length: question.length,
       message_count: messages.length,
-      is_suggestion: !!text,
+      is_suggestion: !!text
     });
 
     await onAsk(question);
@@ -102,7 +102,7 @@ export function AuditExpertChat({ onAsk, isAsking, latestAnswer, analysisResult 
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
             Got Questions About Your Report?
           </h2>
-          <p className="text-slate-400 text-sm md:text-base max-w-lg mx-auto">
+          <p className="text-sm md:text-base max-w-lg mx-auto text-gray-300">
             Ask our AI expert anything about your quote analysis — pricing fairness, hidden costs, negotiation strategies, and more.
           </p>
         </div>
@@ -110,49 +110,49 @@ export function AuditExpertChat({ onAsk, isAsking, latestAnswer, analysisResult 
         {/* Chat container */}
         <div className="rounded-xl border border-slate-700/50 bg-slate-950/60 overflow-hidden">
           {/* Suggested questions */}
-          {showSuggestions && (
-            <div className="p-4 md:p-6 border-b border-slate-700/30">
+          {showSuggestions &&
+          <div className="p-4 md:p-6 border-b border-slate-700/30">
               <p className="text-xs text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                 <Sparkles className="h-3 w-3" />
                 Suggested Questions
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {suggestions.map((q, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSend(q)}
-                    disabled={isAsking}
-                    className={cn(
-                      'text-left text-sm px-3 py-2.5 rounded-lg border transition-all',
-                      'border-slate-700/50 bg-slate-800/50 text-slate-300',
-                      'hover:border-primary/40 hover:bg-primary/5 hover:text-white',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
-                  >
+                {suggestions.map((q, i) =>
+              <button
+                key={i}
+                onClick={() => handleSend(q)}
+                disabled={isAsking}
+                className={cn(
+                  'text-left text-sm px-3 py-2.5 rounded-lg border transition-all',
+                  'border-slate-700/50 bg-slate-800/50 text-slate-300',
+                  'hover:border-primary/40 hover:bg-primary/5 hover:text-white',
+                  'disabled:opacity-50 disabled:cursor-not-allowed'
+                )}>
+
                     {q}
                   </button>
-                ))}
+              )}
               </div>
             </div>
-          )}
+          }
 
           {/* Message thread */}
-          {(messages.length > 0 || isAsking) && (
-            <div
-              ref={scrollRef}
-              className="max-h-[400px] overflow-y-auto p-4 space-y-3"
-            >
-              {messages.map((msg, i) => (
-                <ChatMessage key={i} role={msg.role} content={msg.content} />
-              ))}
-              {isAsking && pendingQuestion && (
-                <>
+          {(messages.length > 0 || isAsking) &&
+          <div
+            ref={scrollRef}
+            className="max-h-[400px] overflow-y-auto p-4 space-y-3">
+
+              {messages.map((msg, i) =>
+            <ChatMessage key={i} role={msg.role} content={msg.content} />
+            )}
+              {isAsking && pendingQuestion &&
+            <>
                   <ChatMessage role="user" content={pendingQuestion} />
                   <ChatMessage role="assistant" content="" isStreaming />
                 </>
-              )}
+            }
             </div>
-          )}
+          }
 
           {/* Input bar */}
           <div className="flex gap-2 p-4 border-t border-slate-700/30 bg-slate-900/50">
@@ -163,31 +163,31 @@ export function AuditExpertChat({ onAsk, isAsking, latestAnswer, analysisResult 
               ref={textareaRef}
               id="audit-expert-chat-input"
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask about your quote..."
               className="min-h-[52px] max-h-[100px] resize-none bg-slate-800/50 border-slate-700/50 text-white placeholder:text-slate-500"
               disabled={isAsking}
-              aria-label="Ask about your quote analysis"
-            />
+              aria-label="Ask about your quote analysis" />
+
             <Button
               onClick={() => handleSend()}
               disabled={!input.trim() || isAsking}
               size="icon"
               className="h-[52px] w-[52px] shrink-0"
-              aria-label={isAsking ? 'Sending message' : 'Send message'}
-            >
-              {isAsking ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Send className="h-5 w-5" />
-              )}
+              aria-label={isAsking ? 'Sending message' : 'Send message'}>
+
+              {isAsking ?
+              <Loader2 className="h-5 w-5 animate-spin" /> :
+
+              <Send className="h-5 w-5" />
+              }
             </Button>
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 }
 
 export default AuditExpertChat;
