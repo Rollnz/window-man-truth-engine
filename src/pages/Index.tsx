@@ -1,17 +1,34 @@
+import { lazy, Suspense } from 'react';
 import { Navbar } from '@/components/home/Navbar';
 import { HeroSection } from '@/components/home/HeroSection';
-import { MarketRealitySection } from '@/components/home/MarketRealitySection';
-import { FailurePointsSection } from '@/components/home/FailurePointsSection';
-import { WhoIsWindowManSection } from '@/components/home/WhoIsWindowManSection';
-import { SecretPlaybookSection } from '@/components/home/SecretPlaybookSection';
-import { SampleReportSection } from '@/components/home/SampleReportSection';
-import { WeaponizeAuditSection } from '@/components/home/WeaponizeAuditSection';
-import { FinalDecisionSection } from '@/components/home/FinalDecisionSection';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
 import { getBreadcrumbSchema, getPillarHasPartReferences, generateLocalBusinessSchema } from '@/lib/seoSchemas/index';
 import { getReviewBoardSchema } from '@/config/expertIdentity';
 import { UrgencyTicker } from '@/components/social-proof';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Lazy load all below-fold sections to reduce initial JS and improve LCP
+const MarketRealitySection = lazy(() => import('@/components/home/MarketRealitySection').then(m => ({ default: m.MarketRealitySection })));
+const FailurePointsSection = lazy(() => import('@/components/home/FailurePointsSection').then(m => ({ default: m.FailurePointsSection })));
+const WhoIsWindowManSection = lazy(() => import('@/components/home/WhoIsWindowManSection').then(m => ({ default: m.WhoIsWindowManSection })));
+const SecretPlaybookSection = lazy(() => import('@/components/home/SecretPlaybookSection').then(m => ({ default: m.SecretPlaybookSection })));
+const SampleReportSection = lazy(() => import('@/components/home/SampleReportSection').then(m => ({ default: m.SampleReportSection })));
+const WeaponizeAuditSection = lazy(() => import('@/components/home/WeaponizeAuditSection').then(m => ({ default: m.WeaponizeAuditSection })));
+const FinalDecisionSection = lazy(() => import('@/components/home/FinalDecisionSection').then(m => ({ default: m.FinalDecisionSection })));
+
+function SectionFallback() {
+  return (
+    <div className="w-full h-96 flex items-center justify-center bg-secondary/20">
+      <div className="space-y-4 w-full max-w-4xl px-4">
+        <Skeleton className="h-8 w-3/4 mx-auto" />
+        <Skeleton className="h-4 w-1/2 mx-auto" />
+        <Skeleton className="h-32 w-full mt-8" />
+      </div>
+    </div>
+  );
+}
+
 const Index = () => {
   usePageTracking('homepage');
   const homepageSchema = [
@@ -83,13 +100,27 @@ const Index = () => {
         <div className="container px-4 py-8 -mt-16 relative z-10 border-secondary">
           <UrgencyTicker variant="homepage" size="lg" />
         </div>
-        <MarketRealitySection />
-        <FailurePointsSection />
-        <WhoIsWindowManSection />
-        <SecretPlaybookSection />
-        <SampleReportSection />
-        <WeaponizeAuditSection />
-        <FinalDecisionSection />
+        <Suspense fallback={<SectionFallback />}>
+          <MarketRealitySection />
+        </Suspense>
+        <Suspense fallback={<SectionFallback />}>
+          <FailurePointsSection />
+        </Suspense>
+        <Suspense fallback={<SectionFallback />}>
+          <WhoIsWindowManSection />
+        </Suspense>
+        <Suspense fallback={<SectionFallback />}>
+          <SecretPlaybookSection />
+        </Suspense>
+        <Suspense fallback={<SectionFallback />}>
+          <SampleReportSection />
+        </Suspense>
+        <Suspense fallback={<SectionFallback />}>
+          <WeaponizeAuditSection />
+        </Suspense>
+        <Suspense fallback={<SectionFallback />}>
+          <FinalDecisionSection />
+        </Suspense>
       </div>
     </div>;
 };
