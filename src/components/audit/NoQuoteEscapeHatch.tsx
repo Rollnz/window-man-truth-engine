@@ -80,7 +80,7 @@ export function NoQuoteEscapeHatch({ onViewSampleClick }: NoQuoteEscapeHatchProp
 
           <p className="text-lg text-[#efefef] max-w-2xl mx-auto">
             You're smart to do research first. Here's how to arm yourself
-            <em className="text-slate-300"> before </em>
+            <em className="text-slate-300"> Before </em>
             the contractors show up.
           </p>
         </div>
@@ -162,7 +162,7 @@ export function NoQuoteEscapeHatch({ onViewSampleClick }: NoQuoteEscapeHatchProp
         <div className="text-center mt-12">
           <div className="inline-flex items-center gap-2 text-slate-500">
             <Sparkles className="w-4 h-4 text-cyan-400" />
-            <span className="text-[#efefef]">Come back anytime with your quote. Scan it, Sign with Confidence.</span>
+            <span className="text-[#efefef]">Come back when you get your first quote—we'll be here to scan it.</span>
           </div>
         </div>
       </div>
