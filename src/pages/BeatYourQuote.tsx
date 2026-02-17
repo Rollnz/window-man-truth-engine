@@ -16,8 +16,7 @@ import { MissionInitiatedModal } from '@/components/beat-your-quote/MissionIniti
 import { AnalysisSuccessScreen } from '@/components/beat-your-quote/AnalysisSuccessScreen';
 import { QuoteCheckerSection } from '@/components/beat-your-quote/QuoteCheckerSection';
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
-import { ToolFAQSection } from '@/components/seo';
-import { getToolFAQs } from '@/data/toolFAQs';
+import { FAQSection } from '@/components/sample-report/FAQSection';
 import { useToast } from '@/hooks/use-toast';
 
 export default function BeatYourQuote() {
@@ -147,13 +146,7 @@ export default function BeatYourQuote() {
         <MissionOutcomes />
 
         {/* PRD-Compliant FAQ Section */}
-        <ToolFAQSection
-          toolPath="/beat-your-quote"
-          faqs={getToolFAQs('beat-your-quote')}
-          title="Beat Your Quote FAQs"
-          description="How we help you negotiate better pricing"
-          variant="dossier"
-        />
+        <FAQSection />
 
         {/* Legacy Interrogation FAQ */}
         <InterrogationFAQ />
