@@ -11,20 +11,23 @@ export function HeroSection() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border-primary/30 bg-primary/5 mb-8 animate-fade-in border-2 shadow-2xl"><Shield className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Free Pro-Consumer Protection Service</span></div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 animate-fade-in-up"><span className="text-foreground">You Don't Lose Money on Windows</span><br /><span className="text-foreground">Because Prices Are High.</span><span className="block mt-4 text-primary [text-shadow:0_0_40px_hsl(var(--primary)/0.4)]">You Lose Money Because You Don't Know What You Don't Know.</span></h1>
+          <p className="text-sm md:text-base text-secondary italic max-w-2xl mx-auto mb-6 animate-fade-in-up" style={{
+          animationDelay: '0.1s'
+        }}>After scanning her $42,000 quote, Maria discovered{' '}<span className="font-semibold not-italic [text-shadow:0_0_20px_hsl(var(--secondary)/0.4)]">$6,800 in hidden omissions</span>.</p>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-6 animate-fade-in-up" style={{
-          animationDelay: '0.15s'
+          animationDelay: '0.2s'
         }}>Contractors see code requirements, pricing margins, and fine print.<br className="hidden md:block" />Homeowners see a total price — and hope it's fair.</p>
           <p className="text-xl md:text-2xl font-semibold text-foreground mb-8 animate-fade-in-up" style={{
-          animationDelay: '0.2s'
+          animationDelay: '0.25s'
         }}>Window Man exists to end that imbalance.</p>
           <div className="max-w-2xl mx-auto mb-10 p-6 rounded-xl bg-card/50 border border-border/50 backdrop-blur-sm animate-fade-in-up" style={{
-          animationDelay: '0.25s'
+          animationDelay: '0.3s'
         }}>
             <p className="text-muted-foreground leading-relaxed">The impact window industry isn't broken because contractors are dishonest. It's broken because the system rewards technical knowledge — and homeowners aren't given access to it.<span className="block mt-3 text-foreground font-medium">Until now.</span></p>
             <p className="text-sm text-muted-foreground mt-4 border-t border-border/50 pt-4">Window Man is a free, pro-consumer protection service that uses AI to audit window estimates the same way insurers, inspectors, and experienced professionals do — <em>before you sign anything</em>.</p>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{
-          animationDelay: '0.3s'
+          animationDelay: '0.35s'
         }}>
             <div className="flex flex-col items-center">
               <Button asChild size="lg" variant="cta" className="text-sm sm:text-base px-4 sm:px-8 py-6 group cta-glow w-full sm:w-auto font-bold"><Link to={ROUTES.QUOTE_SCANNER}><Eye className="mr-2 w-5 h-5 flex-shrink-0" />See What People Miss In Window Contracts<ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1 flex-shrink-0" /></Link></Button>
@@ -32,7 +35,7 @@ export function HeroSection() {
             </div>
           </div>
           <div className="mt-6 animate-fade-in" style={{
-          animationDelay: '0.4s'
+          animationDelay: '0.45s'
         }}><Link to="/sample-report" className="inline-flex items-center text-primary hover:text-primary/80 transition-colors group"><span className="border-b border-primary/50 group-hover:border-primary text-sm">View a Real Sample AI Report</span><span className="ml-2 transition-transform group-hover:translate-x-1">→</span></Link><p className="text-xs text-muted-foreground mt-1">See exactly what the analysis looks like before sharing anything.</p></div>
         </div>
       </div>
