@@ -4,6 +4,7 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLeadSuppression } from '@/hooks/forms/useLeadSuppression';
 import { trackLeadCapture, trackLeadSubmissionSuccess, trackEvent } from '@/lib/gtm';
 import { getOrCreateClientId } from '@/lib/tracking';
 import { getOrCreateSessionId } from '@/lib/tracking';
@@ -41,15 +42,6 @@ import {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SESSION_KEY = 'wm_prequote_v2_lead_id';
-const COMPLETION_SESSION_KEY = 'wm_prequote_v2_completed';
-
-function getStoredLeadId(): string | null {
-  try {
-    return sessionStorage.getItem(SESSION_KEY);
-  } catch {
-    return null;
-  }
-}
 
 function storeLeadId(id: string): void {
   try {
@@ -59,22 +51,6 @@ function storeLeadId(id: string): void {
   }
 }
 
-
-function hasCompletedInSession(): boolean {
-  try {
-    return sessionStorage.getItem(COMPLETION_SESSION_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function markCompletedInSession(): void {
-  try {
-    sessionStorage.setItem(COMPLETION_SESSION_KEY, '1');
-  } catch {
-    // Non-critical
-  }
-}
 
 function buildContextConfig(
   overrides?: Partial<PreQuoteLeadModalContextConfig>
@@ -131,16 +107,25 @@ export function PreQuoteLeadModalV2({
     () => buildContextConfig(contextConfig),
     [contextConfig]
   );
-  const hasCompletedLead = hasCompletedInSession();
-  const suppressOpen = hideAfterCompletion && hasCompletedLead;
+
+  // ─── Smart lead suppression ────────────────────────────────────────────
+  const {
+    hasGlobalLead,
+    hasCompletedCta,
+    storedLeadId,
+    markCompleted,
+  } = useLeadSuppression(ctaSource);
+
+  const suppressOpen = hideAfterCompletion && hasCompletedCta;
 
   // Step machine
   const [step, setStep] = useState<StepType>('capture');
 
   // Lead identity (persisted after Step 1)
-  const [leadId, setLeadId] = useState<string | null>(getStoredLeadId);
+  const [leadId, setLeadId] = useState<string | null>(storedLeadId ?? null);
   const [contactData, setContactData] = useState<ContactData | null>(null);
   const closeResetTimerRef = useRef<number | null>(null);
+  const reengagedRef = useRef(false);
 
   // Qualification data (in-memory until Step 5)
   const [qualification, setQualification] = useState<QualificationData>({
@@ -157,26 +142,53 @@ export function PreQuoteLeadModalV2({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isQualificationSubmitting, setIsQualificationSubmitting] = useState(false);
 
+  // ─── Sync leadId from storage if state missed initialization ─────────
+  useEffect(() => {
+    if (hasGlobalLead && !leadId && storedLeadId) {
+      setLeadId(storedLeadId);
+    }
+  }, [hasGlobalLead, storedLeadId, leadId]);
+
+  // ─── Deterministic step on every open (not just mount) ───────────────
+  useEffect(() => {
+    if (!isOpen) return;
+    if (hasGlobalLead && storedLeadId) {
+      setStep('timeline');
+    } else {
+      setStep('capture');
+    }
+  }, [isOpen, hasGlobalLead, storedLeadId]);
+
+  // ─── Re-engagement tracking (once per open, ref-guarded) ─────────────
+  useEffect(() => {
+    if (!isOpen) {
+      reengagedRef.current = false;
+      return;
+    }
+    if (reengagedRef.current) return;
+
+    const didSkip = hasGlobalLead && !!storedLeadId && step === 'timeline';
+    if (!didSkip) return;
+
+    reengagedRef.current = true;
+    trackEvent('prequote_modal_reengaged', {
+      cta_source: ctaSource,
+      lead_id: storedLeadId,
+      skip_capture: true,
+    });
+  }, [isOpen, hasGlobalLead, storedLeadId, step, ctaSource]);
+
   // ═══════════════════════════════════════════════════════════════════════
   // Reset on close
   // ═══════════════════════════════════════════════════════════════════════
+  // Reset qualification data on close (step is owned by the "on open" effect above)
   useEffect(() => {
     if (!isOpen) {
-      // Clear any stale timer before scheduling another reset.
       if (closeResetTimerRef.current) {
         window.clearTimeout(closeResetTimerRef.current);
       }
 
-      // Don't clear leadId (persists in sessionStorage)
-      // But reset to capture step if qualification not completed
       closeResetTimerRef.current = window.setTimeout(() => {
-        if (step !== 'result') {
-          if (leadId) {
-            setStep('timeline');
-          } else {
-            setStep('capture');
-          }
-        }
         setQualification({
           timeline: null,
           hasQuote: null,
@@ -192,7 +204,7 @@ export function PreQuoteLeadModalV2({
         window.clearTimeout(closeResetTimerRef.current);
       }
     };
-  }, [isOpen, step, leadId]);
+  }, [isOpen]);
 
   // ═══════════════════════════════════════════════════════════════════════
   // Step 1: Create lead via save-lead
@@ -494,10 +506,10 @@ export function PreQuoteLeadModalV2({
 
   const handleResultClose = useCallback(() => {
     if (hideAfterCompletion) {
-      markCompletedInSession();
+      markCompleted();
     }
     onClose();
-  }, [hideAfterCompletion, onClose]);
+  }, [hideAfterCompletion, onClose, markCompleted]);
 
   const showBack =
     step !== 'capture' && step !== 'timeline' && step !== 'result';
@@ -531,7 +543,7 @@ export function PreQuoteLeadModalV2({
         )}
 
         {/* Step content */}
-        {step === 'capture' && !(hideAfterCompletion && hasCompletedLead) && (
+        {step === 'capture' && !suppressOpen && (
           <LeadStep1Capture
             onSubmit={handleStep1Submit}
             isSubmitting={isSubmitting}
@@ -542,6 +554,7 @@ export function PreQuoteLeadModalV2({
           <LeadStepTimeline
             onSelect={handleTimelineSelect}
             selected={qualification.timeline}
+            isReturning={hasGlobalLead && !!storedLeadId}
           />
         )}
 

@@ -5,6 +5,7 @@ import type { Timeline } from './types';
 interface LeadStepTimelineProps {
   onSelect: (value: Timeline) => void;
   selected: Timeline | null;
+  isReturning?: boolean;
 }
 
 const OPTIONS: { value: Timeline; label: string }[] = [
@@ -14,7 +15,7 @@ const OPTIONS: { value: Timeline; label: string }[] = [
   { value: 'research', label: 'Just researching' },
 ];
 
-export function LeadStepTimeline({ onSelect, selected }: LeadStepTimelineProps) {
+export function LeadStepTimeline({ onSelect, selected, isReturning }: LeadStepTimelineProps) {
   const [choosing, setChoosing] = useState<Timeline | null>(null);
 
   const handleClick = (value: Timeline) => {
@@ -27,7 +28,7 @@ export function LeadStepTimeline({ onSelect, selected }: LeadStepTimelineProps) 
       <div className="flex items-center gap-2 mb-2">
         <Calendar className="w-5 h-5 text-primary" />
         <h2 className="text-lg font-bold text-foreground" aria-live="polite">
-          When are you planning your window project?
+          {isReturning ? 'Welcome back — when' : 'When'} are you planning your window project?
         </h2>
       </div>
       <p className="text-sm text-muted-foreground mb-6">
