@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => ({
           // Core vendor - React ecosystem
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           // Data layer
-          'vendor-data': ['@supabase/supabase-js', '@tanstack/react-query'],
+          'vendor-data': ['@tanstack/react-query'],
           // UI components (heavy)
           'vendor-ui': [
             '@radix-ui/react-dialog',
@@ -36,8 +36,8 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-popover',
             '@radix-ui/react-select',
           ],
-          // Charts (only loaded when needed)
-          'vendor-charts': ['recharts'],
+          // recharts removed from manual chunks - naturally code-splits with lazy pages
+          // supabase removed from vendor-data - naturally splits with pages that use it
           // Form handling
           'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
         },
