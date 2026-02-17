@@ -21,7 +21,7 @@ export const AUDIT_CONFIG = {
     primaryCtaLabel: 'Scan My Quote Free',
     sampleCtaLabel: 'No quote yet? View a sample audit',
     sampleCtaSubline: 'See exactly what we flag before you get a quote.',
-    trustLine: 'Private & Secure • No account needed to start',
+    trustLine: 'private & secure • No account needed',
   },
 
   // NoQuote Section
