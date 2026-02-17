@@ -11,6 +11,7 @@ import { AnalyzingState, FullResultsPanel } from "./scanner-modal";
 import { XRayScannerBackground } from "@/components/ui/XRayScannerBackground";
 import { PreQuoteLeadModalV2 } from "@/components/LeadModalV2/PreQuoteLeadModalV2";
 import { FilePreviewCard } from "@/components/ui/FilePreviewCard";
+import { PreGateInterstitial } from "./PreGateInterstitial";
 
 const XRAY_CALLOUTS = [
 {
@@ -96,6 +97,9 @@ interface UploadZoneXRayProps {
   /** Callback to reopen lead modal */
   onReopenModal?: () => void;
   onReset?: () => void;
+  /** Pre-gate interstitial props */
+  scanAttemptId?: string;
+  onCompletePreGate?: () => void;
 }
 
 export function UploadZoneXRay({
@@ -110,7 +114,9 @@ export function UploadZoneXRay({
   fileType,
   fileSize,
   onReopenModal,
-  onReset
+  onReset,
+  scanAttemptId,
+  onCompletePreGate
 }: UploadZoneXRayProps) {
   const [visibleCallouts, setVisibleCallouts] = useState<number[]>([]);
   const [isHoveringPreview, setIsHoveringPreview] = useState(false);
@@ -144,9 +150,10 @@ export function UploadZoneXRay({
 
   // Render the LEFT panel (Before: Confusing Estimate / Blurred Upload)
   const renderLeftPanel = () => {
-    // If file is uploaded, show blurred preview
-    if (filePreviewUrl && (scannerPhase === 'uploaded' || scannerPhase === 'analyzing' || scannerPhase === 'revealed')) {
+    // If file is uploaded, show blurred preview (pre-gate, uploaded, analyzing, revealed)
+    if (filePreviewUrl && (scannerPhase === 'pre-gate' || scannerPhase === 'uploaded' || scannerPhase === 'analyzing' || scannerPhase === 'revealed')) {
       const isRevealed = scannerPhase === 'revealed';
+      const isPreGate = scannerPhase === 'pre-gate';
 
       return (
         <Card
@@ -166,15 +173,18 @@ export function UploadZoneXRay({
             />
 
             
-            {/* Overlay for uploaded state (before reveal) */}
+            {/* Overlay for uploaded/pre-gate state (before reveal) */}
             {!isRevealed &&
             <div className="absolute inset-0 bg-slate-900/60 flex flex-col items-center justify-center">
                 <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mb-4 border-2 border-orange-500/40">
                   <Lock className="w-8 h-8 text-orange-400" />
                 </div>
                 <p className="text-white font-semibold text-lg">Quote Uploaded</p>
-                <p className="text-[#efefef] text-sm mb-4">Enter your details to unlock analysis</p>
-                {onReopenModal &&
+                <p className="text-[#efefef] text-sm mb-4">
+                  {isPreGate ? 'Running pre-check analysis...' : 'Enter your details to unlock analysis'}
+                </p>
+                {/* Only show reopen button when NOT in pre-gate (interstitial still running) */}
+                {!isPreGate && onReopenModal &&
               <Button
                 onClick={onReopenModal}
                 className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold">
@@ -271,6 +281,23 @@ export function UploadZoneXRay({
   // Render the RIGHT panel based on scanner phase
   const renderRightPanel = () => {
     switch (scannerPhase) {
+      case 'pre-gate':
+        // Running pre-check interstitial
+        return (
+          <Card className="relative bg-slate-900/80 border-slate-700/50 p-6 min-h-[500px] overflow-hidden flex items-center justify-center">
+            {scanAttemptId && onCompletePreGate ? (
+              <PreGateInterstitial
+                scanAttemptId={scanAttemptId}
+                onComplete={onCompletePreGate}
+              />
+            ) : (
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+                <p className="text-[#efefef] text-sm">Preparing analysis...</p>
+              </div>
+            )}
+          </Card>);
+
       case 'uploaded':
         // Waiting for lead capture - show locked preview
         return (

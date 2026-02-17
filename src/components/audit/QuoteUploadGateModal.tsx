@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Lock, Mail, Phone, User, CheckCircle2 } from 'lucide-react';
+import { Loader2, Lock, Mail, Phone, User, CheckCircle2, Sparkles, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { trackEvent, trackModalOpen } from '@/lib/gtm';
@@ -22,6 +22,8 @@ interface QuoteUploadGateModalProps {
   isLoading?: boolean;
   /** Ref to element that triggered the modal for focus restoration */
   returnFocusRef?: React.RefObject<HTMLElement | null>;
+  /** Scan attempt ID for deterministic micro-tease rotation */
+  scanAttemptId?: string;
 }
 
 /**
@@ -37,7 +39,8 @@ export function QuoteUploadGateModal({
   onClose,
   onSubmit,
   isLoading = false,
-  returnFocusRef
+  returnFocusRef,
+  scanAttemptId
 }: QuoteUploadGateModalProps) {
   const firstInputRef = useRef<HTMLInputElement>(null);
   const openTimeRef = useRef<number | null>(null);
@@ -146,14 +149,36 @@ export function QuoteUploadGateModal({
         {/* Header */}
         <div className="px-6 pt-6 pb-2">
           <div className="flex items-center gap-2 mb-2">
-            <Lock className="w-5 h-5 text-slate-700" />
+            <Sparkles className="w-5 h-5 text-slate-700" />
             <h2 className="text-xl font-bold text-slate-900">
-              Unlock Your Full Analysis
+              Your Quote Is Ready to Audit
             </h2>
           </div>
           <p className="text-sm text-slate-600 leading-relaxed">
-            Your quote has been analyzed. Enter your details to see the complete breakdown, warnings, and recommendations.
+            Your quote is uploaded and ready. Enter your details to start the audit and unlock your full breakdown, warnings, and recommendations.
           </p>
+        </div>
+
+        {/* Micro-tease pill */}
+        <div className="mx-6 mb-1">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-amber-50 border border-amber-200">
+            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <p className="text-xs text-amber-800 font-medium">
+              {(() => {
+                const variants = [
+                  'Pre-check: review areas may exist in scope / fine print.',
+                  'Pre-check: potential omissions detected in scope wording.',
+                  'Pre-check: contract clarity signals flagged for review.',
+                ];
+                if (!scanAttemptId) return variants[0];
+                let hash = 0;
+                for (let i = 0; i < scanAttemptId.length; i++) {
+                  hash = ((hash << 5) - hash + scanAttemptId.charCodeAt(i)) | 0;
+                }
+                return variants[Math.abs(hash) % variants.length];
+              })()}
+            </p>
+          </div>
         </div>
 
         {/* Trust Banner */}
@@ -161,7 +186,7 @@ export function QuoteUploadGateModal({
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-green-50 border border-green-200">
             <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
             <p className="text-sm text-green-800">
-              <span className="font-bold">Your data is secure.</span> And Saved in Your Vault.
+              <span className="font-bold">Your data is secure.</span> Your report will be saved in your Vault.
             </p>
           </div>
         </div>
@@ -301,12 +326,12 @@ export function QuoteUploadGateModal({
             {isLoading ?
             <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Starting Analysis...
+                Running Analysis...
               </> :
 
             <>
-                <Lock className="w-4 h-4 mr-2" />
-                Unlock My Score Now
+                <Sparkles className="w-4 h-4 mr-2" />
+                Start My Analysis
               </>
             }
           </Button>
