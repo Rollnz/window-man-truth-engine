@@ -1,181 +1,70 @@
 
 
-# Hardened Smart Lead Suppression
+# Add "Contractor Sales Tactics" Image to Sales Tactics Guide Hero
 
 ## What Changes (User Perspective)
 
-1. User clicks "No Quote Yet?" in the Hero, fills out the form, completes the flow.
-2. User scrolls down and clicks "No Quote Yet? View a Sample Audit" on the After card.
-3. The modal opens, skips the form, and shows the Timeline step with a "Welcome back" message. No double data entry.
-4. Same-CTA repeat clicks are still suppressed (no spam).
+The red circular placeholder with a Target icon in the hero section gets replaced with the uploaded "Contractor Sales Tactics" brain image. The two overlay badges ("Contractor Playbook" pill and "Includes 11 Named Tactics" callout) stay exactly where they are. The image loads efficiently with lazy loading and proper optimization attributes.
+
+## Why This Is the Best Plan
+
+1. **Minimal change, maximum impact.** Only one file is edited (SalesTacticsGuide.tsx) and one asset is copied. The overlays already look great -- we keep them untouched.
+2. **No layout breakage.** The current box uses a fixed `w-64 sm:w-80 h-80` div with a gradient background and a centered icon. We replace the gradient div with an `<img>` tag inside the same container, using `object-cover` to fill the space. The rounded corners and card border stay intact.
+3. **Aspect-ratio friendly.** The uploaded image is roughly 4:3. The current box is taller than wide (80x80 rem area inside a w-80 container). We adjust to `aspect-[4/3]` and let width drive height naturally, so the image isn't cropped awkwardly. The overlays remain absolutely positioned relative to the parent.
+4. **Performance.** The image is below-the-fold on mobile (the text column stacks first), so `loading="lazy"` is correct. We add `decoding="async"` and explicit `width`/`height` attributes to prevent layout shift (CLS).
+5. **Asset in `public/`.** Since this is a static content image (not a React component asset), placing it in `public/images/` follows the existing pattern used by other guide pages (`claim-kit-book.webp`, `defense-kit-book.webp`, etc.) and avoids unnecessary bundling.
 
 ## Technical Changes
 
-### File 1: CREATE `src/hooks/forms/useLeadSuppression.ts`
+### Step 1: Copy the uploaded image
 
-Custom hook encapsulating all sessionStorage suppression logic.
+Copy `user-uploads://sales_tactics.webp` to `public/images/sales-tactics-brain.webp`
 
-**Returns:**
-```text
-hasGlobalLead    -- storedLeadId exists OR global_completed flag is true
-hasCompletedCta  -- this specific ctaSource was completed
-storedLeadId     -- lead ID from sessionStorage (or null)
-markCompleted()  -- sets global flag + per-CTA flag (callback, not render side-effect)
-```
+This follows the existing naming convention in `public/images/`.
 
-**Storage keys:**
-- `wm_prequote_v2_lead_id` -- existing, unchanged
-- `wm_prequote_v2_global_completed` -- new global flag
-- `wm_prequote_v2_completed_${ctaSource}` -- new per-CTA flag
+### Step 2: Edit `src/pages/SalesTacticsGuide.tsx`
 
-**Safety details:**
-- All reads are synchronous (safe in render). All writes happen inside the `markCompleted` callback only.
-- If `ctaSource` is falsy, falls back to `'unknown'` and logs a dev-mode `console.warn`.
-- Legacy cleanup: removes stale `wm_prequote_v2_completed` key inside a `useEffect` (not during render).
-- `hasGlobalLead` is defined broadly: `!!storedLeadId || globalCompletedFlag`. This means a user who completed Step 1 but closed early is still recognized as returning (critique point C).
+**Replace lines 106-109** (the gradient placeholder div):
 
-### File 2: EDIT `src/hooks/forms/index.ts`
-
-Add barrel export for `useLeadSuppression`.
-
-### File 3: EDIT `src/components/LeadModalV2/PreQuoteLeadModalV2.tsx`
-
-**A. Remove old helpers (lines 44, 63-77)**
-
-Delete `COMPLETION_SESSION_KEY`, `hasCompletedInSession`, `markCompletedInSession`. Keep `SESSION_KEY`, `getStoredLeadId`, `storeLeadId` (still needed for Step 1 writes).
-
-**B. Wire up the hook**
-
-```typescript
-const { hasGlobalLead, hasCompletedCta, storedLeadId, markCompleted } =
-  useLeadSuppression(ctaSource);
-```
-
-**C. Suppression logic**
-
-Replace lines 134-135:
-
-```typescript
-const suppressOpen = hideAfterCompletion && hasCompletedCta;
-```
-
-Same CTA completed = suppress. Different CTA = open with skip.
-
-**D. leadId initialization (critique point 1)**
-
-Replace line 141:
-
-```typescript
-const [leadId, setLeadId] = useState<string | null>(storedLeadId ?? null);
-```
-
-Plus a safety guard for mount-order race conditions:
-
-```typescript
-useEffect(() => {
-  if (hasGlobalLead && !leadId && storedLeadId) {
-    setLeadId(storedLeadId);
-  }
-}, [hasGlobalLead, storedLeadId, leadId]);
-```
-
-**E. Step reset on open (critique point A)**
-
-`useState('capture')` only runs on mount, not on re-open. Replace the initial `useState` with `'capture'` and add a deterministic "on open" effect:
-
-```typescript
-const [step, setStep] = useState<StepType>('capture');
-
-useEffect(() => {
-  if (!isOpen) return;
-  if (hasGlobalLead && storedLeadId) {
-    setStep('timeline');
-  } else {
-    setStep('capture');
-  }
-}, [isOpen, hasGlobalLead, storedLeadId]);
-```
-
-This fires every time the modal opens, ensuring step always matches reality. The existing "reset on close" effect (lines 163-195) is updated to not conflict -- it only resets qualification data and scoring, not the step (the "on open" effect owns that).
-
-**F. Re-engagement tracking with ref guard (critique point B)**
-
-```typescript
-const reengagedRef = useRef(false);
-
-useEffect(() => {
-  if (!isOpen) {
-    reengagedRef.current = false;
-    return;
-  }
-  if (reengagedRef.current) return;
-
-  const didSkip = hasGlobalLead && !!storedLeadId && step === 'timeline';
-  if (!didSkip) return;
-
-  reengagedRef.current = true;
-  trackEvent('prequote_modal_reengaged', {
-    cta_source: ctaSource,
-    lead_id: storedLeadId,
-    skip_capture: true,
-  });
-}, [isOpen, hasGlobalLead, storedLeadId, step, ctaSource]);
-```
-
-Fires exactly once per modal open. Resets when modal closes. Correct deps, no stale values.
-
-**G. Mark completion (line 497)**
-
-Replace `markCompletedInSession()` with `markCompleted()` (sets both global + per-CTA keys). This only fires when the user explicitly closes the result screen (critique point D -- lifecycle agreement).
-
-**H. Render guard for capture step (line 534)**
-
-Replace `!(hideAfterCompletion && hasCompletedLead)` with `!suppressOpen` to use the new logic consistently.
-
-### File 4: EDIT `src/components/LeadModalV2/LeadStepTimeline.tsx`
-
-Add optional `isReturning` prop. When true, prepend "Welcome back -- " to the heading:
-
-```typescript
-interface LeadStepTimelineProps {
-  onSelect: (value: Timeline) => void;
-  selected: Timeline | null;
-  isReturning?: boolean;
-}
-```
-
-Heading becomes:
+Current:
 ```tsx
-{isReturning ? 'Welcome back — when' : 'When'} are you planning your window project?
+<div className="relative bg-card rounded-xl shadow-2xl p-2 border border-border">
+  <div className="w-64 sm:w-80 h-80 bg-gradient-to-br from-destructive/20 to-primary/20 rounded-lg flex items-center justify-center">
+    <Target className="w-24 h-24 text-destructive/50" />
+  </div>
 ```
 
-Passed from PreQuoteLeadModalV2:
+New:
 ```tsx
-<LeadStepTimeline
-  onSelect={handleTimelineSelect}
-  selected={qualification.timeline}
-  isReturning={hasGlobalLead && !!storedLeadId}
-/>
+<div className="relative bg-card rounded-xl shadow-2xl p-2 border border-border">
+  <img
+    src="/images/sales-tactics-brain.webp"
+    alt="Contractor sales tactics brain map showing price inflation, fear-based upselling, and psychological pressure points"
+    className="w-64 sm:w-80 aspect-[4/3] object-cover rounded-lg"
+    loading="lazy"
+    decoding="async"
+    width={640}
+    height={480}
+  />
 ```
 
-## Files Summary
+**What stays the same:**
+- The "Contractor Playbook" red pill badge (lines 111-114) -- unchanged
+- The "Includes 11 Named Tactics" bottom-left callout (lines 117-120) -- unchanged
+- The blurred red background glow (line 103) -- unchanged
+- The outer positioning wrapper -- unchanged
 
-| File | Action |
+**What's removed:**
+- The `Target` icon import can stay (it's still used in Section 3), so no import changes needed.
+- The gradient placeholder div and centered icon are replaced by the image.
+
+### Summary
+
+| Item | Detail |
 |------|--------|
-| `src/hooks/forms/useLeadSuppression.ts` | Create |
-| `src/hooks/forms/index.ts` | Edit (add export) |
-| `src/components/LeadModalV2/PreQuoteLeadModalV2.tsx` | Edit |
-| `src/components/LeadModalV2/LeadStepTimeline.tsx` | Edit |
-
-## Edge Cases Handled
-
-- **useState only runs on mount**: "On open" effect sets step deterministically each time (critique A)
-- **Re-engagement fires once per open**: Ref guard + correct deps (critique B)
-- **Early close after Step 1**: `hasGlobalLead` checks `storedLeadId` existence, not just completion flag (critique C)
-- **markCompleted lifecycle**: Only fires on explicit result screen close (critique D)
-- **Missing ctaSource**: Falls back to `'unknown'`, logs dev warning
-- **Legacy storage key**: Cleaned up in useEffect
-- **sessionStorage unavailable**: All reads return false/null, all writes silently fail
-- **leadId null on skip**: Guard useEffect syncs from storage
-- **Multiple instances mounted**: All read from same storage, stay in sync
+| Files modified | 1 (`src/pages/SalesTacticsGuide.tsx`) |
+| Assets added | 1 (`public/images/sales-tactics-brain.webp`) |
+| Lines changed | 4 (replace gradient div + icon with img tag) |
+| Overlays affected | None -- both kept as-is |
+| Performance | `loading="lazy"`, `decoding="async"`, explicit dimensions for CLS prevention |
 
