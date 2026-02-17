@@ -1,66 +1,55 @@
 
 
-# Remove "Listen to a Real Call" from /proof Page
+# Restyle Beat Your Quote FAQ to Match /sample-report Style
 
-## What Gets Removed
+## The Problem
+The `ToolFAQSection` on `/beat-your-quote` uses a blue gradient header and dossier-style accordion items. It looks inconsistent with the clean, card-based FAQ style used on `/sample-report`.
 
-The "Listen to a Real Call" button lives at the bottom of the `VoiceOfReasonSection` component (lines 239-249). It's the CTA that navigates to `/expert`. This button and its handler will be deleted.
+## The Fix
+Swap `ToolFAQSection` for the `FAQSection` component from `src/components/sample-report/FAQSection.tsx`. This gives the clean look: centered "Common Questions" pill badge, bold heading, white card container with rounded corners, and simple divider-based accordion items.
 
-## Exact Changes
+## What Changes
 
-### File 1: `src/components/proof/VoiceAgent/VoiceOfReasonSection.tsx`
+### File 1: `src/pages/BeatYourQuote.tsx`
 
-**Delete the CTA block at lines 239-249:**
+**Replace the import:**
+- Remove: `import { ToolFAQSection } from '@/components/seo/ToolFAQSection'`
+- Remove: `import { getToolFAQs } from '@/data/toolFAQs'`
+- Add: `import { FAQSection } from '@/components/sample-report/FAQSection'`
+
+**Replace the JSX (lines ~149-156):**
+
+Current:
 ```
-{/* CTA */}
-<div className="wm-reveal wm-stagger-4 text-center">
-  <Button 
-    size="lg" 
-    onClick={onListenToCall}
-    className="gap-2 wm-btn-press"
-  >
-    <Phone className="w-5 h-5" />
-    Listen to a Real Call
-  </Button>
-</div>
-```
-
-**Remove `onListenToCall` from the interface and destructured props** (lines 11, 22):
-- Remove `onListenToCall: () => void;` from the interface
-- Remove `onListenToCall,` from the destructured props
-
-**Remove the `Phone` icon import** (line 2) since it is only used by this CTA.
-
-### File 2: `src/pages/Proof.tsx`
-
-**Remove the `handleListenToCall` callback** (lines 60-68):
-```
-const handleListenToCall = useCallback(() => { ... }, [navigate]);
+<ToolFAQSection
+  toolPath="/beat-your-quote"
+  faqs={getToolFAQs('beat-your-quote')}
+  title="Beat Your Quote FAQs"
+  description="How we help you negotiate better pricing"
+  variant="dossier"
+/>
 ```
 
-**Remove the prop from the JSX** (line 181):
+New:
 ```
-onListenToCall={handleListenToCall}
+<FAQSection />
 ```
 
-### File 3: `src/components/proof/EvidenceHero/ProofHero.tsx`
-
-**No changes.** The hero has a separate "Watch the AI Voice Agent Expose a Quote" button that scrolls to the section. That button is unrelated and stays.
+The `FAQSection` component already has its own FAQ content baked in, "Talk to Window Man" footer link, section tracking, and the clean card styling. No props needed beyond the optional `onOpenPreQuoteModal` if you want the "Talk to Window Man" link to open a modal.
 
 ## What Does NOT Change
+- `InterrogationFAQ` section (stays as-is)
+- `FAQSection` component (unchanged, reused from /sample-report)
+- `ToolFAQSection` component (unchanged, still used on other pages)
+- All other sections on /beat-your-quote (unchanged)
 
-- The entire VoiceOfReasonSection (guardian block, transcript gallery, filters) stays -- only the bottom CTA button is removed
-- ProofHero -- untouched
-- TruthAuditSection, EconomicProofSection, CaseStudyVaultSection, GoldenThreadNextSteps -- untouched
-- Transcript open/filter handlers and their tracking -- untouched
-- The `proofData.ts` data file -- untouched
-- The `index.ts` barrel export -- untouched
-- No other pages or components affected
-
-## Files Modified
+## Visual Result
+The blue gradient header + dossier-styled accordions get replaced with:
+- A centered "Common Questions" pill badge
+- A bold "Frequently Asked Questions" heading
+- A clean card container with border dividers between FAQ items
+- A "Talk to Window Man" link at the bottom
 
 | File | Change |
 |------|--------|
-| `src/components/proof/VoiceAgent/VoiceOfReasonSection.tsx` | Remove CTA block, `onListenToCall` prop, `Phone` import |
-| `src/pages/Proof.tsx` | Remove `handleListenToCall` callback and its prop pass-through |
-
+| `src/pages/BeatYourQuote.tsx` | Swap `ToolFAQSection` for `FAQSection` from sample-report |
