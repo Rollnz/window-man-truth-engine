@@ -42,7 +42,7 @@ import { getAttributionData } from '@/lib/attribution';
 import { trackLeadCapture, trackLeadSubmissionSuccess } from '@/lib/gtm';
 // Session registration for database FK compliance
 import { getSessionId as getRegisteredSessionId } from '@/lib/windowTruthClient';
-import { Lock, Upload } from 'lucide-react';
+import { Lock, Upload, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FilePreviewCard } from '@/components/ui/FilePreviewCard';
 
@@ -165,6 +165,12 @@ export default function QuoteScanner() {
                 </div>
 
                 {/* Right column - After (always rendered, content swaps by phase) */}
+                <div className="space-y-6">
+                  <div className="flex flex-col items-center md:flex-row md:items-center gap-1 md:gap-2 text-xs uppercase tracking-wider">
+                    <ShieldCheck className="w-4 h-4 text-muted-foreground hidden md:block" />
+                    <span className="font-bold font-sans text-primary text-base">After:</span>
+                    <span className="font-bold font-sans text-primary text-base">Your AI Intelligence Report</span>
+                  </div>
                 <div className="rounded-xl border border-border bg-card min-h-[400px] p-6 space-y-6">
                   {/* Error display (any phase) */}
                   {gated.error && !gated.isLoading && (
@@ -176,13 +182,46 @@ export default function QuoteScanner() {
                     />
                   )}
 
-                  {/* Phase: idle — placeholder shell */}
+                  {/* Phase: idle — benefit preview + CTA */}
                   {gated.phase === 'idle' && (
-                    <div className="flex flex-col items-center justify-center h-full min-h-[350px] gap-4">
-                      <Lock className="w-10 h-10 text-muted-foreground/50" />
-                      <p className="text-muted-foreground text-center text-sm">
-                        Upload your quote to get started
-                      </p>
+                    <div className="flex flex-col items-center justify-center h-full min-h-[350px] gap-5 text-center">
+                      <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+                        <ShieldCheck className="w-7 h-7 text-primary" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-bold text-foreground">Your Report Will Include</h3>
+                        <p className="text-sm text-muted-foreground">Upload a quote to unlock your full analysis</p>
+                      </div>
+                      <ul className="text-sm text-muted-foreground space-y-2 text-left max-w-xs">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                          5 category safety scores
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                          Missing scope items flagged
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                          Fine print and red flag alerts
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                          Fair price per opening comparison
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                          Negotiation email and phone scripts
+                        </li>
+                      </ul>
+                      <Button
+                        onClick={() => uploadRef.current?.querySelector('input[type="file"]')?.dispatchEvent(new MouseEvent('click'))}
+                        className="gap-2 mt-2"
+                        size="lg"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Upload Your Quote
+                      </Button>
                     </div>
                   )}
 
@@ -260,6 +299,7 @@ export default function QuoteScanner() {
                       />
                     </>
                   )}
+                </div>
                 </div>
               </div>
             </ErrorBoundary>
