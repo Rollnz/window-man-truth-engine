@@ -54,7 +54,7 @@ async function fillAndSubmitLeadForm(page: Page, data?: {
   const phone = data?.phone ?? '5551234567';
 
   // Wait for the modal to be visible
-  await expect(page.locator('text=Unlock Your Full Analysis')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('text=Your Quote Is Ready to Audit')).toBeVisible({ timeout: 15000 });
 
   // Fill form fields by their IDs
   await page.fill('#gate-firstName', firstName);
@@ -66,7 +66,7 @@ async function fillAndSubmitLeadForm(page: Page, data?: {
   await page.locator('#sms-consent').click();
 
   // Submit
-  await page.locator('button:has-text("Unlock My Score Now")').click();
+  await page.locator('button:has-text("Start My Analysis")').click();
 }
 
 // ── Test Suite ─────────────────────────────────────────────────────────────
@@ -131,7 +131,7 @@ test.describe('Scanner Flow — /ai-scanner', () => {
     await uploadDummyPDF(page);
 
     // Wait for modal to appear
-    await expect(page.locator('text=Unlock Your Full Analysis')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('text=Your Quote Is Ready to Audit')).toBeVisible({ timeout: 15000 });
 
     // Assert zero quote-scanner calls at this point
     expect(quoteScannerRequests.length).toBe(0);
@@ -155,7 +155,7 @@ test.describe('Scanner Flow — /ai-scanner', () => {
   test('abandon & reset: upload, dismiss, reset, re-upload reopens modal', async ({ page }) => {
     // Upload, then dismiss modal to reach locked state
     await uploadDummyPDF(page);
-    await expect(page.locator('text=Unlock Your Full Analysis')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('text=Your Quote Is Ready to Audit')).toBeVisible({ timeout: 15000 });
     await page.locator('[data-dialog-close], button[aria-label="Close"]').first().click();
     await expect(page.locator('text=Your report is ready to unlock')).toBeVisible({ timeout: 10000 });
 
@@ -169,7 +169,7 @@ test.describe('Scanner Flow — /ai-scanner', () => {
     await uploadDummyPDF(page, 'second-quote.pdf');
 
     // Modal should reopen
-    await expect(page.locator('text=Unlock Your Full Analysis')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('text=Your Quote Is Ready to Audit')).toBeVisible({ timeout: 15000 });
   });
 
   // ────────────────────────────────────────────────────────────────────────
