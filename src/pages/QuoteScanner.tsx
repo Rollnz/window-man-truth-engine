@@ -30,6 +30,8 @@ import { PreQuoteLeadModal } from '@/components/sample-report/PreQuoteLeadModal'
 import { AIComparisonSection } from '@/components/quote-scanner/AIComparisonSection';
 import { UrgencyTicker } from '@/components/social-proof';
 import { ScanPipelineStrip } from '@/components/quote-scanner/ScanPipelineStrip';
+import { SectionFrame } from '@/components/proof/SectionFrame';
+import aiBrainImg from '@/assets/ai_brain.webp';
 import { TestimonialCards } from '@/components/TestimonialCards';
 // New gated flow components
 import { TalkToExpertCTA } from '@/components/quote-scanner/TalkToExpertCTA';
@@ -99,7 +101,19 @@ export default function QuoteScanner() {
           <UrgencyTicker />
         </div>
 
-        <ScanPipelineStrip />
+        <SectionFrame
+          id="forensic-pipeline"
+          eyebrow={
+            <span className="inline-flex items-center gap-2">
+              <img src={aiBrainImg} alt="" width={20} height={20} className="object-contain" />
+              FORENSIC ALLY
+            </span>
+          }
+          title="See Exactly How We Protect You"
+          subtitle="Our AI scans every line of your quote in seconds — here's the 4-step process."
+        >
+          <ScanPipelineStrip />
+        </SectionFrame>
 
         <section className="py-12 md:py-20">
           <div className="container px-4">

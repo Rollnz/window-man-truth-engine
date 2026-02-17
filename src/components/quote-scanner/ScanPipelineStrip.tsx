@@ -198,52 +198,7 @@ function CircuitTraces({ opacity = 0.08 }: { opacity?: number }) {
   );
 }
 
-// ─── Forensic Badge Banner ────────────────────────────────────────────────────
-function ForensicBadge({ isMobile }: { isMobile: boolean }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: isMobile ? "column" : "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: isMobile ? 8 : 16,
-        marginBottom: isMobile ? 16 : 24,
-        textAlign: "center",
-      }}
-    >
-      {/* Hexagon icon */}
-      <div style={{ position: "relative", width: 40, height: 40, flexShrink: 0 }}>
-        <img src={aiBrainImg} alt="AI Brain" width={40} height={40} style={{ objectFit: "contain" }} />
-      </div>
-      {/* Text */}
-      <div>
-        <div
-          style={{
-            fontSize: isMobile ? 13 : 15,
-            fontWeight: 700,
-            color: C.cyan,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase" as const,
-          }}
-        >
-          FORENSIC ALLY
-        </div>
-        <div
-          style={{
-            fontSize: isMobile ? 9 : 10,
-            color: C.whiteDim,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase" as const,
-            marginTop: 2,
-          }}
-        >
-          FOR IMPACT WINDOW DECISIONS
-        </div>
-      </div>
-    </div>
-  );
-}
+// ForensicBadge extracted to SectionFrame in QuoteScanner.tsx
 
 // ─── Scene 1: Extraction ──────────────────────────────────────────────────────
 function ExtractionScene({ isMobile }: { isMobile: boolean }) {
@@ -934,8 +889,7 @@ export function ScanPipelineStrip() {
       >
         <CircuitTraces />
 
-        {/* Banner */}
-        <ForensicBadge isMobile={isMobile} />
+        {/* Banner extracted to SectionFrame in QuoteScanner.tsx */}
 
         {isMobile ? (
           /* ━━━ MOBILE: VERTICAL STACK ━━━ */
@@ -970,39 +924,39 @@ export function ScanPipelineStrip() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr auto 1.3fr auto 0.8fr auto 1fr",
+              gridTemplateColumns: "1fr auto 1fr auto 1fr auto 1fr",
               alignItems: "center",
               gap: 0,
             }}
           >
-            <div style={{ ...cell(0.1), height: 240 }}>
+            <div style={{ ...cell(0.1), height: 240, minWidth: 0 }}>
               <CircuitTraces opacity={0.05} />
               <ExtractionScene isMobile={false} />
             </div>
 
-            <div style={{ padding: "0 4px", display: "flex", alignItems: "center", width: 60 }}>
+            <div style={{ padding: "0 4px", display: "flex", alignItems: "center", width: 40 }}>
               <ParticleBeam direction="right" count={5} speed={1.8} />
             </div>
 
-            <div style={{ ...cell(0.3), height: 240 }}>
+            <div style={{ ...cell(0.3), height: 240, minWidth: 0 }}>
               <CircuitTraces opacity={0.05} />
               <AIBrainScene isMobile={false} />
             </div>
 
-            <div style={{ padding: "0 4px", display: "flex", alignItems: "center", width: 60 }}>
+            <div style={{ padding: "0 4px", display: "flex", alignItems: "center", width: 40 }}>
               <ParticleBeam direction="right" count={5} speed={1.8} />
             </div>
 
-            <div style={{ ...cell(0.5), height: 240 }}>
+            <div style={{ ...cell(0.5), height: 240, minWidth: 0 }}>
               <CircuitTraces opacity={0.05} />
               <DatabaseScene isMobile={false} />
             </div>
 
-            <div style={{ padding: "0 4px", display: "flex", alignItems: "center", width: 60 }}>
+            <div style={{ padding: "0 4px", display: "flex", alignItems: "center", width: 40 }}>
               <ParticleBeam direction="right" count={5} speed={1.8} color={C.red} />
             </div>
 
-            <div style={{ ...cell(0.7, C.redDim), height: 240 }}>
+            <div style={{ ...cell(0.7, C.redDim), height: 240, minWidth: 0 }}>
               <RedFlagScene isMobile={false} />
             </div>
           </div>
