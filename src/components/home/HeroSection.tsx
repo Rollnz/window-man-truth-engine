@@ -36,7 +36,7 @@ export function HeroSection() {
           </div>
           <div className="mt-6 animate-fade-in" style={{
           animationDelay: '0.45s'
-        }}><Link to="/sample-report" className="inline-flex items-center text-primary hover:text-primary/80 transition-colors group"><span className="border-b border-primary/50 group-hover:border-primary text-sm">View a Real Sample AI Report</span><span className="ml-2 transition-transform group-hover:translate-x-1">→</span></Link><p className="text-xs text-muted-foreground mt-1">See exactly what the analysis looks like before sharing anything.</p></div>
+        }}><Link to="/sample-report" className="inline-flex items-center text-primary hover:text-primary/80 transition-colors group"><span className="border-b border-primary/50 group-hover:border-primary text-xl">View a Real Sample AI Report</span><span className="ml-2 transition-transform group-hover:translate-x-1">→</span></Link><p className="text-xs text-muted-foreground mt-1">See exactly what the analysis looks like before sharing anything.</p></div>
         </div>
       </div>
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[hsl(var(--surface-1))] to-transparent" />
