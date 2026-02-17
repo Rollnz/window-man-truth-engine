@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SEO } from '@/components/SEO';
-import { ConversionBar } from '@/components/conversion/ConversionBar';
+
 import { Navbar } from '@/components/home/Navbar';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
@@ -130,13 +130,6 @@ const SalesTacticsGuide = () => {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
-        {/* Keep the estimate path visible for readers who are ready to act */}
-        <ConversionBar
-          headline="Spot the tactic, then book a zero-pressure inspection."
-          subheadline="Share your address and goal—we'll pair you with a vetted estimator who won't play games."
-        />
-      </div>
 
       {/* SECTION 2 — IMMEDIATE VALIDATION */}
       <section className="py-16 sm:py-24 bg-card">
