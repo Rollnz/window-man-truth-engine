@@ -1,13 +1,13 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  CheckCircle2, 
-  TrendingDown, 
-  Shield, 
+import {
+  CheckCircle2,
+  TrendingDown,
+  Shield,
   Handshake,
   ArrowRight,
-  Sparkles
-} from 'lucide-react';
+  Sparkles } from
+'lucide-react';
 
 export function BeatOrValidateSection() {
   return (
@@ -21,10 +21,10 @@ export function BeatOrValidateSection() {
       <div className="container relative px-4">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <Badge 
-            variant="outline" 
-            className="mb-6 px-4 py-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-          >
+          <Badge
+            variant="outline"
+            className="mb-6 px-4 py-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-400">
+
             <Sparkles className="w-4 h-4 mr-2" />
             The No-Lose Proposition
           </Badge>
@@ -37,7 +37,7 @@ export function BeatOrValidateSection() {
           </h2>
           
           <p className="text-lg text-[#efefef] max-w-2xl mx-auto">
-            Every scan ends with you winning. Period.
+            Every Scan ends with you Winning. Period.
           </p>
         </div>
 
@@ -72,15 +72,15 @@ export function BeatOrValidateSection() {
 
               <ul className="space-y-3">
                 {[
-                  'Independent verification you can trust',
-                  'Peace of mind before signing',
-                  'Proof to show skeptical family members',
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-[#efefef]">
+                'Independent verification you can trust',
+                'Peace of mind before signing',
+                'Proof to show skeptical family members'].
+                map((item, i) =>
+                <li key={i} className="flex items-start gap-3 text-[#efefef]">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
                     <span>{item}</span>
                   </li>
-                ))}
+                )}
               </ul>
 
               {/* Result badge */}
@@ -121,15 +121,15 @@ export function BeatOrValidateSection() {
 
               <ul className="space-y-3">
                 {[
-                  'AI-generated negotiation scripts',
-                  'Line-by-line price breakdown',
-                  'Better offer from our contractor network',
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-[#efefef]">
+                'AI-generated negotiation scripts',
+                'Line-by-line price breakdown',
+                'Better offer from our contractor network'].
+                map((item, i) =>
+                <li key={i} className="flex items-start gap-3 text-[#efefef]">
                     <CheckCircle2 className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" />
                     <span>{item}</span>
                   </li>
-                ))}
+                )}
               </ul>
 
               {/* Result badge */}
@@ -168,6 +168,6 @@ export function BeatOrValidateSection() {
           </Card>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 }
