@@ -30,14 +30,14 @@ export function BeatOrValidateSection() {
           </Badge>
           
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4">
-            We Don't Just Grade the Homework.
+            With Window Man, You Can't Lose.
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-              We Fix the Grade.
+              I'll Either Verify Your Quote — Or Start a Bidding War.
             </span>
           </h2>
           
           <p className="text-lg text-[#efefef] max-w-2xl mx-auto">
-            Every Scan ends with you Winning. Period.
+            A "Verified Fair" badge of confidence, or the price you actually deserve.
           </p>
         </div>
 
