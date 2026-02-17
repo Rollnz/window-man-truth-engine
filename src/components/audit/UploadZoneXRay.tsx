@@ -234,7 +234,8 @@ export function UploadZoneXRay({
         <div
           key={callout.id}
           className={cn(
-            "absolute z-20 transform transition-all duration-500",
+            "absolute transform transition-all duration-500",
+            callout.id === 2 ? "z-0 lg:z-20" : "z-20",
             visibleCallouts.includes(callout.id) ?
             "opacity-100 scale-100 translate-y-0" :
             "opacity-0 scale-75 translate-y-4"
