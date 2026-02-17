@@ -1,39 +1,65 @@
 
 
-# Fix the Before/After Visual Balance
+# Fix AFTER Card: Blurred Report Preview + Matched Frame
 
-## The Core Problem
+## Scope: ONLY the right column idle state (lines 199-257)
 
-The right card's `bg-card/40` is nearly invisible on a dark background, so it looks like the right side has no card at all. The left card only looks like a card because QuoteUploadZone renders its own dashed border internally -- the outer wrapper is invisible on both sides.
+The Before card is NOT touched. Headers stay outside both cards.
 
-## Changes (QuoteScanner.tsx only)
+## Exact Changes to `src/pages/QuoteScanner.tsx`
 
-### 1. Add a visible dashed border to the right card
-Match the left card's visual language by giving the right column's idle-state content a dashed border frame:
-`border border-dashed border-border/60 rounded-xl p-6`
+### 1. Replace idle-state wrapper classes (line 200)
 
-This creates the same "artifact in a frame" look as the left side's upload zone.
+**Current:**
+```
+border border-dashed border-border/60 rounded-xl p-6
+```
 
-### 2. Unify CTA colors
-Both the "Upload Your Quote" and "Download Sample" buttons on the left currently have different orange tones. The right has blue. Fix:
-- Primary CTA (both sides): default variant (blue)
-- Secondary CTA (both sides): outline variant (border only)
+**New:**
+```
+relative rounded-xl border-2 border-dashed border-border/40 overflow-hidden
+```
 
-### 3. Fill the right card's vertical space
-The benefit list + CTAs end at ~40% of the card height. Fix by letting the inner content container use `flex-1 justify-between` so the benefit list sits at top and CTAs pin toward the bottom, filling the visual space to match the left card.
+This matches the Before card's heavier dashed frame.
 
-### 4. Keep headers outside (as they are now)
-Headers are correctly positioned outside the cards. No change needed.
+### 2. Add blurred ghost report layer (new code, inside the wrapper, before content)
+
+A CSS-only fake report rendered as an `absolute inset-0` background:
+
+- A large circle (w-20 h-20) at the top center representing the score donut
+- A text bar placeholder below it
+- 5 horizontal bars (h-2 rounded-full, varying widths) representing score categories
+- 3 pill-shaped rows representing flagged items
+- All wrapped in `blur-sm opacity-25 pointer-events-none` so it is a ghost, not readable
+- A vignette overlay div on top: `absolute inset-0 bg-gradient-to-b from-background/20 via-background/40 to-background/80`
+
+### 3. Content layer stays identical (on top of blur)
+
+Wrap existing content in `relative z-10 p-8 h-full flex flex-col items-center justify-center text-center`:
+
+- ShieldCheck icon circle (unchanged)
+- "Your Report Will Include" heading (unchanged)
+- "Upload a quote to unlock your full analysis" subtitle (unchanged)
+- 5 bullet points with primary dots (unchanged)
+- "Start My Free Audit" button (mt-6, unchanged)
+- "No Quote Yet?" + "Get a Free Consultation" button (unchanged)
+
+### 4. CTA spacing
+
+`mt-6` on the CTA block -- buttons sit directly under the bullets, not pushed to the card bottom.
+
+## What Does NOT Change
+
+- Before card (left column) -- zero changes
+- Headers outside cards -- zero changes
+- Upload hooks, refs, gating phases, modals, analytics -- zero changes
+- Other phases (uploaded, locked, analyzing, revealed) -- zero changes
+- Any other page sections -- zero changes
+- QuoteUploadZone component -- zero changes
 
 ## File Modified
 
-| File | Change |
-|------|--------|
-| `src/pages/QuoteScanner.tsx` | Add dashed border frame to right idle state, unify CTA button variants, adjust vertical fill |
-
-## What Does NOT Change
-- QuoteUploadZone component
-- Upload logic, hooks, modals, analytics
-- Left card structure (it already has its dashed frame from QuoteUploadZone)
-- Header placement (stays outside)
+| File | Lines Affected |
+|------|---------------|
+| `src/pages/QuoteScanner.tsx` | ~199-257 (idle state block only) |
 
