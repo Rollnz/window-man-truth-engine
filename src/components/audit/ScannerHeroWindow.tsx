@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Shield, Scan, Lock, Sparkles } from "lucide-react";
+import { Shield, Scan, Sparkles } from "lucide-react";
 import { AUDIT_CONFIG } from "@/config/auditConfig";
 import { useTickerStats } from "@/hooks/useTickerStats";
 import { UrgencyTicker } from "@/components/social-proof";
@@ -259,11 +259,6 @@ export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHer
                     </div>
                   }
 
-                  {/* Trust Line */}
-                  <div className="flex items-center gap-2 text-[#efefef] text-sm">
-                    <Lock className="w-4 h-4 text-emerald-500" />
-                    <span>{AUDIT_CONFIG.hero.trustLine}</span>
-                  </div>
                 </div>
               </div>
             </div>
