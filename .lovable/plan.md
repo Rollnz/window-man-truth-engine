@@ -1,69 +1,106 @@
 
 
-# Polish the Before/After Section -- Visual Parity + Ghost Preview
+# Fix Before/After Section: Visual Balance, Alignment, and CTA Consistency
 
-## Scope
+## What's Being Fixed (6 Issues)
 
-Only `src/pages/QuoteScanner.tsx` is modified. No hooks, modals, analytics, or dependencies change.
+1. **Height mismatch** -- Before card is taller than After card
+2. **Visual density gap** -- Before has nested frames (outer card + dashed inner + sample doc overlay); After is a flat list
+3. **Header misalignment** -- "BEFORE:" renders inside the QuoteUploadZone component (inside the card); "AFTER:" floats above the card border
+4. **Nested frame difference** -- Before has a "document within a card" feel; After is just a bare card
+5. **Orphan paragraph** -- "Contractors often hand you..." sits at the bottom of the Before card with disconnected spacing
+6. **CTA style competition** -- Left has an orange "Download Sample" button; right has a blue primary CTA. Two different colors for file-picker triggers creates confusion
+
+## Architecture Constraint
+
+The "BEFORE:" header lives inside `QuoteUploadZone.tsx` (line 94-98), not in the parent page. This means to fix header alignment, I need to touch **two files**:
+
+- `src/pages/QuoteScanner.tsx` -- restructure both column layouts
+- `src/components/quote-scanner/QuoteUploadZone.tsx` -- move the "BEFORE:" header out (or let the parent control it)
+
+## The Layout After This Fix
+
+```text
+DESKTOP (lg:grid-cols-2)
++----------------------------------------------+  +----------------------------------------------+
+| rounded-xl border bg-card/40 min-h-[560px]   |  | rounded-xl border bg-card/40 min-h-[560px]   |
+| p-6 flex flex-col                             |  | p-6 flex flex-col                             |
+|                                               |  |                                               |
+| [FileText] BEFORE: Just a Confusing Estimate  |  | [ShieldCheck] AFTER: Your AI Intelligence     |
+|                                               |  |               Report                          |
+| +------------------------------------------+ |  | +------------------------------------------+ |
+| | Inner dashed frame (upload zone)         | |  | | Inner report frame                       | |
+| | - Sample quote doc + callouts            | |  | | - Ghost report preview (bg layer)        | |
+| | - Upload CTA overlay                     | |  | | - Benefit list (fg, z-10)                | |
+| |                                          | |  | |                                          | |
+| |                                          | |  | |                                          | |
+| +------------------------------------------+ |  | +------------------------------------------+ |
+|                                               |  |                                               |
+| Caption: "Contractors often hand you..."      |  | [Start My Free Audit] -- pinned via mt-auto  |
++----------------------------------------------+  +----------------------------------------------+
+
+MOBILE (stacked, same structure per card)
+```
 
 ## Changes
 
-### 1. Match Card Frames
+### File 1: `src/components/quote-scanner/QuoteUploadZone.tsx`
 
-Both columns currently have different outer styles. The Before card inherits whatever `QuoteUploadZone` renders (dashed border upload area), while the After card uses `rounded-xl border border-border bg-card`.
+**Move the "BEFORE:" header out of this component.**
 
-**Fix:** Wrap the left column's content in the same `rounded-xl border border-border bg-card min-h-[400px] p-6` container that the right column uses. This makes both cards look like a matched pair in both themes. The dashed upload styling stays *inside* this frame as content, not as the outer border.
+The header (lines 93-98) and the orphan paragraph (lines 279-283) are currently inside QuoteUploadZone. To let the parent page control header placement consistently across both columns:
 
-### 2. Blurred Ghost Report Preview (Pure CSS, No Images)
+- Remove the header `div` (lines 93-98) from inside QuoteUploadZone
+- Remove the orphan paragraph (lines 279-283) from inside QuoteUploadZone
+- Export both as separate optional renders, OR simply let the parent render them
 
-Add an `absolute inset-0` layer inside the After card (idle phase only) that renders a faint "ghost report" using divs styled with theme tokens:
+This way both headers live in `QuoteScanner.tsx` at the same structural level.
 
-- A fake header bar (`bg-muted/40 rounded h-4 w-3/4`)
-- 3 stacked "score tile" rows (small colored dot + gray bar placeholders)
-- A fake "warning row" with a slightly different width
+### File 2: `src/pages/QuoteScanner.tsx`
 
-The entire layer gets `opacity-40 blur-[1px] pointer-events-none` so it's visible but never competes with the benefit list text above it. The card becomes `relative` and the benefit list content gets `relative z-10`.
+**Restructure both columns to be symmetrical:**
 
-All colors use `bg-muted`, `bg-primary/20`, `border-border` -- zero hardcoded values.
+**Both columns get the same outer frame:**
+- `rounded-xl border border-border bg-card/40 dark:bg-background/30 min-h-[560px] p-6 flex flex-col`
 
-### 3. Top-Align Idle Layout + Pin CTA to Bottom
+**Both columns render their header INSIDE the card at the top:**
+- Left: `[FileText] BEFORE: Just a Confusing Estimate` (rose colored, moved from QuoteUploadZone)
+- Right: `[ShieldCheck] AFTER: Your AI Intelligence Report` (primary colored, moved from above the card into it)
 
-Change the idle state container from `items-center justify-center` (vertically centered) to `justify-between` with the CTA wrapped in an `mt-auto` container. This fills the vertical space and pins the button to the lower third, matching the visual weight of the left card.
+**After card idle state gets an inner report frame:**
+- Wrap the ghost preview + benefit list in: `relative flex-1 rounded-xl border border-border/60 bg-muted/10 overflow-hidden`
+- Strengthen the ghost preview to look like a recognizable report structure:
+  - "Report Header" bar
+  - Row of 5 score chip placeholders
+  - "Top Flags" section with 3 warning rows (dot + bar)
+  - "Missing Items" section with 2 rows
+  - Vignette overlay for readability: `bg-gradient-to-b from-background/0 via-background/0 to-background/60`
 
-The layout becomes:
-```text
-+---------------------------+
-| [ShieldCheck icon]        |
-| Your Report Will Include  |
-|  - 5 category scores      |
-|  - Missing scope items    |
-|  - Fine print alerts      |
-|  - Fair price comparison  |
-|  - Negotiation scripts    |
-|                           |
-|   [ See What I Flag ]     |
-+---------------------------+
-```
+**Orphan paragraph becomes a caption:**
+- Render the "Contractors often hand you..." text below the upload zone inside the left card as: `mt-4 text-sm text-muted-foreground leading-relaxed`
 
-### 4. Differentiate CTA Copy
+**CTA unification:**
+- Both CTAs use `variant="default" size="lg"` (primary color)
+- Left copy: "Upload Your Quote" (unchanged)
+- Right copy: "Start My Free Audit" (was "See What I Flag")
+- Same click handler on both (triggers file picker)
 
-Change the right-side CTA text from "Upload Your Quote" to "See What I Flag". Same `onClick` handler (triggers the file picker via `uploadRef`), just different copy so the two buttons don't feel redundant.
+**Equal height enforcement:**
+- Both outer cards: `min-h-[560px]`
+- Inner content uses `flex-1`
+- Right CTA pinned with `mt-auto`
 
-## Technical Detail
+## Files Modified
 
-All changes are within lines 167-225 of `src/pages/QuoteScanner.tsx`:
+| File | What Changes |
+|------|-------------|
+| `src/components/quote-scanner/QuoteUploadZone.tsx` | Remove header and orphan paragraph (they move to parent) |
+| `src/pages/QuoteScanner.tsx` | Restructure both column layouts, add inner report frame, unify headers and CTAs |
 
-- **Line 174**: Add `relative` to the After card's className
-- **Lines 186-225**: Replace the idle phase block with the new top-aligned layout + ghost preview background layer + updated CTA copy
-- **Lines 112-165**: Wrap the left column's phase-conditional content in a matching card frame
+## What Does NOT Change
 
-No new files, no new imports, no new dependencies.
-
-## Definition of Done
-
-- After card has a faint ghost report preview behind the benefit list (idle phase only)
-- Both cards share the same outer frame style (`rounded-xl border border-border bg-card`)
-- After card content is top-aligned with CTA pinned to the bottom
-- Right CTA reads "See What I Flag"; left CTA unchanged
-- Correct in both light and dark mode (all semantic tokens, zero hardcoded colors)
+- Upload hooks, refs, gating phases, modals
+- Analytics events
+- Any other page sections
+- No new dependencies
 
