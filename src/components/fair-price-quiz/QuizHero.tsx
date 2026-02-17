@@ -30,7 +30,7 @@ export function QuizHero({ onStart }: QuizHeroProps) {
           <p className="text-lg md:text-xl text-muted-foreground">
             Compare your quote against
           </p>
-          <UrgencyTicker variant="homepage" size="md" showToday={false} animated={true} />
+          <UrgencyTicker variant="homepage" size="md" showToday={true} animated={true} />
           <p className="text-lg md:text-xl text-muted-foreground">
             in 60 seconds.
           </p>
