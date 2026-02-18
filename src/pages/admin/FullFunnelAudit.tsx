@@ -1,7 +1,7 @@
 /**
- * Full-Funnel Meta Tracking Audit Page
- * 
- * Comprehensive dashboard for testing all 6 Meta conversion events.
+ * Full-Funnel OPT Tracking Audit Page
+ *
+ * Tests the 5 canonical wmTracking OPT conversion events.
  * Access via /admin/full-funnel-audit (requires admin auth)
  */
 
@@ -14,25 +14,25 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { 
-  Play, 
-  CheckCircle2, 
-  XCircle, 
-  AlertCircle, 
+import {
+  Play,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
   Loader2,
   User,
   Hash,
   Network,
   Zap,
   Target,
-  FileCheck,
-  Phone,
-  TrendingUp,
   Send,
+  CalendarCheck,
+  DollarSign,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { 
-  runFullFunnelAudit, 
+import {
+  runFullFunnelAudit,
   generateGoldenLead,
   META_EVENTS,
   type FullFunnelAuditReport,
@@ -40,12 +40,11 @@ import {
 } from '@/lib/fullFunnelTrackingAudit';
 
 const EVENT_ICONS: Record<string, React.ReactNode> = {
-  lead_form_opened: <FileCheck className="h-4 w-4" />,
-  scanner_upload: <Zap className="h-4 w-4" />,
-  quote_upload_success: <Target className="h-4 w-4" />,
-  call_initiated: <Phone className="h-4 w-4" />,
-  engagement_score: <TrendingUp className="h-4 w-4" />,
-  lead_submission_success: <Send className="h-4 w-4" />,
+  wm_lead: <Send className="h-4 w-4" />,
+  wm_qualified_lead: <ShieldCheck className="h-4 w-4" />,
+  wm_scanner_upload: <Zap className="h-4 w-4" />,
+  wm_appointment_booked: <CalendarCheck className="h-4 w-4" />,
+  wm_sold: <DollarSign className="h-4 w-4" />,
 };
 
 export default function FullFunnelAuditPage() {
@@ -56,7 +55,7 @@ export default function FullFunnelAuditPage() {
   const handleRunAudit = useCallback(async () => {
     setIsRunning(true);
     setError(null);
-    
+
     try {
       const result = await runFullFunnelAudit();
       setReport(result);
@@ -70,23 +69,17 @@ export default function FullFunnelAuditPage() {
 
   const getStatusIcon = (status: 'PASS' | 'PARTIAL' | 'FAIL') => {
     switch (status) {
-      case 'PASS':
-        return <CheckCircle2 className="h-6 w-6 text-primary" />;
-      case 'PARTIAL':
-        return <AlertCircle className="h-6 w-6 text-secondary-foreground" />;
-      case 'FAIL':
-        return <XCircle className="h-6 w-6 text-destructive" />;
+      case 'PASS': return <CheckCircle2 className="h-6 w-6 text-primary" />;
+      case 'PARTIAL': return <AlertCircle className="h-6 w-6 text-secondary-foreground" />;
+      case 'FAIL': return <XCircle className="h-6 w-6 text-destructive" />;
     }
   };
 
   const getStatusColor = (status: 'PASS' | 'PARTIAL' | 'FAIL') => {
     switch (status) {
-      case 'PASS':
-        return 'bg-primary text-primary-foreground border-primary';
-      case 'PARTIAL':
-        return 'bg-amber-500 text-white border-amber-500';
-      case 'FAIL':
-        return 'bg-destructive text-destructive-foreground border-destructive';
+      case 'PASS': return 'bg-primary text-primary-foreground border-primary';
+      case 'PARTIAL': return 'bg-amber-500 text-white border-amber-500';
+      case 'FAIL': return 'bg-destructive text-destructive-foreground border-destructive';
     }
   };
 
@@ -95,6 +88,15 @@ export default function FullFunnelAuditPage() {
     if (result.score >= result.maxScore * 0.5) return 'PARTIAL';
     return 'FAIL';
   };
+
+  const CheckRow = ({ passed, label }: { passed: boolean; label: string }) => (
+    <div className="flex items-center gap-2">
+      {passed
+        ? <CheckCircle2 className="h-4 w-4 text-primary" />
+        : <XCircle className="h-4 w-4 text-destructive" />}
+      <span>{label}</span>
+    </div>
+  );
 
   return (
     <>
@@ -106,28 +108,28 @@ export default function FullFunnelAuditPage() {
       <div className="container max-w-6xl py-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Full-Funnel Meta Tracking Audit</h1>
+            <h1 className="text-2xl font-bold">Full-Funnel OPT Tracking Audit</h1>
             <p className="text-muted-foreground">
-              Test all 6 Meta conversion events with a Golden Lead profile
+              Test all 5 canonical OPT conversion events via wmTracking
             </p>
           </div>
           <Badge variant="outline" className="text-xs">
-            GTM v63 Compatible
+            wmTracking v1.0
           </Badge>
         </div>
 
         {/* Event Overview */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Meta Conversion Events (6 Tags)</CardTitle>
+            <CardTitle className="text-base">OPT Conversion Events (5 Events)</CardTitle>
             <CardDescription>
-              Events tested against GTM container GTM-NHVFR5QZ
+              Canonical value ladder fired through wmTracking.ts firewall
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {META_EVENTS.map((event) => (
-                <div 
+                <div
                   key={event.eventName}
                   className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 text-sm"
                 >
@@ -147,20 +149,15 @@ export default function FullFunnelAuditPage() {
               Run Full-Funnel Audit
             </CardTitle>
             <CardDescription>
-              Generates a Golden Lead, fires all 6 events, and validates the tracking pipeline
+              Generates a Golden Lead, fires all 5 OPT events, and validates the tracking pipeline
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
-              onClick={handleRunAudit} 
-              disabled={isRunning}
-              size="lg"
-              className="gap-2"
-            >
+            <Button onClick={handleRunAudit} disabled={isRunning} size="lg" className="gap-2">
               {isRunning ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Running 6-Event Sequence...
+                  Running 5-Event OPT Sequence...
                 </>
               ) : (
                 <>
@@ -169,7 +166,6 @@ export default function FullFunnelAuditPage() {
                 </>
               )}
             </Button>
-            
             {error && (
               <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
                 {error}
@@ -189,8 +185,8 @@ export default function FullFunnelAuditPage() {
                     {getStatusIcon(report.overallStatus)}
                     <div>
                       <h3 className="text-lg font-semibold">
-                        {report.overallStatus === 'PASS' ? 'Full-Funnel Verified' : 
-                         report.overallStatus === 'PARTIAL' ? 'Partial Coverage' : 
+                        {report.overallStatus === 'PASS' ? 'Full-Funnel Verified' :
+                         report.overallStatus === 'PARTIAL' ? 'Partial Coverage' :
                          'Issues Detected'}
                       </h3>
                       <p className="text-sm text-muted-foreground">
@@ -206,7 +202,6 @@ export default function FullFunnelAuditPage() {
                     <p className="text-xs text-muted-foreground">Projected EMQ</p>
                   </div>
                 </div>
-                
                 <div className="mt-4">
                   <div className="flex justify-between text-sm mb-1">
                     <span>Overall Score</span>
@@ -252,29 +247,20 @@ export default function FullFunnelAuditPage() {
                       </div>
                     </div>
                   </div>
-                  
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                       <Hash className="h-3 w-3" />
                       SHA-256 Hashes (for Parity Check)
                     </h4>
                     <div className="space-y-1 text-sm font-mono text-foreground">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">em:</span>
-                        <code className="text-xs bg-background border border-border px-2 py-0.5 rounded truncate max-w-[180px] text-foreground">{report.goldenLeadHashes.email.slice(0, 16)}...</code>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">ph:</span>
-                        <code className="text-xs bg-background border border-border px-2 py-0.5 rounded truncate max-w-[180px] text-foreground">{report.goldenLeadHashes.phone?.slice(0, 16) || 'N/A'}...</code>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">fn:</span>
-                        <code className="text-xs bg-background border border-border px-2 py-0.5 rounded truncate max-w-[180px] text-foreground">{report.goldenLeadHashes.firstName?.slice(0, 16) || 'N/A'}...</code>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">ln:</span>
-                        <code className="text-xs bg-background border border-border px-2 py-0.5 rounded truncate max-w-[180px] text-foreground">{report.goldenLeadHashes.lastName?.slice(0, 16) || 'N/A'}...</code>
-                      </div>
+                      {(['email', 'phone', 'firstName', 'lastName'] as const).map((field) => (
+                        <div key={field} className="flex justify-between items-center">
+                          <span className="text-muted-foreground">{field === 'email' ? 'em' : field === 'phone' ? 'ph' : field === 'firstName' ? 'fn' : 'ln'}:</span>
+                          <code className="text-xs bg-background border border-border px-2 py-0.5 rounded truncate max-w-[180px] text-foreground">
+                            {report.goldenLeadHashes[field]?.slice(0, 16) || 'N/A'}...
+                          </code>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -288,11 +274,11 @@ export default function FullFunnelAuditPage() {
               </CardHeader>
               <CardContent>
                 <Accordion type="single" collapsible className="w-full">
-                  {report.eventResults.map((result, index) => {
+                  {report.eventResults.map((result) => {
                     const status = getEventStatus(result);
                     return (
-                      <AccordionItem 
-                        key={result.eventName} 
+                      <AccordionItem
+                        key={result.eventName}
                         value={result.eventName}
                         className="[background:transparent] bg-card border border-border rounded-lg mb-2 text-foreground"
                       >
@@ -302,72 +288,41 @@ export default function FullFunnelAuditPage() {
                               {EVENT_ICONS[result.eventName]}
                               <span className="font-medium">{result.eventName}</span>
                             </span>
-                            <Badge 
-                              variant="outline" 
-                              className={cn('ml-auto', getStatusColor(status))}
-                            >
+                            <Badge variant="outline" className={cn('ml-auto', getStatusColor(status))}>
                               {result.score.toFixed(1)}/{result.maxScore}
                             </Badge>
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
                           <div className="space-y-4 pt-2">
+                            {/* Identity & Firewall */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-foreground">
-                              <div className="flex items-center gap-2">
-                                {result.validation.hasEventId ? 
-                                  <CheckCircle2 className="h-4 w-4 text-primary" /> : 
-                                  <XCircle className="h-4 w-4 text-destructive" />}
-                                <span>event_id</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {result.validation.hasEmail ? 
-                                  <CheckCircle2 className="h-4 w-4 text-primary" /> : 
-                                  <XCircle className="h-4 w-4 text-destructive" />}
-                                <span>em (email)</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {result.validation.hasPhone ? 
-                                  <CheckCircle2 className="h-4 w-4 text-primary" /> : 
-                                  <AlertCircle className="h-4 w-4 text-muted-foreground" />}
-                                <span>ph (phone)</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {result.validation.hasFirstName ? 
-                                  <CheckCircle2 className="h-4 w-4 text-primary" /> : 
-                                  <AlertCircle className="h-4 w-4 text-muted-foreground" />}
-                                <span>fn (firstName)</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {result.validation.hasLastName ? 
-                                  <CheckCircle2 className="h-4 w-4 text-primary" /> : 
-                                  <AlertCircle className="h-4 w-4 text-muted-foreground" />}
-                                <span>ln (lastName)</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {result.validation.hasCity ? 
-                                  <CheckCircle2 className="h-4 w-4 text-primary" /> : 
-                                  <AlertCircle className="h-4 w-4 text-muted-foreground" />}
-                                <span>ct (city)</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {result.validation.hasState ? 
-                                  <CheckCircle2 className="h-4 w-4 text-primary" /> : 
-                                  <AlertCircle className="h-4 w-4 text-muted-foreground" />}
-                                <span>st (state)</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {result.validation.hasZip ? 
-                                  <CheckCircle2 className="h-4 w-4 text-primary" /> : 
-                                  <AlertCircle className="h-4 w-4 text-muted-foreground" />}
-                                <span>zp (zip)</span>
-                              </div>
+                              <CheckRow passed={result.validation.hasEventId} label="event_id" />
+                              <CheckRow passed={result.validation.hasClientId} label="client_id" />
+                              <CheckRow passed={result.validation.hasSessionId} label="session_id" />
+                              <CheckRow passed={result.validation.hasMetaCategory} label='meta.category="opt"' />
+                              <CheckRow passed={result.validation.hasMetaSend} label="meta.send=true" />
+                              <CheckRow passed={result.validation.hasValue} label="value/currency" />
+                              <CheckRow passed={result.validation.hasExternalId} label="external_id" />
+                              <CheckRow passed={result.validation.hasUserData} label="user_data" />
                             </div>
-                            
+
+                            {/* PII Hashes */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-foreground">
+                              <CheckRow passed={result.validation.hasEmail} label="em (email)" />
+                              <CheckRow passed={result.validation.hasPhone} label="ph (phone)" />
+                              <CheckRow passed={result.validation.hasFirstName} label="fn (firstName)" />
+                              <CheckRow passed={result.validation.hasLastName} label="ln (lastName)" />
+                              <CheckRow passed={result.validation.hasCity} label="ct (city)" />
+                              <CheckRow passed={result.validation.hasState} label="st (state)" />
+                              <CheckRow passed={result.validation.hasZip} label="zp (zip)" />
+                            </div>
+
                             <div className="text-sm text-foreground">
                               <span className="text-muted-foreground">Event ID: </span>
                               <code className="text-xs bg-background border border-border px-2 py-0.5 rounded text-foreground">{result.eventId}</code>
                             </div>
-                            
+
                             {result.issues.length > 0 && (
                               <div className="space-y-1 text-sm">
                                 {result.issues.map((issue, i) => (
@@ -411,9 +366,7 @@ export default function FullFunnelAuditPage() {
                     <div className="text-xs text-muted-foreground">Event ID Format</div>
                   </div>
                 </div>
-                
                 <Separator className="my-4" />
-                
                 <div className="text-sm text-foreground">
                   <span className="font-medium">Server-Side Parity: </span>
                   <span className={report.serverSideParity.formatConsistent ? 'text-primary' : 'text-foreground'}>
@@ -474,7 +427,7 @@ export default function FullFunnelAuditPage() {
               <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="font-medium">Ready to audit your tracking pipeline</p>
               <p className="text-sm mt-1">
-                Click "Start Audit" to generate a Golden Lead and test all 6 Meta conversion events
+                Click "Start Audit" to generate a Golden Lead and test all 5 OPT conversion events
               </p>
             </CardContent>
           </Card>

@@ -1,33 +1,39 @@
 /**
- * Full-Funnel Meta Tracking Audit
- * 
- * Comprehensive E2E verification suite for all Meta Pixel events:
- * 1. CE - lead_form_opened (Meta - Lead Form Opened)
- * 2. CE - ScannerUpload (Meta - ScannerUpload)
- * 3. quote_upload_success (Meta - Quote Upload Success)
- * 4. CE - call_initiated (Meta - Click to Call)
- * 5. engagement_score (Meta - High Engagement 60+)
- * 6. lead_submission_success (Meta - Lead Conversion)
- * 
- * Tests all 6 Meta conversion tags from GTM version 63
+ * Full-Funnel Tracking Audit — Canonical wmTracking OPT Events
+ *
+ * Fires the 5 canonical OPT conversion events through wmTracking.ts
+ * and validates that each event lands in the Data Layer with the correct
+ * payload structure (event_id, meta, value, identity fields, hashed PII).
+ *
+ * OPT Ladder:
+ *   wm_lead              $10
+ *   wm_qualified_lead    $100
+ *   wm_scanner_upload    $500
+ *   wm_appointment_booked $1,000
+ *   wm_sold              $5,000 + sale_amount
  */
 
 import { generateSecureUUID } from './secureUUID';
-import { 
-  trackEvent,
-  buildEnhancedUserData,
-  generateEventId,
+import {
   sha256,
   hashPhone,
   hashName,
   hashCity,
   hashState,
   hashZip,
-  getFbp,
-  getFbc,
-  getClientUserAgent,
   type EnhancedUserData,
 } from './gtm';
+import {
+  wmLead,
+  wmQualifiedLead,
+  wmScannerUpload,
+  wmAppointmentBooked,
+  wmSold,
+  _resetWmLeadGuard,
+  _resetScannerUploadGuard,
+  _resetSessionGuards,
+  type WmUserIdentity,
+} from './wmTracking';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GOLDEN LEAD PROFILE
@@ -46,10 +52,6 @@ export interface GoldenLeadProfile {
   sourceTool: string;
 }
 
-/**
- * Generate a "Golden Lead" profile with all matching fields
- * for maximum EMQ testing
- */
 export function generateGoldenLead(): GoldenLeadProfile {
   const testId = Date.now().toString(36);
   return {
@@ -67,66 +69,46 @@ export function generateGoldenLead(): GoldenLeadProfile {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// META EVENT DEFINITIONS
+// OPT EVENT DEFINITIONS (canonical 5)
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface MetaEventDefinition {
   eventName: string;
-  gtmTriggerName: string;
   metaTagName: string;
   expectedValue: number;
-  category: 'standard' | 'custom';
   description: string;
 }
 
 export const META_EVENTS: MetaEventDefinition[] = [
   {
-    eventName: 'lead_form_opened',
-    gtmTriggerName: 'CE - lead_form_opened',
-    metaTagName: 'Meta - Lead Form Opened',
-    expectedValue: 0,
-    category: 'custom',
-    description: 'User opens a lead capture form',
+    eventName: 'wm_lead',
+    metaTagName: 'Lead ($10)',
+    expectedValue: 10,
+    description: 'First-party email capture with confirmed leadId',
   },
   {
-    eventName: 'scanner_upload',
-    gtmTriggerName: 'CE - ScannerUpload',
-    metaTagName: 'Meta - ScannerUpload',
-    expectedValue: 35,
-    category: 'custom',
-    description: 'User uploads a document to the scanner',
-  },
-  {
-    eventName: 'quote_upload_success',
-    gtmTriggerName: 'CE - quote_upload_success',
-    metaTagName: 'Meta - Quote Upload Success',
-    expectedValue: 50,
-    category: 'custom',
-    description: 'Quote successfully analyzed',
-  },
-  {
-    eventName: 'call_initiated',
-    gtmTriggerName: 'CE - call_initiated',
-    metaTagName: 'Meta - Click to Call',
-    expectedValue: 60,
-    category: 'custom',
-    description: 'User initiates a phone call',
-  },
-  {
-    eventName: 'engagement_score',
-    gtmTriggerName: 'CE - engagement_score',
-    metaTagName: 'Meta - High Engagement 60+',
-    expectedValue: 40,
-    category: 'custom',
-    description: 'User reaches 60+ engagement score',
-  },
-  {
-    eventName: 'lead_submission_success',
-    gtmTriggerName: 'CE - lead_submission_success',
-    metaTagName: 'Meta - Lead Conversion',
+    eventName: 'wm_qualified_lead',
+    metaTagName: 'QualifiedLead ($100)',
     expectedValue: 100,
-    category: 'standard',
-    description: 'Lead form successfully submitted',
+    description: 'Lead passes scope + timeline qualification',
+  },
+  {
+    eventName: 'wm_scanner_upload',
+    metaTagName: 'ScannerUpload ($500)',
+    expectedValue: 500,
+    description: 'User uploaded a quote for AI analysis',
+  },
+  {
+    eventName: 'wm_appointment_booked',
+    metaTagName: 'Schedule ($1,000)',
+    expectedValue: 1000,
+    description: 'Consultation / booking confirmed',
+  },
+  {
+    eventName: 'wm_sold',
+    metaTagName: 'Purchase ($5,000+)',
+    expectedValue: 20000, // $5,000 base + $15,000 test sale
+    description: 'Sale closed (test: $15k sale amount)',
   },
 ];
 
@@ -142,7 +124,6 @@ interface CapturedPixelRequest {
   hasAdvancedMatching: boolean;
   hasEventId: boolean;
   params: Record<string, string>;
-  triggeredBy?: string;
 }
 
 let capturedRequests: CapturedPixelRequest[] = [];
@@ -151,31 +132,25 @@ let mutationObserver: MutationObserver | null = null;
 
 function parsePixelUrl(url: string): CapturedPixelRequest {
   const params: Record<string, string> = {};
-  
   try {
     const urlObj = new URL(url);
-    urlObj.searchParams.forEach((value, key) => {
-      params[key] = value;
-    });
+    urlObj.searchParams.forEach((value, key) => { params[key] = value; });
   } catch {
-    const queryString = url.split('?')[1] || '';
-    queryString.split('&').forEach(pair => {
+    const qs = url.split('?')[1] || '';
+    qs.split('&').forEach(pair => {
       const [key, value] = pair.split('=');
       if (key) params[key] = decodeURIComponent(value || '');
     });
   }
-  
-  // Check for cd (custom data) JSON - Meta's advanced matching params
+
   let hasAdvancedMatching = !!(params.ud || params.em || params.ph || params.fn);
   if (params.cd) {
     try {
-      const customData = JSON.parse(decodeURIComponent(params.cd));
-      hasAdvancedMatching = hasAdvancedMatching || !!(customData.em || customData.ph || customData.fn);
-    } catch {
-      // Ignore parse errors
-    }
+      const cd = JSON.parse(decodeURIComponent(params.cd));
+      hasAdvancedMatching = hasAdvancedMatching || !!(cd.em || cd.ph || cd.fn);
+    } catch { /* ignore */ }
   }
-  
+
   return {
     url,
     timestamp: Date.now(),
@@ -189,26 +164,20 @@ function parsePixelUrl(url: string): CapturedPixelRequest {
 
 export function startNetworkInterception(): void {
   capturedRequests = [];
-  
   if (typeof window === 'undefined') return;
-  
-  // Intercept fetch requests
+
   if (!originalFetch) {
     originalFetch = window.fetch;
-    window.fetch = async function(...args) {
+    window.fetch = async function (...args) {
       const url = typeof args[0] === 'string' ? args[0] : args[0] instanceof Request ? args[0].url : '';
-      
       if (url.includes('facebook.com/tr/') || url.includes('facebook.com/tr?')) {
         const parsed = parsePixelUrl(url);
         capturedRequests.push(parsed);
-        console.log('[FullFunnelAudit] Captured Meta Pixel (fetch):', parsed.eventName, parsed);
       }
-      
       return originalFetch!.apply(this, args);
     };
   }
-  
-  // Monitor for img pixel requests
+
   if (!mutationObserver) {
     mutationObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
@@ -216,33 +185,19 @@ export function startNetworkInterception(): void {
           if (node instanceof HTMLImageElement) {
             const src = node.src;
             if (src.includes('facebook.com/tr/') || src.includes('facebook.com/tr?')) {
-              const parsed = parsePixelUrl(src);
-              capturedRequests.push(parsed);
-              console.log('[FullFunnelAudit] Captured Meta Pixel (img):', parsed.eventName, parsed);
+              capturedRequests.push(parsePixelUrl(src));
             }
           }
         });
       });
     });
-    
     mutationObserver.observe(document.body, { childList: true, subtree: true });
   }
-  
-  console.log('[FullFunnelAudit] Network interception started');
 }
 
 export function stopNetworkInterception(): void {
-  if (originalFetch) {
-    window.fetch = originalFetch;
-    originalFetch = null;
-  }
-  
-  if (mutationObserver) {
-    mutationObserver.disconnect();
-    mutationObserver = null;
-  }
-  
-  console.log('[FullFunnelAudit] Network interception stopped');
+  if (originalFetch) { window.fetch = originalFetch; originalFetch = null; }
+  if (mutationObserver) { mutationObserver.disconnect(); mutationObserver = null; }
 }
 
 export function getCapturedRequests(): CapturedPixelRequest[] {
@@ -258,21 +213,27 @@ interface DataLayerEvent {
   event_id?: string;
   lead_id?: string;
   external_id?: string;
+  client_id?: string;
+  session_id?: string;
   value?: number;
   currency?: string;
+  meta?: {
+    send?: boolean;
+    category?: string;
+    meta_event_name?: string;
+    value?: number;
+    currency?: string;
+    wm_tracking_version?: string;
+  };
   user_data?: Partial<EnhancedUserData>;
-  source_tool?: string;
   [key: string]: unknown;
 }
 
 export function findDataLayerEvents(eventName: string): DataLayerEvent[] {
-  if (typeof window === 'undefined' || !window.dataLayer) {
-    return [];
-  }
-  
+  if (typeof window === 'undefined' || !window.dataLayer) return [];
   return window.dataLayer.filter(
-    (entry): entry is DataLayerEvent => 
-      typeof entry === 'object' && entry !== null && (entry as DataLayerEvent).event === eventName
+    (entry): entry is DataLayerEvent =>
+      typeof entry === 'object' && entry !== null && (entry as DataLayerEvent).event === eventName,
   );
 }
 
@@ -282,252 +243,7 @@ export function getLastDataLayerEvent(eventName: string): DataLayerEvent | null 
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// EVENT FIRING FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════════════
-
-export interface FiredEventResult {
-  eventName: string;
-  eventId: string;
-  timestamp: number;
-  userData: EnhancedUserData | undefined;
-  dataLayerPushed: boolean;
-}
-
-/**
- * Fire lead_form_opened event
- */
-export async function fireLeadFormOpened(
-  goldenLead: GoldenLeadProfile
-): Promise<FiredEventResult> {
-  const eventId = generateEventId();
-  const userData = await buildEnhancedUserData({
-    email: goldenLead.email,
-    phone: goldenLead.phone,
-    leadId: goldenLead.leadId,
-    firstName: goldenLead.firstName,
-    lastName: goldenLead.lastName,
-    city: goldenLead.city,
-    state: goldenLead.state,
-    zipCode: goldenLead.zipCode,
-  });
-  
-  trackEvent('lead_form_opened', {
-    event_id: eventId,
-    lead_id: goldenLead.leadId,
-    external_id: goldenLead.leadId,
-    user_data: userData,
-    source_tool: goldenLead.sourceTool,
-    form_name: 'full-funnel-test',
-  });
-  
-  return {
-    eventName: 'lead_form_opened',
-    eventId,
-    timestamp: Date.now(),
-    userData,
-    dataLayerPushed: true,
-  };
-}
-
-/**
- * Fire scanner_upload event (CE - ScannerUpload)
- */
-export async function fireScannerUpload(
-  goldenLead: GoldenLeadProfile
-): Promise<FiredEventResult> {
-  const eventId = generateEventId();
-  const userData = await buildEnhancedUserData({
-    email: goldenLead.email,
-    phone: goldenLead.phone,
-    leadId: goldenLead.leadId,
-    firstName: goldenLead.firstName,
-    lastName: goldenLead.lastName,
-    city: goldenLead.city,
-    state: goldenLead.state,
-    zipCode: goldenLead.zipCode,
-  });
-  
-  trackEvent('scanner_upload', {
-    event_id: eventId,
-    lead_id: goldenLead.leadId,
-    external_id: goldenLead.leadId,
-    user_data: userData,
-    value: 35,
-    currency: 'USD',
-    source_tool: goldenLead.sourceTool,
-    file_type: 'image/png',
-  });
-  
-  return {
-    eventName: 'scanner_upload',
-    eventId,
-    timestamp: Date.now(),
-    userData,
-    dataLayerPushed: true,
-  };
-}
-
-/**
- * Fire quote_upload_success event
- */
-export async function fireQuoteUploadSuccess(
-  goldenLead: GoldenLeadProfile
-): Promise<FiredEventResult> {
-  const scanAttemptId = generateSecureUUID();
-  const eventId = `quote_uploaded:${scanAttemptId}`;
-  const userData = await buildEnhancedUserData({
-    email: goldenLead.email,
-    phone: goldenLead.phone,
-    leadId: goldenLead.leadId,
-    firstName: goldenLead.firstName,
-    lastName: goldenLead.lastName,
-    city: goldenLead.city,
-    state: goldenLead.state,
-    zipCode: goldenLead.zipCode,
-  });
-  
-  trackEvent('quote_upload_success', {
-    event_id: eventId,
-    lead_id: goldenLead.leadId,
-    external_id: goldenLead.leadId,
-    user_data: userData,
-    value: 50,
-    currency: 'USD',
-    source_tool: goldenLead.sourceTool,
-  });
-  
-  return {
-    eventName: 'quote_upload_success',
-    eventId,
-    timestamp: Date.now(),
-    userData,
-    dataLayerPushed: true,
-  };
-}
-
-/**
- * Fire call_initiated event (CE - call_initiated)
- */
-export async function fireCallInitiated(
-  goldenLead: GoldenLeadProfile
-): Promise<FiredEventResult> {
-  const eventId = generateEventId();
-  const userData = await buildEnhancedUserData({
-    email: goldenLead.email,
-    phone: goldenLead.phone,
-    leadId: goldenLead.leadId,
-    firstName: goldenLead.firstName,
-    lastName: goldenLead.lastName,
-    city: goldenLead.city,
-    state: goldenLead.state,
-    zipCode: goldenLead.zipCode,
-  });
-  
-  trackEvent('call_initiated', {
-    event_id: eventId,
-    lead_id: goldenLead.leadId,
-    external_id: goldenLead.leadId,
-    user_data: userData,
-    value: 60,
-    currency: 'USD',
-    source_tool: goldenLead.sourceTool,
-    phone_number_dialed: goldenLead.phone,
-  });
-  
-  return {
-    eventName: 'call_initiated',
-    eventId,
-    timestamp: Date.now(),
-    userData,
-    dataLayerPushed: true,
-  };
-}
-
-/**
- * Fire engagement_score event (Meta - High Engagement 60+)
- */
-export async function fireEngagementScore(
-  goldenLead: GoldenLeadProfile,
-  score: number = 65
-): Promise<FiredEventResult> {
-  const eventId = generateEventId();
-  const userData = await buildEnhancedUserData({
-    email: goldenLead.email,
-    phone: goldenLead.phone,
-    leadId: goldenLead.leadId,
-    firstName: goldenLead.firstName,
-    lastName: goldenLead.lastName,
-    city: goldenLead.city,
-    state: goldenLead.state,
-    zipCode: goldenLead.zipCode,
-  });
-  
-  trackEvent('engagement_score', {
-    event_id: eventId,
-    lead_id: goldenLead.leadId,
-    external_id: goldenLead.leadId,
-    user_data: userData,
-    value: 40,
-    currency: 'USD',
-    source_tool: goldenLead.sourceTool,
-    engagement_score: score,
-    threshold_reached: score >= 60,
-  });
-  
-  return {
-    eventName: 'engagement_score',
-    eventId,
-    timestamp: Date.now(),
-    userData,
-    dataLayerPushed: true,
-  };
-}
-
-/**
- * Fire lead_submission_success event (Meta - Lead Conversion)
- */
-export async function fireLeadSubmissionSuccess(
-  goldenLead: GoldenLeadProfile
-): Promise<FiredEventResult> {
-  const eventId = generateEventId();
-  const userData = await buildEnhancedUserData({
-    email: goldenLead.email,
-    phone: goldenLead.phone,
-    leadId: goldenLead.leadId,
-    firstName: goldenLead.firstName,
-    lastName: goldenLead.lastName,
-    city: goldenLead.city,
-    state: goldenLead.state,
-    zipCode: goldenLead.zipCode,
-  });
-  
-  trackEvent('lead_submission_success', {
-    event_id: eventId,
-    lead_id: goldenLead.leadId,
-    external_id: goldenLead.leadId,
-    user_data: userData,
-    value: 100,
-    currency: 'USD',
-    source_tool: goldenLead.sourceTool,
-    source_system: 'website',
-    // Location fields as strings (not IP addresses)
-    city: goldenLead.city,
-    region: goldenLead.state,
-    zip: goldenLead.zipCode,
-    country: goldenLead.country,
-  });
-  
-  return {
-    eventName: 'lead_submission_success',
-    eventId,
-    timestamp: Date.now(),
-    userData,
-    dataLayerPushed: true,
-  };
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// COMPREHENSIVE AUDIT
+// AUDIT RESULT TYPES
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface EventAuditResult {
@@ -548,7 +264,10 @@ export interface EventAuditResult {
     hasZip: boolean;
     hasExternalId: boolean;
     hasValue: boolean;
-    locationStringsValid: boolean;
+    hasClientId: boolean;
+    hasSessionId: boolean;
+    hasMetaCategory: boolean;
+    hasMetaSend: boolean;
   };
   score: number;
   maxScore: number;
@@ -575,7 +294,7 @@ export interface FullFunnelAuditReport {
     eventsWithAdvancedMatching: number;
   };
   serverSideParity: {
-    eventIdFormat: 'uuid_v4' | 'deterministic' | 'mixed';
+    eventIdFormat: 'deterministic' | 'mixed';
     formatConsistent: boolean;
     recommendation: string;
   };
@@ -586,27 +305,108 @@ export interface FullFunnelAuditReport {
   actionItems: string[];
 }
 
-/**
- * Run the complete Full-Funnel Meta Tracking Audit
- */
+// ═══════════════════════════════════════════════════════════════════════════
+// VALIDATE A SINGLE DATA LAYER EVENT
+// ═══════════════════════════════════════════════════════════════════════════
+
+function validateEvent(
+  eventName: string,
+  meta: MetaEventDefinition,
+  eventId: string,
+): EventAuditResult {
+  const dlEvent = getLastDataLayerEvent(eventName);
+
+  const validation = {
+    hasEventId: !!dlEvent?.event_id,
+    hasUserData: !!dlEvent?.user_data,
+    hasEmail: !!(dlEvent?.user_data?.em || dlEvent?.user_data?.sha256_email_address),
+    hasPhone: !!(dlEvent?.user_data?.ph || dlEvent?.user_data?.sha256_phone_number),
+    hasFirstName: !!dlEvent?.user_data?.fn,
+    hasLastName: !!dlEvent?.user_data?.ln,
+    hasCity: !!dlEvent?.user_data?.ct,
+    hasState: !!dlEvent?.user_data?.st,
+    hasZip: !!dlEvent?.user_data?.zp,
+    hasExternalId: !!(dlEvent?.user_data?.external_id || dlEvent?.external_id),
+    hasValue: dlEvent?.value === meta.expectedValue,
+    hasClientId: !!dlEvent?.client_id,
+    hasSessionId: !!dlEvent?.session_id,
+    hasMetaCategory: dlEvent?.meta?.category === 'opt',
+    hasMetaSend: dlEvent?.meta?.send === true,
+  };
+
+  let score = 0;
+  const issues: string[] = [];
+  const maxScore = 14;
+
+  // Core identity (4 pts)
+  if (validation.hasEventId) score += 2; else issues.push('❌ Missing event_id');
+  if (validation.hasClientId) score += 1; else issues.push('❌ Missing client_id');
+  if (validation.hasSessionId) score += 1; else issues.push('❌ Missing session_id');
+
+  // Meta firewall (2 pts)
+  if (validation.hasMetaCategory) score += 1; else issues.push('❌ meta.category !== "opt"');
+  if (validation.hasMetaSend) score += 1; else issues.push('❌ meta.send !== true');
+
+  // Value (1 pt)
+  if (validation.hasValue) score += 1; else issues.push(`❌ value mismatch (expected ${meta.expectedValue})`);
+
+  // PII / user_data (6 pts)
+  if (validation.hasUserData) score += 0.5; else issues.push('❌ Missing user_data');
+  if (validation.hasEmail) score += 1.5; else issues.push('⚠️ Missing em');
+  if (validation.hasPhone) score += 1; else issues.push('ℹ️ Missing ph');
+  if (validation.hasFirstName) score += 0.5;
+  if (validation.hasLastName) score += 0.5;
+  if (validation.hasCity) score += 0.5;
+  if (validation.hasState) score += 0.5;
+  if (validation.hasZip) score += 0.5;
+  if (validation.hasExternalId) score += 0.5;
+
+  return {
+    eventName,
+    metaTagName: meta.metaTagName,
+    fired: !!dlEvent,
+    eventId,
+    dataLayerEvent: dlEvent,
+    validation,
+    score,
+    maxScore,
+    issues,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RUN FULL-FUNNEL AUDIT
+// ═══════════════════════════════════════════════════════════════════════════
+
+const TEST_SALE_AMOUNT = 15000;
+const TEST_SCAN_ATTEMPT_ID_PREFIX = 'audit-scan-';
+
 export async function runFullFunnelAudit(): Promise<FullFunnelAuditReport> {
   console.log('═══════════════════════════════════════════════════════════════');
-  console.log('  FULL-FUNNEL META TRACKING AUDIT');
-  console.log('  Comprehensive 6-Event Conversion Pipeline Test');
+  console.log('  FULL-FUNNEL OPT TRACKING AUDIT');
+  console.log('  5-Event Canonical wmTracking Pipeline Test');
   console.log('═══════════════════════════════════════════════════════════════');
-  
+
   const actionItems: string[] = [];
-  
+
   // 1. Generate Golden Lead
-  console.log('\n[1/6] Generating Golden Lead profile...');
   const goldenLead = generateGoldenLead();
-  console.log('  Lead ID:', goldenLead.leadId.slice(0, 8) + '...');
-  console.log('  Email:', goldenLead.email);
-  console.log('  Phone:', goldenLead.phone);
-  console.log('  Location:', `${goldenLead.city}, ${goldenLead.state} ${goldenLead.zipCode}`);
-  
-  // Pre-hash all fields for parity check
-  const [hashedEmail, hashedPhone, hashedFn, hashedLn, hashedCity, hashedState, hashedZip] = 
+  console.log('\n[1/5] Golden Lead:', goldenLead.leadId.slice(0, 8) + '...', goldenLead.email);
+
+  // Build identity for wmTracking
+  const identity: WmUserIdentity = {
+    leadId: goldenLead.leadId,
+    email: goldenLead.email,
+    phone: goldenLead.phone,
+    firstName: goldenLead.firstName,
+    lastName: goldenLead.lastName,
+    city: goldenLead.city,
+    state: goldenLead.state,
+    zipCode: goldenLead.zipCode,
+  };
+
+  // Pre-hash for parity display
+  const [hashedEmail, hashedPhone, hashedFn, hashedLn, hashedCity, hashedState, hashedZip] =
     await Promise.all([
       sha256(goldenLead.email),
       hashPhone(goldenLead.phone),
@@ -616,7 +416,7 @@ export async function runFullFunnelAudit(): Promise<FullFunnelAuditReport> {
       hashState(goldenLead.state),
       hashZip(goldenLead.zipCode),
     ]);
-  
+
   const goldenLeadHashes = {
     email: hashedEmail,
     phone: hashedPhone,
@@ -626,150 +426,97 @@ export async function runFullFunnelAudit(): Promise<FullFunnelAuditReport> {
     state: hashedState,
     zip: hashedZip,
   };
-  
-  console.log('\n[2/6] Pre-computed hashes for parity check:');
-  console.log('  em:', hashedEmail.slice(0, 12) + '...');
-  console.log('  ph:', hashedPhone?.slice(0, 12) + '...');
-  console.log('  fn:', hashedFn?.slice(0, 12) + '...');
-  console.log('  ln:', hashedLn?.slice(0, 12) + '...');
-  
-  // 2. Start network interception
-  console.log('\n[3/6] Starting network interception...');
+
+  // 2. Reset dedupe guards so audit can fire cleanly on every run
+  console.log('\n[2/5] Resetting dedupe guards...');
+  _resetWmLeadGuard();
+  _resetScannerUploadGuard();
+  _resetSessionGuards(goldenLead.leadId);
+
+  // 3. Start network interception
+  console.log('\n[3/5] Starting network interception...');
   startNetworkInterception();
-  
-  // 3. Fire all 6 events in sequence
-  console.log('\n[4/6] Firing 6-event conversion sequence...');
-  
-  const firedEvents: FiredEventResult[] = [];
-  const eventResults: EventAuditResult[] = [];
-  
-  // Fire events with small delays to ensure proper sequencing
-  const eventFirers = [
-    { name: 'lead_form_opened', fn: () => fireLeadFormOpened(goldenLead), meta: META_EVENTS[0] },
-    { name: 'scanner_upload', fn: () => fireScannerUpload(goldenLead), meta: META_EVENTS[1] },
-    { name: 'quote_upload_success', fn: () => fireQuoteUploadSuccess(goldenLead), meta: META_EVENTS[2] },
-    { name: 'call_initiated', fn: () => fireCallInitiated(goldenLead), meta: META_EVENTS[3] },
-    { name: 'engagement_score', fn: () => fireEngagementScore(goldenLead, 75), meta: META_EVENTS[4] },
-    { name: 'lead_submission_success', fn: () => fireLeadSubmissionSuccess(goldenLead), meta: META_EVENTS[5] },
-  ];
-  
-  for (const { name, fn, meta } of eventFirers) {
-    console.log(`  Firing: ${name}...`);
-    const result = await fn();
-    firedEvents.push(result);
-    
-    // Small delay to let GTM process
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    // Validate the event
-    const dlEvent = getLastDataLayerEvent(name);
-    const validation = {
-      hasEventId: !!dlEvent?.event_id,
-      hasUserData: !!dlEvent?.user_data,
-      hasEmail: !!(dlEvent?.user_data?.em || dlEvent?.user_data?.sha256_email_address),
-      hasPhone: !!(dlEvent?.user_data?.ph || dlEvent?.user_data?.sha256_phone_number),
-      hasFirstName: !!dlEvent?.user_data?.fn,
-      hasLastName: !!dlEvent?.user_data?.ln,
-      hasCity: !!dlEvent?.user_data?.ct,
-      hasState: !!dlEvent?.user_data?.st,
-      hasZip: !!dlEvent?.user_data?.zp,
-      hasExternalId: !!(dlEvent?.user_data?.external_id || dlEvent?.external_id),
-      hasValue: dlEvent?.value !== undefined,
-      locationStringsValid: 
-        typeof dlEvent?.city === 'string' && 
-        typeof dlEvent?.region === 'string' && 
-        typeof dlEvent?.zip === 'string' ||
-        true, // Not all events have location
-    };
-    
-    // Calculate score
-    let score = 0;
-    const issues: string[] = [];
-    
-    if (validation.hasEventId) score += 2; else issues.push('❌ Missing event_id (deduplication will fail)');
-    if (validation.hasUserData) score += 1; else issues.push('❌ Missing user_data object');
-    if (validation.hasEmail) score += 1.5; else issues.push('⚠️ Missing em (hashed email)');
-    if (validation.hasPhone) score += 1; else issues.push('ℹ️ Missing ph (hashed phone)');
-    if (validation.hasFirstName) score += 0.75; else issues.push('ℹ️ Missing fn (hashed firstName)');
-    if (validation.hasLastName) score += 0.75; else issues.push('ℹ️ Missing ln (hashed lastName)');
-    if (validation.hasCity) score += 0.5;
-    if (validation.hasState) score += 0.5;
-    if (validation.hasZip) score += 0.5;
-    if (validation.hasExternalId) score += 0.5;
-    if (validation.hasValue) score += 1;
-    
-    eventResults.push({
-      eventName: name,
-      metaTagName: meta.metaTagName,
-      fired: true,
-      eventId: result.eventId,
-      dataLayerEvent: dlEvent,
-      validation,
-      score,
-      maxScore: 10,
-      issues,
-    });
-    
-    console.log(`    ✓ ${name} - Score: ${score.toFixed(1)}/10`);
-  }
-  
-  // Wait for pixel requests to be captured
-  console.log('\n[5/6] Waiting for network requests...');
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Stop interception and analyze
+
+  // 4. Fire all 5 OPT events through canonical wmTracking emitters
+  console.log('\n[4/5] Firing 5-event OPT sequence...');
+
+  const context = { source_tool: 'full-funnel-audit' };
+  const scanAttemptId = `${TEST_SCAN_ATTEMPT_ID_PREFIX}${goldenLead.leadId.slice(0, 8)}`;
+  const appointmentKey = `audit-${Date.now()}`;
+  const dealKey = `audit-deal-${Date.now()}`;
+
+  // Expected deterministic event_ids
+  const expectedIds: Record<string, string> = {
+    wm_lead: `lead:${goldenLead.leadId}`,
+    wm_qualified_lead: `ql:${goldenLead.leadId}`,
+    wm_scanner_upload: `upload:${scanAttemptId}`,
+    wm_appointment_booked: `appt:${goldenLead.leadId}:${appointmentKey}`,
+    wm_sold: `sold:${goldenLead.leadId}:${dealKey}`,
+  };
+
+  // Fire in sequence with small delays for Data Layer propagation
+  console.log('  Firing: wm_lead...');
+  await wmLead(identity, context);
+  await new Promise(r => setTimeout(r, 150));
+
+  // Reset QL session guard since wmScannerUpload will mark upload-fired
+  // and we want QL to fire before that
+  console.log('  Firing: wm_qualified_lead...');
+  await wmQualifiedLead(identity, context);
+  await new Promise(r => setTimeout(r, 150));
+
+  // Reset scanner guard again since QL may have changed session state
+  _resetScannerUploadGuard();
+  console.log('  Firing: wm_scanner_upload...');
+  await wmScannerUpload(identity, scanAttemptId, context);
+  await new Promise(r => setTimeout(r, 150));
+
+  console.log('  Firing: wm_appointment_booked...');
+  await wmAppointmentBooked(identity, appointmentKey, context);
+  await new Promise(r => setTimeout(r, 150));
+
+  console.log('  Firing: wm_sold...');
+  await wmSold(identity, TEST_SALE_AMOUNT, dealKey, context);
+  await new Promise(r => setTimeout(r, 150));
+
+  // 5. Validate each event in the Data Layer
+  console.log('\n[5/5] Validating Data Layer events...');
+
+  const eventResults: EventAuditResult[] = META_EVENTS.map((meta) => {
+    const result = validateEvent(meta.eventName, meta, expectedIds[meta.eventName]);
+    console.log(`  ${result.fired ? '✓' : '✗'} ${meta.eventName} — ${result.score.toFixed(1)}/${result.maxScore}`);
+    return result;
+  });
+
+  // Wait for pixel requests
+  await new Promise(r => setTimeout(r, 1500));
   stopNetworkInterception();
   const pixelRequests = getCapturedRequests();
-  
-  console.log('\n[6/6] Analyzing captured requests...');
-  console.log(`  Total pixel requests captured: ${pixelRequests.length}`);
-  
+
   const eventsWithEventId = pixelRequests.filter(r => r.hasEventId).length;
   const eventsWithAdvancedMatching = pixelRequests.filter(r => r.hasAdvancedMatching).length;
-  
-  // Calculate overall score
-  const totalScore = eventResults.reduce((sum, r) => sum + r.score, 0);
-  const maxScore = eventResults.reduce((sum, r) => sum + r.maxScore, 0);
-  const overallScore = totalScore;
-  
-  // Determine status
+
+  // Score
+  const totalScore = eventResults.reduce((s, r) => s + r.score, 0);
+  const maxScore = eventResults.reduce((s, r) => s + r.maxScore, 0);
+
   let overallStatus: 'PASS' | 'PARTIAL' | 'FAIL' = 'FAIL';
-  if (totalScore >= maxScore * 0.8) {
-    overallStatus = 'PASS';
-  } else if (totalScore >= maxScore * 0.5) {
-    overallStatus = 'PARTIAL';
-  }
-  
-  // Check event ID format consistency
-  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  const deterministicPattern = /^[a-z_]+:[0-9a-f-]+$/;
-  
-  let uuidCount = 0;
-  let deterministicCount = 0;
-  
-  firedEvents.forEach(e => {
-    if (uuidPattern.test(e.eventId)) uuidCount++;
-    else if (deterministicPattern.test(e.eventId)) deterministicCount++;
-  });
-  
-  const eventIdFormat = uuidCount === firedEvents.length ? 'uuid_v4' : 
-                        deterministicCount === firedEvents.length ? 'deterministic' : 'mixed';
-  
-  // Build action items
-  if (eventsWithEventId < pixelRequests.length && pixelRequests.length > 0) {
-    actionItems.push('Configure GTM Meta tags to pass eventID: {{DLV - event_id}} in the options object');
-  }
-  
+  if (totalScore >= maxScore * 0.8) overallStatus = 'PASS';
+  else if (totalScore >= maxScore * 0.5) overallStatus = 'PARTIAL';
+
+  // Event ID format — all should be deterministic now
+  const deterministicPattern = /^[a-z_]+:.+$/;
+  const allDeterministic = eventResults.every(
+    r => r.eventId && deterministicPattern.test(r.eventId),
+  );
+
+  // Action items
   eventResults.forEach(r => {
-    if (!r.validation.hasEventId) {
-      actionItems.push(`Fix ${r.eventName}: Missing event_id in dataLayer push`);
-    }
-    if (!r.validation.hasEmail) {
-      actionItems.push(`Fix ${r.eventName}: Missing hashed email (em) in user_data`);
-    }
+    if (!r.validation.hasEventId) actionItems.push(`Fix ${r.eventName}: Missing event_id`);
+    if (!r.validation.hasMetaCategory) actionItems.push(`Fix ${r.eventName}: meta.category !== "opt"`);
+    if (!r.validation.hasEmail) actionItems.push(`Fix ${r.eventName}: Missing hashed email`);
   });
-  
-  // Build report
+
   const report: FullFunnelAuditReport = {
     timestamp: new Date().toISOString(),
     goldenLead,
@@ -782,42 +529,27 @@ export async function runFullFunnelAudit(): Promise<FullFunnelAuditReport> {
       eventsWithAdvancedMatching,
     },
     serverSideParity: {
-      eventIdFormat,
-      formatConsistent: eventIdFormat !== 'mixed',
-      recommendation: eventIdFormat === 'mixed' 
-        ? 'Standardize event_id format to UUID v4 for consistency'
-        : 'Event ID format is consistent across all events',
+      eventIdFormat: allDeterministic ? 'deterministic' : 'mixed',
+      formatConsistent: allDeterministic,
+      recommendation: allDeterministic
+        ? 'All event IDs use deterministic type:{id} format ✓'
+        : 'Some event IDs are not deterministic — check wmTracking emitters',
     },
-    overallScore,
+    overallScore: totalScore,
     maxScore,
     overallStatus,
     projectedEMQ: Math.round((totalScore / maxScore) * 10 * 10) / 10,
     actionItems,
   };
-  
-  // Print summary
+
   console.log('\n═══════════════════════════════════════════════════════════════');
-  console.log('  FULL-FUNNEL AUDIT SUMMARY');
+  console.log(`  Status: ${overallStatus} | Score: ${totalScore.toFixed(1)}/${maxScore} | EMQ: ${report.projectedEMQ.toFixed(1)}/10`);
   console.log('═══════════════════════════════════════════════════════════════');
-  console.log(`  Overall Status: ${overallStatus}`);
-  console.log(`  Total Score: ${totalScore.toFixed(1)}/${maxScore}`);
-  console.log(`  Projected EMQ: ${report.projectedEMQ.toFixed(1)}/10`);
-  console.log(`  Events Tested: ${eventResults.length}`);
-  console.log(`  Pixel Requests Captured: ${pixelRequests.length}`);
-  console.log(`  Events with eventID in Pixel: ${eventsWithEventId}/${pixelRequests.length}`);
-  console.log(`  Events with Advanced Matching: ${eventsWithAdvancedMatching}/${pixelRequests.length}`);
-  
-  if (actionItems.length > 0) {
-    console.log('\n  ACTION ITEMS:');
-    actionItems.forEach((item, i) => console.log(`  ${i + 1}. ${item}`));
-  }
-  
-  console.log('═══════════════════════════════════════════════════════════════');
-  
+
   return report;
 }
 
-// Export for global access in dev tools
+// Export for dev tools
 if (typeof window !== 'undefined') {
   (window as unknown as Record<string, unknown>).fullFunnelAudit = {
     run: runFullFunnelAudit,
