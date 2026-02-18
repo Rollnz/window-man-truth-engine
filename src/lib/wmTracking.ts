@@ -222,6 +222,8 @@ async function pushWmEvent(
     source_system: 'website',
     page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
     page_location: typeof window !== 'undefined' ? window.location.href : undefined,
+    client_id: typeof window !== 'undefined' ? getOrCreateClientId() : undefined,
+    session_id: typeof window !== 'undefined' ? getOrCreateSessionId() : undefined,
     external_id: identity.leadId,
     lead_id: identity.leadId,
     ...(user_data ? { user_data } : {}),
