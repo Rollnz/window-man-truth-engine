@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { trackEvent } from '@/lib/gtm';
+import { wmInternal } from '@/lib/wmTracking';
 import { useAuth } from '@/hooks/useAuth';
 import { getGoldenThreadId } from '@/lib/goldenThread';
 
@@ -171,7 +171,7 @@ export function useCanonicalScore(): UseCanonicalScoreReturn {
 
       // Fire GTM threshold events ONLY when server confirms transition
       if (high_intent_reached_now) {
-        trackEvent('HighIntentUser', {
+        wmInternal('HighIntentUser', {
           total_score,
           level_label,
           triggered_by: eventType,
@@ -180,7 +180,7 @@ export function useCanonicalScore(): UseCanonicalScoreReturn {
       }
 
       if (qualified_reached_now) {
-        trackEvent('QualifiedProspect', {
+        wmInternal('QualifiedProspect', {
           total_score,
           level_label,
           triggered_by: eventType,
@@ -190,7 +190,7 @@ export function useCanonicalScore(): UseCanonicalScoreReturn {
 
       // Always log the engagement delta for analytics
       if (inserted) {
-        trackEvent('engagement_score', {
+        wmInternal('engagement_score', {
           action: eventType,
           score_delta: eventType === 'QUOTE_UPLOADED' ? 50 : 100,
           total_score,

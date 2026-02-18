@@ -15,7 +15,8 @@ import {
 'lucide-react';
 import { ConsultationSchema } from '@/components/consultation/ConsultationSchema';
 import { supabase } from '@/integrations/supabase/client';
-import { trackLeadSubmissionSuccess, trackEvent } from '@/lib/gtm';
+import { trackEvent } from '@/lib/gtm';
+import { wmLead } from '@/lib/wmTracking';
 import { useCanonicalScore, getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { toast } from 'sonner';
 
@@ -87,17 +88,10 @@ export default function Consultation() {
         sourceEntityType: 'lead',
         sourceEntityId: leadId
       }),
-      trackLeadSubmissionSuccess({
-        leadId,
-        email: data.email,
-        phone: data.phone,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        city: data.cityZip,
-        sourceTool: 'consultation',
-        eventId: leadId,
-        value: 100
-      })]
+      wmLead(
+        { leadId, email: data.email, phone: data.phone, firstName: data.firstName, lastName: data.lastName },
+        { source_tool: 'consultation' },
+      )]
       );
 
       // Track consultation booked event (non-blocking)

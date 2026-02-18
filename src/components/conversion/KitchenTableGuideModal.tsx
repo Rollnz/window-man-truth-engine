@@ -10,7 +10,8 @@ import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/use
 import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
 import { useSessionData } from '@/hooks/useSessionData';
 import { ArrowRight, CheckCircle2, Calendar, Phone, Home, Building2, MapPin, Clock, ChevronLeft } from 'lucide-react';
-import { trackModalOpen, trackEvent, trackConsultationBooked } from '@/lib/gtm';
+import { trackModalOpen, trackEvent } from '@/lib/gtm';
+import { wmLead } from '@/lib/wmTracking';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { supabase } from '@/integrations/supabase/client';
 import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
@@ -256,17 +257,12 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
         }
       });
 
-      // Track with proper EMQ data (event_id, user_data, value/currency)
+      // Track wmLead conversion event
       const effectiveLeadId = capturedLeadId || crypto.randomUUID();
-      await trackConsultationBooked({
-        leadId: effectiveLeadId,
-        email: values.email,
-        phone: values.phone || undefined,
-        firstName: values.firstName,
-        lastName: values.lastName,
-        sourceTool: 'kitchen-table-guide',
-        eventId: `consultation_booked:${effectiveLeadId}`,
-      });
+      await wmLead(
+        { leadId: effectiveLeadId, email: values.email, phone: values.phone || undefined, firstName: values.firstName, lastName: values.lastName },
+        { source_tool: 'kitchen-table-guide' },
+      );
     } catch (error) {
       console.error('Failed to save consultation:', error);
     }

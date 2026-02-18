@@ -18,7 +18,8 @@ import { Label } from '@/components/ui/label';
 import { NameInputPair, normalizeNameFields } from '@/components/ui/NameInputPair';
 import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
 import { emailInputProps, phoneInputProps } from '@/lib/formAccessibility';
-import { trackEvent, trackLeadSubmissionSuccess } from '@/lib/gtm';
+import { trackEvent } from '@/lib/gtm';
+import { wmLead } from '@/lib/wmTracking';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
 import { setLeadAnchor, getLeadAnchor } from '@/lib/leadAnchor';
@@ -151,17 +152,11 @@ export function SampleReportLeadModal({
         cta_source: ctaSource,
       });
 
-      // Fire lead submission success for conversion tracking
-      await trackLeadSubmissionSuccess({
-        leadId: newLeadId,
-        email: values.email.trim(),
-        phone: values.phone.trim(),
-        firstName,
-        lastName: lastName || undefined,
-        sourceTool: 'sample-report',
-        eventId: `sample_report_lead:${newLeadId}`,
-        value: 100, // $100 value for lead captured
-      });
+      // Fire wmLead conversion event
+      await wmLead(
+        { leadId: newLeadId, email: values.email.trim(), phone: values.phone.trim(), firstName, lastName: lastName || undefined },
+        { source_tool: 'sample-report' },
+      );
 
       // Transition to Step 2 (call offer)
       setStep('call-offer');

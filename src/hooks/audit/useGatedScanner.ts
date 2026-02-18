@@ -10,8 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
-import { trackEvent, trackModalOpen, trackQuoteUploadSuccess } from '@/lib/gtm';
-import { trackScannerUpload } from '@/lib/tracking/scannerUpload';
+import { trackEvent, trackModalOpen } from '@/lib/gtm';
+import { wmScannerUpload } from '@/lib/wmTracking';
 import { useCanonicalScore } from '@/hooks/useCanonicalScore';
 import type { AuditAnalysisResult, ExplainScoreFormData } from '@/types/audit';
 
@@ -296,15 +296,11 @@ export function useGatedScanner(): UseGatedScannerReturn {
       const { base64, mimeType } = await compressImage(state.file);
 
       // Track scanner upload
-      trackScannerUpload({
-        scanAttemptId: state.scanAttemptId || '',
-        sourceTool: 'audit-scanner',
-        fileName: state.file.name,
-        fileSize: state.file.size,
-        fileType: state.file.type,
-        leadId: existingLeadId || undefined,
-        sessionId,
-      });
+      await wmScannerUpload(
+        { email: data.email, phone: data.phone, leadId: existingLeadId || undefined },
+        state.scanAttemptId || '',
+        { source_tool: 'audit-scanner' },
+      );
 
       // Call AI analysis API
       const { data: analysisData, error: requestError } = await heavyAIRequest.sendRequest<AuditAnalysisResult & { error?: string }>(
@@ -344,13 +340,11 @@ export function useGatedScanner(): UseGatedScannerReturn {
           sourceEntityId: state.scanAttemptId,
         });
 
-        await trackQuoteUploadSuccess({
-          scanAttemptId: state.scanAttemptId,
-          email: data.email,
-          phone: data.phone,
-          leadId: existingLeadId || undefined,
-          sourceTool: 'audit-scanner',
-        });
+        await wmScannerUpload(
+          { email: data.email, phone: data.phone, leadId: existingLeadId || undefined },
+          state.scanAttemptId,
+          { source_tool: 'audit-scanner' },
+        );
       }
 
       // Save result to session

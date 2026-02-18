@@ -10,8 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
-import { trackEvent, trackModalOpen, trackQuoteUploadSuccess } from '@/lib/gtm';
-import { trackScannerUpload } from '@/lib/tracking/scannerUpload';
+import { trackEvent, trackModalOpen } from '@/lib/gtm';
+import { wmScannerUpload } from '@/lib/wmTracking';
 import { useCanonicalScore } from '@/hooks/useCanonicalScore';
 import { 
   DeterministicPhase, 
@@ -167,15 +167,13 @@ export function useDeterministicScanner(): UseDeterministicScannerReturn {
     try {
       const { base64, mimeType } = await compressImage(file);
 
-      // Track upload event
-      trackScannerUpload({
-        scanAttemptId,
-        sourceTool: 'audit-scanner',
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        leadId: existingLeadId || undefined,
-        sessionId,
+      // Track upload event (RT — no value, audience-building only)
+      trackEvent('scanner_upload_started', {
+        scan_attempt_id: scanAttemptId,
+        source_tool: 'audit-scanner',
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
       });
 
       // Call AI analysis API
@@ -295,14 +293,17 @@ export function useDeterministicScanner(): UseDeterministicScannerReturn {
           sourceEntityId: state.scanAttemptId,
         });
 
-        // Track quote upload success ($50 value)
-        await trackQuoteUploadSuccess({
-          scanAttemptId: state.scanAttemptId,
-          email: data.email,
-          phone: data.phone,
-          leadId: existingLeadId || undefined,
-          sourceTool: 'audit-scanner',
-        });
+        // Canonical OPT event: wm_scanner_upload ($500, hardcoded in wmTracking.ts)
+        await wmScannerUpload(
+          {
+            leadId: existingLeadId || '',
+            email: data.email,
+            phone: data.phone,
+            firstName: data.firstName,
+          },
+          state.scanAttemptId,
+          { source_tool: 'audit-scanner' },
+        );
       }
 
       // Save result to session

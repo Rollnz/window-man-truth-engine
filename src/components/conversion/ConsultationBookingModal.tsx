@@ -14,7 +14,8 @@ import { useFormAbandonment } from "@/hooks/useFormAbandonment";
 import { useScore } from "@/contexts/ScoreContext";
 import { getOrCreateAnonId } from "@/hooks/useCanonicalScore";
 import { Calendar, Check, Loader2 } from "lucide-react";
-import { trackEvent, trackModalOpen, trackBookingConfirmed, trackFormStart, trackLeadSubmissionSuccess, generateEventId } from "@/lib/gtm";
+import { trackEvent, trackModalOpen, trackFormStart, generateEventId } from "@/lib/gtm";
+import { wmLead, wmAppointmentBooked } from "@/lib/wmTracking";
 import { getOrCreateClientId, getOrCreateSessionId } from "@/lib/tracking";
 import { getLeadAnchor } from "@/lib/leadAnchor";
 import { getAttributionData, buildAIContextFromSession } from "@/lib/attribution";
@@ -227,35 +228,18 @@ export function ConsultationBookingModal({
           },
         });
 
-        // Track primary lead capture with Enhanced Conversions (value: 100 USD)
-        await trackLeadSubmissionSuccess({
-          leadId: data.leadId,
-          email: values.email,
-          phone: values.phone,
-          firstName,
-          lastName: lastName || undefined,
-          // Location data from sessionData if available
-          city: sessionData.city || undefined,
-          state: sessionData.state || undefined,
-          zipCode: sessionData.zipCode || undefined,
-          sourceTool,
-          eventId: data.leadId,
-          value: 100,
-        });
+        // Track wmLead conversion event
+        await wmLead(
+          { leadId: data.leadId, email: values.email, phone: values.phone, firstName, lastName: lastName || undefined },
+          { source_tool: sourceTool },
+        );
 
-        // Track Enhanced Consultation Booking with async PII hashing (value: 75 USD)
-        await trackBookingConfirmed({
-          leadId: data.leadId,
-          email: values.email,
-          phone: values.phone,
-          firstName,
-          lastName: lastName || undefined,
-          preferredTime: values.preferredTime,
-          sourceTool,
-          windowCount: sessionData.windowCount,
-          estimatedProjectValue: sessionData.fairPriceQuizResults?.quoteAmount,
-          urgencyLevel: sessionData.urgencyLevel,
-        });
+        // Track wmAppointmentBooked conversion event
+        await wmAppointmentBooked(
+          { leadId: data.leadId, email: values.email, phone: values.phone, firstName, lastName: lastName || undefined },
+          undefined,
+          { source_tool: sourceTool },
+        );
         
         // PHASE 4: Log high-value booking_confirmed signal to wm_event_log
         // Include email/phone for EMQ 9.5+ compliance

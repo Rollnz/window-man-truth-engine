@@ -16,7 +16,8 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useCanonicalScore, getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { Download, Check, Loader2 } from 'lucide-react';
-import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess, trackFormStart, trackLeadCapture, generateEventId } from '@/lib/gtm';
+import { trackEvent, trackModalOpen, trackFormStart, trackLeadCapture, generateEventId } from '@/lib/gtm';
+import { wmLead } from '@/lib/wmTracking';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
@@ -207,17 +208,11 @@ export function EbookLeadModal({
           }
         );
 
-        // Track with value
-        await trackLeadSubmissionSuccess({
-          leadId: data.leadId,
-          email: values.email.trim(),
-          phone: phone.trim() || undefined,
-          firstName: normalizedNames.firstName,
-          lastName: normalizedNames.lastName || undefined,
-          sourceTool,
-          eventId: data.leadId,
-          value: 100,
-        });
+        // Track wmLead conversion event
+        await wmLead(
+          { leadId: data.leadId, email: values.email.trim(), phone: phone.trim() || undefined, firstName: normalizedNames.firstName, lastName: normalizedNames.lastName || undefined },
+          { source_tool: sourceTool },
+        );
 
         toast({
           title: config.successTitle,

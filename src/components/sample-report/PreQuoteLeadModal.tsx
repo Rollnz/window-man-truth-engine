@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Zap, Download, ArrowRight, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { trackLeadCapture, trackLeadSubmissionSuccess } from "@/lib/gtm";
+import { trackLeadCapture } from "@/lib/gtm";
+import { wmLead } from "@/lib/wmTracking";
 import { getOrCreateClientId } from "@/lib/tracking";
 import { getAttributionData } from "@/lib/attribution";
 import { useNavigate } from "react-router-dom";
@@ -161,16 +162,10 @@ export function PreQuoteLeadModal({ isOpen, onClose, onSuccess, ctaSource = "unk
             formData.phone,
             { hasName: true, hasPhone: true },
           ),
-          trackLeadSubmissionSuccess({
-            leadId: result.leadId,
-            email: formData.email,
-            phone: formData.phone.replace(/\D/g, ""),
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            sourceTool: "sample-report",
-            eventId: `pre_quote_lead:${result.leadId}`,
-            value: 75, // Higher value than quote uploads ($50) - main page goal
-          }),
+          wmLead(
+            { leadId: result.leadId, email: formData.email, phone: formData.phone.replace(/\D/g, ""), firstName: formData.firstName, lastName: formData.lastName },
+            { source_tool: 'sample-report' },
+          ),
         ]).catch((err) => console.warn("[PreQuoteLeadModal] Non-fatal tracking error:", err));
 
         setSubmittedName(formData.firstName);

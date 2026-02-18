@@ -41,7 +41,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getOrCreateClientId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
-import { trackLeadCapture, trackLeadSubmissionSuccess, trackEvent } from '@/lib/gtm';
+import { trackLeadCapture, trackEvent } from '@/lib/gtm';
+import { wmLead } from '@/lib/wmTracking';
 // Session registration for database FK compliance
 import { getSessionId as getRegisteredSessionId } from '@/lib/windowTruthClient';
 import { Lock, Upload, ShieldCheck, FileText, FileDown } from 'lucide-react';
@@ -435,15 +436,10 @@ export default function QuoteScanner() {
                       }
                     );
 
-                    await trackLeadSubmissionSuccess({
-                      leadId: result.leadId,
-                      email: data.email,
-                      firstName: data.firstName,
-                      lastName: data.lastName,
-                      sourceTool: 'quote-scanner',
-                      eventId: result.leadId,
-                      value: 100,
-                    });
+                    await wmLead(
+                      { leadId: result.leadId, email: data.email, firstName: data.firstName, lastName: data.lastName },
+                      { source_tool: 'quote-scanner' },
+                    );
 
                     setIsNoQuoteSubmitted(true);
                   }

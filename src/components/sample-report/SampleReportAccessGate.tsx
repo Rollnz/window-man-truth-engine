@@ -11,7 +11,8 @@ import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useCanonicalScore, getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { useProgressiveGate } from '@/hooks/useProgressiveGate';
 import { FileText, Check, Loader2, Shield, AlertCircle, Lock } from 'lucide-react';
-import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess, trackLeadCapture, generateEventId } from '@/lib/gtm';
+import { trackEvent, trackModalOpen, trackLeadCapture, generateEventId } from '@/lib/gtm';
+import { wmLead } from '@/lib/wmTracking';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor, setLeadAnchor } from '@/lib/leadAnchor';
 import { getAttributionData } from '@/lib/attribution';
@@ -178,7 +179,7 @@ export function SampleReportAccessGate({ isOpen, onClose, onSuccess }: SampleRep
         Promise.allSettled([
           awardScore({ eventType: 'LEAD_CAPTURED', sourceEntityType: 'lead', sourceEntityId: data.leadId }),
           trackLeadCapture({ leadId: data.leadId, sourceTool: 'sample_report', conversionAction: 'gate_unlock' }, values.email.trim(), phone.trim() || undefined, { hasName: true, hasPhone: !!phone.trim(), hasProjectDetails: false }),
-          trackLeadSubmissionSuccess({ leadId: data.leadId, email: values.email.trim(), phone: phone.trim() || undefined, firstName: normalizedNames.firstName, lastName: normalizedNames.lastName, sourceTool: 'sample-report', eventId: data.leadId, value: 50 })
+          wmLead({ leadId: data.leadId, email: values.email.trim(), phone: phone.trim() || undefined, firstName: normalizedNames.firstName, lastName: normalizedNames.lastName }, { source_tool: 'sample-report' })
         ]).catch(err => console.warn('[tracking] Non-fatal tracking error:', err));
         
         toast({ title: 'Access Granted!', description: 'Enjoy the sample report.' });

@@ -9,7 +9,8 @@ import { gradeConfig } from '@/data/fairPriceQuizData';
 import { VaultSyncButton } from './VaultSyncButton';
 import { WhyVaultFAQ } from './WhyVaultFAQ';
 import { DownsellStickyFooter } from './DownsellStickyFooter';
-import { trackEvent, trackPhoneLead } from '@/lib/gtm';
+import { trackEvent } from '@/lib/gtm';
+import { wmQualifiedLead } from '@/lib/wmTracking';
 import { NextStepCard } from '@/components/seo/NextStepCard';
 import { MethodologyBadge } from '@/components/authority/MethodologyBadge';
 
@@ -76,13 +77,11 @@ export function QuizResults({
 
     setIsSubmitting(true);
     
-    // Track phone lead with Enhanced Conversions (SHA-256 hashed PII)
-    await trackPhoneLead({
-      leadId: leadId || '',
-      phone: digits,
-      email: userEmail,
-      sourceTool: 'fair-price-quiz',
-    });
+    // Track qualified lead via wmQualifiedLead
+    await wmQualifiedLead(
+      { leadId: leadId || '', phone: digits, email: userEmail },
+      { source_tool: 'fair-price-quiz' },
+    );
     
     await onPhoneSubmit(digits);
     setPhoneSubmitted(true);

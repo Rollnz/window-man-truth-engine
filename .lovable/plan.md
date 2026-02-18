@@ -1,59 +1,35 @@
 
+# Fix: Scanner Dedupe Guard + Unused Import Cleanup
 
-# Fix Build Errors: Missing "qualified" Status + TypeScript Type Error
+## Finding 1: Scanner dedupe uses single variable (VALID -- needs fix)
 
-## Two Issues to Fix
+**Problem**: `lastFiredScanId` in `wmTracking.ts` is a single string. It only blocks the *immediately previous* scanAttemptId. If a user uploads scan A, then scan B, then scan A again, the second A fires a duplicate $500 event.
 
-### 1. Backend: Add "qualified" to allowed statuses in `admin-lead-detail`
+The `markUploadFired()` sessionStorage guard works per *leadId* (not per scanAttemptId), so it does not catch this scenario either.
 
-**File:** `supabase/functions/admin-lead-detail/index.ts` (line 344)
+**Fix** (in `src/lib/wmTracking.ts`):
 
-The `validStatuses` array is missing `"qualified"`. Your frontend CRM types define it as a valid status, but the edge function rejects it.
+1. Replace `let lastFiredScanId: string | null = null` with `const firedScanIds = new Set<string>()` (line 112).
+2. In `wmScannerUpload`, change the guard from `lastFiredScanId === scanAttemptId` to `firedScanIds.has(scanAttemptId)` (line 341).
+3. Replace `lastFiredScanId = scanAttemptId` with `firedScanIds.add(scanAttemptId)` (line 349).
+4. In `_resetScannerUploadGuard`, replace `lastFiredScanId = null` with `firedScanIds.clear()` (line 479).
+5. Add bounded pruning: if the Set exceeds 50 entries, clear and re-add only the current ID. This prevents unbounded memory growth in long-running sessions (edge case, but cheap insurance).
 
-**Change:**
-```typescript
-// Before
-const validStatuses = ['new', 'qualifying', 'mql', 'appointment_set', 'sat', 'closed_won', 'closed_lost', 'dead'];
+No other files change -- the Set is module-private, and the public API (`wmScannerUpload`, `_resetScannerUploadGuard`) keeps the same signatures.
 
-// After
-const validStatuses = ['new', 'qualifying', 'mql', 'qualified', 'appointment_set', 'sat', 'closed_won', 'closed_lost', 'dead'];
-```
+---
 
-### 2. Frontend: Fix TypeScript operator error in `VariantB_DiagnosticQuiz.tsx`
+## Finding 2: Unused `_resetSessionGuards` import (VALID -- remove it)
 
-**File:** `src/components/floating-cta/steps/choice-variants/VariantB_DiagnosticQuiz.tsx` (line 138)
+**Problem**: `src/lib/__tests__/lead-capture-integration.test.ts` line 15 imports `_resetSessionGuards` but never calls it. These tests only exercise `wmLead` and `wmAppointmentBooked`, which do not use the session-based scanner/QL dedupe guards. The `_resetScannerUploadGuard()` call in `beforeEach` (line 46) is sufficient.
 
-The `quizStep` variable has type `0 | 1 | 2 | 'done'` (a union of numbers and string). Using `>=` on it fails because TypeScript can't compare `string | number` with `number`. The existing casts `(quizStep as number)` on lines 169 and 202 suppress this, but line 138 is missing the cast.
+**Fix**: Remove `_resetSessionGuards` from the import statement on line 15.
 
-**Change (line 138):**
-```typescript
-// Before
-<div className={cn('space-y-2', quizStep >= 0 ? 'opacity-100' : 'opacity-40')}>
+---
 
-// After
-<div className={cn('space-y-2', (quizStep as number) >= 0 ? 'opacity-100' : 'opacity-40')}>
-```
+## Summary
 
-### 3. Edge function dep resolution error (`quote-scanner/deps.ts`)
-
-The `npm:@supabase/supabase-js@2.39.7` specifier fails type resolution in the build. This is a Deno module resolution issue -- the pinned version `2.39.7` doesn't match any available package in the build environment. Updating to match the project's installed version (`2.89.0`) resolves it.
-
-**File:** `supabase/functions/quote-scanner/deps.ts` (lines 8-9)
-
-```typescript
-// Before
-export { createClient } from "npm:@supabase/supabase-js@2.39.7";
-export type { SupabaseClient } from "npm:@supabase/supabase-js@2.39.7";
-
-// After
-export { createClient } from "npm:@supabase/supabase-js@2";
-export type { SupabaseClient } from "npm:@supabase/supabase-js@2";
-```
-
-Using the major version `@2` prevents future pin staleness.
-
-## What Does NOT Change
-- No schema or database changes
-- No UI layout changes
-- No other edge functions affected
-
+| File | Change |
+|---|---|
+| `src/lib/wmTracking.ts` | Replace `lastFiredScanId` single-variable with bounded `Set<string>` |
+| `src/lib/__tests__/lead-capture-integration.test.ts` | Remove unused `_resetSessionGuards` import |

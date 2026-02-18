@@ -5,7 +5,7 @@
  * to ad platforms (Google/Meta) for value-based bidding optimization.
  */
 
-import { trackEvent } from '@/lib/gtm';
+import { wmInternal } from '@/lib/wmTracking';
 
 const SCORE_STORAGE_KEY = 'wte-engagement-score';
 const HIGH_INTENT_THRESHOLD = 100;
@@ -84,8 +84,8 @@ export function trackEngagement(
     timestamp: Date.now(),
   });
   
-  // 1️⃣ Push to GTM DataLayer (for Google Ads Value-Based Bidding)
-  trackEvent('engagement_score', {
+  // 1️⃣ Push to GTM DataLayer (internal scoring only — not sent to ad platforms)
+  wmInternal('engagement_score', {
     action,
     score_delta: points,
     total_score: newScore,
@@ -95,10 +95,9 @@ export function trackEngagement(
   // 2️⃣ Fire High-Intent threshold event (100+ points)
   if (newScore >= HIGH_INTENT_THRESHOLD && !state.highIntentFired) {
     state.highIntentFired = true;
-    trackEvent('HighIntentUser', {
+    wmInternal('HighIntentUser', {
       total_score: newScore,
       events_count: state.events.length,
-      fb_event: 'Lead', // Maps to FB Lead event via GTM
     });
     console.log('🎯 HIGH INTENT USER DETECTED:', newScore);
   }
@@ -106,10 +105,9 @@ export function trackEngagement(
   // 3️⃣ Fire Qualified threshold event (150+ points)
   if (newScore >= QUALIFIED_THRESHOLD && !state.qualifiedFired) {
     state.qualifiedFired = true;
-    trackEvent('QualifiedProspect', {
+    wmInternal('QualifiedProspect', {
       total_score: newScore,
       events_count: state.events.length,
-      fb_event: 'Lead_Qualifier', // Custom event for Meta
     });
     console.log('🏆 QUALIFIED PROSPECT:', newScore);
   }
