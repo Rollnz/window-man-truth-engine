@@ -114,7 +114,7 @@ const LEGACY_BRIDGE: Partial<Record<WmOptEvent, string>> = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Scanner upload dedupe — one fire per scanAttemptId */
-let lastFiredScanId: string | null = null;
+const firedScanIds = new Set<string>();
 
 /** wm_lead dedupe — one fire per leadId per page load */
 const sentWmLeadIds = new Set<string>();
@@ -354,7 +354,7 @@ export async function wmScannerUpload(
   scanAttemptId: string,
   context?: WmEventContext,
 ): Promise<string | null> {
-  if (lastFiredScanId === scanAttemptId) {
+  if (firedScanIds.has(scanAttemptId)) {
     if (import.meta.env.DEV) {
       console.log(`[wmTracking] wm_scanner_upload deduplicated for ${scanAttemptId}`);
     }
@@ -362,7 +362,12 @@ export async function wmScannerUpload(
   }
 
   const eventId = `upload:${scanAttemptId}`;
-  lastFiredScanId = scanAttemptId;
+
+  // Bounded pruning: prevent unbounded memory in long-running sessions
+  if (firedScanIds.size >= 50) {
+    firedScanIds.clear();
+  }
+  firedScanIds.add(scanAttemptId);
   markUploadFired(identity.leadId);
 
   await pushWmEvent(
@@ -496,7 +501,7 @@ export function wmInternal(
 
 /** Reset scanner upload dedupe guard */
 export function _resetScannerUploadGuard(): void {
-  lastFiredScanId = null;
+  firedScanIds.clear();
 }
 
 /** Reset wm_lead page-load dedupe guard */

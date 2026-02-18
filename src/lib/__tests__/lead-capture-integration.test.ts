@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   trackLeadCapture,
 } from '../gtm';
-import { wmLead, wmAppointmentBooked, _resetScannerUploadGuard, _resetSessionGuards } from '../wmTracking';
+import { wmLead, wmAppointmentBooked, _resetScannerUploadGuard } from '../wmTracking';
 import { setLeadAnchor, getLeadAnchor, clearLeadAnchor } from '../leadAnchor';
 import { setExplicitSubmission, hasExplicitSubmission, clearExplicitSubmission } from '../consent';
 
