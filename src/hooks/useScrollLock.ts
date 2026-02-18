@@ -6,6 +6,11 @@ interface UseScrollLockOptions {
   showDelay?: number;
 }
 
+/**
+ * Controls navbar visibility based on scroll direction.
+ * Hides on scroll-down (after 50px), shows on scroll-up with configurable delays.
+ * @returns `{ isNavbarVisible }` - whether the navbar should be rendered
+ */
 export function useScrollLock({ 
   enabled, 
   hideDelay = 0,

@@ -52,6 +52,10 @@ interface UseAttributionROASReturn {
   refetch: () => Promise<void>;
 }
 
+/**
+ * Computes ROAS (Return on Ad Spend) and CPA metrics by joining
+ * ad spend data with revenue/deal data for a given date range.
+ */
 export function useAttributionROAS({
   startDate,
   endDate,

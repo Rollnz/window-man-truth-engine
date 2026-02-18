@@ -41,6 +41,10 @@ interface UseCallAgentsReturn {
   killSwitch: () => Promise<{ disabled_count: number }>;
 }
 
+/**
+ * Manages call agent configurations: CRUD operations on AI phone agents,
+ * including enable/disable, template editing, and per-agent dispatch stats.
+ */
 export function useCallAgents(): UseCallAgentsReturn {
   const [agents, setAgents] = useState<CallAgent[]>([]);
   const [loading, setLoading] = useState(true);

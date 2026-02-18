@@ -64,6 +64,11 @@ export interface UseGlobalSearchReturn {
   handleKeyDown: (e: React.KeyboardEvent) => void;
 }
 
+/**
+ * Admin global search hook. Queries the `global_search_index` table
+ * with debounced input, returns typed entity results (leads, calls, notes, etc.),
+ * and manages recent-lead history in localStorage.
+ */
 export function useGlobalSearch(): UseGlobalSearchReturn {
   const navigate = useNavigate();
   const [recentLeads, setRecentLeads] = useState<CRMLead[]>([]);

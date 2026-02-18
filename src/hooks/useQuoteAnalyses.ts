@@ -17,6 +17,10 @@ export interface QuoteAnalysis {
   analysis_json: Record<string, unknown>;
 }
 
+/**
+ * Fetches the authenticated user's quote analysis history (up to 10 most recent).
+ * Returns the list, latest analysis, and loading/error states for Vault display.
+ */
 export function useQuoteAnalyses() {
   const [analyses, setAnalyses] = useState<QuoteAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);

@@ -176,6 +176,10 @@ const INITIAL_STATE: DocumentUploadState = {
 // Hook Implementation
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * Handles multi-stage document uploads (validate → send → process → done).
+ * Tracks upload progress, errors, and integrates with session/lead identity.
+ */
 export function useDocumentUpload(): {
   state: DocumentUploadState;
   upload: (params: DocumentUploadParams) => Promise<DocumentUploadResult>;

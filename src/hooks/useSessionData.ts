@@ -190,6 +190,12 @@ const setStoredData = (data: SessionData): void => {
   }
 };
 
+/**
+ * Central session data store backed by localStorage.
+ * Provides reactive read/write access to all user session fields
+ * (project details, tool completions, lead identity, etc.).
+ * Used throughout the app as the single source of client-side state.
+ */
 export function useSessionData() {
   const [sessionData, setSessionData] = useState<SessionData>(() => getStoredData());
 

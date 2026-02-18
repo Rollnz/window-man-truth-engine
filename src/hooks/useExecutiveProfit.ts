@@ -93,6 +93,10 @@ interface UseExecutiveProfitReturn {
   refetch: () => Promise<void>;
 }
 
+/**
+ * Executive-level P&L dashboard hook. Aggregates revenue, ad spend,
+ * profit margins, ROAS, and CPA across configurable date ranges with auto-refresh.
+ */
 export function useExecutiveProfit({
   startDate,
   endDate,

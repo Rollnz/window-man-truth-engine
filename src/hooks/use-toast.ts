@@ -163,6 +163,10 @@ function toast({ ...props }: Toast) {
   };
 }
 
+/**
+ * Provides imperative toast notification control.
+ * Returns current toasts array, a `toast()` trigger, and a `dismiss()` method.
+ */
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState);
 

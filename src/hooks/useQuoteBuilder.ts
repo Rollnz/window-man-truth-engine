@@ -24,6 +24,11 @@ import type {
 } from "@/types/quote-builder";
 import type { SourceTool } from "@/types/sourceTool";
 
+/**
+ * State machine for the multi-step Quote Builder wizard.
+ * Manages step navigation, form data, AI estimate generation,
+ * lead submission via Golden Thread, and session persistence.
+ */
 export function useQuoteBuilder(): UseQuoteBuilderReturn {
   // Golden Thread: Get and persist leadId and sessionId
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();

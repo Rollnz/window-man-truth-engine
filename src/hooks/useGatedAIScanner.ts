@@ -158,6 +158,11 @@ function clearPersistedState(): void {
 // HOOK
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * Gated AI scanner state machine for the /ai-scanner page.
+ * Flow: idle → uploaded → locked (lead modal) → analyzing (theater) → revealed.
+ * Orchestrates file upload, lead capture gate, AI analysis, and result reveal.
+ */
 export function useGatedAIScanner(): UseGatedAIScannerReturn {
   const { toast } = useToast();
   const { sessionData, sessionId, updateField } = useSessionData();

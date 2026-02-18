@@ -13,6 +13,11 @@ interface UseLeadNavigationReturn {
   isLoading: boolean;
 }
 
+/**
+ * Enables previous/next navigation between CRM leads in the admin detail view.
+ * Queries the full lead list and provides index-based traversal.
+ * @param currentLeadId - The currently viewed lead ID
+ */
 export function useLeadNavigation(currentLeadId: string | undefined): UseLeadNavigationReturn {
   const navigate = useNavigate();
 

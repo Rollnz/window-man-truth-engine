@@ -20,6 +20,10 @@ export interface ActivityFilters {
   status: string;       // empty string means all statuses
 }
 
+/**
+ * Fetches and manages the list of phone call activity logs
+ * from the admin CRM, including status, duration, and sentiment data.
+ */
 export function useCallActivity() {
   const [calls, setCalls] = useState<ActivityCall[]>([]);
   const [loading, setLoading] = useState(true);

@@ -44,6 +44,10 @@ interface UseRevenueReturn {
   filters: RevenueFilters;
 }
 
+/**
+ * Fetches revenue KPIs and deal list for the admin dashboard.
+ * Supports optional date/status filtering and provides aggregated totals.
+ */
 export function useRevenue(filters: RevenueFilters = {}): UseRevenueReturn {
   const [kpis, setKpis] = useState<RevenueKPIs>({
     dealsWon: 0,

@@ -34,6 +34,10 @@ interface UseCRMLeadsReturn {
   markQualifiedConversion: (leadId: string) => Promise<{ fired: boolean }>;
 }
 
+/**
+ * Admin CRM lead management hook. Fetches, filters, updates status,
+ * and disqualifies leads. Provides summary statistics by status and quality.
+ */
 export function useCRMLeads(): UseCRMLeadsReturn {
   const [leads, setLeads] = useState<CRMLead[]>([]);
   const [summary, setSummary] = useState<CRMSummary | null>(null);

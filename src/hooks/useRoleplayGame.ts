@@ -16,6 +16,11 @@ const DEFAULT_CONFIG: GameConfig = {
   embedded: false,
 };
 
+/**
+ * Game state manager for the contractor roleplay tool.
+ * Tracks messages, resistance meter, hints, win/lose conditions,
+ * and provides handlers for sending messages and using hints.
+ */
 export function useRoleplayGame(configOverride: Partial<GameConfig> = {}) {
   const config = { ...DEFAULT_CONFIG, ...configOverride };
   

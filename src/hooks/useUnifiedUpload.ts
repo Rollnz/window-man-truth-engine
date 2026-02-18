@@ -79,6 +79,11 @@ const INITIAL_STATE: UnifiedUploadState = {
 // Hook Implementation
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * Unified upload facade that delegates to either `useQuoteUpload` or
+ * `useDocumentUpload` based on the upload kind. Normalizes state and
+ * results into a single consistent API for consumer components.
+ */
 export function useUnifiedUpload(): {
   state: UnifiedUploadState;
   upload: (params: UnifiedUploadParams) => Promise<UnifiedUploadResult>;

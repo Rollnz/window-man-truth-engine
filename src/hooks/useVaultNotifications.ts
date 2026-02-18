@@ -13,6 +13,11 @@ const TOOL_IDS = [
   'claim-survival'
 ];
 
+/**
+ * Calculates notification badges for the Evidence Vault.
+ * Counts incomplete tools and missing claim documents to
+ * determine whether the vault icon should show an alert indicator.
+ */
 export function useVaultNotifications() {
   const { sessionData, isToolCompleted } = useSessionData();
   
