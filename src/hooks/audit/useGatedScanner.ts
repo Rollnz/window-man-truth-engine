@@ -155,6 +155,11 @@ const INITIAL_STATE: GatedScannerState = {
 // HOOK IMPLEMENTATION
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * CRO-optimized scanner with an immediate lead gate.
+ * Flow: Upload → Blur Preview → Lead Modal → Theater → Reveal.
+ * Maximizes conversion by requiring email before showing full results.
+ */
 export function useGatedScanner(): UseGatedScannerReturn {
   const { toast } = useToast();
   const { sessionData, sessionId, updateField } = useSessionData();

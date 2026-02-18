@@ -25,6 +25,10 @@ interface UseEvidenceAnalysisProps {
   files: Record<string, string>;
 }
 
+/**
+ * Runs AI-powered analysis on claim evidence documents to generate
+ * per-document status scores, overall readiness, and actionable recommendations.
+ */
 export function useEvidenceAnalysis({
   documents,
   progress,

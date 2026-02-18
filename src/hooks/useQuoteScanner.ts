@@ -112,6 +112,11 @@ async function compressImage(file: File, maxBytes = 4_000_000): Promise<{ base64
   });
 }
 
+/**
+ * Core quote scanner hook. Orchestrates file upload, AI forensic analysis,
+ * score extraction, identity capture, and result caching in session data.
+ * Used by the standalone scanner page (non-gated variant).
+ */
 export function useQuoteScanner(): UseQuoteScannerReturn {
   const { toast } = useToast();
   const { sessionData, sessionId, updateField } = useSessionData();

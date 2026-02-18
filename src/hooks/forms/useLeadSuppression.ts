@@ -55,6 +55,11 @@ export interface UseLeadSuppressionResult {
   markCompleted: () => void;
 }
 
+/**
+ * Suppresses duplicate lead capture forms after a user has already submitted.
+ * Checks localStorage for a prior completion flag and hides the CTA accordingly.
+ * @param ctaSource - Identifier for the CTA placement (e.g. 'hero', 'sidebar')
+ */
 export function useLeadSuppression(ctaSource: string): UseLeadSuppressionResult {
   // Defensive fallback for missing ctaSource
   const resolvedCta = ctaSource || 'unknown';

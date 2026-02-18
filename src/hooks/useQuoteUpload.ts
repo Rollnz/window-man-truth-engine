@@ -63,6 +63,11 @@ const ALLOWED_TYPES = [
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+/**
+ * Handles quote file uploads to the `upload-quote` edge function.
+ * Validates file type/size, sends with session + attribution metadata,
+ * and returns the upload result with file ID and signed URL.
+ */
 export function useQuoteUpload() {
   const { sessionId } = useSessionData();
   const { leadId } = useLeadIdentity();

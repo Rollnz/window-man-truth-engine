@@ -79,6 +79,11 @@ interface UseLeadFinancialsReturn {
   hasFinancials: boolean;
 }
 
+/**
+ * Manages opportunities and deals for a single CRM lead.
+ * Provides CRUD for pipeline stages, deal values, and financial summaries.
+ * @param wmLeadId - The wm_leads ID to load financials for
+ */
 export function useLeadFinancials(wmLeadId: string | undefined): UseLeadFinancialsReturn {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);

@@ -27,6 +27,11 @@ interface UseFormValidationReturn<T extends Record<string, string>> {
   getError: (field: keyof T) => string | undefined;
 }
 
+/**
+ * Generic form validation hook using Zod schemas. Manages field values,
+ * per-field errors, optional formatters, and provides a `validate()` gate.
+ * @template T - Shape of the form values (string fields)
+ */
 export function useFormValidation<T extends Record<string, string>>({
   initialValues,
   schemas,

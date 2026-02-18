@@ -18,6 +18,11 @@ const GROWTH_RATE = 4.9;
 const TODAY_MIN = 12;
 const TODAY_MAX = 28;
 
+/**
+ * Client-side fallback for quote ticker stats. Calculates projected
+ * total and today's quote count using a seeded daily random and linear growth.
+ * @returns `{ total, today }` — projected quote counts
+ */
 export function useProjectedQuotes() {
   return useMemo(() => {
     const now = new Date();

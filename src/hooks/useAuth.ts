@@ -3,6 +3,11 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { ROUTES } from '@/config/navigation';
 
+/**
+ * Core authentication hook. Manages user/session state, provides
+ * sign-in, sign-up, sign-out, and password management utilities.
+ * Automatically syncs with the auth state change listener.
+ */
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);

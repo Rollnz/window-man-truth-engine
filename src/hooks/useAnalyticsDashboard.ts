@@ -79,6 +79,10 @@ const defaultData: AnalyticsDashboardData = {
   },
 };
 
+/**
+ * Provides analytics dashboard data including daily metrics, channel breakdown,
+ * and funnel stats for a configurable date range. Supports manual refresh.
+ */
 export function useAnalyticsDashboard(initialDateRange?: DateRange) {
   const [data, setData] = useState<AnalyticsDashboardData>(defaultData);
   const [isLoading, setIsLoading] = useState(true);

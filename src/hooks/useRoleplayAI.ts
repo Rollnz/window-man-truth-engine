@@ -9,6 +9,11 @@ interface UseRoleplayAIOptions {
   difficulty: Difficulty;
 }
 
+/**
+ * AI backend for the contractor roleplay negotiation game.
+ * Sends chat messages to the AI model and parses resistance/tactic responses.
+ * @param options.difficulty - Difficulty level affecting AI pushback intensity
+ */
 export function useRoleplayAI({ difficulty }: UseRoleplayAIOptions) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

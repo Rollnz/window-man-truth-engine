@@ -120,6 +120,11 @@ const INITIAL_STATE: DeterministicScannerState = {
   scanAttemptId: null,
 };
 
+/**
+ * Simplified audit scanner state machine with no animation timers.
+ * Phases are driven by actual state transitions (upload → analyze → reveal).
+ * Handles file upload, AI forensic analysis, and result caching.
+ */
 export function useDeterministicScanner(): UseDeterministicScannerReturn {
   const { toast } = useToast();
   const { sessionData, sessionId, updateField } = useSessionData();

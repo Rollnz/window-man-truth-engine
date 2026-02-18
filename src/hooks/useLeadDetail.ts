@@ -141,6 +141,11 @@ interface UseLeadDetailReturn {
   updateLead: (updates: Partial<LeadDetailData>) => Promise<boolean>;
 }
 
+/**
+ * Fetches full lead detail (profile, timeline events, notes) for the
+ * admin lead-detail view. Supports status updates, note CRUD, and refresh.
+ * @param leadId - The wm_leads ID to load
+ */
 export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
   const [lead, setLead] = useState<LeadDetailData | null>(null);
   const [events, setEvents] = useState<LeadEvent[]>([]);

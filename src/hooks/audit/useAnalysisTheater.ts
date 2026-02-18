@@ -46,6 +46,12 @@ interface UseAnalysisTheaterOptions {
  * });
  * ```
  */
+/**
+ * @deprecated Use `useDeterministicScanner` instead — no animation timing needed.
+ *
+ * Timer-based progress animation with a 90% pause gate.
+ * Drives the visual "analyzing" theater experience during AI quote scanning.
+ */
 export function useAnalysisTheater(options: UseAnalysisTheaterOptions): AnalysisTheaterState & {
   start: () => void;
 } {

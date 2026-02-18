@@ -27,6 +27,10 @@ export interface AdminDashboardData {
   refetch: () => void;
 }
 
+/**
+ * Fetches aggregated admin dashboard stats (leads, quotes, conversions)
+ * and recent activity events via react-query. Auto-refreshes every 30 seconds.
+ */
 export function useAdminDashboard(): AdminDashboardData {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-dashboard'],
