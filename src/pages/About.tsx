@@ -286,7 +286,19 @@ const About = () => {
                 </div>
               </div>
             </div>
-          );
+          </div>
+        </section>
+      </main>
+
+      <ConsultationBookingModal
+        isOpen={showConsultationModal}
+        onClose={() => setShowConsultationModal(false)}
+        onSuccess={() => setShowConsultationModal(false)}
+        sessionData={sessionData}
+        sourceTool="consultation"
+      />
+    </div>
+  );
 };
 
 export default About;
