@@ -286,30 +286,7 @@ const About = () => {
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* Community Impact */}
-        <CommunityImpact />
-
-        {/* CTA Section */}
-        <section className="container px-4 pb-16">
-          <ConversionBar
-            headline="Need a human sanity check?"
-            subheadline="Tap through to your free estimate and we'll pair you with a vetted impact window specialist."
-          />
-        </section>
-      </main>
-
-      <ConsultationBookingModal
-        isOpen={showConsultationModal}
-        onClose={() => setShowConsultationModal(false)}
-        onSuccess={() => setShowConsultationModal(false)}
-        sessionData={sessionData}
-        sourceTool="consultation"
-      />
-    </div>
-  );
+          );
 };
 
 export default About;
