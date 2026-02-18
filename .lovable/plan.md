@@ -1,68 +1,70 @@
 
 
-# Fix: Make Tracking Fire-and-Forget in useGatedScanner.ts
+# Implement 5 Approved Tracking Fixes
 
-## Problem
+All 5 fixes from the approved audit were never applied. This plan implements them.
 
-Two `await wmScannerUpload(...)` calls on lines 304 and 348 are in the critical path. If either throws, the entire `handleLeadSubmit` catch block fires, showing the user "Analysis Failed" even when the AI analysis could succeed (or already has).
+## 1. Fix Circular Dependency (P0-A)
 
-## Changes (1 file only: `src/hooks/audit/useGatedScanner.ts`)
+**`src/lib/gtm.ts`**
+- Remove line 19: the `wmLead, wmQualifiedLead, ...` import from `./wmTracking`
+- Remove `installTruthEngine()` function and its `TruthEngine` interface (they already exist in `src/lib/tracking/truthEngine.ts`)
+- Keep the `window.truthEngine?` type declaration (interface merging is fine)
 
-### Fix 1 -- Line 304: Pre-analysis tracking (blocks AI call)
+**`src/main.tsx`**
+- Change line 8 from `import { installTruthEngine } from "./lib/gtm"` to `import { installTruthEngine } from "./lib/tracking/truthEngine"`
 
-```text
-Before:
-  await wmScannerUpload(identity, scanAttemptId, context);
+## 2. Fix event_id Parity (P0-B)
 
-After:
-  wmScannerUpload(identity, scanAttemptId, context)
-    .catch(err => console.warn('[Non-critical] Scanner upload tracking failed:', err));
-```
+**`src/lib/wmTracking.ts` line 289**
+- Change `const eventId = \`lead:\${identity.leadId}\`` to `const eventId = identity.leadId`
+- This makes the browser event_id match the server-side CAPI dispatch (bare UUID) for Meta deduplication
 
-Remove `await` so it becomes fire-and-forget. Add `.catch()` to prevent unhandled rejection.
+## 3. Neutralize value/currency in secondarySignalEvents (P0-D)
 
-### Fix 2 -- Line 348: Post-analysis tracking (blocks result reveal)
+**`src/lib/secondarySignalEvents.ts`**
+- Remove `VOICE_ESTIMATE_VALUE` constant (line 71)
+- Remove `value: VOICE_ESTIMATE_VALUE` and `currency: 'USD'` from lines 114-115
+- Add `meta: { send: false, category: 'internal', wm_tracking_version: '1.0.0' }` to the event payload
+- Update file-level JSDoc to remove "value-based bidding" claim
 
-Same pattern:
+## 4. Session-Stable Dedupe for wm_lead (P1-A)
 
-```text
-Before:
-  await wmScannerUpload(identity, scanAttemptId, context);
+**`src/lib/wmTracking.ts`**
+- Add `hasLeadFired(leadId)` and `markLeadFired(leadId)` sessionStorage helpers after line 156
+- Update wmLead() guard (line 281) to check both Set AND sessionStorage
+- After firing, call `markLeadFired(identity.leadId)`
+- Update `_resetSessionGuards()` to also clear `wm_lead_fired:{leadId}`
 
-After:
-  wmScannerUpload(identity, scanAttemptId, context)
-    .catch(err => console.warn('[Non-critical] Post-analysis tracking failed:', err));
-```
+## 5. Fix getFbc Timestamp (P1-B)
 
-### Fix 3 -- Line 341: `awardScore` (also blocks result reveal)
+**`src/lib/gtm.ts` line 240**
+- Change `Date.now()` to `Math.floor(Date.now() / 1000)` (Meta fbc spec requires seconds)
 
-`awardScore` on line 342 is also awaited. If the canonical score API is down, the user never sees their report. Same treatment:
+## 6. Update Tests
 
-```text
-Before:
-  await awardScore({ ... });
+**`src/lib/__tests__/wmTracking.test.ts`**
+- Update the `wmLead` event_id test: expect bare `TEST_LEAD_ID` instead of `lead:${TEST_LEAD_ID}`
+- Add test: wmLead deduplicates via sessionStorage across simulated reloads (clear Set, keep sessionStorage, verify suppression)
+- Add test: `_resetSessionGuards` clears `wm_lead_fired:{leadId}`
 
-After:
-  awardScore({ ... })
-    .catch(err => console.warn('[Non-critical] Canonical score award failed:', err));
-```
+## Files Modified
 
-### What does NOT change
+| File | Change |
+|------|--------|
+| `src/lib/gtm.ts` | Remove wm* imports, remove installTruthEngine, fix getFbc |
+| `src/main.tsx` | Update installTruthEngine import path |
+| `src/lib/wmTracking.ts` | Bare UUID event_id, session dedupe for wm_lead |
+| `src/lib/secondarySignalEvents.ts` | Remove value/currency, add meta.category: internal |
+| `src/lib/__tests__/wmTracking.test.ts` | Update event_id assertions, add session dedupe tests |
 
-- No new imports
-- No changes to `wmTracking.ts`, `gtm.ts`, or any other file
-- Event names, payloads, and `event_id` logic are untouched
-- The `trackEvent` calls (lines 287, 333) are already synchronous and safe
+## Implementation Order
 
-### Test file
-
-Create `src/hooks/audit/__tests__/useGatedScanner.test.tsx` with cases covering:
-1. AI analysis succeeds when first `wmScannerUpload` rejects
-2. Result reveal succeeds when second `wmScannerUpload` rejects
-3. Result reveal succeeds when `awardScore` rejects
-4. Analysis succeeds when all three non-critical calls reject simultaneously
-
-## Why this order
-
-All three fixes are independent single-line changes in the same function. The test file depends on understanding the fixed behavior, so it is created last.
+1. Create/verify `truthEngine.ts` (already exists, no changes needed)
+2. Edit `gtm.ts` (remove cycle + fix getFbc) 
+3. Edit `main.tsx` (update import)
+4. Edit `wmTracking.ts` (event_id + session dedupe)
+5. Edit `secondarySignalEvents.ts` (neutralize value)
+6. Update tests
+7. Run test suite to verify
 
