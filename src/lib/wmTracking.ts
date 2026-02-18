@@ -155,6 +155,24 @@ function markQlFired(leadId: string): void {
   }
 }
 
+/** Check if wm_lead has fired for a leadId in this session */
+function hasLeadFired(leadId: string): boolean {
+  try {
+    return sessionStorage.getItem(`wm_lead_fired:${leadId}`) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** Mark that wm_lead fired for a leadId in this session */
+function markLeadFired(leadId: string): void {
+  try {
+    sessionStorage.setItem(`wm_lead_fired:${leadId}`, '1');
+  } catch {
+    // Non-critical
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // QUALIFIED LEAD THRESHOLD HELPER
 // ═══════════════════════════════════════════════════════════════════════════
@@ -214,11 +232,17 @@ async function pushWmEvent(
     }
   }
 
+  // P0-C: inject persistent browser identity into every OPT event payload
+  const client_id = typeof window !== 'undefined' ? getOrCreateClientId() : undefined;
+  const session_id = typeof window !== 'undefined' ? getOrCreateSessionId() : undefined;
+
   const payload: Record<string, unknown> = {
     event_id: eventId,
     meta,
     value,
     currency: 'USD',
+    client_id,
+    session_id,
     source_system: 'website',
     page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
     page_location: typeof window !== 'undefined' ? window.location.href : undefined,
@@ -276,15 +300,18 @@ export async function wmLead(
   identity: WmUserIdentity,
   context?: WmEventContext,
 ): Promise<void> {
-  if (sentWmLeadIds.has(identity.leadId)) {
+  // P1-A: dual-layer dedupe — in-memory (page load) + sessionStorage (tab lifetime)
+  if (sentWmLeadIds.has(identity.leadId) || hasLeadFired(identity.leadId)) {
     if (import.meta.env.DEV) {
       console.log(`[wmTracking] wm_lead deduplicated for ${identity.leadId}`);
     }
     return;
   }
   sentWmLeadIds.add(identity.leadId);
+  markLeadFired(identity.leadId);
 
-  const eventId = `lead:${identity.leadId}`;
+  // P0-B: bare leadId (no prefix) to match server-side CAPI event_id for Meta deduplication
+  const eventId = identity.leadId;
 
   await pushWmEvent(
     'wm_lead', eventId, identity,
@@ -514,6 +541,7 @@ export function _resetSessionGuards(leadId: string): void {
   try {
     sessionStorage.removeItem(`wm_upload_fired:${leadId}`);
     sessionStorage.removeItem(`wm_ql_fired:${leadId}`);
+    sessionStorage.removeItem(`wm_lead_fired:${leadId}`);
   } catch {
     // Non-critical
   }

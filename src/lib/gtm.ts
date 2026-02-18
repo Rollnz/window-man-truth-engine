@@ -7,7 +7,7 @@ export const GTM_ID = 'GTM-NHVFR5QZ';
 declare global {
   interface Window {
     dataLayer: Record<string, unknown>[];
-    truthEngine?: TruthEngine;
+    // truthEngine is declared in src/lib/tracking/truthEngine.ts
   }
 }
 
@@ -16,7 +16,6 @@ declare global {
 // ═══════════════════════════════════════════════════════════════════════════
 
 import type { SourceTool } from '@/types/sourceTool';
-import { wmLead, wmQualifiedLead, wmScannerUpload, wmAppointmentBooked, wmSold, wmRetarget, wmInternal } from './wmTracking';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { calculateLeadScore, getRoutingAction, getCRMTags } from '@/lib/leadScoringEngine';
 import { buildEventMetadata, buildGTMEvent, type EventMetadataInput } from './eventMetadataHelper';
@@ -236,8 +235,9 @@ export function getFbc(): string | null {
   const fbclid = urlParams.get('fbclid');
   
   if (fbclid) {
-    // Format per Meta spec: fb.1.{timestamp}.{fbclid}
-    return `fb.1.${Date.now()}.${fbclid}`;
+    // Format per Meta spec: fb.1.{unix_seconds}.{fbclid}
+    // IMPORTANT: Meta expects seconds, not milliseconds
+    return `fb.1.${Math.floor(Date.now() / 1000)}.${fbclid}`;
   }
   
   // Fallback: Check existing cookie
@@ -710,83 +710,9 @@ export const trackScannerUploadCompleted = (params: {
   });
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// TRUTH ENGINE - Global API for Debugging & Cross-Module Access
-// ═══════════════════════════════════════════════════════════════════════════
+// TruthEngine interface and installTruthEngine() have moved to:
+//   src/lib/tracking/truthEngine.ts
+// This eliminates the circular dependency: gtm.ts ↔ wmTracking.ts
 
-/**
- * TruthEngine interface - exposed on window for debugging
- */
-export interface TruthEngine {
-  // Utilities
-  buildEnhancedUserData: typeof buildEnhancedUserData;
-  normalizeEmail: typeof normalizeEmail;
-  normalizeToE164: typeof normalizeToE164;
-  safeHash: typeof safeHash;
-  sha256: typeof sha256;
-  hashPhone: typeof hashPhone;
-  generateEventId: typeof generateEventId;
-  isAlreadyHashed: typeof isAlreadyHashed;
-  getFbp: typeof getFbp;
-  getFbc: typeof getFbc;
-
-  // Canonical wmTracking functions
-  wmLead: typeof wmLead;
-  wmQualifiedLead: typeof wmQualifiedLead;
-  wmScannerUpload: typeof wmScannerUpload;
-  wmAppointmentBooked: typeof wmAppointmentBooked;
-  wmSold: typeof wmSold;
-  wmRetarget: typeof wmRetarget;
-  wmInternal: typeof wmInternal;
-  
-  // General tracking
-  trackEvent: typeof trackEvent;
-  trackLeadCapture: typeof trackLeadCapture;
-}
-
-/**
- * Install the Truth Engine on window for debugging and cross-module access
- * 
- * MERGE-SAFE: Does not overwrite existing properties
- * 
- * Call this from app entry point (main.tsx)
- */
-export function installTruthEngine(): void {
-  if (typeof window === 'undefined') return;
-  
-  // Merge-safe: preserve any existing properties
-  window.truthEngine = {
-    ...window.truthEngine,
-    // Utilities
-    buildEnhancedUserData,
-    normalizeEmail,
-    normalizeToE164,
-    safeHash,
-    sha256,
-    hashPhone,
-    generateEventId,
-    isAlreadyHashed,
-    getFbp,
-    getFbc,
-    // Canonical wmTracking functions
-    wmLead,
-    wmQualifiedLead,
-    wmScannerUpload,
-    wmAppointmentBooked,
-    wmSold,
-    wmRetarget,
-    wmInternal,
-    // General tracking
-    trackEvent,
-    trackLeadCapture,
-  };
-  
-  if (import.meta.env.DEV) {
-    console.log('[TruthEngine] Installed on window.truthEngine', {
-      methods: Object.keys(window.truthEngine),
-    });
-  }
-}
-
-// Re-export normalizeToE164 from phoneFormat for truthEngine access
+// Re-export normalizeToE164 from phoneFormat for callers that import it via gtm.ts
 export { normalizeToE164 };

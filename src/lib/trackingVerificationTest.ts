@@ -303,8 +303,9 @@ export async function runTrackingVerificationTest(): Promise<TrackingVerificatio
   console.log('\n[2/5] Starting network interception...');
   startPixelInterception();
   
-  const expectedEventId = `lead:${testLead.leadId}`;
-  console.log('\n[3/5] Expected event_id:', expectedEventId);
+  // P0-B: wmLead now uses bare leadId (no prefix) to match server-side CAPI event_id
+  const expectedEventId = testLead.leadId;
+  console.log('\n[3/5] Expected event_id (bare UUID, no prefix):', expectedEventId);
   
   console.log('\n[4/5] Firing wmLead (canonical $10 OPT event)...');
   await wmLead(
@@ -352,7 +353,7 @@ export async function runTrackingVerificationTest(): Promise<TrackingVerificatio
     },
     eventIdParity: {
       browserEventId: dataLayerEvent?.event_id ?? 'NOT_FOUND',
-      expectedFormat: 'lead:{leadId}',
+      expectedFormat: '{leadId} (bare UUID — matches server CAPI event_id)',
       match: dataLayerEvent?.event_id === expectedEventId,
       deduplicationReady: dataLayerEvent?.event_id === expectedEventId,
     },

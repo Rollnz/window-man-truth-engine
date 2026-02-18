@@ -1,13 +1,14 @@
 /**
  * Secondary Signal Events
- * 
- * Simplified signal tracking functions for high-value events.
- * These supplement lead_captured events.
- * 
- * EMQ Compliance: All events include:
- * - event_id (UUID for deduplication)
- * - user_data (hashed PII for Enhanced Conversions)
- * - value + currency (for value-based bidding)
+ *
+ * Analytical signal tracking functions for high-value behavioral events.
+ * These supplement lead_captured events for internal reporting only.
+ *
+ * IMPORTANT: These events are NOT OPT conversion events and must never carry
+ * value or currency. Monetary signals are exclusively managed by wmTracking.ts.
+ *
+ * GTM Firewall: All events include meta.category: 'internal' — ad-platform
+ * conversion tags must require meta.category === 'opt' and will never fire here.
  */
 
 import { buildEventMetadata, buildGTMEvent } from './eventMetadataHelper';
@@ -67,21 +68,23 @@ export interface VoiceEstimateConfirmedParams {
   next_step?: string;
 }
 
-// Conversion value for voice estimate confirmed (high-intent signal)
-const VOICE_ESTIMATE_VALUE = 30;
-
 /**
- * Track voice estimate confirmed with EMQ-compliant user_data
- * 
+ * Track voice estimate confirmed — internal analytics event only.
+ *
+ * IMPORTANT: This event is intentionally category='internal'.
+ * It must NOT carry value or currency — monetary signals belong exclusively
+ * in wmTracking.ts OPT events. Adding value here would corrupt ad-platform
+ * bidding if a GTM tag were accidentally misconfigured to fire on this event.
+ *
  * Includes:
- * - event_id for Meta CAPI deduplication
- * - user_data with hashed email (em) and phone (ph) for Enhanced Conversions
- * - value + currency for value-based bidding
+ * - event_id for deduplication
+ * - user_data with hashed email (em) and phone (ph) for internal analytics
+ * - meta.category: 'internal' — GTM firewall blocks all ad-platform tags
  */
 export async function trackVoiceEstimateConfirmed(params: VoiceEstimateConfirmedParams): Promise<void> {
   const event_id = crypto.randomUUID();
-  
-  // Build user_data with hashed PII for EMQ compliance
+
+  // Build user_data with hashed PII for internal analytics
   const [hashedEmail, hashedPhone] = await Promise.all([
     params.email ? sha256(params.email.toLowerCase().trim()) : Promise.resolve(undefined),
     params.phone_number ? hashPhone(params.phone_number) : Promise.resolve(undefined),
@@ -111,8 +114,12 @@ export async function trackVoiceEstimateConfirmed(params: VoiceEstimateConfirmed
 
   const gtmEvent = buildGTMEvent('voice_estimate_confirmed', metadata, {
     event_id,
-    value: VOICE_ESTIMATE_VALUE,
-    currency: 'USD',
+    // P0-D: NO value or currency — this is an internal analytics event, not an OPT conversion
+    meta: {
+      send: false,
+      category: 'internal',
+      wm_tracking_version: '1.0.0',
+    },
     user_data,
     // Normalized phone for display (not hashed)
     phone_e164: params.phone_number ? normalizeToE164(params.phone_number) : undefined,
