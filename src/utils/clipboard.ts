@@ -1,3 +1,8 @@
+/**
+ * Copies text to the system clipboard. Uses the modern Clipboard API
+ * with a textarea fallback for non-HTTPS / local development environments.
+ * @param text - The string to copy
+ */
 export async function copyToClipboard(text: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);

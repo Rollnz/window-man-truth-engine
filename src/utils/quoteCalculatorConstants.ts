@@ -91,7 +91,9 @@ export const SIZE_OPTIONS: { window: SizeOption[]; door: SizeOption[] } = {
   ]
 };
 
-// --- HELPER FUNCTIONS ---
+/**
+ * Formats a number as a USD currency string with no decimal places.
+ */
 export const formatCurrency = (val: number): string =>
   new Intl.NumberFormat('en-US', { 
     style: 'currency', 
@@ -99,6 +101,10 @@ export const formatCurrency = (val: number): string =>
     maximumFractionDigits: 0 
   }).format(val);
 
+/**
+ * Returns an HSL background color on a green heatmap scale for a given price.
+ * Lower prices are lighter, higher prices are darker.
+ */
 export const getHeatmapColor = (price: number, min: number, max: number): string => {
   if (min === max) return 'hsl(142, 70%, 90%)';
   const ratio = (price - min) / (max - min);
