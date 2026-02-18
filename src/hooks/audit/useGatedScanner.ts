@@ -301,11 +301,11 @@ export function useGatedScanner(): UseGatedScannerReturn {
       const { base64, mimeType } = await compressImage(state.file);
 
       // Track scanner upload
-      await wmScannerUpload(
+      wmScannerUpload(
         { email: data.email, phone: data.phone, leadId: existingLeadId || undefined },
         state.scanAttemptId || '',
         { source_tool: 'audit-scanner' },
-      );
+      ).catch(err => console.warn('[Non-critical] Scanner upload tracking failed:', err));
 
       // Call AI analysis API
       const { data: analysisData, error: requestError } = await heavyAIRequest.sendRequest<AuditAnalysisResult & { error?: string }>(
@@ -339,17 +339,17 @@ export function useGatedScanner(): UseGatedScannerReturn {
 
       // Award canonical score
       if (state.scanAttemptId) {
-        await awardScore({
+        awardScore({
           eventType: 'QUOTE_UPLOADED',
           sourceEntityType: 'quote',
           sourceEntityId: state.scanAttemptId,
-        });
+        }).catch(err => console.warn('[Non-critical] Canonical score award failed:', err));
 
-        await wmScannerUpload(
+        wmScannerUpload(
           { email: data.email, phone: data.phone, leadId: existingLeadId || undefined },
           state.scanAttemptId,
           { source_tool: 'audit-scanner' },
-        );
+        ).catch(err => console.warn('[Non-critical] Post-analysis tracking failed:', err));
       }
 
       // Save result to session
