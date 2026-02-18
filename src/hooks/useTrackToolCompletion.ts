@@ -98,13 +98,12 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
     wmRetarget(config.eventName, {
       lead_id: sessionData.leadId,
       source_tool: toolId,
-      event_id: eventId,
       tool_id: toolId,
       tool_version: '1.0',
       tracking_step: trackingStep,
       score_snapshot: cumulativeScore,
       ...metadata,
-    });
+    } as Record<string, unknown>);
     
     // Mark as tracked in deduplication system
     markToolEventTracked(toolId, 'completed');
@@ -166,10 +165,9 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
     wmRetarget('enhanced_match', {
       lead_id: sessionData.leadId,
       source_tool: toolId,
-      event_id: eventId,
       tool_id: toolId,
       tracking_step: 'enhanced_match',
-    });
+    } as Record<string, unknown>);
     
     // Mark as tracked
     markToolEventTracked(toolId, 'enhanced_match');
