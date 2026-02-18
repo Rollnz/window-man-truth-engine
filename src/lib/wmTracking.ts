@@ -233,8 +233,8 @@ async function pushWmEvent(
   }
 
   // P0-C: inject persistent browser identity into every OPT event payload
-  const client_id = typeof window !== 'undefined' ? getOrCreateClientId() : undefined;
-  const session_id = typeof window !== 'undefined' ? getOrCreateSessionId() : undefined;
+const client_id = getOrCreateClientId();
+  const session_id = getOrCreateSessionId();
 
   const payload: Record<string, unknown> = {
     event_id: eventId,
