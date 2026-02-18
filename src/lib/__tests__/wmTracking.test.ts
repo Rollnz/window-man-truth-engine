@@ -103,11 +103,11 @@ describe('wmLead', () => {
     expect(meta.meta_event_name).toBe('Lead');
   });
 
-  it('uses deterministic event_id: lead:{leadId}', async () => {
+  it('uses bare leadId as event_id (matches server-side CAPI for Meta dedup)', async () => {
     await wmLead(testIdentity);
 
     const event = mockDataLayer.find(e => e.event === 'wm_lead');
-    expect(event!.event_id).toBe(`lead:${TEST_LEAD_ID}`);
+    expect(event!.event_id).toBe(TEST_LEAD_ID);
   });
 
   it('fires legacy bridge lead_submission_success as RT (no value)', async () => {
