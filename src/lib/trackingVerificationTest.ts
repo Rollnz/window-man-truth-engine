@@ -351,7 +351,7 @@ export async function runTrackingVerificationTest(): Promise<TrackingVerificatio
       validation,
     },
     eventIdParity: {
-      browserEventId: expectedEventId,
+      browserEventId: dataLayerEvent?.event_id ?? 'NOT_FOUND',
       expectedFormat: 'lead:{leadId}',
       match: dataLayerEvent?.event_id === expectedEventId,
       deduplicationReady: dataLayerEvent?.event_id === expectedEventId,
