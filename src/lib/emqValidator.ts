@@ -47,8 +47,8 @@ const isValidEventId = (id: string | undefined | null): boolean => {
   if (!id || typeof id !== 'string') return false;
   // Primary format: plain UUID v4 (matches server-side event_id for Meta deduplication)
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  // Legacy fallback: event_type:uuid (e.g., "lead_captured:uuid") — accepted but no longer recommended
-  const deterministicPattern = /^[a-z_]+:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  // Deterministic format: prefix:uuid or prefix:uuid:suffix (e.g., "sold:uuid:dealKey")
+  const deterministicPattern = /^[a-z_]+:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(:.+)?$/i;
   return uuidPattern.test(id) || deterministicPattern.test(id);
 };
 
