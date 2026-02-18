@@ -214,8 +214,8 @@ async function pushWmEvent(
     page_location: typeof window !== 'undefined' ? window.location.href : undefined,
     external_id: identity.leadId,
     lead_id: identity.leadId,
-    ...(user_data && { user_data }),
-    ...context,
+    ...(user_data ? { user_data } : {}),
+    ...(context || {}),
   };
 
   trackEvent(eventName, payload);
@@ -432,7 +432,7 @@ export function wmRetarget(
     source_system: 'website',
     page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
     page_location: typeof window !== 'undefined' ? window.location.href : undefined,
-    ...context,
+    ...(context || {}),
   });
 }
 
@@ -455,7 +455,7 @@ export function wmInternal(
       category: 'internal' as WmEventCategory,
       wm_tracking_version: WM_TRACKING_VERSION,
     },
-    ...data,
+    ...(data || {}),
   });
 }
 
