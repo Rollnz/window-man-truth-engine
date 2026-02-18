@@ -54,7 +54,6 @@ export interface ToolSuccessCallback {
 export interface TrackableToolEvent {
   toolId: SourceTool;
   eventName: string;
-  deltaValue: number;
   metadata?: ToolCompletionMetadata;
   email?: string;
   phone?: string;

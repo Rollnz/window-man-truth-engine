@@ -288,22 +288,20 @@ export default function TrackingTestPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">DLV Present</span>
-                    <Badge variant={report.gtmTagVerification.dataLayerVariablePresent ? 'default' : 'destructive'}>
-                      {report.gtmTagVerification.dataLayerVariablePresent ? 'Yes' : 'No'}
+                    <span className="text-sm text-muted-foreground">event_id Parity</span>
+                    <Badge variant={report.eventIdParity.deduplicationReady ? 'default' : 'destructive'}>
+                      {report.eventIdParity.deduplicationReady ? 'Ready' : 'Not Ready'}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">event_id Format</span>
-                    <Badge 
-                      variant={report.gtmTagVerification.eventIdFormat === 'valid_uuid' ? 'default' : 'destructive'}
-                    >
-                      {report.gtmTagVerification.eventIdFormat}
+                    <Badge variant={report.eventIdParity.match ? 'default' : 'destructive'}>
+                      {report.eventIdParity.expectedFormat}
                     </Badge>
                   </div>
                   <Separator />
                   <p className="text-xs text-muted-foreground">
-                    {report.gtmTagVerification.recommendation}
+                    Events use deterministic IDs (e.g. lead:{'<'}leadId{'>'}) for CAPI deduplication.
                   </p>
                 </CardContent>
               </Card>

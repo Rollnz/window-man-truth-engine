@@ -118,7 +118,7 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
         `%c[Tool Complete] ${toolId}`,
         'color: #3b82f6; font-weight: bold',
         {
-          delta: config.deltaValue,
+          tier: config.tier,
           cumulative: cumulativeScore,
           step: trackingStep,
           hasEmail: !!email,
