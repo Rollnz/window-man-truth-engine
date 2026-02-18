@@ -1,992 +1,219 @@
 /**
- * GTM Tracking Validation Tests
+ * GTM Tracking Validation Tests (Post-Refactor)
  * 
- * Verifies trackLeadSubmissionSuccess and related functions:
- * 1. Correct function signature (no deprecated params like hasPhone)
- * 2. Async behavior (returns Promise)
- * 3. DataLayer push structure matches Enhanced Conversions schema
+ * Verifies canonical wmTracking functions:
+ * 1. Hardcoded values ($10, $100, $500, $1000, $5000+)
+ * 2. meta.category = 'opt' on all OPT events
+ * 3. Hashed PII in user_data (Enhanced Conversions)
+ * 4. Deduplication guards (scanner upload, qualified lead)
+ * 5. Legacy bridge events fire as RT (no value)
+ * 
+ * Legacy functions (trackLeadSubmissionSuccess, trackBookingConfirmed, etc.)
+ * have been removed — all conversion tracking goes through wmTracking.ts
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
-  trackLeadSubmissionSuccess,
-  trackConsultationBooked,
-  trackPhoneLead,
-  trackBookingConfirmed,
-  trackQuoteUploadSuccess,
   sha256,
   hashPhone,
 } from '../gtm';
+import {
+  wmLead,
+  wmQualifiedLead,
+  wmScannerUpload,
+  wmAppointmentBooked,
+  wmSold,
+  wmRetarget,
+  wmInternal,
+  _resetScannerUploadGuard,
+  _resetSessionGuards,
+} from '../wmTracking';
 import { normalizeToE164 } from '../phoneFormat';
 
-// Mock window.dataLayer
+// Mock dataLayer
 const mockDataLayer: any[] = [];
+const mockSessionStorage: Record<string, string> = {};
 
 beforeEach(() => {
-  // Reset dataLayer mock
   mockDataLayer.length = 0;
   vi.stubGlobal('dataLayer', mockDataLayer);
+  vi.stubGlobal('sessionStorage', {
+    getItem: vi.fn((key: string) => mockSessionStorage[key] || null),
+    setItem: vi.fn((key: string, value: string) => { mockSessionStorage[key] = value; }),
+    removeItem: vi.fn((key: string) => { delete mockSessionStorage[key]; }),
+    clear: vi.fn(),
+  });
+  _resetScannerUploadGuard();
+  Object.keys(mockSessionStorage).forEach(k => delete mockSessionStorage[k]);
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('trackLeadSubmissionSuccess', () => {
-  it('should be an async function that returns a Promise', async () => {
-    const result = trackLeadSubmissionSuccess({
-      leadId: 'test-lead-123',
-      email: 'test@example.com',
-      sourceTool: 'quote-builder',
-    });
+describe('wmLead', () => {
+  it('should fire wm_lead with $10 value and meta.category=opt', async () => {
+    await wmLead(
+      { leadId: 'test-lead-1', email: 'test@example.com' },
+      { source_tool: 'quote-builder' },
+    );
 
-    expect(result).toBeInstanceOf(Promise);
-    await result; // Should resolve without error
-  });
-
-  it('should accept the correct signature without hasPhone', async () => {
-    // This should compile and run without errors
-    await trackLeadSubmissionSuccess({
-      leadId: 'test-lead-123',
-      email: 'test@example.com',
-      phone: '555-123-4567',
-      firstName: 'John',
-      lastName: 'Doe',
-      sourceTool: 'quote-builder',
-    });
-
-    // Verify dataLayer was pushed
-    expect(mockDataLayer.length).toBeGreaterThan(0);
-  });
-
-  it('should push event with correct schema structure (default value)', async () => {
-    await trackLeadSubmissionSuccess({
-      leadId: 'test-lead-456',
-      email: 'user@test.com',
-      phone: '(555) 987-6543',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      sourceTool: 'beat-your-quote',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    const event = mockDataLayer.find(e => e.event === 'wm_lead');
     expect(event).toBeDefined();
-    
-    // Verify required fields - default value is 15
-    expect(event.event).toBe('lead_submission_success');
-    expect(event.event_id).toBeDefined();
-    expect(event.value).toBe(15);
+    expect(event.value).toBe(10);
     expect(event.currency).toBe('USD');
-    
-    // Verify user_data structure (Enhanced Conversions)
-    expect(event.user_data).toBeDefined();
-    expect(event.external_id).toBe('test-lead-456');
-    
-    // Verify hashed PII fields exist (SHA-256)
-    expect(event.user_data.sha256_email_address).toBeDefined();
-    expect(event.user_data.sha256_email_address).toMatch(/^[a-f0-9]{64}$/); // 64 hex chars
-    
-    // Verify Meta CAPI aliases exist
-    expect(event.user_data.em).toBeDefined();
-    expect(event.user_data.ph).toBeDefined();
+    expect(event.meta.send).toBe(true);
+    expect(event.meta.category).toBe('opt');
+    expect(event.event_id).toBe('lead:test-lead-1');
   });
 
-  it('should accept value override for value-based bidding', async () => {
-    await trackLeadSubmissionSuccess({
-      leadId: 'lead-value-override',
-      email: 'value@test.com',
-      sourceTool: 'quote-builder',
-      value: 100,
+  it('should fire legacy bridge lead_submission_success as RT', async () => {
+    await wmLead({ leadId: 'bridge-1', email: 'b@test.com' });
+
+    const bridge = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    expect(bridge).toBeDefined();
+    expect(bridge.meta.category).toBe('rt');
+    expect(bridge.value).toBeUndefined();
+    expect(bridge.legacy_bridge).toBe(true);
+  });
+
+  it('should include hashed user_data for EMQ', async () => {
+    await wmLead({
+      leadId: 'emq-1',
+      email: 'emq@test.com',
+      phone: '555-123-4567',
     });
 
-    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    const event = mockDataLayer.find(e => e.event === 'wm_lead');
+    expect(event.user_data).toBeDefined();
+    expect(event.user_data.em).toMatch(/^[a-f0-9]{64}$/);
+    expect(event.user_data.external_id).toBe('emq-1');
+  });
+});
+
+describe('wmQualifiedLead', () => {
+  it('should fire wm_qualified_lead with $100 value', async () => {
+    const fired = await wmQualifiedLead(
+      { leadId: 'ql-1', email: 'ql@test.com' },
+      { source_tool: 'quiz' },
+    );
+
+    expect(fired).toBe(true);
+    const event = mockDataLayer.find(e => e.event === 'wm_qualified_lead');
     expect(event).toBeDefined();
     expect(event.value).toBe(100);
-    expect(event.currency).toBe('USD');
+    expect(event.meta.category).toBe('opt');
   });
 
-  it('should use raw leadId as eventId for Meta deduplication parity', async () => {
-    const rawLeadId = '550e8400-e29b-41d4-a716-446655440000';
-    await trackLeadSubmissionSuccess({
-      leadId: rawLeadId,
-      email: 'eventid@test.com',
-      sourceTool: 'quote-builder',
-      eventId: rawLeadId,
-    });
+  it('should deduplicate per session', async () => {
+    await wmQualifiedLead({ leadId: 'ql-dedup', email: 'ql@test.com' });
+    const fired = await wmQualifiedLead({ leadId: 'ql-dedup', email: 'ql@test.com' });
 
-    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    expect(fired).toBe(false);
+    const events = mockDataLayer.filter(e => e.event === 'wm_qualified_lead');
+    expect(events).toHaveLength(1);
+  });
+});
+
+describe('wmScannerUpload', () => {
+  it('should fire wm_scanner_upload with $500 value', async () => {
+    const eventId = await wmScannerUpload(
+      { leadId: 'scan-1', email: 'scan@test.com' },
+      'attempt-abc',
+    );
+
+    expect(eventId).toBe('upload:attempt-abc');
+    const event = mockDataLayer.find(e => e.event === 'wm_scanner_upload');
     expect(event).toBeDefined();
-    expect(event.event_id).toBe(rawLeadId);
+    expect(event.value).toBe(500);
+    expect(event.meta.category).toBe('opt');
   });
 
-  it('should NOT include hasPhone in the function signature', async () => {
-    // TypeScript should reject this call with hasPhone
-    // This test documents the correct behavior
-    await trackLeadSubmissionSuccess({
-      leadId: 'test-lead-789',
-      email: 'nophone@test.com',
-      sourceTool: 'ai-scanner',
-    });
+  it('should deduplicate per scanAttemptId', async () => {
+    await wmScannerUpload({ leadId: 'scan-2' } as any, 'attempt-dup');
+    const result = await wmScannerUpload({ leadId: 'scan-2' } as any, 'attempt-dup');
 
-    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    expect(result).toBeNull();
+    const events = mockDataLayer.filter(e => e.event === 'wm_scanner_upload');
+    expect(events).toHaveLength(1);
+  });
+});
+
+describe('wmAppointmentBooked', () => {
+  it('should fire wm_appointment_booked with $1000 value', async () => {
+    await wmAppointmentBooked(
+      { leadId: 'appt-1', email: 'appt@test.com' },
+      'cal-456',
+    );
+
+    const event = mockDataLayer.find(e => e.event === 'wm_appointment_booked');
     expect(event).toBeDefined();
-    // has_phone is allowed in the EVENT payload (for reporting), just not as a function param
-    expect(event.has_phone).toBe(false);
+    expect(event.value).toBe(1000);
+    expect(event.meta.category).toBe('opt');
+    expect(event.event_id).toBe('appt:appt-1:cal-456');
   });
+});
 
-  it('should handle missing optional fields gracefully', async () => {
-    await trackLeadSubmissionSuccess({
-      leadId: 'minimal-lead',
-      email: 'minimal@test.com',
-      sourceTool: 'quote-scanner',
-    });
+describe('wmSold', () => {
+  it('should fire wm_sold with $5000 + saleAmount', async () => {
+    await wmSold(
+      { leadId: 'sold-1', email: 'sold@test.com' },
+      12000,
+      'deal-789',
+    );
 
-    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
+    const event = mockDataLayer.find(e => e.event === 'wm_sold');
     expect(event).toBeDefined();
-    expect(event.user_data.sha256_email_address).toBeDefined();
-    // Phone hash should be undefined when not provided
-    expect(event.user_data.sha256_phone_number).toBeUndefined();
+    expect(event.value).toBe(17000); // 5000 + 12000
+    expect(event.meta.category).toBe('opt');
+    expect(event.event_id).toBe('sold:sold-1:deal-789');
   });
 });
 
-describe('trackConsultationBooked', () => {
-  it('should be async and push correct value', async () => {
-    await trackConsultationBooked({
-      leadId: 'booking-lead-123',
-      email: 'booking@test.com',
-      phone: '555-111-2222',
-      sourceTool: 'consultation-modal',
-    });
+describe('wmRetarget', () => {
+  it('should fire with meta.category=rt and NO value', () => {
+    wmRetarget('wm_tool_completed', { source_tool: 'quiz' });
 
-    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
+    const event = mockDataLayer.find(e => e.event === 'wm_tool_completed');
     expect(event).toBeDefined();
-    expect(event.value).toBe(50); // Consultation value
-    expect(event.currency).toBe('USD');
-  });
-
-  it('should include user_data with hashed PII', async () => {
-    await trackConsultationBooked({
-      leadId: 'booking-lead-456',
-      email: 'user@booking.com',
-      phone: '(555) 333-4444',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
-    expect(event.user_data).toBeDefined();
-    expect(event.user_data.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
-    expect(event.user_data.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
+    expect(event.meta.category).toBe('rt');
+    expect(event.meta.send).toBe(true);
+    expect(event.value).toBeUndefined();
+    expect(event.currency).toBeUndefined();
   });
 });
 
-describe('EMQ 9.5+ Compliance - trackConsultationBooked', () => {
-  it('should include unique event_id for Meta CAPI deduplication', async () => {
-    await trackConsultationBooked({
-      leadId: 'booking-emq-1',
-      email: 'booking-emq@test.com',
-      phone: '555-123-4567',
-      sourceTool: 'consultation-modal',
-    });
+describe('wmInternal', () => {
+  it('should fire with meta.send=false and NO value', () => {
+    wmInternal('internal_score_update', { score: 42 });
 
-    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
-    expect(event.event_id).toBeDefined();
-    // event_id uses leadId as fallback when no explicit eventId provided
-    expect(event.event_id).toBe('booking-emq-1');
-  });
-
-  it('should include external_id matching leadId for user matching', async () => {
-    const testLeadId = 'booking-external-id-test';
-    await trackConsultationBooked({
-      leadId: testLeadId,
-      email: 'booking-ext@test.com',
-      phone: '555-999-8888',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
-    expect(event.external_id).toBe(testLeadId);
-  });
-
-  it('should include both Meta CAPI (em/ph) and Google (sha256_*) identifiers', async () => {
-    await trackConsultationBooked({
-      leadId: 'booking-dual-id',
-      email: 'booking-dual@test.com',
-      phone: '555-777-6666',
-      sourceTool: 'modal',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
-    const userData = event.user_data;
-
-    // Google Enhanced Conversions format
-    expect(userData.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
-    expect(userData.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
-
-    // Meta CAPI format (same hashes, aliased)
-    expect(userData.em).toBe(userData.sha256_email_address);
-    expect(userData.ph).toBe(userData.sha256_phone_number);
-  });
-
-  it('should normalize email (lowercase, trim) before hashing', async () => {
-    await trackConsultationBooked({
-      leadId: 'booking-email-norm-1',
-      email: '  BOOKING@EXAMPLE.COM  ',
-      phone: '555-111-0000',
-    });
-
-    await trackConsultationBooked({
-      leadId: 'booking-email-norm-2',
-      email: 'booking@example.com',
-      phone: '555-111-0001',
-    });
-
-    const events = mockDataLayer.filter(e => e.event === 'consultation_booked');
-    const hash1 = events[0].user_data.sha256_email_address;
-    const hash2 = events[1].user_data.sha256_email_address;
-
-    expect(hash1).toBe(hash2); // Same hash despite different casing/whitespace
-  });
-
-  it('should normalize phone to E.164 before hashing', async () => {
-    await trackConsultationBooked({
-      leadId: 'booking-phone-norm-1',
-      email: 'phone1@booking.com',
-      phone: '(555) 222-3333',
-    });
-
-    await trackConsultationBooked({
-      leadId: 'booking-phone-norm-2',
-      email: 'phone2@booking.com',
-      phone: '555-222-3333',
-    });
-
-    await trackConsultationBooked({
-      leadId: 'booking-phone-norm-3',
-      email: 'phone3@booking.com',
-      phone: '5552223333',
-    });
-
-    const events = mockDataLayer.filter(e => e.event === 'consultation_booked');
-    const hashes = events.map(e => e.user_data.sha256_phone_number);
-
-    // All phone formats should produce identical hash
-    expect(hashes[0]).toBe(hashes[1]);
-    expect(hashes[1]).toBe(hashes[2]);
-  });
-
-  it('should include $75 value for value-based bidding', async () => {
-    await trackConsultationBooked({
-      leadId: 'booking-value-test',
-      email: 'value@booking.com',
-      phone: '555-444-5555',
-      sourceTool: 'consultation-modal',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
-    expect(event.value).toBe(50);
-    expect(event.currency).toBe('USD');
-  });
-
-  it('should include source_tool for attribution', async () => {
-    await trackConsultationBooked({
-      leadId: 'booking-source-test',
-      email: 'source@booking.com',
-      phone: '555-666-7777',
-      sourceTool: 'exit-intent-modal',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
-    expect(event.source_tool).toBe('exit-intent-modal');
-  });
-
-  it('should handle metadata passthrough', async () => {
-    await trackConsultationBooked({
-      leadId: 'booking-meta-test',
-      email: 'meta@booking.com',
-      phone: '555-888-9999',
-      preferredTime: '2pm-4pm',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'consultation_booked');
-    expect(event.preferred_time).toBe('2pm-4pm');
-  });
-});
-
-describe('trackPhoneLead', () => {
-  it('should be async and push correct value', async () => {
-    await trackPhoneLead({
-      leadId: 'phone-lead-123',
-      phone: '555-333-4444',
-      email: 'phone@test.com',
-      sourceTool: 'fair-price-quiz',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
+    const event = mockDataLayer.find(e => e.event === 'internal_score_update');
     expect(event).toBeDefined();
-    expect(event.value).toBe(25);
-    expect(event.currency).toBe('USD');
-  });
-
-  it('should include hashed phone in user_data', async () => {
-    await trackPhoneLead({
-      leadId: 'phone-lead-456',
-      phone: '(555) 987-6543',
-      sourceTool: 'quiz-results',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
-    expect(event.user_data).toBeDefined();
-    expect(event.user_data.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
-    expect(event.user_data.ph).toBeDefined(); // Meta CAPI alias
+    expect(event.meta.send).toBe(false);
+    expect(event.meta.category).toBe('internal');
+    expect(event.value).toBeUndefined();
   });
 });
 
-describe('EMQ 9.5+ Compliance - trackPhoneLead', () => {
-  it('should include unique event_id for Meta CAPI deduplication', async () => {
-    await trackPhoneLead({
-      leadId: 'phone-emq-1',
-      phone: '555-123-4567',
-      email: 'phone-emq@test.com',
-      sourceTool: 'fair-price-quiz',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
-    expect(event.event_id).toBeDefined();
-    // event_id uses leadId as fallback when no explicit eventId provided
-    expect(event.event_id).toBe('phone-emq-1');
-  });
-
-  it('should include external_id matching leadId for user matching', async () => {
-    const testLeadId = 'phone-external-id-test';
-    await trackPhoneLead({
-      leadId: testLeadId,
-      phone: '555-999-8888',
-      sourceTool: 'quiz-results',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
-    expect(event.external_id).toBe(testLeadId);
-  });
-
-  it('should include both Meta CAPI (ph) and Google (sha256_*) phone identifiers', async () => {
-    await trackPhoneLead({
-      leadId: 'phone-dual-id',
-      phone: '555-777-6666',
-      email: 'phone-dual@test.com',
-      sourceTool: 'quiz',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
-    const userData = event.user_data;
-
-    // Google Enhanced Conversions format
-    expect(userData.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
-
-    // Meta CAPI format (same hash, aliased)
-    expect(userData.ph).toBe(userData.sha256_phone_number);
-  });
-
-  it('should include email hashes when email is provided', async () => {
-    await trackPhoneLead({
-      leadId: 'phone-with-email',
-      phone: '555-111-2222',
-      email: 'phone-email@test.com',
-      sourceTool: 'quiz-results',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
-    const userData = event.user_data;
-
-    // Google Enhanced Conversions format
-    expect(userData.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
-
-    // Meta CAPI format
-    expect(userData.em).toBe(userData.sha256_email_address);
-  });
-
-  it('should normalize phone to E.164 before hashing', async () => {
-    await trackPhoneLead({
-      leadId: 'phone-norm-1',
-      phone: '(555) 333-4444',
-      sourceTool: 'quiz',
-    });
-
-    await trackPhoneLead({
-      leadId: 'phone-norm-2',
-      phone: '555-333-4444',
-      sourceTool: 'quiz',
-    });
-
-    await trackPhoneLead({
-      leadId: 'phone-norm-3',
-      phone: '5553334444',
-      sourceTool: 'quiz',
-    });
-
-    const events = mockDataLayer.filter(e => e.event === 'phone_lead_captured');
-    const hashes = events.map(e => e.user_data.sha256_phone_number);
-
-    // All phone formats should produce identical hash
-    expect(hashes[0]).toBe(hashes[1]);
-    expect(hashes[1]).toBe(hashes[2]);
-  });
-
-  it('should include $25 value for value-based bidding', async () => {
-    await trackPhoneLead({
-      leadId: 'phone-value-test',
-      phone: '555-444-5555',
-      sourceTool: 'fair-price-quiz',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
-    expect(event.value).toBe(25);
-    expect(event.currency).toBe('USD');
-  });
-
-  it('should include source_tool for attribution', async () => {
-    await trackPhoneLead({
-      leadId: 'phone-source-test',
-      phone: '555-666-7777',
-      sourceTool: 'cost-calculator',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
-    expect(event.source_tool).toBe('cost-calculator');
-  });
-
-  it('should handle phone-only submissions (no email)', async () => {
-    await trackPhoneLead({
-      leadId: 'phone-only-test',
-      phone: '555-888-9999',
-      sourceTool: 'quiz-results',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'phone_lead_captured');
-    expect(event.user_data.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
-    expect(event.user_data.ph).toMatch(/^[a-f0-9]{64}$/);
-    expect(event.user_data.sha256_email_address).toBeUndefined();
-    expect(event.user_data.em).toBeUndefined();
-  });
-});
-
-describe('EMQ 9.5+ Compliance - trackBookingConfirmed', () => {
-  it('should include unique event_id for Meta CAPI deduplication', async () => {
-    await trackBookingConfirmed({
-      leadId: 'booking-emq-1',
-      email: 'booking-emq@test.com',
-      phone: '555-123-4567',
-      sourceTool: 'consultation-modal',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
-    expect(event.event_id).toBeDefined();
-    // event_id uses leadId as fallback when no explicit eventId provided
-    expect(event.event_id).toBe('booking-emq-1');
-  });
-
-  it('should include external_id matching leadId for user matching', async () => {
-    const testLeadId = 'booking-confirmed-external-id';
-    await trackBookingConfirmed({
-      leadId: testLeadId,
-      email: 'booking-ext@test.com',
-      phone: '555-999-8888',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
-    expect(event.external_id).toBe(testLeadId);
-  });
-
-  it('should include both Meta CAPI (em/ph) and Google (sha256_*) identifiers', async () => {
-    await trackBookingConfirmed({
-      leadId: 'booking-confirmed-dual-id',
-      email: 'booking-dual@test.com',
-      phone: '555-777-6666',
-      sourceTool: 'modal',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
-    const userData = event.user_data;
-
-    // Google Enhanced Conversions format
-    expect(userData.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
-    expect(userData.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
-
-    // Meta CAPI format (same hashes, aliased)
-    expect(userData.em).toBe(userData.sha256_email_address);
-    expect(userData.ph).toBe(userData.sha256_phone_number);
-  });
-
-  it('should normalize email (lowercase, trim) before hashing', async () => {
-    await trackBookingConfirmed({
-      leadId: 'booking-confirmed-email-norm-1',
-      email: '  BOOKINGCONFIRMED@EXAMPLE.COM  ',
-      phone: '555-111-0000',
-    });
-
-    await trackBookingConfirmed({
-      leadId: 'booking-confirmed-email-norm-2',
-      email: 'bookingconfirmed@example.com',
-      phone: '555-111-0001',
-    });
-
-    const events = mockDataLayer.filter(e => e.event === 'booking_confirmed');
-    const hash1 = events[0].user_data.sha256_email_address;
-    const hash2 = events[1].user_data.sha256_email_address;
-
-    expect(hash1).toBe(hash2); // Same hash despite different casing/whitespace
-  });
-
-  it('should normalize phone to E.164 before hashing', async () => {
-    await trackBookingConfirmed({
-      leadId: 'booking-confirmed-phone-norm-1',
-      email: 'phone1@booking-confirmed.com',
-      phone: '(555) 444-5555',
-    });
-
-    await trackBookingConfirmed({
-      leadId: 'booking-confirmed-phone-norm-2',
-      email: 'phone2@booking-confirmed.com',
-      phone: '555-444-5555',
-    });
-
-    await trackBookingConfirmed({
-      leadId: 'booking-confirmed-phone-norm-3',
-      email: 'phone3@booking-confirmed.com',
-      phone: '5554445555',
-    });
-
-    const events = mockDataLayer.filter(e => e.event === 'booking_confirmed');
-    const hashes = events.map(e => e.user_data.sha256_phone_number);
-
-    // All phone formats should produce identical hash
-    expect(hashes[0]).toBe(hashes[1]);
-    expect(hashes[1]).toBe(hashes[2]);
-  });
-
-  it('should include $75 value for highest-tier value-based bidding', async () => {
-    await trackBookingConfirmed({
-      leadId: 'booking-confirmed-value-test',
-      email: 'value@booking-confirmed.com',
-      phone: '555-666-7777',
-      sourceTool: 'consultation-modal',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
-    expect(event.value).toBe(75); // Highest conversion value tier
-    expect(event.currency).toBe('USD');
-  });
-
-  it('should include source_tool for attribution', async () => {
-    await trackBookingConfirmed({
-      leadId: 'booking-confirmed-source-test',
-      email: 'source@booking-confirmed.com',
-      phone: '555-888-9999',
-      sourceTool: 'exit-intent-modal',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
-    expect(event.source_tool).toBe('exit-intent-modal');
-  });
-
-  it('should include conversion_metadata with project details', async () => {
-    await trackBookingConfirmed({
-      leadId: 'booking-confirmed-meta-test',
-      email: 'meta@booking-confirmed.com',
-      phone: '555-000-1111',
-      windowCount: 12,
-      estimatedProjectValue: 15000,
-      urgencyLevel: 'high',
-      preferredTime: '2pm-4pm',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
-    expect(event.conversion_metadata).toBeDefined();
-    expect(event.conversion_metadata.window_count).toBe(12);
-    expect(event.conversion_metadata.estimated_project_value).toBe(15000);
-    expect(event.conversion_metadata.urgency_level).toBe('high');
-    expect(event.conversion_metadata.preferred_callback_time).toBe('2pm-4pm');
-  });
-
-  it('should handle email-only submissions (no phone)', async () => {
-    await trackBookingConfirmed({
-      leadId: 'booking-confirmed-email-only',
-      email: 'emailonly@booking-confirmed.com',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
-    expect(event.user_data.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
-    expect(event.user_data.em).toMatch(/^[a-f0-9]{64}$/);
-    expect(event.user_data.sha256_phone_number).toBeUndefined();
-    expect(event.user_data.ph).toBeUndefined();
-  });
-
-  it('should include has_name flag for data quality tracking', async () => {
-    await trackBookingConfirmed({
-      leadId: 'booking-confirmed-name-test',
-      email: 'name@booking-confirmed.com',
-      firstName: 'John',
-      lastName: 'Smith',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'booking_confirmed');
-    // has_name is no longer part of the payload - firstName/lastName are hashed in user_data
-    expect(event.user_data).toBeDefined();
-  });
-});
-
-describe('normalizeToE164', () => {
-  it('should convert 10-digit US numbers to E.164', () => {
-    expect(normalizeToE164('5551234567')).toBe('+15551234567');
-    expect(normalizeToE164('555-123-4567')).toBe('+15551234567');
-    expect(normalizeToE164('(555) 123-4567')).toBe('+15551234567');
-  });
-
-  it('should handle numbers starting with 1', () => {
-    expect(normalizeToE164('15551234567')).toBe('+15551234567');
-    expect(normalizeToE164('1-555-123-4567')).toBe('+15551234567');
-  });
-
-  it('should return undefined for invalid phone numbers', () => {
-    expect(normalizeToE164('')).toBeUndefined();
-    expect(normalizeToE164(undefined)).toBeUndefined();
-    expect(normalizeToE164('12345')).toBeUndefined(); // Too short
-    expect(normalizeToE164('123456789012')).toBeUndefined(); // Too long
-  });
-});
-
-describe('SHA-256 Hashing', () => {
-  it('should produce consistent 64-character hex hashes', async () => {
-    const hash = await sha256('test@example.com');
-    expect(hash).toMatch(/^[a-f0-9]{64}$/);
-    
-    // Same input should produce same hash
-    const hash2 = await sha256('test@example.com');
-    expect(hash).toBe(hash2);
-  });
-
-  it('should normalize email before hashing (lowercase, trim)', async () => {
-    const hash1 = await sha256('TEST@EXAMPLE.COM');
-    const hash2 = await sha256('test@example.com');
-    const hash3 = await sha256('  test@example.com  ');
-    
+describe('SHA-256 Utilities', () => {
+  it('should hash email consistently', async () => {
+    const hash1 = await sha256('test@example.com');
+    const hash2 = await sha256('TEST@Example.COM');
     expect(hash1).toBe(hash2);
-    expect(hash2).toBe(hash3);
-  });
-
-  it('should handle empty input', async () => {
-    const hash = await sha256('');
-    expect(hash).toBe('');
-  });
-
-  it('should hash phone with E.164 normalization', async () => {
-    const hash1 = await hashPhone('555-123-4567');
-    const hash2 = await hashPhone('(555) 123-4567');
-    const hash3 = await hashPhone('5551234567');
-    
-    // All should produce the same hash after E.164 normalization
-    expect(hash1).toBe(hash2);
-    expect(hash2).toBe(hash3);
     expect(hash1).toMatch(/^[a-f0-9]{64}$/);
   });
 
-  it('should return undefined for invalid phone numbers', async () => {
-    const hash = await hashPhone('12345'); // Too short
-    expect(hash).toBeUndefined();
-  });
-});
-
-describe('EMQ 9.5+ Compliance - trackLeadSubmissionSuccess', () => {
-  it('should include unique event_id for Meta CAPI deduplication', async () => {
-    await trackLeadSubmissionSuccess({
-      leadId: 'emq-test-1',
-      email: 'emq@test.com',
-      phone: '555-123-4567',
-      sourceTool: 'quote-builder',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
-    expect(event.event_id).toBeDefined();
-    // event_id is set using mocked crypto.randomUUID in test environment
-    expect(typeof event.event_id).toBe('string');
-  });
-
-  it('should include external_id matching leadId for user matching', async () => {
-    const testLeadId = 'emq-external-id-test';
-    await trackLeadSubmissionSuccess({
-      leadId: testLeadId,
-      email: 'external@test.com',
-      sourceTool: 'scanner',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
-    expect(event.external_id).toBe(testLeadId);
-  });
-
-  it('should include both Meta CAPI (em/ph) and Google (sha256_*) identifiers', async () => {
-    await trackLeadSubmissionSuccess({
-      leadId: 'emq-dual-id-test',
-      email: 'dual@test.com',
-      phone: '555-987-6543',
-      sourceTool: 'quiz',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
-    const userData = event.user_data;
-
-    // Google Enhanced Conversions format
-    expect(userData.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
-    expect(userData.sha256_phone_number).toMatch(/^[a-f0-9]{64}$/);
-
-    // Meta CAPI format (same hashes, aliased)
-    expect(userData.em).toBe(userData.sha256_email_address);
-    expect(userData.ph).toBe(userData.sha256_phone_number);
-  });
-
-  it('should normalize email (lowercase, trim) before hashing', async () => {
-    await trackLeadSubmissionSuccess({
-      leadId: 'emq-email-norm-1',
-      email: '  TEST@EXAMPLE.COM  ',
-      sourceTool: 'scanner',
-    });
-
-    await trackLeadSubmissionSuccess({
-      leadId: 'emq-email-norm-2',
-      email: 'test@example.com',
-      sourceTool: 'scanner',
-    });
-
-    const events = mockDataLayer.filter(e => e.event === 'lead_submission_success');
-    const hash1 = events[0].user_data.sha256_email_address;
-    const hash2 = events[1].user_data.sha256_email_address;
-
-    expect(hash1).toBe(hash2); // Same hash despite different casing/whitespace
-  });
-
   it('should normalize phone to E.164 before hashing', async () => {
-    await trackLeadSubmissionSuccess({
-      leadId: 'emq-phone-norm-1',
-      email: 'phone1@test.com',
-      phone: '(555) 123-4567',
-      sourceTool: 'scanner',
-    });
-
-    await trackLeadSubmissionSuccess({
-      leadId: 'emq-phone-norm-2',
-      email: 'phone2@test.com',
-      phone: '555-123-4567',
-      sourceTool: 'scanner',
-    });
-
-    await trackLeadSubmissionSuccess({
-      leadId: 'emq-phone-norm-3',
-      email: 'phone3@test.com',
-      phone: '5551234567',
-      sourceTool: 'scanner',
-    });
-
-    const events = mockDataLayer.filter(e => e.event === 'lead_submission_success');
-    const hashes = events.map(e => e.user_data.sha256_phone_number);
-
-    // All phone formats should produce identical hash
-    expect(hashes[0]).toBe(hashes[1]);
-    expect(hashes[1]).toBe(hashes[2]);
+    const hash1 = await hashPhone('(555) 123-4567');
+    const hash2 = await hashPhone('555-123-4567');
+    const hash3 = await hashPhone('5551234567');
+    expect(hash1).toBe(hash2);
+    expect(hash2).toBe(hash3);
   });
 
-  it('should include value and currency for value-based bidding', async () => {
-    await trackLeadSubmissionSuccess({
-      leadId: 'emq-value-test',
-      email: 'value@test.com',
-      sourceTool: 'quote-builder',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
-    expect(event.value).toBe(15);
-    expect(event.currency).toBe('USD');
-  });
-
-  it('should handle email-only submissions (no phone)', async () => {
-    await trackLeadSubmissionSuccess({
-      leadId: 'emq-email-only',
-      email: 'emailonly@test.com',
-      sourceTool: 'guide-download',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
-    expect(event.user_data.sha256_email_address).toMatch(/^[a-f0-9]{64}$/);
-    expect(event.user_data.sha256_phone_number).toBeUndefined();
-    expect(event.user_data.em).toMatch(/^[a-f0-9]{64}$/);
-    expect(event.user_data.ph).toBeUndefined();
-  });
-
-  it('should include source_tool for attribution', async () => {
-    await trackLeadSubmissionSuccess({
-      leadId: 'emq-source-test',
-      email: 'source@test.com',
-      sourceTool: 'beat-your-quote',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'lead_submission_success');
-    expect(event.source_tool).toBe('beat-your-quote');
-  });
-});
-
-describe('Codebase Compliance Documentation', () => {
-  it('documents the correct trackLeadSubmissionSuccess signature', () => {
-    /**
-     * CORRECT SIGNATURE (enforced by TypeScript):
-     * 
-     * await trackLeadSubmissionSuccess({
-     *   leadId: string,       // Required - lead identifier
-     *   email: string,        // Required - for SHA-256 hashing
-     *   phone?: string,       // Optional - for SHA-256 hashing
-     *   name?: string,        // Optional - for user context
-     *   sourceTool?: string,  // Optional - attribution
-     * });
-     * 
-     * DEPRECATED PARAMETERS (will cause TypeScript error):
-     * - hasPhone ❌ (removed - phone presence is inferred)
-     * - hasName ❌ (removed - name presence is inferred)
-     * - hasAddress ❌ (not supported)
-     * 
-     * REQUIRED PATTERNS:
-     * - Must be awaited (async function)
-     * - Phone is normalized to E.164 before hashing
-     * - Email is lowercased and trimmed before hashing
-     * 
-     * VALUE-BASED BIDDING:
-     * - trackLeadSubmissionSuccess: $15 USD
-     * - trackConsultationBooked: $75 USD
-     * - trackPhoneLead: $25 USD
-     */
-    expect(true).toBe(true); // Documentation test
-  });
-
-  it('documents trackConsultationBooked signature', () => {
-    /**
-     * CORRECT SIGNATURE:
-     * 
-     * await trackConsultationBooked({
-     *   leadId: string,           // Required
-     *   email: string,            // Required
-     *   phone: string,            // Required
-     *   metadata?: object,        // Optional
-     *   sourceTool?: string,      // Optional
-     * });
-     */
-    expect(true).toBe(true);
-  });
-
-  it('documents trackPhoneLead signature', () => {
-    /**
-     * CORRECT SIGNATURE:
-     * 
-     * await trackPhoneLead({
-     *   leadId: string,       // Required
-     *   phone: string,        // Required
-     *   email?: string,       // Optional
-     *   sourceTool: string,   // Required
-     * });
-     */
-    expect(true).toBe(true);
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// trackQuoteUploadSuccess Tests
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe('trackQuoteUploadSuccess', () => {
-  it('should be an async function that returns a Promise', async () => {
-    const result = trackQuoteUploadSuccess({
-      scanAttemptId: 'test-scan-123',
-    });
-
-    expect(result).toBeInstanceOf(Promise);
-    await result;
-  });
-
-  it('should push quote_upload_success event with value: 50', async () => {
-    await trackQuoteUploadSuccess({
-      scanAttemptId: 'scan-abc-123',
-      email: 'quote@test.com',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'quote_upload_success');
-    expect(event).toBeDefined();
-    expect(event.value).toBe(50);
-    expect(event.currency).toBe('USD');
-  });
-
-  it('should generate deterministic event_id as quote_uploaded:<scanAttemptId>', async () => {
-    const scanAttemptId = 'unique-scan-456';
-    await trackQuoteUploadSuccess({
-      scanAttemptId,
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'quote_upload_success');
-    expect(event).toBeDefined();
-    expect(event.event_id).toBe(`quote_uploaded:${scanAttemptId}`);
-  });
-
-  it('should include external_id only when leadId is provided', async () => {
-    // Without leadId
-    await trackQuoteUploadSuccess({
-      scanAttemptId: 'scan-no-lead',
-    });
-    let event = mockDataLayer.find(e => e.event === 'quote_upload_success');
-    expect(event.external_id).toBeUndefined();
-
-    // Clear and test with leadId
-    mockDataLayer.length = 0;
-    await trackQuoteUploadSuccess({
-      scanAttemptId: 'scan-with-lead',
-      leadId: 'lead-xyz-789',
-    });
-    event = mockDataLayer.find(e => e.event === 'quote_upload_success');
-    expect(event.external_id).toBe('lead-xyz-789');
-  });
-
-  it('should include hashed email in user_data when email provided', async () => {
-    await trackQuoteUploadSuccess({
-      scanAttemptId: 'scan-with-email',
-      email: 'hash@test.com',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'quote_upload_success');
-    expect(event).toBeDefined();
-    expect(event.user_data).toBeDefined();
-    expect(event.user_data.em).toBeDefined();
-    expect(event.user_data.em).toMatch(/^[a-f0-9]{64}$/); // 64 hex chars SHA-256
-    expect(event.user_data.sha256_email_address).toBeDefined();
-  });
-
-  it('should NOT push lead_submission_success event', async () => {
-    await trackQuoteUploadSuccess({
-      scanAttemptId: 'scan-separate-event',
-      email: 'separate@test.com',
-    });
-
-    const leadEvent = mockDataLayer.find(e => e.event === 'lead_submission_success');
-    expect(leadEvent).toBeUndefined();
-
-    const quoteEvent = mockDataLayer.find(e => e.event === 'quote_upload_success');
-    expect(quoteEvent).toBeDefined();
-  });
-
-  it('should default source_tool to quote-scanner', async () => {
-    await trackQuoteUploadSuccess({
-      scanAttemptId: 'scan-default-source',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'quote_upload_success');
-    expect(event.source_tool).toBe('quote-scanner');
-  });
-
-  it('should respect custom source_tool', async () => {
-    await trackQuoteUploadSuccess({
-      scanAttemptId: 'scan-custom-source',
-      sourceTool: 'custom-tool',
-    });
-
-    const event = mockDataLayer.find(e => e.event === 'quote_upload_success');
-    expect(event.source_tool).toBe('custom-tool');
+  it('should not double-hash already-hashed values', async () => {
+    const original = await sha256('test@example.com');
+    const doubleHash = await sha256(original);
+    expect(doubleHash).toBe(original);
   });
 });

@@ -13,10 +13,8 @@ import { useFormAbandonment } from '@/hooks/useFormAbandonment';
 import { useScore } from '@/contexts/ScoreContext';
 import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { getAttributionData } from '@/lib/attribution';
-import { trackFormSubmit, generateEventId } from '@/lib/gtm';
-import { wmLead } from '@/lib/wmTracking';
-import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
-import { getLeadAnchor } from '@/lib/leadAnchor';
+import { trackFormSubmit } from '@/lib/gtm';
+import { wmLead, wmRetarget } from '@/lib/wmTracking';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -77,17 +75,9 @@ export function MissionInitiatedModal({
       setShowScanning(true);
       const timer = setTimeout(() => setShowScanning(false), 1500);
       
-      // Enriched dataLayer push for funnel reconstruction
-      const externalId = existingLeadId || getLeadAnchor() || null;
-      window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push({
-        event: 'mission_modal_opened',
-        event_id: generateEventId(),
-        client_id: getOrCreateClientId(),
-        session_id: getOrCreateSessionId(),
-        external_id: externalId,
+      // Firewall-compliant RT event for funnel reconstruction
+      wmRetarget('wm_mission_modal_opened', {
         source_tool: 'beat-your-quote',
-        source_system: 'web',
         modal_name: 'mission_initiated',
         quote_file_id: quoteFileId,
       });
@@ -141,22 +131,11 @@ export function MissionInitiatedModal({
       // Track analytics
       const effectiveLeadId = newLeadId || existingLeadId;
       
-      // Enriched dataLayer push for mission form completion
-      window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push({
-        event: 'mission_form_completed',
-        event_id: generateEventId(),
-        client_id: getOrCreateClientId(),
-        session_id: getOrCreateSessionId(),
-        external_id: effectiveLeadId || null,
+      // Firewall-compliant RT event for form completion (no raw PII)
+      wmRetarget('wm_mission_form_completed', {
         source_tool: 'beat-your-quote',
-        source_system: 'web',
         form_name: 'mission_initiated',
         quote_file_id: quoteFileId,
-        user_data: {
-          first_name: firstName,
-          last_name: lastName || undefined,
-        },
       });
       
       trackFormSubmit({
