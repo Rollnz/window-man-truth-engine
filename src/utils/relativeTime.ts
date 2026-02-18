@@ -1,3 +1,9 @@
+/**
+ * Formats an ISO timestamp into a human-readable relative string
+ * (e.g. "Just now", "3 minutes ago", "2 days ago").
+ * @param timestamp - ISO 8601 date string, or null
+ * @returns Human-readable relative time, or "Never" if null
+ */
 export function formatRelativeTime(timestamp: string | null): string {
   if (!timestamp) return "Never";
   const seconds = Math.floor(

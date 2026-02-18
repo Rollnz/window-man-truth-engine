@@ -20,6 +20,13 @@ interface ProductScore {
   reasoning: string;
 }
 
+/**
+ * Calculates the best-fit Fast Win product recommendation based on
+ * user quiz answers. Scores each product across four weighted dimensions
+ * (pain point, orientation, current status, budget) and returns the top match.
+ * @param answers - The user's quiz responses
+ * @returns The winning product, match score (0-100), honorable mentions, and reasoning
+ */
 export function calculateFastWin(answers: FastWinAnswers): FastWinResult {
   const scores: ProductScore[] = [];
 
@@ -84,6 +91,10 @@ export function calculateFastWin(answers: FastWinAnswers): FastWinResult {
   };
 }
 
+/**
+ * Scores how well a product category addresses the user's primary pain point.
+ * @returns 0-1 relevance score
+ */
 function getPainPointScore(painPoint: string, productCategory: string): number {
   const mappings: Record<string, Record<string, number>> = {
     heat: { heat: 1.0, budget: 0.6, uv: 0.3, noise: 0.2, security: 0.1 },
@@ -96,6 +107,11 @@ function getPainPointScore(painPoint: string, productCategory: string): number {
   return mappings[painPoint]?.[productCategory] ?? 0.2;
 }
 
+/**
+ * Scores how much the home's compass orientation benefits a product category.
+ * West/South-facing homes get higher scores for heat and UV products.
+ * @returns 0-1 relevance score
+ */
 function getOrientationScore(orientation: string, productCategory: string): number {
   // West and South facing boost heat-related products
   const heatBoostOrientations = ['west', 'south'];
@@ -115,6 +131,11 @@ function getOrientationScore(orientation: string, productCategory: string): numb
   return 0.5;
 }
 
+/**
+ * Scores upgrade potential based on the user's current window type.
+ * Single-pane homes benefit most from nearly every category.
+ * @returns 0-1 relevance score
+ */
 function getStatusScore(currentStatus: string, productCategory: string): number {
   const mappings: Record<string, Record<string, number>> = {
     single: { heat: 1.0, budget: 1.0, noise: 0.8, security: 0.7, uv: 0.6 },
@@ -126,6 +147,11 @@ function getStatusScore(currentStatus: string, productCategory: string): number 
   return mappings[currentStatus]?.[productCategory] ?? 0.5;
 }
 
+/**
+ * Scores how well a product category aligns with the user's budget priority
+ * (lowest cost, best value, fastest payback, or highest quality).
+ * @returns 0-1 relevance score
+ */
 function getBudgetScore(budgetPriority: string, productCategory: string): number {
   const mappings: Record<string, Record<string, number>> = {
     lowest: { budget: 1.0, uv: 0.8, heat: 0.5, noise: 0.4, security: 0.3 },
