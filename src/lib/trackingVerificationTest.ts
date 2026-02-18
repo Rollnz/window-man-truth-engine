@@ -387,9 +387,9 @@ export async function runTrackingVerificationTest(): Promise<TrackingVerificatio
       validation,
     },
     eventIdParity: {
-      browserEventId,
-      serverFormat: browserEventId, // Same UUID format used server-side
-      match: true, // Same generation logic
+      browserEventId: dataLayerEvent?.event_id || '', // Actual browser event_id from dataLayer
+      serverFormat: browserEventId, // Expected UUID format used server-side
+      match: dataLayerEvent?.event_id === browserEventId, // Compare actual vs expected
       deduplicationReady: dataLayerEvent?.event_id === browserEventId,
     },
     networkCapture: {
