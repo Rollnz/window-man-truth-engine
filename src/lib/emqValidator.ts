@@ -15,6 +15,8 @@ export interface EMQValidationResult {
   phoneHash: EMQCheckResult;
   externalId: EMQCheckResult & { matchesLeadId: boolean };
   valueAndCurrency: EMQCheckResult & { expectedValue: number; actualValue?: number; currency?: string };
+  clientId: EMQCheckResult;
+  sessionId: EMQCheckResult;
   overallScore: 'HIGH' | 'MEDIUM' | 'LOW';
   passedCount: number;
   totalChecks: number;
@@ -22,20 +24,20 @@ export interface EMQValidationResult {
 
 // Expected conversion values by event type
 export const EXPECTED_VALUES: Record<string, number> = {
-  lead_submission_success: 100,  // Full contact lead (name + email + phone)
-  lead_captured: 15,             // Email-only leads
-  phone_lead: 25,
-  consultation_booked: 75,       // High-intent consultation
-  booking_confirmed: 75,
+  wm_lead: 10,
+  wm_qualified_lead: 100,
+  wm_scanner_upload: 500,
+  wm_appointment_booked: 1000,
+  wm_sold: 5000,
 };
 
 // Conversion events we track
 export const CONVERSION_EVENTS = [
-  'lead_submission_success',
-  'lead_captured',
-  'phone_lead',
-  'consultation_booked',
-  'booking_confirmed',
+  'wm_lead',
+  'wm_qualified_lead',
+  'wm_scanner_upload',
+  'wm_appointment_booked',
+  'wm_sold',
 ];
 
 // Validate event_id format: plain UUID v4 is the primary/recommended format.
@@ -130,6 +132,22 @@ export function validateEMQEvent(event: Record<string, unknown>): EMQValidationR
             !currencyValid ? `Expected USD, got ${currency ?? 'undefined'}` : undefined,
   };
 
+  // 6. Client ID validation (bonus — not penalized when absent)
+  const clientId = event.client_id as string | undefined;
+  const clientIdCheck: EMQCheckResult = {
+    passed: !!clientId,
+    value: clientId ? `${clientId.substring(0, 12)}...` : undefined,
+    reason: !clientId ? 'Missing client_id (optional but recommended)' : undefined,
+  };
+
+  // 7. Session ID validation (bonus — not penalized when absent)
+  const sessionId = event.session_id as string | undefined;
+  const sessionIdCheck: EMQCheckResult = {
+    passed: !!sessionId,
+    value: sessionId ? `${sessionId.substring(0, 12)}...` : undefined,
+    reason: !sessionId ? 'Missing session_id (optional but recommended)' : undefined,
+  };
+
   // Calculate overall score
   const checks = [
     eventIdCheck.passed,
@@ -137,14 +155,16 @@ export function validateEMQEvent(event: Record<string, unknown>): EMQValidationR
     phoneHashCheck.passed,
     externalIdCheck.passed,
     valueAndCurrencyCheck.passed,
+    clientIdCheck.passed,
+    sessionIdCheck.passed,
   ];
   const passedCount = checks.filter(Boolean).length;
-  const totalChecks = 5;
+  const totalChecks = 7;
 
   let overallScore: 'HIGH' | 'MEDIUM' | 'LOW';
-  if (passedCount >= 4) {
+  if (passedCount >= 6) {
     overallScore = 'HIGH';
-  } else if (passedCount >= 3) {
+  } else if (passedCount >= 4) {
     overallScore = 'MEDIUM';
   } else {
     overallScore = 'LOW';
@@ -156,6 +176,8 @@ export function validateEMQEvent(event: Record<string, unknown>): EMQValidationR
     phoneHash: phoneHashCheck,
     externalId: externalIdCheck,
     valueAndCurrency: valueAndCurrencyCheck,
+    clientId: clientIdCheck,
+    sessionId: sessionIdCheck,
     overallScore,
     passedCount,
     totalChecks,
