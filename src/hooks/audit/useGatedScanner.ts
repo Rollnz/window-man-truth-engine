@@ -295,16 +295,20 @@ export function useGatedScanner(): UseGatedScannerReturn {
       // 3. Start AI analysis
       const { base64, mimeType } = await compressImage(state.file);
 
-      // Track scanner upload
-      trackScannerUpload({
-        scanAttemptId: state.scanAttemptId || '',
-        sourceTool: 'audit-scanner',
-        fileName: state.file.name,
-        fileSize: state.file.size,
-        fileType: state.file.type,
-        leadId: existingLeadId || undefined,
-        sessionId,
-      });
+      // Track scanner upload (fire-and-forget)
+      try {
+        trackScannerUpload({
+          scanAttemptId: state.scanAttemptId || '',
+          sourceTool: 'audit-scanner',
+          fileName: state.file.name,
+          fileSize: state.file.size,
+          fileType: state.file.type,
+          leadId: existingLeadId || undefined,
+          sessionId,
+        });
+      } catch (err) {
+        console.error('[Non-critical] Scanner upload tracking failed:', err);
+      }
 
       // Call AI analysis API
       const { data: analysisData, error: requestError } = await heavyAIRequest.sendRequest<AuditAnalysisResult & { error?: string }>(
@@ -344,12 +348,15 @@ export function useGatedScanner(): UseGatedScannerReturn {
           sourceEntityId: state.scanAttemptId,
         });
 
-        await trackQuoteUploadSuccess({
+        // Track quote upload success (fire-and-forget)
+        trackQuoteUploadSuccess({
           scanAttemptId: state.scanAttemptId,
           email: data.email,
           phone: data.phone,
           leadId: existingLeadId || undefined,
           sourceTool: 'audit-scanner',
+        }).catch(err => {
+          console.error('[Non-critical] Quote upload tracking failed:', err);
         });
       }
 
