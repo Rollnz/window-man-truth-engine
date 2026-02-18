@@ -5,7 +5,7 @@ import "./index.css";
 import "./styles/impact-window.css";
 import { initializeAttribution } from "./lib/attribution";
 import { pushBotSignalToDataLayer } from "./lib/botDetection";
-import { installTruthEngine } from "./lib/gtm";
+import { installTruthEngine } from "./lib/tracking/truthEngine";
 import { reconcileIdentities } from "./lib/identityReconciliation";
 import { scheduleWhenIdle } from "./lib/deferredInit";
 
