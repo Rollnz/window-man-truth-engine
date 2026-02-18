@@ -72,6 +72,11 @@ export interface WmEventContext {
   source_system?: string;
   page_path?: string;
   page_location?: string;
+  /** Forbidden at compile time — monetary data must never appear in context */
+  value?: never;
+  currency?: never;
+  meta?: never;
+  event_id?: never;
   [key: string]: unknown;
 }
 
@@ -110,6 +115,9 @@ const LEGACY_BRIDGE: Partial<Record<WmOptEvent, string>> = {
 
 /** Scanner upload dedupe — one fire per scanAttemptId */
 let lastFiredScanId: string | null = null;
+
+/** wm_lead dedupe — one fire per leadId per page load */
+const sentWmLeadIds = new Set<string>();
 
 /** Check if wm_scanner_upload has fired for a leadId in this session */
 function hasUploadFired(leadId: string): boolean {
@@ -268,6 +276,14 @@ export async function wmLead(
   identity: WmUserIdentity,
   context?: WmEventContext,
 ): Promise<void> {
+  if (sentWmLeadIds.has(identity.leadId)) {
+    if (import.meta.env.DEV) {
+      console.log(`[wmTracking] wm_lead deduplicated for ${identity.leadId}`);
+    }
+    return;
+  }
+  sentWmLeadIds.add(identity.leadId);
+
   const eventId = `lead:${identity.leadId}`;
 
   await pushWmEvent(
@@ -401,7 +417,8 @@ export async function wmSold(
 ): Promise<void> {
   const suffix = dealKey || String(Date.now());
   const eventId = `sold:${identity.leadId}:${suffix}`;
-  const totalValue = OPT_VALUES.wm_sold + Math.max(0, saleAmount);
+  const safeSaleAmount = Number.isFinite(saleAmount) ? Math.max(0, saleAmount) : 0;
+  const totalValue = OPT_VALUES.wm_sold + safeSaleAmount;
 
   await pushWmEvent(
     'wm_sold', eventId, identity,
@@ -430,6 +447,9 @@ export function wmRetarget(
   const anchor = typeof window !== 'undefined' ? getLeadAnchor() : null;
   const external_id = anchor || undefined;
 
+  // Strip reserved monetary keys — RT events must never carry value or currency
+  const { value: _v, currency: _c, ...safeContext } = (context || {}) as Record<string, unknown>;
+
   trackEvent(eventName, {
     event_id: eventId,
     meta: {
@@ -443,7 +463,7 @@ export function wmRetarget(
     source_system: 'website',
     page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
     page_location: typeof window !== 'undefined' ? window.location.href : undefined,
-    ...(context || {}),
+    ...safeContext,
   });
 }
 
@@ -477,6 +497,11 @@ export function wmInternal(
 /** Reset scanner upload dedupe guard */
 export function _resetScannerUploadGuard(): void {
   lastFiredScanId = null;
+}
+
+/** Reset wm_lead page-load dedupe guard */
+export function _resetWmLeadGuard(): void {
+  sentWmLeadIds.clear();
 }
 
 /** Reset all session-based dedupe flags for a leadId */

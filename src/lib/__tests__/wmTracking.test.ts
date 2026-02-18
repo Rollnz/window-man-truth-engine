@@ -25,6 +25,7 @@ import {
   qualifiesForQualifiedLead,
   _resetScannerUploadGuard,
   _resetSessionGuards,
+  _resetWmLeadGuard,
 } from '../wmTracking';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -71,6 +72,7 @@ beforeEach(() => {
   mockSessionStorage.clear();
   _resetScannerUploadGuard();
   _resetSessionGuards(TEST_LEAD_ID);
+  _resetWmLeadGuard();
 });
 
 afterEach(() => {
@@ -126,6 +128,22 @@ describe('wmLead', () => {
     const event = mockDataLayer.find(e => e.event === 'wm_lead');
     expect(event!.lead_id).toBe(TEST_LEAD_ID);
     expect(event!.external_id).toBe(TEST_LEAD_ID);
+  });
+
+  it('deduplicates per leadId (second call for same leadId is suppressed)', async () => {
+    await wmLead(testIdentity);
+    await wmLead(testIdentity);
+
+    const events = mockDataLayer.filter(e => e.event === 'wm_lead');
+    expect(events).toHaveLength(1);
+  });
+
+  it('allows different leadIds to each fire once', async () => {
+    await wmLead({ ...testIdentity, leadId: 'lead-x' });
+    await wmLead({ ...testIdentity, leadId: 'lead-y' });
+
+    const events = mockDataLayer.filter(e => e.event === 'wm_lead');
+    expect(events).toHaveLength(2);
   });
 });
 
@@ -295,6 +313,13 @@ describe('wmSold', () => {
     const event = mockDataLayer.find(e => e.event === 'wm_sold');
     expect((event!.event_id as string).startsWith(`sold:${TEST_LEAD_ID}:`)).toBe(true);
   });
+
+  it('treats NaN saleAmount as 0 to prevent value corruption', async () => {
+    await wmSold(testIdentity, NaN, 'deal-nan');
+
+    const event = mockDataLayer.find(e => e.event === 'wm_sold');
+    expect(event!.value).toBe(5000); // 5000 + 0 = 5000
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -333,6 +358,19 @@ describe('wmRetarget', () => {
     const event = mockDataLayer.find(e => e.event === 'test_event');
     expect(event!.source_tool).toBe('scanner');
     expect(event!.custom_field).toBe(42);
+  });
+
+  it('strips value and currency from context even if passed at runtime', () => {
+    // Cast bypasses the compile-time never guard to simulate a runtime call
+    wmRetarget('rt_event', { source_tool: 'test' } as Record<string, unknown> as any);
+    // Simulate a runtime caller injecting monetary data through the cast
+    const ctx = { source_tool: 'test', value: 100, currency: 'USD' } as any;
+    wmRetarget('rt_money_stripped', ctx);
+
+    const event = mockDataLayer.find(e => e.event === 'rt_money_stripped');
+    expect(event!.value).toBeUndefined();
+    expect(event!.currency).toBeUndefined();
+    expect(event!.source_tool).toBe('test');
   });
 });
 
