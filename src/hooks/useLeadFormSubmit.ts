@@ -224,16 +224,20 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       const firstName = nameParts[0] || undefined;
       const lastName = nameParts.slice(1).join(' ') || undefined;
 
-      await wmLead(
-        {
-          leadId: effectiveLeadId || '',
-          email: data.email,
-          phone: data.phone || undefined,
-          firstName,
-          lastName,
-        },
-        { source_tool: sourceTool },
-      );
+      try {
+        await wmLead(
+          {
+            leadId: effectiveLeadId || '',
+            email: data.email,
+            phone: data.phone || undefined,
+            firstName,
+            lastName,
+          },
+          { source_tool: sourceTool },
+        );
+      } catch (wmError) {
+        console.error('[useLeadFormSubmit] wmLead failed (non-blocking):', wmError);
+      }
 
       // Show success toast
       toast({
