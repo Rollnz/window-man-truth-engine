@@ -179,6 +179,7 @@ interface CapturedPixelRequest {
 
 let capturedPixelRequests: CapturedPixelRequest[] = [];
 let originalFetch: typeof fetch | null = null;
+let pixelObserver: MutationObserver | null = null;
 
 export function startPixelInterception(): void {
   capturedPixelRequests = [];
@@ -197,21 +198,23 @@ export function startPixelInterception(): void {
     };
   }
   
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
-        if (node instanceof HTMLImageElement) {
-          const src = node.src;
-          if (src.includes('facebook.com/tr/') || src.includes('facebook.com/tr?')) {
-            const parsed = parsePixelUrl(src);
-            capturedPixelRequests.push(parsed);
+  if (!pixelObserver) {
+    pixelObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof HTMLImageElement) {
+            const src = node.src;
+            if (src.includes('facebook.com/tr/') || src.includes('facebook.com/tr?')) {
+              const parsed = parsePixelUrl(src);
+              capturedPixelRequests.push(parsed);
+            }
           }
-        }
+        });
       });
     });
-  });
+    pixelObserver.observe(document.body, { childList: true, subtree: true });
+  }
   
-  observer.observe(document.body, { childList: true, subtree: true });
   console.log('[TrackingTest] Pixel interception started');
 }
 
@@ -219,6 +222,10 @@ export function stopPixelInterception(): void {
   if (originalFetch) {
     window.fetch = originalFetch;
     originalFetch = null;
+  }
+  if (pixelObserver) {
+    pixelObserver.disconnect();
+    pixelObserver = null;
   }
 }
 
@@ -402,8 +409,8 @@ export function quickDataLayerCheck(): void {
   });
 }
 
-// Export for global access in dev tools
-if (typeof window !== 'undefined') {
+// Export for global access in dev tools (dev-only)
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as unknown as Record<string, unknown>).trackingTest = {
     run: runTrackingVerificationTest,
     quickCheck: quickDataLayerCheck,

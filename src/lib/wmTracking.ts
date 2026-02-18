@@ -20,6 +20,8 @@
  */
 
 import { trackEvent, buildEnhancedUserData, generateEventId } from './gtm';
+import { getOrCreateClientId, getOrCreateSessionId } from './tracking';
+import { getLeadAnchor } from './leadAnchor';
 import type { EnhancedUserData } from './gtm';
 import type { QualificationData } from '@/components/LeadModalV2/types';
 
@@ -422,6 +424,12 @@ export function wmRetarget(
 ): void {
   const eventId = generateEventId();
 
+  // Auto-inject identity fields from page context
+  const client_id = typeof window !== 'undefined' ? getOrCreateClientId() : undefined;
+  const session_id = typeof window !== 'undefined' ? getOrCreateSessionId() : undefined;
+  const anchor = typeof window !== 'undefined' ? getLeadAnchor() : null;
+  const external_id = anchor || undefined;
+
   trackEvent(eventName, {
     event_id: eventId,
     meta: {
@@ -429,6 +437,9 @@ export function wmRetarget(
       category: 'rt' as WmEventCategory,
       wm_tracking_version: WM_TRACKING_VERSION,
     },
+    client_id,
+    session_id,
+    external_id,
     source_system: 'website',
     page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
     page_location: typeof window !== 'undefined' ? window.location.href : undefined,
