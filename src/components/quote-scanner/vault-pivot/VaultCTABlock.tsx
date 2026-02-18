@@ -71,7 +71,7 @@ export function VaultCTABlock({ onGoogleAuth, onEmailSubmit, isLoading = false }
         )}
         style={{ backgroundColor: "#D97706" }}
       >
-        ENTER YOUR SECURE VAULT
+        GET PREPARED FOR QUOTES
       </Button>
 
       {/* Email Fallback Toggle */}
