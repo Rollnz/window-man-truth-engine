@@ -13,7 +13,8 @@ import { useFormAbandonment } from '@/hooks/useFormAbandonment';
 import { useScore } from '@/contexts/ScoreContext';
 import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { getAttributionData } from '@/lib/attribution';
-import { trackFormSubmit, trackLeadSubmissionSuccess, generateEventId } from '@/lib/gtm';
+import { trackFormSubmit, generateEventId } from '@/lib/gtm';
+import { wmLead } from '@/lib/wmTracking';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
 import { supabase } from '@/integrations/supabase/client';
@@ -180,21 +181,11 @@ export function MissionInitiatedModal({
         }
       }
 
-      // Push Enhanced Conversion event with SHA-256 PII hashing (value: 100 USD)
-      await trackLeadSubmissionSuccess({
-        leadId: effectiveLeadId || '',
-        email: values.email,
-        phone: values.phone || undefined,
-        firstName,
-        lastName: lastName || undefined,
-        // Location data from sessionData if available
-        city: sessionData?.city || undefined,
-        state: sessionData?.state || undefined,
-        zipCode: sessionData?.zipCode || undefined,
-        sourceTool: 'beat-your-quote',
-        eventId: effectiveLeadId || '',
-        value: 100,
-      });
+      // Push wmLead conversion event
+      await wmLead(
+        { leadId: effectiveLeadId || '', email: values.email, phone: values.phone || undefined, firstName, lastName: lastName || undefined },
+        { source_tool: 'beat-your-quote' },
+      );
 
       toast({
         title: 'Mission Received!',

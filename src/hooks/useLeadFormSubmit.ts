@@ -12,7 +12,8 @@ import { toast } from '@/hooks/use-toast';
 import { useLeadIdentity } from './useLeadIdentity';
 import { useSessionData } from './useSessionData';
 import { getAttributionData, getFullAttributionData } from '@/lib/attribution';
-import { trackLeadCapture, trackFormSubmit, trackEvent, trackLeadSubmissionSuccess } from '@/lib/gtm';
+import { trackLeadCapture, trackFormSubmit, trackEvent } from '@/lib/gtm';
+import { wmLead } from '@/lib/wmTracking';
 import { getLeadQuality } from '@/lib/leadQuality';
 import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { setExplicitSubmission } from '@/lib/consent';
@@ -215,26 +216,24 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
       trackEvent('generate_lead', {
         lead_source: sourceTool,
         form_location: formLocation,
-        value: leadScore,
         lead_id: effectiveLeadId,
       });
 
-      // Push Enhanced Conversion event with SHA-256 PII hashing (value: 15 USD)
-      // Split name into firstName/lastName for LeadSubmissionSuccessInput
+      // Canonical OPT event: wm_lead ($10, hardcoded in wmTracking.ts)
       const nameParts = (normalizedName || '').trim().split(' ');
       const firstName = nameParts[0] || undefined;
       const lastName = nameParts.slice(1).join(' ') || undefined;
-      
-      await trackLeadSubmissionSuccess({
-        leadId: effectiveLeadId || '',
-        email: data.email,
-        phone: data.phone || undefined,
-        firstName,
-        lastName,
-        sourceTool,
-        eventId: effectiveLeadId || '',
-        value: 100,
-      });
+
+      await wmLead(
+        {
+          leadId: effectiveLeadId || '',
+          email: data.email,
+          phone: data.phone || undefined,
+          firstName,
+          lastName,
+        },
+        { source_tool: sourceTool },
+      );
 
       // Show success toast
       toast({

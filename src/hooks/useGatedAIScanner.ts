@@ -11,8 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
-import { trackEvent, trackModalOpen, trackQuoteUploadSuccess } from '@/lib/gtm';
-import { trackScannerUpload } from '@/lib/tracking/scannerUpload';
+import { trackEvent, trackModalOpen } from '@/lib/gtm';
+import { wmScannerUpload } from '@/lib/wmTracking';
 import { useCanonicalScore } from '@/hooks/useCanonicalScore';
 import { logScannerCompleted } from '@/lib/highValueSignals';
 import type { QuoteAnalysisResult } from '@/hooks/useQuoteScanner';
@@ -295,15 +295,11 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
       // 4. Compress and analyze
       const { base64, mimeType } = await compressImage(state.file);
 
-      trackScannerUpload({
-        scanAttemptId: state.scanAttemptId || '',
-        sourceTool: 'quote-scanner',
-        fileName: state.file.name,
-        fileSize: state.file.size,
-        fileType: state.file.type,
-        leadId: capturedLeadId || undefined,
-        sessionId,
-      });
+      await wmScannerUpload(
+        { email: data.email, phone: data.phone, leadId: capturedLeadId || undefined },
+        state.scanAttemptId || '',
+        { source_tool: 'quote-scanner' },
+      );
 
       const { data: analysisData, error: requestError } = await heavyAIRequest.sendRequest<QuoteAnalysisResult & { error?: string }>(
         'quote-scanner',
@@ -341,13 +337,11 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
           sourceEntityType: 'quote',
           sourceEntityId: state.scanAttemptId,
         });
-        await trackQuoteUploadSuccess({
-          scanAttemptId: state.scanAttemptId,
-          email: data.email,
-          phone: data.phone,
-          leadId: capturedLeadId || undefined,
-          sourceTool: 'quote-scanner',
-        });
+        await wmScannerUpload(
+          { email: data.email, phone: data.phone, leadId: capturedLeadId || undefined },
+          state.scanAttemptId,
+          { source_tool: 'quote-scanner' },
+        );
       }
 
       await logScannerCompleted({

@@ -6,7 +6,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ROUTES } from "@/config/navigation";
 import { getAttributionData } from "@/lib/attribution";
-import { trackLeadCapture, trackLeadSubmissionSuccess } from "@/lib/gtm";
+import { trackLeadCapture } from "@/lib/gtm";
+import { wmLead } from "@/lib/wmTracking";
 import { getLeadQuality } from "@/lib/leadQuality";
 import { RateLimitError } from "@/lib/errors";
 import { callGemini } from "@/utils/geminiHelper";
@@ -284,16 +285,10 @@ export function useQuoteBuilder(): UseQuoteBuilderReturn {
         const firstName = nameParts[0] || undefined;
         const lastName = nameParts.slice(1).join(' ') || undefined;
         
-        await trackLeadSubmissionSuccess({
-          leadId: result.leadId,
-          email: data.email.trim(),
-          phone: data.phone?.trim(),
-          firstName,
-          lastName,
-          sourceTool: 'quote-builder',
-          eventId: result.leadId,
-          value: 100,
-        });
+        await wmLead(
+          { leadId: result.leadId, email: data.email.trim(), phone: data.phone?.trim(), firstName, lastName },
+          { source_tool: 'quote-builder' },
+        );
 
         return result.leadId;
 

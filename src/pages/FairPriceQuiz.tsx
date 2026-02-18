@@ -12,7 +12,8 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
-import { trackEvent, trackLeadCapture, trackToolCompletion, trackLeadSubmissionSuccess } from '@/lib/gtm';
+import { trackEvent, trackLeadCapture, trackToolCompletion } from '@/lib/gtm';
+import { wmLead } from '@/lib/wmTracking';
 import { supabase } from '@/integrations/supabase/client';
 import { getAttributionData, getLastNonDirectAttribution } from '@/lib/attribution';
 import { getOrCreateSessionId } from '@/lib/tracking';
@@ -194,16 +195,10 @@ export default function FairPriceQuiz() {
             hasProjectDetails: !!quizAnswers.windowCount,
           }
         ),
-        trackLeadSubmissionSuccess({
-          leadId: newLeadId,
-          email,
-          phone: phoneDigits || undefined,
-          firstName,
-          lastName: lastName || undefined,
-          sourceTool: 'fair-price-quiz',
-          eventId: newLeadId,
-          value: 100,
-        }),
+        wmLead(
+          { leadId: newLeadId, email, phone: phoneDigits || undefined, firstName, lastName: lastName || undefined },
+          { source_tool: 'fair-price-quiz' },
+        ),
       ]);
 
       // Track tool completion with delta value for value-based bidding

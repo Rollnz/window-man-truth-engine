@@ -25,7 +25,7 @@
 
 import { useCallback } from 'react';
 import { useSessionData } from './useSessionData';
-import { trackEvent } from '@/lib/gtm';
+import { wmRetarget } from '@/lib/wmTracking';
 import { getToolDeltaConfig } from '@/config/toolDeltaValues';
 import { getEngagementScore } from '@/services/analytics';
 import { createToolEventId, isToolEventTracked, markToolEventTracked } from '@/lib/eventDeduplication';
@@ -94,9 +94,8 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
     // Create deterministic event ID for this tool completion
     const eventId = createToolEventId(toolId, 'completed');
     
-    // Fire the conversion value event with full context
-    trackEvent(config.eventName, {
-      value: Math.max(0, Math.min(500, config.deltaValue)),
+    // Fire retargeting event (no value/currency — audience building only)
+    wmRetarget(config.eventName, {
       lead_id: sessionData.leadId,
       source_tool: toolId,
       event_id: eventId,
@@ -163,9 +162,8 @@ export function useTrackToolCompletion(): UseTrackToolCompletionReturn {
     // Create deterministic event ID
     const eventId = createToolEventId(toolId, 'enhanced_match');
     
-    // Fire identity linking event (no additional delta value)
-    trackEvent('enhanced_match', {
-      value: 0,
+    // Fire identity linking event (retargeting — no value/currency)
+    wmRetarget('enhanced_match', {
       lead_id: sessionData.leadId,
       source_tool: toolId,
       event_id: eventId,

@@ -11,8 +11,9 @@
  */
 
 import { generateSecureUUID } from './secureUUID';
-import { 
-  trackLeadSubmissionSuccess, 
+import { wmLead } from './wmTracking';
+import {
+  trackLeadSubmissionSuccess, // @deprecated - used only in this verification test utility
   buildEnhancedUserData,
   generateEventId,
   sha256,
@@ -338,6 +339,7 @@ export async function runTrackingVerificationTest(): Promise<TrackingVerificatio
   
   // 4. Trigger lead_submission_success event
   console.log('\n[4/5] Triggering lead_submission_success event...');
+  // TODO: Migrate to wmLead once legacy events are fully removed
   await trackLeadSubmissionSuccess({
     leadId: testLead.leadId,
     email: testLead.email,

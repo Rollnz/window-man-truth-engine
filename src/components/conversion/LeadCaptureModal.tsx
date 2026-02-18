@@ -11,7 +11,8 @@ import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useFormAbandonment } from '@/hooks/useFormAbandonment';
 import { useCanonicalScore, getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { Mail, Check, Loader2, Lock, CheckCircle2, Phone } from 'lucide-react';
-import { trackEvent, trackModalOpen, trackLeadSubmissionSuccess, trackFormStart, trackLeadCapture, generateEventId } from '@/lib/gtm';
+import { trackEvent, trackModalOpen, trackFormStart, trackLeadCapture, generateEventId } from '@/lib/gtm';
+import { wmLead } from '@/lib/wmTracking';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
 import { getAttributionData, buildAIContextFromSession } from '@/lib/attribution';
@@ -233,21 +234,11 @@ export function LeadCaptureModal({
           }
         );
 
-        // Push Enhanced Conversion event to dataLayer with SHA-256 PII hashing (value: 100 USD)
-        await trackLeadSubmissionSuccess({
-          leadId: data.leadId,
-          email: values.email.trim(),
-          phone: values.phone.trim() || undefined,
-          firstName: normalizedNames.firstName,
-          lastName: normalizedNames.lastName || undefined,
-          // Location data from sessionData if available
-          city: sessionData.city || undefined,
-          state: sessionData.state || undefined,
-          zipCode: sessionData.zipCode || undefined,
-          sourceTool,
-          eventId: data.leadId,
-          value: 100,
-        });
+        // Push wmLead conversion event
+        await wmLead(
+          { leadId: data.leadId, email: values.email.trim(), phone: values.phone.trim() || undefined, firstName: normalizedNames.firstName, lastName: normalizedNames.lastName || undefined },
+          { source_tool: sourceTool },
+        );
 
         toast({
           title: 'Conversation Saved!',

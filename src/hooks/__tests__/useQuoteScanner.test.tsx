@@ -50,12 +50,8 @@ vi.mock('@/lib/highValueSignals', () => ({
   logScannerCompleted: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/lib/tracking/scannerUpload', () => ({
-  trackScannerUpload: vi.fn(),
-}));
-
-vi.mock('@/lib/gtm', () => ({
-  trackQuoteUploadSuccess: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/lib/wmTracking', () => ({
+  wmScannerUpload: vi.fn().mockResolvedValue('upload:test-scan-id'),
 }));
 
 vi.mock('@/lib/errors', () => ({
@@ -66,8 +62,7 @@ vi.mock('@/lib/errors', () => ({
 
 // Import mocked modules
 import { heavyAIRequest } from '@/lib/aiRequest';
-import { trackScannerUpload } from '@/lib/tracking/scannerUpload';
-import { trackQuoteUploadSuccess } from '@/lib/gtm';
+import { wmScannerUpload } from '@/lib/wmTracking';
 import { logScannerCompleted } from '@/lib/highValueSignals';
 
 const mockSendRequest = heavyAIRequest.sendRequest as ReturnType<typeof vi.fn>;
@@ -138,7 +133,7 @@ describe('useQuoteScanner', () => {
       expect(result.current.isAnalyzing).toBe(true);
     });
 
-    it('calls trackScannerUpload on file upload', async () => {
+    it('calls wmScannerUpload on file upload', async () => {
       const { result } = renderHook(() => useQuoteScanner());
       const mockFile = new File(['test'], 'quote.pdf', { type: 'application/pdf' });
 
@@ -146,13 +141,14 @@ describe('useQuoteScanner', () => {
         await result.current.analyzeQuote(mockFile);
       });
 
-      expect(trackScannerUpload).toHaveBeenCalledWith(
+      expect(wmScannerUpload).toHaveBeenCalledWith(
         expect.objectContaining({
-          sourceTool: 'quote-scanner',
-          fileName: 'quote.pdf',
-          fileSize: mockFile.size,
-          fileType: 'application/pdf',
-        })
+          leadId: expect.any(String),
+        }),
+        expect.any(String), // scanAttemptId
+        expect.objectContaining({
+          source_tool: 'quote-scanner',
+        }),
       );
     });
 
@@ -204,7 +200,7 @@ describe('useQuoteScanner', () => {
       });
 
       expect(logScannerCompleted).toHaveBeenCalled();
-      expect(trackQuoteUploadSuccess).toHaveBeenCalled();
+      expect(wmScannerUpload).toHaveBeenCalled();
     });
 
     it('sets isAnalyzing to false after completion', async () => {

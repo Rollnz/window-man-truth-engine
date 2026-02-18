@@ -5,7 +5,8 @@ import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLeadSuppression } from '@/hooks/forms/useLeadSuppression';
-import { trackLeadCapture, trackLeadSubmissionSuccess, trackEvent } from '@/lib/gtm';
+import { trackLeadCapture, trackEvent } from '@/lib/gtm';
+import { wmLead, wmRetarget, wmInternal, wmQualifiedLead, qualifiesForQualifiedLead } from '@/lib/wmTracking';
 import { getOrCreateClientId } from '@/lib/tracking';
 import { getOrCreateSessionId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
@@ -267,17 +268,10 @@ export function PreQuoteLeadModalV2({
               data.phone,
               { hasName: true, hasPhone: true }
             ),
-            trackLeadSubmissionSuccess({
-              leadId: newLeadId,
-              email: data.email,
-              phone: data.phone.replace(/\D/g, ''),
-              firstName: data.firstName,
-              lastName: data.lastName,
-              sourceTool: resolvedContextConfig.sourceTool,
-              // Deduplication guard: keep browser event_id == leadId for parity with server CAPI.
-              eventId: newLeadId,
-              value: resolvedContextConfig.leadValue,
-            }),
+            wmLead(
+              { leadId: newLeadId, email: data.email, phone: data.phone.replace(/\D/g, ''), firstName: data.firstName, lastName: data.lastName },
+              { source_tool: resolvedContextConfig.sourceTool },
+            ),
           ]).catch((err) =>
             console.warn('[V2] Non-fatal tracking error:', err)
           );
@@ -334,25 +328,21 @@ export function PreQuoteLeadModalV2({
     currentLeadId: string
   ) => {
     if (segment === 'HOT') {
-      trackEvent('Lead_HighIntent', {
+      wmRetarget('wm_lead_highintent_rt', {
         lead_id: currentLeadId,
         lead_score: score,
         lead_segment: segment,
         source: `prequote-v2:${contextKey}`,
-        value: 150,
-        currency: 'USD',
       });
     } else if (segment === 'WARM') {
-      trackEvent('Lead_MidIntent', {
+      wmRetarget('wm_lead_midintent_rt', {
         lead_id: currentLeadId,
         lead_score: score,
         lead_segment: segment,
         source: `prequote-v2:${contextKey}`,
-        value: 50,
-        currency: 'USD',
       });
     } else {
-      trackEvent(`Lead_${segment}`, {
+      wmInternal(`Lead_${segment}`, {
         lead_id: currentLeadId,
         lead_score: score,
         lead_segment: segment,
@@ -462,6 +452,14 @@ export function PreQuoteLeadModalV2({
 
           // Fire segment-specific GTM events (ONLY after PATCH)
           fireSegmentEvents(result.segment, result.score, leadId);
+
+          // Check if lead qualifies for wmQualifiedLead
+          if (qualifiesForQualifiedLead(finalQualification)) {
+            wmQualifiedLead(
+              { leadId, email: contactData?.email, phone: contactData?.phone, firstName: contactData?.firstName, lastName: contactData?.lastName },
+              { source_tool: 'prequote-v2' },
+            ).catch((err) => console.warn('[V2] wmQualifiedLead non-fatal error:', err));
+          }
 
           // Enqueue phone call for HOT leads (fire-and-forget)
           enqueuePhoneCallIfEligible(

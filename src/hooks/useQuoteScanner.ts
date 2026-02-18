@@ -6,8 +6,7 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
 import { logScannerCompleted } from '@/lib/highValueSignals';
-import { trackScannerUpload } from '@/lib/tracking/scannerUpload';
-import { trackQuoteUploadSuccess } from '@/lib/gtm';
+import { wmScannerUpload } from '@/lib/wmTracking';
 import { useCanonicalScore } from '@/hooks/useCanonicalScore';
 import { ForensicSummary, ExtractedIdentity } from '@/types/audit';
 
@@ -166,15 +165,11 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
       setMimeType(mt);
 
       // 🎯 FIRE ScannerUpload dataLayer event IMMEDIATELY after upload accepted, before AI call
-      trackScannerUpload({
+      await wmScannerUpload(
+        { email: sessionData.email, phone: sessionData.phone, leadId: leadId || undefined },
         scanAttemptId,
-        sourceTool: 'quote-scanner',
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        leadId: leadId || undefined,
-        sessionId,
-      });
+        { source_tool: 'quote-scanner' },
+      );
       
       const { data, error: requestError } = await heavyAIRequest.sendRequest<QuoteAnalysisResult & { error?: string }>(
         'quote-scanner',
@@ -232,13 +227,11 @@ export function useQuoteScanner(): UseQuoteScannerReturn {
         // GTM: Fire $50 conversion signal for Meta value-based bidding
         // Uses deterministic event_id: quote_uploaded:<scanAttemptId>
         // Must await to ensure GTM dispatch before any navigation/unmount
-        await trackQuoteUploadSuccess({
+        await wmScannerUpload(
+          { email: sessionData.email || undefined, phone: sessionData.phone || undefined, leadId: leadId || undefined },
           scanAttemptId,
-          email: sessionData.email || undefined,
-          phone: sessionData.phone || undefined,
-          leadId: leadId || undefined,
-          sourceTool: 'quote-scanner',
-        });
+          { source_tool: 'quote-scanner' },
+        );
       }
       
     } catch (err) {

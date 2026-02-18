@@ -8,7 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useScore } from '@/contexts/ScoreContext';
-import { trackLeadSubmissionSuccess, trackEvent } from '@/lib/gtm';
+import { trackEvent } from '@/lib/gtm';
+import { wmLead } from '@/lib/wmTracking';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
 import { normalizeNameFields } from '@/components/ui/NameInputPair';
@@ -112,16 +113,11 @@ export function ScannerLeadCaptureModal({
         updateField('firstName', firstName);
         updateField('lastName', lastName);
 
-        // Track lead capture - trackLeadSubmissionSuccess handles all hashing internally
-        await trackLeadSubmissionSuccess({
-          leadId,
-          email: data.email,
-          firstName,
-          lastName,
-          sourceTool: 'quote-scanner',
-          eventId: leadId,
-          value: 100, // High-value scanner lead
-        });
+        // Track lead capture via wmLead
+        await wmLead(
+          { leadId, email: data.email, firstName, lastName },
+          { source_tool: 'quote-scanner' },
+        );
 
         // Award Truth Engine points
         try {

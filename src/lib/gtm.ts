@@ -16,6 +16,7 @@ declare global {
 // ═══════════════════════════════════════════════════════════════════════════
 
 import type { SourceTool } from '@/types/sourceTool';
+import { wmLead, wmQualifiedLead, wmScannerUpload, wmAppointmentBooked, wmSold, wmRetarget, wmInternal } from './wmTracking';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { calculateLeadScore, getRoutingAction, getCRMTags } from '@/lib/leadScoringEngine';
 import { buildEventMetadata, buildGTMEvent, type EventMetadataInput } from './eventMetadataHelper';
@@ -534,8 +535,9 @@ export interface LeadSubmissionSuccessInput {
 }
 
 /**
+ * @deprecated Use wmLead from @/lib/wmTracking
  * Track lead submission success with FULL Enhanced Conversions
- * 
+ *
  * OPTION A IMPLEMENTATION: Payload Parity with lead_captured
  * 
  * This function fires the `lead_submission_success` event which triggers
@@ -677,8 +679,9 @@ export interface QuoteUploadSuccessInput {
 }
 
 /**
+ * @deprecated Use wmScannerUpload from @/lib/wmTracking
  * Track quote upload success with Enhanced Conversions
- * 
+ *
  * VALUE: $50 (high-intent signal - user uploaded a quote for analysis)
  * EVENT NAME: quote_upload_success (separate from lead_submission_success)
  * 
@@ -781,11 +784,12 @@ export const trackQuoteUploadSuccess = async (params: QuoteUploadSuccessInput): 
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
+ * @deprecated Use wmQualifiedLead from @/lib/wmTracking
  * Track phone lead capture with Enhanced Conversions
- * 
+ *
  * ENHANCED: Async SHA-256 PII hashing with E.164 phone normalization
  * Value: $25 (higher intent than email-only leads)
- * 
+ *
  * CRITICAL: Only hashed PII is pushed to dataLayer - raw PII never appears
  */
 export const trackPhoneLead = async (params: {
@@ -843,11 +847,12 @@ export const trackPhoneLead = async (params: {
 };
 
 /**
+ * @deprecated Use wmLead or wmAppointmentBooked from @/lib/wmTracking
  * Track consultation booked with Enhanced Conversions
- * 
+ *
  * ENHANCED: Async SHA-256 PII hashing
  * Value: $50 (high-intent conversion)
- * 
+ *
  * CRITICAL: Only hashed PII is pushed to dataLayer - raw PII never appears
  */
 export const trackConsultationBooked = async (params: {
@@ -907,11 +912,12 @@ export const trackConsultationBooked = async (params: {
 };
 
 /**
+ * @deprecated Use wmAppointmentBooked from @/lib/wmTracking
  * Track booking confirmed with Enhanced Conversions
- * 
+ *
  * ENHANCED: Async SHA-256 PII hashing
  * Value: $75 (highest conversion value tier)
- * 
+ *
  * CRITICAL: Only hashed PII is pushed to dataLayer - raw PII never appears
  */
 export const trackBookingConfirmed = async (params: {
@@ -1122,6 +1128,7 @@ export const trackVaultActivation = (params?: {
 };
 
 /**
+ * @deprecated Use wmSold from @/lib/wmTracking
  * Track offline conversion (CRM status updates)
  */
 export const trackOfflineConversion = (params: {
@@ -1265,11 +1272,20 @@ export interface TruthEngine {
   getFbp: typeof getFbp;
   getFbc: typeof getFbc;
   
-  // High-value conversion tracking
+  // High-value conversion tracking (legacy — deprecated)
   trackLeadSubmissionSuccess: typeof trackLeadSubmissionSuccess;
   trackPhoneLead: typeof trackPhoneLead;
   trackConsultationBooked: typeof trackConsultationBooked;
   trackBookingConfirmed: typeof trackBookingConfirmed;
+
+  // Canonical wmTracking functions
+  wmLead: typeof wmLead;
+  wmQualifiedLead: typeof wmQualifiedLead;
+  wmScannerUpload: typeof wmScannerUpload;
+  wmAppointmentBooked: typeof wmAppointmentBooked;
+  wmSold: typeof wmSold;
+  wmRetarget: typeof wmRetarget;
+  wmInternal: typeof wmInternal;
   
   // General tracking
   trackEvent: typeof trackEvent;
@@ -1300,11 +1316,19 @@ export function installTruthEngine(): void {
     isAlreadyHashed,
     getFbp,
     getFbc,
-    // High-value conversion tracking
+    // High-value conversion tracking (legacy — deprecated)
     trackLeadSubmissionSuccess,
     trackPhoneLead,
     trackConsultationBooked,
     trackBookingConfirmed,
+    // Canonical wmTracking functions
+    wmLead,
+    wmQualifiedLead,
+    wmScannerUpload,
+    wmAppointmentBooked,
+    wmSold,
+    wmRetarget,
+    wmInternal,
     // General tracking
     trackEvent,
     trackLeadCapture,

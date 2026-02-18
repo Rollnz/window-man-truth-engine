@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NameInputPair, normalizeNameFields } from "@/components/ui/NameInputPair";
 import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
-import { trackLeadSubmissionSuccess, generateEventId } from "@/lib/gtm";
+import { generateEventId } from "@/lib/gtm";
+import { wmLead } from "@/lib/wmTracking";
 import { getOrCreateClientId, getOrCreateSessionId } from "@/lib/tracking";
 import { getLeadAnchor } from "@/lib/leadAnchor";
 import type { LeadModalProps, LeadFormData } from "@/types/quote-builder";
@@ -85,16 +86,10 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
         },
       });
       
-      await trackLeadSubmissionSuccess({
-        leadId,
-        email: values.email,
-        phone: values.phone || undefined,
-        firstName,
-        lastName: lastName || undefined,
-        sourceTool: 'quote-builder',
-        eventId: leadId,
-        value: 100,
-      });
+      await wmLead(
+        { leadId, email: values.email, phone: values.phone || undefined, firstName, lastName: lastName || undefined },
+        { source_tool: 'quote-builder' },
+      );
     }
   };
 
