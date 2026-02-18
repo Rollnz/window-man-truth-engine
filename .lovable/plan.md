@@ -1,68 +1,79 @@
 
 
-# Update EMQ Validator to Match wmTracking Canonical Events
+# Refactor Full-Funnel Audit to Canonical wmTracking Events
 
 ## Problem
-The `emqValidator.ts` file still references deprecated event names (`lead_submission_success`, `lead_captured`, etc.) and their old dollar values. This causes:
-- The EMQ Validator Overlay to silently ignore all 5 canonical `wm_` events
-- The "Run Test" button's `wm_lead` event to never appear in the validator
-- Value/currency checks to fail (expecting $100 instead of $10 for leads)
+
+`src/lib/fullFunnelTrackingAudit.ts` fires 6 legacy events (`lead_form_opened`, `scanner_upload`, `quote_upload_success`, `call_initiated`, `engagement_score`, `lead_submission_success`) with wrong values and bypasses the `wmTracking.ts` firewall entirely. The UI page (`src/pages/admin/FullFunnelAudit.tsx`) references these legacy event names in its icon map and descriptions.
+
+## Solution
+
+Replace the entire audit engine to fire the 5 canonical OPT events through `wmTracking.ts` functions directly, and update the UI to match.
 
 ## Files to Change
 
-### 1. `src/lib/emqValidator.ts` (the only file that needs modification)
+### 1. `src/lib/fullFunnelTrackingAudit.ts` (major rewrite)
 
-**A. Replace `EXPECTED_VALUES` with canonical wmTracking values:**
+**A. Replace META_EVENTS constant** -- from 6 legacy events to 5 canonical OPT events:
 
-```
-Before:
-  lead_submission_success: 100
-  lead_captured: 15
-  phone_lead: 25
-  consultation_booked: 75
-  booking_confirmed: 75
+| Event | Value | Meta Tag |
+|-------|-------|----------|
+| `wm_lead` | $10 | Lead |
+| `wm_qualified_lead` | $100 | QualifiedLead |
+| `wm_scanner_upload` | $500 | ScannerUpload |
+| `wm_appointment_booked` | $1,000 | Schedule |
+| `wm_sold` | $5,000 | Purchase |
 
-After:
-  wm_lead: 10
-  wm_qualified_lead: 100
-  wm_scanner_upload: 500
-  wm_appointment_booked: 1000
-  wm_sold: 5000
-```
+**B. Replace 6 individual fire functions** with calls to the canonical wmTracking emitters:
 
-**B. Replace `CONVERSION_EVENTS` array:**
+- `wmLead(identity, context)` instead of `fireLeadFormOpened` + `fireLeadSubmissionSuccess`
+- `wmQualifiedLead(identity, context)` instead of `fireCallInitiated`
+- `wmScannerUpload(identity, scanAttemptId, context)` instead of `fireScannerUpload` + `fireQuoteUploadSuccess`
+- `wmAppointmentBooked(identity, appointmentKey, context)` instead of `fireEngagementScore`
+- `wmSold(identity, saleAmount, dealKey, context)` -- new, no legacy equivalent
 
-```
-Before:
-  ['lead_submission_success', 'lead_captured', 'phone_lead',
-   'consultation_booked', 'booking_confirmed']
+Before each call, reset the relevant dedupe guards (`_resetWmLeadGuard`, `_resetScannerUploadGuard`, `_resetSessionGuards`) so the audit can fire cleanly on every run.
 
-After:
-  ['wm_lead', 'wm_qualified_lead', 'wm_scanner_upload',
-   'wm_appointment_booked', 'wm_sold']
-```
+**C. Update validation checks** to verify:
+- `event_id` matches deterministic format (`lead:{uuid}`, `ql:{uuid}`, `upload:{uuid}`, etc.)
+- `meta.category === 'opt'` and `meta.send === true`
+- `client_id` and `session_id` are present at root level
+- `value` and `currency` match expected OPT values
+- All `user_data` hashed PII fields (em, ph, fn, ln, ct, st, zp)
 
-**C. Add `client_id` and `session_id` validation** as two new check rows in `validateEMQEvent()`, increasing `totalChecks` from 5 to 7. These are bonus checks (passed = true when present, not penalized when absent) so existing HIGH scores are preserved.
+**D. Update EventAuditResult interface** to add:
+- `hasClientId: boolean`
+- `hasSessionId: boolean`
+- `hasMetaCategory: boolean`
+- `hasMetaSend: boolean`
 
-### 2. No other files change
-- `trackingVerificationTest.ts` -- already correct (targets `wm_lead`, expects $10)
-- `EMQValidatorOverlay.tsx` -- no code changes needed; it calls `isConversionEvent()` which will automatically start matching `wm_` events after the fix
-- `wmTracking.ts` -- untouched
+**E. Remove** all legacy fire functions (`fireLeadFormOpened`, `fireScannerUpload`, `fireQuoteUploadSuccess`, `fireCallInitiated`, `fireEngagementScore`, `fireLeadSubmissionSuccess`).
+
+**F. Update scoring** -- max score per event adjusted to include identity checks (client_id, session_id) and meta firewall checks (meta.category, meta.send), bringing the total check count to ~14 per event.
+
+### 2. `src/pages/admin/FullFunnelAudit.tsx` (UI updates)
+
+**A. Update EVENT_ICONS** map keys from legacy names to `wm_lead`, `wm_qualified_lead`, `wm_scanner_upload`, `wm_appointment_booked`, `wm_sold`.
+
+**B. Update copy**: "5 OPT conversion events" instead of "6 Meta conversion events". Update descriptions and button text.
+
+**C. Add validation columns** in the per-event accordion for `client_id`, `session_id`, `meta.category`, and `meta.send`.
 
 ## Implementation Order
-1. Update `EXPECTED_VALUES` and `CONVERSION_EVENTS` constants
-2. Add identity field checks to `validateEMQEvent()`
-3. Verify no test files import the old constants by name (they don't -- tests use wmTracking directly)
 
-## Potential Challenges
-- The `FullFunnelAudit.tsx` page has an icon map referencing `lead_submission_success` -- this is cosmetic only (icon lookup) and unrelated to validation logic, so it won't break. It can be cleaned up separately.
-- The legacy bridge in `wmTracking.ts` still fires `lead_submission_success` as an RT event. The updated validator will correctly ignore it (RT events are not in `CONVERSION_EVENTS`), which is the desired behavior.
+1. Rewrite `fullFunnelTrackingAudit.ts` -- constants, imports, fire logic, validation, scoring
+2. Update `FullFunnelAudit.tsx` -- icon map, copy, validation display
+3. Both files are self-contained; no other files change
 
 ## What Success Looks Like
-After this change:
-- Submitting a lead form fires `wm_lead`
-- The EMQ Validator Overlay auto-opens and shows the event with score HIGH (5/5 or 7/7)
-- The tracking test page reports PASS with projected EMQ 9.5+
-- Value shows $10 USD (not $100)
-- `client_id` and `session_id` presence is validated
+
+- Click "Run Audit" and see 5 events in the Data Layer
+- Each event has deterministic `event_id`, correct `value`/`currency`, `meta.category: 'opt'`, `client_id`, `session_id`
+- Overall score reflects the new 5-event OPT ladder
+- No TypeScript errors, no changes to `wmTracking.ts` or `gtm.ts`
+
+## Potential Challenges
+
+- **Dedupe guards will block re-runs**: The wmTracking functions deduplicate by leadId/scanAttemptId. The solution is to call the test-only reset utilities (`_resetWmLeadGuard`, `_resetScannerUploadGuard`, `_resetSessionGuards`) before firing each event sequence. These are already exported from `wmTracking.ts` for exactly this purpose.
+- **wm_sold needs a sale amount**: Will use a fixed test value (e.g., $15,000) so `value` = $5,000 + $15,000 = $20,000.
 
