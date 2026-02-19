@@ -33,7 +33,7 @@ const DialogContent = React.forwardRef<React.ElementRef<typeof DialogPrimitive.C
       )}
     </DialogPrimitive.Content>
   </DialogPortal>);
-DialogContent.displayName = DialogPrimitive.Content.displayName;
+DialogContent.displayName = "DialogContent";
 const DialogHeader = ({
   className,
   ...props

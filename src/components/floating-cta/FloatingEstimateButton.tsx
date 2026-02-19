@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, forwardRef } from 'react';
 import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { EstimateSlidePanel } from './EstimateSlidePanel';
 import { cn } from '@/lib/utils';
@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
  * Appears in the bottom-right corner and syncs with the mobile sticky footer's
  * scroll hide/show behavior. Opens a slide-in panel for estimate requests.
  */
-export function FloatingEstimateButton() {
+export const FloatingEstimateButton = forwardRef<HTMLButtonElement>((props, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [hasEntered, setHasEntered] = useState(false);
@@ -76,6 +76,7 @@ export function FloatingEstimateButton() {
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <button
+            ref={ref}
             className={cn(
               // Positioning - above mobile footer, normal on desktop
               'fixed right-4 z-50',
@@ -120,4 +121,6 @@ export function FloatingEstimateButton() {
       </Sheet>
     </>
   );
-}
+});
+
+FloatingEstimateButton.displayName = "FloatingEstimateButton";
