@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
  * Appears in the bottom-right corner and syncs with the mobile sticky footer's
  * scroll hide/show behavior. Opens a slide-in panel for estimate requests.
  */
-export const FloatingEstimateButton = forwardRef<HTMLButtonElement>((props, ref) => {
+export const FloatingEstimateButton = forwardRef<HTMLButtonElement, Record<string, never>>((_props, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [hasEntered, setHasEntered] = useState(false);
