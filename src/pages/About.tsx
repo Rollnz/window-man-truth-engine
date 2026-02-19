@@ -15,8 +15,6 @@ import {
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 import { Button } from "@/components/ui/button";
-import { ConversionBar } from "@/components/conversion/ConversionBar";
-import { CommunityImpact } from "@/components/authority/CommunityImpact";
 import { ROUTES } from "@/config/navigation";
 import { getAboutPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 import { REVIEW_BOARD } from "@/config/expertIdentity";
