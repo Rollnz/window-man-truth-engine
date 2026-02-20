@@ -14,7 +14,7 @@
 // 7. Fat-finger safety: min-h-[48px] buttons, mt-6 + border-t + pt-4 for decline
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { X, DollarSign, Bell, FileText, ArrowLeft } from 'lucide-react';
+import { X, ArrowLeft, ShieldCheck, AlertTriangle, FileText } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,6 @@ import { trackEvent, generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
 import type { SourceTool } from '@/types/sourceTool';
-import { FormSurfaceProvider } from '@/components/forms/FormSurfaceProvider';
 import { scheduleWhenIdle } from '@/lib/deferredInit';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -116,13 +115,13 @@ function WindowCountSelector({ value, onChange, error }: WindowCountSelectorProp
 
   return (
     <div className="space-y-2">
-      <label id="window-count-label" className="text-sm font-semibold text-slate-900">
-        How many windows?
+      <label id="window-count-label" className="text-sm font-semibold text-slate-300">
+        Scope of Project (Window Count)
       </label>
       <div
         role="radiogroup"
         aria-labelledby="window-count-label"
-        className="grid grid-cols-2 gap-2 md:flex md:gap-2"
+        className="grid grid-cols-2 gap-2"
       >
         {WINDOW_COUNT_OPTIONS.map((opt, index) => {
           const isSelected = value === opt.value;
@@ -137,11 +136,11 @@ function WindowCountSelector({ value, onChange, error }: WindowCountSelectorProp
               onClick={() => onChange(opt.value)}
               onKeyDown={(e) => handleKeyDown(e, index)}
               className={`
-                flex-1 py-3 px-4 rounded-lg border text-sm font-medium transition-colors
-                min-h-[48px] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
+                flex-1 py-3 px-4 rounded-lg border text-sm font-bold transition-all
+                min-h-[48px] focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-[hsl(220,20%,11%)]
                 ${isSelected
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-slate-700 border-gray-300 hover:border-primary'
+                  ? 'bg-cyan-900/40 text-cyan-300 border-cyan-500 shadow-[0_0_10px_rgba(8,145,178,0.2)]'
+                  : 'bg-[hsl(220,25%,8%)] text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200'
                 }
               `}
             >
@@ -684,6 +683,15 @@ export function ExitIntentModal({
   };
 
   // ─────────────────────────────────────────────────────────────────────────
+  // STEP TRACKER DATA
+  // ─────────────────────────────────────────────────────────────────────────
+  const stepTrackerItems = [
+    { number: 1, title: 'Pricing Intelligence', desc: 'Access verified local installation data.', key: 'insider_price' as GauntletStep },
+    { number: 2, title: 'Storm Sentinel', desc: 'Real-time alerts on supply chain delays.', key: 'storm_sentinel' as GauntletStep },
+    { number: 3, title: 'Defense Protocol', desc: 'The 3-question cheat sheet against high-pressure sales.', key: 'kitchen_table' as GauntletStep },
+  ];
+
+  // ─────────────────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────
   if (!isOpen) return null;
@@ -692,271 +700,367 @@ export function ExitIntentModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="gauntlet-title"
     >
+      {/* MODAL CONTAINER — Split Pane */}
       <div
         className={`
-          relative w-full max-w-md bg-white dark:bg-white rounded-xl border-t-4 border-primary shadow-2xl
+          relative w-full max-w-4xl rounded-2xl overflow-hidden
+          bg-[hsl(220,25%,7%)] border border-[hsl(200,60%,25%/0.3)]
+          shadow-[0_30px_80px_rgba(0,0,0,0.6)]
           animate-in fade-in slide-in-from-right-4 duration-300
-          max-h-[90vh] overflow-y-auto
-          ${currentStep === 'insider_price' ? 'p-6 sm:p-8' : ''}
-          ${currentStep === 'storm_sentinel' ? 'p-5 sm:p-7' : ''}
-          ${currentStep === 'kitchen_table' ? 'p-4 sm:p-6' : ''}
+          max-h-[90vh] flex flex-col md:flex-row
         `}
       >
-      {/* FormSurfaceProvider wraps all form content for trust styling */}
-      <FormSurfaceProvider surface="trust">
-        {/* Close button */}
-        <button
-          onClick={() => handleClose('user_closed')}
-          className="absolute top-4 right-4 p-1 rounded-full hover:bg-muted transition-colors"
-          aria-label="Close modal"
-        >
-          <X className="w-5 h-5 text-muted-foreground" />
-        </button>
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* LEFT PANE: BRANDING — Desktop Only                            */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        <div className="hidden md:flex w-[42%] bg-[hsl(220,22%,9%)] relative flex-col justify-between p-8 overflow-hidden">
+          {/* Blueprint Grid Pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage: `
+                linear-gradient(hsl(200,60%,50%) 1px, transparent 1px),
+                linear-gradient(90deg, hsl(200,60%,50%) 1px, transparent 1px)
+              `,
+              backgroundSize: '40px 40px',
+            }}
+          />
 
-        {/* Step indicator */}
-        <div className="flex items-center justify-between mb-4">
-          {currentStep !== 'insider_price' && (
-            <button
-              type="button"
-              onClick={handleBack}
-              className="text-xs text-muted-foreground hover:underline underline-offset-4 flex items-center gap-1"
-            >
-              <ArrowLeft className="w-3 h-3" />
-              Back
-            </button>
-          )}
-          <span
-            className="text-xs text-slate-500 ml-auto"
-            aria-live="polite"
-          >
-            Step {stepNumber} of 3
-          </span>
+          {/* Decorative corner accents */}
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-cyan-500/5 to-transparent" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-cyan-500/5 to-transparent" />
+
+          <div className="relative z-10 flex flex-col h-full">
+            {/* Logo / Title */}
+            <div className="mb-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div>
+                  <div className="text-lg font-bold">
+                    <span className="text-cyan-400">Forensic</span>{' '}
+                    <span className="text-white">Ally</span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-slate-500 text-xs tracking-wider uppercase">
+                For Impact Window Decisions
+              </p>
+            </div>
+
+            {/* Character / Visual Area */}
+            <div className="flex-1 flex items-center justify-center my-4">
+              <div className="relative w-40 h-40">
+                {/* Cyan ambient glow */}
+                <div className="absolute inset-0 rounded-full bg-cyan-500/10 blur-2xl" />
+                {/* Placeholder silhouette */}
+                <div className="relative w-full h-full rounded-full bg-[hsl(220,25%,12%)] border border-slate-700/50 flex items-center justify-center">
+                  <ShieldCheck className="w-16 h-16 text-cyan-500/30" />
+                </div>
+              </div>
+            </div>
+
+            {/* Step Tracker */}
+            <div className="space-y-4">
+              {stepTrackerItems.map((item) => {
+                const isActive = item.key === currentStep;
+                return (
+                  <div key={item.key} className="flex items-start gap-3">
+                    <div
+                      className={`
+                        flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border
+                        ${isActive
+                          ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400'
+                          : 'bg-slate-800 border-slate-700 text-slate-500'
+                        }
+                      `}
+                    >
+                      {item.number}
+                    </div>
+                    <div>
+                      <p className={`text-sm font-bold ${isActive ? 'text-white' : 'text-slate-500'}`}>
+                        {item.title}
+                      </p>
+                      <p className={`text-xs ${isActive ? 'text-slate-400' : 'text-slate-600'}`}>
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* STEP 1: INSIDER PRICE (Lead Score: 100) */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {currentStep === 'insider_price' && (
-          <div className="space-y-5">
-            <div className="text-center">
-              {/* Best Value Badge */}
-              <Badge variant="secondary" className="mb-3 text-xs">
-                BEST VALUE
-              </Badge>
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* RIGHT PANE: FORM SURFACE                                      */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        <div className="flex-1 bg-[hsl(220,20%,11%)] p-6 sm:p-8 overflow-y-auto max-h-[90vh] md:max-h-none relative">
+          {/* Close Button */}
+          <button
+            onClick={() => handleClose('user_closed')}
+            className="absolute top-4 right-4 p-2 rounded-full text-slate-500 hover:text-white hover:bg-slate-800 transition-colors z-10"
+            aria-label="Close modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
 
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full mb-3">
-                <DollarSign className="w-8 h-8 text-primary" />
-              </div>
-
-              <h2 id="gauntlet-title" className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">
-                Wait! See What Your Neighbors Paid.
-              </h2>
-              <p className="text-sm text-slate-600">
-                Unlock our database of recent window project costs in your area. Stop guessing.
-              </p>
-            </div>
-
-            <form onSubmit={handleStep1Submit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-900">Name</label>
-                <Input
-                  ref={firstInputRef}
-                  type="text"
-                  {...step1Form.getFieldProps('name')}
-                  onChange={handleInputChange('name', step1Form.getFieldProps('name').onChange)}
-                  placeholder="Your name"
-                  className={step1Form.hasError('name') ? 'border-destructive' : ''}
-                  disabled={step1Submit.isSubmitting}
-                />
-                {step1Form.hasError('name') && (
-                  <p className="text-xs text-destructive">{step1Form.getError('name')}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-900">Email</label>
-                <Input
-                  type="email"
-                  {...step1Form.getFieldProps('email')}
-                  onChange={handleInputChange('email', step1Form.getFieldProps('email').onChange)}
-                  placeholder="your@email.com"
-                  className={step1Form.hasError('email') ? 'border-destructive' : ''}
-                  disabled={step1Submit.isSubmitting}
-                />
-                {step1Form.hasError('email') && (
-                  <p className="text-xs text-destructive">{step1Form.getError('email')}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-900">Phone</label>
-                <Input
-                  type="tel"
-                  {...step1Form.getFieldProps('phone')}
-                  onChange={handleInputChange('phone', step1Form.getFieldProps('phone').onChange)}
-                  placeholder="(555) 555-5555"
-                  className={step1Form.hasError('phone') ? 'border-destructive' : ''}
-                  disabled={step1Submit.isSubmitting}
-                />
-                {step1Form.hasError('phone') && (
-                  <p className="text-xs text-destructive">{step1Form.getError('phone')}</p>
-                )}
-              </div>
-
-              <WindowCountSelector
-                value={step1Form.values.windowCount}
-                onChange={(val) => step1Form.setValue('windowCount', val)}
-                error={step1Form.getError('windowCount')}
-              />
-
-              {/* CTA Button */}
-              <Button
-                type="submit"
-                variant="cta"
-                className="w-full min-h-[48px]"
-                disabled={step1Submit.isSubmitting}
+          {/* Step Header */}
+          <div className="flex items-center justify-between mb-6">
+            {currentStep !== 'insider_price' ? (
+              <button
+                type="button"
+                onClick={handleBack}
+                className="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1 uppercase tracking-wider"
               >
-                {step1Submit.isSubmitting ? 'Processing...' : 'Show Me Local Prices'}
-              </Button>
-
-              {/* Decline - separated for fat-finger safety */}
-              <div className="mt-6 border-t border-gray-200 pt-4 text-center">
-                <button
-                  type="button"
-                  onClick={handleDecline}
-                  className="text-sm text-muted-foreground hover:underline underline-offset-4"
-                >
-                  I don't care about pricing
-                </button>
+                <ArrowLeft className="w-3 h-3" />
+                Back
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 md:hidden">
+                <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                <span className="text-sm font-bold text-white">Forensic Ally</span>
               </div>
-            </form>
+            )}
+            <span
+              className="text-cyan-400 text-xs tracking-wider uppercase ml-auto"
+              aria-live="polite"
+            >
+              Step {stepNumber} of 3
+            </span>
           </div>
-        )}
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* STEP 2: STORM SENTINEL (Lead Score: 60) */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {currentStep === 'storm_sentinel' && (
-          <div className="space-y-5">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-11 h-11 bg-amber-500/10 rounded-full mb-3">
-                <Bell className="w-7 h-7 text-amber-500" />
+          {/* ═══════════════════════════════════════════════════════════ */}
+          {/* STEP 1: INSIDER PRICE (Lead Score: 100)                   */}
+          {/* ═══════════════════════════════════════════════════════════ */}
+          {currentStep === 'insider_price' && (
+            <div className="space-y-5">
+              <div>
+                <Badge className="mb-3 text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20">
+                  INTELLIGENCE DATABASE
+                </Badge>
+
+                <h2 id="gauntlet-title" className="text-xl sm:text-2xl font-bold text-white mb-2 uppercase tracking-tight">
+                  See What Your Neighbors Actually Paid.
+                </h2>
+                <p className="text-sm text-slate-400">
+                  Stop guessing. Unlock our proprietary database of recent impact window project costs verified in your exact zip code.
+                </p>
               </div>
 
-              <h2 id="gauntlet-title" className="text-lg sm:text-xl font-bold text-slate-900 mb-2">
-                Don't Get Stuck in a Backorder.
-              </h2>
-              <p className="text-sm text-slate-600">
-                When storms hit, lead times triple. Get instant text alerts for manufacturing delays and flash price drops.
-              </p>
-            </div>
+              <form onSubmit={handleStep1Submit} className="space-y-4">
+                {/* Name + Phone side by side */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-300">Full Name</label>
+                    <Input
+                      ref={firstInputRef}
+                      type="text"
+                      {...step1Form.getFieldProps('name')}
+                      onChange={handleInputChange('name', step1Form.getFieldProps('name').onChange)}
+                      placeholder="Your name"
+                      className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step1Form.hasError('name') ? 'border-destructive' : ''}`}
+                      disabled={step1Submit.isSubmitting}
+                    />
+                    {step1Form.hasError('name') && (
+                      <p className="text-xs text-destructive">{step1Form.getError('name')}</p>
+                    )}
+                  </div>
 
-            <form onSubmit={handleStep2Submit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-900">Phone Number</label>
-                <Input
-                  ref={firstInputRef}
-                  type="tel"
-                  {...step2Form.getFieldProps('phone')}
-                  onChange={handleInputChange('phone', step2Form.getFieldProps('phone').onChange)}
-                  placeholder="(555) 555-5555"
-                  className={step2Form.hasError('phone') ? 'border-destructive' : ''}
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-300">Phone Number</label>
+                    <Input
+                      type="tel"
+                      {...step1Form.getFieldProps('phone')}
+                      onChange={handleInputChange('phone', step1Form.getFieldProps('phone').onChange)}
+                      placeholder="(555) 555-5555"
+                      className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step1Form.hasError('phone') ? 'border-destructive' : ''}`}
+                      disabled={step1Submit.isSubmitting}
+                    />
+                    {step1Form.hasError('phone') && (
+                      <p className="text-xs text-destructive">{step1Form.getError('phone')}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Email full width */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-300">Email Address</label>
+                  <Input
+                    type="email"
+                    {...step1Form.getFieldProps('email')}
+                    onChange={handleInputChange('email', step1Form.getFieldProps('email').onChange)}
+                    placeholder="your@email.com"
+                    className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step1Form.hasError('email') ? 'border-destructive' : ''}`}
+                    disabled={step1Submit.isSubmitting}
+                  />
+                  {step1Form.hasError('email') && (
+                    <p className="text-xs text-destructive">{step1Form.getError('email')}</p>
+                  )}
+                </div>
+
+                <WindowCountSelector
+                  value={step1Form.values.windowCount}
+                  onChange={(val) => step1Form.setValue('windowCount', val)}
+                  error={step1Form.getError('windowCount')}
+                />
+
+                {/* CTA Button */}
+                <button
+                  type="submit"
+                  className="w-full min-h-[48px] inline-flex items-center justify-center rounded-lg font-bold text-white transition-all bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 shadow-[0_0_15px_rgba(8,145,178,0.3)] hover:shadow-[0_0_25px_rgba(8,145,178,0.5)] border border-cyan-400/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+                  disabled={step1Submit.isSubmitting}
+                >
+                  {step1Submit.isSubmitting ? 'Accessing Secure Database...' : 'Reveal Local Pricing Data'}
+                </button>
+
+                {/* Decline — fat-finger safety */}
+                <div className="mt-6 border-t border-slate-800 pt-4 text-center">
+                  <button
+                    type="button"
+                    onClick={handleDecline}
+                    className="text-slate-500 hover:text-slate-300 underline underline-offset-4 uppercase text-xs tracking-wider"
+                  >
+                    Skip — I don't care about pricing
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════ */}
+          {/* STEP 2: STORM SENTINEL (Lead Score: 60)                   */}
+          {/* ═══════════════════════════════════════════════════════════ */}
+          {currentStep === 'storm_sentinel' && (
+            <div className="space-y-5">
+              <div>
+                <div className="inline-flex items-center justify-center w-11 h-11 bg-amber-500/10 border border-amber-500/20 rounded-full mb-3">
+                  <AlertTriangle className="w-6 h-6 text-amber-400" />
+                </div>
+
+                <h2 id="gauntlet-title" className="text-lg sm:text-xl font-bold text-white mb-2 uppercase tracking-tight">
+                  Don't Get Caught in{' '}
+                  <span className="block">Supply Chain Gridlock.</span>
+                </h2>
+                <p className="text-sm text-slate-400">
+                  When named storms approach, lead times triple overnight. Activate our early-warning SMS system for immediate manufacturing delays and flash price drops.
+                </p>
+              </div>
+
+              <form onSubmit={handleStep2Submit} className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-300">Direct Alert Number</label>
+                  <Input
+                    ref={firstInputRef}
+                    type="tel"
+                    {...step2Form.getFieldProps('phone')}
+                    onChange={handleInputChange('phone', step2Form.getFieldProps('phone').onChange)}
+                    placeholder="(555) 555-5555"
+                    className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step2Form.hasError('phone') ? 'border-destructive' : ''}`}
+                    disabled={step2Submit.isSubmitting}
+                  />
+                  {step2Form.hasError('phone') && (
+                    <p className="text-xs text-destructive">{step2Form.getError('phone')}</p>
+                  )}
+                </div>
+
+                {/* CTA Button */}
+                <button
+                  type="submit"
+                  className="w-full min-h-[48px] inline-flex items-center justify-center rounded-lg font-bold text-white transition-all bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 shadow-[0_0_15px_rgba(8,145,178,0.3)] hover:shadow-[0_0_25px_rgba(8,145,178,0.5)] border border-cyan-400/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                   disabled={step2Submit.isSubmitting}
-                />
-                {step2Form.hasError('phone') && (
-                  <p className="text-xs text-destructive">{step2Form.getError('phone')}</p>
-                )}
-              </div>
-
-              {/* CTA Button */}
-              <Button
-                type="submit"
-                variant="cta"
-                className="w-full min-h-[48px]"
-                disabled={step2Submit.isSubmitting}
-              >
-                {step2Submit.isSubmitting ? 'Signing up...' : 'Alert Me Instantly'}
-              </Button>
-
-              {/* Decline - separated for fat-finger safety */}
-              <div className="mt-6 border-t border-gray-200 pt-4 text-center">
-                <button
-                  type="button"
-                  onClick={handleDecline}
-                  className="text-sm text-muted-foreground hover:underline underline-offset-4"
                 >
-                  I'll take my chances
+                  {step2Submit.isSubmitting ? 'Activating Sentinel...' : 'Activate Instant SMS Alerts'}
                 </button>
-              </div>
-            </form>
-          </div>
-        )}
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* STEP 3: KITCHEN TABLE DEFENSE (Lead Score: 30) */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {currentStep === 'kitchen_table' && (
-          <div className="space-y-4">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-10 h-10 bg-slate-100 rounded-full mb-3">
-                <FileText className="w-6 h-6 text-slate-600" />
-              </div>
-
-              <h2 id="gauntlet-title" className="text-lg font-bold text-slate-900 mb-2">
-                At Least Take This With You.
-              </h2>
-              <p className="text-sm text-slate-600">
-                Going to get quotes? Download our '3-Question Cheat Sheet' to stop high-pressure salesmen in their tracks.
-              </p>
+                {/* Decline — fat-finger safety */}
+                <div className="mt-6 border-t border-slate-800 pt-4 text-center">
+                  <button
+                    type="button"
+                    onClick={handleDecline}
+                    className="text-slate-500 hover:text-slate-300 underline underline-offset-4 uppercase text-xs tracking-wider"
+                  >
+                    Skip — I'll risk the backorder
+                  </button>
+                </div>
+              </form>
             </div>
+          )}
 
-            <form onSubmit={handleStep3Submit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-900">Email</label>
-                <Input
-                  ref={firstInputRef}
-                  type="email"
-                  {...step3Form.getFieldProps('email')}
-                  onChange={handleInputChange('email', step3Form.getFieldProps('email').onChange)}
-                  placeholder="your@email.com"
-                  className={step3Form.hasError('email') ? 'border-destructive' : ''}
-                  disabled={step3Submit.isSubmitting}
-                />
-                {step3Form.hasError('email') && (
-                  <p className="text-xs text-destructive">{step3Form.getError('email')}</p>
-                )}
+          {/* ═══════════════════════════════════════════════════════════ */}
+          {/* STEP 3: KITCHEN TABLE DEFENSE (Lead Score: 30)            */}
+          {/* ═══════════════════════════════════════════════════════════ */}
+          {currentStep === 'kitchen_table' && (
+            <div className="space-y-4">
+              <div>
+                <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-500/10 border border-blue-500/20 rounded-full mb-3">
+                  <FileText className="w-6 h-6 text-blue-400" />
+                </div>
+
+                <h2 id="gauntlet-title" className="text-lg font-bold text-white mb-2 uppercase tracking-tight">
+                  Arm Yourself With{' '}
+                  <span className="block">The Defense Protocol.</span>
+                </h2>
+                <p className="text-sm text-slate-400">
+                  Preparing for in-home quotes? Download the definitive '3-Question Blueprint' engineered to instantly disarm high-pressure sales tactics.
+                </p>
               </div>
 
-              {/* CTA Button */}
-              <Button
-                type="submit"
-                variant="cta"
-                className="w-full min-h-[48px]"
-                disabled={step3Submit.isSubmitting}
-              >
-                {step3Submit.isSubmitting ? 'Sending...' : 'Send My Cheat Sheet'}
-              </Button>
+              <form onSubmit={handleStep3Submit} className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-300">Delivery Address</label>
+                  <Input
+                    ref={firstInputRef}
+                    type="email"
+                    {...step3Form.getFieldProps('email')}
+                    onChange={handleInputChange('email', step3Form.getFieldProps('email').onChange)}
+                    placeholder="your@email.com"
+                    className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step3Form.hasError('email') ? 'border-destructive' : ''}`}
+                    disabled={step3Submit.isSubmitting}
+                  />
+                  {step3Form.hasError('email') && (
+                    <p className="text-xs text-destructive">{step3Form.getError('email')}</p>
+                  )}
+                </div>
 
-              {/* Decline - separated for fat-finger safety */}
-              <div className="mt-6 border-t border-gray-200 pt-4 text-center">
+                {/* CTA Button */}
                 <button
-                  type="button"
-                  onClick={handleDecline}
-                  className="text-sm text-muted-foreground hover:underline underline-offset-4"
+                  type="submit"
+                  className="w-full min-h-[48px] inline-flex items-center justify-center rounded-lg font-bold text-white transition-all bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 shadow-[0_0_15px_rgba(8,145,178,0.3)] hover:shadow-[0_0_25px_rgba(8,145,178,0.5)] border border-cyan-400/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+                  disabled={step3Submit.isSubmitting}
                 >
-                  No thanks, I like sales pitches
+                  {step3Submit.isSubmitting ? 'Transmitting...' : 'Send The Blueprint Securely'}
                 </button>
-              </div>
-            </form>
+
+                {/* Decline — fat-finger safety */}
+                <div className="mt-6 border-t border-slate-800 pt-4 text-center">
+                  <button
+                    type="button"
+                    onClick={handleDecline}
+                    className="text-slate-500 hover:text-slate-300 underline underline-offset-4 uppercase text-xs tracking-wider"
+                  >
+                    Skip — I enjoy sales pitches
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Trust Footer */}
+          <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-slate-800">
+            <ShieldCheck className="w-3.5 h-3.5 text-slate-600" />
+            <span className="text-slate-600 text-xs uppercase tracking-wider">
+              Secure 256-bit Encrypted Transmission
+            </span>
           </div>
-        )}
-        </FormSurfaceProvider>
+        </div>
       </div>
     </div>
   );
