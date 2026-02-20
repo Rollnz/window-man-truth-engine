@@ -3,7 +3,7 @@ import { type LucideIcon, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
 
-const CTA_SHADOW = '0 12px 32px -8px rgba(255,198,114,0.30), 0 24px 56px -16px rgba(255,198,114,0.15)';
+const CTA_SHADOW = '0 12px 32px -8px rgba(255,198,114,0.50), 0 24px 56px -16px rgba(255,198,114,0.30)';
 
 interface MidPageCTAProps {
   heading: string;
