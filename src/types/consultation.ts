@@ -47,6 +47,8 @@ export interface ConsultationFormData {
   
   // Optional
   quoteDetails?: string;
+  quoteFileId?: string;
+  quoteFileName?: string;
   concern?: ConcernType;
   concernOther?: string;
 }
