@@ -161,6 +161,14 @@ export default {
       fontFamily: {
         typewriter: ["Courier New", "Courier", "monospace"],
       },
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        DEFAULT: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+        xl: "var(--shadow-lg), 0 20px 50px -12px hsl(25 95% 50% / 0.10)",
+        "2xl": "var(--shadow-lg), 0 25px 60px -10px hsl(25 95% 50% / 0.15)",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
