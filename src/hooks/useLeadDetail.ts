@@ -241,7 +241,14 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
   useEffect(() => {
     if (aiPreAnalysis?.status !== 'pending') return;
     const interval = setInterval(() => fetchRef.current(), 5000);
-    return () => clearInterval(interval);
+    // Safety: stop polling after 2 minutes to prevent infinite loops
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      setAiPreAnalysis(prev => prev?.status === 'pending' ? {
+        ...prev, status: 'failed', reason: 'Analysis timed out after 2 minutes'
+      } : prev);
+    }, 120_000);
+    return () => { clearInterval(interval); clearTimeout(timeout); };
   }, [aiPreAnalysis?.status]);
 
   const callAction = async (action: string, data: Record<string, unknown>): Promise<boolean> => {
