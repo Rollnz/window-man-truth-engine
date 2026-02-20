@@ -54,11 +54,15 @@ export function ConsultationSuccessScreen({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm overflow-y-auto py-6">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm overflow-y-auto py-6"
+      role="status"
+      aria-label="Strategy session confirmed"
+    >
       <div className="relative max-w-md mx-auto px-6 text-center animate-fade-in max-h-[90vh] overflow-y-auto">
 
         {/* Hero Icon with glowing ring */}
-        <div className="relative w-28 h-28 mx-auto mb-8">
+        <div className="relative w-28 h-28 mx-auto mb-8" aria-hidden="true">
           <div
             className="absolute inset-0 rounded-full bg-primary/10 animate-pulse"
             style={{ boxShadow: '0 0 40px hsl(209 68% 55% / 0.3), 0 0 80px hsl(209 68% 55% / 0.1)' }}
@@ -83,7 +87,7 @@ export function ConsultationSuccessScreen({
         {/* Glassy Status Card */}
         <div className="bg-primary/5 border border-primary/20 border-l-4 border-l-secondary backdrop-blur-md rounded-2xl p-6 mb-6">
           <div className="flex items-center justify-center gap-2 text-secondary mb-3">
-            <MessageSquare className="w-5 h-5" />
+            <MessageSquare className="w-5 h-5" aria-hidden="true" />
             <span className="font-semibold">Expect a text in 5 minutes</span>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -92,29 +96,29 @@ export function ConsultationSuccessScreen({
         </div>
 
         {/* Checklist Row */}
-        <div className="flex flex-wrap justify-center gap-2 mb-6">
-          <div className="flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-2 text-xs font-medium animate-in slide-in-from-bottom duration-300" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
-            <Check className="w-3.5 h-3.5 text-success" />
+        <ul className="flex flex-wrap justify-center gap-2 mb-6 list-none" aria-label="Submission progress">
+          <li className="flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-2 text-xs font-medium animate-in slide-in-from-bottom duration-300" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
+            <Check className="w-3.5 h-3.5 text-success" aria-hidden="true" />
             <span className="text-foreground">Request Received</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-2 text-xs font-medium animate-in slide-in-from-bottom duration-300" style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
-            <Check className="w-3.5 h-3.5 text-primary" />
+          </li>
+          <li className="flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-2 text-xs font-medium animate-in slide-in-from-bottom duration-300" style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
+            <Check className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
             <span className="text-foreground">Expert Assigned</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-2 text-xs font-medium animate-in slide-in-from-bottom duration-300" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
-            <Loader2 className="w-3.5 h-3.5 text-secondary animate-spin" />
+          </li>
+          <li className="flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-2 text-xs font-medium animate-in slide-in-from-bottom duration-300" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
+            <Loader2 className="w-3.5 h-3.5 text-secondary animate-spin" aria-label="In progress" />
             <span className="text-foreground">Session Prep Starting</span>
-          </div>
-        </div>
+          </li>
+        </ul>
 
         {/* Trust Indicators as pills */}
         <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground mb-8">
           <span className="flex items-center gap-1 bg-card border border-border rounded-full px-3 py-1">
-            <Shield className="w-3 h-3 text-primary" />
+            <Shield className="w-3 h-3 text-primary" aria-hidden="true" />
             Encrypted & Secure
           </span>
           <span className="flex items-center gap-1 bg-card border border-border rounded-full px-3 py-1">
-            <Sparkles className="w-3 h-3 text-secondary" />
+            <Sparkles className="w-3 h-3 text-secondary" aria-hidden="true" />
             Expert-Led Session
           </span>
         </div>
@@ -123,7 +127,7 @@ export function ConsultationSuccessScreen({
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <CallWindowManButton source="consultation_success" />
           {onClose && (
-            <Button variant="cta" onClick={onClose}>
+            <Button variant="cta" onClick={onClose} className="focus:ring-2 focus:ring-primary focus:ring-offset-2">
               Continue Browsing
             </Button>
           )}
