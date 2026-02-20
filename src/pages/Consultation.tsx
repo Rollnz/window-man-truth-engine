@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { Navbar } from '@/components/home/Navbar';
 import { ConsultationForm } from '@/components/consultation/ConsultationForm';
-import { SubmissionConfirmation } from '@/components/consultation/SubmissionConfirmation';
+import { ConsultationSuccessScreen } from '@/components/consultation/ConsultationSuccessScreen';
 import { ConsultationFormData, ConsultationSubmission } from '@/types/consultation';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -132,19 +132,11 @@ export default function Consultation() {
   // If submitted, show confirmation
   if (isSubmitted) {
     return (
-      <>
-        <ConsultationSchema />
-        <Navbar />
-        <div className="pt-16">
-          <SubmissionConfirmation
-            firstName={submittedFirstName}
-            source="consultation"
-            nextStep="text"
-            expectedTime="5 minutes"
-            onContinueBrowsing={handleContinueBrowsing} />
-
-        </div>
-      </>);
+      <ConsultationSuccessScreen
+        firstName={submittedFirstName}
+        onClose={handleContinueBrowsing}
+      />
+    );
 
   }
 
