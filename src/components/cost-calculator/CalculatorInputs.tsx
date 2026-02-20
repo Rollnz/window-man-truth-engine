@@ -54,7 +54,7 @@ export function CalculatorInputs({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-white">Monthly Energy Bill</h3>
+              <h3 className="font-semibold text-primary">Monthly Energy Bill</h3>
             </div>
             {hasPrefilledBill && <Badge variant="outline" className="border-primary/50 text-primary text-xs">
                 Using your saved info
@@ -62,7 +62,7 @@ export function CalculatorInputs({
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            {billOptions.map(option => <Button key={option} type="button" variant={energyBill === option ? 'default' : 'outline'} className={cn('h-12 text-sm transition-all', energyBill === option && 'shadow-[0_0_15px_hsl(var(--primary)/0.3)]')} onClick={() => setEnergyBill(option)}>
+            {billOptions.map((option) => <Button key={option} type="button" variant={energyBill === option ? 'default' : 'outline'} className={cn('h-12 text-sm transition-all', energyBill === option && 'shadow-[0_0_15px_hsl(var(--primary)/0.3)]')} onClick={() => setEnergyBill(option)}>
                 {option}
               </Button>)}
           </div>
@@ -79,7 +79,7 @@ export function CalculatorInputs({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Grid3X3 className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-white">Window Age</h3>
+              <h3 className="font-semibold text-primary">Window Age</h3>
             </div>
             {hasPrefilledAge && <Badge variant="outline" className="border-primary/50 text-primary-foreground text-base">
                 Using your saved info
@@ -87,7 +87,7 @@ export function CalculatorInputs({
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            {ageOptions.map(option => <Button key={option} type="button" variant={windowAge === option ? 'default' : 'outline'} className={cn('h-12 text-sm transition-all', windowAge === option && 'shadow-[0_0_15px_hsl(var(--primary)/0.3)]')} onClick={() => setWindowAge(option)}>
+            {ageOptions.map((option) => <Button key={option} type="button" variant={windowAge === option ? 'default' : 'outline'} className={cn('h-12 text-sm transition-all', windowAge === option && 'shadow-[0_0_15px_hsl(var(--primary)/0.3)]')} onClick={() => setWindowAge(option)}>
                 {option}
               </Button>)}
           </div>
@@ -104,7 +104,7 @@ export function CalculatorInputs({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Home className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-white">Home Size</h3>
+              <h3 className="font-semibold text-blue-500">Home Size</h3>
             </div>
             {hasPrefilledSize && <Badge variant="outline" className="border-primary/50 text-primary text-xs">
                 Using your saved info
@@ -116,7 +116,7 @@ export function CalculatorInputs({
               <span className="text-sm text-white">Square Feet</span>
               <span className="text-xl font-bold text-primary">{homeSize.toLocaleString()}</span>
             </div>
-            <Slider value={[homeSize]} onValueChange={value => setHomeSize(value[0])} min={500} max={5000} step={100} className="py-4" aria-label="Home Size in square feet" />
+            <Slider value={[homeSize]} onValueChange={(value) => setHomeSize(value[0])} min={500} max={5000} step={100} className="py-4" aria-label="Home Size in square feet" />
             <div className="flex justify-between text-xs text-white">
               <span>500 sq ft</span>
               <span>5,000 sq ft</span>
@@ -130,7 +130,7 @@ export function CalculatorInputs({
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 mb-4">
             <Grid3X3 className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-white">Number of Windows</h3>
+            <h3 className="font-semibold text-primary">Number of Windows</h3>
           </div>
           
           <div className="space-y-4">
@@ -138,7 +138,7 @@ export function CalculatorInputs({
               <span className="text-sm text-white">Windows to Replace</span>
               <span className="text-xl font-bold text-primary">{windowCount}</span>
             </div>
-            <Slider value={[windowCount]} onValueChange={value => setWindowCount(value[0])} min={1} max={50} step={1} className="py-4" aria-label="Number of windows to replace" />
+            <Slider value={[windowCount]} onValueChange={(value) => setWindowCount(value[0])} min={1} max={50} step={1} className="py-4" aria-label="Number of windows to replace" />
             <div className="flex justify-between text-xs text-white">
               <span>1 window</span>
               <span>50 windows</span>
