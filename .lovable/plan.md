@@ -1,83 +1,98 @@
 
 
-# CRO Email Delivery System - Implementation Plan
+# Truth Pillar Pages Redesign - Visual Consistency Overhaul
 
-## Summary
+## The Problem
 
-Add 6 hand-crafted CRO email templates and wire them into the existing lead pipeline. When a user submits a form on any high-value tool, they automatically receive a personalized follow-up email driving them toward booking a consultation.
+The 4 Truth Pillar pages (`/window-cost-truth`, `/window-risk-and-code`, `/window-sales-truth`, `/window-verification-system`) look like generic blog posts compared to the rich, immersive visual experience of the homepage and `/sample-report`. Here's exactly what's wrong:
 
-## Current State
+### Audit Findings
 
-- The `EmailPayload` type already includes the 6 new type strings (done in prior session)
-- No actual email templates exist yet for the 6 new tools
-- `save-lead` only routes emails for `comparison-tool` and `cost-calculator`
+| Issue | Pillar Pages | Homepage / Sample Report |
+|-------|-------------|--------------------------|
+| **Hero** | Plain text on flat background, no gradient or depth | Full-viewport gradient hero with radial glows, animated badge, text-shadow effects |
+| **Animations** | Zero scroll animations | `AnimateOnScroll` on every section, staggered reveals, animated score counters |
+| **Cards** | Basic `Card` with `hover:border-primary/50` only | `rounded-2xl`, `shadow-xl`, `hover:shadow-2xl hover:scale-[1.02]`, colored top borders, icon containers with tinted backgrounds |
+| **Content blocks** | Raw `prose` block -- wall of text, no visual breakup | Stat cards, gradient callout boxes, segmented bars, social proof tickers |
+| **Section spacing** | `py-8` / `py-12` -- tight | `py-20 md:py-32` -- generous breathing room |
+| **Section dividers** | `border-t border-border` -- thin flat lines | Gradient backgrounds (`bg-[hsl(var(--surface-1))]`), layered sections |
+| **Typography** | Standard h2/h3, no accent colors | Colored accent spans, text-shadow glows, `tracking-tight` on headings |
+| **Backgrounds** | Flat `bg-background` everywhere | Alternating surface layers, radial gradient orbs, gradient-to-b transitions |
+| **CTAs** | Basic `Button` at bottom | Gradient `variant="cta"` with glow, hover arrow animation, supporting microcopy |
+| **AccordionContent** | `text-black` (hardcoded -- breaks dark mode!) | Uses theme tokens |
+| **Social proof** | None | `UrgencyTicker`, stat counters, trust badges |
 
-## Changes Required
+---
 
-### File 1: `supabase/functions/send-email-notification/index.ts`
+## Solution: Component-Driven Redesign
 
-Insert 6 new `case` blocks into `generateEmailContent()` before the `default` case (line 328):
+Rather than patching CSS, create reusable section components that match the homepage/sample-report visual standard, then rebuild each pillar page using them.
 
-| Case | Subject Line | Key Data | CTA |
-|------|-------------|----------|-----|
-| `quote-scanner-results` | "Your Quote Has Been Analyzed" | Overall score, warnings count | "Get a Transparent Quote From Us" |
-| `beat-your-quote-results` | "Your Quote Upload Confirmed" | Upload confirmation, next steps | "Book Your Free Comparison Call" |
-| `quote-builder-results` | "Your Window Estimate Summary" | Window count, total estimate | "Lock In Your Real Price" |
-| `risk-diagnostic-results` | "Your Protection Score" | Protection score, gap breakdown | "Get Your Free Protection Assessment" |
-| `vulnerability-test-results` | "Your Vulnerability Score" | Score, vulnerability level | "Schedule Your Free Window Inspection" |
-| `fair-price-quiz-results` | "Are You Overpaying?" | Quiz results, fair price insight | "See What You Should Really Pay" |
+### New Shared Components (create once, reuse across all 4 pages)
 
-Each template uses:
-- Brand colors: dark background (#1a1a2e), cyan (#00D4FF), gold (#FFD700)
-- CRO structure: greeting, result summary, "what this means" bullets, social proof, CTA button, footer
-- Mobile-first inline CSS, 48px tall CTA buttons
-- Consultation link: `https://itswindowman.com/consultation`
+**1. `PillarHeroSection`** -- Full-viewport gradient hero with radial glow orbs, animated badge, accent-colored heading spans, dual CTA buttons with glow, and `AnimateOnScroll` entrance animations.
 
-### File 2: `supabase/functions/save-lead/index.ts`
+**2. `PillarStatBar`** -- A horizontal stat strip (like MarketRealitySection's StatCards) showing 3 key numbers relevant to the pillar (e.g., "$1,200/yr in energy waste", "31% claims denied", "40-60% hidden cost gap"). Each stat has an icon, colored top bar, and staggered scroll-in animation.
 
-Expand the email routing block (after line 1085) with 6 new `else if` branches. Each extracts relevant data from `sessionData` and `aiContext`:
+**3. `PillarContentBlock`** -- Replaces raw `prose` walls. Alternating layout: left-aligned content blocks with a colored sidebar accent, pull-quote callout boxes with gradient backgrounds (matching the homepage's `bg-card/50 border border-border/50` pattern), and bullet lists inside elevated cards rather than raw `ul` elements.
 
-```text
-else if (sourceTool === 'quote-scanner') {
-  triggerEmailNotification({
-    email: normalizedEmail,
-    type: 'quote-scanner-results',
-    data: {
-      firstName: normalizedFirstName,
-      overallScore: sessionData?.overallScore || sessionData?.overall_score,
-      warningsCount: sessionData?.warningsCount || sessionData?.warnings_count,
-      leadId,
-    },
-  });
-}
-// ... similar for beat-your-quote, quote-builder, risk-diagnostic,
-//     vulnerability-test, fair-price-quiz
-```
+**4. `PillarCalloutCard`** -- A gradient-bordered card for key insights (like the homepage's "When something goes wrong, insurers don't look at intent..." box). Uses `bg-gradient-to-br from-primary/10 to-secondary/5 border border-primary/20 rounded-2xl p-8`.
 
-### Deployment
+**5. `PillarGuideCard`** (replaces current flat cards) -- Elevated card with icon container (tinted background + border), shadow-xl base, hover:shadow-2xl + scale-[1.02] lift, colored top accent bar, and `AnimateOnScroll` stagger.
 
-Both edge functions will be redeployed after changes. Then we test by checking edge function logs for email delivery confirmation.
+**6. `PillarCTASection`** -- A gradient-backed full-width CTA section (not a plain centered button). Uses `bg-gradient-to-br from-primary/10 to-secondary/5`, large heading, supporting copy, `variant="cta"` button with glow, and microcopy below.
 
-## What Does NOT Change
+### File Changes
 
-- No database schema changes
-- No new edge functions
-- No frontend changes
-- Existing email templates remain untouched
+**Create new files:**
+- `src/components/pillar/PillarHeroSection.tsx`
+- `src/components/pillar/PillarStatBar.tsx`
+- `src/components/pillar/PillarContentBlock.tsx`
+- `src/components/pillar/PillarCalloutCard.tsx`
+- `src/components/pillar/PillarGuideCard.tsx`
+- `src/components/pillar/PillarCTASection.tsx`
+- `src/components/pillar/index.ts` (barrel export)
 
-## Technical Details
+**Refactor existing files:**
+- `src/pages/WindowCostTruth.tsx` -- Rebuild using new pillar components
+- `src/pages/WindowRiskAndCode.tsx` -- Rebuild using new pillar components
+- `src/pages/WindowSalesTruth.tsx` -- Rebuild using new pillar components
+- `src/pages/WindowVerificationSystem.tsx` -- Rebuild using new pillar components
 
-### Data Extraction per Tool
+### Per-Page Content Strategy
 
-| Tool | Session Data Fields | AI Context Fields |
-|------|-------------------|-------------------|
-| quote-scanner | `overallScore`, `warningsCount` | -- |
-| beat-your-quote | -- | -- (confirmation only) |
-| quote-builder | `windowCount`, `estimatedTotal` | -- |
-| risk-diagnostic | `protectionScore`, `gapCount` | -- |
-| vulnerability-test | `quizScore`, `quizVulnerability` | -- |
-| fair-price-quiz | `quizScore`, `quizResult` | -- |
+Each page gets unique content data but the same visual framework:
 
-### Email From Address
+**WindowCostTruth:**
+- Stats: "$1,200+/yr" energy waste, "40-60%" hidden cost gap, "25-30yr" premium lifespan
+- Callout: "Budget windows cost 2-3x more over a decade"
+- Content broken into 3 visual blocks: Hidden Economics, Florida Cost Equation, What Quotes Don't Tell You
 
-`Window Truth Engine <noreply@windowman.com>` (matches existing Resend sender)
+**WindowRiskAndCode:**
+- Stats: "150+ mph" wind zones, "45%" max insurance discount, "9,000" pressure test cycles
+- Callout: "One weak point can cause catastrophic failure"
+- Content: HVHZ Requirements, Outside HVHZ, Insurance Implications
+
+**WindowSalesTruth:**
+- Stats: "30-50%" built-in margin, "3 days" FL cancellation right, "4" common manipulation tactics
+- Callout: "No legitimate deal expires same-day"
+- Content: Psychology of Sales, Common Tactics, How to Protect Yourself
+
+**WindowVerificationSystem:**
+- Stats: "3" verification pillars, "NOA" certification check, "100%" permit compliance needed
+- Callout: "If they can't provide NOA numbers, walk away"
+- Content: Product Verification, Contractor Verification, Quote Verification
+
+### Bug Fixes Included
+- Remove all `text-black` from AccordionContent (3 pages have this -- breaks dark mode)
+- Replace `border-t border-border` section dividers with alternating gradient backgrounds
+- Add `AnimateOnScroll` to all sections with staggered delays
+
+### What Does NOT Change
+- SEO metadata, JSON-LD schemas, canonical URLs
+- ExitIntentModal integration (stays exactly as-is)
+- ReviewedByBadge placement
+- Pillar config data structure
+- FAQ content
+- Route paths
+
