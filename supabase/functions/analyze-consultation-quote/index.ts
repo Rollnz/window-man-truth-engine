@@ -254,7 +254,7 @@ Output MUST conform to the provided JSON tool schema.`,
                         location: { type: "string", description: "Room or location label (e.g., 'Kitchen', 'Master Bedroom', 'Unknown')." },
                         product_category: { type: "string", enum: ["Window", "Door", "Sliding Door", "Other"], description: "Type of product." },
                         style: { type: "string", description: "Window/door style (e.g., 'Double Hung', 'Casement', 'Picture', 'Sliding Door')." },
-                        quantity: { type: "number", description: "Number of this item." },
+                        quantity: { type: ["number", "null"], description: "Number of this item, or null if not stated." },
                         measurements_raw: { type: "string", description: "Exact measurement text from document (e.g., '36\" x 60\"')." },
                         measurements_width_in: { type: ["number", "null"], description: "Width in inches if explicitly derivable, else null." },
                         measurements_height_in: { type: ["number", "null"], description: "Height in inches if explicitly derivable, else null." },
@@ -380,7 +380,7 @@ Output MUST conform to the provided JSON tool schema.`,
             product_category: ["Window", "Door", "Sliding Door", "Other"].includes(String(item.product_category))
               ? String(item.product_category) : "Other",
             style: String(item.style || "Unknown"),
-            quantity: typeof item.quantity === "number" ? item.quantity : 1,
+            quantity: typeof item.quantity === "number" ? item.quantity : null,
             measurements_raw: String(item.measurements_raw || "Unknown"),
             measurements_width_in: typeof item.measurements_width_in === "number" ? item.measurements_width_in : null,
             measurements_height_in: typeof item.measurements_height_in === "number" ? item.measurements_height_in : null,
@@ -416,6 +416,11 @@ Output MUST conform to the provided JSON tool schema.`,
         red_flags: Array.isArray(raw.red_flags) ? raw.red_flags.map(String) : [],
 
         sales_angle: String(raw.sales_angle || "No angle extracted"),
+
+        // Legacy top-level aliases for backward compatibility with existing consumers
+        estimated_total_price: typeof raw.project_overview?.estimated_total_price === "number"
+          ? raw.project_overview.estimated_total_price : null,
+        window_brand_or_material: String(raw.project_overview?.window_brand_or_material || "Unknown"),
       };
 
       // Write completed to quote_files
