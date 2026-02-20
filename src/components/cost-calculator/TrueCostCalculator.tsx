@@ -384,7 +384,7 @@ export function TrueCostCalculator({
           </div>
 
           <FadeInSection delay={200}>
-            <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-xl shadow-blue-100/60 lg:p-7">
+            <div className="rounded-2xl border-blue-100 bg-white p-6 shadow-xl shadow-blue-100/60 lg:p-7 border-4">
               <h3 className="mb-3 text-2xl font-black tracking-tight text-gray-900">
                 See What Your Windows Really Cost After Savings
               </h3>
