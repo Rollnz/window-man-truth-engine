@@ -1,149 +1,153 @@
 
 
-# Upgrade Consultation "Quote Details" to Combined Upload + Paste
+# Background AI Pre-Analysis for Consultation Quote Uploads
 
 ## Summary
 
-Replace the textarea-only "Upload or paste quote details" section (lines 452-461 of ConsultationForm.tsx) with a compact file upload dropzone above a textarea, separated by an "or" divider. Reuses the existing `QuoteUploadDropzone` component and `upload-quote` edge function. The uploaded file ID is threaded through to `save-lead` via the existing `sessionData` JSONB column -- no database migration needed.
+When a user uploads a competitor's quote during the Strategy Session booking, a new edge function (`analyze-consultation-quote`) runs in the background to generate a private "sales cheat sheet." The `save-lead` function triggers it fire-and-forget after the DB insert, so the user's booking flow stays under 500ms. Results are stored in a new `ai_pre_analysis` JSONB column on the `leads` table.
 
 ---
 
-## File 1: `src/components/consultation/ConsultationForm.tsx`
+## Phase 1: Database Migration
 
-### What Changes
+Add `ai_pre_analysis` JSONB column to the `leads` table:
 
-**Replace lines 452-461** (the "Quote Details" block) with a three-part layout:
-
-**Part A: Compact QuoteUploadDropzone**
-- Import `QuoteUploadDropzone` from `@/components/beat-your-quote/QuoteUploadDropzone`
-- Render with `compact={true}` and `sourcePage="consultation"`
-- Add two local state variables at the top of the component:
-  - `uploadedFileId: string | null` (default `null`)
-  - `uploadedFileName: string | null` (default `null`)
-- `onSuccess` callback: set both state variables from the returned `fileId` and reconstruct the filename from the path
-- `onError` callback: show a `toast.error()` with the error message (reuses existing `sonner` import pattern from Consultation.tsx)
-
-**Part B: "or" divider**
-- Single line: `<div className="flex items-center gap-3 text-xs text-muted-foreground"><div className="flex-1 h-px bg-border" /><span>or</span><div className="flex-1 h-px bg-border" /></div>`
-- Height cost: 24px total
-
-**Part C: Textarea (simplified label)**
-- Same textarea, but label changes from "Upload or paste quote details" to "Paste quote details"
-- Reduce `rows` from 4 to 3 to offset the added dropzone height
-- Everything else identical (onChange, placeholder, etc.)
-
-**Part D: File attached state**
-- When `uploadedFileId` is not null AND the dropzone is in success state, the `QuoteUploadDropzone` already renders its own success card with "Upload Another Quote" button -- this handles the "file preview" display automatically
-- Add a small "Quote Detected" badge below the dropzone success state: `<span className="inline-flex items-center gap-1 text-xs text-emerald-400"><CheckCircle className="w-3 h-3" /> Quote attached to your submission</span>`
-- This badge confirms the file will be included when the form submits
-
-**Part E: Remove lifecycle**
-- The `QuoteUploadDropzone` already has a "Upload Another Quote" button in its success state that calls `reset()` internally
-- When the dropzone resets (user clicks "Upload Another Quote" or removes a selected file), the `onSuccess` callback won't fire, but we need to also clear `uploadedFileId` and `uploadedFileName`
-- Solution: Track the dropzone's reset by checking if `lastUpload` goes back to null -- or simpler: add a small "Remove attachment" text button next to the badge that sets both state vars back to `null`
-
-**Part F: State integrity**
-- `uploadedFileId` and `uploadedFileName` are stored as `useState` at the component level, separate from `formData`
-- They survive form validation errors (validation only touches `errors` state, not upload state)
-- They are passed upward via the existing `onSubmit(data)` callback by extending the data object
-
-### Threading file ID to parent
-
-Update `handleSubmit` (line 216-237): Before calling `onSubmit(formData as ConsultationFormData)`, spread in the upload fields:
-
-```typescript
-const submissionData = {
-  ...formData,
-  quoteFileId: uploadedFileId || undefined,
-  quoteFileName: uploadedFileName || undefined,
-} as ConsultationFormData;
-await onSubmit(submissionData);
+```sql
+ALTER TABLE public.leads
+ADD COLUMN ai_pre_analysis JSONB DEFAULT '{"status": "none"}'::jsonb;
 ```
 
-### Mobile height budget
-
-| Element | Height |
-|---|---|
-| Compact dropzone (min-h-[120px], p-4) | ~120px |
-| "or" divider | ~24px |
-| Textarea (3 rows) | ~80px |
-| Total | ~224px |
-| Current textarea (4 rows) | ~100px |
-| **Net increase** | **~124px** |
-
-When a file is attached, the dropzone's success state replaces the dropzone (~100px), so the total is roughly equal to the current layout. The form card scrolls naturally within the page, so this does not cause viewport overflow.
-
----
-
-## File 2: `src/types/consultation.ts`
-
-### What Changes
-
-Add two optional fields to `ConsultationFormData`:
-
-```typescript
-quoteFileId?: string;
-quoteFileName?: string;
-```
-
-These are optional because file upload is not required. No other type changes needed.
-
----
-
-## File 3: `src/pages/Consultation.tsx`
-
-### What Changes
-
-Update `handleSubmit` (line 39) to include the upload fields in the `sessionData` payload sent to `save-lead`:
-
-```typescript
-sessionData: {
-  clientId,
-  propertyType: data.propertyType,
-  windowCount: data.windowCount,
-  cityZip: data.cityZip,
-  impactRequired: data.impactRequired,
-  hasQuote: data.hasQuote,
-  quoteCount: data.quoteCount,
-  windowTypes: data.windowTypes,
-  concern: data.concern,
-  quoteDetails: data.quoteDetails,
-  quoteFileId: data.quoteFileId,    // NEW
-  quoteFileName: data.quoteFileName, // NEW
+The column stores this structure:
+```text
+{
+  "status": "none" | "pending" | "completed" | "failed",
+  "result": null | {
+    "estimated_total_price": number | null,
+    "window_brand_or_material": string,
+    "detected_markup_level": "High" | "Average" | "Low" | "Unknown",
+    "red_flags": string[],
+    "sales_angle": string
+  },
+  "reason": string | null,
+  "started_at": string | null,
+  "completed_at": string | null,
+  "model": string | null
 }
 ```
 
-No other changes. The `save-lead` edge function already stores `sessionData` as JSONB -- no backend update needed.
+No RLS changes needed -- the `leads` table is already private (anon INSERT only, no SELECT for anon/public). The column is only readable by admin edge functions using `service_role`.
 
 ---
 
-## What Already Works (No Changes Needed)
+## Phase 2: New Edge Function -- `analyze-consultation-quote`
 
-- **`QuoteUploadDropzone`** already accepts `sourcePage` and `compact` props (confirmed from the component code) -- no interface update needed
-- **`useQuoteUpload` hook** already handles client-side validation (file type: PDF/JPG/PNG, max 10MB), progress bar, error display with retry, and loading spinner -- all production-grade error/loading states are built in
-- **`upload-quote` edge function** already stores files in the `quotes` bucket with session metadata -- reused as-is
-- **Storage bucket** (`quotes`) already exists with appropriate policies
+**File:** `supabase/functions/analyze-consultation-quote/index.ts`
+
+**Config:** Add to `supabase/config.toml`:
+```text
+[functions.analyze-consultation-quote]
+verify_jwt = false
+```
+
+**Request contract** (from `save-lead`):
+```text
+POST with service_role Bearer token
+{
+  "leadId": "uuid",
+  "quoteFileId": "uuid",
+  "mimeType": "application/pdf" | "image/jpeg" | "image/png"
+}
+```
+
+**Response:** Immediately returns `202 Accepted` with `{ "message": "Analysis started" }`, then continues processing.
+
+**Logic flow:**
+
+1. **Auth check:** Validate the Authorization header contains the service_role key (server-to-server only).
+
+2. **Idempotency check:** Read `leads.ai_pre_analysis->>'status'` for this `leadId`. If already `pending` or `completed`, return `200 { "message": "Already processed" }` and skip.
+
+3. **Set pending:** Update `leads.ai_pre_analysis` to `{"status": "pending", "started_at": "..."}`.
+
+4. **Download file:** Use `service_role` Supabase client to read from `quote_files` table (get `file_path`), then download from `quotes` storage bucket via `storage.from('quotes').download(filePath)`.
+
+5. **Size guard:** If file exceeds 10MB, fail gracefully.
+
+6. **Convert to base64:** For images (JPEG/PNG), convert directly. For PDFs, pass the raw buffer as base64 with `application/pdf` MIME type (Gemini handles PDF natively).
+
+7. **AI call:** Use Lovable AI Gateway (`https://ai.gateway.lovable.dev/v1/chat/completions`) with `google/gemini-2.5-flash` (fast, cheap, handles vision + PDF natively). NOT OpenAI -- this project already uses the Lovable AI Gateway exclusively with `LOVABLE_API_KEY`.
+
+   - **System prompt:** "Sales Intel" persona -- extract pricing, brand/material, markup signals, red flags, and a sales angle. NOT the homeowner-facing scanner prompt.
+   - **Tool calling:** Use structured output via `tools` + `tool_choice` to enforce the JSON schema (estimated_total_price, window_brand_or_material, detected_markup_level, red_flags, sales_angle).
+   - **AbortController:** 45-second timeout on the AI call.
+
+8. **Update DB:** On success, update `leads.ai_pre_analysis` to `{"status": "completed", "result": {...}, "completed_at": "...", "model": "google/gemini-2.5-flash"}`. On failure, set `{"status": "failed", "reason": "...", "completed_at": "..."}`.
+
+9. **Observability:** `console.log` at each stage (file downloaded, AI invoked, DB updated). `console.error` on failures.
 
 ---
 
-## Safety and Logic Layer (Addressing All Gaps)
+## Phase 3: Trigger from `save-lead`
 
-| Concern | How It Is Handled |
+**File:** `supabase/functions/save-lead/index.ts`
+
+After the quote file linking block (around line 970, after `quoteFileLinked = true`), add a fire-and-forget call:
+
+```typescript
+// Check if the linked file has a mime type suitable for analysis
+if (quoteFileLinked && fileData?.file_path) {
+  // Fire-and-forget: trigger background AI pre-analysis
+  const mimeType = /* get from quote_files record, already queried above */;
+  fetch(`${supabaseUrl}/functions/v1/analyze-consultation-quote`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseServiceKey}`,
+    },
+    body: JSON.stringify({
+      leadId,
+      quoteFileId,
+      mimeType: mimeType || 'application/pdf',
+    }),
+  }).catch(err => {
+    console.error('[save-lead] Failed to trigger AI pre-analysis (non-blocking):', err);
+  });
+  // NOT awaited -- save-lead returns 200 immediately
+}
+```
+
+The `fileData` variable is already available from the existing quote alert block (line 930-933). We also need the MIME type, which we can add to the existing `select` query: change `.select('file_path, file_name')` to `.select('file_path, file_name, mime_type')`.
+
+---
+
+## Phase 4: Why These Choices
+
+| Decision | Rationale |
 |---|---|
-| **Loading/Error UI** | Built into `QuoteUploadDropzone`: progress bar during upload, red error card with message on failure, retry via re-selecting file |
-| **Client-side validation** | Built into `useQuoteUpload`: checks file type (PDF/JPG/PNG only) and size (max 10MB) before any network call |
-| **State integrity on validation errors** | `uploadedFileId` is a separate `useState`, not part of `formData` -- form validation errors do not clear it |
-| **Remove clears payload** | Explicit: "Remove attachment" button sets `uploadedFileId = null` and `uploadedFileName = null`, so cleared IDs are never sent to `save-lead` |
-| **Component props** | `QuoteUploadDropzone` already accepts `sourcePage` prop and passes it through to `useQuoteUpload` -- no interface update required |
-| **Ghost file on failure** | `useQuoteUpload` never sets `lastUpload.success = true` on error, so `uploadedFileId` stays `null` -- impossible to attach a failed upload |
+| `google/gemini-2.5-flash` not `gpt-4o` | Project uses Lovable AI Gateway exclusively. Gemini 2.5 Flash handles PDF + image natively, is cheaper, and faster. No need for OpenAI. |
+| Tool calling not `response_format` | Lovable AI Gateway supports tool calling for structured output. More reliable than asking for raw JSON. |
+| Fire-and-forget `fetch` not `waitUntil` | Deno edge runtime does not guarantee `EdgeRuntime.waitUntil()` availability. The `analyze-consultation-quote` function is a separate invocation that runs independently -- `save-lead` just fires the HTTP call and catches immediate network errors. |
+| No new RLS policies | `leads` table already blocks anon SELECT. The new column is invisible to clients by default. Admin functions use `service_role`. |
+| Idempotency via status check | Prevents duplicate AI charges if `save-lead` retries or the user double-submits. |
 
 ---
 
 ## Files Modified
 
-1. **`src/components/consultation/ConsultationForm.tsx`** -- Import `QuoteUploadDropzone`, add upload state, replace quote details section with upload + divider + textarea layout, thread file ID into submission data
-2. **`src/types/consultation.ts`** -- Add optional `quoteFileId` and `quoteFileName` fields
-3. **`src/pages/Consultation.tsx`** -- Pass `quoteFileId` and `quoteFileName` in `sessionData` to `save-lead`
+1. **Database migration** -- Add `ai_pre_analysis` JSONB column to `leads`
+2. **`supabase/functions/analyze-consultation-quote/index.ts`** -- New edge function (Sales Intel AI analysis)
+3. **`supabase/config.toml`** -- Add `[functions.analyze-consultation-quote]` with `verify_jwt = false`
+4. **`supabase/functions/save-lead/index.ts`** -- Add fire-and-forget fetch trigger after quote file linking, add `mime_type` to the existing file query select
 
-No new files. No new edge functions. No database migrations. No new storage buckets. No new dependencies.
+No frontend changes. No new dependencies. No new storage buckets.
+
+---
+
+## Acceptance Criteria
+
+1. **Speed:** Client booking returns 200 in under 500ms, unaffected by AI processing
+2. **State transitions:** `ai_pre_analysis.status` goes `none` -> `pending` -> `completed` (or `failed`)
+3. **Accuracy:** Valid quote PDF produces populated `result` with `estimated_total_price` and `sales_angle`
+4. **Error handling:** Corrupted file or non-quote image results in `failed` status with non-empty `reason`
+5. **Idempotency:** Duplicate trigger for same lead does not produce duplicate AI charges
 
