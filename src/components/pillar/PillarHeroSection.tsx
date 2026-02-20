@@ -26,17 +26,17 @@ export function PillarHeroSection({
   ctas,
 }: PillarHeroSectionProps) {
   return (
-    <section className="relative overflow-hidden py-20 md:py-28">
+    <section className="relative overflow-hidden py-20 md:py-28 bg-[hsl(var(--surface-1))] border-b border-border/30">
       {/* Background gradient orbs */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/8 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/6 rounded-full blur-3xl" />
       </div>
 
       <div className="container px-4 relative z-10">
         <div className="max-w-4xl space-y-8">
           <AnimateOnScroll duration={500}>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-border/20 backdrop-blur-sm">
               <Icon className="h-4 w-4 text-primary" />
               <span className="text-sm font-semibold uppercase tracking-wider text-primary">
                 {badgeText}
