@@ -83,9 +83,9 @@
     --surface-2: 220 16% 12%;
     --surface-3: 220 14% 16%;
 
-    --shadow-sm: 0 10px 18px -14px hsl(220 20% 2% / 0.60);
-    --shadow-md: 0 18px 40px -22px hsl(220 20% 2% / 0.72);
-    --shadow-lg: 0 30px 70px -30px hsl(220 20% 2% / 0.82);
+    --shadow-sm: 0 4px 12px -4px hsl(25 95% 45% / 0.18), 0 10px 18px -14px hsl(220 20% 2% / 0.55);
+    --shadow-md: 0 8px 24px -6px hsl(25 95% 45% / 0.22), 0 18px 40px -22px hsl(220 20% 2% / 0.65);
+    --shadow-lg: 0 14px 40px -8px hsl(25 95% 45% / 0.28), 0 30px 70px -30px hsl(220 20% 2% / 0.72);
 
     /* "Words lift off the screen" — use ONLY on big headers */
     --text-lift: 0 1px 0 hsl(0 0% 0% / 0.16), 0 18px 50px hsl(220 20% 2% / 0.35);
@@ -157,9 +157,9 @@
     --surface-2: 210 30% 95%;
     --surface-3: 210 25% 92%;
 
-    --shadow-sm: 0 10px 18px -14px hsl(209 40% 20% / 0.16);
-    --shadow-md: 0 18px 40px -22px hsl(209 40% 20% / 0.18);
-    --shadow-lg: 0 30px 70px -30px hsl(209 40% 20% / 0.20);
+    --shadow-sm: 0 4px 12px -4px hsl(25 95% 50% / 0.12), 0 10px 18px -14px hsl(209 40% 20% / 0.14);
+    --shadow-md: 0 8px 24px -6px hsl(25 95% 50% / 0.16), 0 18px 40px -22px hsl(209 40% 20% / 0.16);
+    --shadow-lg: 0 14px 40px -8px hsl(25 95% 50% / 0.20), 0 30px 70px -30px hsl(209 40% 20% / 0.18);
 
     --text-lift: 0 1px 0 hsl(0 0% 100% / 0.70), 0 18px 45px hsl(209 40% 20% / 0.18);
   }
@@ -303,10 +303,17 @@
     border-radius: inherit;
   }
 
-  /* Lifted cards */
+  /* Lifted cards — orange-tinted depth */
   .elev-sm { box-shadow: var(--shadow-sm); }
   .elev-md { box-shadow: var(--shadow-md); }
   .elev-lg { box-shadow: var(--shadow-lg); }
+
+  /* Hover lift — deeper orange glow on interaction */
+  .elev-sm:hover, .elev-md:hover, .elev-lg:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
 
   /* Lifted headlines (use sparingly) */
   .text-lift { text-shadow: var(--text-lift); }
