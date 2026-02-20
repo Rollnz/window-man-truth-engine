@@ -147,6 +147,7 @@ interface UseLeadDetailReturn {
   updateSocialProfile: (platform: 'facebook' | 'instagram', url: string | null) => Promise<boolean>;
   updateLead: (updates: Partial<LeadDetailData>) => Promise<boolean>;
   triggerAnalysis: (quoteFileId: string) => Promise<boolean>;
+  getQuoteFileUrl: (fileId: string) => Promise<string | null>;
 }
 
 export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
@@ -420,6 +421,39 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
     }
   };
 
+  const getQuoteFileUrl = async (fileId: string): Promise<string | null> => {
+    if (!leadId) return null;
+    try {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) {
+        toast({ title: 'Error', description: 'Not authenticated', variant: 'destructive' });
+        return null;
+      }
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-lead-detail?id=${leadId}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authSession.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'get_quote_file_url', fileId }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to get file URL');
+      }
+
+      const data = await res.json();
+      return data.signedUrl || null;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not open uploaded document';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
+      return null;
+    }
+  };
+
   return {
     lead,
     events,
@@ -439,5 +473,6 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
     updateSocialProfile,
     updateLead,
     triggerAnalysis,
+    getQuoteFileUrl,
   };
 }
