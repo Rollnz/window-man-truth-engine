@@ -1,102 +1,41 @@
 
 
-# Visual Overhaul: "Forensic Elevated" Surfaces for Pillar Components + About Page
+# Fix text-primary and text-destructive Contrast in Light Mode
 
 ## Problem
 
-The 6 shared pillar components and the About page use flat backgrounds (`bg-card/50`, `bg-card/30`, `bg-muted/30`) with basic borders (`border-border`, `border-border/50`) and minimal shadows (`shadow-md`, `shadow-sm`). This creates a flat, monotone feel that clashes with the premium depth of the homepage and /sample-report.
+Both `--primary` (209 68% 55%) and `--destructive` (0 84% 60%) use the same HSL values in light and dark mode. On light backgrounds (white/near-white), these produce contrast ratios of approximately 3.5:1 and 4:1 respectively -- well below the 6:1 target. In dark mode they're fine (high contrast against dark surfaces).
 
-## What Changes
+## Solution
 
-Upgrade all surfaces, borders, shadows, and hover effects across 7 files using the existing `surface-1/2/3` CSS custom properties, glassmorphic borders, and elevated shadows. No new dependencies. No structural or content changes. Pure Tailwind class swaps.
+Darken both tokens **in the light theme only** by reducing their lightness value. This fixes all `text-primary` and `text-destructive` usage site-wide (icons, links, badges, labels) without any component-level changes. Button backgrounds (`bg-primary`) simply become a slightly deeper blue/red, which is aesthetically better and maintains the white `primary-foreground` text.
 
-## Files Modified (7 total)
+## Exact Changes
 
-### 1. PillarHeroSection.tsx
+**File: `src/index.css`** (1 file, 2 line changes)
 
-**Current:** Weak `bg-primary/5` and `bg-secondary/5` orbs at small size (w-96, w-80)
-**Updated:**
-- Enlarge orbs to `w-[500px] h-[500px]` and `w-[400px] h-[400px]` with stronger opacity (`bg-primary/8`, `bg-secondary/6`)
-- Add section background: `bg-[hsl(var(--surface-1))]`
-- Add bottom separator: `border-b border-border/30`
-- Badge gets glassmorphic border: `border-white/10 backdrop-blur-sm`
+In the `.light` theme block only:
 
-### 2. PillarStatBar.tsx
+| Token | Current | New | Contrast on white |
+|---|---|---|---|
+| `--primary` | `209 68% 55%` | `209 68% 38%` | ~6.3:1 (was ~3.5:1) |
+| `--destructive` | `0 84% 60%` | `0 84% 40%` | ~6.5:1 (was ~4:1) |
 
-**Current:** `bg-card/50 border-y border-border/50`, cards use `shadow-md hover:shadow-lg`
-**Updated:**
-- Section: `bg-[hsl(var(--surface-2))]` with `border-y border-border/30`
-- Cards: `bg-card backdrop-blur-sm border border-white/10 shadow-xl hover:shadow-2xl hover:scale-[1.02] hover:shadow-primary/10 transition-all duration-300`
-- Icon container: `border-white/10`
+Also update `--sidebar-primary` in `.light` to match: `209 68% 38%`.
 
-### 3. PillarContentBlock.tsx
+Dark mode values remain unchanged (55% and 60% are already high-contrast on dark surfaces).
 
-**Current:** No section background, bullet box uses `bg-card/50 border-border/50 shadow-sm`
-**Updated:**
-- Section: `bg-[hsl(var(--surface-1))]`
-- Left accent border: thicken to `border-l-[3px] border-primary/40`
-- Bullet card: `bg-card/80 backdrop-blur-sm border-white/10 shadow-lg`
+## What This Fixes
 
-### 4. PillarCalloutCard.tsx
-
-**Current:** `bg-gradient-to-br from-primary/10 to-secondary/5 border-primary/20 shadow-lg`
-**Updated:**
-- Outer card: `bg-card/90 backdrop-blur-sm border-white/10 shadow-2xl`
-- Keep internal gradient as a subtle layered effect
-- Icon container: `border-white/10`
-
-### 5. PillarGuideCards.tsx
-
-**Current:** Section `bg-card/30`, cards already have `shadow-xl hover:shadow-2xl hover:scale-[1.02]`
-**Updated:**
-- Section: `bg-[hsl(var(--surface-2))]`
-- Cards: add `backdrop-blur-sm border-white/10 hover:shadow-primary/10`
-- Icon container: `border-white/10`
-
-### 6. PillarCTASection.tsx
-
-**Current:** `bg-gradient-to-br from-primary/8 to-secondary/5`, single ambient orb
-**Updated:**
-- Section: `bg-[hsl(var(--surface-1))]` as base, keep gradient overlay
-- Add `border-t border-border/30` top separator
-- Enlarge ambient orb to `w-[600px] h-[600px]` with `bg-primary/6`
-
-### 7. About.tsx (manual upgrade)
-
-Since About doesn't use pillar components, it gets the same treatment applied directly:
-
-- **Hero section:** Add `bg-[hsl(var(--surface-1))]`, ambient gradient orbs behind content, wrap with `relative overflow-hidden`
-- **3 hero value cards** (Safety First, AI + Human, Lead With Value): Upgrade from `border-border` to `bg-card backdrop-blur-sm border-white/10 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300`. Wrap each in `AnimateOnScroll` with staggered `delay={index * 120}`
-- **Methodology section:** Change from `bg-muted/30` to `bg-[hsl(var(--surface-2))]`
-- **Methodology inner cards:** Add `border-white/10 shadow-lg backdrop-blur-sm`
-- **Transparency callout:** Add `shadow-lg backdrop-blur-sm`
-- **Review Board section:** Add `bg-[hsl(var(--surface-1))]`
-- **Review Board card:** Add `border-white/10 shadow-xl backdrop-blur-sm`
-- **Credential pills:** Add `backdrop-blur-sm`
-- **Mission section:** Change from `bg-muted/30` to `bg-[hsl(var(--surface-2))]`
-- **Problem/Solution cards:** Add `border-white/10 shadow-lg backdrop-blur-sm`
-- **Wrap sections** with `AnimateOnScroll` for entrance animations
+- All `text-primary` usage across About page, pillar components, hero badges, guide card icons, links, checklist icons, credential pills
+- All `text-destructive` usage on the About page mission section ("The Problem We're Solving" heading, numbered badges)
+- Every other page that uses these tokens in light mode
 
 ## What Does NOT Change
 
-- No routing, SEO, analytics, or database changes
-- No new files or dependencies
-- No content, CTA, or ExitIntentModal changes
-- Pillar page files themselves are NOT modified (they inherit from shared components)
-- All text stays on semantic tokens (`text-foreground`, `text-muted-foreground`) for 5:1+ contrast
-- `border-white/10` is decorative only, not carrying meaning
-
-## Accessibility
-
-- All existing semantic tokens preserved -- contrast ratios unchanged
-- `backdrop-blur-sm` is purely visual enhancement
-- `AnimateOnScroll` already respects `prefers-reduced-motion`
-- No opacity animations on paragraph text
-- Hover effects are progressive enhancement only
-
-## Performance
-
-- Zero new JS -- all changes are Tailwind class swaps
-- No new dependencies
-- `backdrop-blur-sm` is GPU-composited, negligible cost on modern browsers
+- Dark mode appearance (tokens unchanged)
+- No component files modified
+- No new tokens or dependencies
+- Button text (`text-primary-foreground: white`) stays white on the now-deeper backgrounds
+- Dossier page overrides its own `--primary` via `!important`, unaffected
 
