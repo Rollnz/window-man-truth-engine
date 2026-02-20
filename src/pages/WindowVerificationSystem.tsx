@@ -1,4 +1,5 @@
 import { CheckCircle, FileSearch, Library, FolderLock, Layers, Search, ShieldCheck, Shield } from "lucide-react";
+import clipboardHeroImg from "@/assets/impact_truth_clipboard_1-2.webp";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 
@@ -149,6 +150,10 @@ const WindowVerificationSystem = () => {
             { label: "Browse Evidence Library", to: ROUTES.EVIDENCE, icon: FileSearch },
             { label: "View Intel Reports", to: ROUTES.INTEL, icon: Library },
           ]}
+          heroImage={{
+            src: clipboardHeroImg,
+            alt: "Impact window verification checklist clipboard illustration",
+          }}
         />
 
         <PillarStatBar stats={stats} />
