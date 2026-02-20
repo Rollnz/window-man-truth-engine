@@ -1,177 +1,172 @@
 
 
-# Upgrade Slide-Over "Ask Window Man" Chat
-## Hurricane Hero Persona + Guided Actions + Tracking + Guardrails
+# Mobile-First: Micro-Commitments, Context Pre-fill, and Persona Expansion
+
+## The Constraint
+
+The slide-over sheet renders at `w-3/4` on mobile (roughly 280px on a 375px screen) with `p-6` padding, leaving about 232px of usable horizontal space. Every pixel of vertical space matters because the chat area, soft gate, and input bar all compete for the same ~500px of visible drawer height.
 
 ---
 
-## Summary
+## File 1: `src/components/floating-cta/steps/AiQaStep.tsx`
 
-Transform the slide-over chat from a generic Q&A widget into the **Window Man "Hurricane Hero"** persona-driven triage layer. The AI answers questions in character, suggests exactly 3 approved tools via hidden `<wm_actions>` tags rendered as buttons, tracks every interaction via `wmRetarget`, and never invents pricing.
+### Change A: Soft Gate CTA (replaces routing, never stacks)
 
----
+Add a `showSoftGate` boolean state. After post-stream parsing, if the latest message has a `verdict` OR `actions.length > 0`, set `showSoftGate = true`.
 
-## Phase 1: Edge Function -- Persona + Actions + Guardrails
+**The soft gate REPLACES the existing `showRouting` block** -- it does not stack on top. The render logic becomes:
+- If `showSoftGate === true` AND `showRouting === true`: render ONLY the soft gate (it subsumes routing)
+- If `showSoftGate === false` AND `showRouting === true`: render standard routing CTAs (existing behavior)
 
-**File: `supabase/functions/slide-over-chat/index.ts`**
+**Mobile layout (why it fits):**
 
-### A. Rewrite `buildSystemPrompt()` with Hurricane Hero Persona
+The soft gate is a single compact row, not a card:
 
-Replace the current generic persona with:
-- **Identity:** "You are Window Man, the Hurricane Hero -- the homeowner's shield against window scams and hurricane damage."
-- **Voice:** Direct, protective, no-nonsense. Occasional heroic metaphors ("Truth Armor," "fortify your knowledge," "your home deserves a shield, not a sales pitch") but never at the expense of clarity.
-- **No fluff.** Give the truth straight, backed by `truthContext`.
-
-### B. Add `<wm_actions>` output instructions
-
-Instruct the AI to append a hidden `<wm_actions>` JSON block when recommending tools. **Strict Rule of Three** -- the AI's only approved "superpowers" are:
-
-| Route | Label |
-|---|---|
-| `/ai-scanner` | Scan My Quote |
-| `/beat-your-quote` | Beat Your Quote |
-| `/fair-price-quiz` | Is My Price Fair? |
-
-- Max 2 actions per response
-- Frame tools as "Power-ups" or "Shields" in the conversational text
-- Button labels stay professional (the persona voice is in the text, not the button)
-- Optional `verdict` field: `"protected"`, `"inspect"`, or `"breach"`
-
-### C. Pricing guardrails (prompt-enforced)
-
-- NEVER invent specific dollar amounts or percent claims unless the user provided their quote data in-session
-- If asked "is this fair?" without quote data, route to `/ai-scanner`
-- No "today only" / urgency / sales pressure language
-- Max 1-2 follow-up questions if critical info is missing
-
-### D. Accept `truthContext` in request body
-
-Add optional `truthContext` field alongside existing fields (backward compatible):
-- mode, county, city, state, zip
-- windowCount, windowAge, homeSize, zipCode
-- completedTools (future: list of tools user already used)
-
-### E. Increase `max_tokens` from 300 to 450
-
-The persona voice + structured answer + `<wm_actions>` block needs more room.
-
-### F. Keep `[ROUTE:form]` / `[ROUTE:call]` in the prompt as fallback
-
-The old routing markers are preserved so existing behavior doesn't break.
-
----
-
-## Phase 2: Frontend -- Parse Actions + Render Buttons + Verdict Badge
-
-**File: `src/components/floating-cta/steps/AiQaStep.tsx`**
-
-### A. Add `parseWmActions()` helper
-
-- Extract JSON array from `<wm_actions>...</wm_actions>` in completed AI response
-- Return `{ cleanText, actions, verdict }`
-- Strip the tag block from displayed text
-- If JSON is malformed, fail silently (return empty actions, no crash)
-
-### B. Route allowlist (CORRECTED -- strict 3-tool limit)
-
-```text
-/ai-scanner     -> "Scan My Quote"
-/beat-your-quote -> "Beat Your Quote"
-/fair-price-quiz -> "Is My Price Fair?"
+```
+[Shield icon] Window Man flagged findings.    <- 1 line, text-xs
+[====== Save My Analysis ======]              <- 1 button, w-full, py-2
+[        I'll do it later       ]             <- text link, py-1
 ```
 
-**No other routes allowed.** Any action with a route not in this list is silently dropped. Max 2 actions rendered per response.
+Total height: approximately 80px (vs the existing routing block which is ~90px with its heading + 2 buttons). It is shorter than what it replaces.
 
-### C. Render action buttons below latest assistant message
+**Why it looks great:** No card container, no border, no padding bloat. The shield icon + single-line copy + single full-width button is the most compact possible CTA. On a 375px screen, the text wraps cleanly at `text-xs` and the button has generous tap target at `w-full py-2`.
 
-- Compact button row with the label from the AI (or fallback label from allowlist)
-- On click: navigate to route via `react-router-dom` `useNavigate`
-- Only show on the most recent assistant message
+**Social proof line:** Rendered as inline `text-[10px]` micro-copy directly below the button: "X homeowners in [County] saved their report today." This is raw text, NOT the UrgencyTicker component -- no animation, no pulsing dot, no layout cost.
 
-### D. Verdict badge (optional)
+**Keyboard dismissal:** When `showSoftGate` becomes true, call `inputRef.current?.blur()` to dismiss the mobile keyboard, ensuring the full soft gate is visible without the "letterbox" effect.
 
-- Small badge above action buttons: shield icon (green = `protected`), magnifying glass (amber = `inspect`), alert (red = `breach`)
-- Only renders when AI includes a `verdict` field
-- Adds personality without cluttering chat
+**Tracking:** Fire `ai_micro_commit_shown` (verdict, mode) via `useEffect` when `showSoftGate` transitions to true. Fire `ai_micro_commit_accepted` (source: 'soft_gate', mode) on "Save My Analysis" click.
 
-### E. Extend internal Message interface
+### Change B: Action buttons -- full-width stacked on mobile
 
-Add optional `actions` and `verdict` fields so they persist when scrolling through chat history.
+Change the action button container from `flex gap-2 flex-wrap` to `flex flex-col gap-1.5`. Each button becomes `w-full` with tight vertical padding (`py-1.5 text-xs`).
 
-### F. Preserve existing routing behavior
+**Why it looks great:** On a 280px-wide drawer, "Is My Price Fair?" (17 characters) plus an arrow icon fits comfortably on a single line at `text-xs`. Stacking vertically gives each button a full-width tap target (minimum 44px height per button), which meets Apple HIG guidelines. The `gap-1.5` (6px) keeps them visually grouped without wasting space.
 
-- `[ROUTE:form]` / `[ROUTE:call]` parsing stays as fallback
-- 3-message threshold routing CTAs stay
-- 5-message limit with "connect with expert" CTA stays
-- `<wm_actions>` is additive, not a replacement
+**Height budget:** 2 stacked buttons = approximately 100px. Combined with the verdict badge above (24px), total action block is about 124px -- less than 25% of a typical 500px visible drawer area. The AI's answer text remains visible above.
+
+### Change C: Chat-to-Tool pre-fill via URL params
+
+Update `handleActionClick` to build `URLSearchParams` from truthContext:
+
+```typescript
+const params = new URLSearchParams();
+const wc = sessionData.windowCount || formData.windowCount;
+const zip = sessionData.zipCode || formData.zip;
+const lastVerdict = messages.findLast(m => m.verdict)?.verdict;
+
+if (wc) params.set('count', String(wc));
+if (zip) params.set('zip', zip);
+if (lastVerdict) params.set('verdict', lastVerdict);
+params.set('ref', 'wm_chat');
+
+navigate(`${action.route}?${params.toString()}`);
+```
+
+Fire `ai_context_passed` with `target_route` and `param_count`.
+
+**Attribution safety:** `ref` is an internal referral path. The attribution system uses `utm_source`, `gclid`, `fbclid` -- separate namespace, no collision.
+
+### Change D: Tracking events (3 new)
+
+All via `wmRetarget`, no OPT events:
+- `ai_micro_commit_shown` -- verdict, mode
+- `ai_micro_commit_accepted` -- source: 'soft_gate', mode  
+- `ai_context_passed` -- target_route, param_count
 
 ---
 
-## Phase 3: Tracking -- Switch from `trackEvent` to `wmRetarget`
+## File 2: `src/pages/FairPriceQuiz.tsx`
 
-**File: `src/components/floating-cta/steps/AiQaStep.tsx`**
+### Change A: Read URL params and pre-fill window count
 
-Replace all `trackEvent()` calls with `wmRetarget()` from `@/lib/wmTracking`. These are RT events (retargeting audiences) with no value/currency, fully compliant with the Signal Firewall.
+Import `useSearchParams`. On mount, read `count`, `zip`, `ref` params.
 
-| Event | When | Key Fields |
+If `count` is a valid positive integer, pre-set `answers[2]` (the window count question, index 2) with that number value. This is the `type: 'number'` question "How many windows are you replacing?"
+
+If `ref === 'wm_chat'`, auto-advance phase from `'hero'` to `'quiz'` and set `currentStep` to the NEXT unanswered question (if count is pre-filled, skip to step 3). This skips the hero landing page so the user feels continuity from the chat.
+
+**Pre-filled fields are fully editable:** The quiz uses `useState` for answers -- the pre-filled value is just an initial state. The number input renders normally with the value visible and editable. No "locked" UI treatment.
+
+### Change B: Continuity banner (mobile-safe)
+
+When `ref === 'wm_chat'` is present, render a small pill at the top of the quiz container:
+
+```
+[Shield icon] Continuing your Window Man analysis
+```
+
+Styled as `inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium`. This is 28px tall and sits inside the existing `container px-4` padding.
+
+**Why it looks great:** On mobile, this pill is a subtle orientation cue -- the user knows they didn't land on a random page. It takes only 28px of vertical space and matches the badge aesthetic already used in `QuizHero` (the "Fair Price Diagnostic" badge).
+
+---
+
+## File 3: `src/pages/QuoteScanner.tsx`
+
+### Change A: Read URL params, sync zip to session
+
+Import `useSearchParams`. On mount, read `zip`, `ref` params.
+
+If `ref === 'wm_chat'` and `zip` is present, call `updateField('zipCode', zip)` to sync session data.
+
+No visual changes. The scanner is upload-based -- no form fields to pre-fill. But the zip is now available in session for the edge function analysis.
+
+---
+
+## File 4: `src/pages/BeatYourQuote.tsx`
+
+### Change A: Read URL params, sync context to session
+
+Import `useSearchParams` and `useSessionData` (already imported). On mount, read `count`, `zip`, `ref` params.
+
+If `ref === 'wm_chat'`, sync available fields via the existing session hook.
+
+No visual changes. Context flows silently into the session for downstream use.
+
+---
+
+## File 5: `supabase/functions/slide-over-chat/index.ts`
+
+### Change A: Guardian Pivot paragraph
+
+Add one new paragraph to the `actionsInstructions` section of `buildSystemPrompt()`, after the existing "ROUTING FALLBACKS" block:
+
+```
+THE GUARDIAN PIVOT:
+When you detect red flags or the user seems uncertain, occasionally offer to "lock" or "save" their analysis.
+Example: "I've flagged some concerns here. I recommend we lock this analysis in your vault now -- it makes it harder for a salesperson to wiggle out later."
+Use "vault" and "lock data" terminology to frame data collection as protection, not marketing.
+Max once per conversation. Only when verdict would be "inspect" or "breach."
+Do NOT use this if the user seems casual or is just asking general questions.
+```
+
+No other prompt changes.
+
+---
+
+## Mobile UX Verification Checklist
+
+| Concern | Solution | Height Budget |
 |---|---|---|
-| `ai_chat_opened` | Step mounts | `source_tool: 'slide-over-chat'`, `mode`, `panel_variant` |
-| `ai_message_sent` | User sends a message | `source_tool: 'slide-over-chat'`, `mode`, `message_index` |
-| `ai_answer_received` | Stream completes | `source_tool: 'slide-over-chat'`, `mode`, `message_index`, `has_actions`, `verdict` |
-| `ai_action_clicked` | User clicks action button | `source_tool: 'slide-over-chat'`, `mode`, `action_route` |
-| `ai_deep_engagement` | 3rd user message (once) | `source_tool: 'slide-over-chat'`, `mode`, `messages_exchanged` |
-
-No OPT events fired from chat. No value/currency ever.
-
----
-
-## Phase 4: Pass `truthContext` from Frontend
-
-**File: `src/components/floating-cta/steps/AiQaStep.tsx`**
-
-Build and send `truthContext` alongside existing `locationData` and `sessionContext` fields:
-
-```text
-truthContext: {
-  mode,
-  county, city, state, zip,
-  windowCount, windowAge, homeSize, zipCode,
-  completedTools: []
-}
-```
-
-Sent in addition to (not replacing) existing fields for backward compatibility. The edge function uses whichever is available.
+| Soft gate pushes content off-screen | Replaces routing CTA (never stacks), shorter than what it replaces | ~80px (vs ~90px existing) |
+| Action buttons don't fit side-by-side | Full-width stacked with `flex-col gap-1.5` | ~100px for 2 buttons |
+| Keyboard blocks soft gate | `inputRef.current?.blur()` on soft gate trigger | 0px (keyboard dismissed) |
+| Pre-fill feels "locked" | Standard `useState` initial value, fully editable input | No change |
+| Page jump feels disorienting | Continuity pill: "Continuing your Window Man analysis" | 28px |
+| Social proof clutters the card | Raw `text-[10px]` micro-copy, not the animated ticker component | ~14px |
+| Total soft gate + verdict + actions | Never shown simultaneously (soft gate only appears when routing would) | Max ~124px |
 
 ---
 
 ## Files Modified
 
-1. **`supabase/functions/slide-over-chat/index.ts`** -- Rewritten `buildSystemPrompt()` with Hurricane Hero persona, `<wm_actions>` instructions, pricing guardrails, `truthContext` interface, `max_tokens` bump to 450
-2. **`src/components/floating-cta/steps/AiQaStep.tsx`** -- `parseWmActions()` helper, 3-route allowlist, action button rendering, verdict badge, `wmRetarget` tracking (5 events), `truthContext` payload
+1. `src/components/floating-cta/steps/AiQaStep.tsx` -- Soft gate, stacked buttons, URL param builder, 3 tracking events, keyboard blur
+2. `src/pages/FairPriceQuiz.tsx` -- URL param pre-fill (answers[2]), auto-advance to quiz phase, continuity pill
+3. `src/pages/QuoteScanner.tsx` -- URL param zip sync (no visual changes)
+4. `src/pages/BeatYourQuote.tsx` -- URL param context sync (no visual changes)
+5. `supabase/functions/slide-over-chat/index.ts` -- Guardian Pivot paragraph in prompt
 
 No new files. No database changes. No new dependencies.
-
----
-
-## What Does NOT Change
-
-- Streaming SSE architecture (intact)
-- Rate limiting logic (untouched)
-- `[ROUTE:form]` / `[ROUTE:call]` fallback parsing (preserved)
-- 5-message limit and "connect with expert" CTA (preserved)
-- No OPT events from chat (Signal Firewall compliant)
-- No new Edge Functions or database tables
-
----
-
-## Acceptance Criteria
-
-- The assistant speaks in the Window Man "Hurricane Hero" voice consistently
-- `<wm_actions>` is never visible to the user (stripped from display)
-- Action buttons render below the latest AI message and navigate ONLY to `/ai-scanner`, `/beat-your-quote`, or `/fair-price-quiz`
-- Invalid/malformed actions or disallowed routes fail silently
-- Verdict badge shows when AI includes a verdict field
-- `wmRetarget` fires for all 5 tracking events
-- The AI does not invent specific pricing; it routes to `/ai-scanner` when it lacks data
-- Streaming UX remains smooth with no regressions
 
