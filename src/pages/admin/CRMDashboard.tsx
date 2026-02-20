@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Loader2, Calculator, FileText, Activity, Zap, Search, ScanSearch } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Loader2, Calculator, FileText, Activity, Zap, ScanSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useCRMLeads } from '@/hooks/useCRMLeads';
 import { useGlobalSearch } from '@/hooks/useGlobalSearch';
@@ -38,8 +39,10 @@ export default function CRMDashboard() {
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [showHighTouchOnly, setShowHighTouchOnly] = useState(false);
   const [v2SegmentFilter, setV2SegmentFilter] = useState<string>('all');
-  const [hasQuoteFilter, setHasQuoteFilter] = useState(false);
-  const [analyzedFilter, setAnalyzedFilter] = useState(false);
+  const [quoteTab, setQuoteTab] = useState<'all' | 'with_quote' | 'analyzed'>('all');
+
+  const hasQuoteFilter = quoteTab === 'with_quote' || quoteTab === 'analyzed';
+  const analyzedFilter = quoteTab === 'analyzed';
 
   const { 
     leads, 
@@ -102,7 +105,7 @@ export default function CRMDashboard() {
   useEffect(() => {
     handleRefresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasQuoteFilter, analyzedFilter]);
+  }, [quoteTab]);
 
   const handleRecalculateScores = async () => {
     setIsRecalculating(true);
@@ -177,10 +180,8 @@ export default function CRMDashboard() {
                 <h1 className="text-2xl font-bold">Lead Warehouse</h1>
                 <p className="text-sm text-muted-foreground">
                   CRM Kanban Board • {filteredLeads.length} leads
-                  {(showHighTouchOnly || v2SegmentFilter !== 'all' || hasQuoteFilter || analyzedFilter) && ` (filtered from ${leads.length})`}
+                  {(showHighTouchOnly || v2SegmentFilter !== 'all' || quoteTab !== 'all') && ` (filtered from ${leads.length})`}
                   {v2SegmentFilter !== 'all' && ` • Segment: ${v2SegmentFilter}`}
-                  {hasQuoteFilter && ' • With Quote'}
-                  {analyzedFilter && ' • Analyzed'}
                 </p>
               </div>
             </div>
@@ -207,31 +208,22 @@ export default function CRMDashboard() {
                 </Label>
               </div>
 
-              {/* With Quote Filter */}
-              <div className="flex items-center gap-2 px-3 py-1.5 border border-border/50 rounded-lg bg-card/50">
-                <Switch
-                  id="quote-filter"
-                  checked={hasQuoteFilter}
-                  onCheckedChange={setHasQuoteFilter}
-                />
-                <Label htmlFor="quote-filter" className="flex items-center gap-2 cursor-pointer text-sm">
-                  <FileText className="h-4 w-4 text-amber-500" />
-                  With Quote
-                </Label>
-              </div>
-
-              {/* Analyzed Filter */}
-              <div className="flex items-center gap-2 px-3 py-1.5 border border-border/50 rounded-lg bg-card/50">
-                <Switch
-                  id="analyzed-filter"
-                  checked={analyzedFilter}
-                  onCheckedChange={setAnalyzedFilter}
-                />
-                <Label htmlFor="analyzed-filter" className="flex items-center gap-2 cursor-pointer text-sm">
-                  <ScanSearch className="h-4 w-4 text-green-500" />
-                  Analyzed
-                </Label>
-              </div>
+              {/* Quote Tab Filter */}
+              <Tabs value={quoteTab} onValueChange={(v) => setQuoteTab(v as typeof quoteTab)}>
+                <TabsList className="h-9">
+                  <TabsTrigger value="all" className="text-xs px-3 h-7">
+                    All Leads
+                  </TabsTrigger>
+                  <TabsTrigger value="with_quote" className="text-xs px-3 h-7 gap-1.5">
+                    <FileText className="h-3.5 w-3.5" />
+                    With Quote
+                  </TabsTrigger>
+                  <TabsTrigger value="analyzed" className="text-xs px-3 h-7 gap-1.5">
+                    <ScanSearch className="h-3.5 w-3.5" />
+                    Analyzed
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
 
               {/* V2 Segment Filter */}
               <div className="flex items-center gap-2 px-3 py-1.5 border border-border/50 rounded-lg bg-card/50">
@@ -351,13 +343,13 @@ export default function CRMDashboard() {
               Show All Leads
             </Button>
           </div>
-        ) : filteredLeads.length === 0 && (hasQuoteFilter || analyzedFilter) ? (
+        ) : filteredLeads.length === 0 && quoteTab !== 'all' ? (
           <div className="text-center py-12 border rounded-lg border-dashed border-border/50">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground mb-2">
-              {analyzedFilter ? 'No leads with analyzed quotes found' : 'No leads with uploaded quotes found'}
+              {quoteTab === 'analyzed' ? 'No leads with analyzed quotes found' : 'No leads with uploaded quotes found'}
             </p>
-            <Button variant="outline" className="mt-4" onClick={() => { setHasQuoteFilter(false); setAnalyzedFilter(false); }}>
+            <Button variant="outline" className="mt-4" onClick={() => setQuoteTab('all')}>
               Show All Leads
             </Button>
           </div>
