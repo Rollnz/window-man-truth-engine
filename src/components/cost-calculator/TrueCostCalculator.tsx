@@ -117,16 +117,16 @@ function FadeInSection({
   children,
   delay = 0,
   className
-}: {
-  children: React.ReactNode;
-  delay?: number;
-  className?: string;
-}) {
+
+
+
+
+}: {children: React.ReactNode;delay?: number;className?: string;}) {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
           observer.unobserve(entry.target);
@@ -219,7 +219,7 @@ export function TrueCostCalculator({
     return () => clearTimeout(timeout);
   }, [flashFields]);
   const updateField = (field: keyof CalculatorInputs, value: number) => {
-    setInputs(prev => {
+    setInputs((prev) => {
       const nextValue = sanitizePositiveNumber(value, prev[field]);
       return {
         ...prev,
@@ -231,14 +231,14 @@ export function TrueCostCalculator({
     if (!scenarioPrompt.trim()) return;
     setAiFeedback(null);
     setIsAiLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 800));
     const updates = parseScenarioPrompt(scenarioPrompt);
     if (Object.keys(updates).length === 0) {
       setAiFeedback("I didn't spot numbers to change. Try 'Term 25 years at 6%' or 'Project cost 35k'.");
       setIsAiLoading(false);
       return;
     }
-    setInputs(prev => {
+    setInputs((prev) => {
       setFlashFields(new Set(Object.keys(updates) as (keyof CalculatorInputs)[]));
       return {
         ...prev,
@@ -346,7 +346,7 @@ export function TrueCostCalculator({
     clearErrors();
   };
   const renderHighlightCard = (highlight: SavingsHighlight, index: number) => <FadeInSection key={highlight.title} delay={index * 100}>
-      <div className={cn('h-full rounded-xl border bg-white p-5 shadow-md transition-transform hover:scale-[1.02]', highlight.borderClass)}>
+      <div className={cn("h-full rounded-xl bg-white p-5 shadow-md transition-transform hover:scale-[1.02] border-4", highlight.borderClass)}>
         <div className="mb-3 flex items-center">
           <div className={cn('mr-3 flex h-9 w-9 items-center justify-center rounded-full', highlight.badgeClass)}>
             {highlight.icon}
@@ -354,7 +354,7 @@ export function TrueCostCalculator({
           <h3 className="text-sm font-semibold text-gray-900">{highlight.title}</h3>
         </div>
         <ul className="space-y-2 text-sm text-gray-700">
-          {highlight.points.map(point => <li key={point} className="flex gap-2">
+          {highlight.points.map((point) => <li key={point} className="flex gap-2">
               <span>•</span>
               <span>{point}</span>
             </li>)}
@@ -402,7 +402,7 @@ export function TrueCostCalculator({
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                       <span className="text-sm text-gray-500">$</span>
                     </div>
-                    <input id="projectCost" type="number" inputMode="decimal" value={inputs.projectCost} onChange={event => updateField('projectCost', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 bg-[#EFF6FF] py-2 pl-7 pr-4 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('projectCost') && 'border-emerald-500 bg-emerald-50')} />
+                    <input id="projectCost" type="number" inputMode="decimal" value={inputs.projectCost} onChange={(event) => updateField('projectCost', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 bg-[#EFF6FF] py-2 pl-7 pr-4 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('projectCost') && 'border-emerald-500 bg-emerald-50')} />
                   </div>
                 </div>
 
@@ -411,14 +411,14 @@ export function TrueCostCalculator({
                     <label htmlFor="termYears" className="block text-sm font-medium text-gray-700">
                       Term (years)
                     </label>
-                    <input id="termYears" type="number" inputMode="numeric" min={1} max={40} value={inputs.termYears} onChange={event => updateField('termYears', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 bg-[#EFF6FF] px-4 py-2 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('termYears') && 'border-emerald-500 bg-emerald-50')} />
+                    <input id="termYears" type="number" inputMode="numeric" min={1} max={40} value={inputs.termYears} onChange={(event) => updateField('termYears', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 bg-[#EFF6FF] px-4 py-2 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('termYears') && 'border-emerald-500 bg-emerald-50')} />
                   </div>
 
                   <div className="space-y-2">
                     <label htmlFor="aprPercent" className="block text-sm font-medium text-gray-700">
                       Estimated APR (%)
                     </label>
-                    <input id="aprPercent" type="number" inputMode="decimal" step="0.01" value={inputs.aprPercent} onChange={event => updateField('aprPercent', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 bg-[#EFF6FF] px-4 py-2 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('aprPercent') && 'border-emerald-500 bg-emerald-50')} />
+                    <input id="aprPercent" type="number" inputMode="decimal" step="0.01" value={inputs.aprPercent} onChange={(event) => updateField('aprPercent', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 bg-[#EFF6FF] px-4 py-2 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('aprPercent') && 'border-emerald-500 bg-emerald-50')} />
                   </div>
                 </div>
 
@@ -430,7 +430,7 @@ export function TrueCostCalculator({
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                       <span className="text-sm text-gray-500">$</span>
                     </div>
-                    <input id="estimatedSavings" type="number" inputMode="decimal" value={inputs.estimatedMonthlySavings} onChange={event => updateField('estimatedMonthlySavings', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 bg-[#EFF6FF] py-2 pl-7 pr-4 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('estimatedMonthlySavings') && 'border-emerald-500 bg-emerald-50')} />
+                    <input id="estimatedSavings" type="number" inputMode="decimal" value={inputs.estimatedMonthlySavings} onChange={(event) => updateField('estimatedMonthlySavings', parseFloat(event.target.value))} className={cn('block w-full rounded-lg border border-gray-300 bg-[#EFF6FF] py-2 pl-7 pr-4 text-sm outline-none transition-all focus:border-sky-500 focus:ring-sky-500', flashFields.has('estimatedMonthlySavings') && 'border-emerald-500 bg-emerald-50')} />
                   </div>
                   <p className="text-[11px] leading-tight text-gray-500">Conservative guess. Many homeowners land between $80–$200/mo.</p>
                 </div>
@@ -466,7 +466,7 @@ export function TrueCostCalculator({
                   AI Scenario Tester
                 </label>
                 <div className="relative flex items-center gap-2">
-                  <input id="aiChat" type="text" value={scenarioPrompt} placeholder="e.g., 'What if rate was 5%?'" onChange={event => setScenarioPrompt(event.target.value)} onKeyDown={event => {
+                  <input id="aiChat" type="text" value={scenarioPrompt} placeholder="e.g., 'What if rate was 5%?'" onChange={(event) => setScenarioPrompt(event.target.value)} onKeyDown={(event) => {
                   if (event.key === 'Enter') {
                     event.preventDefault();
                     handleScenario();
