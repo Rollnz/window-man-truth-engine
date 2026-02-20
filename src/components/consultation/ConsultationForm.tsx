@@ -8,9 +8,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, CheckCircle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CallWindowManButton } from './CallWindowManButton';
+import { QuoteUploadDropzone } from '@/components/beat-your-quote/QuoteUploadDropzone';
+import { toast } from 'sonner';
 interface ConsultationFormProps {
   onSubmit: (data: ConsultationFormData) => Promise<void>;
   onFormStart?: () => void;
@@ -82,6 +84,8 @@ export function ConsultationForm({
   const [hasStarted, setHasStarted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<ConsultationFormData>>({
     windowTypes: []
   });
@@ -228,7 +232,12 @@ export function ConsultationForm({
     }
     setIsSubmitting(true);
     try {
-      await onSubmit(formData as ConsultationFormData);
+      const submissionData = {
+        ...formData,
+        quoteFileId: uploadedFileId || undefined,
+        quoteFileName: uploadedFileName || undefined,
+      } as ConsultationFormData;
+      await onSubmit(submissionData);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Something went wrong. Please try again.');
     } finally {
@@ -449,12 +458,55 @@ export function ConsultationForm({
                 </RadioGroup>
               </fieldset>}
 
-            {/* Quote Details - Optional */}
-            <div className="space-y-2">
-              <Label htmlFor="quoteDetails" className="text-white">
-                Upload or paste quote details <span className="text-muted-foreground">(optional)</span>
+            {/* Quote Details - Upload + Paste */}
+            <div className="space-y-3">
+              <Label className="text-foreground">
+                Share your quote <span className="text-muted-foreground">(optional)</span>
               </Label>
-              <Textarea id="quoteDetails" name="quoteDetails" rows={4} value={formData.quoteDetails || ''} onChange={e => handleChange('quoteDetails', e.target.value)} placeholder="Paste your quote details here, or describe what you've been quoted..." className="resize-none" />
+
+              {/* File upload or attached badge */}
+              {uploadedFileId ? (
+                <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
+                  <CheckCircle className="w-4 h-4 text-primary shrink-0" />
+                  <span className="text-sm text-foreground truncate flex-1">{uploadedFileName || 'Quote attached'}</span>
+                  <button
+                    type="button"
+                    onClick={() => { setUploadedFileId(null); setUploadedFileName(null); }}
+                    className="text-muted-foreground hover:text-foreground p-0.5"
+                    aria-label="Remove attachment"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <QuoteUploadDropzone
+                  compact
+                  sourcePage="consultation"
+                  onSuccess={(fileId, filePath) => {
+                    setUploadedFileId(fileId);
+                    setUploadedFileName(filePath.split('/').pop() || 'quote-document');
+                  }}
+                  onError={(error) => toast.error(error)}
+                />
+              )}
+
+              {/* Divider */}
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex-1 h-px bg-border" />
+                <span>or</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+
+              {/* Paste textarea */}
+              <Textarea
+                id="quoteDetails"
+                name="quoteDetails"
+                rows={3}
+                value={formData.quoteDetails || ''}
+                onChange={e => handleChange('quoteDetails', e.target.value)}
+                placeholder="Paste your quote details here, or describe what you've been quoted..."
+                className="resize-none"
+              />
               <p className="text-xs text-muted-foreground">
                 The more details you share, the more thorough our review can be.
               </p>

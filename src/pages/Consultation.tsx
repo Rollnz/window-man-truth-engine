@@ -64,7 +64,9 @@ export default function Consultation() {
             quoteCount: data.quoteCount,
             windowTypes: data.windowTypes,
             concern: data.concern,
-            quoteDetails: data.quoteDetails
+            quoteDetails: data.quoteDetails,
+            quoteFileId: data.quoteFileId,
+            quoteFileName: data.quoteFileName
           }
         }
       });
