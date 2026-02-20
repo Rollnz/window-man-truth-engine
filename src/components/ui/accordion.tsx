@@ -6,7 +6,7 @@ const Accordion = AccordionPrimitive.Root;
 const AccordionItem = React.forwardRef<React.ElementRef<typeof AccordionPrimitive.Item>, React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>>(({
   className,
   ...props
-}, ref) => <AccordionPrimitive.Item ref={ref} className={cn("border-b [background:var(--accordion,transparent)] rounded-lg px-4 text-black", className)} {...props} />);
+}, ref) => <AccordionPrimitive.Item ref={ref} className={cn("border-b rounded-lg px-4 text-foreground", className)} {...props} />);
 AccordionItem.displayName = "AccordionItem";
 const AccordionTrigger = React.forwardRef<React.ElementRef<typeof AccordionPrimitive.Trigger>, React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>>(({
   className,
@@ -24,7 +24,7 @@ const AccordionContent = React.forwardRef<React.ElementRef<typeof AccordionPrimi
   children,
   ...props
 }, ref) => <AccordionPrimitive.Content ref={ref} className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down" {...props}>
-    <div className={cn("pb-4 pt-0 text-black", className)}>{children}</div>
+    <div className={cn("pb-4 pt-0 text-muted-foreground", className)}>{children}</div>
   </AccordionPrimitive.Content>);
 AccordionContent.displayName = AccordionPrimitive.Content.displayName;
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent };
