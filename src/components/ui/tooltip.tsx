@@ -12,6 +12,7 @@ interface TooltipProps extends React.ComponentPropsWithoutRef<typeof TooltipPrim
 const Tooltip = ({ delayDuration = 0, ...props }: TooltipProps) => (
   <TooltipPrimitive.Root delayDuration={delayDuration} {...props} />
 );
+Tooltip.displayName = "Tooltip";
 
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
