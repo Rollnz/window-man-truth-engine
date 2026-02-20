@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { proofStats } from '@/data/proof/proofData';
 import { EvidenceStat } from '../EvidenceStat';
 import { ShimmerBadge } from '@/components/ui/ShimmerBadge';
+import { UrgencyTicker } from '@/components/social-proof/UrgencyTicker';
+import { useTickerStats } from '@/hooks/useTickerStats';
 
 interface ProofHeroProps {
   onWatchVoiceAgent: () => void;
@@ -17,6 +19,8 @@ interface ProofHeroProps {
  * Motion: Uses wm-reveal + stagger for child-level entrance animations
  */
 export function ProofHero({ onWatchVoiceAgent, onViewCaseStudies }: ProofHeroProps) {
+  const { total } = useTickerStats();
+
   return (
     <section 
       className="pt-20 pb-12 md:pt-28 md:pb-20 relative overflow-hidden"
@@ -46,7 +50,7 @@ export function ProofHero({ onWatchVoiceAgent, onViewCaseStudies }: ProofHeroPro
           <p className="wm-reveal wm-stagger-2 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
             We do not ask for trust. We earn it—through transparent data, AI-audited quotes, 
             and the documented outcomes of{' '}
-            <span className="font-semibold text-foreground">{proofStats.totalHomeowners}+ Florida homeowners</span>{' '}
+            <span className="font-semibold text-foreground">{total.toLocaleString()}+ Florida homeowners</span>{' '}
             who beat inflated window pricing, hidden specs, and insurance blind spots.
           </p>
           
@@ -72,15 +76,18 @@ export function ProofHero({ onWatchVoiceAgent, onViewCaseStudies }: ProofHeroPro
           </div>
         </div>
 
-        {/* Live Proof Counters */}
-        <div className="wm-reveal wm-stagger-4 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-          <EvidenceStat
-            label="Florida Homeowners Helped"
-            value={proofStats.totalHomeowners}
-            suffix="+"
-            variant="primary"
-            showVerified
+        {/* Live Proof: UrgencyTicker */}
+        <div className="wm-reveal wm-stagger-4 max-w-4xl mx-auto mb-6">
+          <UrgencyTicker 
+            variant="homepage" 
+            size="lg" 
+            showToday 
+            showPermitFlags={false}
           />
+        </div>
+
+        {/* Remaining stat cards */}
+        <div className="wm-reveal wm-stagger-5 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
           <EvidenceStat
             label="Avg. Overpricing Identified"
             value={proofStats.averageOverpricing}

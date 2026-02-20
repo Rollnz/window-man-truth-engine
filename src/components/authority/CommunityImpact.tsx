@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Shield, DollarSign, Home, FileSearch, ArrowRight } from 'lucide-react';
 import { ROUTES } from '@/config/navigation';
 import { cn } from '@/lib/utils';
+import { useTickerStats } from '@/hooks/useTickerStats';
 
 interface ImpactStatProps {
   value: number;
@@ -88,6 +89,8 @@ interface CommunityImpactProps {
  * Used on Home and Evidence pages for social proof.
  */
 export function CommunityImpact({ className, variant = 'full' }: CommunityImpactProps) {
+  const { total } = useTickerStats();
+
   if (variant === 'compact') {
     return (
       <div className={cn("grid grid-cols-2 gap-4", className)}>
@@ -100,7 +103,7 @@ export function CommunityImpact({ className, variant = 'full' }: CommunityImpact
           delay={0}
         />
         <ImpactStat
-          value={450}
+          value={total}
           suffix="+"
           label="Florida homes scanned"
           icon={<Home className="w-6 h-6 text-primary" />}
@@ -139,7 +142,7 @@ export function CommunityImpact({ className, variant = 'full' }: CommunityImpact
               delay={0}
             />
             <ImpactStat
-              value={450}
+              value={total}
               suffix="+"
               label="Florida homes scanned"
               icon={<Home className="w-6 h-6 text-primary" />}
