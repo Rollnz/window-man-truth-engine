@@ -411,6 +411,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          ai_pre_analysis: Json | null
           ai_psych_profile: string | null
           ai_sales_hook: string | null
           chat_history: Json | null
@@ -475,6 +476,7 @@ export type Database = {
           zip: string | null
         }
         Insert: {
+          ai_pre_analysis?: Json | null
           ai_psych_profile?: string | null
           ai_sales_hook?: string | null
           chat_history?: Json | null
@@ -539,6 +541,7 @@ export type Database = {
           zip?: string | null
         }
         Update: {
+          ai_pre_analysis?: Json | null
           ai_psych_profile?: string | null
           ai_sales_hook?: string | null
           chat_history?: Json | null
