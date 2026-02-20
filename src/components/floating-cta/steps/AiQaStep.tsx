@@ -1,17 +1,31 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, ArrowRight, Phone, Loader2 } from 'lucide-react';
+import { Send, ArrowRight, Phone, Loader2, Shield, Search, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { fastAIRequest } from '@/lib/aiRequest';
-import { trackEvent } from '@/lib/gtm';
+import { wmRetarget } from '@/lib/wmTracking';
 import type { AiQaMode } from '@/lib/panelVariants';
 import type { LocationPersonalization } from '@/hooks/useLocationPersonalization';
 import type { SessionData } from '@/hooks/useSessionData';
 import type { EstimateFormData } from '../EstimateSlidePanel';
 
+// ═══════════════════════════════════════════════════════════════════
+// Types
+// ═══════════════════════════════════════════════════════════════════
+
+interface WmAction {
+  type: 'navigate';
+  route: string;
+  label: string;
+  verdict?: 'protected' | 'inspect' | 'breach';
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  actions?: WmAction[];
+  verdict?: 'protected' | 'inspect' | 'breach';
 }
 
 interface AiQaStepProps {
@@ -26,34 +40,128 @@ interface AiQaStepProps {
   panelVariant: string;
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// Constants & Helpers
+// ═══════════════════════════════════════════════════════════════════
+
 const MAX_USER_MESSAGES = 5;
 
+/** Strict 3-tool allowlist */
+const ALLOWED_ROUTES: Record<string, string> = {
+  '/ai-scanner': 'Scan My Quote',
+  '/beat-your-quote': 'Beat Your Quote',
+  '/fair-price-quiz': 'Is My Price Fair?',
+};
+
 /**
- * Strip routing signals from AI responses. The AI may include
- * [ROUTE:form] or [ROUTE:call] markers to trigger routing CTA display.
+ * Parse <wm_actions>...</wm_actions> from AI response.
+ * Returns cleaned text, validated actions, and optional verdict.
+ */
+function parseWmActions(text: string): {
+  cleanText: string;
+  actions: WmAction[];
+  verdict: 'protected' | 'inspect' | 'breach' | null;
+} {
+  let actions: WmAction[] = [];
+  let verdict: 'protected' | 'inspect' | 'breach' | null = null;
+
+  const cleaned = text
+    .replace(/<wm_actions>\s*([\s\S]*?)\s*<\/wm_actions>/gi, (_, jsonStr) => {
+      try {
+        const parsed = JSON.parse(jsonStr);
+        if (Array.isArray(parsed)) {
+          // Filter to allowlisted routes only, max 2
+          const valid = parsed
+            .filter(
+              (a: any) =>
+                a?.type === 'navigate' &&
+                typeof a.route === 'string' &&
+                ALLOWED_ROUTES[a.route]
+            )
+            .slice(0, 2)
+            .map((a: any) => ({
+              type: 'navigate' as const,
+              route: a.route,
+              label: typeof a.label === 'string' ? a.label : ALLOWED_ROUTES[a.route],
+              verdict: ['protected', 'inspect', 'breach'].includes(a.verdict)
+                ? a.verdict
+                : undefined,
+            }));
+          actions = valid;
+
+          // Extract verdict from first action that has one
+          const first = valid.find((a: WmAction) => a.verdict);
+          if (first) verdict = first.verdict!;
+        }
+      } catch {
+        // Malformed JSON — fail silently
+      }
+      return '';
+    })
+    .trim();
+
+  return { cleanText: cleaned, actions, verdict };
+}
+
+/**
+ * Strip [ROUTE:form] / [ROUTE:call] routing signals from AI responses.
  */
 function parseRouteSignal(text: string): {
   cleanText: string;
   routeSignal: 'form' | 'call' | null;
 } {
   let routeSignal: 'form' | 'call' | null = null;
-
   const cleaned = text
     .replace(/\[ROUTE:(form|call)\]/gi, (_, match) => {
       routeSignal = match.toLowerCase() as 'form' | 'call';
       return '';
     })
     .trim();
-
   return { cleanText: cleaned, routeSignal };
 }
 
-/**
- * AiQaStep - Lightweight streaming chat interface for the slide-over panel.
- *
- * Supports 5 modes: proof, diagnostic, savings, storm, concierge.
- * After MAX_USER_MESSAGES or a routing signal, shows routing CTAs.
- */
+// ═══════════════════════════════════════════════════════════════════
+// Verdict Badge Component
+// ═══════════════════════════════════════════════════════════════════
+
+function VerdictBadge({ verdict }: { verdict: 'protected' | 'inspect' | 'breach' }) {
+  const config = {
+    protected: {
+      icon: Shield,
+      label: 'Protected',
+      className: 'text-green-600 bg-green-50 border-green-200',
+    },
+    inspect: {
+      icon: Search,
+      label: 'Needs Inspection',
+      className: 'text-amber-600 bg-amber-50 border-amber-200',
+    },
+    breach: {
+      icon: AlertTriangle,
+      label: 'Red Flags',
+      className: 'text-red-600 bg-red-50 border-red-200',
+    },
+  };
+
+  const { icon: Icon, label, className } = config[verdict];
+
+  return (
+    <div
+      className={cn(
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
+        className
+      )}
+    >
+      <Icon className="w-3 h-3" />
+      {label}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Main Component
+// ═══════════════════════════════════════════════════════════════════
+
 export function AiQaStep({
   mode,
   initialMessage,
@@ -73,8 +181,10 @@ export function AiQaStep({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false);
+  const deepEngagementFired = useRef(false);
+  const navigate = useNavigate();
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll on new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -83,13 +193,12 @@ export function AiQaStep({
 
   // Track step entry
   useEffect(() => {
-    trackEvent('ai_qa_started', {
+    wmRetarget('ai_chat_opened', {
+      source_tool: 'slide-over-chat',
+      mode,
       panel_variant: panelVariant,
-      ai_qa_mode: mode,
-      has_location_data: !!locationData,
-      initial_message: initialMessage || null,
     });
-  }, [mode, panelVariant, locationData, initialMessage]);
+  }, [mode, panelVariant]);
 
   // Send a message to the AI
   const sendMessage = useCallback(
@@ -105,13 +214,36 @@ export function AiQaStep({
       const newCount = userMessageCount + 1;
       setUserMessageCount(newCount);
 
-      trackEvent('ai_qa_message_sent', {
-        panel_variant: panelVariant,
+      wmRetarget('ai_message_sent', {
+        source_tool: 'slide-over-chat',
+        mode,
         message_index: newCount,
-        ai_qa_mode: mode,
       });
 
-      // Build request body
+      // Fire deep engagement once at 3rd message
+      if (newCount === 3 && !deepEngagementFired.current) {
+        deepEngagementFired.current = true;
+        wmRetarget('ai_deep_engagement', {
+          source_tool: 'slide-over-chat',
+          mode,
+          messages_exchanged: newCount,
+        });
+      }
+
+      // Build truthContext
+      const truthContext = {
+        mode,
+        county: locationData?.county,
+        city: locationData?.city,
+        state: locationData?.stateCode,
+        zip: locationData?.zip,
+        windowCount: sessionData.windowCount || formData.windowCount,
+        windowAge: sessionData.windowAge,
+        homeSize: sessionData.homeSize,
+        zipCode: sessionData.zipCode || formData.zip,
+        completedTools: [] as string[],
+      };
+
       const body = {
         messages: updatedMessages.map((m) => ({
           role: m.role,
@@ -133,6 +265,7 @@ export function AiQaStep({
           homeSize: sessionData.homeSize,
           zipCode: sessionData.zipCode || formData.zip,
         },
+        truthContext,
       };
 
       try {
@@ -142,14 +275,13 @@ export function AiQaStep({
           { timeoutMs: 20000 }
         );
 
-        // Stream the response
         const reader = response.body?.getReader();
         if (!reader) throw new Error('No reader');
 
         const decoder = new TextDecoder();
         let fullText = '';
 
-        // Add a placeholder assistant message
+        // Add placeholder assistant message
         setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
         let done = false;
@@ -159,7 +291,6 @@ export function AiQaStep({
 
           if (result.value) {
             const chunk = decoder.decode(result.value, { stream: true });
-            // Parse SSE lines
             const lines = chunk.split('\n');
             for (const line of lines) {
               if (line.startsWith('data: ')) {
@@ -167,8 +298,7 @@ export function AiQaStep({
                 if (data === '[DONE]') continue;
                 try {
                   const parsed = JSON.parse(data);
-                  const delta =
-                    parsed.choices?.[0]?.delta?.content || '';
+                  const delta = parsed.choices?.[0]?.delta?.content || '';
                   if (delta) {
                     fullText += delta;
                     setMessages((prev) => {
@@ -188,39 +318,47 @@ export function AiQaStep({
           }
         }
 
-        // Parse routing signal from complete response
-        const { cleanText, routeSignal } = parseRouteSignal(fullText);
+        // ── Post-stream parsing ──
+
+        // 1. Parse wm_actions
+        const { cleanText: afterActions, actions, verdict } = parseWmActions(fullText);
+
+        // 2. Parse legacy route signals
+        const { cleanText, routeSignal } = parseRouteSignal(afterActions);
+
+        // Update final message with clean text + parsed actions
         setMessages((prev) => {
           const updated = [...prev];
           updated[updated.length - 1] = {
             role: 'assistant',
             content: cleanText,
+            actions: actions.length > 0 ? actions : undefined,
+            verdict: verdict || undefined,
           };
           return updated;
         });
 
+        // Track answer received
+        wmRetarget('ai_answer_received', {
+          source_tool: 'slide-over-chat',
+          mode,
+          message_index: newCount,
+          has_actions: actions.length > 0,
+          verdict: verdict || undefined,
+        });
+
         if (routeSignal) {
           setShowRouting(true);
-          trackEvent('ai_qa_routing_shown', {
-            panel_variant: panelVariant,
-            route_type: routeSignal,
-            messages_exchanged: newCount,
-          });
         }
 
         // Show routing after threshold
         if (newCount >= 3 && !showRouting) {
           setShowRouting(true);
-          trackEvent('ai_qa_routing_shown', {
-            panel_variant: panelVariant,
-            route_type: 'threshold',
-            messages_exchanged: newCount,
-          });
         }
       } catch (err) {
         console.error('[AiQaStep] Streaming error:', err);
         setMessages((prev) => [
-          ...prev.slice(0, -1), // Remove placeholder
+          ...prev.slice(0, -1),
           {
             role: 'assistant',
             content:
@@ -253,11 +391,9 @@ export function AiQaStep({
     if (initialMessage) {
       sendMessage(initialMessage);
     } else {
-      // Send a greeting prompt based on mode
       const greetings: Record<AiQaMode, string> = {
         proof: 'What kind of results have you seen for homeowners in my area?',
-        diagnostic:
-          'Can you give me a quick assessment of my window situation?',
+        diagnostic: 'Can you give me a quick assessment of my window situation?',
         savings: 'How much could I save by upgrading my windows?',
         storm: 'How prepared is my home for the next hurricane?',
         concierge: 'Hi, I have some questions about impact windows.',
@@ -272,38 +408,66 @@ export function AiQaStep({
     sendMessage(input);
   };
 
+  const handleActionClick = (action: WmAction) => {
+    wmRetarget('ai_action_clicked', {
+      source_tool: 'slide-over-chat',
+      mode,
+      action_route: action.route,
+    });
+    navigate(action.route);
+  };
+
   const atLimit = userMessageCount >= MAX_USER_MESSAGES;
 
   return (
     <div className="flex flex-col h-full min-h-[400px]">
       {/* Chat area */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto space-y-3 mb-4 pr-1"
-      >
+      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
         {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={cn(
-              'flex',
-              msg.role === 'user' ? 'justify-end' : 'justify-start'
-            )}
-          >
+          <div key={i}>
             <div
               className={cn(
-                'max-w-[85%] rounded-lg px-3 py-2 text-sm',
-                msg.role === 'user'
-                  ? 'bg-primary text-primary-foreground rounded-br-sm'
-                  : 'bg-muted text-foreground rounded-bl-sm'
+                'flex',
+                msg.role === 'user' ? 'justify-end' : 'justify-start'
               )}
             >
-              {msg.content || (
-                <span className="inline-flex items-center gap-1 text-muted-foreground">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Thinking...
-                </span>
-              )}
+              <div
+                className={cn(
+                  'max-w-[85%] rounded-lg px-3 py-2 text-sm',
+                  msg.role === 'user'
+                    ? 'bg-primary text-primary-foreground rounded-br-sm'
+                    : 'bg-muted text-foreground rounded-bl-sm'
+                )}
+              >
+                {msg.content || (
+                  <span className="inline-flex items-center gap-1 text-muted-foreground">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Thinking...
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* Verdict badge + Action buttons (only on assistant messages with actions) */}
+            {msg.role === 'assistant' && msg.actions && msg.actions.length > 0 && (
+              <div className="mt-2 ml-0 space-y-2">
+                {msg.verdict && <VerdictBadge verdict={msg.verdict} />}
+                <div className="flex gap-2 flex-wrap">
+                  {msg.actions.map((action, ai) => (
+                    <Button
+                      key={ai}
+                      onClick={() => handleActionClick(action)}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                    >
+                      <ArrowRight className="h-3 w-3 mr-1" />
+                      {action.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -317,10 +481,10 @@ export function AiQaStep({
           <div className="flex gap-2">
             <Button
               onClick={() => {
-                trackEvent('ai_qa_routed', {
-                  panel_variant: panelVariant,
-                  route_destination: 'form',
-                  messages_exchanged: userMessageCount,
+                wmRetarget('ai_action_clicked', {
+                  source_tool: 'slide-over-chat',
+                  action_route: 'form',
+                  mode,
                 });
                 onRouteToForm();
               }}
@@ -333,10 +497,10 @@ export function AiQaStep({
             </Button>
             <Button
               onClick={() => {
-                trackEvent('ai_qa_routed', {
-                  panel_variant: panelVariant,
-                  route_destination: 'call',
-                  messages_exchanged: userMessageCount,
+                wmRetarget('ai_action_clicked', {
+                  source_tool: 'slide-over-chat',
+                  action_route: 'call',
+                  mode,
                 });
                 onRouteToCall();
               }}
@@ -359,7 +523,7 @@ export function AiQaStep({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a question..."
+            placeholder="Ask Window Man..."
             disabled={isStreaming}
             className={cn(
               'flex-1 rounded-md border border-border bg-muted/30 px-3 py-2',
@@ -385,10 +549,10 @@ export function AiQaStep({
           <div className="flex gap-2">
             <Button
               onClick={() => {
-                trackEvent('ai_qa_routed', {
-                  panel_variant: panelVariant,
-                  route_destination: 'form',
-                  messages_exchanged: userMessageCount,
+                wmRetarget('ai_action_clicked', {
+                  source_tool: 'slide-over-chat',
+                  action_route: 'form',
+                  mode,
                 });
                 onRouteToForm();
               }}
@@ -400,10 +564,10 @@ export function AiQaStep({
             </Button>
             <Button
               onClick={() => {
-                trackEvent('ai_qa_routed', {
-                  panel_variant: panelVariant,
-                  route_destination: 'call',
-                  messages_exchanged: userMessageCount,
+                wmRetarget('ai_action_clicked', {
+                  source_tool: 'slide-over-chat',
+                  action_route: 'call',
+                  mode,
                 });
                 onRouteToCall();
               }}
