@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, forwardRef } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -78,11 +78,12 @@ const WindowVerificationSystem = lazy(() => import("./pages/WindowVerificationSy
 const AuthGuard = lazy(() => import("./components/auth/AuthGuard").then(m => ({ default: m.AuthGuard })));
 
 // Loading fallback component
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
+const PageLoader = forwardRef<HTMLDivElement>((_, ref) => (
+  <div ref={ref} className="min-h-screen flex items-center justify-center bg-background">
     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
-);
+));
+PageLoader.displayName = "PageLoader";
 
 const queryClient = new QueryClient();
 
