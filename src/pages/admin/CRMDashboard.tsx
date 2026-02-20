@@ -234,7 +234,7 @@ export default function CRMDashboard() {
                   id="v2-segment-filter"
                   value={v2SegmentFilter}
                   onChange={(e) => setV2SegmentFilter(e.target.value)}
-                  className="text-sm bg-transparent border-none outline-none cursor-pointer text-foreground"
+                  className="text-sm bg-background border-none outline-none cursor-pointer text-foreground [&>option]:bg-background [&>option]:text-foreground"
                 >
                   <option value="all">All</option>
                   <option value="HOT">HOT</option>
