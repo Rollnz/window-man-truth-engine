@@ -1,153 +1,173 @@
 
-
-# Background AI Pre-Analysis for Consultation Quote Uploads
+# Forward-Compatible AI Pre-Analysis: Database Pivot + Sales Intel HUD
 
 ## Summary
 
-When a user uploads a competitor's quote during the Strategy Session booking, a new edge function (`analyze-consultation-quote`) runs in the background to generate a private "sales cheat sheet." The `save-lead` function triggers it fire-and-forget after the DB insert, so the user's booking flow stays under 500ms. Results are stored in a new `ai_pre_analysis` JSONB column on the `leads` table.
+Move the `ai_pre_analysis` column from `leads` to `quote_files` (forward-compatible for multi-quote). Update the `analyze-consultation-quote` edge function to write to `quote_files` instead of `leads`. Update `admin-lead-detail` to return the most recent file's analysis. Build the Sales Intel HUD component with auto-polling and dark mode support.
 
 ---
 
 ## Phase 1: Database Migration
 
-Add `ai_pre_analysis` JSONB column to the `leads` table:
+**Two operations in one migration:**
 
-```sql
-ALTER TABLE public.leads
-ADD COLUMN ai_pre_analysis JSONB DEFAULT '{"status": "none"}'::jsonb;
-```
+1. **Add** `ai_pre_analysis JSONB DEFAULT '{"status": "none"}'` to `quote_files`
+2. **Drop** `ai_pre_analysis` from `leads` (data check: column was just added, no production data at risk)
 
-The column stores this structure:
-```text
-{
-  "status": "none" | "pending" | "completed" | "failed",
-  "result": null | {
-    "estimated_total_price": number | null,
-    "window_brand_or_material": string,
-    "detected_markup_level": "High" | "Average" | "Low" | "Unknown",
-    "red_flags": string[],
-    "sales_angle": string
-  },
-  "reason": string | null,
-  "started_at": string | null,
-  "completed_at": string | null,
-  "model": string | null
-}
-```
-
-No RLS changes needed -- the `leads` table is already private (anon INSERT only, no SELECT for anon/public). The column is only readable by admin edge functions using `service_role`.
+This makes each quote file carry its own AI analysis, enabling future multi-quote UX without migration.
 
 ---
 
-## Phase 2: New Edge Function -- `analyze-consultation-quote`
+## Phase 2: Edge Function -- `analyze-consultation-quote/index.ts`
 
-**File:** `supabase/functions/analyze-consultation-quote/index.ts`
+Update all DB reads/writes from `leads` to `quote_files`:
 
-**Config:** Add to `supabase/config.toml`:
-```text
-[functions.analyze-consultation-quote]
-verify_jwt = false
-```
+- **Idempotency check** (line 56-77): Query `quote_files.ai_pre_analysis` where `id = quoteFileId` instead of `leads` where `id = leadId`
+- **Set pending** (line 89-97): Update `quote_files` where `id = quoteFileId`
+- **Write completed** (line 277-287): Update `quote_files` where `id = quoteFileId`
+- **Write failed** (line 295-304): Update `quote_files` where `id = quoteFileId`
 
-**Request contract** (from `save-lead`):
-```text
-POST with service_role Bearer token
-{
-  "leadId": "uuid",
-  "quoteFileId": "uuid",
-  "mimeType": "application/pdf" | "image/jpeg" | "image/png"
-}
-```
-
-**Response:** Immediately returns `202 Accepted` with `{ "message": "Analysis started" }`, then continues processing.
-
-**Logic flow:**
-
-1. **Auth check:** Validate the Authorization header contains the service_role key (server-to-server only).
-
-2. **Idempotency check:** Read `leads.ai_pre_analysis->>'status'` for this `leadId`. If already `pending` or `completed`, return `200 { "message": "Already processed" }` and skip.
-
-3. **Set pending:** Update `leads.ai_pre_analysis` to `{"status": "pending", "started_at": "..."}`.
-
-4. **Download file:** Use `service_role` Supabase client to read from `quote_files` table (get `file_path`), then download from `quotes` storage bucket via `storage.from('quotes').download(filePath)`.
-
-5. **Size guard:** If file exceeds 10MB, fail gracefully.
-
-6. **Convert to base64:** For images (JPEG/PNG), convert directly. For PDFs, pass the raw buffer as base64 with `application/pdf` MIME type (Gemini handles PDF natively).
-
-7. **AI call:** Use Lovable AI Gateway (`https://ai.gateway.lovable.dev/v1/chat/completions`) with `google/gemini-2.5-flash` (fast, cheap, handles vision + PDF natively). NOT OpenAI -- this project already uses the Lovable AI Gateway exclusively with `LOVABLE_API_KEY`.
-
-   - **System prompt:** "Sales Intel" persona -- extract pricing, brand/material, markup signals, red flags, and a sales angle. NOT the homeowner-facing scanner prompt.
-   - **Tool calling:** Use structured output via `tools` + `tool_choice` to enforce the JSON schema (estimated_total_price, window_brand_or_material, detected_markup_level, red_flags, sales_angle).
-   - **AbortController:** 45-second timeout on the AI call.
-
-8. **Update DB:** On success, update `leads.ai_pre_analysis` to `{"status": "completed", "result": {...}, "completed_at": "...", "model": "google/gemini-2.5-flash"}`. On failure, set `{"status": "failed", "reason": "...", "completed_at": "..."}`.
-
-9. **Observability:** `console.log` at each stage (file downloaded, AI invoked, DB updated). `console.error` on failures.
+The `leadId` parameter is still accepted (for logging) but no longer used for DB writes. The `quoteFileId` becomes the primary key for all operations.
 
 ---
 
-## Phase 3: Trigger from `save-lead`
+## Phase 3: Edge Function -- `admin-lead-detail/index.ts`
 
-**File:** `supabase/functions/save-lead/index.ts`
-
-After the quote file linking block (around line 970, after `quoteFileLinked = true`), add a fire-and-forget call:
+In the GET handler, after the existing `quote_files` query (line 160-172), extract `aiPreAnalysis` from the most recently created file that has a non-"none" status:
 
 ```typescript
-// Check if the linked file has a mime type suitable for analysis
-if (quoteFileLinked && fileData?.file_path) {
-  // Fire-and-forget: trigger background AI pre-analysis
-  const mimeType = /* get from quote_files record, already queried above */;
-  fetch(`${supabaseUrl}/functions/v1/analyze-consultation-quote`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${supabaseServiceKey}`,
-    },
-    body: JSON.stringify({
-      leadId,
-      quoteFileId,
-      mimeType: mimeType || 'application/pdf',
-    }),
-  }).catch(err => {
-    console.error('[save-lead] Failed to trigger AI pre-analysis (non-blocking):', err);
-  });
-  // NOT awaited -- save-lead returns 200 immediately
+// Extract AI pre-analysis from the most recent analyzed quote file
+let aiPreAnalysis = null;
+if (files && files.length > 0) {
+  const analyzed = files.find(
+    (f: any) => f.ai_pre_analysis && f.ai_pre_analysis.status !== 'none'
+  );
+  if (analyzed) {
+    aiPreAnalysis = analyzed.ai_pre_analysis;
+  }
 }
 ```
 
-The `fileData` variable is already available from the existing quote alert block (line 930-933). We also need the MIME type, which we can add to the existing `select` query: change `.select('file_path, file_name')` to `.select('file_path, file_name, mime_type')`.
+The `files` query already fetches `*` from `quote_files` ordered by `created_at DESC`, so the first match is always the most recent. Include `aiPreAnalysis` in the response JSON (line 268-294).
 
 ---
 
-## Phase 4: Why These Choices
+## Phase 4: Frontend Hook -- `useLeadDetail.ts`
 
-| Decision | Rationale |
-|---|---|
-| `google/gemini-2.5-flash` not `gpt-4o` | Project uses Lovable AI Gateway exclusively. Gemini 2.5 Flash handles PDF + image natively, is cheaper, and faster. No need for OpenAI. |
-| Tool calling not `response_format` | Lovable AI Gateway supports tool calling for structured output. More reliable than asking for raw JSON. |
-| Fire-and-forget `fetch` not `waitUntil` | Deno edge runtime does not guarantee `EdgeRuntime.waitUntil()` availability. The `analyze-consultation-quote` function is a separate invocation that runs independently -- `save-lead` just fires the HTTP call and catches immediate network errors. |
-| No new RLS policies | `leads` table already blocks anon SELECT. The new column is invisible to clients by default. Admin functions use `service_role`. |
-| Idempotency via status check | Prevents duplicate AI charges if `save-lead` retries or the user double-submits. |
+### New Types
+
+```typescript
+export interface AiPreAnalysisResult {
+  estimated_total_price: number | null;
+  window_brand_or_material: string;
+  detected_markup_level: 'High' | 'Average' | 'Low' | 'Unknown';
+  red_flags: string[];
+  sales_angle: string;
+}
+
+export interface AiPreAnalysis {
+  status: 'none' | 'pending' | 'completed' | 'failed';
+  result: AiPreAnalysisResult | null;
+  reason: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  model: string | null;
+}
+```
+
+### New State + Polling
+
+- Add `const [aiPreAnalysis, setAiPreAnalysis] = useState<AiPreAnalysis | null>(null);`
+- Set from `data.aiPreAnalysis` in `fetchData`
+- Add to return object and interface
+
+**Polling with safe deps** (fixes infinite loop bug):
+
+```typescript
+useEffect(() => {
+  if (aiPreAnalysis?.status !== 'pending') return;
+  const interval = setInterval(() => {
+    fetchData();
+  }, 5000);
+  return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [aiPreAnalysis?.status]);
+```
+
+`fetchData` is intentionally omitted from the dependency array. It is stable by reference (memoized with `useCallback` keyed on `leadId` and `toast`), but listing it would cause the interval to reset on every fetch cycle. The `eslint-disable` comment documents this intentional omission.
+
+### Deduplicate Return Interface
+
+The file currently has two `UseLeadDetailReturn` interfaces (lines 108-125 and 127-142). Merge them into one that includes `aiPreAnalysis` and `canonical`.
+
+---
+
+## Phase 5: New Component -- `SalesIntelCard.tsx`
+
+**File:** `src/components/lead-detail/SalesIntelCard.tsx`
+
+### Status: `none` -- Return `null`
+
+### Status: `pending`
+- Card with `animate-pulse` border accent
+- `Loader2` spinner + "Analyzing competitor quote..." text
+- Compact, single-line height
+
+### Status: `failed`
+- Muted card with `AlertTriangle` icon
+- Shows `reason` text
+- Non-intrusive
+
+### Status: `completed` -- The Tactical HUD
+
+**Header:** "Competitor Quote Intel" with `Crosshair` icon
+
+**3-column metrics grid:**
+- Estimated Price: `$X,XXX` formatted or "Not detected"
+- Brand/Material: string value
+- Markup Level: color-coded Badge:
+  - High: `variant="destructive"` (red)
+  - Average: `bg-amber-500/15 text-amber-600 dark:text-amber-400`
+  - Low: `bg-emerald-500/15 text-emerald-600 dark:text-emerald-400`
+  - Unknown: `variant="secondary"`
+
+**Red Flags:** Pills with `AlertTriangle` icon, `bg-destructive/10 text-destructive`. Empty state: green "No red flags" pill.
+
+**Sales Angle callout** (dark mode safe):
+- Container: `bg-blue-500/10 border border-blue-500/20 rounded-lg p-4`
+- Label: `text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wide font-semibold` -- "What to say on the call"
+- Body: `text-sm text-blue-900 dark:text-blue-100`
+
+**Footer:** `text-xs text-muted-foreground` with model + timestamp
+
+---
+
+## Phase 6: Lead Detail Page -- Placement
+
+**File:** `src/pages/admin/LeadDetail.tsx`
+
+Place `SalesIntelCard` as a full-width banner above the 3-pane grid:
+
+```tsx
+<main className="max-w-7xl mx-auto p-4 lg:p-6">
+  <SalesIntelCard aiPreAnalysis={aiPreAnalysis} />
+  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    {/* existing 3 panes */}
+  </div>
+</main>
+```
+
+Destructure `aiPreAnalysis` from `useLeadDetail(id)` on line 26.
 
 ---
 
 ## Files Modified
 
-1. **Database migration** -- Add `ai_pre_analysis` JSONB column to `leads`
-2. **`supabase/functions/analyze-consultation-quote/index.ts`** -- New edge function (Sales Intel AI analysis)
-3. **`supabase/config.toml`** -- Add `[functions.analyze-consultation-quote]` with `verify_jwt = false`
-4. **`supabase/functions/save-lead/index.ts`** -- Add fire-and-forget fetch trigger after quote file linking, add `mime_type` to the existing file query select
+1. **Database migration** -- Add `ai_pre_analysis` to `quote_files`, drop from `leads`
+2. **`supabase/functions/analyze-consultation-quote/index.ts`** -- All DB ops target `quote_files` by `quoteFileId`
+3. **`supabase/functions/admin-lead-detail/index.ts`** -- Extract `aiPreAnalysis` from files array, include in response
+4. **`src/hooks/useLeadDetail.ts`** -- Add types, state, polling (safe deps), merge duplicate interface
+5. **`src/components/lead-detail/SalesIntelCard.tsx`** -- New component
+6. **`src/pages/admin/LeadDetail.tsx`** -- Import + place SalesIntelCard above grid
 
-No frontend changes. No new dependencies. No new storage buckets.
-
----
-
-## Acceptance Criteria
-
-1. **Speed:** Client booking returns 200 in under 500ms, unaffected by AI processing
-2. **State transitions:** `ai_pre_analysis.status` goes `none` -> `pending` -> `completed` (or `failed`)
-3. **Accuracy:** Valid quote PDF produces populated `result` with `estimated_total_price` and `sales_angle`
-4. **Error handling:** Corrupted file or non-quote image results in `failed` status with non-empty `reason`
-5. **Idempotency:** Duplicate trigger for same lead does not produce duplicate AI charges
-
+No new edge functions. No new storage buckets. No new dependencies.
