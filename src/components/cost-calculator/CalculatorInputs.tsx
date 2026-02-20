@@ -140,7 +140,7 @@ export function CalculatorInputs({
             </div>
             <Slider value={[windowCount]} onValueChange={(value) => setWindowCount(value[0])} min={1} max={50} step={1} className="py-4" aria-label="Number of windows to replace" />
             <div className="flex justify-between text-xs text-white">
-              <span>1 window</span>
+              <span className="text-primary">1 window</span>
               <span>50 windows</span>
             </div>
           </div>

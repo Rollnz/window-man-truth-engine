@@ -373,7 +373,7 @@ export function TrueCostCalculator({
           </p>
         </FadeInSection>
 
-        <div className="grid items-start gap-10 lg:grid-cols-2 bg-slate-100">
+        <div className="grid items-start gap-10 lg:grid-cols-2 text-secondary bg-teal-50">
           <div className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               {SAVINGS_HIGHLIGHTS.slice(0, 2).map(renderHighlightCard)}
