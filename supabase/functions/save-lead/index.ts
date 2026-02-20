@@ -1082,6 +1082,70 @@ serve(async (req) => {
         type: 'cost-calculator-report',
         data: safeSessionData,
       });
+    } else if (sourceTool === 'quote-scanner') {
+      triggerEmailNotification({
+        email: normalizedEmail,
+        type: 'quote-scanner-results',
+        data: {
+          firstName: normalizedFirstName,
+          overallScore: sessionData?.overallScore || sessionData?.overall_score,
+          warningsCount: sessionData?.warningsCount || sessionData?.warnings_count,
+          leadId,
+        },
+      });
+    } else if (sourceTool === 'beat-your-quote') {
+      triggerEmailNotification({
+        email: normalizedEmail,
+        type: 'beat-your-quote-results',
+        data: {
+          firstName: normalizedFirstName,
+          leadId,
+        },
+      });
+    } else if (sourceTool === 'quote-builder') {
+      triggerEmailNotification({
+        email: normalizedEmail,
+        type: 'quote-builder-results',
+        data: {
+          firstName: normalizedFirstName,
+          windowCount: sessionData?.windowCount,
+          estimatedTotal: sessionData?.estimatedTotal || sessionData?.estimated_total,
+          leadId,
+        },
+      });
+    } else if (sourceTool === 'risk-diagnostic') {
+      triggerEmailNotification({
+        email: normalizedEmail,
+        type: 'risk-diagnostic-results',
+        data: {
+          firstName: normalizedFirstName,
+          protectionScore: sessionData?.overallProtectionScore || sessionData?.protectionScore || sessionData?.protection_score,
+          gapCount: sessionData?.gapCount || sessionData?.gap_count,
+          leadId,
+        },
+      });
+    } else if (sourceTool === 'vulnerability-test') {
+      triggerEmailNotification({
+        email: normalizedEmail,
+        type: 'vulnerability-test-results',
+        data: {
+          firstName: normalizedFirstName,
+          quizScore: sessionData?.quizScore || sessionData?.quiz_score,
+          quizVulnerability: sessionData?.quizVulnerability || sessionData?.quiz_vulnerability,
+          leadId,
+        },
+      });
+    } else if (sourceTool === 'fair-price-quiz') {
+      triggerEmailNotification({
+        email: normalizedEmail,
+        type: 'fair-price-quiz-results',
+        data: {
+          firstName: normalizedFirstName,
+          quizScore: sessionData?.quizScore || sessionData?.quiz_score,
+          quizResult: sessionData?.quizResult || sessionData?.quiz_result,
+          leadId,
+        },
+      });
     }
 
     // Record successful request for rate limiting (fire-and-forget)
