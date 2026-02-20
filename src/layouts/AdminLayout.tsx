@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { GlobalLeadSearch } from '@/components/admin/GlobalLeadSearch';
+import { GlobalSearchProvider } from '@/contexts/GlobalSearchContext';
 
 /**
  * Shared layout for all admin routes
@@ -7,9 +8,9 @@ import { GlobalLeadSearch } from '@/components/admin/GlobalLeadSearch';
  */
 export function AdminLayout() {
   return (
-    <>
+    <GlobalSearchProvider>
       <Outlet />
       <GlobalLeadSearch />
-    </>
+    </GlobalSearchProvider>
   );
 }

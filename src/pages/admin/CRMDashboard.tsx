@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useCRMLeads } from '@/hooks/useCRMLeads';
-import { useGlobalSearch } from '@/hooks/useGlobalSearch';
+import { useGlobalSearchOpen } from '@/contexts/GlobalSearchContext';
 import { KanbanBoard } from '@/components/crm/KanbanBoard';
 import { CRMSummaryCards } from '@/components/crm/CRMSummaryCards';
 import { DateRangePicker, DateRange } from '@/components/admin/DateRangePicker';
@@ -30,7 +30,7 @@ const ADMIN_EMAILS = [
 export default function CRMDashboard() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { setIsOpen } = useGlobalSearch();
+  const { setIsOpen } = useGlobalSearchOpen();
   
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: subDays(new Date(), 30),

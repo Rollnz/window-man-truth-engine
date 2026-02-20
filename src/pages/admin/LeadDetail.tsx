@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLeadDetail } from '@/hooks/useLeadDetail';
 import { useLeadNavigation } from '@/hooks/useLeadNavigation';
-import { useGlobalSearch } from '@/hooks/useGlobalSearch';
+import { useGlobalSearchOpen } from '@/contexts/GlobalSearchContext';
 import { LeadIdentityCard } from '@/components/lead-detail/LeadIdentityCard';
 import { LeadTimeline } from '@/components/lead-detail/LeadTimeline';
 import { NotesWidget } from '@/components/lead-detail/NotesWidget';
@@ -26,7 +26,7 @@ function LeadDetailContent() {
   const navigate = useNavigate();
   const { lead, events, files, notes, session, calls, pendingCalls, aiPreAnalysis, isLoading, error, canonical, refetch, updateStatus, addNote, updateSocialUrl, triggerAnalysis } = useLeadDetail(id);
   const { previousLeadId, nextLeadId, currentIndex, totalLeads, goToPrevious, goToNext } = useLeadNavigation(id);
-  const { setIsOpen, addToRecent } = useGlobalSearch();
+  const { setIsOpen } = useGlobalSearchOpen();
 
   // Canonicalize URL if the request resolved via fallback (leads.id → wm_leads.id)
   useEffect(() => {
@@ -36,12 +36,6 @@ function LeadDetailContent() {
     }
   }, [canonical, id, navigate]);
 
-  // Add current lead to recent leads when viewed
-  useEffect(() => {
-    if (lead) {
-      addToRecent(lead as any);
-    }
-  }, [lead, addToRecent]);
 
   if (isLoading) {
     return (

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useGlobalSearchOpen } from '@/contexts/GlobalSearchContext';
 import { getLeadRoute } from '@/lib/leadRouting';
 import { CRMLead } from '@/types/crm';
 
@@ -76,7 +77,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
   const [entityTypeFilter, setEntityTypeFilter] = useState<EntityType[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
   const [groupedResults, setGroupedResults] = useState<GroupedResults>({} as GroupedResults);
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOpen, setIsOpen } = useGlobalSearchOpen();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
