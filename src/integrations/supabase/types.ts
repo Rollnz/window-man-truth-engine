@@ -1505,6 +1505,8 @@ export type Database = {
           phone: string | null
           qualified_at: string | null
           qualified_cv_fired: boolean | null
+          social_facebook_url: string | null
+          social_instagram_url: string | null
           state: string | null
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
@@ -1552,6 +1554,8 @@ export type Database = {
           phone?: string | null
           qualified_at?: string | null
           qualified_cv_fired?: boolean | null
+          social_facebook_url?: string | null
+          social_instagram_url?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
@@ -1599,6 +1603,8 @@ export type Database = {
           phone?: string | null
           qualified_at?: string | null
           qualified_cv_fired?: boolean | null
+          social_facebook_url?: string | null
+          social_instagram_url?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string

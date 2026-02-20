@@ -90,6 +90,8 @@ export interface LeadDetailData {
   original_source_tool: string | null;
   original_session_id: string | null;
   verified_social_url: string | null;
+  social_facebook_url: string | null;
+  social_instagram_url: string | null;
   city: string | null;
   facebook_page_name: string | null;
   facebook_ad_id: string | null;
@@ -142,6 +144,7 @@ interface UseLeadDetailReturn {
   updateStatus: (status: LeadStatus) => Promise<boolean>;
   addNote: (content: string) => Promise<boolean>;
   updateSocialUrl: (url: string) => Promise<boolean>;
+  updateSocialProfile: (platform: 'facebook' | 'instagram', url: string | null) => Promise<boolean>;
   updateLead: (updates: Partial<LeadDetailData>) => Promise<boolean>;
   triggerAnalysis: (quoteFileId: string) => Promise<boolean>;
 }
@@ -333,6 +336,27 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
     return success;
   };
 
+  const updateSocialProfile = async (
+    platform: 'facebook' | 'instagram',
+    url: string | null
+  ): Promise<boolean> => {
+    const success = await callAction('update_social_profile', { platform, url });
+    if (success) {
+      setLead(prev => {
+        if (!prev) return null;
+        if (platform === 'facebook') {
+          return { ...prev, social_facebook_url: url };
+        }
+        return { ...prev, social_instagram_url: url };
+      });
+      toast({
+        title: 'Success',
+        description: url ? 'Social profile saved' : 'Social profile cleared',
+      });
+    }
+    return success;
+  };
+
   const updateLead = async (updates: Partial<LeadDetailData>): Promise<boolean> => {
     const success = await callAction('update_lead', { updates });
     if (success) {
@@ -412,6 +436,7 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
     updateStatus,
     addNote,
     updateSocialUrl,
+    updateSocialProfile,
     updateLead,
     triggerAnalysis,
   };

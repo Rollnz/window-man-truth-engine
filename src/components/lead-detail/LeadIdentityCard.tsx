@@ -17,9 +17,10 @@ interface LeadIdentityCardProps {
   session: LeadSession | null;
   onStatusChange: (status: LeadStatus) => Promise<boolean>;
   onSaveSocialUrl: (url: string) => Promise<boolean>;
+  onSaveSocialProfile: (platform: 'facebook' | 'instagram', url: string | null) => Promise<boolean>;
 }
 
-export function LeadIdentityCard({ lead, session, onStatusChange, onSaveSocialUrl }: LeadIdentityCardProps) {
+export function LeadIdentityCard({ lead, session, onStatusChange, onSaveSocialUrl, onSaveSocialProfile }: LeadIdentityCardProps) {
   const fullName = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Unknown Lead';
 
   return (
@@ -112,8 +113,9 @@ export function LeadIdentityCard({ lead, session, onStatusChange, onSaveSocialUr
             firstName={lead.first_name}
             lastName={lead.last_name}
             city={lead.city}
-            verifiedUrl={lead.verified_social_url}
-            onSaveUrl={onSaveSocialUrl}
+            facebookUrl={lead.social_facebook_url}
+            instagramUrl={lead.social_instagram_url}
+            onSaveProfile={onSaveSocialProfile}
           />
         </CardContent>
       </Card>

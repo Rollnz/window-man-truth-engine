@@ -265,7 +265,7 @@ serve(async (req) => {
     const alertsCreated = await storeAlerts(supabase, alerts);
 
     // Auto-resolve alerts if conditions improved
-    if (metrics.emqScore >= THRESHOLDS.EMQ_CRITICAL) {
+    if ((metrics.emqScore as number) >= THRESHOLDS.EMQ_CRITICAL) {
       await supabase
         .from('tracking_health_alerts')
         .update({ resolved_at: new Date().toISOString() })

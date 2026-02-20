@@ -24,7 +24,7 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 function LeadDetailContent() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { lead, events, files, notes, session, calls, pendingCalls, aiPreAnalysis, isLoading, error, canonical, refetch, updateStatus, addNote, updateSocialUrl, triggerAnalysis } = useLeadDetail(id);
+  const { lead, events, files, notes, session, calls, pendingCalls, aiPreAnalysis, isLoading, error, canonical, refetch, updateStatus, addNote, updateSocialUrl, updateSocialProfile, triggerAnalysis } = useLeadDetail(id);
   const { previousLeadId, nextLeadId, currentIndex, totalLeads, goToPrevious, goToNext } = useLeadNavigation(id);
   const { setIsOpen } = useGlobalSearchOpen();
 
@@ -156,6 +156,7 @@ function LeadDetailContent() {
               session={session}
               onStatusChange={updateStatus}
               onSaveSocialUrl={updateSocialUrl}
+              onSaveSocialProfile={updateSocialProfile}
             />
             
             {/* Intent Signals - Sales Cheat Sheet */}
