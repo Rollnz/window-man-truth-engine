@@ -2,3 +2,6 @@ project_id = "kffoximblqwcnznwvugu"
 
 [functions.log-event]
 verify_jwt = false
+
+[functions.analyze-consultation-quote]
+verify_jwt = false
