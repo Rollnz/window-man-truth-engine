@@ -1,4 +1,5 @@
 import { Phone, Mail, MessageCircle, MapPin, Calculator, Calendar } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -75,11 +76,21 @@ export function LeadIdentityCard({ lead, session, onStatusChange, onSaveSocialUr
                 <span className="text-xs">Email</span>
               </a>
             </Button>
-            <Button variant="outline" className="flex-col h-auto py-3" asChild disabled={!lead.phone}>
-              <a href={lead.phone ? `https://wa.me/${lead.phone.replace(/\D/g, '')}` : '#'} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="h-5 w-5 mb-1" />
-                <span className="text-xs">WhatsApp</span>
-              </a>
+            <Button
+              variant="outline"
+              className="flex-col h-auto py-3"
+              onClick={() => {
+                if (!lead.phone) {
+                  toast.error('Cannot open WhatsApp: No phone number on file for this lead.');
+                  return;
+                }
+                const digits = lead.phone.replace(/\D/g, '');
+                const e164 = digits.length === 10 ? `1${digits}` : digits;
+                window.open(`https://wa.me/${e164}`, '_blank');
+              }}
+            >
+              <MessageCircle className="h-5 w-5 mb-1" />
+              <span className="text-xs">WhatsApp</span>
             </Button>
           </div>
         </CardContent>
