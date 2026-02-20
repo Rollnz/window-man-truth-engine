@@ -41,7 +41,7 @@ serve(async (req) => {
   }
 
   if (!claimedId) {
-    return errorResponse(409, "not_claimable", "Quote file is not in a claimable state (must be 'none' or 'failed')");
+    return errorResponse(409, "not_claimable", "Quote file is not in a claimable state (must be 'none', 'failed', or 'pending')");
   }
 
   // ── Look up file metadata for mimeType ──
@@ -62,7 +62,8 @@ serve(async (req) => {
 
   const analyzeUrl = `${supabaseUrl}/functions/v1/analyze-consultation-quote`;
 
-  // Don't await — fire-and-forget so the admin gets an instant response
+  // Don't await the full analysis, but DO catch network-level failures
+  // and write 'failed' to the DB so it doesn't stay stuck in 'pending'
   fetch(analyzeUrl, {
     method: "POST",
     headers: {
@@ -74,8 +75,22 @@ serve(async (req) => {
       quoteFileId,
       mimeType: fileRecord.mime_type,
     }),
-  }).catch((err) => {
+  }).catch(async (err) => {
     console.error("[admin-trigger-analysis] Fire-and-forget failed:", err);
+    // Critical: write 'failed' so DB doesn't stay stuck in 'pending'
+    await supabaseAdmin
+      .from("quote_files")
+      .update({
+        ai_pre_analysis: {
+          status: "failed",
+          result: null,
+          reason: `Trigger fetch failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+          started_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+          model: null,
+        },
+      })
+      .eq("id", quoteFileId);
   });
 
   console.log(`[admin-trigger-analysis] Triggered analysis for quoteFileId=${quoteFileId} leadId=${leadId} by ${validation.email}`);

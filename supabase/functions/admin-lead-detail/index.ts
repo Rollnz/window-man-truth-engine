@@ -434,6 +434,40 @@ serve(async (req) => {
       }
 
       // =====================
+      // FORCE FAIL ANALYSIS (client-side timeout sync)
+      // =====================
+      if (action === 'force_fail_analysis') {
+        const { quoteFileId, reason } = body;
+        if (!quoteFileId) {
+          return errorResponse(400, 'missing_quote_file_id', 'quoteFileId is required');
+        }
+
+        // Only overwrite if still stuck in 'pending'
+        const { error: failError } = await supabase
+          .from('quote_files')
+          .update({
+            ai_pre_analysis: {
+              status: 'failed',
+              result: null,
+              reason: reason || 'Client-side timeout',
+              started_at: null,
+              completed_at: new Date().toISOString(),
+              model: null,
+            },
+          })
+          .eq('id', quoteFileId)
+          .eq('ai_pre_analysis->>status', 'pending');
+
+        if (failError) {
+          console.error('[admin-lead-detail] force_fail_analysis error:', failError.message);
+        }
+
+        return new Response(JSON.stringify({ ok: true, success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // =====================
       // OPPORTUNITY CRUD
       // =====================
 
