@@ -153,9 +153,11 @@ const WindowRiskAndCode = () => {
         <EvidenceModule
           title="Risk Data You Need to See"
           subtitle="Exposed compliance gaps across Florida homes"
+          columns={3}
           findings={[
             { title: "62% of Homes Have At Least One Non-Compliant Opening", description: "Building code inspection data reveals that most Florida homes have at least one window or door opening that doesn't meet current hurricane protection requirements.", severity: "critical", icon: AlertTriangle, source: "FL Building Code Inspection Data" },
             { title: "Improper Installation Voids Warranty in 100% of Cases", description: "Every major window manufacturer's warranty terms require certified installation. DIY or unlicensed installs void all coverage — no exceptions.", severity: "warning", icon: ShieldCheck, source: "Manufacturer Warranty Terms" },
+            { title: "Category 4+ Storms Expose 3x More Failures", description: "Post-hurricane damage assessments show homes with non-rated windows suffer triple the structural damage rate during Category 4 or higher events.", severity: "critical", icon: AlertTriangle, source: "FEMA Post-Storm Damage Reports" },
           ]}
         />
 
