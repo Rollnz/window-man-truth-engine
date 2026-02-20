@@ -21,10 +21,10 @@ export function PillarCTASection({
   microcopy,
 }: PillarCTASectionProps) {
   return (
-    <section className="py-20 md:py-28 relative overflow-hidden">
+    <section className="py-20 md:py-28 relative overflow-hidden bg-[hsl(var(--surface-1))] border-t border-border/30">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-secondary/5 pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/6 rounded-full blur-3xl pointer-events-none" />
 
       <div className="container px-4 relative z-10">
         <AnimateOnScroll duration={700}>
