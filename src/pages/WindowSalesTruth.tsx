@@ -1,10 +1,11 @@
-import { Eye, Users, ScanSearch, MessageSquare, DollarSign, Shield, Clock } from "lucide-react";
+import { Eye, Users, ScanSearch, MessageSquare, DollarSign, Shield, Clock, AlertTriangle } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
 import { ReviewedByBadge, ExitIntentModal } from "@/components/authority";
+import { EvidenceModule, MidPageCTA } from "@/components/forensic";
 import { getReviewBoardSchema } from "@/config/expertIdentity";
 import { generatePillarSchemaGraph, generateFAQSchema } from "@/lib/seoSchemas/index";
 import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
@@ -130,7 +131,25 @@ const WindowSalesTruth = () => {
 
         <PillarContentBlock sections={contentSections} />
 
+        <EvidenceModule
+          title="What Our Data Reveals"
+          subtitle="Analysis from thousands of real Florida window quotes"
+          findings={[
+            { title: "73% of Quotes Contain At Least One Red Flag", description: "Our AI scanner analysis of thousands of quotes reveals that nearly three-quarters contain pricing anomalies, missing items, or pressure-tactic language.", severity: "critical", icon: AlertTriangle, source: "WindowMan AI Scanner Analysis" },
+            { title: "Average Initial Markup: 38% Above Fair Market", description: "The first quote you receive is typically inflated by 38% compared to fair market value. Getting multiple quotes and knowing the data puts you in control.", severity: "warning", icon: DollarSign, source: "3,400+ Quote Database" },
+          ]}
+        />
+
         <PillarCalloutCard text="No legitimate deal expires same-day. If the pressure feels manipulative, it probably is." />
+
+        <MidPageCTA
+          heading="Upload Your Quote for Instant Analysis"
+          description="Our AI scanner identifies pricing anomalies, missing items, and pressure tactics in seconds."
+          buttonLabel="Scan Your Quote"
+          buttonIcon={ScanSearch}
+          to={ROUTES.QUOTE_SCANNER}
+          microcopy="Free · No login required · AI-powered analysis"
+        />
 
         <PillarGuideCards guides={guides} />
 

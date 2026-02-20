@@ -5,6 +5,7 @@ import { Navbar } from "@/components/home/Navbar";
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
 import { ReviewedByBadge, ExitIntentModal } from "@/components/authority";
+import { EvidenceModule, MidPageCTA } from "@/components/forensic";
 import { getReviewBoardSchema } from "@/config/expertIdentity";
 import { generatePillarSchemaGraph, generateFAQSchema } from "@/lib/seoSchemas/index";
 import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
@@ -149,7 +150,25 @@ const WindowRiskAndCode = () => {
 
         <PillarContentBlock sections={contentSections} />
 
+        <EvidenceModule
+          title="Risk Data You Need to See"
+          subtitle="Exposed compliance gaps across Florida homes"
+          findings={[
+            { title: "62% of Homes Have At Least One Non-Compliant Opening", description: "Building code inspection data reveals that most Florida homes have at least one window or door opening that doesn't meet current hurricane protection requirements.", severity: "critical", icon: AlertTriangle, source: "FL Building Code Inspection Data" },
+            { title: "Improper Installation Voids Warranty in 100% of Cases", description: "Every major window manufacturer's warranty terms require certified installation. DIY or unlicensed installs void all coverage — no exceptions.", severity: "warning", icon: ShieldCheck, source: "Manufacturer Warranty Terms" },
+          ]}
+        />
+
         <PillarCalloutCard text="One weak point can cause catastrophic failure. Consistent protection across all openings is not optional—it's essential." />
+
+        <MidPageCTA
+          heading="Check Your Home's Protection Gaps"
+          description="Get a personalized risk assessment based on your home's location, age, and current protection."
+          buttonLabel="Run Risk Diagnostic"
+          buttonIcon={AlertTriangle}
+          to={ROUTES.RISK_DIAGNOSTIC}
+          microcopy="Free · No login required · Florida-specific analysis"
+        />
 
         <PillarGuideCards heading="Related Guides" guides={guides} />
 

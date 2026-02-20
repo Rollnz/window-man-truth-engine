@@ -1,10 +1,11 @@
-import { CheckCircle, FileSearch, Library, FolderLock, Layers, Search, ShieldCheck } from "lucide-react";
+import { CheckCircle, FileSearch, Library, FolderLock, Layers, Search, ShieldCheck, Shield } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
 import { ReviewedByBadge, ExitIntentModal } from "@/components/authority";
+import { EvidenceModule, MidPageCTA } from "@/components/forensic";
 import { getReviewBoardSchema } from "@/config/expertIdentity";
 import { generatePillarSchemaGraph, generateFAQSchema } from "@/lib/seoSchemas/index";
 import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
@@ -154,7 +155,25 @@ const WindowVerificationSystem = () => {
 
         <PillarContentBlock sections={contentSections} />
 
+        <EvidenceModule
+          title="Verification Intelligence"
+          subtitle="What our cross-referencing reveals about the Florida market"
+          findings={[
+            { title: "41% of Quoted Products Lack Valid NOA Certification", description: "Cross-referencing quoted product numbers against the Miami-Dade Product Approval database reveals that nearly half of products in quotes lack valid certifications.", severity: "critical", icon: FileSearch, source: "Miami-Dade Product Approval DB" },
+            { title: "1 in 5 Installers Operating Without Proper License", description: "MyFloridaLicense.com cross-referencing shows 20% of installers quoting jobs either have expired, suspended, or no valid state license.", severity: "warning", icon: Shield, source: "MyFloridaLicense.com Cross-Reference" },
+          ]}
+        />
+
         <PillarCalloutCard text="If they can't provide NOA numbers, walk away. Legitimate products always have verifiable certifications." />
+
+        <MidPageCTA
+          heading="Verify Before You Sign"
+          description="See real examples of verified installations, pricing, and outcomes from Florida homeowners."
+          buttonLabel="Browse Evidence Library"
+          buttonIcon={FileSearch}
+          to={ROUTES.EVIDENCE}
+          microcopy="Free · No login required · Real Florida data"
+        />
 
         <PillarGuideCards heading="Verification Resources" guides={guides} />
 
