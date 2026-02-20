@@ -2,14 +2,9 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Vault, LogIn, Menu, X, Sun, Moon, Phone } from 'lucide-react';
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { ROUTES } from '@/config/navigation';
-
-// Lazy-load ReadinessIndicator (pulls in canvas-confetti ~35KB)
-const ReadinessIndicator = lazy(() => 
-  import('@/components/navigation/ReadinessIndicator').then(m => ({ default: m.ReadinessIndicator }))
-);
 
 interface NavbarProps {
   funnelMode?: boolean;
@@ -119,12 +114,6 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
               Beat Your Quote
             </Link>
             
-            {/* Readiness Score Indicator - lazy loaded */}
-            {ready && (
-              <Suspense fallback={null}>
-                <ReadinessIndicator />
-              </Suspense>
-            )}
           </div>
         )}
 
@@ -233,14 +222,6 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
             </span>
           </Link>
           
-          {/* Readiness Score - Mobile (lazy) */}
-          {ready && (
-            <div className="py-2">
-              <Suspense fallback={null}>
-                <ReadinessIndicator />
-              </Suspense>
-            </div>
-          )}
           
           {/* Theme Toggle - Mobile */}
           <button 
