@@ -1,8 +1,8 @@
 import { type LucideIcon } from "lucide-react";
 import { SeverityBadge } from "./SeverityBadge";
 
-const SHADOW = '0 8px 24px -6px rgba(255,198,114,0.25), 0 18px 40px -22px rgba(255,198,114,0.15)';
-const SHADOW_HOVER = '0 14px 40px -8px rgba(255,198,114,0.40), 0 30px 70px -30px rgba(255,198,114,0.25)';
+const SHADOW = '0 8px 24px -6px rgba(255,198,114,0.45), 0 18px 40px -22px rgba(255,198,114,0.30)';
+const SHADOW_HOVER = '0 14px 40px -8px rgba(255,198,114,0.60), 0 30px 70px -30px rgba(255,198,114,0.40)';
 
 export interface Finding {
   title: string;
@@ -15,7 +15,7 @@ export interface Finding {
 export function FindingCard({ title, description, severity, icon: Icon, source }: Finding) {
   return (
     <div
-      className="group bg-card backdrop-blur-sm border border-border/20 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1"
+      className="group glow-border-forensic bg-card backdrop-blur-sm p-6 transition-all duration-300 hover:-translate-y-1"
       style={{ boxShadow: SHADOW }}
       onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = SHADOW_HOVER; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = SHADOW; }}

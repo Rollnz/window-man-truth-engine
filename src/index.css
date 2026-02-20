@@ -380,6 +380,22 @@
       linear-gradient(135deg, hsl(var(--primary) / 0.5) 0%, hsl(var(--primary) / 0.2) 50%, transparent 80%) border-box;
   }
 
+  /* Glow border - forensic evidence theme (#ffc672 orange) */
+  .glow-border-forensic {
+    border: 1px solid transparent;
+    border-radius: 1rem;
+    background:
+      linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+      linear-gradient(135deg, rgba(255,198,114,0.5) 0%, transparent 50%) border-box;
+    transition: all 0.3s ease;
+  }
+
+  .glow-border-forensic:hover {
+    background:
+      linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+      linear-gradient(135deg, rgba(255,198,114,0.7) 0%, rgba(255,198,114,0.25) 50%, transparent 80%) border-box;
+  }
+
   /* ============================================================
      PATTERN OVERLAYS - Technical depth effects
      ============================================================ */
@@ -506,11 +522,18 @@
         linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
         linear-gradient(135deg, hsl(var(--primary) / 0.15) 0%, transparent 40%) border-box;
     }
+
+    .glow-border-forensic {
+      background:
+        linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+        linear-gradient(135deg, rgba(255,198,114,0.25) 0%, transparent 40%) border-box;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .glow-border-secondary,
-    .glow-border-primary {
+    .glow-border-primary,
+    .glow-border-forensic {
       transition: none !important;
     }
     
