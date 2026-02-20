@@ -265,6 +265,18 @@ serve(async (req) => {
         latestCloseDate,
       };
 
+      // Extract AI pre-analysis from the most recent analyzed quote file
+      let aiPreAnalysis = null;
+      if (files?.length) {
+        const analyzed = (files as any[]).find((f: any) =>
+          f?.ai_pre_analysis &&
+          typeof f.ai_pre_analysis === 'object' &&
+          f.ai_pre_analysis.status &&
+          f.ai_pre_analysis.status !== 'none'
+        );
+        aiPreAnalysis = analyzed?.ai_pre_analysis ?? null;
+      }
+
       return new Response(JSON.stringify({
         ok: true,
         // === CANONICAL ID FIELDS ===
@@ -289,6 +301,7 @@ serve(async (req) => {
         opportunities: opportunities || [],
         deals: deals || [],
         financialSummary,
+        aiPreAnalysis,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

@@ -52,25 +52,21 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // ── Idempotency check ──
-  const { data: lead, error: leadErr } = await supabase
-    .from("leads")
-    .select("ai_pre_analysis")
-    .eq("id", leadId)
-    .maybeSingle();
+  // ── Atomic claim via RPC (race-condition safe) ──
+  const { data: claimedId, error: claimErr } = await supabase
+    .rpc('claim_quote_file_preanalysis', { p_quote_file_id: quoteFileId });
 
-  if (leadErr || !lead) {
-    console.error("[analyze-consultation-quote] Lead not found:", leadId, leadErr);
-    return new Response(JSON.stringify({ error: "Lead not found" }), {
-      status: 404,
+  if (claimErr) {
+    console.error('[analyze-consultation-quote] Claim error:', claimErr);
+    return new Response(JSON.stringify({ error: 'claim_failed' }), {
+      status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
-  const currentStatus = lead.ai_pre_analysis?.status;
-  if (currentStatus === "pending" || currentStatus === "completed") {
-    console.log("[analyze-consultation-quote] Already processed:", leadId, currentStatus);
-    return new Response(JSON.stringify({ message: "Already processed" }), {
+  if (!claimedId) {
+    console.log('[analyze-consultation-quote] Already claimed/completed:', quoteFileId);
+    return new Response(JSON.stringify({ skipped: true, message: "Already processed" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -82,20 +78,11 @@ serve(async (req) => {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-  // Use EdgeRuntime.waitUntil if available, otherwise just run inline
+  const startedAtIso = new Date().toISOString();
+
   const processingPromise = (async () => {
     try {
-      // Set pending
-      await supabase
-        .from("leads")
-        .update({
-          ai_pre_analysis: {
-            status: "pending",
-            started_at: new Date().toISOString(),
-          },
-        })
-        .eq("id", leadId);
-      console.log("[analyze-consultation-quote] Set pending:", leadId);
+      console.log("[analyze-consultation-quote] Claimed & pending for quoteFile:", quoteFileId, "lead:", leadId);
 
       // Download file
       const { data: fileRecord, error: fileErr } = await supabase
@@ -224,7 +211,7 @@ If the document is NOT a window/door quote (e.g., it's a random image, receipt, 
         tool_choice: { type: "function", function: { name: "submit_quote_analysis" } },
       };
 
-      console.log("[analyze-consultation-quote] Invoking AI for lead:", leadId);
+      console.log("[analyze-consultation-quote] Invoking AI for quoteFile:", quoteFileId);
 
       const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -273,35 +260,40 @@ If the document is NOT a window/door quote (e.g., it's a random image, receipt, 
         sales_angle: String(analysisResult.sales_angle || "No angle extracted"),
       };
 
-      // Update DB with success
+      // Write completed to quote_files
       await supabase
-        .from("leads")
+        .from("quote_files")
         .update({
           ai_pre_analysis: {
             status: "completed",
             result,
+            reason: null,
+            started_at: startedAtIso,
             completed_at: new Date().toISOString(),
             model: "google/gemini-2.5-flash",
           },
         })
-        .eq("id", leadId);
+        .eq("id", quoteFileId);
 
-      console.log("[analyze-consultation-quote] SUCCESS for lead:", leadId, JSON.stringify(result));
+      console.log("[analyze-consultation-quote] SUCCESS for quoteFile:", quoteFileId, JSON.stringify(result));
     } catch (err) {
       const reason = err instanceof Error ? err.message : "Unknown error";
-      console.error("[analyze-consultation-quote] FAILED for lead:", leadId, reason);
+      console.error("[analyze-consultation-quote] FAILED for quoteFile:", quoteFileId, reason);
 
-      // Update DB with failure
+      // Write failed to quote_files
       await supabase
-        .from("leads")
+        .from("quote_files")
         .update({
           ai_pre_analysis: {
             status: "failed",
+            result: null,
             reason,
+            started_at: startedAtIso,
             completed_at: new Date().toISOString(),
+            model: "google/gemini-2.5-flash",
           },
         })
-        .eq("id", leadId);
+        .eq("id", quoteFileId);
     }
   })();
 
@@ -312,7 +304,6 @@ If the document is NOT a window/door quote (e.g., it's a random image, receipt, 
       // @ts-ignore
       EdgeRuntime.waitUntil(processingPromise);
     } else {
-      // Just let the promise run — Deno will keep the isolate alive for the response
       processingPromise.catch((e) =>
         console.error("[analyze-consultation-quote] Background processing error:", e)
       );

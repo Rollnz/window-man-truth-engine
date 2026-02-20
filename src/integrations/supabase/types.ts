@@ -1000,6 +1000,7 @@ export type Database = {
       }
       quote_files: {
         Row: {
+          ai_pre_analysis: Json
           created_at: string
           deleted_at: string | null
           file_name: string
@@ -1015,6 +1016,7 @@ export type Database = {
           utm_source: string | null
         }
         Insert: {
+          ai_pre_analysis?: Json
           created_at?: string
           deleted_at?: string | null
           file_name: string
@@ -1030,6 +1032,7 @@ export type Database = {
           utm_source?: string | null
         }
         Update: {
+          ai_pre_analysis?: Json
           created_at?: string
           deleted_at?: string | null
           file_name?: string
@@ -2329,6 +2332,10 @@ export type Database = {
       backfill_all_lead_scores: {
         Args: { p_lookback_days?: number }
         Returns: Json
+      }
+      claim_quote_file_preanalysis: {
+        Args: { p_quote_file_id: string }
+        Returns: string
       }
       cleanup_rate_limits: { Args: never; Returns: undefined }
       cleanup_test_data: { Args: never; Returns: Json }
