@@ -208,7 +208,7 @@ export default function Consultation() {
                 Get The Truth From Window Man     
               </h2>
               
-              <p className="max-w-xl mx-auto text-primary-foreground">
+              <p className="max-w-xl mx-auto text-muted-foreground">
                 The more accurate your details, the more useful your call will be.
               
               </p>
