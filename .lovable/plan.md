@@ -1,161 +1,100 @@
 
 
-# ExitIntentModal Visual Facelift -- Dark Forensic Split-Pane
+# "Forensic Elevated" Visual Overhaul -- Pillar Pages + About
 
-## What Changes
+## Problem
+The 4 pillar pages and /about look flat and monotone compared to the premium /sample-report and homepage. They use basic `bg-background` and `bg-card/30` without depth, ambient glows, glassmorphic borders, or elevated card shadows. This visual disconnect undermines trust.
 
-A complete visual rebuild of `src/components/authority/ExitIntentModal.tsx` render output. All logic, state machine, analytics, hooks, form validation, trigger detection, and handler functions remain **100% identical**. Only the JSX return and inline styling change.
+## Scope
+- 6 shared pillar components (already exist, need visual upgrade)
+- 4 pillar page files (no structural changes, just benefit from shared component upgrades)
+- 1 About page (manual upgrade since it doesn't use the pillar components)
 
-## New Layout
+## CRO Recommendations (Top 5)
 
-The modal transforms from a single white card into a **split-pane forensic modal**:
+1. **Ambient Depth Glow System** -- Add radial gradient "orbs" behind hero, stat, and CTA sections using `surface-1/2/3` tokens. Creates visual depth matching sample-report. *Best option: highest trust-lift for lowest effort, applies globally via shared components.*
 
-```text
-+-----------------------------------------------+
-|  LEFT PANE (dark)    |   RIGHT PANE (form)     |
-|                      |                         |
-|  FORENSIC            |   Step 1 of 3           |
-|  ALLY                |                         |
-|  For Impact Window   |   [INTELLIGENCE DATABASE]|
-|  Decisions           |                         |
-|                      |   SEE WHAT YOUR         |
-|  [Character Image]   |   NEIGHBORS ACTUALLY    |
-|                      |   PAID.                 |
-|  1. Pricing Intel    |                         |
-|  2. Storm Sentinel   |   [Name]  [Phone]       |
-|  3. Defense Protocol |   [Email]               |
-|                      |   [Window Count Grid]   |
-|                      |                         |
-|                      |   [=== CTA BUTTON ===]  |
-|                      |                         |
-|                      |   Skip link             |
-|                      |   Lock + Encrypted      |
-+-----------------------------------------------+
-```
+2. **Glassmorphic Elevated Cards** -- Upgrade all cards (stat boxes, guide cards, content blocks, callout) with `shadow-xl hover:shadow-2xl hover:scale-[1.02]` lift effects, `backdrop-blur-sm`, and `border-white/10` glassmorphic borders. Matches the ComparisonSection pattern.
 
-On **mobile** (`< md`), the left pane is hidden entirely -- only the right form pane renders as a full-width dark card.
+3. **Staggered Cascade Entrances** -- Add directional `AnimateOnScroll` (left/right reveals for side-by-side layouts) and staggered delays so grids "cascade" in 1-2-3 rather than appearing all at once. Fast durations (400-500ms) to avoid frustration.
 
-## Visual Specifications (Matching Reference Image)
+4. **Section Surface Alternation** -- Alternate between `surface-1`, `surface-2`, and `surface-3` backgrounds across sections instead of flat `bg-background` everywhere. Creates visual rhythm that guides the eye downward.
 
-### Overall Container
-- Background: `bg-[hsl(220,25%,7%)]` (near-black industrial)
-- Border: `border border-[hsl(200,60%,25%/0.3)]` (subtle cyan border)
-- Shadow: `shadow-[0_30px_80px_rgba(0,0,0,0.6)]` (dramatic depth)
-- Rounded: `rounded-2xl`
-- Max width: `max-w-4xl` (wider to accommodate two panes)
-- Animation: keep existing `animate-in fade-in slide-in-from-right-4`
+5. **Micro-interaction Trust Signals** -- Add hover glow effects on stat values (subtle cyan text-shadow), animated gradient accent bars on guide cards, and a pulsing icon on the callout card. Increases perceived interactivity.
 
-### Left Pane (Branding -- Desktop Only)
-- Width: ~40% (`w-[42%]`)
-- Background: `bg-[hsl(220,22%,9%)]` with CSS grid blueprint pattern overlay (subtle blue grid lines)
-- Content:
-  - Forensic Ally logo/title in cyan (`text-cyan-400`) + white
-  - Tagline: "For Impact Window Decisions"
-  - Character placeholder area with cyan ambient glow
-  - Step tracker sidebar: 3 numbered steps with the active step highlighted in cyan
+**Recommendation:** Options 1-4 together. They transform the pages from flat to premium with purely Tailwind changes in shared components. Option 5 is nice-to-have but lower priority.
 
-### Right Pane (Form Surface)
-- Width: ~60% (`w-[58%]`)
-- Background: `bg-[hsl(220,20%,11%)]` (slightly lighter than left)
-- All text: `text-slate-200` for body, `text-white` for headings
-- Input styling: `bg-[hsl(220,25%,8%)]` dark inputs with `border-slate-700`, `text-slate-200`, `placeholder:text-slate-500`
-- Focus ring: `focus:ring-cyan-500 focus:ring-offset-[hsl(220,20%,11%)]`
+## Technical Plan
 
-### Inputs (Dark Forensic Override)
-- Remove FormSurfaceProvider `surface="trust"` (white card context)
-- Directly apply dark input classes: `bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700`
-- Labels: `text-slate-300 font-semibold`
-- Error text: keep `text-destructive`
+### A. Shared Components (src/components/pillar/) -- 6 files
 
-### Window Count Selector (Dark)
-- Unselected: `bg-[hsl(220,25%,8%)] text-slate-400 border-slate-700 hover:border-slate-500`
-- Selected: `bg-cyan-900/40 text-cyan-300 border-cyan-500 shadow-[0_0_10px_rgba(8,145,178,0.2)]`
-- Focus ring: `focus:ring-cyan-500 focus:ring-offset-[hsl(220,20%,11%)]`
+**PillarHeroSection.tsx:**
+- Background: Replace `bg-primary/5` orbs with larger `bg-[hsl(var(--primary)/0.08)]` and `bg-[hsl(var(--accent-orange)/0.05)]` orbs using the same pattern as the homepage hero
+- Section bg: `bg-[hsl(var(--surface-1))]`
+- Add a subtle `border-b border-border/30` bottom separator
 
-### CTA Button
-- Gradient: `bg-gradient-to-r from-cyan-600 to-blue-700`
-- Hover: `hover:from-cyan-500 hover:to-blue-600`
-- Glow shadow: `shadow-[0_0_15px_rgba(8,145,178,0.3)] hover:shadow-[0_0_25px_rgba(8,145,178,0.5)]`
-- Border: `border border-cyan-400/30`
-- This replaces the existing `variant="cta"` with inline classes since the modal has its own dark theme context
+**PillarStatBar.tsx:**
+- Section bg: `bg-[hsl(var(--surface-2))]` instead of `bg-card/50`
+- Cards: `bg-card border border-white/10 shadow-xl hover:shadow-2xl hover:scale-[1.02] hover:shadow-primary/10 backdrop-blur-sm transition-all duration-300`
+- Top accent bar: keep the `bg-primary` bar, add subtle glow
+- Value text: `text-foreground` (stays theme-aware)
 
-### Badges
-- Step 1 "INTELLIGENCE DATABASE": `bg-cyan-500/10 text-cyan-400 border border-cyan-500/30`
-- Step indicator: `text-cyan-400 text-xs tracking-wider uppercase`
+**PillarContentBlock.tsx:**
+- Section bg: `bg-[hsl(var(--surface-1))]`
+- Bullet card: upgrade from `bg-card/50 shadow-sm` to `bg-card/80 backdrop-blur-sm border-white/10 shadow-lg`
+- Left border accent: thicken from `border-l-2` to `border-l-[3px]` with `border-primary/40`
 
-### Decline Links
-- `text-slate-500 hover:text-slate-300 underline underline-offset-4 uppercase text-xs tracking-wider`
-- Keep fat-finger safety: `mt-6 border-t border-slate-800 pt-4`
+**PillarCalloutCard.tsx:**
+- Outer card: `bg-card/90 backdrop-blur-sm border-white/10 shadow-2xl` with a gradient top accent bar
+- Inner gradient: keep `from-primary/10 to-secondary/5` but layer on card surface
 
-### Trust Footer
-- `text-slate-600 text-xs` with ShieldCheck icon
-- "SECURE 256-BIT ENCRYPTED TRANSMISSION" in uppercase tracking-wider
+**PillarGuideCard.tsx:**
+- Section bg: `bg-[hsl(var(--surface-2))]`
+- Cards already have `shadow-xl hover:shadow-2xl hover:scale-[1.02]` -- add `backdrop-blur-sm border-white/10` and `hover:shadow-primary/10`
 
-### Step Tracker (Left Pane)
-- Active step: cyan numbered circle (`bg-cyan-500/20 border-cyan-500 text-cyan-400`)
-- Inactive steps: slate (`bg-slate-800 border-slate-700 text-slate-500`)
-- Step title: `text-white font-bold` (active) / `text-slate-500` (inactive)
-- Description: `text-slate-400 text-xs` (active) / `text-slate-600 text-xs` (inactive)
+**PillarCTASection.tsx:**
+- Section bg: `bg-[hsl(var(--surface-1))]`
+- Larger ambient orb behind the CTA
+- Add subtle `border-t border-border/30` top separator
 
-### Overlay
-- `bg-black/70 backdrop-blur-md` (deeper than current `bg-background/80 backdrop-blur-sm`)
+### B. About Page (src/pages/About.tsx)
 
-## Wording Updates (Per Reference)
+Apply the same surface treatment manually since About doesn't use pillar components:
+- Hero section: `bg-[hsl(var(--surface-1))]` with ambient orbs
+- Hero cards (Safety First, AI + Human, Lead With Value): `bg-card border-white/10 shadow-xl hover:shadow-2xl hover:scale-[1.02] backdrop-blur-sm transition-all duration-300`
+- Methodology section: `bg-[hsl(var(--surface-2))]` instead of `bg-muted/30`
+- Inner methodology cards: `bg-card border-white/10 shadow-lg`
+- Review Board section: `bg-[hsl(var(--surface-1))]`
+- Review Board card: `bg-card border-white/10 shadow-xl backdrop-blur-sm`
+- Mission section: `bg-[hsl(var(--surface-2))]`
+- Mission inner cards: `border-white/10 shadow-lg`
+- Wrap key sections with `AnimateOnScroll` for entrance animations
+- Stagger the 3-card hero grid with `delay={index * 120}`
+- Credential pills: same as current but with `backdrop-blur-sm`
 
-**Step 1 -- Insider Price:**
-- Badge: "INTELLIGENCE DATABASE"
-- Headline: "SEE WHAT YOUR NEIGHBORS ACTUALLY PAID."
-- Sub: "Stop guessing. Unlock our proprietary database of recent impact window project costs verified in your exact zip code."
-- CTA: "Reveal Local Pricing Data"
-- Decline: "SKIP -- I DON'T CARE ABOUT PRICING"
-- Labels: "Full Name" / "Phone Number" / "Email Address" / "Scope of Project (Window Count)"
+### C. Contrast / Accessibility
+- All text remains on semantic tokens (`text-foreground`, `text-muted-foreground`)
+- `border-white/10` is decorative, not carrying meaning
+- Surface tokens already provide proper contrast ratios in both themes (verified in CSS: light `surface-1` = 97% lightness, dark `surface-1` = 9% lightness)
 
-**Step 2 -- Storm Sentinel:**
-- Headline: "DON'T GET CAUGHT IN SUPPLY CHAIN GRIDLOCK."
-- Sub: "When named storms approach, lead times triple overnight. Activate our early-warning SMS system for immediate manufacturing delays and flash price drops."
-- CTA: "Activate Instant SMS Alerts"
-- Decline: "SKIP -- I'LL RISK THE BACKORDER"
-- Label: "Direct Alert Number"
+### D. Performance
+- No new dependencies
+- No lazy loading changes needed (ExitIntentModal is already lazy in the Navbar)
+- `AnimateOnScroll` already uses `IntersectionObserver` and cleans up `will-change`
+- All changes are Tailwind class swaps, zero JS additions
 
-**Step 3 -- Kitchen Table:**
-- Headline: "ARM YOURSELF WITH THE DEFENSE PROTOCOL."
-- Sub: "Preparing for in-home quotes? Download the definitive '3-Question Blueprint' engineered to instantly disarm high-pressure sales tactics."
-- CTA: "Send The Blueprint Securely"
-- Decline: "SKIP -- I ENJOY SALES PITCHES"
-- Label: "Delivery Address" (email)
+### Files Modified
+1. `src/components/pillar/PillarHeroSection.tsx`
+2. `src/components/pillar/PillarStatBar.tsx`
+3. `src/components/pillar/PillarContentBlock.tsx`
+4. `src/components/pillar/PillarCalloutCard.tsx`
+5. `src/components/pillar/PillarGuideCard.tsx`
+6. `src/components/pillar/PillarCTASection.tsx`
+7. `src/pages/About.tsx`
 
-## Step 1 Form Layout Change
-
-The reference shows **Name + Phone side by side** on one row, then Email full-width below:
-
-```text
-[ Full Name          ] [ Phone Number      ]
-[ Email Address                            ]
-[ Window Count Grid (2x2)                  ]
-```
-
-This is a `grid grid-cols-2 gap-3` for row 1, then full-width inputs below.
-
-## Files Changed
-
-**Only one file:** `src/components/authority/ExitIntentModal.tsx`
-
-Changes are exclusively in:
-1. The `WindowCountSelector` component's className strings (dark theme)
-2. The JSX return block (lines 693-961) -- restructured into split-pane layout
-3. Labels, headings, and button text (wording updates)
-
-## What Does NOT Change
-
-- All imports (lines 16-31)
-- Type definitions (lines 37-50)
-- Constants (lines 56-71)
-- WindowCountSelector keyboard logic (lines 86-115)
-- All state, refs, hooks (lines 170-261)
-- All form configs and submission hooks (lines 227-338)
-- Modal lifecycle (canShowModal, showModal) (lines 343-395)
-- All useEffect blocks for analytics (lines 398-577)
-- All handlers (handleClose, handleDecline, handleBack, handleStep*Submit) (lines 582-684)
-- The barrel export from `src/components/authority/index.ts`
-- No database, edge function, or routing changes
+### What Does NOT Change
+- No page routing, data, SEO, or analytics changes
+- No pillar page files need editing (they inherit from shared components)
+- No new dependencies
+- No database or edge function changes
 
