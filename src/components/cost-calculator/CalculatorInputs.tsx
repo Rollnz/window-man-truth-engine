@@ -118,7 +118,7 @@ export function CalculatorInputs({
             </div>
             <Slider value={[homeSize]} onValueChange={(value) => setHomeSize(value[0])} min={500} max={5000} step={100} className="py-4" aria-label="Home Size in square feet" />
             <div className="flex justify-between text-xs text-white">
-              <span>500 sq ft</span>
+              <span className="text-primary font-bold">500 sq ft</span>
               <span>5,000 sq ft</span>
             </div>
           </div>
