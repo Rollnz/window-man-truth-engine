@@ -15,6 +15,7 @@ import { FinancialsSection } from '@/components/lead-detail/FinancialsSection';
 import { ConversionPathTimeline } from '@/components/lead-detail/ConversionPathTimeline';
 import { ProjectedRevenueCard } from '@/components/lead-detail/ProjectedRevenueCard';
 import { IntentSignalsSummary } from '@/components/lead-detail/IntentSignalsSummary';
+import { SalesIntelCard } from '@/components/lead-detail/SalesIntelCard';
 import { AdminBreadcrumb } from '@/components/admin/AdminBreadcrumb';
 import { LeadNavigation } from '@/components/admin/LeadNavigation';
 import { SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
@@ -23,7 +24,7 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 function LeadDetailContent() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { lead, events, files, notes, session, calls, pendingCalls, isLoading, error, canonical, refetch, updateStatus, addNote, updateSocialUrl } = useLeadDetail(id);
+  const { lead, events, files, notes, session, calls, pendingCalls, aiPreAnalysis, isLoading, error, canonical, refetch, updateStatus, addNote, updateSocialUrl } = useLeadDetail(id);
   const { previousLeadId, nextLeadId, currentIndex, totalLeads, goToPrevious, goToNext } = useLeadNavigation(id);
   const { setIsOpen, addToRecent } = useGlobalSearch();
 
@@ -148,6 +149,8 @@ function LeadDetailContent() {
 
       {/* 3-Pane Layout */}
       <main className="max-w-7xl mx-auto p-4 lg:p-6">
+        {/* Sales Intel HUD - full width, top of page */}
+        <SalesIntelCard aiPreAnalysis={aiPreAnalysis} />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Pane: Identity + Intent + Revenue */}
           <aside className="lg:col-span-3 space-y-4">

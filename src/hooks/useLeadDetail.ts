@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { LeadStatus } from '@/types/crm';
@@ -105,23 +105,21 @@ export interface CanonicalInfo {
   canonical_path: string;
 }
 
-interface UseLeadDetailReturn {
-  lead: LeadDetailData | null;
-  events: LeadEvent[];
-  files: LeadFile[];
-  notes: LeadNote[];
-  session: LeadSession | null;
-  calls: PhoneCallLog[];
-  pendingCalls: PendingCall[];
-  isLoading: boolean;
-  error: string | null;
-  /** Present when URL should be canonicalized (resolved via fallback) */
-  canonical: CanonicalInfo | null;
-  refetch: () => Promise<void>;
-  updateStatus: (status: LeadStatus) => Promise<boolean>;
-  addNote: (content: string) => Promise<boolean>;
-  updateSocialUrl: (url: string) => Promise<boolean>;
-  updateLead: (updates: Partial<LeadDetailData>) => Promise<boolean>;
+export interface AiPreAnalysisResult {
+  estimated_total_price: number | null;
+  window_brand_or_material: string;
+  detected_markup_level: 'High' | 'Average' | 'Low' | 'Unknown';
+  red_flags: string[];
+  sales_angle: string;
+}
+
+export interface AiPreAnalysis {
+  status: 'none' | 'pending' | 'completed' | 'failed';
+  result: AiPreAnalysisResult | null;
+  reason: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  model: string | null;
 }
 
 interface UseLeadDetailReturn {
@@ -132,8 +130,10 @@ interface UseLeadDetailReturn {
   session: LeadSession | null;
   calls: PhoneCallLog[];
   pendingCalls: PendingCall[];
+  aiPreAnalysis: AiPreAnalysis | null;
   isLoading: boolean;
   error: string | null;
+  canonical: CanonicalInfo | null;
   refetch: () => Promise<void>;
   updateStatus: (status: LeadStatus) => Promise<boolean>;
   addNote: (content: string) => Promise<boolean>;
@@ -154,6 +154,7 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
   const [session, setSession] = useState<LeadSession | null>(null);
   const [calls, setCalls] = useState<PhoneCallLog[]>([]);
   const [pendingCalls, setPendingCalls] = useState<PendingCall[]>([]);
+  const [aiPreAnalysis, setAiPreAnalysis] = useState<AiPreAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [canonical, setCanonical] = useState<CanonicalInfo | null>(null);
@@ -172,7 +173,6 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
       return;
     }
 
-    // Validate UUID format before making API call
     if (!isValidUUID(leadId)) {
       setError('Invalid lead ID format. Please use a valid lead URL.');
       setIsLoading(false);
@@ -189,7 +189,6 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
         return;
       }
 
-      // Use fetch with query params (GET request)
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-lead-detail?id=${leadId}`;
       const res = await fetch(url, {
         headers: {
@@ -211,8 +210,8 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
       setSession(data.session);
       setCalls(data.calls || []);
       setPendingCalls(data.pendingCalls || []);
+      setAiPreAnalysis(data.aiPreAnalysis || null);
       
-      // Handle canonical URL info (when resolved via fallback)
       if (data.canonical) {
         setCanonical(data.canonical);
       } else {
@@ -234,6 +233,16 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Safe polling via useRef — prevents stale closures without eslint-disable
+  const fetchRef = useRef(fetchData);
+  useEffect(() => { fetchRef.current = fetchData; }, [fetchData]);
+
+  useEffect(() => {
+    if (aiPreAnalysis?.status !== 'pending') return;
+    const interval = setInterval(() => fetchRef.current(), 5000);
+    return () => clearInterval(interval);
+  }, [aiPreAnalysis?.status]);
 
   const callAction = async (action: string, data: Record<string, unknown>): Promise<boolean> => {
     if (!leadId) return false;
@@ -280,7 +289,6 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
   const addNote = async (content: string): Promise<boolean> => {
     const success = await callAction('add_note', { content });
     if (success) {
-      // Refetch to get the new note with proper data
       await fetchData();
       toast({ title: 'Success', description: 'Note added' });
     }
@@ -313,6 +321,7 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
     session,
     calls,
     pendingCalls,
+    aiPreAnalysis,
     isLoading,
     error,
     canonical,
