@@ -1003,6 +1003,7 @@ export type Database = {
           ai_pre_analysis: Json
           created_at: string
           deleted_at: string | null
+          file_kind: string
           file_name: string
           file_path: string
           file_size: number
@@ -1019,6 +1020,7 @@ export type Database = {
           ai_pre_analysis?: Json
           created_at?: string
           deleted_at?: string | null
+          file_kind?: string
           file_name: string
           file_path: string
           file_size: number
@@ -1035,6 +1037,7 @@ export type Database = {
           ai_pre_analysis?: Json
           created_at?: string
           deleted_at?: string | null
+          file_kind?: string
           file_name?: string
           file_path?: string
           file_size?: number
@@ -2350,6 +2353,15 @@ export type Database = {
         Returns: number
       }
       get_lead_quality: { Args: { score: number }; Returns: string }
+      get_quote_indicators: {
+        Args: { p_lead_ids: string[] }
+        Returns: {
+          has_analyzed_quote: boolean
+          has_quote_file: boolean
+          latest_quote_status: string
+          lead_id: string
+        }[]
+      }
       get_score_points: { Args: { p_event_type: string }; Returns: number }
       has_role: {
         Args: {

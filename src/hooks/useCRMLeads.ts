@@ -24,7 +24,7 @@ interface UseCRMLeadsReturn {
   summary: CRMSummary | null;
   isLoading: boolean;
   error: string | null;
-  fetchLeads: (startDate?: string, endDate?: string) => Promise<void>;
+  fetchLeads: (startDate?: string, endDate?: string, options?: { hasQuote?: boolean; analyzed?: boolean }) => Promise<void>;
   updateLeadStatus: (leadId: string, newStatus: LeadStatus, extras?: UpdateLeadExtras) => Promise<boolean>;
   getLeadsByStatus: (status: LeadStatus) => CRMLead[];
   /**
@@ -45,7 +45,7 @@ export function useCRMLeads(): UseCRMLeadsReturn {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchLeads = useCallback(async (startDate?: string, endDate?: string) => {
+  const fetchLeads = useCallback(async (startDate?: string, endDate?: string, options?: { hasQuote?: boolean; analyzed?: boolean }) => {
     setIsLoading(true);
     setError(null);
 
@@ -60,6 +60,8 @@ export function useCRMLeads(): UseCRMLeadsReturn {
       const params = new URLSearchParams();
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
+      if (options?.hasQuote) params.append('has_quote', 'true');
+      if (options?.analyzed) params.append('analyzed', 'true');
 
       // Use GET request with query params (edge function only handles GET)
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;

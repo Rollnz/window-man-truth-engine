@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Loader2, Calculator, FileText, Activity, Zap, Search } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Loader2, Calculator, FileText, Activity, Zap, Search, ScanSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
@@ -38,6 +38,8 @@ export default function CRMDashboard() {
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [showHighTouchOnly, setShowHighTouchOnly] = useState(false);
   const [v2SegmentFilter, setV2SegmentFilter] = useState<string>('all');
+  const [hasQuoteFilter, setHasQuoteFilter] = useState(false);
+  const [analyzedFilter, setAnalyzedFilter] = useState(false);
 
   const { 
     leads, 
@@ -81,13 +83,26 @@ export default function CRMDashboard() {
   }, [leads]);
 
   const handleRefresh = () => {
+    const options = {
+      ...(hasQuoteFilter && { hasQuote: true }),
+      ...(analyzedFilter && { analyzed: true }),
+    };
     if (dateRange.startDate && dateRange.endDate) {
       fetchLeads(
         format(dateRange.startDate, 'yyyy-MM-dd'),
-        format(dateRange.endDate, 'yyyy-MM-dd')
+        format(dateRange.endDate, 'yyyy-MM-dd'),
+        Object.keys(options).length > 0 ? options : undefined
       );
+    } else {
+      fetchLeads(undefined, undefined, Object.keys(options).length > 0 ? options : undefined);
     }
   };
+
+  // Re-fetch when quote filters change
+  useEffect(() => {
+    handleRefresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasQuoteFilter, analyzedFilter]);
 
   const handleRecalculateScores = async () => {
     setIsRecalculating(true);
@@ -162,8 +177,10 @@ export default function CRMDashboard() {
                 <h1 className="text-2xl font-bold">Lead Warehouse</h1>
                 <p className="text-sm text-muted-foreground">
                   CRM Kanban Board • {filteredLeads.length} leads
-                  {(showHighTouchOnly || v2SegmentFilter !== 'all') && ` (filtered from ${leads.length})`}
+                  {(showHighTouchOnly || v2SegmentFilter !== 'all' || hasQuoteFilter || analyzedFilter) && ` (filtered from ${leads.length})`}
                   {v2SegmentFilter !== 'all' && ` • Segment: ${v2SegmentFilter}`}
+                  {hasQuoteFilter && ' • With Quote'}
+                  {analyzedFilter && ' • Analyzed'}
                 </p>
               </div>
             </div>
@@ -187,6 +204,32 @@ export default function CRMDashboard() {
                       {highTouchCount}
                     </Badge>
                   )}
+                </Label>
+              </div>
+
+              {/* With Quote Filter */}
+              <div className="flex items-center gap-2 px-3 py-1.5 border border-border/50 rounded-lg bg-card/50">
+                <Switch
+                  id="quote-filter"
+                  checked={hasQuoteFilter}
+                  onCheckedChange={setHasQuoteFilter}
+                />
+                <Label htmlFor="quote-filter" className="flex items-center gap-2 cursor-pointer text-sm">
+                  <FileText className="h-4 w-4 text-amber-500" />
+                  With Quote
+                </Label>
+              </div>
+
+              {/* Analyzed Filter */}
+              <div className="flex items-center gap-2 px-3 py-1.5 border border-border/50 rounded-lg bg-card/50">
+                <Switch
+                  id="analyzed-filter"
+                  checked={analyzedFilter}
+                  onCheckedChange={setAnalyzedFilter}
+                />
+                <Label htmlFor="analyzed-filter" className="flex items-center gap-2 cursor-pointer text-sm">
+                  <ScanSearch className="h-4 w-4 text-green-500" />
+                  Analyzed
                 </Label>
               </div>
 
@@ -305,6 +348,16 @@ export default function CRMDashboard() {
               High-touch leads have both Google (gclid) and Meta (fbclid) attribution
             </p>
             <Button variant="outline" className="mt-4" onClick={() => setShowHighTouchOnly(false)}>
+              Show All Leads
+            </Button>
+          </div>
+        ) : filteredLeads.length === 0 && (hasQuoteFilter || analyzedFilter) ? (
+          <div className="text-center py-12 border rounded-lg border-dashed border-border/50">
+            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground mb-2">
+              {analyzedFilter ? 'No leads with analyzed quotes found' : 'No leads with uploaded quotes found'}
+            </p>
+            <Button variant="outline" className="mt-4" onClick={() => { setHasQuoteFilter(false); setAnalyzedFilter(false); }}>
               Show All Leads
             </Button>
           </div>
