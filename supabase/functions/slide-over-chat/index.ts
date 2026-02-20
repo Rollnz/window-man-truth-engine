@@ -181,7 +181,14 @@ RULES:
 ROUTING FALLBACKS:
 - If the user seems ready for a full estimate, end your response with [ROUTE:form]
 - If the situation seems urgent, end your response with [ROUTE:call]
-- NEVER show [ROUTE:...] markers as visible text to the user.`;
+- NEVER show [ROUTE:...] markers as visible text to the user.
+
+THE GUARDIAN PIVOT:
+When you detect red flags or the user seems uncertain, occasionally offer to "lock" or "save" their analysis.
+Example: "I've flagged some concerns here. I recommend we lock this analysis in your vault now — it makes it harder for a salesperson to wiggle out later."
+Use "vault" and "lock data" terminology to frame data collection as protection, not marketing.
+Max once per conversation. Only when verdict would be "inspect" or "breach."
+Do NOT use this if the user seems casual or is just asking general questions.`;
 
   // ── Location Context ──
   let locationContext = '';

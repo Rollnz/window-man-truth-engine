@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 import { Navbar } from '@/components/home/Navbar';
 import { QuoteScannerHero } from '@/components/quote-scanner/QuoteScannerHero';
@@ -71,7 +72,18 @@ export default function QuoteScanner() {
 
   const { sessionData, updateField } = useSessionData();
   const { leadId, setLeadId } = useLeadIdentity();
+  const [searchParams] = useSearchParams();
   const [isNoQuoteSubmitting, setIsNoQuoteSubmitting] = useState(false);
+
+  // Sync chat context to session on mount
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    const zip = searchParams.get('zip');
+    if (ref === 'wm_chat' && zip) {
+      updateField('zipCode', zip);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [isNoQuoteSubmitted, setIsNoQuoteSubmitted] = useState(false);
   const [preQuoteOpen, setPreQuoteOpen] = useState(false);
   const [registeredSessionId, setRegisteredSessionId] = useState<string>('');
