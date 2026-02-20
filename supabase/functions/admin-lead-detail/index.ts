@@ -544,6 +544,47 @@ serve(async (req) => {
       }
 
       // =====================
+      // GET QUOTE FILE URL (server-side signed URL for private bucket)
+      // =====================
+      if (action === 'get_quote_file_url') {
+        const { fileId } = body;
+        if (!fileId || typeof fileId !== 'string') {
+          return errorResponse(400, 'missing_file_id', 'fileId is required');
+        }
+        if (!isValidUUID(fileId as string)) {
+          return errorResponse(400, 'invalid_file_id', 'fileId must be a valid UUID');
+        }
+
+        // Look up the file and verify it belongs to this lead
+        const { data: file, error: fileError } = await supabase
+          .from('quote_files')
+          .select('id, lead_id, file_path')
+          .eq('id', fileId)
+          .is('deleted_at', null)
+          .maybeSingle();
+
+        assertNoError(fileError, 'quote_files.select(get_url)');
+
+        if (!file || file.lead_id !== resolution.lead_id) {
+          return errorResponse(404, 'file_not_found', 'File not found or does not belong to this lead');
+        }
+
+        // Generate signed URL server-side (service_role has bucket access)
+        const { data: signedData, error: signError } = await supabase
+          .storage.from('quotes')
+          .createSignedUrl(file.file_path, 600);
+
+        if (signError || !signedData?.signedUrl) {
+          console.error('[admin-lead-detail] Storage sign error:', signError?.message);
+          return errorResponse(500, 'sign_failed', 'Failed to generate file URL');
+        }
+
+        return new Response(JSON.stringify({ ok: true, signedUrl: signedData.signedUrl }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // =====================
       // OPPORTUNITY CRUD
       // =====================
 

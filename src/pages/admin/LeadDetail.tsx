@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLeadDetail } from '@/hooks/useLeadDetail';
@@ -21,10 +21,31 @@ import { LeadNavigation } from '@/components/admin/LeadNavigation';
 import { SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 
+function ViewOriginalQuoteButton({ fileId, getQuoteFileUrl }: { fileId: string; getQuoteFileUrl: (id: string) => Promise<string | null> }) {
+  const [loading, setLoading] = useState(false);
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const url = await getQuoteFileUrl(fileId);
+      if (url) window.open(url, '_blank');
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <div className="mb-4">
+      <Button variant="outline" onClick={handleClick} disabled={loading} className="gap-2">
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+        View Original Quote
+      </Button>
+    </div>
+  );
+}
+
 function LeadDetailContent() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { lead, events, files, notes, session, calls, pendingCalls, aiPreAnalysis, isLoading, error, canonical, refetch, updateStatus, addNote, updateSocialUrl, updateSocialProfile, triggerAnalysis } = useLeadDetail(id);
+  const { lead, events, files, notes, session, calls, pendingCalls, aiPreAnalysis, isLoading, error, canonical, refetch, updateStatus, addNote, updateSocialUrl, updateSocialProfile, triggerAnalysis, getQuoteFileUrl } = useLeadDetail(id);
   const { previousLeadId, nextLeadId, currentIndex, totalLeads, goToPrevious, goToNext } = useLeadNavigation(id);
   const { setIsOpen } = useGlobalSearchOpen();
 
@@ -148,6 +169,9 @@ function LeadDetailContent() {
           aiPreAnalysis={aiPreAnalysis}
           onTriggerAnalysis={aiPreAnalysis?.quote_file_id ? () => triggerAnalysis(aiPreAnalysis.quote_file_id!) : undefined}
         />
+        {files.length > 0 && (
+          <ViewOriginalQuoteButton fileId={files[0].id} getQuoteFileUrl={getQuoteFileUrl} />
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Pane: Identity + Intent + Revenue */}
           <aside className="lg:col-span-3 space-y-4">
@@ -182,7 +206,7 @@ function LeadDetailContent() {
           {/* Right Pane: Workspace */}
           <aside className="lg:col-span-3 space-y-4">
             <NotesWidget onAddNote={addNote} />
-            <FilesWidget files={files} onTriggerFileAnalysis={triggerAnalysis} />
+            <FilesWidget files={files} onTriggerFileAnalysis={triggerAnalysis} getQuoteFileUrl={getQuoteFileUrl} />
             <DispatchWindowManButton lead={lead} pendingCalls={pendingCalls} onSuccess={refetch} />
             <FinancialsSection wmLeadId={lead.id} />
           </aside>

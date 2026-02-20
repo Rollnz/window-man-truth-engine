@@ -6,27 +6,27 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { LeadFile } from '@/hooks/useLeadDetail';
-import { supabase } from '@/integrations/supabase/client';
 
 interface FilesWidgetProps {
   files: LeadFile[];
   onTriggerFileAnalysis?: (quoteFileId: string) => Promise<boolean>;
+  getQuoteFileUrl?: (fileId: string) => Promise<string | null>;
 }
 
-export function FilesWidget({ files, onTriggerFileAnalysis }: FilesWidgetProps) {
+export function FilesWidget({ files, onTriggerFileAnalysis, getQuoteFileUrl }: FilesWidgetProps) {
   const [triggeringFileId, setTriggeringFileId] = useState<string | null>(null);
+  const [viewingFileId, setViewingFileId] = useState<string | null>(null);
 
   const handleViewFile = async (file: LeadFile) => {
+    if (!getQuoteFileUrl || viewingFileId) return;
+    setViewingFileId(file.id);
     try {
-      const { data } = await supabase.storage
-        .from('quotes')
-        .createSignedUrl(file.file_path, 60 * 10, { download: false });
-
-      if (data?.signedUrl) {
-        window.open(data.signedUrl, '_blank');
+      const url = await getQuoteFileUrl(file.id);
+      if (url) {
+        window.open(url, '_blank');
       }
-    } catch (error) {
-      console.error('Error getting signed URL:', error);
+    } finally {
+      setViewingFileId(null);
     }
   };
 
@@ -122,7 +122,6 @@ export function FilesWidget({ files, onTriggerFileAnalysis }: FilesWidgetProps) 
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      {/* Run AI Scan button for unanalyzed/failed files */}
                       {onTriggerFileAnalysis && canTriggerAnalysis(file) && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -145,14 +144,24 @@ export function FilesWidget({ files, onTriggerFileAnalysis }: FilesWidgetProps) 
                           </TooltipContent>
                         </Tooltip>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => handleViewFile(file)}
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => handleViewFile(file)}
+                            disabled={viewingFileId === file.id || !getQuoteFileUrl}
+                          >
+                            {viewingFileId === file.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ExternalLink className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>View file</TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                 ))}
