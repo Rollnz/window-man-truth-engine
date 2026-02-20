@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ShimmerBadge } from '@/components/ui/ShimmerBadge';
 import {
   SheetContent,
   SheetHeader,
@@ -25,6 +26,7 @@ import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
 import type { AiQaMode } from '@/lib/panelVariants';
 import type { SourceTool } from '@/types/sourceTool';
+import { FORENSIC_ALLY_INITIAL_MESSAGE } from '@/components/authority/SilentAllyInterceptor';
 
 // phonecall.bot number
 const PHONECALL_BOT_NUMBER = '+15614685571';
@@ -64,6 +66,9 @@ type Step = 'choice' | 'ai-qa' | 'project' | 'contact' | 'address' | 'success';
 
 interface EstimateSlidePanelProps {
   onClose: () => void;
+  triggerSource?: string;
+  triggerMode?: string;
+  triggerInitialMessage?: string;
 }
 
 /**
@@ -79,13 +84,24 @@ interface EstimateSlidePanelProps {
  * NOTE: Wrapped with forwardRef to satisfy Radix Dialog's ref requirements.
  */
 export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlidePanelProps>(
-  function EstimateSlidePanel({ onClose }, ref) {
-  const [step, setStep] = useState<Step>('choice');
+  function EstimateSlidePanel({ onClose, triggerSource, triggerMode, triggerInitialMessage }, ref) {
+  const isForensicAlly = triggerSource === 'exit_intent_ally';
+
+  const [step, setStep] = useState<Step>(() => isForensicAlly ? 'ai-qa' : 'choice');
   const [formData, setFormData] = useState<EstimateFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [aiQaMode, setAiQaMode] = useState<AiQaMode>('concierge');
-  const [aiQaInitialMessage, setAiQaInitialMessage] = useState<string | undefined>();
+  const [aiQaMode, setAiQaMode] = useState<AiQaMode>(() => {
+    if (triggerMode === 'savings') return 'savings';
+    if (isForensicAlly) return 'concierge';
+    return 'concierge';
+  });
+  const [aiQaInitialMessage, setAiQaInitialMessage] = useState<string | undefined>(() => {
+    if (isForensicAlly && !triggerInitialMessage) {
+      return FORENSIC_ALLY_INITIAL_MESSAGE;
+    }
+    return triggerInitialMessage;
+  });
 
   const { leadId, setLeadId } = useLeadIdentity();
   const { sessionData, sessionId, updateFields } = useSessionData();
@@ -319,8 +335,32 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
   return (
     <SheetContent 
       side="right" 
-      className="w-full sm:max-w-md border-l-2 border-primary/20 bg-background overflow-y-auto pb-8"
+      className={[
+        'w-full sm:max-w-md border-l-2 border-primary/20 overflow-y-auto pb-8',
+        isForensicAlly
+          ? 'bg-gradient-to-b from-cyan-950/10 to-background border-t-2 border-t-cyan-500/60'
+          : 'bg-background',
+      ].join(' ')}
     >
+      {/* Forensic Ally special header */}
+      {isForensicAlly && (
+        <div className="flex flex-col items-center gap-2 pt-2 pb-4 border-b border-cyan-500/20 mb-2">
+          <div className="relative">
+            <img
+              src="/images/windowman.webp"
+              alt="Window Man — Forensic Ally"
+              className="w-14 h-14 rounded-full object-cover ring-2 ring-cyan-400/50 shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+            />
+          </div>
+          <ShimmerBadge
+            text="⚡ SPECIAL ACCESS"
+            hideIcon
+            variant="primary"
+            className="text-[10px]"
+          />
+        </div>
+      )}
+
       <SheetHeader className="mb-6">
         {step !== 'choice' && step !== 'success' && (
           <Button
@@ -336,7 +376,7 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
 
         <SheetTitle className="text-2xl font-bold text-foreground">
           {step === 'choice' && 'Get Your Free Estimate'}
-          {step === 'ai-qa' && 'Ask Window Man'}
+          {step === 'ai-qa' && (isForensicAlly ? '🛡️ Forensic Ally' : 'Ask Window Man')}
           {step === 'project' && 'Project Details'}
           {step === 'contact' && 'Contact Information'}
           {step === 'address' && 'Property Address'}
@@ -345,7 +385,7 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
 
         <SheetDescription className="text-muted-foreground">
           {step === 'choice' && 'Choose how you\'d like to connect with us.'}
-          {step === 'ai-qa' && 'Get instant answers about impact windows.'}
+          {step === 'ai-qa' && (isForensicAlly ? 'Independent. Unbiased. On your side.' : 'Get instant answers about impact windows.')}
           {step === 'project' && 'Tell us about your window project.'}
           {step === 'contact' && 'How can we reach you?'}
           {step === 'address' && 'Where is the property located?'}

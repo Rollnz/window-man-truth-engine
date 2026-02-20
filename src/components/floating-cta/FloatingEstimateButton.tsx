@@ -15,6 +15,9 @@ export const FloatingEstimateButton = forwardRef<HTMLButtonElement, Record<strin
   const [isVisible, setIsVisible] = useState(true);
   const [hasEntered, setHasEntered] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
+  const [triggerSource, setTriggerSource] = useState<string | undefined>();
+  const [triggerMode, setTriggerMode] = useState<string | undefined>();
+  const [triggerInitialMessage, setTriggerInitialMessage] = useState<string | undefined>();
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
 
@@ -27,6 +30,32 @@ export const FloatingEstimateButton = forwardRef<HTMLButtonElement, Record<strin
     }, 2000);
     return () => clearTimeout(entranceTimer);
   }, []);
+
+  // Listen for programmatic open requests (e.g., from SilentAllyInterceptor)
+  useEffect(() => {
+    const handleOpenPanel = (e: Event) => {
+      const detail = (e as CustomEvent).detail as {
+        source?: string;
+        mode?: string;
+        initialMessage?: string;
+      } | undefined;
+      setTriggerSource(detail?.source);
+      setTriggerMode(detail?.mode);
+      setTriggerInitialMessage(detail?.initialMessage);
+      setIsOpen(true);
+    };
+    window.addEventListener('open-estimate-panel', handleOpenPanel);
+    return () => window.removeEventListener('open-estimate-panel', handleOpenPanel);
+  }, []);
+
+  // Reset trigger state when panel closes
+  useEffect(() => {
+    if (!isOpen) {
+      setTriggerSource(undefined);
+      setTriggerMode(undefined);
+      setTriggerInitialMessage(undefined);
+    }
+  }, [isOpen]);
 
   // Scroll handler - synced with MobileStickyFooter logic
   const handleScroll = useCallback(() => {
@@ -117,7 +146,12 @@ export const FloatingEstimateButton = forwardRef<HTMLButtonElement, Record<strin
           />
         </SheetTrigger>
         
-        <EstimateSlidePanel onClose={() => setIsOpen(false)} />
+        <EstimateSlidePanel
+          onClose={() => setIsOpen(false)}
+          triggerSource={triggerSource}
+          triggerMode={triggerMode}
+          triggerInitialMessage={triggerInitialMessage}
+        />
       </Sheet>
     </>
   );

@@ -8,6 +8,11 @@ const FloatingEstimateButton = lazy(() =>
   import('@/components/floating-cta/FloatingEstimateButton').then(m => ({ default: m.FloatingEstimateButton }))
 );
 
+// Lazy load SilentAllyInterceptor - scroll-proximity exit intent bar
+const SilentAllyInterceptor = lazy(() =>
+  import('@/components/authority/SilentAllyInterceptor').then(m => ({ default: m.SilentAllyInterceptor }))
+);
+
 /**
  * PublicLayout wraps all public-facing pages with the unified footer system.
  * 
@@ -37,6 +42,11 @@ export function PublicLayout() {
       {/* Floating CTA button - lazy loaded, appears last on all public pages */}
       <Suspense fallback={null}>
         <FloatingEstimateButton />
+      </Suspense>
+
+      {/* Scroll-proximity exit intent interceptor bar */}
+      <Suspense fallback={null}>
+        <SilentAllyInterceptor />
       </Suspense>
     </div>
   );
