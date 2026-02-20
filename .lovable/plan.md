@@ -1,66 +1,143 @@
 
 
-# Audit: "Run Analysis" Feature -- Fix Console Warnings
+# Fix All 31 Build Errors + Implement Dynamic Social Research Buttons
 
-## Status: Core Feature Is Working
+This plan has two parts: (A) fix all 31 pre-existing build errors across edge functions, and (B) implement the dynamic social research feature from the approved ticket.
 
-After a thorough code audit and edge function log review, the entire "Run Analysis" pipeline is functioning correctly end-to-end:
+## Part A: Fix 31 Build Errors
 
-- The AI extraction uses tool calling with the correct 5-field schema
-- The try/catch writes `failed` to the DB on any error (no silent failures)
-- The external link buttons generate signed URLs and open in new tabs
-- The Sparkles buttons call `triggerAnalysis(file.id)` per-file
-- The RPC accepts `pending` status for admin overrides
-- The optimistic UI has rollback + 2-minute timeout synced to DB
-- Edge function logs confirm successful analysis runs
+### Error Category 1: `TS2345` -- `hasAdminRole` type mismatch (13 errors)
 
-## Only Issue: Two React Console Warnings
+The shared `hasAdminRole` in `adminAuth.ts` uses `SupabaseClient` imported from `esm.sh`, which produces a different generic signature than the `createClient` return type in each edge function.
 
-The console shows "Function components cannot be given refs" warnings from two components. These are cosmetic (no broken functionality) but should be cleaned up.
+**Fix:** Change the parameter type from `SupabaseClient` to `any` in `adminAuth.ts` line 97. This is standard practice for shared Deno helpers where the client generic params vary.
 
-### Root Cause
+| File | Line | Fix |
+|------|------|-----|
+| `supabase/functions/_shared/adminAuth.ts` | 97 | Change `supabaseAdmin: SupabaseClient` to `supabaseAdmin: any` |
 
-Radix UI's `TooltipTrigger` with `asChild` tries to pass a `ref` to its child. Two shadcn components are plain function components without `forwardRef`:
+This resolves all 13 `TS2345` errors across: `admin-call-activity`, `admin-executive-profit`, `admin-lead-detail`, `admin-quotes`, `admin-revenue`, `admin-smoke-test`, `admin-update-call-agent`, `admin-webhook-receipts`, `crm-disposition`, `crm-leads`, `enqueue-manual-call`, `mark-qualified-conversion`.
 
-1. **`Badge`** in `src/components/ui/badge.tsx` -- used inside `TooltipTrigger asChild` in `SalesIntelCard.tsx`
-2. **`Tooltip`** in `src/components/ui/tooltip.tsx` -- the `Tooltip` wrapper is a plain function, not a `forwardRef` component
+### Error Category 2: `TS2304` -- undefined `email` variable (14 errors)
 
-### Fix
+Three edge functions reference `email` without declaring it. In all cases, `user.email` is available from the auth check. The fix is to add `const email = user.email || 'unknown';` right after the user is validated.
 
-| # | File | Change |
-|---|------|--------|
-| 1 | `src/components/ui/badge.tsx` | Wrap `Badge` with `React.forwardRef` |
-| 2 | `src/components/ui/tooltip.tsx` | Wrap `Tooltip` with `React.forwardRef` (or add displayName) |
+| File | Fix |
+|------|-----|
+| `supabase/functions/admin-call-activity/index.ts` | Add `const email = user.email \|\| 'unknown';` after line 85 |
+| `supabase/functions/admin-update-call-agent/index.ts` | Add `const email = user.email \|\| 'unknown';` after line 108 |
+| `supabase/functions/enqueue-manual-call/index.ts` | Add `const email = user.email \|\| 'unknown';` after line 109 |
 
-**badge.tsx change:**
-```typescript
-// Before:
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return <div ... />;
-}
+### Error Category 3: `TS2304` -- undefined `userEmail` (1 error)
 
-// After:
-const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
-  ({ className, variant, ...props }, ref) => {
-    return <div ref={ref} ... />;
-  }
-);
-Badge.displayName = "Badge";
+`crm-disposition/index.ts` line 316 references `userEmail` but never declares it. The user object is available via `user` from line 101.
+
+| File | Fix |
+|------|-----|
+| `supabase/functions/crm-disposition/index.ts` | Add `const userEmail = user.email \|\| 'unknown';` after line 108 (after the admin check) |
+
+### Error Category 4: `TS2304` -- undefined `fileData` (2 errors)
+
+In `save-lead/index.ts`, `fileData` is declared inside a `try` block (line 930) but referenced outside it (lines 970, 981). The AI pre-analysis block needs to move inside the try block, before the closing `catch`.
+
+| File | Fix |
+|------|-----|
+| `supabase/functions/save-lead/index.ts` | Move the AI pre-analysis block (lines 967-987) inside the try block, before line 963 (`} catch (alertErr)`) |
+
+### Error Category 5: `TS18046` -- `metrics.emqScore` is `unknown` (1 error)
+
+In `check-tracking-health/index.ts`, `checkHealth()` returns `metrics: Record<string, unknown>`. Accessing `.emqScore` requires a cast.
+
+| File | Fix |
+|------|-----|
+| `supabase/functions/check-tracking-health/index.ts` | Cast: `(metrics.emqScore as number) >= THRESHOLDS.EMQ_CRITICAL` at line 268 |
+
+---
+
+## Part B: Dynamic Social Research Buttons
+
+### Step 1: Database Migration
+
+```sql
+ALTER TABLE public.wm_leads ADD COLUMN IF NOT EXISTS social_facebook_url text;
+ALTER TABLE public.wm_leads ADD COLUMN IF NOT EXISTS social_instagram_url text;
 ```
 
-**tooltip.tsx change:**
-```typescript
-// Before:
-const Tooltip = ({ delayDuration = 0, ...props }: TooltipProps) => (
-  <TooltipPrimitive.Root delayDuration={delayDuration} {...props} />
-);
+No RLS changes needed (all access is via service-role edge function).
 
-// After (add displayName -- Root doesn't need forwardRef):
-const Tooltip = ({ delayDuration = 0, ...props }: TooltipProps) => (
-  <TooltipPrimitive.Root delayDuration={delayDuration} {...props} />
-);
-Tooltip.displayName = "Tooltip";
+### Step 2: Backend -- Add `update_social_profile` action
+
+In `supabase/functions/admin-lead-detail/index.ts`, add a new POST action block after the existing `update_social_url` block (which stays for backward compatibility):
+
+- Accepts `{ action: "update_social_profile", platform: "facebook"|"instagram", url: string|null }`
+- Adds a `normalizeAndValidateSocialUrl` helper that:
+  - Validates platform is "facebook" or "instagram"
+  - Allows `null` (for clearing)
+  - Trims, prepends `https://` if missing protocol
+  - Validates with `new URL()`
+  - Enforces https only
+  - Checks domain allowlist: `facebook.com`/`m.facebook.com` for FB, `instagram.com` for IG
+  - Strips query params and hash for clean storage
+- Maps platform to the correct column (`social_facebook_url` or `social_instagram_url`)
+- Updates only that column + `updated_at`
+
+### Step 3: Hook -- Update `useLeadDetail.ts`
+
+- Add `social_facebook_url: string | null` and `social_instagram_url: string | null` to `LeadDetailData` interface
+- Replace `updateSocialUrl` with `updateSocialProfile(platform: 'facebook'|'instagram', url: string|null)`
+- Optimistic update targets the correct field based on platform
+- Toast shows "Social profile saved" or "Social profile cleared"
+- Update the return type interface and return object
+
+### Step 4: Rewrite `SocialSearchButtons.tsx`
+
+New props interface:
+```
+facebookUrl, instagramUrl, onSaveProfile(platform, url)
 ```
 
-These are the only changes needed. No edge function, hook, or UI logic changes required.
+Button behavior:
+- Facebook: saved URL -> open direct; else -> `facebook.com/search/top/?q=<name+city>`
+- Instagram: saved URL -> open direct; else -> `google.com/search?q=site:instagram.com <name+city>`
+- LinkedIn: always Google site-search (unchanged)
+
+Visual indicators:
+- `variant="default"` when verified URL exists, `variant="outline"` when search
+- Tooltip: "View saved profile" vs "Search Facebook" / "Search Instagram (Google)"
+
+Save/Clear section:
+- Two rows (Facebook + Instagram), each with Input + Save + Clear buttons
+- Frontend validation: trim, prepend https://, `new URL()`, domain allowlist check
+- Invalid URL -> destructive toast, save blocked
+- Clear button calls `onSaveProfile(platform, null)`
+
+### Step 5: Update `LeadIdentityCard.tsx`
+
+Pass new props to `SocialSearchButtons`:
+```
+facebookUrl={lead.social_facebook_url}
+instagramUrl={lead.social_instagram_url}
+onSaveProfile={updateSocialProfile}
+```
+
+Remove old `onSaveSocialUrl` prop.
+
+---
+
+## Files Changed
+
+| File | Change Type |
+|------|-------------|
+| `supabase/functions/_shared/adminAuth.ts` | Fix: `hasAdminRole` param type to `any` |
+| `supabase/functions/admin-call-activity/index.ts` | Fix: add `email` declaration |
+| `supabase/functions/admin-update-call-agent/index.ts` | Fix: add `email` declaration |
+| `supabase/functions/enqueue-manual-call/index.ts` | Fix: add `email` declaration |
+| `supabase/functions/crm-disposition/index.ts` | Fix: add `userEmail` declaration |
+| `supabase/functions/save-lead/index.ts` | Fix: move `fileData` usage into scope |
+| `supabase/functions/check-tracking-health/index.ts` | Fix: cast `metrics.emqScore` |
+| `supabase/functions/admin-lead-detail/index.ts` | Feature: add `update_social_profile` action |
+| `src/hooks/useLeadDetail.ts` | Feature: update interface + replace save function |
+| `src/components/lead-detail/SocialSearchButtons.tsx` | Feature: full rewrite with platform-aware logic |
+| `src/components/lead-detail/LeadIdentityCard.tsx` | Feature: update props |
+| Database migration | Add 2 columns to `wm_leads` |
 
