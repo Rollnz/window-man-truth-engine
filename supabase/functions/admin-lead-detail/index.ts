@@ -569,16 +569,58 @@ serve(async (req) => {
           return errorResponse(404, 'file_not_found', 'File not found or does not belong to this lead');
         }
 
+        // Normalize path - strip bucket prefix, leading slashes, or full URL segments
+        let objectPath = file.file_path;
+        if (objectPath.startsWith('quotes/')) objectPath = objectPath.slice(7);
+        if (objectPath.startsWith('/')) objectPath = objectPath.slice(1);
+        if (objectPath.includes('/object/')) {
+          objectPath = objectPath.split('/object/').pop() || '';
+          if (objectPath.startsWith('quotes/')) objectPath = objectPath.slice(7);
+        }
+        if (!objectPath) {
+          return errorResponse(400, 'invalid_file_path', 'File path is empty after normalization');
+        }
+
+        // Diagnostic logging
+        console.log('[get_quote_file_url] Signing:', {
+          bucket: 'quotes',
+          fileId,
+          file_path: file.file_path,
+          normalizedPath: objectPath,
+          hasUrl: !!Deno.env.get('SUPABASE_URL'),
+          srkLen: (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '').length,
+        });
+
         // Generate signed URL server-side (service_role has bucket access)
         const { data: signedData, error: signError } = await supabase
           .storage.from('quotes')
-          .createSignedUrl(file.file_path, 600);
+          .createSignedUrl(objectPath, 600);
 
         if (signError || !signedData?.signedUrl) {
-          console.error('[admin-lead-detail] Storage sign error:', signError?.message);
-          return errorResponse(500, 'sign_failed', 'Failed to generate file URL');
+          console.error('[get_quote_file_url] Sign FAILED:', {
+            message: signError?.message,
+            name: (signError as any)?.name,
+            statusCode: (signError as any)?.statusCode,
+          });
+          return new Response(JSON.stringify({
+            ok: false,
+            code: 'sign_failed',
+            error: 'Failed to generate file URL',
+            details: {
+              bucket: 'quotes',
+              fileId,
+              file_path: file.file_path,
+              normalized_path: objectPath,
+              storage_error: signError?.message || 'No signed URL returned',
+            },
+            timestamp: new Date().toISOString(),
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
+        console.log('[get_quote_file_url] Success: signed URL generated for fileId=' + fileId);
         return new Response(JSON.stringify({ ok: true, signedUrl: signedData.signedUrl }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
