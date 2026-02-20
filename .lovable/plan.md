@@ -1,100 +1,102 @@
 
 
-# "Forensic Elevated" Visual Overhaul -- Pillar Pages + About
+# Visual Overhaul: "Forensic Elevated" Surfaces for Pillar Components + About Page
 
 ## Problem
-The 4 pillar pages and /about look flat and monotone compared to the premium /sample-report and homepage. They use basic `bg-background` and `bg-card/30` without depth, ambient glows, glassmorphic borders, or elevated card shadows. This visual disconnect undermines trust.
 
-## Scope
-- 6 shared pillar components (already exist, need visual upgrade)
-- 4 pillar page files (no structural changes, just benefit from shared component upgrades)
-- 1 About page (manual upgrade since it doesn't use the pillar components)
+The 6 shared pillar components and the About page use flat backgrounds (`bg-card/50`, `bg-card/30`, `bg-muted/30`) with basic borders (`border-border`, `border-border/50`) and minimal shadows (`shadow-md`, `shadow-sm`). This creates a flat, monotone feel that clashes with the premium depth of the homepage and /sample-report.
 
-## CRO Recommendations (Top 5)
+## What Changes
 
-1. **Ambient Depth Glow System** -- Add radial gradient "orbs" behind hero, stat, and CTA sections using `surface-1/2/3` tokens. Creates visual depth matching sample-report. *Best option: highest trust-lift for lowest effort, applies globally via shared components.*
+Upgrade all surfaces, borders, shadows, and hover effects across 7 files using the existing `surface-1/2/3` CSS custom properties, glassmorphic borders, and elevated shadows. No new dependencies. No structural or content changes. Pure Tailwind class swaps.
 
-2. **Glassmorphic Elevated Cards** -- Upgrade all cards (stat boxes, guide cards, content blocks, callout) with `shadow-xl hover:shadow-2xl hover:scale-[1.02]` lift effects, `backdrop-blur-sm`, and `border-white/10` glassmorphic borders. Matches the ComparisonSection pattern.
+## Files Modified (7 total)
 
-3. **Staggered Cascade Entrances** -- Add directional `AnimateOnScroll` (left/right reveals for side-by-side layouts) and staggered delays so grids "cascade" in 1-2-3 rather than appearing all at once. Fast durations (400-500ms) to avoid frustration.
+### 1. PillarHeroSection.tsx
 
-4. **Section Surface Alternation** -- Alternate between `surface-1`, `surface-2`, and `surface-3` backgrounds across sections instead of flat `bg-background` everywhere. Creates visual rhythm that guides the eye downward.
+**Current:** Weak `bg-primary/5` and `bg-secondary/5` orbs at small size (w-96, w-80)
+**Updated:**
+- Enlarge orbs to `w-[500px] h-[500px]` and `w-[400px] h-[400px]` with stronger opacity (`bg-primary/8`, `bg-secondary/6`)
+- Add section background: `bg-[hsl(var(--surface-1))]`
+- Add bottom separator: `border-b border-border/30`
+- Badge gets glassmorphic border: `border-white/10 backdrop-blur-sm`
 
-5. **Micro-interaction Trust Signals** -- Add hover glow effects on stat values (subtle cyan text-shadow), animated gradient accent bars on guide cards, and a pulsing icon on the callout card. Increases perceived interactivity.
+### 2. PillarStatBar.tsx
 
-**Recommendation:** Options 1-4 together. They transform the pages from flat to premium with purely Tailwind changes in shared components. Option 5 is nice-to-have but lower priority.
+**Current:** `bg-card/50 border-y border-border/50`, cards use `shadow-md hover:shadow-lg`
+**Updated:**
+- Section: `bg-[hsl(var(--surface-2))]` with `border-y border-border/30`
+- Cards: `bg-card backdrop-blur-sm border border-white/10 shadow-xl hover:shadow-2xl hover:scale-[1.02] hover:shadow-primary/10 transition-all duration-300`
+- Icon container: `border-white/10`
 
-## Technical Plan
+### 3. PillarContentBlock.tsx
 
-### A. Shared Components (src/components/pillar/) -- 6 files
+**Current:** No section background, bullet box uses `bg-card/50 border-border/50 shadow-sm`
+**Updated:**
+- Section: `bg-[hsl(var(--surface-1))]`
+- Left accent border: thicken to `border-l-[3px] border-primary/40`
+- Bullet card: `bg-card/80 backdrop-blur-sm border-white/10 shadow-lg`
 
-**PillarHeroSection.tsx:**
-- Background: Replace `bg-primary/5` orbs with larger `bg-[hsl(var(--primary)/0.08)]` and `bg-[hsl(var(--accent-orange)/0.05)]` orbs using the same pattern as the homepage hero
-- Section bg: `bg-[hsl(var(--surface-1))]`
-- Add a subtle `border-b border-border/30` bottom separator
+### 4. PillarCalloutCard.tsx
 
-**PillarStatBar.tsx:**
-- Section bg: `bg-[hsl(var(--surface-2))]` instead of `bg-card/50`
-- Cards: `bg-card border border-white/10 shadow-xl hover:shadow-2xl hover:scale-[1.02] hover:shadow-primary/10 backdrop-blur-sm transition-all duration-300`
-- Top accent bar: keep the `bg-primary` bar, add subtle glow
-- Value text: `text-foreground` (stays theme-aware)
+**Current:** `bg-gradient-to-br from-primary/10 to-secondary/5 border-primary/20 shadow-lg`
+**Updated:**
+- Outer card: `bg-card/90 backdrop-blur-sm border-white/10 shadow-2xl`
+- Keep internal gradient as a subtle layered effect
+- Icon container: `border-white/10`
 
-**PillarContentBlock.tsx:**
-- Section bg: `bg-[hsl(var(--surface-1))]`
-- Bullet card: upgrade from `bg-card/50 shadow-sm` to `bg-card/80 backdrop-blur-sm border-white/10 shadow-lg`
-- Left border accent: thicken from `border-l-2` to `border-l-[3px]` with `border-primary/40`
+### 5. PillarGuideCards.tsx
 
-**PillarCalloutCard.tsx:**
-- Outer card: `bg-card/90 backdrop-blur-sm border-white/10 shadow-2xl` with a gradient top accent bar
-- Inner gradient: keep `from-primary/10 to-secondary/5` but layer on card surface
+**Current:** Section `bg-card/30`, cards already have `shadow-xl hover:shadow-2xl hover:scale-[1.02]`
+**Updated:**
+- Section: `bg-[hsl(var(--surface-2))]`
+- Cards: add `backdrop-blur-sm border-white/10 hover:shadow-primary/10`
+- Icon container: `border-white/10`
 
-**PillarGuideCard.tsx:**
-- Section bg: `bg-[hsl(var(--surface-2))]`
-- Cards already have `shadow-xl hover:shadow-2xl hover:scale-[1.02]` -- add `backdrop-blur-sm border-white/10` and `hover:shadow-primary/10`
+### 6. PillarCTASection.tsx
 
-**PillarCTASection.tsx:**
-- Section bg: `bg-[hsl(var(--surface-1))]`
-- Larger ambient orb behind the CTA
-- Add subtle `border-t border-border/30` top separator
+**Current:** `bg-gradient-to-br from-primary/8 to-secondary/5`, single ambient orb
+**Updated:**
+- Section: `bg-[hsl(var(--surface-1))]` as base, keep gradient overlay
+- Add `border-t border-border/30` top separator
+- Enlarge ambient orb to `w-[600px] h-[600px]` with `bg-primary/6`
 
-### B. About Page (src/pages/About.tsx)
+### 7. About.tsx (manual upgrade)
 
-Apply the same surface treatment manually since About doesn't use pillar components:
-- Hero section: `bg-[hsl(var(--surface-1))]` with ambient orbs
-- Hero cards (Safety First, AI + Human, Lead With Value): `bg-card border-white/10 shadow-xl hover:shadow-2xl hover:scale-[1.02] backdrop-blur-sm transition-all duration-300`
-- Methodology section: `bg-[hsl(var(--surface-2))]` instead of `bg-muted/30`
-- Inner methodology cards: `bg-card border-white/10 shadow-lg`
-- Review Board section: `bg-[hsl(var(--surface-1))]`
-- Review Board card: `bg-card border-white/10 shadow-xl backdrop-blur-sm`
-- Mission section: `bg-[hsl(var(--surface-2))]`
-- Mission inner cards: `border-white/10 shadow-lg`
-- Wrap key sections with `AnimateOnScroll` for entrance animations
-- Stagger the 3-card hero grid with `delay={index * 120}`
-- Credential pills: same as current but with `backdrop-blur-sm`
+Since About doesn't use pillar components, it gets the same treatment applied directly:
 
-### C. Contrast / Accessibility
-- All text remains on semantic tokens (`text-foreground`, `text-muted-foreground`)
-- `border-white/10` is decorative, not carrying meaning
-- Surface tokens already provide proper contrast ratios in both themes (verified in CSS: light `surface-1` = 97% lightness, dark `surface-1` = 9% lightness)
+- **Hero section:** Add `bg-[hsl(var(--surface-1))]`, ambient gradient orbs behind content, wrap with `relative overflow-hidden`
+- **3 hero value cards** (Safety First, AI + Human, Lead With Value): Upgrade from `border-border` to `bg-card backdrop-blur-sm border-white/10 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300`. Wrap each in `AnimateOnScroll` with staggered `delay={index * 120}`
+- **Methodology section:** Change from `bg-muted/30` to `bg-[hsl(var(--surface-2))]`
+- **Methodology inner cards:** Add `border-white/10 shadow-lg backdrop-blur-sm`
+- **Transparency callout:** Add `shadow-lg backdrop-blur-sm`
+- **Review Board section:** Add `bg-[hsl(var(--surface-1))]`
+- **Review Board card:** Add `border-white/10 shadow-xl backdrop-blur-sm`
+- **Credential pills:** Add `backdrop-blur-sm`
+- **Mission section:** Change from `bg-muted/30` to `bg-[hsl(var(--surface-2))]`
+- **Problem/Solution cards:** Add `border-white/10 shadow-lg backdrop-blur-sm`
+- **Wrap sections** with `AnimateOnScroll` for entrance animations
 
-### D. Performance
+## What Does NOT Change
+
+- No routing, SEO, analytics, or database changes
+- No new files or dependencies
+- No content, CTA, or ExitIntentModal changes
+- Pillar page files themselves are NOT modified (they inherit from shared components)
+- All text stays on semantic tokens (`text-foreground`, `text-muted-foreground`) for 5:1+ contrast
+- `border-white/10` is decorative only, not carrying meaning
+
+## Accessibility
+
+- All existing semantic tokens preserved -- contrast ratios unchanged
+- `backdrop-blur-sm` is purely visual enhancement
+- `AnimateOnScroll` already respects `prefers-reduced-motion`
+- No opacity animations on paragraph text
+- Hover effects are progressive enhancement only
+
+## Performance
+
+- Zero new JS -- all changes are Tailwind class swaps
 - No new dependencies
-- No lazy loading changes needed (ExitIntentModal is already lazy in the Navbar)
-- `AnimateOnScroll` already uses `IntersectionObserver` and cleans up `will-change`
-- All changes are Tailwind class swaps, zero JS additions
-
-### Files Modified
-1. `src/components/pillar/PillarHeroSection.tsx`
-2. `src/components/pillar/PillarStatBar.tsx`
-3. `src/components/pillar/PillarContentBlock.tsx`
-4. `src/components/pillar/PillarCalloutCard.tsx`
-5. `src/components/pillar/PillarGuideCard.tsx`
-6. `src/components/pillar/PillarCTASection.tsx`
-7. `src/pages/About.tsx`
-
-### What Does NOT Change
-- No page routing, data, SEO, or analytics changes
-- No pillar page files need editing (they inherit from shared components)
-- No new dependencies
-- No database or edge function changes
+- `backdrop-blur-sm` is GPU-composited, negligible cost on modern browsers
 
