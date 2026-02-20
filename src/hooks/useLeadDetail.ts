@@ -31,6 +31,10 @@ export interface LeadFile {
   mime_type: string;
   created_at: string;
   source_page: string | null;
+  ai_pre_analysis?: {
+    status: string;
+    [key: string]: unknown;
+  } | null;
 }
 
 export interface LeadSession {
@@ -99,7 +103,6 @@ export interface LeadDetailData {
   updated_at: string;
 }
 
-/** Canonical redirect info when the request used a non-canonical ID */
 export interface CanonicalInfo {
   wm_lead_id: string;
   canonical_path: string;
@@ -120,6 +123,7 @@ export interface AiPreAnalysis {
   started_at: string | null;
   completed_at: string | null;
   model: string | null;
+  quote_file_id?: string;
 }
 
 interface UseLeadDetailReturn {
@@ -139,13 +143,9 @@ interface UseLeadDetailReturn {
   addNote: (content: string) => Promise<boolean>;
   updateSocialUrl: (url: string) => Promise<boolean>;
   updateLead: (updates: Partial<LeadDetailData>) => Promise<boolean>;
+  triggerAnalysis: (quoteFileId: string) => Promise<boolean>;
 }
 
-/**
- * Fetches full lead detail (profile, timeline events, notes) for the
- * admin lead-detail view. Supports status updates, note CRUD, and refresh.
- * @param leadId - The wm_leads ID to load
- */
 export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
   const [lead, setLead] = useState<LeadDetailData | null>(null);
   const [events, setEvents] = useState<LeadEvent[]>([]);
@@ -234,7 +234,7 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
     fetchData();
   }, [fetchData]);
 
-  // Safe polling via useRef — prevents stale closures without eslint-disable
+  // Safe polling via useRef
   const fetchRef = useRef(fetchData);
   useEffect(() => { fetchRef.current = fetchData; }, [fetchData]);
 
@@ -313,6 +313,60 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
     return success;
   };
 
+  /**
+   * Trigger AI analysis for a specific quote file.
+   * Optimistically sets status to 'pending' to activate polling.
+   * Rolls back on failure with a destructive toast.
+   */
+  const triggerAnalysis = async (quoteFileId: string): Promise<boolean> => {
+    if (!lead?.lead_id) return false;
+
+    // Save previous state for rollback
+    const previousState = aiPreAnalysis ? { ...aiPreAnalysis } : null;
+
+    // Optimistic: set to pending immediately (triggers 5s polling)
+    setAiPreAnalysis(prev => ({
+      status: 'pending',
+      result: prev?.result || null,
+      reason: null,
+      started_at: new Date().toISOString(),
+      completed_at: null,
+      model: null,
+      quote_file_id: quoteFileId,
+    }));
+
+    try {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) {
+        throw new Error('Not authenticated');
+      }
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-trigger-analysis`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authSession.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quoteFileId, leadId: lead.lead_id }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to trigger analysis');
+      }
+
+      toast({ title: 'Analysis Started', description: 'AI analysis is running. Results will appear shortly.' });
+      return true;
+    } catch (err) {
+      // Rollback to previous state
+      setAiPreAnalysis(previousState);
+      const message = err instanceof Error ? err.message : 'Failed to start analysis';
+      toast({ title: 'Analysis Failed', description: message + '. Please try again.', variant: 'destructive' });
+      return false;
+    }
+  };
+
   return {
     lead,
     events,
@@ -330,5 +384,6 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
     addNote,
     updateSocialUrl,
     updateLead,
+    triggerAnalysis,
   };
 }

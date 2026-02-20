@@ -1,16 +1,64 @@
-import { Crosshair, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Crosshair, Loader2, AlertTriangle, CheckCircle, Sparkles, RefreshCw, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AiPreAnalysis } from '@/hooks/useLeadDetail';
 
 interface SalesIntelCardProps {
   aiPreAnalysis: AiPreAnalysis | null;
+  onTriggerAnalysis?: () => Promise<boolean>;
 }
 
-export function SalesIntelCard({ aiPreAnalysis }: SalesIntelCardProps) {
-  if (!aiPreAnalysis || aiPreAnalysis.status === 'none') {
+export function SalesIntelCard({ aiPreAnalysis, onTriggerAnalysis }: SalesIntelCardProps) {
+  const [isTriggering, setIsTriggering] = useState(false);
+
+  const handleTrigger = async () => {
+    if (!onTriggerAnalysis || isTriggering) return;
+    setIsTriggering(true);
+    try {
+      await onTriggerAnalysis();
+    } finally {
+      setIsTriggering(false);
+    }
+  };
+
+  // No quote file at all — nothing to show
+  if (!aiPreAnalysis) {
     return null;
+  }
+
+  // Status: none — quote uploaded but never analyzed
+  if (aiPreAnalysis.status === 'none') {
+    return (
+      <Card className="mb-6 border-muted">
+        <CardContent className="flex items-center justify-between py-4">
+          <div className="flex items-center gap-3">
+            <FileText className="h-5 w-5 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              Quote uploaded but not yet analyzed
+            </span>
+          </div>
+          {onTriggerAnalysis && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleTrigger}
+              disabled={isTriggering}
+              className="gap-2"
+            >
+              {isTriggering ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Run AI Analysis
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    );
   }
 
   // Pending: fixed-height skeleton to prevent layout shift
@@ -30,15 +78,37 @@ export function SalesIntelCard({ aiPreAnalysis }: SalesIntelCardProps) {
     );
   }
 
-  // Failed: muted card
+  // Failed: muted card with retry button — stale error is hidden when triggering
   if (aiPreAnalysis.status === 'failed') {
     return (
-      <Card className="mb-6 border-muted">
-        <CardContent className="flex items-center gap-3 py-4">
-          <AlertTriangle className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            Quote analysis failed: {aiPreAnalysis.reason || 'Unknown error'}
-          </span>
+      <Card className="mb-6 border-destructive/30">
+        <CardContent className="flex items-center justify-between py-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            {isTriggering ? (
+              <span className="text-sm text-muted-foreground">Retrying analysis...</span>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                Quote analysis failed{aiPreAnalysis.reason ? `: ${aiPreAnalysis.reason}` : ''}
+              </span>
+            )}
+          </div>
+          {onTriggerAnalysis && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleTrigger}
+              disabled={isTriggering}
+              className="gap-2"
+            >
+              {isTriggering ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Retry Analysis
+            </Button>
+          )}
         </CardContent>
       </Card>
     );
