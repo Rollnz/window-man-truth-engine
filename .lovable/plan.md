@@ -1,70 +1,84 @@
 
 
-# Fix Private Bucket File Viewing + Add 1-Click "View Original Quote" Button
+# Fix: Add Diagnostic Logging + Path Normalization to `get_quote_file_url`
 
-## Summary
+## Root Cause (Confirmed)
 
-The `quotes` storage bucket is private (service_role only). The current `FilesWidget` uses client-side `createSignedUrl` which silently fails for all admins. This plan adds a server-side signed URL action and wires it through the UI, fixing existing file viewing and adding a prominent "View Original Quote" button.
+The code is architecturally correct -- it already uses the service-role client (`SUPABASE_SERVICE_ROLE_KEY` on line 57) and the correct bucket name (`quotes`). The "Object not found" error occurs because:
+
+- The `quote_files` database rows reference paths like `167a06f9.../...png`
+- Those storage objects exist in **Live** storage but **not in Test** storage
+- Storage files never sync between environments
+
+**This will work in production once published.** However, we should still add robust logging and path normalization so failures are immediately diagnosable.
 
 ## Changes
 
-### 1. Backend: Add `get_quote_file_url` action to `admin-lead-detail/index.ts`
+### 1. Update `supabase/functions/admin-lead-detail/index.ts` (lines 549-585)
 
-Add a new action block (after `force_fail_analysis`, before opportunity CRUD) that:
+Replace the current `get_quote_file_url` block with an enhanced version that adds:
 
-- Validates `fileId` is present and a valid UUID
-- Queries `quote_files` by `id = fileId`, selecting `id, lead_id, file_path`
-- Cross-lead guard: confirms `quote_files.lead_id === resolution.lead_id` (the `leads.id` foreign key used by `quote_files`, NOT `wm_leads.id`)
-- Generates signed URL: `supabase.storage.from('quotes').createSignedUrl(file_path, 600)`
-- Returns `{ ok: true, signedUrl }` on success
-- Returns 400 for missing/invalid fileId, 404 for not found or wrong lead, 500 for signing failure
+**Diagnostic logging before signing:**
+- Bucket name
+- fileId
+- DB row values (lead_id, file_path)
+- Whether SUPABASE_URL is set, service role key length (not the key itself)
 
-### 2. Hook: Add `getQuoteFileUrl` to `useLeadDetail.ts`
+**Path normalization:**
+- Strip leading `quotes/` prefix if present
+- Strip leading `/` if present
+- If path contains `/object/`, extract the object key portion
+- Reject empty paths with 400
 
-- Add a new async function `getQuoteFileUrl(fileId: string): Promise<string | null>`
-- Uses a dedicated fetch (not `callAction` which returns boolean) to POST the action and parse the JSON response for `signedUrl`
-- Shows destructive toast on error, returns null
-- Add to the hook return object and interface
+**Detailed error response on failure:**
+- Include `bucket`, `fileId`, `file_path` (original from DB), `normalized_path`, and `storage_error` in the `details` field
 
-### 3. UI: Fix `FilesWidget.tsx`
+**Success logging:**
+- Log confirmation when signed URL is generated successfully
 
-- Remove direct `supabase.storage` import and client-side signing
-- Accept new prop: `getQuoteFileUrl: (fileId: string) => Promise<string | null>`
-- The ExternalLink button per row now calls `getQuoteFileUrl(file.id)`, shows a per-row loading state, and opens the result in a new tab
-- Add "View file" tooltip to the ExternalLink button
+### Technical Detail
 
-### 4. UI: Add "View Original Quote" button in `LeadDetail.tsx`
+```text
+Before (line 573):
+  const { data: signedData, error: signError } = await supabase
+    .storage.from('quotes')
+    .createSignedUrl(file.file_path, 600);
 
-- Add a button between `SalesIntelCard` and the 3-pane grid
-- Only renders when `files.length > 0`
-- Label: "View Original Quote", icon: `FileText`, variant: `outline`
-- On click: calls `getQuoteFileUrl(files[0].id)`, opens result in new tab
-- Shows `Loader2` spinner while loading, disabled during fetch
-- Pass `getQuoteFileUrl` as prop to `FilesWidget`
+After:
+  // Normalize path
+  let objectPath = file.file_path;
+  if (objectPath.startsWith('quotes/')) objectPath = objectPath.slice(7);
+  if (objectPath.startsWith('/')) objectPath = objectPath.slice(1);
+  if (objectPath.includes('/object/')) {
+    objectPath = objectPath.split('/object/').pop() || '';
+    if (objectPath.startsWith('quotes/')) objectPath = objectPath.slice(7);
+  }
+  if (!objectPath) return errorResponse(400, 'invalid_file_path', '...');
+
+  // Diagnostic log
+  console.log('[get_quote_file_url] Signing:', {
+    bucket: 'quotes', fileId, file_path: file.file_path,
+    normalizedPath: objectPath,
+    hasUrl: !!Deno.env.get('SUPABASE_URL'),
+    srkLen: (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '').length
+  });
+
+  const { data: signedData, error: signError } = await supabase
+    .storage.from('quotes')
+    .createSignedUrl(objectPath, 600);
+
+  // Enhanced error with details
+```
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `supabase/functions/admin-lead-detail/index.ts` | Add `get_quote_file_url` action (~35 lines) |
-| `src/hooks/useLeadDetail.ts` | Add `getQuoteFileUrl` function + export |
-| `src/components/lead-detail/FilesWidget.tsx` | Replace client signing with prop callback, add tooltip + loading |
-| `src/pages/admin/LeadDetail.tsx` | Add "View Original Quote" button, wire prop |
+| `supabase/functions/admin-lead-detail/index.ts` | Enhanced `get_quote_file_url` with logging + path normalization |
 
-## Technical Details
+## Testing
 
-### Cross-lead guard (critical)
-
-The GET handler fetches `quote_files` using `.eq('lead_id', lead.lead_id)` -- this is `leads.id`, not `wm_leads.id`. So the guard in the new action must use `resolution.lead_id`:
-
-```text
-query: quote_files.id = fileId
-guard: file.lead_id === resolution.lead_id
-```
-
-### Edge function signing
-
-The edge function already creates a service-role client (line 55-58), which has full storage access. `supabase.storage.from('quotes').createSignedUrl(file_path, 600)` will work without any policy changes.
-
-### No database or storage changes required
+- After deploying, the button will still return "Object not found" in Test for leads whose files only exist in Live -- this is expected.
+- **To verify end-to-end:** publish to Live and test with a real lead, or upload a new file in Test and use that lead.
+- The improved logging will now show exactly what path was attempted, making any future issues immediately diagnosable.
 
