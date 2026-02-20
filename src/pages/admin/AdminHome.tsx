@@ -3,7 +3,7 @@ import { Users, FileText, BarChart3, Flame, TrendingUp, Phone, RefreshCw, Dollar
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
-import { useGlobalSearch } from '@/hooks/useGlobalSearch';
+import { useGlobalSearchOpen } from '@/contexts/GlobalSearchContext';
 import { StatsCard } from '@/components/admin/StatsCard';
 import { DashboardActivityWidget } from '@/components/admin/DashboardActivityWidget';
 import { QuickActionCard } from '@/components/admin/QuickActionCard';
@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 function AdminHomeContent() {
   const { stats, recentActivity, isLoading, refetch } = useAdminDashboard();
-  const { setIsOpen } = useGlobalSearch();
+  const { setIsOpen } = useGlobalSearchOpen();
 
   return (
     <div className="min-h-screen bg-background">
