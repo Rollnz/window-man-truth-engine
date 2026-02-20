@@ -1,172 +1,149 @@
 
 
-# Mobile-First: Micro-Commitments, Context Pre-fill, and Persona Expansion
+# Upgrade Consultation "Quote Details" to Combined Upload + Paste
 
-## The Constraint
+## Summary
 
-The slide-over sheet renders at `w-3/4` on mobile (roughly 280px on a 375px screen) with `p-6` padding, leaving about 232px of usable horizontal space. Every pixel of vertical space matters because the chat area, soft gate, and input bar all compete for the same ~500px of visible drawer height.
+Replace the textarea-only "Upload or paste quote details" section (lines 452-461 of ConsultationForm.tsx) with a compact file upload dropzone above a textarea, separated by an "or" divider. Reuses the existing `QuoteUploadDropzone` component and `upload-quote` edge function. The uploaded file ID is threaded through to `save-lead` via the existing `sessionData` JSONB column -- no database migration needed.
 
 ---
 
-## File 1: `src/components/floating-cta/steps/AiQaStep.tsx`
+## File 1: `src/components/consultation/ConsultationForm.tsx`
 
-### Change A: Soft Gate CTA (replaces routing, never stacks)
+### What Changes
 
-Add a `showSoftGate` boolean state. After post-stream parsing, if the latest message has a `verdict` OR `actions.length > 0`, set `showSoftGate = true`.
+**Replace lines 452-461** (the "Quote Details" block) with a three-part layout:
 
-**The soft gate REPLACES the existing `showRouting` block** -- it does not stack on top. The render logic becomes:
-- If `showSoftGate === true` AND `showRouting === true`: render ONLY the soft gate (it subsumes routing)
-- If `showSoftGate === false` AND `showRouting === true`: render standard routing CTAs (existing behavior)
+**Part A: Compact QuoteUploadDropzone**
+- Import `QuoteUploadDropzone` from `@/components/beat-your-quote/QuoteUploadDropzone`
+- Render with `compact={true}` and `sourcePage="consultation"`
+- Add two local state variables at the top of the component:
+  - `uploadedFileId: string | null` (default `null`)
+  - `uploadedFileName: string | null` (default `null`)
+- `onSuccess` callback: set both state variables from the returned `fileId` and reconstruct the filename from the path
+- `onError` callback: show a `toast.error()` with the error message (reuses existing `sonner` import pattern from Consultation.tsx)
 
-**Mobile layout (why it fits):**
+**Part B: "or" divider**
+- Single line: `<div className="flex items-center gap-3 text-xs text-muted-foreground"><div className="flex-1 h-px bg-border" /><span>or</span><div className="flex-1 h-px bg-border" /></div>`
+- Height cost: 24px total
 
-The soft gate is a single compact row, not a card:
+**Part C: Textarea (simplified label)**
+- Same textarea, but label changes from "Upload or paste quote details" to "Paste quote details"
+- Reduce `rows` from 4 to 3 to offset the added dropzone height
+- Everything else identical (onChange, placeholder, etc.)
 
-```
-[Shield icon] Window Man flagged findings.    <- 1 line, text-xs
-[====== Save My Analysis ======]              <- 1 button, w-full, py-2
-[        I'll do it later       ]             <- text link, py-1
-```
+**Part D: File attached state**
+- When `uploadedFileId` is not null AND the dropzone is in success state, the `QuoteUploadDropzone` already renders its own success card with "Upload Another Quote" button -- this handles the "file preview" display automatically
+- Add a small "Quote Detected" badge below the dropzone success state: `<span className="inline-flex items-center gap-1 text-xs text-emerald-400"><CheckCircle className="w-3 h-3" /> Quote attached to your submission</span>`
+- This badge confirms the file will be included when the form submits
 
-Total height: approximately 80px (vs the existing routing block which is ~90px with its heading + 2 buttons). It is shorter than what it replaces.
+**Part E: Remove lifecycle**
+- The `QuoteUploadDropzone` already has a "Upload Another Quote" button in its success state that calls `reset()` internally
+- When the dropzone resets (user clicks "Upload Another Quote" or removes a selected file), the `onSuccess` callback won't fire, but we need to also clear `uploadedFileId` and `uploadedFileName`
+- Solution: Track the dropzone's reset by checking if `lastUpload` goes back to null -- or simpler: add a small "Remove attachment" text button next to the badge that sets both state vars back to `null`
 
-**Why it looks great:** No card container, no border, no padding bloat. The shield icon + single-line copy + single full-width button is the most compact possible CTA. On a 375px screen, the text wraps cleanly at `text-xs` and the button has generous tap target at `w-full py-2`.
+**Part F: State integrity**
+- `uploadedFileId` and `uploadedFileName` are stored as `useState` at the component level, separate from `formData`
+- They survive form validation errors (validation only touches `errors` state, not upload state)
+- They are passed upward via the existing `onSubmit(data)` callback by extending the data object
 
-**Social proof line:** Rendered as inline `text-[10px]` micro-copy directly below the button: "X homeowners in [County] saved their report today." This is raw text, NOT the UrgencyTicker component -- no animation, no pulsing dot, no layout cost.
+### Threading file ID to parent
 
-**Keyboard dismissal:** When `showSoftGate` becomes true, call `inputRef.current?.blur()` to dismiss the mobile keyboard, ensuring the full soft gate is visible without the "letterbox" effect.
-
-**Tracking:** Fire `ai_micro_commit_shown` (verdict, mode) via `useEffect` when `showSoftGate` transitions to true. Fire `ai_micro_commit_accepted` (source: 'soft_gate', mode) on "Save My Analysis" click.
-
-### Change B: Action buttons -- full-width stacked on mobile
-
-Change the action button container from `flex gap-2 flex-wrap` to `flex flex-col gap-1.5`. Each button becomes `w-full` with tight vertical padding (`py-1.5 text-xs`).
-
-**Why it looks great:** On a 280px-wide drawer, "Is My Price Fair?" (17 characters) plus an arrow icon fits comfortably on a single line at `text-xs`. Stacking vertically gives each button a full-width tap target (minimum 44px height per button), which meets Apple HIG guidelines. The `gap-1.5` (6px) keeps them visually grouped without wasting space.
-
-**Height budget:** 2 stacked buttons = approximately 100px. Combined with the verdict badge above (24px), total action block is about 124px -- less than 25% of a typical 500px visible drawer area. The AI's answer text remains visible above.
-
-### Change C: Chat-to-Tool pre-fill via URL params
-
-Update `handleActionClick` to build `URLSearchParams` from truthContext:
+Update `handleSubmit` (line 216-237): Before calling `onSubmit(formData as ConsultationFormData)`, spread in the upload fields:
 
 ```typescript
-const params = new URLSearchParams();
-const wc = sessionData.windowCount || formData.windowCount;
-const zip = sessionData.zipCode || formData.zip;
-const lastVerdict = messages.findLast(m => m.verdict)?.verdict;
-
-if (wc) params.set('count', String(wc));
-if (zip) params.set('zip', zip);
-if (lastVerdict) params.set('verdict', lastVerdict);
-params.set('ref', 'wm_chat');
-
-navigate(`${action.route}?${params.toString()}`);
+const submissionData = {
+  ...formData,
+  quoteFileId: uploadedFileId || undefined,
+  quoteFileName: uploadedFileName || undefined,
+} as ConsultationFormData;
+await onSubmit(submissionData);
 ```
 
-Fire `ai_context_passed` with `target_route` and `param_count`.
+### Mobile height budget
 
-**Attribution safety:** `ref` is an internal referral path. The attribution system uses `utm_source`, `gclid`, `fbclid` -- separate namespace, no collision.
+| Element | Height |
+|---|---|
+| Compact dropzone (min-h-[120px], p-4) | ~120px |
+| "or" divider | ~24px |
+| Textarea (3 rows) | ~80px |
+| Total | ~224px |
+| Current textarea (4 rows) | ~100px |
+| **Net increase** | **~124px** |
 
-### Change D: Tracking events (3 new)
-
-All via `wmRetarget`, no OPT events:
-- `ai_micro_commit_shown` -- verdict, mode
-- `ai_micro_commit_accepted` -- source: 'soft_gate', mode  
-- `ai_context_passed` -- target_route, param_count
+When a file is attached, the dropzone's success state replaces the dropzone (~100px), so the total is roughly equal to the current layout. The form card scrolls naturally within the page, so this does not cause viewport overflow.
 
 ---
 
-## File 2: `src/pages/FairPriceQuiz.tsx`
+## File 2: `src/types/consultation.ts`
 
-### Change A: Read URL params and pre-fill window count
+### What Changes
 
-Import `useSearchParams`. On mount, read `count`, `zip`, `ref` params.
+Add two optional fields to `ConsultationFormData`:
 
-If `count` is a valid positive integer, pre-set `answers[2]` (the window count question, index 2) with that number value. This is the `type: 'number'` question "How many windows are you replacing?"
-
-If `ref === 'wm_chat'`, auto-advance phase from `'hero'` to `'quiz'` and set `currentStep` to the NEXT unanswered question (if count is pre-filled, skip to step 3). This skips the hero landing page so the user feels continuity from the chat.
-
-**Pre-filled fields are fully editable:** The quiz uses `useState` for answers -- the pre-filled value is just an initial state. The number input renders normally with the value visible and editable. No "locked" UI treatment.
-
-### Change B: Continuity banner (mobile-safe)
-
-When `ref === 'wm_chat'` is present, render a small pill at the top of the quiz container:
-
-```
-[Shield icon] Continuing your Window Man analysis
+```typescript
+quoteFileId?: string;
+quoteFileName?: string;
 ```
 
-Styled as `inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium`. This is 28px tall and sits inside the existing `container px-4` padding.
-
-**Why it looks great:** On mobile, this pill is a subtle orientation cue -- the user knows they didn't land on a random page. It takes only 28px of vertical space and matches the badge aesthetic already used in `QuizHero` (the "Fair Price Diagnostic" badge).
+These are optional because file upload is not required. No other type changes needed.
 
 ---
 
-## File 3: `src/pages/QuoteScanner.tsx`
+## File 3: `src/pages/Consultation.tsx`
 
-### Change A: Read URL params, sync zip to session
+### What Changes
 
-Import `useSearchParams`. On mount, read `zip`, `ref` params.
+Update `handleSubmit` (line 39) to include the upload fields in the `sessionData` payload sent to `save-lead`:
 
-If `ref === 'wm_chat'` and `zip` is present, call `updateField('zipCode', zip)` to sync session data.
-
-No visual changes. The scanner is upload-based -- no form fields to pre-fill. But the zip is now available in session for the edge function analysis.
-
----
-
-## File 4: `src/pages/BeatYourQuote.tsx`
-
-### Change A: Read URL params, sync context to session
-
-Import `useSearchParams` and `useSessionData` (already imported). On mount, read `count`, `zip`, `ref` params.
-
-If `ref === 'wm_chat'`, sync available fields via the existing session hook.
-
-No visual changes. Context flows silently into the session for downstream use.
-
----
-
-## File 5: `supabase/functions/slide-over-chat/index.ts`
-
-### Change A: Guardian Pivot paragraph
-
-Add one new paragraph to the `actionsInstructions` section of `buildSystemPrompt()`, after the existing "ROUTING FALLBACKS" block:
-
-```
-THE GUARDIAN PIVOT:
-When you detect red flags or the user seems uncertain, occasionally offer to "lock" or "save" their analysis.
-Example: "I've flagged some concerns here. I recommend we lock this analysis in your vault now -- it makes it harder for a salesperson to wiggle out later."
-Use "vault" and "lock data" terminology to frame data collection as protection, not marketing.
-Max once per conversation. Only when verdict would be "inspect" or "breach."
-Do NOT use this if the user seems casual or is just asking general questions.
+```typescript
+sessionData: {
+  clientId,
+  propertyType: data.propertyType,
+  windowCount: data.windowCount,
+  cityZip: data.cityZip,
+  impactRequired: data.impactRequired,
+  hasQuote: data.hasQuote,
+  quoteCount: data.quoteCount,
+  windowTypes: data.windowTypes,
+  concern: data.concern,
+  quoteDetails: data.quoteDetails,
+  quoteFileId: data.quoteFileId,    // NEW
+  quoteFileName: data.quoteFileName, // NEW
+}
 ```
 
-No other prompt changes.
+No other changes. The `save-lead` edge function already stores `sessionData` as JSONB -- no backend update needed.
 
 ---
 
-## Mobile UX Verification Checklist
+## What Already Works (No Changes Needed)
 
-| Concern | Solution | Height Budget |
-|---|---|---|
-| Soft gate pushes content off-screen | Replaces routing CTA (never stacks), shorter than what it replaces | ~80px (vs ~90px existing) |
-| Action buttons don't fit side-by-side | Full-width stacked with `flex-col gap-1.5` | ~100px for 2 buttons |
-| Keyboard blocks soft gate | `inputRef.current?.blur()` on soft gate trigger | 0px (keyboard dismissed) |
-| Pre-fill feels "locked" | Standard `useState` initial value, fully editable input | No change |
-| Page jump feels disorienting | Continuity pill: "Continuing your Window Man analysis" | 28px |
-| Social proof clutters the card | Raw `text-[10px]` micro-copy, not the animated ticker component | ~14px |
-| Total soft gate + verdict + actions | Never shown simultaneously (soft gate only appears when routing would) | Max ~124px |
+- **`QuoteUploadDropzone`** already accepts `sourcePage` and `compact` props (confirmed from the component code) -- no interface update needed
+- **`useQuoteUpload` hook** already handles client-side validation (file type: PDF/JPG/PNG, max 10MB), progress bar, error display with retry, and loading spinner -- all production-grade error/loading states are built in
+- **`upload-quote` edge function** already stores files in the `quotes` bucket with session metadata -- reused as-is
+- **Storage bucket** (`quotes`) already exists with appropriate policies
+
+---
+
+## Safety and Logic Layer (Addressing All Gaps)
+
+| Concern | How It Is Handled |
+|---|---|
+| **Loading/Error UI** | Built into `QuoteUploadDropzone`: progress bar during upload, red error card with message on failure, retry via re-selecting file |
+| **Client-side validation** | Built into `useQuoteUpload`: checks file type (PDF/JPG/PNG only) and size (max 10MB) before any network call |
+| **State integrity on validation errors** | `uploadedFileId` is a separate `useState`, not part of `formData` -- form validation errors do not clear it |
+| **Remove clears payload** | Explicit: "Remove attachment" button sets `uploadedFileId = null` and `uploadedFileName = null`, so cleared IDs are never sent to `save-lead` |
+| **Component props** | `QuoteUploadDropzone` already accepts `sourcePage` prop and passes it through to `useQuoteUpload` -- no interface update required |
+| **Ghost file on failure** | `useQuoteUpload` never sets `lastUpload.success = true` on error, so `uploadedFileId` stays `null` -- impossible to attach a failed upload |
 
 ---
 
 ## Files Modified
 
-1. `src/components/floating-cta/steps/AiQaStep.tsx` -- Soft gate, stacked buttons, URL param builder, 3 tracking events, keyboard blur
-2. `src/pages/FairPriceQuiz.tsx` -- URL param pre-fill (answers[2]), auto-advance to quiz phase, continuity pill
-3. `src/pages/QuoteScanner.tsx` -- URL param zip sync (no visual changes)
-4. `src/pages/BeatYourQuote.tsx` -- URL param context sync (no visual changes)
-5. `supabase/functions/slide-over-chat/index.ts` -- Guardian Pivot paragraph in prompt
+1. **`src/components/consultation/ConsultationForm.tsx`** -- Import `QuoteUploadDropzone`, add upload state, replace quote details section with upload + divider + textarea layout, thread file ID into submission data
+2. **`src/types/consultation.ts`** -- Add optional `quoteFileId` and `quoteFileName` fields
+3. **`src/pages/Consultation.tsx`** -- Pass `quoteFileId` and `quoteFileName` in `sessionData` to `save-lead`
 
-No new files. No database changes. No new dependencies.
+No new files. No new edge functions. No database migrations. No new storage buckets. No new dependencies.
 
