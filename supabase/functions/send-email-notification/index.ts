@@ -325,6 +325,235 @@ function generateEmailContent(payload: EmailPayload): { subject: string; html: s
       };
     }
 
+    case 'quote-scanner-results': {
+      const firstName = (data.firstName as string) || '';
+      const overallScore = (data.overallScore as number) || 0;
+      const warningsCount = (data.warningsCount as number) || 0;
+      const scoreColor = overallScore >= 70 ? '#00D4FF' : overallScore >= 40 ? '#FFD700' : '#FF4444';
+      return {
+        subject: `Your Quote Has Been Analyzed – Score: ${overallScore}/100`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#1a1a2e;color:#fff;">
+            <div style="padding:32px 24px;text-align:center;border-bottom:2px solid #00D4FF;">
+              <h1 style="margin:0;color:#00D4FF;font-size:22px;">Your Quote Analysis Is Ready</h1>
+            </div>
+            <div style="padding:24px;">
+              <p style="font-size:16px;color:#ccc;">${firstName ? `Hi ${firstName},` : 'Hi there,'}</p>
+              <p style="color:#ccc;">We've analyzed the quote you submitted. Here's what our AI found:</p>
+              <div style="text-align:center;margin:24px 0;">
+                <div style="display:inline-block;width:120px;height:120px;border-radius:50%;border:4px solid ${scoreColor};line-height:120px;font-size:36px;font-weight:bold;color:${scoreColor};">${overallScore}</div>
+                <p style="color:#888;margin-top:8px;">Overall Score out of 100</p>
+              </div>
+              ${warningsCount > 0 ? `<div style="background:#2a1a1a;border-left:4px solid #FF4444;padding:16px;border-radius:0 8px 8px 0;margin:16px 0;">
+                <p style="margin:0;color:#FF4444;font-weight:bold;">⚠️ ${warningsCount} Warning${warningsCount > 1 ? 's' : ''} Found</p>
+                <p style="margin:8px 0 0;color:#ccc;font-size:14px;">Your quote contains items that need closer inspection before you sign.</p>
+              </div>` : ''}
+              <h3 style="color:#FFD700;margin-top:24px;">What This Means For You</h3>
+              <ul style="color:#ccc;line-height:1.8;">
+                <li>${overallScore >= 70 ? 'Your quote looks reasonable, but a second opinion never hurts' : overallScore >= 40 ? 'Your quote has some concerning gaps — get a comparison' : 'Your quote has serious red flags — do NOT sign before getting a second opinion'}</li>
+                <li>Florida homeowners overpay by an average of $2,800 per project</li>
+                <li>A transparent quote comparison takes 15 minutes and could save you thousands</li>
+              </ul>
+              <p style="color:#888;font-size:13px;margin:16px 0;">Over 1,200 Florida homeowners have used our tools to protect themselves.</p>
+              <div style="text-align:center;margin:32px 0;">
+                <a href="https://itswindowman.com/consultation" style="display:inline-block;background:#00D4FF;color:#000;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:bold;font-size:16px;min-height:48px;line-height:20px;">Get a Transparent Quote From Us</a>
+              </div>
+            </div>
+            <div style="padding:16px 24px;background:#0d0d1a;text-align:center;border-top:1px solid #333;">
+              <p style="color:#666;font-size:12px;margin:0;">Window Truth Engine by Its Window Man · You received this because you used our Quote Scanner.</p>
+            </div>
+          </div>`,
+      };
+    }
+
+    case 'beat-your-quote-results': {
+      const firstName = (data.firstName as string) || '';
+      return {
+        subject: 'Your Quote Upload Is Confirmed',
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#1a1a2e;color:#fff;">
+            <div style="padding:32px 24px;text-align:center;border-bottom:2px solid #00D4FF;">
+              <h1 style="margin:0;color:#00D4FF;font-size:22px;">We've Got Your Quote</h1>
+            </div>
+            <div style="padding:24px;">
+              <p style="font-size:16px;color:#ccc;">${firstName ? `Hi ${firstName},` : 'Hi there,'}</p>
+              <p style="color:#ccc;">Your quote has been securely uploaded. Here's what happens next:</p>
+              <div style="background:#0d0d1a;border-radius:8px;padding:20px;margin:20px 0;">
+                <div style="display:flex;margin-bottom:16px;"><span style="color:#00D4FF;font-size:20px;margin-right:12px;">1.</span><span style="color:#ccc;">Our team reviews your quote line-by-line</span></div>
+                <div style="display:flex;margin-bottom:16px;"><span style="color:#00D4FF;font-size:20px;margin-right:12px;">2.</span><span style="color:#ccc;">We compare it against fair-market pricing in your area</span></div>
+                <div style="display:flex;"><span style="color:#00D4FF;font-size:20px;margin-right:12px;">3.</span><span style="color:#ccc;">You get an honest, side-by-side comparison — no pressure</span></div>
+              </div>
+              <h3 style="color:#FFD700;">What This Means For You</h3>
+              <ul style="color:#ccc;line-height:1.8;">
+                <li>You'll know if you're getting a fair deal — or being overcharged</li>
+                <li>Most homeowners save $1,500–$4,000 after getting a comparison</li>
+                <li>A 15-minute call could save you from a $10,000+ mistake</li>
+              </ul>
+              <p style="color:#888;font-size:13px;margin:16px 0;">Trusted by 1,200+ Florida homeowners making smarter window decisions.</p>
+              <div style="text-align:center;margin:32px 0;">
+                <a href="https://itswindowman.com/consultation" style="display:inline-block;background:#00D4FF;color:#000;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:bold;font-size:16px;min-height:48px;line-height:20px;">Book Your Free Comparison Call</a>
+              </div>
+            </div>
+            <div style="padding:16px 24px;background:#0d0d1a;text-align:center;border-top:1px solid #333;">
+              <p style="color:#666;font-size:12px;margin:0;">Window Truth Engine by Its Window Man · You received this because you uploaded a quote for comparison.</p>
+            </div>
+          </div>`,
+      };
+    }
+
+    case 'quote-builder-results': {
+      const firstName = (data.firstName as string) || '';
+      const windowCount = (data.windowCount as number) || 0;
+      const estimatedTotal = (data.estimatedTotal as string) || 'See your estimate';
+      return {
+        subject: 'Your Window Estimate Summary',
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#1a1a2e;color:#fff;">
+            <div style="padding:32px 24px;text-align:center;border-bottom:2px solid #00D4FF;">
+              <h1 style="margin:0;color:#00D4FF;font-size:22px;">Your Window Estimate Is Ready</h1>
+            </div>
+            <div style="padding:24px;">
+              <p style="font-size:16px;color:#ccc;">${firstName ? `Hi ${firstName},` : 'Hi there,'}</p>
+              <p style="color:#ccc;">Here's a summary of the estimate you built:</p>
+              <div style="background:#0d0d1a;border-radius:8px;padding:20px;margin:20px 0;text-align:center;">
+                ${windowCount > 0 ? `<p style="color:#888;margin:0 0 4px;">Windows</p><p style="color:#00D4FF;font-size:32px;font-weight:bold;margin:0 0 16px;">${windowCount}</p>` : ''}
+                <p style="color:#888;margin:0 0 4px;">Estimated Range</p>
+                <p style="color:#FFD700;font-size:28px;font-weight:bold;margin:0;">${estimatedTotal}</p>
+              </div>
+              <h3 style="color:#FFD700;">What This Means For You</h3>
+              <ul style="color:#ccc;line-height:1.8;">
+                <li>This is a ballpark estimate — your actual price depends on window sizes, styles, and installation complexity</li>
+                <li>Online estimates are often 15-30% off from real pricing</li>
+                <li>A free in-home measurement gives you the exact number — no surprises</li>
+              </ul>
+              <p style="color:#888;font-size:13px;margin:16px 0;">Over 1,200 Florida homeowners have gotten transparent pricing from us.</p>
+              <div style="text-align:center;margin:32px 0;">
+                <a href="https://itswindowman.com/consultation" style="display:inline-block;background:#00D4FF;color:#000;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:bold;font-size:16px;min-height:48px;line-height:20px;">Lock In Your Real Price</a>
+              </div>
+            </div>
+            <div style="padding:16px 24px;background:#0d0d1a;text-align:center;border-top:1px solid #333;">
+              <p style="color:#666;font-size:12px;margin:0;">Window Truth Engine by Its Window Man · You received this because you used our Quote Builder.</p>
+            </div>
+          </div>`,
+      };
+    }
+
+    case 'risk-diagnostic-results': {
+      const firstName = (data.firstName as string) || '';
+      const protectionScore = (data.protectionScore as number) || 0;
+      const gapCount = (data.gapCount as number) || 0;
+      const scoreColor = protectionScore >= 70 ? '#00D4FF' : protectionScore >= 40 ? '#FFD700' : '#FF4444';
+      return {
+        subject: `Your Protection Score: ${protectionScore}/100`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#1a1a2e;color:#fff;">
+            <div style="padding:32px 24px;text-align:center;border-bottom:2px solid #00D4FF;">
+              <h1 style="margin:0;color:#00D4FF;font-size:22px;">Your Home Protection Score</h1>
+            </div>
+            <div style="padding:24px;">
+              <p style="font-size:16px;color:#ccc;">${firstName ? `Hi ${firstName},` : 'Hi there,'}</p>
+              <p style="color:#ccc;">We've assessed your home's protection level. Here are your results:</p>
+              <div style="text-align:center;margin:24px 0;">
+                <div style="display:inline-block;width:120px;height:120px;border-radius:50%;border:4px solid ${scoreColor};line-height:120px;font-size:36px;font-weight:bold;color:${scoreColor};">${protectionScore}</div>
+                <p style="color:#888;margin-top:8px;">Protection Score out of 100</p>
+              </div>
+              ${gapCount > 0 ? `<div style="background:#2a1a1a;border-left:4px solid #FFD700;padding:16px;border-radius:0 8px 8px 0;margin:16px 0;">
+                <p style="margin:0;color:#FFD700;font-weight:bold;">🔍 ${gapCount} Protection Gap${gapCount > 1 ? 's' : ''} Identified</p>
+                <p style="margin:8px 0 0;color:#ccc;font-size:14px;">Each gap is a potential vulnerability during storm season or a missed insurance discount.</p>
+              </div>` : ''}
+              <h3 style="color:#FFD700;">What This Means For You</h3>
+              <ul style="color:#ccc;line-height:1.8;">
+                <li>Impact windows can save Florida homeowners up to 20% on insurance premiums</li>
+                <li>${protectionScore < 50 ? 'Your home has significant exposure during hurricane season' : 'There are still opportunities to improve your protection'}</li>
+                <li>A free assessment identifies exactly which upgrades give you the biggest ROI</li>
+              </ul>
+              <p style="color:#888;font-size:13px;margin:16px 0;">Trusted by 1,200+ Florida homeowners protecting their families and savings.</p>
+              <div style="text-align:center;margin:32px 0;">
+                <a href="https://itswindowman.com/consultation" style="display:inline-block;background:#00D4FF;color:#000;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:bold;font-size:16px;min-height:48px;line-height:20px;">Get Your Free Protection Assessment</a>
+              </div>
+            </div>
+            <div style="padding:16px 24px;background:#0d0d1a;text-align:center;border-top:1px solid #333;">
+              <p style="color:#666;font-size:12px;margin:0;">Window Truth Engine by Its Window Man · You received this because you used our Risk Diagnostic.</p>
+            </div>
+          </div>`,
+      };
+    }
+
+    case 'vulnerability-test-results': {
+      const firstName = (data.firstName as string) || '';
+      const quizScore = (data.quizScore as number) || 0;
+      const vulnerability = (data.quizVulnerability as string) || 'MODERATE';
+      const vulnColor = vulnerability === 'CRITICAL' ? '#FF4444' : vulnerability === 'MODERATE' ? '#FFD700' : '#00D4FF';
+      return {
+        subject: `Your Vulnerability Level: ${vulnerability}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#1a1a2e;color:#fff;">
+            <div style="padding:32px 24px;text-align:center;border-bottom:2px solid #00D4FF;">
+              <h1 style="margin:0;color:#00D4FF;font-size:22px;">Your Window Vulnerability Results</h1>
+            </div>
+            <div style="padding:24px;">
+              <p style="font-size:16px;color:#ccc;">${firstName ? `Hi ${firstName},` : 'Hi there,'}</p>
+              <p style="color:#ccc;">Based on your answers, here's your vulnerability assessment:</p>
+              <div style="text-align:center;margin:24px 0;background:#0d0d1a;padding:24px;border-radius:8px;border:2px solid ${vulnColor};">
+                <p style="color:#888;margin:0 0 8px;font-size:14px;">Vulnerability Level</p>
+                <p style="color:${vulnColor};font-size:32px;font-weight:bold;margin:0;">${vulnerability}</p>
+                <p style="color:#888;margin:8px 0 0;font-size:14px;">Score: ${quizScore}/100</p>
+              </div>
+              <h3 style="color:#FFD700;">What This Means For You</h3>
+              <ul style="color:#ccc;line-height:1.8;">
+                <li>${vulnerability === 'CRITICAL' ? 'Your windows may not meet Florida building code — this is urgent' : vulnerability === 'MODERATE' ? 'You have notable vulnerabilities that could cost you during storm season' : 'You\'re in decent shape, but there may still be savings opportunities'}</li>
+                <li>Florida's hurricane season puts non-impact windows at serious risk</li>
+                <li>A free window inspection confirms exactly where you stand — no guesswork</li>
+              </ul>
+              <p style="color:#888;font-size:13px;margin:16px 0;">1,200+ Florida homeowners have used our tools to find and fix their vulnerabilities.</p>
+              <div style="text-align:center;margin:32px 0;">
+                <a href="https://itswindowman.com/consultation" style="display:inline-block;background:#00D4FF;color:#000;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:bold;font-size:16px;min-height:48px;line-height:20px;">Schedule Your Free Window Inspection</a>
+              </div>
+            </div>
+            <div style="padding:16px 24px;background:#0d0d1a;text-align:center;border-top:1px solid #333;">
+              <p style="color:#666;font-size:12px;margin:0;">Window Truth Engine by Its Window Man · You received this because you took our Vulnerability Test.</p>
+            </div>
+          </div>`,
+      };
+    }
+
+    case 'fair-price-quiz-results': {
+      const firstName = (data.firstName as string) || '';
+      const quizScore = (data.quizScore as number) || 0;
+      const quizResult = (data.quizResult as string) || '';
+      return {
+        subject: 'Are You Overpaying for Windows?',
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#1a1a2e;color:#fff;">
+            <div style="padding:32px 24px;text-align:center;border-bottom:2px solid #00D4FF;">
+              <h1 style="margin:0;color:#00D4FF;font-size:22px;">Your Fair Price Quiz Results</h1>
+            </div>
+            <div style="padding:24px;">
+              <p style="font-size:16px;color:#ccc;">${firstName ? `Hi ${firstName},` : 'Hi there,'}</p>
+              <p style="color:#ccc;">Here's what our Fair Price Quiz revealed about your situation:</p>
+              <div style="text-align:center;margin:24px 0;background:#0d0d1a;padding:24px;border-radius:8px;">
+                <p style="color:#888;margin:0 0 8px;font-size:14px;">Your Score</p>
+                <p style="color:#FFD700;font-size:36px;font-weight:bold;margin:0;">${quizScore}/100</p>
+                ${quizResult ? `<p style="color:#ccc;margin:12px 0 0;font-size:15px;">${quizResult}</p>` : ''}
+              </div>
+              <h3 style="color:#FFD700;">What This Means For You</h3>
+              <ul style="color:#ccc;line-height:1.8;">
+                <li>The average Florida homeowner overpays by $2,800 on window projects</li>
+                <li>Knowing the fair market price is your best negotiating tool</li>
+                <li>We'll show you exactly what you should pay — based on your specific windows and home</li>
+              </ul>
+              <p style="color:#888;font-size:13px;margin:16px 0;">1,200+ Florida homeowners have used our tools to avoid overpaying.</p>
+              <div style="text-align:center;margin:32px 0;">
+                <a href="https://itswindowman.com/consultation" style="display:inline-block;background:#00D4FF;color:#000;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:bold;font-size:16px;min-height:48px;line-height:20px;">See What You Should Really Pay</a>
+              </div>
+            </div>
+            <div style="padding:16px 24px;background:#0d0d1a;text-align:center;border-top:1px solid #333;">
+              <p style="color:#666;font-size:12px;margin:0;">Window Truth Engine by Its Window Man · You received this because you took our Fair Price Quiz.</p>
+            </div>
+          </div>`,
+      };
+    }
+
     default:
       return {
         subject: 'Notification from Its Window Man',
