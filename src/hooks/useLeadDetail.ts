@@ -241,15 +241,37 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
   useEffect(() => {
     if (aiPreAnalysis?.status !== 'pending') return;
     const interval = setInterval(() => fetchRef.current(), 5000);
-    // Safety: stop polling after 2 minutes to prevent infinite loops
-    const timeout = setTimeout(() => {
+    // Safety: stop polling after 2 minutes and sync failure to DB
+    const timeout = setTimeout(async () => {
       clearInterval(interval);
       setAiPreAnalysis(prev => prev?.status === 'pending' ? {
         ...prev, status: 'failed', reason: 'Analysis timed out after 2 minutes'
       } : prev);
+      // Sync timeout to DB so it doesn't stay stuck as 'pending'
+      if (aiPreAnalysis?.quote_file_id) {
+        try {
+          const { data: { session: authSession } } = await supabase.auth.getSession();
+          if (authSession) {
+            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-lead-detail?id=${leadId}`, {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${authSession.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                action: 'force_fail_analysis',
+                quoteFileId: aiPreAnalysis.quote_file_id,
+                reason: 'Client-side timeout after 2 minutes',
+              }),
+            });
+          }
+        } catch (e) {
+          console.error('[useLeadDetail] Failed to sync timeout to DB:', e);
+        }
+      }
     }, 120_000);
     return () => { clearInterval(interval); clearTimeout(timeout); };
-  }, [aiPreAnalysis?.status]);
+  }, [aiPreAnalysis?.status, aiPreAnalysis?.quote_file_id, leadId]);
 
   const callAction = async (action: string, data: Record<string, unknown>): Promise<boolean> => {
     if (!leadId) return false;

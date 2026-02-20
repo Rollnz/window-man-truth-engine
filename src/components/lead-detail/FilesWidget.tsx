@@ -52,7 +52,7 @@ export function FilesWidget({ files, onTriggerFileAnalysis }: FilesWidgetProps) 
 
   const canTriggerAnalysis = (file: LeadFile): boolean => {
     const status = getFileAnalysisStatus(file);
-    return status === 'none' || status === 'failed';
+    return status === 'none' || status === 'failed' || status === 'pending';
   };
 
   const getStatusIcon = (file: LeadFile) => {
