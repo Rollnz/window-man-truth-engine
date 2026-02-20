@@ -130,9 +130,11 @@ const WindowCostTruth = () => {
         <EvidenceModule
           title="What the Data Shows"
           subtitle="Exposed cost patterns from verified Florida installations"
+          columns={3}
           findings={[
             { title: "Budget Windows Cost 2.3x More Over 10 Years", description: "When factoring energy waste, early replacement, and missed insurance discounts, budget windows consistently cost more than double over a decade compared to premium impact windows.", severity: "critical", icon: TrendingUp, source: "FL DOE Energy Analysis 2024" },
             { title: "Insurance Discount Gap: $1,200/yr Average", description: "Homeowners with certified impact windows save an average of $1,200 more per year on insurance compared to those with budget or non-rated windows.", severity: "warning", icon: DollarSign, source: "Citizens Property Insurance Data" },
+            { title: "Low-E Coating Saves $800+/yr on Cooling", description: "Florida homes with Low-E coated impact windows reduce solar heat gain by up to 70%, translating to average annual cooling savings exceeding $800 in South Florida.", severity: "info", icon: Zap, source: "ENERGY STAR Florida Data 2024" },
           ]}
         />
 

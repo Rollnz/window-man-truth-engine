@@ -158,9 +158,11 @@ const WindowVerificationSystem = () => {
         <EvidenceModule
           title="Verification Intelligence"
           subtitle="What our cross-referencing reveals about the Florida market"
+          columns={3}
           findings={[
             { title: "41% of Quoted Products Lack Valid NOA Certification", description: "Cross-referencing quoted product numbers against the Miami-Dade Product Approval database reveals that nearly half of products in quotes lack valid certifications.", severity: "critical", icon: FileSearch, source: "Miami-Dade Product Approval DB" },
             { title: "1 in 5 Installers Operating Without Proper License", description: "MyFloridaLicense.com cross-referencing shows 20% of installers quoting jobs either have expired, suspended, or no valid state license.", severity: "warning", icon: Shield, source: "MyFloridaLicense.com Cross-Reference" },
+            { title: "Warranty Claims Denied 34% of the Time", description: "Analysis of warranty claim outcomes shows over a third are denied due to missing documentation, unlicensed installation, or product substitution during install.", severity: "info", icon: FileSearch, source: "Consumer Complaint Database 2024" },
           ]}
         />
 

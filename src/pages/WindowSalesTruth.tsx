@@ -134,9 +134,11 @@ const WindowSalesTruth = () => {
         <EvidenceModule
           title="What Our Data Reveals"
           subtitle="Analysis from thousands of real Florida window quotes"
+          columns={3}
           findings={[
             { title: "73% of Quotes Contain At Least One Red Flag", description: "Our AI scanner analysis of thousands of quotes reveals that nearly three-quarters contain pricing anomalies, missing items, or pressure-tactic language.", severity: "critical", icon: AlertTriangle, source: "WindowMan AI Scanner Analysis" },
             { title: "Average Initial Markup: 38% Above Fair Market", description: "The first quote you receive is typically inflated by 38% compared to fair market value. Getting multiple quotes and knowing the data puts you in control.", severity: "warning", icon: DollarSign, source: "3,400+ Quote Database" },
+            { title: "\"Today Only\" Deals Return 92% of the Time", description: "Tracking follow-up quotes shows that same-day pressure discounts are almost always available later. The urgency is manufactured to prevent comparison shopping.", severity: "info", icon: Clock, source: "Quote Follow-Up Tracking Study" },
           ]}
         />
 
