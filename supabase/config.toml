@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.analyze-consultation-quote]
 verify_jwt = false
+
+[functions.admin-trigger-analysis]
+verify_jwt = false

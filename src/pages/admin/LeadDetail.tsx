@@ -24,7 +24,7 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 function LeadDetailContent() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { lead, events, files, notes, session, calls, pendingCalls, aiPreAnalysis, isLoading, error, canonical, refetch, updateStatus, addNote, updateSocialUrl } = useLeadDetail(id);
+  const { lead, events, files, notes, session, calls, pendingCalls, aiPreAnalysis, isLoading, error, canonical, refetch, updateStatus, addNote, updateSocialUrl, triggerAnalysis } = useLeadDetail(id);
   const { previousLeadId, nextLeadId, currentIndex, totalLeads, goToPrevious, goToNext } = useLeadNavigation(id);
   const { setIsOpen, addToRecent } = useGlobalSearch();
 
@@ -150,7 +150,10 @@ function LeadDetailContent() {
       {/* 3-Pane Layout */}
       <main className="max-w-7xl mx-auto p-4 lg:p-6">
         {/* Sales Intel HUD - full width, top of page */}
-        <SalesIntelCard aiPreAnalysis={aiPreAnalysis} />
+        <SalesIntelCard
+          aiPreAnalysis={aiPreAnalysis}
+          onTriggerAnalysis={aiPreAnalysis?.quote_file_id ? () => triggerAnalysis(aiPreAnalysis.quote_file_id!) : undefined}
+        />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Pane: Identity + Intent + Revenue */}
           <aside className="lg:col-span-3 space-y-4">
@@ -184,7 +187,7 @@ function LeadDetailContent() {
           {/* Right Pane: Workspace */}
           <aside className="lg:col-span-3 space-y-4">
             <NotesWidget onAddNote={addNote} />
-            <FilesWidget files={files} />
+            <FilesWidget files={files} onTriggerFileAnalysis={triggerAnalysis} />
             <DispatchWindowManButton lead={lead} pendingCalls={pendingCalls} onSuccess={refetch} />
             <FinancialsSection wmLeadId={lead.id} />
           </aside>

@@ -265,16 +265,29 @@ serve(async (req) => {
         latestCloseDate,
       };
 
-      // Extract AI pre-analysis from the most recent analyzed quote file
+      // Extract AI pre-analysis from the best quote file
+      // Priority: completed > pending > failed > none (most recent within each tier)
       let aiPreAnalysis = null;
       if (files?.length) {
-        const analyzed = (files as any[]).find((f: any) =>
-          f?.ai_pre_analysis &&
-          typeof f.ai_pre_analysis === 'object' &&
-          f.ai_pre_analysis.status &&
-          f.ai_pre_analysis.status !== 'none'
-        );
-        aiPreAnalysis = analyzed?.ai_pre_analysis ?? null;
+        const typedFiles = files as any[];
+        const statusPriority: Record<string, number> = { completed: 4, pending: 3, failed: 2, none: 1 };
+        
+        const bestFile = typedFiles.reduce((best: any, f: any) => {
+          const fStatus = f?.ai_pre_analysis?.status || 'none';
+          const bestStatus = best?.ai_pre_analysis?.status || 'none';
+          const fPri = statusPriority[fStatus] || 0;
+          const bestPri = statusPriority[bestStatus] || 0;
+          return fPri > bestPri ? f : best;
+        }, typedFiles[0]);
+
+        if (bestFile) {
+          const status = bestFile.ai_pre_analysis?.status || 'none';
+          aiPreAnalysis = {
+            ...(bestFile.ai_pre_analysis || { status: 'none', result: null, reason: null }),
+            status,
+            quote_file_id: bestFile.id,
+          };
+        }
       }
 
       return new Response(JSON.stringify({
