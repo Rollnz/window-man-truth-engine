@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Shield } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Navbar } from '@/components/home/Navbar';
 import { QuizHero } from '@/components/fair-price-quiz/QuizHero';
@@ -35,9 +37,24 @@ export default function FairPriceQuiz() {
   const { leadId: hookLeadId, setLeadId } = useLeadIdentity();
   const { trackToolComplete } = useTrackToolCompletion();
 
-  const [phase, setPhase] = useState<Phase>('hero');
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string | number | string[]>>({});
+  const [searchParams] = useSearchParams();
+  const refSource = searchParams.get('ref');
+  const isFromChat = refSource === 'wm_chat';
+
+  // Pre-fill from URL params (chat-to-tool context passing)
+  const prefillCount = searchParams.get('count');
+  const prefillCountNum = prefillCount ? parseInt(prefillCount, 10) : null;
+  const validPrefillCount = prefillCountNum && prefillCountNum > 0 && Number.isFinite(prefillCountNum) ? prefillCountNum : null;
+
+  const [phase, setPhase] = useState<Phase>(isFromChat ? 'quiz' : 'hero');
+  const [currentStep, setCurrentStep] = useState(isFromChat && validPrefillCount ? 3 : 0);
+  const [answers, setAnswers] = useState<Record<number, string | number | string[]>>(() => {
+    const initial: Record<number, string | number | string[]> = {};
+    if (validPrefillCount) {
+      initial[2] = validPrefillCount; // window count question (index 2)
+    }
+    return initial;
+  });
   const [analysis, setAnalysis] = useState<PriceAnalysis | null>(null);
   const [userFirstName, setUserFirstName] = useState('');
   const [userLastName, setUserLastName] = useState('');
@@ -45,6 +62,15 @@ export default function FairPriceQuiz() {
   const [userPhone, setUserPhone] = useState('');
 
   const totalQuestions = quizQuestions.length;
+
+  // Sync URL zip to session on mount
+  useEffect(() => {
+    const urlZip = searchParams.get('zip');
+    if (isFromChat && urlZip) {
+      updateFields({ zipCode: urlZip });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const currentQuestion = quizQuestions[currentStep];
 
   const handleStart = () => {
@@ -304,6 +330,16 @@ export default function FairPriceQuiz() {
       <div className="container px-4 pt-16 pb-2">
         <PillarBreadcrumb toolPath="/fair-price-quiz" variant="badge" />
       </div>
+
+      {/* Continuity pill for chat-originated users */}
+      {isFromChat && (
+        <div className="container px-4 pb-2">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+            <Shield className="w-3 h-3" />
+            Continuing your Window Man analysis
+          </span>
+        </div>
+      )}
 
       <div className="pt-2">
         {phase === 'hero' && <QuizHero onStart={handleStart} />}

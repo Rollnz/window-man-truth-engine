@@ -1,4 +1,5 @@
-import { useState, useCallback, lazy, Suspense, useRef } from 'react';
+import { useState, useCallback, lazy, Suspense, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useSessionData } from '@/hooks/useSessionData';
 import { SEO } from '@/components/SEO';
@@ -32,8 +33,26 @@ const AuditExpertChat = lazy(() => import('@/components/audit/AuditExpertChat').
 
 export default function BeatYourQuote() {
   usePageTracking('beat-your-quote');
-  const { sessionData } = useSessionData();
+  const { sessionData, updateFields } = useSessionData();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  // Sync chat context to session on mount
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref === 'wm_chat') {
+      const fields: Record<string, unknown> = {};
+      const count = searchParams.get('count');
+      const zip = searchParams.get('zip');
+      if (count) {
+        const parsed = parseInt(count, 10);
+        if (parsed > 0 && Number.isFinite(parsed)) fields.windowCount = parsed;
+      }
+      if (zip) fields.zipCode = zip;
+      if (Object.keys(fields).length > 0) updateFields(fields);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   // State to trigger modal from hero buttons (legacy, now used by AnatomySection)

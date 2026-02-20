@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, ArrowRight, Phone, Loader2, Shield, Search, AlertTriangle } from 'lucide-react';
+import { Send, ArrowRight, Phone, Loader2, Shield, Search, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -159,6 +159,76 @@ function VerdictBadge({ verdict }: { verdict: 'protected' | 'inspect' | 'breach'
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// Soft Gate Component (compact micro-commitment CTA)
+// ═══════════════════════════════════════════════════════════════════
+
+function SoftGateCTA({
+  verdict,
+  mode,
+  onAccept,
+  onDismiss,
+  countyName,
+}: {
+  verdict: 'protected' | 'inspect' | 'breach' | null;
+  mode: AiQaMode;
+  onAccept: () => void;
+  onDismiss: () => void;
+  countyName?: string;
+}) {
+  // Fire shown event on mount
+  useEffect(() => {
+    wmRetarget('ai_micro_commit_shown', {
+      source_tool: 'slide-over-chat',
+      verdict: verdict || undefined,
+      mode,
+    });
+  }, [verdict, mode]);
+
+  return (
+    <div className="space-y-1.5 mb-3">
+      {/* Single-line copy with shield icon */}
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <ShieldCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+        <span>Window Man flagged key findings. Save this Truth Report to your vault?</span>
+      </p>
+
+      {/* Primary CTA — full width, compact */}
+      <Button
+        onClick={() => {
+          wmRetarget('ai_micro_commit_accepted', {
+            source_tool: 'slide-over-chat',
+            source: 'soft_gate',
+            mode,
+          });
+          onAccept();
+        }}
+        variant="cta"
+        size="sm"
+        className="w-full py-2 text-xs"
+      >
+        <Shield className="h-3 w-3 mr-1" />
+        Save My Analysis
+      </Button>
+
+      {/* Dismiss link — ghost text */}
+      <button
+        onClick={onDismiss}
+        className="w-full text-center text-[11px] text-muted-foreground hover:text-foreground transition-colors py-0.5"
+      >
+        I'll do it later
+      </button>
+
+      {/* Social proof micro-copy */}
+      {countyName && (
+        <p className="text-[10px] text-muted-foreground/70 text-center">
+          🛡️ Homeowners in {countyName} saved their truth report today
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // Main Component
 // ═══════════════════════════════════════════════════════════════════
 
@@ -177,6 +247,7 @@ export function AiQaStep({
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [showRouting, setShowRouting] = useState(false);
+  const [showSoftGate, setShowSoftGate] = useState(false);
   const [userMessageCount, setUserMessageCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -199,6 +270,13 @@ export function AiQaStep({
       panel_variant: panelVariant,
     });
   }, [mode, panelVariant]);
+
+  // Dismiss keyboard when soft gate appears
+  useEffect(() => {
+    if (showSoftGate) {
+      inputRef.current?.blur();
+    }
+  }, [showSoftGate]);
 
   // Send a message to the AI
   const sendMessage = useCallback(
@@ -355,6 +433,11 @@ export function AiQaStep({
         if (newCount >= 3 && !showRouting) {
           setShowRouting(true);
         }
+
+        // Trigger soft gate when verdict or actions present
+        if ((verdict || actions.length > 0) && !showSoftGate) {
+          setShowSoftGate(true);
+        }
       } catch (err) {
         console.error('[AiQaStep] Streaming error:', err);
         setMessages((prev) => [
@@ -380,6 +463,7 @@ export function AiQaStep({
       formData,
       panelVariant,
       showRouting,
+      showSoftGate,
     ]
   );
 
@@ -409,15 +493,41 @@ export function AiQaStep({
   };
 
   const handleActionClick = (action: WmAction) => {
+    // Build URL params from truthContext for pre-fill
+    const params = new URLSearchParams();
+    const wc = sessionData.windowCount || formData.windowCount;
+    const zip = sessionData.zipCode || formData.zip;
+    const lastVerdictMsg = [...messages].reverse().find((m) => m.verdict);
+    const lastVerdict = lastVerdictMsg?.verdict;
+
+    if (wc) params.set('count', String(wc));
+    if (zip) params.set('zip', zip);
+    if (lastVerdict) params.set('verdict', lastVerdict);
+    params.set('ref', 'wm_chat');
+
+    const paramString = params.toString();
+    const targetUrl = paramString ? `${action.route}?${paramString}` : action.route;
+
     wmRetarget('ai_action_clicked', {
       source_tool: 'slide-over-chat',
       mode,
       action_route: action.route,
     });
-    navigate(action.route);
+
+    // Fire context passed event
+    wmRetarget('ai_context_passed', {
+      source_tool: 'slide-over-chat',
+      target_route: action.route,
+      param_count: params.size,
+    });
+
+    navigate(targetUrl);
   };
 
   const atLimit = userMessageCount >= MAX_USER_MESSAGES;
+
+  // Get the last verdict from messages for the soft gate
+  const lastVerdict = [...messages].reverse().find((m) => m.verdict)?.verdict || null;
 
   return (
     <div className="flex flex-col h-full min-h-[400px]">
@@ -448,20 +558,20 @@ export function AiQaStep({
               </div>
             </div>
 
-            {/* Verdict badge + Action buttons (only on assistant messages with actions) */}
+            {/* Verdict badge + Action buttons — stacked full-width for mobile */}
             {msg.role === 'assistant' && msg.actions && msg.actions.length > 0 && (
               <div className="mt-2 ml-0 space-y-2">
                 {msg.verdict && <VerdictBadge verdict={msg.verdict} />}
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex flex-col gap-1.5">
                   {msg.actions.map((action, ai) => (
                     <Button
                       key={ai}
                       onClick={() => handleActionClick(action)}
                       variant="outline"
                       size="sm"
-                      className="text-xs"
+                      className="w-full text-xs py-1.5 justify-start"
                     >
-                      <ArrowRight className="h-3 w-3 mr-1" />
+                      <ArrowRight className="h-3 w-3 mr-1 flex-shrink-0" />
                       {action.label}
                     </Button>
                   ))}
@@ -472,8 +582,19 @@ export function AiQaStep({
         ))}
       </div>
 
-      {/* Routing CTAs */}
-      {showRouting && (
+      {/* Soft Gate CTA — replaces routing when active */}
+      {showSoftGate && showRouting ? (
+        <SoftGateCTA
+          verdict={lastVerdict}
+          mode={mode}
+          onAccept={() => {
+            onRouteToForm();
+          }}
+          onDismiss={() => setShowSoftGate(false)}
+          countyName={locationData?.county}
+        />
+      ) : showRouting ? (
+        /* Standard Routing CTAs (only when soft gate is dismissed or not triggered) */
         <div className="space-y-2 mb-4">
           <p className="text-xs text-muted-foreground text-center">
             Ready to take the next step?
@@ -513,7 +634,7 @@ export function AiQaStep({
             </Button>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Input area */}
       {!atLimit ? (
