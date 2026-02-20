@@ -1,7 +1,7 @@
 import { Eye, Users, ScanSearch, MessageSquare, DollarSign, Shield, Clock } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
 import { ReviewedByBadge, ExitIntentModal } from "@/components/authority";
@@ -133,31 +133,6 @@ const WindowSalesTruth = () => {
         <PillarCalloutCard text="No legitimate deal expires same-day. If the pressure feels manipulative, it probably is." />
 
         <PillarGuideCards guides={guides} />
-
-        {/* FAQ Section */}
-        <section className="py-16 md:py-24">
-          <div className="container px-4">
-            <AnimateOnScroll duration={600}>
-              <div className="max-w-4xl mx-auto">
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight mb-8">
-                  Frequently Asked Questions
-                </h2>
-                <Accordion type="single" collapsible className="w-full">
-                  {faqs.map((faq, index) => (
-                    <AccordionItem key={index} value={`item-${index}`}>
-                      <AccordionTrigger className="text-left">
-                        {faq.question}
-                      </AccordionTrigger>
-                      <AccordionContent className="text-muted-foreground">
-                        {faq.answer}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </div>
-            </AnimateOnScroll>
-          </div>
-        </section>
 
         {/* Reviewed By Badge */}
         <section className="py-12 md:py-16 bg-card/30">
