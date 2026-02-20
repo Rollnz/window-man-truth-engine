@@ -9,7 +9,7 @@ const corsHeaders = {
 
 interface EmailPayload {
   email: string;
-  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report' | 'fast-win-report' | 'evidence-locker-report' | 'intel-resource-delivery' | 'claim-vault-upload-confirmation' | 'quote-alert';
+  type: 'new-lead' | 'comparison-report' | 'consultation-booked' | 'cost-calculator-report' | 'risk-diagnostic-report' | 'fast-win-report' | 'evidence-locker-report' | 'intel-resource-delivery' | 'claim-vault-upload-confirmation' | 'quote-alert' | 'quote-scanner-results' | 'beat-your-quote-results' | 'quote-builder-results' | 'risk-diagnostic-results' | 'vulnerability-test-results' | 'fair-price-quiz-results';
   data: Record<string, unknown>;
   // Golden Thread: Attribution tracking
   sessionId?: string;
