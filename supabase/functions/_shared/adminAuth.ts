@@ -94,7 +94,7 @@ export function jsonResponse(status: number, body: unknown): Response {
  * @returns true if user has 'admin' role in user_roles table
  */
 export async function hasAdminRole(
-  supabaseAdmin: SupabaseClient,
+  supabaseAdmin: any,
   userId: string
 ): Promise<boolean> {
   const { data, error } = await supabaseAdmin

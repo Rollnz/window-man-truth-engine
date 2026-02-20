@@ -960,30 +960,30 @@ serve(async (req) => {
               });
             }
             console.log('Quote alert emails triggered for:', adminEmails);
+
+            // ═══════════════════════════════════════════════════════════════════════
+            // AI PRE-ANALYSIS: Fire-and-forget background analysis for sales team
+            // ═══════════════════════════════════════════════════════════════════════
+            if (fileData?.file_path) {
+              const analysisUrl = `${supabaseUrl}/functions/v1/analyze-consultation-quote`;
+              fetch(analysisUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabaseServiceKey}`,
+                },
+                body: JSON.stringify({
+                  leadId,
+                  quoteFileId,
+                  mimeType: fileData.mime_type || 'application/pdf',
+                }),
+              }).catch(err => {
+                console.error('[save-lead] Failed to trigger AI pre-analysis (non-blocking):', err);
+              });
+              console.log('[save-lead] AI pre-analysis triggered for lead:', leadId);
+            }
           } catch (alertErr) {
             console.error('Quote alert failed (non-blocking):', alertErr);
-          }
-
-          // ═══════════════════════════════════════════════════════════════════════
-          // AI PRE-ANALYSIS: Fire-and-forget background analysis for sales team
-          // ═══════════════════════════════════════════════════════════════════════
-          if (fileData?.file_path) {
-            const analysisUrl = `${supabaseUrl}/functions/v1/analyze-consultation-quote`;
-            fetch(analysisUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseServiceKey}`,
-              },
-              body: JSON.stringify({
-                leadId,
-                quoteFileId,
-                mimeType: fileData.mime_type || 'application/pdf',
-              }),
-            }).catch(err => {
-              console.error('[save-lead] Failed to trigger AI pre-analysis (non-blocking):', err);
-            });
-            console.log('[save-lead] AI pre-analysis triggered for lead:', leadId);
           }
         }
       } catch (linkErr) {

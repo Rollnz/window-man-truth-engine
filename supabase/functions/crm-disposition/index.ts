@@ -116,6 +116,8 @@ Deno.serve(async (req) => {
       });
     }
 
+    const userEmail = user.email || 'unknown';
+
     if (req.method !== "POST") {
       return new Response(JSON.stringify({ error: "Method not allowed" }), {
         status: 405,

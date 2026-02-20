@@ -410,6 +410,82 @@ serve(async (req) => {
         });
       }
 
+      // =====================
+      // UPDATE SOCIAL PROFILE (per-platform Facebook/Instagram)
+      // =====================
+      if (action === 'update_social_profile') {
+        const { platform, url: rawUrl } = body;
+
+        // Validate platform
+        if (platform !== 'facebook' && platform !== 'instagram') {
+          return errorResponse(400, 'invalid_platform', 'Platform must be facebook or instagram');
+        }
+
+        const column = platform === 'facebook' ? 'social_facebook_url' : 'social_instagram_url';
+
+        // Handle clear (null)
+        if (rawUrl === null || rawUrl === undefined || (typeof rawUrl === 'string' && !rawUrl.trim())) {
+          const { error: updateError } = await supabase
+            .from('wm_leads')
+            .update({ [column]: null, updated_at: new Date().toISOString() })
+            .eq('id', leadId);
+
+          assertNoError(updateError, `wm_leads.update(${column}_clear)`);
+
+          return new Response(JSON.stringify({ ok: true, success: true }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Validate URL
+        if (typeof rawUrl !== 'string') {
+          return errorResponse(400, 'invalid_social_url', 'URL must be a string or null');
+        }
+
+        let urlStr = rawUrl.trim();
+        if (!/^https?:\/\//i.test(urlStr)) {
+          urlStr = `https://${urlStr}`;
+        }
+
+        let parsedUrl: URL;
+        try {
+          parsedUrl = new URL(urlStr);
+        } catch {
+          return errorResponse(400, 'invalid_social_url', 'Invalid URL format');
+        }
+
+        if (parsedUrl.protocol !== 'https:') {
+          return errorResponse(400, 'invalid_social_url', 'URL must use https');
+        }
+
+        const host = parsedUrl.hostname.replace(/^www\./i, '').toLowerCase();
+        const fbHosts = new Set(['facebook.com', 'm.facebook.com']);
+        const igHosts = new Set(['instagram.com']);
+
+        if (platform === 'facebook' && !fbHosts.has(host)) {
+          return errorResponse(400, 'invalid_social_url', 'Facebook URL must be on facebook.com or m.facebook.com');
+        }
+        if (platform === 'instagram' && !igHosts.has(host)) {
+          return errorResponse(400, 'invalid_social_url', 'Instagram URL must be on instagram.com');
+        }
+
+        // Strip query params and hash for clean storage
+        parsedUrl.search = '';
+        parsedUrl.hash = '';
+        const cleanUrl = parsedUrl.toString();
+
+        const { error: updateError } = await supabase
+          .from('wm_leads')
+          .update({ [column]: cleanUrl, updated_at: new Date().toISOString() })
+          .eq('id', leadId);
+
+        assertNoError(updateError, `wm_leads.update(${column})`);
+
+        return new Response(JSON.stringify({ ok: true, success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       if (action === 'update_lead') {
         const { updates } = body;
         const allowedFields = ['first_name', 'last_name', 'phone', 'city', 'notes', 'estimated_deal_value', 'actual_deal_value', 'assigned_to'];

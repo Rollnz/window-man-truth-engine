@@ -89,6 +89,8 @@ serve(async (req) => {
     return json(401, { error: "Unauthorized" });
   }
 
+  const email = user.email || 'unknown';
+
   // Check admin role in database
   const isAdmin = await hasAdminRole(supabaseAdmin, user.id);
   if (!isAdmin) {
