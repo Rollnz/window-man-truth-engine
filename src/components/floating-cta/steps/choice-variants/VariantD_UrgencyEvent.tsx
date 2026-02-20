@@ -4,6 +4,7 @@ import { UrgencyTicker } from '@/components/social-proof/UrgencyTicker';
 import { PANEL_VARIANT_CONFIG } from '@/lib/panelVariants';
 import { CtaCard } from './shared/CtaCard';
 import { MiniTrustBar } from './shared/MiniTrustBar';
+import { useTickerStats } from '@/hooks/useTickerStats';
 import { trackEvent } from '@/lib/gtm';
 import { cn } from '@/lib/utils';
 import type { ChoiceVariantProps } from './types';
@@ -34,6 +35,7 @@ export function VariantD_UrgencyEvent({
 }: ChoiceVariantProps) {
   const config = PANEL_VARIANT_CONFIG.D;
   const seasonal = getSeasonalContext();
+  const { total } = useTickerStats();
 
   const countyData = locationData?.countyData;
   const countyLabel = locationData?.county;
@@ -118,7 +120,7 @@ export function VariantD_UrgencyEvent({
         stat={
           countyLabel && countyData
             ? `${countyLabel}: ${countyData.avgStormClaims} claims filed annually`
-            : '3,400+ Quotes Analyzed'
+            : `${total.toLocaleString()}+ Quotes Analyzed`
         }
         riskReversal="Licensed. Insured. FL Building Code Certified."
       />

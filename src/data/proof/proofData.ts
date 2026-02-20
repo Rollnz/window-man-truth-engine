@@ -25,16 +25,14 @@ export interface Transcript {
 }
 
 export interface ProofStats {
-  totalHomeowners: number;
   averageOverpricing: number;
   totalSavingsIdentified: string;
   insurancePremiumReduction: string;
   avgEnergySavings: string;
 }
 
-// Live proof statistics
+// Live proof statistics (totalHomeowners now comes from useTickerStats)
 export const proofStats: ProofStats = {
-  totalHomeowners: 450,
   averageOverpricing: 1847,
   totalSavingsIdentified: '$832K+',
   insurancePremiumReduction: '18-20%',

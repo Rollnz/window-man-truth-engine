@@ -7,6 +7,7 @@ import { CtaCard } from './shared/CtaCard';
 import { MiniTrustBar } from './shared/MiniTrustBar';
 import { trackEvent } from '@/lib/gtm';
 import { cn } from '@/lib/utils';
+import { useTickerStats } from '@/hooks/useTickerStats';
 import type { ChoiceVariantProps } from './types';
 
 type QuizStep = 0 | 1 | 2 | 'done';
@@ -48,6 +49,7 @@ export function VariantB_DiagnosticQuiz({
   onStartAiQa,
 }: ChoiceVariantProps) {
   const config = PANEL_VARIANT_CONFIG.B;
+  const { total } = useTickerStats();
   const [quizStep, setQuizStep] = useState<QuizStep>(0);
   const [quizStarted, setQuizStarted] = useState(false);
   const [answers, setAnswers] = useState<QuizAnswers>({
@@ -291,7 +293,7 @@ export function VariantB_DiagnosticQuiz({
       </div>
 
       <MiniTrustBar
-        stat="3,400+ Quotes Analyzed"
+        stat={`${total.toLocaleString()}+ Quotes Analyzed`}
         riskReversal="Florida Building Code Certified Analysis"
       />
     </div>

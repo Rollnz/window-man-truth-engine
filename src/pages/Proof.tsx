@@ -115,7 +115,7 @@ export default function Proof() {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
     name: 'The Evidence Locker - Verified Window Replacement Savings',
-    description: 'Real-time data, verified savings, and documented outcomes from 450+ Florida homeowners who beat inflated window pricing.',
+    description: 'Real-time data, verified savings, and documented outcomes from thousands of Florida homeowners who beat inflated window pricing.',
     url: 'https://itswindowman.com/proof',
     mainEntity: {
       '@type': 'ItemList',
@@ -148,7 +148,7 @@ export default function Proof() {
     <ProofPageShell>
       <SEO 
         title="The Evidence Locker - Verified Window Replacement Savings | Window Man"
-        description="Real-time data, verified savings, and documented outcomes from 450+ Florida homeowners who beat inflated window pricing, hidden specs, and insurance blind spots."
+        description="Real-time data, verified savings, and documented outcomes from thousands of Florida homeowners who beat inflated window pricing, hidden specs, and insurance blind spots."
         canonicalUrl="https://itswindowman.com/proof"
         jsonLd={jsonLd}
       />
