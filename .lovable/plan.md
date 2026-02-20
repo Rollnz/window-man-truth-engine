@@ -1,42 +1,70 @@
 
 
-# Fix: React forwardRef Warning on PageLoader
+# Replace Hardcoded Stats with Live Ticker Data on /proof and Site-Wide
 
 ## Problem
-`PageLoader` is defined as a plain arrow function in `src/App.tsx` (line 81). React emits a `forwardRef` warning when it or React Router attempts to forward a ref to this component.
+The `/proof` page hero uses a hardcoded `proofStats.totalHomeowners = 450` while the rest of the site uses live database-backed data via `useTickerStats()`. This creates inconsistency -- the ticker might show 3,500+ scans while the proof page says "450+ homeowners helped."
 
-## Solution
-Convert `PageLoader` from a plain arrow function to a `forwardRef`-wrapped component, matching the pattern already used elsewhere in the codebase (e.g., `NavLink`, `FloatingEstimateButton`).
+## Design: ProofHero Redesign
 
-## Changes
+Replace the current "Florida Homeowners Helped" `EvidenceStat` tile with the `UrgencyTicker` component (using the `homepage` variant for the light trust-forward aesthetic). The ticker provides live "quotes scanned" count + "+X today" with a pulsing dot, which is far more compelling than a stale "450+."
 
-**File: `src/App.tsx`**
+**Layout change:** Go from a 4-column stat grid to:
+- **Top row:** Full-width `UrgencyTicker` (variant="homepage", size="lg") centered above the stat cards
+- **Bottom row:** 3 remaining stat cards (Avg. Overpricing, Total Savings, Insurance Premium Reduction) in a 3-column grid
 
-Replace (lines 81-84):
-```tsx
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
-```
+Also update the inline copy from `{proofStats.totalHomeowners}+ Florida homeowners` to use the live `total` from `useTickerStats()`.
 
-With:
-```tsx
-import { forwardRef } from "react";
+## Site-Wide Hardcoded Stats Audit
 
-const PageLoader = forwardRef<HTMLDivElement>((_, ref) => (
-  <div ref={ref} className="min-h-screen flex items-center justify-center bg-background">
-    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-));
-PageLoader.displayName = "PageLoader";
-```
+| Location | Hardcoded Value | Fix |
+|---|---|---|
+| **ProofHero.tsx** | `proofStats.totalHomeowners` (450) in text + EvidenceStat | Replace with `useTickerStats().total` + swap stat tile for `UrgencyTicker` |
+| **Proof.tsx SEO** | "450+ Florida homeowners" in meta description + JSON-LD | Replace with generic "thousands of" (SEO strings can't be dynamic) |
+| **CommunityImpact.tsx** | `value={450}` "Florida homes scanned" (appears twice: compact + full) | Replace with `useTickerStats().total` |
+| **MiniTrustBar.tsx** | Default prop `"3,400+ Quotes Analyzed"` | Accept `total` from `useTickerStats` and format dynamically |
+| **VariantB_DiagnosticQuiz.tsx** | `stat="3,400+ Quotes Analyzed"` | Pass live `total` formatted as stat string |
+| **VariantD_UrgencyEvent.tsx** | Fallback `"3,400+ Quotes Analyzed"` | Same: pass live total |
+| **ScannerSocialProof.tsx** | Already uses `useTickerStats()` | No change needed |
+| **AnimatedStatsBar.tsx** | Already uses `useTickerStats()` | No change needed |
+| **ScannerHeroWindow.tsx** | Already uses `useTickerStats()` | No change needed |
+| **PathSelector.tsx** | Already uses `useTickerStats()` | No change needed |
 
-Note: `forwardRef` is not yet imported at the top of `App.tsx`, so it will be added to the existing React import line. The `displayName` assignment follows the project convention seen in all shadcn/ui components.
+## Technical Details
 
-## Impact
-- Silences the console warning
-- Zero visual or behavioral change
-- Follows existing project patterns
+### File Changes
+
+**1. `src/components/proof/EvidenceHero/ProofHero.tsx`**
+- Import `UrgencyTicker` and `useTickerStats`
+- Remove `proofStats` import (no longer needed here)
+- Replace inline "450+ Florida homeowners" text with `{total.toLocaleString()}+`
+- Replace the 4-column stat grid with:
+  - Full-width `UrgencyTicker` (variant="homepage", size="lg", showToday=true)
+  - 3-column grid for the remaining stats (Avg. Overpricing, Total Savings, Insurance Premium Reduction) using hardcoded values that are genuinely static business metrics
+
+**2. `src/pages/Proof.tsx`**
+- Update SEO description from "450+" to "thousands of" (static strings can't reference hooks)
+- Update JSON-LD description similarly
+
+**3. `src/components/authority/CommunityImpact.tsx`**
+- Import `useTickerStats`
+- Replace both `value={450}` instances with `total` from the hook
+
+**4. `src/components/floating-cta/steps/choice-variants/shared/MiniTrustBar.tsx`**
+- Change default `stat` prop from `"3,400+ Quotes Analyzed"` to accept dynamic values
+- No hook here (it's a presentational component) -- callers pass the value
+
+**5. `src/components/floating-cta/steps/choice-variants/VariantB_DiagnosticQuiz.tsx`**
+- Import `useTickerStats`
+- Pass `stat={`${total.toLocaleString()}+ Quotes Analyzed`}` to MiniTrustBar
+
+**6. `src/components/floating-cta/steps/choice-variants/VariantD_UrgencyEvent.tsx`**
+- Import `useTickerStats`
+- Replace fallback `"3,400+ Quotes Analyzed"` with live total
+
+**7. `src/data/proof/proofData.ts`**
+- Remove `totalHomeowners` from `ProofStats` interface and `proofStats` object (no longer consumed anywhere after changes above)
+
+### No new dependencies needed
+`useTickerStats` is already module-level cached with `requestIdleCallback` deferred fetching, so adding it to 2-3 more components has negligible performance cost -- it returns the cached result instantly after the first fetch.
 
