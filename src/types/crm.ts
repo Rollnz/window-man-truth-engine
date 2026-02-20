@@ -86,6 +86,11 @@ export interface CRMLead {
   lead_score?: number | null;
   lead_segment?: 'HOT' | 'WARM' | 'NURTURE' | 'LOW' | null;
   qualification_completed_at?: string | null;
+
+  // Quote file indicators (derived server-side from quote_files table)
+  has_quote_file?: boolean;
+  has_analyzed_quote?: boolean;
+  latest_quote_status?: 'none' | 'pending' | 'completed' | 'failed' | null;
 }
 
 export interface CRMColumn {

@@ -86,6 +86,8 @@ Deno.serve(async (req) => {
       const endDate = url.searchParams.get("endDate");
       const status = url.searchParams.get("status");
       const quality = url.searchParams.get("quality");
+      const hasQuoteParam = url.searchParams.get("has_quote");
+      const analyzedParam = url.searchParams.get("analyzed");
 
       let query = supabase
         .from("wm_leads")
@@ -115,20 +117,72 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Get summary stats
+      // --- Quote indicators: batch RPC ---
+      let enrichedLeads = (leads || []).map((l: any) => ({
+        ...l,
+        has_quote_file: false,
+        has_analyzed_quote: false,
+        latest_quote_status: null,
+      }));
+
+      // Collect lead_ids that link to quote_files (wm_leads.lead_id -> leads.id -> quote_files.lead_id)
+      const leadIds = (leads || [])
+        .map((l: any) => l.lead_id)
+        .filter((id: string | null) => !!id);
+
+      if (leadIds.length > 0) {
+        const { data: indicators, error: rpcError } = await supabase.rpc(
+          "get_quote_indicators",
+          { p_lead_ids: leadIds }
+        );
+
+        if (rpcError) {
+          console.error("[crm-leads] RPC get_quote_indicators error:", rpcError.message);
+          // Non-fatal: continue with defaults
+        } else if (indicators && indicators.length > 0) {
+          // Build lookup by lead_id
+          const indicatorMap = new Map<string, any>();
+          for (const ind of indicators) {
+            indicatorMap.set(ind.lead_id, ind);
+          }
+
+          enrichedLeads = enrichedLeads.map((lead: any) => {
+            const ind = lead.lead_id ? indicatorMap.get(lead.lead_id) : null;
+            if (ind) {
+              return {
+                ...lead,
+                has_quote_file: ind.has_quote_file ?? false,
+                has_analyzed_quote: ind.has_analyzed_quote ?? false,
+                latest_quote_status: ind.latest_quote_status ?? null,
+              };
+            }
+            return lead;
+          });
+        }
+      }
+
+      // --- Post-filter by quote indicators ---
+      if (hasQuoteParam === "true") {
+        enrichedLeads = enrichedLeads.filter((l: any) => l.has_quote_file === true);
+      }
+      if (analyzedParam === "true") {
+        enrichedLeads = enrichedLeads.filter((l: any) => l.has_analyzed_quote === true);
+      }
+
+      // Get summary stats (computed after filtering)
       const summary = {
-        total: leads?.length || 0,
+        total: enrichedLeads.length,
         byStatus: {} as Record<string, number>,
         byQuality: {} as Record<string, number>,
-        totalValue: leads?.reduce((sum, l) => sum + (l.actual_deal_value || l.estimated_deal_value || 0), 0) || 0,
+        totalValue: enrichedLeads.reduce((sum: number, l: any) => sum + (l.actual_deal_value || l.estimated_deal_value || 0), 0),
       };
 
-      leads?.forEach((lead) => {
+      enrichedLeads.forEach((lead: any) => {
         summary.byStatus[lead.status] = (summary.byStatus[lead.status] || 0) + 1;
         summary.byQuality[lead.lead_quality] = (summary.byQuality[lead.lead_quality] || 0) + 1;
       });
 
-      return new Response(JSON.stringify({ leads, summary }), {
+      return new Response(JSON.stringify({ leads: enrichedLeads, summary }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

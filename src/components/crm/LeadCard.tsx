@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Draggable } from '@hello-pangea/dnd';
 import { formatDistanceToNow } from 'date-fns';
-import { User, Phone, DollarSign, Zap, ExternalLink, TrendingUp } from 'lucide-react';
+import { User, Phone, DollarSign, Zap, ExternalLink, TrendingUp, FileText } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 import { getLeadRoute } from '@/lib/leadRouting';
 import { Card, CardContent } from '@/components/ui/card';
@@ -128,6 +128,40 @@ export function LeadCard({ lead, index, onClick }: LeadCardProps) {
                       </Tooltip>
                     </TooltipProvider>
                   )}
+                  
+                  {/* Quote Badge */}
+                  {lead.has_quote_file && (() => {
+                    const status = lead.latest_quote_status;
+                    const isAnalyzed = lead.has_analyzed_quote;
+                    let badgeClass = "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"; // default: uploaded
+                    let tooltipText = "Quote Uploaded";
+                    
+                    if (isAnalyzed && status === 'completed') {
+                      badgeClass = "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300";
+                      tooltipText = "Quote Analyzed";
+                    } else if (status === 'pending') {
+                      badgeClass = "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300";
+                      tooltipText = "Analysis Pending";
+                    } else if (status === 'failed') {
+                      badgeClass = "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300";
+                      tooltipText = "Analysis Failed";
+                    }
+                    
+                    return (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className={cn("text-[10px] font-bold px-1 rounded cursor-default", badgeClass)}>
+                              Q
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">{tooltipText}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })()}
                 </div>
                 
                 {/* Velocity Badge */}
