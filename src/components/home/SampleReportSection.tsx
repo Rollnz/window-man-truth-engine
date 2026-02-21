@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, ArrowRight, MessageSquare, AlertTriangle, Shield, CheckCircle2, Eye, Upload, Scan, FileSearch } from 'lucide-react';
 import { ROUTES } from '@/config/navigation';
 export function SampleReportSection() {
-  return <section className="py-20 md:py-32 relative bg-[hsl(var(--surface-1))]">
+  return <section className="py-20 md:py-32 relative bg-[hsl(var(--surface-2))]">
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-12"><h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">See the "Hidden Math" Your Contractor<span className="block mt-2 text-primary">Didn't Show You</span></h2><p className="text-lg text-muted-foreground">This isn't a generic score. It's a 40-point technical audit that turns a confusing five-page estimate into a clear, one-page strategy.</p></div>
         <div className="max-w-2xl mx-auto mb-16 text-center"><p className="text-lg text-muted-foreground">Most contractors show you a total.<br />They don't show you how that number was protected — or how it could be challenged.</p><p className="text-xl text-foreground font-semibold mt-4">This report does.</p></div>

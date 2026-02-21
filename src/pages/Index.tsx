@@ -83,10 +83,20 @@ const Index = () => {
           <UrgencyTicker variant="homepage" size="lg" />
         </div>
         <MarketRealitySection />
+        {/* Edge glow divider */}
+        <div className="h-16 md:h-20 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06)_0%,transparent_70%)]" />
         <FailurePointsSection />
+        {/* Edge glow divider */}
+        <div className="h-16 md:h-20 bg-[radial-gradient(ellipse_at_center,hsl(var(--secondary)/0.05)_0%,transparent_70%)]" />
         <WhoIsWindowManSection />
+        {/* Edge glow divider */}
+        <div className="h-16 md:h-20 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06)_0%,transparent_70%)]" />
         <SecretPlaybookSection />
+        {/* Edge glow divider */}
+        <div className="h-16 md:h-20 bg-[radial-gradient(ellipse_at_center,hsl(var(--secondary)/0.05)_0%,transparent_70%)]" />
         <SampleReportSection />
+        {/* Edge glow divider */}
+        <div className="h-16 md:h-20 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06)_0%,transparent_70%)]" />
         <WeaponizeAuditSection />
         <FinalDecisionSection />
       </div>

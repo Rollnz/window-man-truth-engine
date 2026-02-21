@@ -5,7 +5,10 @@ import { ROUTES } from '@/config/navigation';
 
 export function WeaponizeAuditSection() {
   return (
-    <section className="py-20 md:py-32 relative bg-background">
+    <section className="py-20 md:py-32 relative bg-[hsl(var(--surface-3))] overflow-hidden">
+      {/* Ambient mesh blobs */}
+      <div className="absolute top-0 left-0 w-80 h-80 rounded-full bg-[radial-gradient(circle,hsl(var(--secondary)/0.04)_0%,transparent_70%)] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.03)_0%,transparent_70%)] pointer-events-none" />
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-8"><h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">Once You Have the Report,<span className="block mt-2 text-primary">You're in Control</span></h2><p className="text-lg text-muted-foreground">It's a decision tool to choose how to win, not a file for a drawer.</p></div>
         <div className="max-w-2xl mx-auto mb-16 text-center"><p className="text-lg text-muted-foreground">Unlike most services, Window Man doesn't just hand you data and walk away. The audit gives you two clear paths to win, ensuring you are never negotiating blind.</p></div>
