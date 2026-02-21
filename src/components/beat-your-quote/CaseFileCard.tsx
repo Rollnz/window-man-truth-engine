@@ -151,7 +151,7 @@ export function CaseFileCard({
           <p className="text-sm leading-relaxed italic text-secondary-foreground">
             "{data.testimonial}"
           </p>
-          <p className="text-xs text-muted-foreground/60 mt-3">
+          <p className="text-xs mt-3 text-slate-400">
             — {data.homeowner}, {data.location}
           </p>
         </div>
