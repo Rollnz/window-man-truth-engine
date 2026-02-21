@@ -147,7 +147,15 @@ export default function QuoteScanner() {
                   </div>
 
                   {/* Card — no border */}
-                  <div className="rounded-xl bg-card/40 dark:bg-background/30 min-h-[520px] p-6 flex flex-col">
+                  <div className="group rounded-xl min-h-[520px] p-6 flex flex-col
+                    bg-card dark:bg-slate-900/90
+                    border border-rose-200/30 dark:border-rose-500/20
+                    shadow-[0_4px_24px_-4px_rgba(159,18,57,0.06),0_1px_3px_rgba(0,0,0,0.04)]
+                    dark:shadow-[0_0_1px_0_rgba(255,255,255,0.06)_inset,0_1px_0_0_rgba(255,255,255,0.04)_inset,0_8px_24px_-8px_rgba(0,0,0,0.4)]
+                    cursor-pointer
+                    transition-[transform,box-shadow,border-color] duration-300 ease-out
+                    motion-safe:hover:-translate-y-1 hover:shadow-[0_8px_32px_-4px_rgba(159,18,57,0.1),0_2px_6px_rgba(0,0,0,0.06)] hover:border-rose-200/50
+                    dark:hover:shadow-[0_0_1px_0_rgba(255,255,255,0.08)_inset,0_1px_0_0_rgba(255,255,255,0.06)_inset,0_12px_32px_-8px_rgba(0,0,0,0.5)] dark:hover:border-rose-500/30">
                     {/* Recovery message */}
                     {gated.recoveryMessage && gated.phase === 'idle' && (
                       <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-foreground mb-4">
@@ -212,7 +220,16 @@ export default function QuoteScanner() {
                   </div>
 
                   {/* Card — no border */}
-                  <div className="rounded-xl bg-card/40 dark:bg-background/30 min-h-[520px] p-6 flex flex-col">
+                  <div className="group rounded-xl min-h-[520px] p-6 flex flex-col
+                    bg-card dark:bg-slate-900/95
+                    border border-primary/20 dark:border-primary/20
+                    shadow-[0_6px_32px_-4px_rgba(57,147,221,0.08),0_2px_6px_rgba(0,0,0,0.04)]
+                    dark:shadow-[0_0_1px_0_rgba(57,147,221,0.12)_inset,0_1px_0_0_rgba(255,255,255,0.05)_inset,0_12px_32px_-8px_rgba(0,0,0,0.45)]
+                    motion-safe:-translate-y-0.5
+                    cursor-pointer
+                    transition-[transform,box-shadow,border-color] duration-300 ease-out
+                    motion-safe:hover:-translate-y-1.5 hover:shadow-[0_12px_40px_-4px_rgba(57,147,221,0.12),0_4px_8px_rgba(0,0,0,0.06)] hover:border-primary/30
+                    dark:hover:shadow-[0_0_1px_0_rgba(57,147,221,0.15)_inset,0_1px_0_0_rgba(255,255,255,0.07)_inset,0_16px_40px_-8px_rgba(0,0,0,0.5)] dark:hover:border-primary/30">
                     {/* Error display (any phase) */}
                     {gated.error && !gated.isLoading && (
                       <AIErrorFallback
@@ -225,7 +242,7 @@ export default function QuoteScanner() {
 
                     {/* Phase: idle — benefit preview + dual CTAs */}
                     {gated.phase === 'idle' && (
-                      <div className="flex-1 relative rounded-xl border-2 border-dashed border-border/40 overflow-hidden">
+                      <div className="flex-1 relative rounded-xl border border-dashed border-border/20 dark:border-border/15 overflow-hidden">
                         {/* ── Blurred ghost report background ── */}
                         <div className="absolute inset-0 flex flex-col items-center pt-10 px-8 gap-4 blur-sm opacity-25 pointer-events-none">
                           {/* Score donut placeholder */}
