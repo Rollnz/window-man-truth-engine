@@ -49,6 +49,7 @@ import { getSessionId as getRegisteredSessionId } from '@/lib/windowTruthClient'
 import { Lock, Upload, ShieldCheck, FileText, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FilePreviewCard } from '@/components/ui/FilePreviewCard';
+import { ExitIntentModal } from '@/components/authority';
 
 export default function QuoteScanner() {
   usePageTracking('quote-scanner');
@@ -501,6 +502,12 @@ export default function QuoteScanner() {
         isOpen={preQuoteOpen}
         onClose={() => setPreQuoteOpen(false)}
         ctaSource="scanner_download_sample"
+      />
+
+      <ExitIntentModal
+        sourceTool="quote-scanner"
+        hasConverted={!!leadId}
+        resultSummary="AI-powered quote analysis and fair pricing intelligence"
       />
     </div>
   );
