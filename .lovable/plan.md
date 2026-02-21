@@ -1,104 +1,63 @@
 
 
-# Homepage Visual Redesign -- Adapted to Project Standards
+# Idea 2: Gradient Bridge + Faint Glow Accent
 
-## What You Want (and What I'd Do Differently)
+## Summary
 
-Your diff introduces custom CSS classes (`.home-band`, `.home-band--failure`, `.section-divider`, etc.) with `::before` and `::after` pseudo-elements. This is solid CSS, but it conflicts with this project's established approach:
+Replace all 5 edge glow dividers in `Index.tsx` with layered backgrounds that combine:
+1. A **linear gradient** blending the exact end-color of the section above into the start-color of the section below (seamless bridge)
+2. A **faint radial glow** layered on top (primary or secondary, 8% opacity) to preserve the subtle "energy line" that guides scrolling
 
-- **This project avoids custom CSS classes for layout/styling.** Everything uses Tailwind utility classes and theme tokens (`surface-1/2/3`, `--primary`, `--secondary`).
-- **Pattern utilities already exist** in `src/index.css` (`.pattern-diagonal`, `.pattern-grid`, `.pattern-lines`, `.pattern-steps`) -- they're used at the card level inside FailurePointsSection already.
-- **Edge glow dividers already exist** in `Index.tsx` as inline Tailwind radial gradients.
-- **Ambient mesh blobs already exist** in FailurePoints and WeaponizeAudit sections.
+## Single File Changed
 
-So the adaptation: I'll achieve the same visual result using the project's existing systems instead of adding a new CSS class layer.
+**`src/pages/Index.tsx`** -- lines 87, 90, 93, 96, 99
 
----
+Each divider `div` gets a `style` prop with a two-layer `background` instead of the current single radial gradient class.
 
-## What Changes
+## Divider-by-Divider Spec
 
-### 1. Section Background Gradients (replacing flat surface tokens)
+### Divider 1 (line 87): MarketReality to FailurePoints
+- Top: `hsl(var(--surface-1))`
+- Bottom: `hsl(34,34%,96.8%)`
+- Accent: primary @ 8%
 
-Instead of `.home-band--failure { background: linear-gradient(...) }`, I'll apply the warm-to-cool gradient directly as Tailwind arbitrary values on each section's root element.
+### Divider 2 (line 90): FailurePoints to WhoIsWindowMan
+- Top: `hsl(210,26%,96.1%)`
+- Bottom: `hsl(var(--surface-3))`
+- Accent: secondary @ 8%
 
-| Section | Current | New |
-|---|---|---|
-| FailurePoints | `bg-[hsl(var(--surface-2))]` | `bg-gradient-to-b from-[hsl(34,34%,96.8%)] to-[hsl(210,26%,96.1%)]` |
-| SecretPlaybook | `bg-[hsl(var(--surface-1))]` | `bg-gradient-to-b from-[hsl(210,28%,96.8%)] to-[hsl(32,24%,97.2%)]` |
-| WeaponizeAudit | `bg-[hsl(var(--surface-3))]` | `bg-gradient-to-b from-[hsl(28,30%,97.2%)] to-[hsl(210,24%,95.9%)]` |
+### Divider 3 (line 93): WhoIsWindowMan to SecretPlaybook
+- Top: `hsl(var(--surface-3))`
+- Bottom: `hsl(210,28%,96.8%)`
+- Accent: primary @ 8%
 
-These are the exact gradient values from your diff, applied as Tailwind classes instead of custom CSS.
+### Divider 4 (line 96): SecretPlaybook to SampleReport
+- Top: `hsl(32,24%,97.2%)`
+- Bottom: `hsl(var(--surface-2))`
+- Accent: secondary @ 8%
 
-### 2. Section-Level Background Patterns (new)
+### Divider 5 (line 99): SampleReport to WeaponizeAudit
+- Top: `hsl(var(--surface-2))`
+- Bottom: `hsl(28,30%,97.2%)`
+- Accent: primary @ 8%
 
-The project already has card-level pattern classes. For section-wide patterns, I'll add three new utility classes to `src/index.css` that are minimal and follow the existing pattern convention:
+## Implementation Pattern
 
-- `.pattern-crosshatch` -- FailurePoints section (blueprint crosshatch, your `::before` from `--failure`)
-- `.pattern-dots` -- SecretPlaybook section (dot grid, your `::before` from `--playbook`)
-- `.pattern-scanlines` -- WeaponizeAudit section (horizontal scan lines + vertical cadence, your `::before` from `--weaponize`)
+Each divider becomes:
+```html
+<div
+  className="h-[clamp(52px,7vw,84px)]"
+  style={{
+    background: `radial-gradient(ellipse at center, hsl(var(--primary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--surface-1)), hsl(34,34%,96.8%))`
+  }}
+  aria-hidden="true"
+/>
+```
 
-These follow the exact same structure as the existing `.pattern-diagonal`, `.pattern-grid`, etc. -- just tuned for section-scale use with lower opacity.
-
-### 3. Stronger Glow Dividers (tuning existing)
-
-The dividers already exist in `Index.tsx`. I'll increase their opacity from `0.05-0.06` to `0.15-0.20` and use `clamp()` for responsive height, matching your diff's `clamp(52px, 7vw, 84px)` intent.
-
-### 4. Reduced-Motion Support (new)
-
-I'll add a `@media (prefers-reduced-motion: reduce)` block that disables the new pattern overlays and glow dividers. This matches your diff's accessibility approach.
-
-### 5. Mobile Density Tuning
-
-The new pattern classes will include a `@media (max-width: 768px)` override to reduce pattern density on small screens, matching your diff's mobile rules.
-
----
-
-## Files Updated
-
-| File | Change |
-|---|---|
-| `src/index.css` | Add `.pattern-crosshatch`, `.pattern-dots`, `.pattern-scanlines` utilities + reduced-motion rule |
-| `src/components/home/FailurePointsSection.tsx` | Section root: gradient bg + `pattern-crosshatch` class |
-| `src/components/home/SecretPlaybookSection.tsx` | Section root: gradient bg + `pattern-dots` class |
-| `src/components/home/WeaponizeAuditSection.tsx` | Section root: gradient bg + `pattern-scanlines` class |
-| `src/pages/Index.tsx` | Strengthen existing glow divider opacity/sizing |
+The `style` prop is used because Tailwind arbitrary values don't support multi-layer backgrounds cleanly. The height stays as a Tailwind class.
 
 ## What Does NOT Change
-
-- All text, CTAs, icons, business logic, and component structure
-- Existing ambient mesh blobs (already present)
-- MarketReality, WhoIsWindowMan, SampleReport, FinalDecision sections (already well-styled)
-- Mobile responsiveness and accessibility of content
-- Hero section
-
-## Technical Details
-
-The new pattern classes follow the exact convention of the existing ones (lines 404-482 of `index.css`):
-
-```css
-/* Section-scale crosshatch (FailurePoints) */
-.pattern-crosshatch { position: relative; }
-.pattern-crosshatch::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.042;
-  background:
-    repeating-linear-gradient(45deg, hsl(var(--primary) / 0.11) 0 1px, transparent 1px 13px),
-    repeating-linear-gradient(-45deg, hsl(var(--secondary) / 0.09) 0 1px, transparent 1px 15px);
-  pointer-events: none;
-  z-index: 0;
-}
-```
-
-Each section component will add `isolation: isolate` via Tailwind's `isolate` class and ensure content sits above the pattern with `relative z-10` on the container.
-
-The reduced-motion rule:
-```css
-@media (prefers-reduced-motion: reduce) {
-  .pattern-crosshatch::before,
-  .pattern-dots::before,
-  .pattern-scanlines::before { opacity: 0 !important; }
-}
-```
+- All section components (no files touched except Index.tsx)
+- All content, CTAs, animations, and business logic
+- Ambient mesh blobs and pattern overlays remain as-is
 
