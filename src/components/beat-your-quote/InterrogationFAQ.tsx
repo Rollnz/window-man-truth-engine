@@ -9,37 +9,37 @@ interface FAQItem {
 }
 
 const faqData: FAQItem[] = [
-  {
-    id: "001",
-    agentQuestion: "How can you beat my quote? What's the catch?",
-    windowManAnswer: "It's Window Man. That's like asking Superman if he can fly. I can offer this service because of my extensive network of reliable and motivated contractors. No hidden fees, no obligation—just results."
-  },
-  {
-    id: "002",
-    agentQuestion: "Is this really free? What do you get out of it?",
-    windowManAnswer: "Yes, the analysis is completely free. We make money if we match you with a contractor and you move forward with our recommendation. If we can't beat your quote, we tell you honestly—and you owe us nothing."
-  },
-  {
-    id: "003",
-    agentQuestion: "What if you can't beat my quote?",
-    windowManAnswer: "We'll tell you honestly if your quote is fair and priced competitively without any gotchas. Or we'll identify issues and arm you with questions your estimate didn't clearly explain. You'll gain peace of mind knowing you're not being ripped off. Either way, you win."
-  },
-  {
-    id: "004",
-    agentQuestion: "How long does this take?",
-    windowManAnswer: "Upload is just a click away. You can create a free vault account and view all the information inside your dashboard. You'll receive your analysis within 24 hours. No 3-hour kitchen table sit required."
-  },
-  {
-    id: "005",
-    agentQuestion: "Are you licensed and insured in Florida?",
-    windowManAnswer: "ItsWindowMan is not a contractor or licensed for work. We're a referral service working to earn your business by finding you the best contractor for your job. All contractors in our network are fully licensed, insured, and vetted."
-  },
-  {
-    id: "006",
-    agentQuestion: "What happens after I upload my quote?",
-    windowManAnswer: "Step 1: We analyze your quote for bloat and red flags. Step 2: We prepare a comparison if we can beat it. Step 3: You decide—no pressure, no follow-up calls unless you want them. You're always in control."
-  }
-];
+{
+  id: "001",
+  agentQuestion: "How can you beat my quote? What's the catch?",
+  windowManAnswer: "It's Window Man. That's like asking Superman if he can fly. I can offer this service because of my extensive network of reliable and motivated contractors. No hidden fees, no obligation—just results."
+},
+{
+  id: "002",
+  agentQuestion: "Is this really free? What do you get out of it?",
+  windowManAnswer: "Yes, the analysis is completely free. We make money if we match you with a contractor and you move forward with our recommendation. If we can't beat your quote, we tell you honestly—and you owe us nothing."
+},
+{
+  id: "003",
+  agentQuestion: "What if you can't beat my quote?",
+  windowManAnswer: "We'll tell you honestly if your quote is fair and priced competitively without any gotchas. Or we'll identify issues and arm you with questions your estimate didn't clearly explain. You'll gain peace of mind knowing you're not being ripped off. Either way, you win."
+},
+{
+  id: "004",
+  agentQuestion: "How long does this take?",
+  windowManAnswer: "Upload is just a click away. You can create a free vault account and view all the information inside your dashboard. You'll receive your analysis within 24 hours. No 3-hour kitchen table sit required."
+},
+{
+  id: "005",
+  agentQuestion: "Are you licensed and insured in Florida?",
+  windowManAnswer: "ItsWindowMan is not a contractor or licensed for work. We're a referral service working to earn your business by finding you the best contractor for your job. All contractors in our network are fully licensed, insured, and vetted."
+},
+{
+  id: "006",
+  agentQuestion: "What happens after I upload my quote?",
+  windowManAnswer: "Step 1: We analyze your quote for bloat and red flags. Step 2: We prepare a comparison if we can beat it. Step 3: You decide—no pressure, no follow-up calls unless you want them. You're always in control."
+}];
+
 
 // Custom hook for typing animation
 function useTypingEffect(text: string, isActive: boolean, speed: number = 20) {
@@ -74,10 +74,10 @@ function useTypingEffect(text: string, isActive: boolean, speed: number = 20) {
 function TranscriptEntry({
   item,
   index
-}: {
-  item: FAQItem;
-  index: number;
-}) {
+
+
+
+}: {item: FAQItem;index: number;}) {
   const [isVisible, setIsVisible] = useState(false);
   const [startTyping, setStartTyping] = useState(false);
   const entryRef = useRef<HTMLDivElement>(null);
@@ -111,10 +111,10 @@ function TranscriptEntry({
     <div
       ref={entryRef}
       className={`relative dossier-entry-divider py-8 last:border-b-0 transition-all duration-500 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
-      }`}
-      style={{ transitionDelay: `${index * 100}ms` }}
-    >
+      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`
+      }
+      style={{ transitionDelay: `${index * 100}ms` }}>
+
       {/* Transcript Number */}
       <div className="absolute left-0 md:left-2 top-8 text-xs font-mono bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded">
         [{item.id}]
@@ -135,7 +135,7 @@ function TranscriptEntry({
       {/* Window Man Answer with Typing Effect */}
       <div className="pl-12 md:pl-16 relative">
         <div className="flex items-start gap-3">
-          <span className="windowman-badge px-2 py-0.5 rounded text-[10px] md:text-xs font-mono font-bold uppercase tracking-wider shrink-0">
+          <span className="windowman-badge px-2 py-0.5 rounded text-[10px] md:text-xs font-mono font-bold uppercase tracking-wider shrink-0 text-sidebar-ring">
             WINDOW MAN
           </span>
           <div className="relative flex-1">
@@ -147,9 +147,9 @@ function TranscriptEntry({
             {/* DECLASSIFIED Stamp - appears after typing completes */}
             <div
               className={`absolute -right-2 md:right-0 -bottom-2 md:-bottom-4 pointer-events-none select-none transition-all duration-500 ${
-                isComplete ? 'opacity-40 scale-100 rotate-[-12deg]' : 'opacity-0 scale-150 rotate-0'
-              }`}
-            >
+              isComplete ? 'opacity-40 scale-100 rotate-[-12deg]' : 'opacity-0 scale-150 rotate-0'}`
+              }>
+
               <div className="border-2 border-red-600 px-2 py-1 text-[10px] md:text-xs font-mono text-red-600 font-bold uppercase tracking-widest">
                 DECLASSIFIED
               </div>
@@ -157,8 +157,8 @@ function TranscriptEntry({
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 export function InterrogationFAQ() {
@@ -187,15 +187,15 @@ export function InterrogationFAQ() {
     <section
       ref={sectionRef}
       id="faq"
-      className="py-20 md:py-32 paper-texture relative overflow-hidden"
-    >
+      className="py-20 md:py-32 paper-texture relative overflow-hidden">
+
       {/* Vignette overlay for aged effect */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.06) 100%)'
-        }}
-      />
+        }} />
+
 
       {/* Subtle grid pattern overlay */}
       <div
@@ -206,16 +206,16 @@ export function InterrogationFAQ() {
             linear-gradient(90deg, rgba(0, 0, 0, 0.5) 1px, transparent 1px)
           `,
           backgroundSize: "40px 40px"
-        }}
-      />
+        }} />
+
 
       <div className="container relative">
         {/* Section Header */}
         <div
           className={`text-center mb-16 transition-all duration-700 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
-          }`}
-        >
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`
+          }>
+
           <StampBadge variant="cyan" className="mb-6">
             Intelligence Debrief
           </StampBadge>
@@ -265,9 +265,9 @@ export function InterrogationFAQ() {
 
             {/* Transcript Entries */}
             <div className="px-4 md:px-8 py-4 relative">
-              {faqData.map((item, index) => (
-                <TranscriptEntry key={item.id} item={item} index={index} />
-              ))}
+              {faqData.map((item, index) =>
+              <TranscriptEntry key={item.id} item={item} index={index} />
+              )}
             </div>
 
             {/* Transcript Footer Bar */}
@@ -284,6 +284,6 @@ export function InterrogationFAQ() {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 }
