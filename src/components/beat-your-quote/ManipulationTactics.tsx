@@ -62,8 +62,8 @@ export function ManipulationTactics() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [hasTrackedView, setHasTrackedView] = useState(false);
   useEffect(() => {
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
         if (entry.isIntersecting && !hasTrackedView) {
           trackEvent('manipulation_section_viewed');
           setHasTrackedView(true);
@@ -109,13 +109,13 @@ export function ManipulationTactics() {
           {/* Image - Sticky on Desktop */}
           <div className="lg:sticky lg:top-24 order-2 lg:order-1">
             <div className="relative rounded-xl overflow-hidden border border-red-500/30">
-              <img 
-                src="/images/beat-your-quote/manipulation-tactics.webp" 
-                alt="Infographic exposing common window contractor manipulation tactics" 
-                width={600}
-                height={400}
-                className="w-full h-auto max-w-full" 
-              />
+              <img
+              src="/images/beat-your-quote/manipulation-tactics.webp"
+              alt="Infographic exposing common window contractor manipulation tactics"
+              width={600}
+              height={400}
+              className="w-full h-auto max-w-full" />
+
               <div className="absolute inset-0 bg-gradient-to-t from-[#0A0F14] via-transparent to-transparent" />
               
               {/* Overlay Badge */}
@@ -131,7 +131,7 @@ export function ManipulationTactics() {
           {/* Accordion */}
           <div className="order-1 lg:order-2">
             <Accordion type="single" collapsible className="space-y-3" onValueChange={handleTacticOpen}>
-              {TACTICS.map(tactic => <AccordionItem key={tactic.id} value={tactic.id} className="border border-red-500/30 rounded-lg bg-red-950/10 px-4 data-[state=open]:border-red-500/60 data-[state=open]:bg-red-950/20 transition-all">
+              {TACTICS.map((tactic) => <AccordionItem key={tactic.id} value={tactic.id} className="border border-red-500/30 rounded-lg bg-red-950/10 px-4 data-[state=open]:border-red-500/60 data-[state=open]:bg-red-950/20 transition-all">
                   <AccordionTrigger className="hover:no-underline py-4 text-primary-foreground">
                     <div className="flex items-center gap-4 text-left">
                       {/* Number Badge */}
@@ -147,7 +147,7 @@ export function ManipulationTactics() {
                   </AccordionTrigger>
                   
                   <AccordionContent className="pb-4 pt-0">
-                    <p className="text-muted-foreground leading-relaxed pl-12">
+                    <p className="leading-relaxed pl-12 text-primary-foreground">
                       {tactic.description}
                     </p>
                   </AccordionContent>
