@@ -1,63 +1,41 @@
+# Fix "Confidence Shift" Card -- Theme-Locked Dark Glassmorphic Style
+
+## What Changes
+
+The "Confidence Shift" card (line 64 of `SecretPlaybookSection.tsx`) currently uses theme-aware tokens (`bg-card`, `text-foreground`, `text-muted-foreground`) which means it looks different in light vs dark mode. The user wants it locked to the dark style shown in the screenshot -- always dark, regardless of theme.
+
+## Visual Target (from screenshot)
+
+- Dark gradient background (deep navy/charcoal with a diagonal shift)
+- White heading text ("The Confidence Shift")
+- Light grey body text (muted white)
+- Blue accent on "answers"
+- Bottom callout bar: semi-transparent dark background with lighter border
+- Rounded corners, subtle glassmorphic feel
+
+## Implementation
+
+**File**: `src/components/home/SecretPlaybookSection.tsx` (line 64 only)
+
+Replace the current card's theme-aware classes with hardcoded dark values:
 
 
-# Idea 2: Gradient Bridge + Faint Glow Accent
+| Element          | Current                                                                                               | New                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Card wrapper     | `bg-gradient-to-br from-primary/10 via-card to-[hsl(var(--secondary)/0.05)] border border-primary/20` | `bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 border border-white/10` |
+| Heading          | `text-foreground`                                                                                     | `text-white`                                                                         |
+| Body text        | `text-muted-foreground`                                                                               | `text-slate-100`                                                                     |
+| Bold body        | `text-foreground`                                                                                     | `text-white`                                                                         |
+| "answers" accent | `text-primary`                                                                                        | `text-sky-600` (visible on dark bg)                                                  |
+| Inner callout    | `bg-background/50 border-border/50`                                                                   | `bg-white/5 border-white/10`                                                         |
+| Callout italic   | `text-muted-foreground`                                                                               | `text-slate-400`                                                                     |
+| Callout bold     | `text-foreground font-medium`                                                                         | `text-white font-medium`                                                             |
 
-## Summary
 
-Replace all 5 edge glow dividers in `Index.tsx` with layered backgrounds that combine:
-1. A **linear gradient** blending the exact end-color of the section above into the start-color of the section below (seamless bridge)
-2. A **faint radial glow** layered on top (primary or secondary, 8% opacity) to preserve the subtle "energy line" that guides scrolling
-
-## Single File Changed
-
-**`src/pages/Index.tsx`** -- lines 87, 90, 93, 96, 99
-
-Each divider `div` gets a `style` prop with a two-layer `background` instead of the current single radial gradient class.
-
-## Divider-by-Divider Spec
-
-### Divider 1 (line 87): MarketReality to FailurePoints
-- Top: `hsl(var(--surface-1))`
-- Bottom: `hsl(34,34%,96.8%)`
-- Accent: primary @ 8%
-
-### Divider 2 (line 90): FailurePoints to WhoIsWindowMan
-- Top: `hsl(210,26%,96.1%)`
-- Bottom: `hsl(var(--surface-3))`
-- Accent: secondary @ 8%
-
-### Divider 3 (line 93): WhoIsWindowMan to SecretPlaybook
-- Top: `hsl(var(--surface-3))`
-- Bottom: `hsl(210,28%,96.8%)`
-- Accent: primary @ 8%
-
-### Divider 4 (line 96): SecretPlaybook to SampleReport
-- Top: `hsl(32,24%,97.2%)`
-- Bottom: `hsl(var(--surface-2))`
-- Accent: secondary @ 8%
-
-### Divider 5 (line 99): SampleReport to WeaponizeAudit
-- Top: `hsl(var(--surface-2))`
-- Bottom: `hsl(28,30%,97.2%)`
-- Accent: primary @ 8%
-
-## Implementation Pattern
-
-Each divider becomes:
-```html
-<div
-  className="h-[clamp(52px,7vw,84px)]"
-  style={{
-    background: `radial-gradient(ellipse at center, hsl(var(--primary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--surface-1)), hsl(34,34%,96.8%))`
-  }}
-  aria-hidden="true"
-/>
-```
-
-The `style` prop is used because Tailwind arbitrary values don't support multi-layer backgrounds cleanly. The height stays as a Tailwind class.
+This ensures the card always renders as a dark glassmorphic surface with white/light text, matching the screenshot in both themes.
 
 ## What Does NOT Change
-- All section components (no files touched except Index.tsx)
-- All content, CTAs, animations, and business logic
-- Ambient mesh blobs and pattern overlays remain as-is
 
+- All other cards, CTAs, section backgrounds, and content
+- The text content itself (only styling classes change)
+- No new CSS classes or files needed
