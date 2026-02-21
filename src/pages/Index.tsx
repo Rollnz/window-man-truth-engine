@@ -84,19 +84,15 @@ const Index = () => {
         </div>
         <MarketRealitySection />
         {/* Edge glow divider */}
-        <div className="h-[clamp(52px,7vw,84px)] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.18)_0%,transparent_68%)]" aria-hidden="true" />
+        <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--primary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--surface-1)), hsl(34,34%,96.8%))' }} aria-hidden="true" />
         <FailurePointsSection />
-        {/* Edge glow divider */}
-        <div className="h-[clamp(52px,7vw,84px)] bg-[radial-gradient(ellipse_at_center,hsl(var(--secondary)/0.16)_0%,transparent_68%)]" aria-hidden="true" />
+        <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--secondary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(210,26%,96.1%), hsl(var(--surface-3)))' }} aria-hidden="true" />
         <WhoIsWindowManSection />
-        {/* Edge glow divider */}
-        <div className="h-[clamp(52px,7vw,84px)] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.18)_0%,transparent_68%)]" aria-hidden="true" />
+        <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--primary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--surface-3)), hsl(210,28%,96.8%))' }} aria-hidden="true" />
         <SecretPlaybookSection />
-        {/* Edge glow divider */}
-        <div className="h-[clamp(52px,7vw,84px)] bg-[radial-gradient(ellipse_at_center,hsl(var(--secondary)/0.16)_0%,transparent_68%)]" aria-hidden="true" />
+        <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--secondary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(32,24%,97.2%), hsl(var(--surface-2)))' }} aria-hidden="true" />
         <SampleReportSection />
-        {/* Edge glow divider */}
-        <div className="h-[clamp(52px,7vw,84px)] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.18)_0%,transparent_68%)]" aria-hidden="true" />
+        <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--primary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--surface-2)), hsl(28,30%,97.2%))' }} aria-hidden="true" />
         <WeaponizeAuditSection />
         <FinalDecisionSection />
       </div>
