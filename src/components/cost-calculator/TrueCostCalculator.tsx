@@ -499,7 +499,7 @@ export function TrueCostCalculator({
           <DialogHeader>
             <DialogTitle className="text-2xl font-black">Request Your Quote</DialogTitle>
             <DialogDescription>
-              Get your personalized numbers based on your project details.
+              Get your custom quote based on your project details.
             </DialogDescription>
           </DialogHeader>
 
