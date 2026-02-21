@@ -28,11 +28,13 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index';
 import { ProTipBox } from '@/components/seo';
 import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 
 const InsuranceSavingsGuide = () => {
   usePageTracking('insurance-savings-guide');
   const navigate = useNavigate();
   const { sessionData } = useSessionData();
+  const { hasIdentity } = useLeadIdentity();
   const frameControl = getFrameControl('insurance-savings-guide');
   const smartTools = getSmartRelatedTools('insurance-savings-guide', sessionData.toolsCompleted);
 
@@ -398,7 +400,7 @@ const InsuranceSavingsGuide = () => {
       {/* Exit Intent Modal for lead capture */}
       <ExitIntentModal
         sourceTool="insurance-savings-guide"
-        hasConverted={isSubmitting}
+        hasConverted={hasIdentity}
         resultSummary="Insurance Savings Blueprint"
       />
     </div>

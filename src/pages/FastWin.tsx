@@ -19,12 +19,15 @@ import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
 import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
 import type { SourceTool } from "@/types/sourceTool";
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
+import { ExitIntentModal } from "@/components/authority";
 
 type Phase = "hero" | "questions" | "calculating" | "result";
 
 export default function FastWin() {
   usePageTracking("fast-win");
   const { sessionData, updateFields, markToolCompleted, hasExistingData } = useSessionData();
+  const { hasIdentity } = useLeadIdentity();
   const { trackToolComplete } = useTrackToolCompletion();
 
   const [phase, setPhase] = useState<Phase>("hero");
@@ -192,6 +195,12 @@ export default function FastWin() {
         title={getFrameControl("fast-win").title}
         description={getFrameControl("fast-win").description}
         tools={getSmartRelatedTools("fast-win", sessionData.toolsCompleted)}
+      />
+
+      <ExitIntentModal
+        sourceTool="fast-win"
+        hasConverted={hasIdentity}
+        resultSummary="Fastest Win Strategy"
       />
 
     </div>

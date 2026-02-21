@@ -13,6 +13,7 @@ import { ProtectionReport } from "@/components/risk-diagnostic/ProtectionReport"
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { ExitIntentModal } from "@/components/authority";
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
@@ -27,6 +28,7 @@ type Direction = "forward" | "backward";
 export default function RiskDiagnostic() {
   usePageTracking("risk-diagnostic");
   const { sessionData, updateField, updateFields, markToolCompleted } = useSessionData();
+  const { hasIdentity } = useLeadIdentity();
   const { trackToolComplete } = useTrackToolCompletion();
   const [phase, setPhase] = useState<Phase>("hero");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -167,7 +169,7 @@ export default function RiskDiagnostic() {
       {/* Exit Intent Modal - 3-step re-engagement */}
       <ExitIntentModal 
         sourceTool="risk-diagnostic"
-        hasConverted={!!sessionData.leadId}
+        hasConverted={hasIdentity}
         resultSummary={`Protection Score of ${breakdown.protectionScore}`}
       />
 

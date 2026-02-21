@@ -17,12 +17,15 @@ import { getSmartRelatedTools, getFrameControl } from '@/config/toolRegistry';
 import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { PillarBreadcrumb } from '@/components/seo/PillarBreadcrumb';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { ExitIntentModal } from '@/components/authority';
 
 export default function Intel() {
   usePageTracking('intel-library');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { sessionData, updateField, markToolCompleted } = useSessionData();
+  const { hasIdentity } = useLeadIdentity();
   const { toast } = useToast();
 
   // Modal state (consultation only)
@@ -125,6 +128,12 @@ export default function Intel() {
         title={getFrameControl('intel').title}
         description={getFrameControl('intel').description}
         tools={getSmartRelatedTools('intel', sessionData.toolsCompleted)}
+      />
+
+      <ExitIntentModal
+        sourceTool="intel-library"
+        hasConverted={hasIdentity}
+        resultSummary="Intelligence Library Resources"
       />
 
     </div>

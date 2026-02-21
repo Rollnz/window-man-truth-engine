@@ -14,6 +14,7 @@ import { TimelineChartLazy } from '@/components/cost-calculator/TimelineChartLaz
 import { LiveWasteCounter } from '@/components/cost-calculator/LiveWasteCounter';
 import { BreakEvenIndicator } from '@/components/cost-calculator/BreakEvenIndicator';
 import { ExitIntentModal } from '@/components/authority';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import {
   calculateCostOfInaction,
   convertBillRangeToNumber,
@@ -32,6 +33,7 @@ import { getToolFAQs } from '@/data/toolFAQs';
 export default function CostCalculator() {
   usePageTracking('cost-calculator');
   const { sessionData, updateFields, markToolCompleted } = useSessionData();
+  const { hasIdentity } = useLeadIdentity();
   const { trackToolComplete } = useTrackToolCompletion();
   const [projection, setProjection] = useState<CostProjection | null>(null);
   const [showResults, setShowResults] = useState(false);
@@ -227,7 +229,7 @@ export default function CostCalculator() {
       {showResults && projection && (
         <ExitIntentModal 
           sourceTool="cost-calculator"
-          hasConverted={!!sessionData.leadId}
+          hasConverted={hasIdentity}
           resultSummary={`$${projection.year5.toLocaleString()} in 5-year energy loss`}
         />
       )}

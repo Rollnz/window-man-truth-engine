@@ -387,7 +387,7 @@ export default function FairPriceQuiz() {
       {phase === 'results' && analysis && (
         <ExitIntentModal 
           sourceTool="fair-price-quiz"
-          hasConverted={!!userEmail}
+          hasConverted={!!hookLeadId}
           resultSummary={`${analysis.grade} grade quote analysis`}
         />
       )}
