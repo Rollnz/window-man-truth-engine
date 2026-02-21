@@ -310,7 +310,7 @@ export function ConsultationBookingModal({
       <TrustModal 
         className="sm:max-w-md p-5"
         modalTitle={isSuccess ? undefined : "Schedule a Free Consultation"}
-        modalDescription={isSuccess ? undefined : "Get Your Precision Quote & Expert 10-Year Savings Plan."}
+        modalDescription={isSuccess ? undefined : "Get a Custom Quote & Expert 10-Year Savings Plan."}
         headerAlign="center"
       >
         {isSuccess ? (
