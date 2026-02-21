@@ -2,6 +2,7 @@ import { Eye, Users, ScanSearch, MessageSquare, DollarSign, Shield, Clock, Alert
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
 import { ReviewedByBadge, ExitIntentModal } from "@/components/authority";
@@ -103,6 +104,7 @@ const guides = [
 ];
 
 const WindowSalesTruth = () => {
+  const { hasIdentity } = useLeadIdentity();
   const pillarSchemaGraph = generatePillarSchemaGraph('window-sales-truth');
   const faqSchema = generateFAQSchema(faqs);
 
@@ -178,7 +180,7 @@ const WindowSalesTruth = () => {
 
       <ExitIntentModal
         sourceTool="window-sales-truth"
-        hasConverted={false}
+        hasConverted={hasIdentity}
         resultSummary="Spotting manipulation tactics and negotiating fair window quotes"
       />
     </div>

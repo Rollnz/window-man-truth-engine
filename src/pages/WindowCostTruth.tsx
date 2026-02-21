@@ -2,6 +2,7 @@ import { DollarSign, TrendingUp, Calculator, BarChart3, FileCheck, Zap, Clock } 
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
 import { ReviewedByBadge, ExitIntentModal } from "@/components/authority";
@@ -99,6 +100,7 @@ const guides = [
 ];
 
 const WindowCostTruth = () => {
+  const { hasIdentity } = useLeadIdentity();
   const pillarSchemaGraph = generatePillarSchemaGraph('window-cost-truth');
   const faqSchema = generateFAQSchema(faqs);
 
@@ -174,7 +176,7 @@ const WindowCostTruth = () => {
 
       <ExitIntentModal
         sourceTool="window-cost-truth"
-        hasConverted={false}
+        hasConverted={hasIdentity}
         resultSummary="Understanding the true 10-year cost of impact windows in Florida"
       />
     </div>
