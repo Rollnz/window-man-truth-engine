@@ -17,6 +17,8 @@ import { QuoteCheckerSection } from '@/components/beat-your-quote/QuoteCheckerSe
 import { ConsultationBookingModal } from '@/components/conversion/ConsultationBookingModal';
 import { FAQSection } from '@/components/sample-report/FAQSection';
 import { useToast } from '@/hooks/use-toast';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { ExitIntentModal } from '@/components/authority';
 
 // Gated scanner system (matching /audit architecture)
 import { useGatedScanner } from '@/hooks/audit';
@@ -35,6 +37,7 @@ export default function BeatYourQuote() {
   usePageTracking('beat-your-quote');
   const { sessionData, updateFields } = useSessionData();
   const { toast } = useToast();
+  const { hasIdentity } = useLeadIdentity();
   const [searchParams] = useSearchParams();
 
   // Sync chat context to session on mount
@@ -286,6 +289,12 @@ export default function BeatYourQuote() {
         }}
         sessionData={sessionData}
         sourceTool="beat-your-quote"
+      />
+
+      <ExitIntentModal
+        sourceTool="beat-your-quote"
+        hasConverted={hasIdentity}
+        resultSummary="Quote analysis tactics and negotiation strategies for your window replacement"
       />
     </div>
   );

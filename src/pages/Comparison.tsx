@@ -19,10 +19,13 @@ import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
 import { ToolFAQSection } from "@/components/seo";
 import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
 import { getToolFAQs } from "@/data/toolFAQs";
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
+import { ExitIntentModal } from "@/components/authority";
 
 export default function Comparison() {
   usePageTracking("comparison-tool");
   const { sessionData, markToolCompleted, updateField } = useSessionData();
+  const { hasIdentity } = useLeadIdentity();
   const [viewMode, setViewMode] = useState<ViewMode>("longterm");
   const [showConsultationModal, setShowConsultationModal] = useState(false);
 
@@ -109,6 +112,12 @@ export default function Comparison() {
         title={getFrameControl("comparison").title}
         description={getFrameControl("comparison").description}
         tools={getSmartRelatedTools("comparison", sessionData.toolsCompleted)}
+      />
+
+      <ExitIntentModal
+        sourceTool="comparison-tool"
+        hasConverted={hasIdentity}
+        resultSummary="Window tier comparison data and 10-year true cost analysis"
       />
     </div>
   );
