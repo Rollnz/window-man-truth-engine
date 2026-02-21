@@ -28,6 +28,7 @@ import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChec
 // Vault Pivot Conversion Engine
 import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
 import { PreQuoteLeadModal } from '@/components/sample-report/PreQuoteLeadModal';
+import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 import { AIComparisonSection } from '@/components/quote-scanner/AIComparisonSection';
 import { UrgencyTicker } from '@/components/social-proof';
 import { ScanPipelineStrip } from '@/components/quote-scanner/ScanPipelineStrip';
@@ -129,7 +130,12 @@ export default function QuoteScanner() {
           <ScanPipelineStrip />
         </SectionFrame>
 
-        <section className="py-12 md:py-20">
+        <section className="relative py-16 md:py-24 overflow-hidden">
+          {/* Ambient stage glows */}
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <div className="absolute top-1/4 left-[15%] w-[400px] h-[400px] rounded-full bg-rose-500/[0.04] dark:bg-rose-500/[0.06] blur-3xl" />
+            <div className="absolute top-1/4 right-[15%] w-[400px] h-[400px] rounded-full bg-primary/[0.05] dark:bg-primary/[0.08] blur-3xl" />
+          </div>
           <div className="container px-4">
             <ErrorBoundary
               title="Quote Analysis Error"
@@ -138,6 +144,7 @@ export default function QuoteScanner() {
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
               {/* ═══ Left column — BEFORE ═══ */}
+              <AnimateOnScroll direction="left" duration={400} threshold={0.2}>
                 <div className="flex flex-col">
                   {/* Header — outside the card */}
                   <div className="flex items-center gap-2 mb-3">
@@ -209,8 +216,10 @@ export default function QuoteScanner() {
                     </div>
                   </div>
                 </div>
+              </AnimateOnScroll>
 
                 {/* ═══ Right column — AFTER ═══ */}
+              <AnimateOnScroll direction="right" duration={400} delay={150} threshold={0.2}>
                 <div className="flex flex-col">
                   {/* Header — outside the card */}
                   <div className="flex items-center gap-2 mb-3">
@@ -410,6 +419,7 @@ export default function QuoteScanner() {
                     )}
                   </div>
                 </div>
+              </AnimateOnScroll>
               </div>
             </ErrorBoundary>
           </div>
