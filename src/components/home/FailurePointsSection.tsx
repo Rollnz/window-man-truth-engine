@@ -144,7 +144,7 @@ export function FailurePointsSection() {
           <div className="p-8 rounded-2xl bg-gradient-to-r from-[hsl(var(--secondary)/0.1)] via-transparent to-[hsl(var(--secondary)/0.1)] border border-[hsl(var(--secondary)/0.2)]">
             <p className="text-lg mb-4 text-gray-900">When something goes wrong, insurers don't ask whether you tried your best.</p>
             <p className="text-xl font-semibold text-secondary-foreground">They ask whether everything was done <em>exactly right</em>.</p>
-            <p className="text-lg text-muted-foreground mt-4">And most window quotes don't give homeowners the information needed to know the difference.</p>
+            <p className="text-lg mt-4 text-gray-900">And most window quotes don't give homeowners the information needed to know the difference.</p>
           </div>
         </div>
       </div>
