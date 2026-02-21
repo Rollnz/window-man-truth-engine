@@ -18,6 +18,8 @@ import type { SourceTool } from "@/types/sourceTool";
 import { ROUTES } from "@/config/navigation";
 import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { ExitIntentModal } from "@/components/authority";
+import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
+import { Shield, FileSearch, Users } from "lucide-react";
 
 export default function Evidence() {
   usePageTracking("evidence-locker");
@@ -61,7 +63,6 @@ export default function Evidence() {
     params.set("case", caseId);
     setSearchParams(params);
 
-    // Track case view
     const viewedCases = sessionData.caseStudiesViewed || [];
     if (!viewedCases.includes(caseId)) {
       updateFields({
@@ -84,11 +85,10 @@ export default function Evidence() {
     } else {
       params.set("filter", filter);
     }
-    params.delete("case"); // Close modal when filtering
+    params.delete("case");
     setSearchParams(params);
   };
 
-  // Navigate directly to preserve modal state in history
   const handleToolNavigation = (toolPath: string) => {
     navigate(toolPath);
   };
@@ -111,7 +111,6 @@ export default function Evidence() {
     setShowConsultation(false);
   };
 
-  // Combined schemas including CreativeWork for evidence library
   const combinedSchemas = useMemo(() => [
     ...getToolPageSchemas('evidence-locker'),
     getBreadcrumbSchema('evidence-locker'),
@@ -119,7 +118,7 @@ export default function Evidence() {
   ], []);
 
   return (
-    <div className="min-h-screen evidence-inverted">
+    <div className="min-h-screen bg-background">
       <SEO 
         title="Evidence Locker - Real Homeowner Case Studies"
         description="Browse real case studies showing how homeowners saved thousands on window replacements. See actual savings, strategies used, and tools that worked."
@@ -128,18 +127,66 @@ export default function Evidence() {
       />
       <Navbar />
 
-      {/* PillarBreadcrumb - links UP to parent pillar */}
-      <div className="container px-4 pt-16 pb-2">
-        <PillarBreadcrumb toolPath="/evidence" variant="badge" />
-      </div>
+      {/* Hero Section - Forensic Elevated */}
+      <section className="relative pt-20 pb-12 md:pt-28 md:pb-16 overflow-hidden">
+        {/* Ambient depth gradient */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent pointer-events-none" />
+        
+        <div className="container px-4 relative z-10">
+          <div className="max-w-3xl mx-auto text-center">
+            {/* Breadcrumb */}
+            <AnimateOnScroll duration={300}>
+              <PillarBreadcrumb toolPath="/evidence" variant="badge" />
+            </AnimateOnScroll>
 
-      {/* Main Content */}
-      <section className="py-8" ref={gridRef}>
+            {/* Eyebrow badge */}
+            <AnimateOnScroll delay={100} duration={400}>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mt-6 mb-4">
+                <Shield className="w-4 h-4 text-primary" />
+                <span className="text-sm text-primary font-medium">Verified Case Files</span>
+              </div>
+            </AnimateOnScroll>
+
+            {/* Headline */}
+            <AnimateOnScroll delay={200} duration={500}>
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 leading-tight tracking-tight">
+                Real Homeowner Wins.{' '}
+                <span className="text-primary">Exposed & Documented.</span>
+              </h1>
+            </AnimateOnScroll>
+
+            {/* Sub-headline */}
+            <AnimateOnScroll delay={300} duration={500}>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
+                Browse verified case studies showing how Florida homeowners saved thousands 
+                on window replacements—with the tools and strategies they used.
+              </p>
+            </AnimateOnScroll>
+
+            {/* Hero stat badges */}
+            <AnimateOnScroll delay={400} duration={500}>
+              <div className="flex flex-wrap justify-center gap-4">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border shadow-lg">
+                  <FileSearch className="w-5 h-5 text-primary" />
+                  <span className="text-sm font-medium text-foreground">{caseStudies.length} Verified Cases</span>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border shadow-lg">
+                  <Users className="w-5 h-5 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Real Homeowners</span>
+                </div>
+              </div>
+            </AnimateOnScroll>
+          </div>
+        </div>
+      </section>
+
+      {/* Filter + Grid Section */}
+      <section className="py-8 md:py-12 bg-[hsl(var(--surface-2,var(--background)))]" ref={gridRef}>
         <div className="container px-4 space-y-8">
-          {/* Filter Bar */}
-          <FilterBar activeFilter={urlFilter} onFilterChange={handleFilterChange} />
+          <AnimateOnScroll duration={400}>
+            <FilterBar activeFilter={urlFilter} onFilterChange={handleFilterChange} />
+          </AnimateOnScroll>
 
-          {/* Case Grid with highlighting support */}
           <CaseFileGrid 
             caseStudies={caseStudies} 
             activeFilter={urlFilter} 
@@ -150,7 +197,13 @@ export default function Evidence() {
       </section>
 
       {/* Community Impact */}
-      <CommunityImpact variant="compact" className="container px-4 py-8" />
+      <section className="py-12 md:py-16">
+        <div className="container px-4">
+          <AnimateOnScroll duration={500}>
+            <CommunityImpact variant="compact" />
+          </AnimateOnScroll>
+        </div>
+      </section>
 
       {/* Related Intelligence */}
       <RelatedIntelligence />

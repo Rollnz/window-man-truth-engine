@@ -23,7 +23,7 @@ export function CaseDebriefContent({
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-          <span className="uppercase tracking-wider font-medium">{caseStudy.caseNumber}</span>
+          <span className="uppercase tracking-wider font-medium font-mono">{caseStudy.caseNumber}</span>
           <span>•</span>
           <span className="uppercase tracking-wider">Full Debrief</span>
         </div>
@@ -31,7 +31,6 @@ export function CaseDebriefContent({
           {caseStudy.missionObjective}
         </h2>
         
-        {/* Meta info */}
         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <User className="w-4 h-4" />
@@ -55,7 +54,7 @@ export function CaseDebriefContent({
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
           The Problem
         </h3>
-        <p className="text-foreground">{caseStudy.theProblem}</p>
+        <p className="text-foreground leading-relaxed">{caseStudy.theProblem}</p>
       </div>
 
       <Separator />
@@ -65,7 +64,7 @@ export function CaseDebriefContent({
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
           The Solution
         </h3>
-        <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+        <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 shadow-sm">
           <p className="font-semibold text-primary">{caseStudy.theSolution}</p>
         </div>
       </div>
@@ -81,7 +80,7 @@ export function CaseDebriefContent({
           {caseStudy.verifiedStats.map((stat, index) => (
             <div 
               key={index}
-              className="p-3 rounded-lg bg-card border border-border text-center"
+              className="p-4 rounded-lg bg-card border border-border/50 text-center shadow-md hover:shadow-lg transition-shadow duration-200"
             >
               <div className="text-xl mb-1">{stat.icon}</div>
               <div className="text-xs text-muted-foreground mb-1">{stat.label}</div>
@@ -110,12 +109,12 @@ export function CaseDebriefContent({
           💬 Testimonial
         </h3>
         <blockquote className="border-l-2 border-primary pl-4 italic text-foreground">
-          "{caseStudy.testimonialQuote}"
+          &ldquo;{caseStudy.testimonialQuote}&rdquo;
         </blockquote>
         <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
           <span>— {caseStudy.agentName}</span>
-          <CheckCircle className="w-4 h-4 text-green-500" />
-          <span className="text-green-500 text-xs uppercase">Verified</span>
+          <CheckCircle className="w-4 h-4 text-primary" />
+          <span className="text-primary text-xs uppercase font-medium">Verified</span>
         </div>
       </div>
 

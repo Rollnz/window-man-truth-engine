@@ -6,58 +6,28 @@ import { cn } from '@/lib/utils';
 interface CaseFileCardProps {
   caseStudy: CaseStudy;
   onOpenCase: (caseId: string) => void;
-  /** Whether this card is highlighted from a deep link */
   isHighlighted?: boolean;
 }
 
-// Semantic colors based on mission type
-const missionColors: Record<MissionType, { bg: string; border: string; text: string; glow: React.CSSProperties }> = {
-  heat: { 
-    bg: 'bg-orange-500/10', 
-    border: 'border-orange-500/20', 
-    text: 'text-orange-500',
-    glow: { textShadow: '0 0 16px rgba(249, 115, 22, 0.4)' }
-  },
-  hurricane: { 
-    bg: 'bg-sky-500/10', 
-    border: 'border-sky-500/20', 
-    text: 'text-sky-500',
-    glow: { textShadow: '0 0 16px rgba(14, 165, 233, 0.4)' }
-  },
-  noise: { 
-    bg: 'bg-purple-500/10', 
-    border: 'border-purple-500/20', 
-    text: 'text-purple-500',
-    glow: { textShadow: '0 0 16px rgba(168, 85, 247, 0.4)' }
-  },
-  security: { 
-    bg: 'bg-amber-500/10', 
-    border: 'border-amber-500/20', 
-    text: 'text-amber-500',
-    glow: { textShadow: '0 0 16px rgba(245, 158, 11, 0.4)' }
-  },
-  cost: { 
-    bg: 'bg-emerald-500/10', 
-    border: 'border-emerald-500/20', 
-    text: 'text-emerald-500',
-    glow: { textShadow: '0 0 16px rgba(16, 185, 129, 0.4)' }
-  },
+// Mission type accent colors using semantic tokens where possible
+const missionAccents: Record<MissionType, { badge: string; stat: string }> = {
+  heat:      { badge: 'bg-destructive/10 text-destructive border-destructive/20', stat: 'text-destructive' },
+  hurricane: { badge: 'bg-primary/10 text-primary border-primary/20', stat: 'text-primary' },
+  noise:     { badge: 'bg-accent-foreground/10 text-accent-foreground border-accent-foreground/20', stat: 'text-accent-foreground' },
+  security:  { badge: 'bg-warning/10 text-warning border-warning/20', stat: 'text-warning' },
+  cost:      { badge: 'bg-primary/10 text-primary border-primary/20', stat: 'text-primary' },
 };
 
 export function CaseFileCard({ caseStudy, onOpenCase, isHighlighted = false }: CaseFileCardProps) {
   const primaryStat = caseStudy.verifiedStats[0];
-  const colors = missionColors[caseStudy.missionType] || missionColors.cost;
+  const accent = missionAccents[caseStudy.missionType] || missionAccents.cost;
   
-  // Animate highlight effect - pulse then fade
   const [showHighlight, setShowHighlight] = useState(isHighlighted);
   
   useEffect(() => {
     if (isHighlighted) {
       setShowHighlight(true);
-      // Keep highlight for 3 seconds, then fade
-      const timer = setTimeout(() => {
-        setShowHighlight(false);
-      }, 3000);
+      const timer = setTimeout(() => setShowHighlight(false), 3000);
       return () => clearTimeout(timer);
     }
   }, [isHighlighted]);
@@ -65,10 +35,13 @@ export function CaseFileCard({ caseStudy, onOpenCase, isHighlighted = false }: C
   return (
     <div 
       className={cn(
-        "group relative flex flex-col rounded-xl bg-card border card-hover frame-card cursor-pointer transition-all duration-500",
+        "group relative flex flex-col rounded-xl bg-card border cursor-pointer",
+        "shadow-lg hover:shadow-xl transition-all duration-300",
+        "hover:-translate-y-1 hover:shadow-primary/10",
+        "backdrop-blur-sm",
         showHighlight 
-          ? "border-primary ring-2 ring-primary/30 shadow-lg shadow-primary/20 scale-[1.02]" 
-          : "border-border"
+          ? "border-primary ring-2 ring-primary/30 shadow-primary/20 scale-[1.02]" 
+          : "border-border/50"
       )}
       onClick={() => onOpenCase(caseStudy.id)}
     >
@@ -79,17 +52,17 @@ export function CaseFileCard({ caseStudy, onOpenCase, isHighlighted = false }: C
         </div>
       )}
       
-      {/* Folder tab effect */}
+      {/* Folder tab */}
       <div className="absolute -top-0 left-4 w-2/5 h-3 bg-muted rounded-t-md" />
       
       {/* Header */}
-      <div className="relative pt-5 px-4 pb-3 border-b border-border bg-muted/30">
+      <div className="relative pt-5 px-5 pb-3 border-b border-border/50 bg-muted/30 rounded-t-xl">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wider">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider font-mono">
               {caseStudy.caseNumber} • {caseStudy.evidenceId}
             </div>
-            <div className="text-sm font-medium text-foreground">
+            <div className="text-sm font-medium text-foreground mt-0.5">
               {caseStudy.location}
             </div>
           </div>
@@ -97,34 +70,37 @@ export function CaseFileCard({ caseStudy, onOpenCase, isHighlighted = false }: C
       </div>
 
       {/* Body */}
-      <div className="flex-1 p-4 space-y-4">
+      <div className="flex-1 p-5 space-y-4">
         {/* Mission Objective */}
         <div>
           <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
             Objective
           </div>
-          <div className="font-semibold text-foreground">
+          <div className="font-semibold text-foreground leading-snug">
             {caseStudy.missionObjective}
           </div>
         </div>
 
-        {/* Primary Stat Highlight */}
-        <div className={`p-3 rounded-lg ${colors.bg} border ${colors.border}`}>
+        {/* Primary Stat - elevated card */}
+        <div className={cn(
+          "p-4 rounded-lg border shadow-md",
+          accent.badge
+        )}>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-lg">{primaryStat.icon}</span>
             <span className="text-sm text-muted-foreground">{primaryStat.label}</span>
           </div>
-          <div className={`text-2xl font-bold ${colors.text}`} style={colors.glow}>
+          <div className={cn("text-2xl font-bold", accent.stat)}>
             {primaryStat.change}
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground mt-1">
             {primaryStat.before} → {primaryStat.after}
           </div>
         </div>
 
         {/* Quote Preview */}
         <p className="text-sm text-muted-foreground italic line-clamp-2">
-          "{caseStudy.testimonialQuote}"
+          &ldquo;{caseStudy.testimonialQuote}&rdquo;
         </p>
 
         {/* CTA */}
@@ -134,11 +110,11 @@ export function CaseFileCard({ caseStudy, onOpenCase, isHighlighted = false }: C
         </button>
       </div>
 
-      {/* Footer - Status */}
-      <div className="px-4 py-3 border-t border-border bg-muted/20">
+      {/* Footer */}
+      <div className="px-5 py-3 border-t border-border/50 bg-muted/20 rounded-b-xl">
         <div className="flex items-center gap-2 text-xs">
-          <CheckCircle className="w-4 h-4 text-green-500" />
-          <span className="text-green-500 font-medium uppercase tracking-wider">
+          <CheckCircle className="w-4 h-4 text-primary" />
+          <span className="text-primary font-medium uppercase tracking-wider">
             {caseStudy.status}
           </span>
         </div>

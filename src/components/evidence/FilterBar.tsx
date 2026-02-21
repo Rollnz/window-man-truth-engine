@@ -27,10 +27,10 @@ export function FilterBar({ activeFilter, onFilterChange }: FilterBarProps) {
             key={filter}
             onClick={() => onFilterChange(filter)}
             className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all whitespace-nowrap',
+              'flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all duration-200 whitespace-nowrap',
               activeFilter === filter
-                ? 'bg-primary/10 border-primary text-primary shadow-[0_0_10px_hsl(var(--primary)/0.3)]'
-                : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                ? 'bg-primary/10 border-primary text-primary shadow-md'
+                : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground hover:shadow-sm'
             )}
           >
             {filterIcons[filter]}

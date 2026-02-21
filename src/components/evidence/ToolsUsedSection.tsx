@@ -8,11 +8,11 @@ interface ToolsUsedSectionProps {
 }
 
 const toolIcons: Record<string, React.ReactNode> = {
-  'cost-calculator': <Calculator className="w-5 h-5 text-emerald-500" />,
-  'fast-win': <Zap className="w-5 h-5 text-amber-500" />,
-  'risk-diagnostic': <Shield className="w-5 h-5 text-orange-500" />,
-  'comparison': <GitCompare className="w-5 h-5 text-cyan-500" />,
-  'reality-check': <AlertTriangle className="w-5 h-5 text-yellow-500" />,
+  'cost-calculator': <Calculator className="w-5 h-5 text-primary" />,
+  'fast-win': <Zap className="w-5 h-5 text-primary" />,
+  'risk-diagnostic': <Shield className="w-5 h-5 text-primary" />,
+  'comparison': <GitCompare className="w-5 h-5 text-primary" />,
+  'reality-check': <AlertTriangle className="w-5 h-5 text-primary" />,
 };
 
 export function ToolsUsedSection({ tools, onNavigate }: ToolsUsedSectionProps) {
@@ -29,11 +29,12 @@ export function ToolsUsedSection({ tools, onNavigate }: ToolsUsedSectionProps) {
             <button
               key={tool.toolId}
               onClick={() => onNavigate(tool.toolPath)}
-              className="w-full flex items-start gap-3 p-3 rounded-lg border border-border 
-                         hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
+              className="w-full flex items-start gap-3 p-3 rounded-lg border border-border/50 
+                         bg-card shadow-sm hover:shadow-md hover:border-primary/50 
+                         hover:bg-primary/5 transition-all duration-200 text-left group"
             >
               <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center shrink-0`}>
-                {toolIcons[tool.toolId] || <Zap className="w-5 h-5 text-amber-500" />}
+                {toolIcons[tool.toolId] || <Zap className="w-5 h-5 text-primary" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-medium text-foreground">{tool.toolName}</div>
