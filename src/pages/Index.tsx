@@ -84,19 +84,19 @@ const Index = () => {
         </div>
         <MarketRealitySection />
         {/* Edge glow divider */}
-        <div className="h-16 md:h-20 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06)_0%,transparent_70%)]" />
+        <div className="h-[clamp(52px,7vw,84px)] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.18)_0%,transparent_68%)]" aria-hidden="true" />
         <FailurePointsSection />
         {/* Edge glow divider */}
-        <div className="h-16 md:h-20 bg-[radial-gradient(ellipse_at_center,hsl(var(--secondary)/0.05)_0%,transparent_70%)]" />
+        <div className="h-[clamp(52px,7vw,84px)] bg-[radial-gradient(ellipse_at_center,hsl(var(--secondary)/0.16)_0%,transparent_68%)]" aria-hidden="true" />
         <WhoIsWindowManSection />
         {/* Edge glow divider */}
-        <div className="h-16 md:h-20 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06)_0%,transparent_70%)]" />
+        <div className="h-[clamp(52px,7vw,84px)] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.18)_0%,transparent_68%)]" aria-hidden="true" />
         <SecretPlaybookSection />
         {/* Edge glow divider */}
-        <div className="h-16 md:h-20 bg-[radial-gradient(ellipse_at_center,hsl(var(--secondary)/0.05)_0%,transparent_70%)]" />
+        <div className="h-[clamp(52px,7vw,84px)] bg-[radial-gradient(ellipse_at_center,hsl(var(--secondary)/0.16)_0%,transparent_68%)]" aria-hidden="true" />
         <SampleReportSection />
         {/* Edge glow divider */}
-        <div className="h-16 md:h-20 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06)_0%,transparent_70%)]" />
+        <div className="h-[clamp(52px,7vw,84px)] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.18)_0%,transparent_68%)]" aria-hidden="true" />
         <WeaponizeAuditSection />
         <FinalDecisionSection />
       </div>

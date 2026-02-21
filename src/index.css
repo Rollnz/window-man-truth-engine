@@ -482,6 +482,51 @@
   }
 
   /* ============================================================
+     SECTION-SCALE PATTERN OVERLAYS
+     ============================================================ */
+
+  /* Blueprint crosshatch (FailurePoints section) */
+  .pattern-crosshatch { position: relative; }
+  .pattern-crosshatch::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.042;
+    background:
+      repeating-linear-gradient(45deg, hsl(var(--primary) / 0.11) 0 1px, transparent 1px 13px),
+      repeating-linear-gradient(-45deg, hsl(var(--secondary) / 0.09) 0 1px, transparent 1px 15px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Dot grid (SecretPlaybook section) */
+  .pattern-dots { position: relative; }
+  .pattern-dots::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.04;
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.18) 1px, transparent 1.8px);
+    background-size: 18px 18px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Scan lines (WeaponizeAudit section) */
+  .pattern-scanlines { position: relative; }
+  .pattern-scanlines::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.036;
+    background:
+      repeating-linear-gradient(0deg, hsl(var(--secondary) / 0.12) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(90deg, hsl(var(--primary) / 0.06) 0 1px, transparent 1px 26px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ============================================================
      CTA BREATHING ANIMATION
      ============================================================ */
 
@@ -508,6 +553,22 @@
     .pattern-lines::before,
     .pattern-steps::before {
       display: none;
+    }
+
+    /* Reduce section pattern density on mobile */
+    .pattern-crosshatch::before {
+      background:
+        repeating-linear-gradient(45deg, hsl(var(--primary) / 0.09) 0 1px, transparent 1px 14px),
+        repeating-linear-gradient(-45deg, hsl(var(--secondary) / 0.07) 0 1px, transparent 1px 16px);
+    }
+    .pattern-dots::before {
+      background-size: 16px 16px;
+      opacity: 0.036;
+    }
+    .pattern-scanlines::before {
+      background:
+        repeating-linear-gradient(0deg, hsl(var(--secondary) / 0.1) 0 1px, transparent 1px 10px),
+        repeating-linear-gradient(90deg, hsl(var(--primary) / 0.05) 0 1px, transparent 1px 30px);
     }
     
     /* Reduce glow intensity on mobile */
@@ -540,6 +601,12 @@
     .cta-glow {
       animation: none;
       box-shadow: 0 0 20px hsl(var(--secondary) / 0.3);
+    }
+
+    .pattern-crosshatch::before,
+    .pattern-dots::before,
+    .pattern-scanlines::before {
+      opacity: 0 !important;
     }
   }
 

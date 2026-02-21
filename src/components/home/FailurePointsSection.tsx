@@ -77,7 +77,7 @@ export function FailurePointsSection() {
   ];
 
   return (
-    <section className="py-20 md:py-32 relative bg-[hsl(var(--surface-2))] overflow-hidden">
+    <section className="py-20 md:py-32 relative bg-gradient-to-b from-[hsl(34,34%,96.8%)] to-[hsl(210,26%,96.1%)] overflow-hidden isolate pattern-crosshatch">
       {/* Ambient mesh blobs */}
       <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-[radial-gradient(circle,hsl(var(--secondary)/0.04)_0%,transparent_70%)] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.03)_0%,transparent_70%)] pointer-events-none" />

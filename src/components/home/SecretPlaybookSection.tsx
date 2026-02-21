@@ -56,7 +56,7 @@ export function SecretPlaybookSection() {
     icon: <AlertTriangle className="w-6 h-6 text-primary" />,
     iconColor: "bg-primary/10"
   }];
-  return <section className="py-20 md:py-32 relative bg-[hsl(var(--surface-1))] overflow-hidden">
+  return <section className="py-20 md:py-32 relative bg-gradient-to-b from-[hsl(210,28%,96.8%)] to-[hsl(32,24%,97.2%)] overflow-hidden isolate pattern-dots">
       <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[radial-gradient(circle,hsl(var(--secondary)/0.05)_0%,transparent_70%)]" /><div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.05)_0%,transparent_70%)]" />
       <div className="container px-4 relative z-10">
         <div className="max-w-3xl mx-auto text-center mb-16"><div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--secondary)/0.1)] border border-[hsl(var(--secondary)/0.2)] mb-6"><Sparkles className="w-4 h-4 text-[hsl(var(--secondary))]" /><span className="text-sm font-medium text-[hsl(var(--secondary))]">The AI Advantage</span></div><h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">The "Secret Playbook" Hidden<span className="block mt-2 text-[hsl(var(--secondary))]">Inside Your Quote</span></h2><p className="text-lg text-muted-foreground">Contractors don't usually lie — they just omit.<br />Our AI de-codes the silent risks that turn a good-looking estimate into a financial nightmare.</p></div>
