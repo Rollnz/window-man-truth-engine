@@ -99,7 +99,7 @@ export function FailurePointsSection() {
           <p className="text-lg text-muted-foreground leading-relaxed text-center mt-4">
             And still — many lose coverage, fail inspections, or discover gaps only when it's too late.
           </p>
-          <p className="text-xl text-foreground font-semibold text-center mt-6">
+          <p className="text-xl font-semibold text-center mt-6 text-black">
             That's because the system doesn't reward effort or intent. It rewards <span className="text-primary">precision</span>.
           </p>
         </div>
