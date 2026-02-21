@@ -67,9 +67,9 @@ export function MissionOutcomes() {
         {/* Section Header */}
         <div className={`text-center mb-12 md:mb-16 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
           {/* Section Label */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/30 rounded-full mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 border border-primary/30 rounded-full mb-6 bg-destructive">
             <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-            <span className="text-xs font-mono text-primary tracking-widest">
+            <span className="text-xs font-mono tracking-widest text-glow font-bold">
               MISSION OUTCOMES
             </span>
           </div>
@@ -95,24 +95,24 @@ export function MissionOutcomes() {
 
         {/* Case Files Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10 px-2">
-          {caseFiles.map((caseFile, index) => (
-            <div key={caseFile.caseNumber} className="relative">
+          {caseFiles.map((caseFile, index) =>
+        <div key={caseFile.caseNumber} className="relative">
               {/* Subtle divider between cards on mobile */}
-              {index > 0 && (
-                <div className="lg:hidden absolute -top-4 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-              )}
+              {index > 0 &&
+          <div className="lg:hidden absolute -top-4 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+          }
               {/* Vertical divider between cards on desktop */}
-              {index > 0 && (
-                <div className="hidden lg:block absolute -left-5 top-1/2 -translate-y-1/2 w-px h-3/4 bg-gradient-to-b from-transparent via-border to-transparent" />
-              )}
-              <div 
-                className={`transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95'}`} 
-                style={{ transitionDelay: `${300 + index * 200}ms` }}
-              >
+              {index > 0 &&
+          <div className="hidden lg:block absolute -left-5 top-1/2 -translate-y-1/2 w-px h-3/4 bg-gradient-to-b from-transparent via-border to-transparent" />
+          }
+              <div
+            className={`transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95'}`}
+            style={{ transitionDelay: `${300 + index * 200}ms` }}>
+
                 <CaseFileCard data={caseFile} index={index} />
               </div>
             </div>
-          ))}
+        )}
         </div>
       </div>
     </section>;
