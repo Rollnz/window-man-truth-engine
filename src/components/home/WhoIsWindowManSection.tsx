@@ -36,7 +36,7 @@ function ValueCard({ icon, title, description, highlight }: ValueCardProps) {
 
 export function WhoIsWindowManSection() {
   return (
-    <section className="py-20 md:py-32 relative bg-[hsl(var(--surface-1))]">
+    <section className="py-20 md:py-32 relative bg-[hsl(var(--surface-3))]">
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-12">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
