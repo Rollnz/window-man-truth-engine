@@ -3,28 +3,28 @@ import { AlertCircle, Shield, FileX, Calculator, ChevronDown } from 'lucide-reac
 import { cn } from '@/lib/utils';
 import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 
-interface FailurePointProps { 
-  number: number; 
-  title: string; 
-  description: string; 
-  icon: React.ReactNode; 
-  isOpen: boolean; 
+interface FailurePointProps {
+  number: number;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  isOpen: boolean;
   onClick: () => void;
   patternClass?: string;
 }
 
 function FailurePoint({ number, title, description, icon, isOpen, onClick, patternClass }: FailurePointProps) {
   return (
-    <div 
+    <div
       className={cn(
         "glow-border-secondary overflow-hidden transition-all duration-300",
         patternClass,
         isOpen ? "bg-card shadow-lg" : "bg-card/50 hover:bg-card/80"
-      )}
-    >
+      )}>
+
       <button onClick={onClick} className="w-full p-6 flex items-center gap-4 text-left relative z-10">
         <div className={cn(
-          "flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-colors", 
+          "flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
           isOpen ? "bg-[hsl(var(--secondary))] text-white" : "bg-[hsl(var(--secondary)/0.1)] text-[hsl(var(--secondary))]"
         )}>
           {icon}
@@ -42,39 +42,39 @@ function FailurePoint({ number, title, description, icon, isOpen, onClick, patte
           <p className="text-muted-foreground leading-relaxed">{description}</p>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 export function FailurePointsSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
-  
+
   const failurePoints = [
-    { 
-      title: 'The "Wear and Tear" Trap', 
-      description: 'Insurers often deny claims by classifying damage as pre-existing — even after a major storm.', 
-      icon: <AlertCircle className="w-6 h-6" />,
-      patternClass: 'pattern-diagonal'
-    },
-    { 
-      title: 'Code-Compliance Gaps', 
-      description: "If windows aren't installed to the exact Design Pressure (DP) requirements for your zip code, claims can be denied regardless of product quality.", 
-      icon: <Shield className="w-6 h-6" />,
-      patternClass: 'pattern-grid'
-    },
-    { 
-      title: 'Documentation Failures', 
-      description: 'Missing approvals, specs, or proof-of-loss paperwork can invalidate coverage — even if the work was completed.', 
-      icon: <FileX className="w-6 h-6" />,
-      patternClass: 'pattern-lines'
-    },
-    { 
-      title: 'The Deductible Blind Spot', 
-      description: "Many homeowners don't realize they carry a 2–5% hurricane deductible. Combined with overpaying on a quote, they may never reach a payout threshold.", 
-      icon: <Calculator className="w-6 h-6" />,
-      patternClass: 'pattern-steps'
-    },
-  ];
+  {
+    title: 'The "Wear and Tear" Trap',
+    description: 'Insurers often deny claims by classifying damage as pre-existing — even after a major storm.',
+    icon: <AlertCircle className="w-6 h-6" />,
+    patternClass: 'pattern-diagonal'
+  },
+  {
+    title: 'Code-Compliance Gaps',
+    description: "If windows aren't installed to the exact Design Pressure (DP) requirements for your zip code, claims can be denied regardless of product quality.",
+    icon: <Shield className="w-6 h-6" />,
+    patternClass: 'pattern-grid'
+  },
+  {
+    title: 'Documentation Failures',
+    description: 'Missing approvals, specs, or proof-of-loss paperwork can invalidate coverage — even if the work was completed.',
+    icon: <FileX className="w-6 h-6" />,
+    patternClass: 'pattern-lines'
+  },
+  {
+    title: 'The Deductible Blind Spot',
+    description: "Many homeowners don't realize they carry a 2–5% hurricane deductible. Combined with overpaying on a quote, they may never reach a payout threshold.",
+    icon: <Calculator className="w-6 h-6" />,
+    patternClass: 'pattern-steps'
+  }];
+
 
   return (
     <section className="py-20 md:py-32 relative bg-gradient-to-b from-[hsl(34,34%,96.8%)] to-[hsl(210,26%,96.1%)] overflow-hidden isolate pattern-crosshatch">
@@ -113,29 +113,29 @@ export function FailurePointsSection() {
               // Bottom row: index 2 (left), index 3 (right)
               const direction = index % 2 === 0 ? 'left' : 'right';
               // Desktop: 100ms stagger, Mobile: 50ms stagger
-              const staggerDelay = typeof window !== 'undefined' && window.innerWidth >= 768 
-                ? index * 100 
-                : index * 50;
-              
+              const staggerDelay = typeof window !== 'undefined' && window.innerWidth >= 768 ?
+              index * 100 :
+              index * 50;
+
               return (
-                <AnimateOnScroll 
-                  key={index} 
-                  delay={staggerDelay} 
+                <AnimateOnScroll
+                  key={index}
+                  delay={staggerDelay}
                   threshold={0.3}
                   direction={direction}
-                  desktopDirectionOnly={true}
-                >
-                  <FailurePoint 
-                    number={index + 1} 
-                    title={point.title} 
-                    description={point.description} 
-                    icon={point.icon} 
-                    isOpen={openIndex === index} 
+                  desktopDirectionOnly={true}>
+
+                  <FailurePoint
+                    number={index + 1}
+                    title={point.title}
+                    description={point.description}
+                    icon={point.icon}
+                    isOpen={openIndex === index}
                     onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                    patternClass={point.patternClass}
-                  />
-                </AnimateOnScroll>
-              );
+                    patternClass={point.patternClass} />
+
+                </AnimateOnScroll>);
+
             })}
           </div>
         </div>
@@ -143,11 +143,11 @@ export function FailurePointsSection() {
         <div className="max-w-3xl mx-auto text-center">
           <div className="p-8 rounded-2xl bg-gradient-to-r from-[hsl(var(--secondary)/0.1)] via-transparent to-[hsl(var(--secondary)/0.1)] border border-[hsl(var(--secondary)/0.2)]">
             <p className="text-lg text-muted-foreground mb-4">When something goes wrong, insurers don't ask whether you tried your best.</p>
-            <p className="text-xl font-semibold text-foreground">They ask whether everything was done <em>exactly right</em>.</p>
+            <p className="text-xl font-semibold text-secondary-foreground">They ask whether everything was done <em>exactly right</em>.</p>
             <p className="text-lg text-muted-foreground mt-4">And most window quotes don't give homeowners the information needed to know the difference.</p>
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 }
