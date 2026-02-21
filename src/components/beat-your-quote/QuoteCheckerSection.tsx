@@ -71,7 +71,7 @@ export const QuoteCheckerSection = ({
                 Beat Your Quote
               </h2>
             </div>
-            <p className="text-xl max-w-2xl mx-auto" style={{ color: '#94a3b8' }}>
+            <p className="text-xl max-w-2xl mx-auto text-primary-foreground" style={{ color: '#94a3b8' }}>
               Let Window Man Try to Beat Your Quote. Gain leverage over your contractor, keep them honest. You've got nothing to lose.
             </p>
           </div>
@@ -85,9 +85,9 @@ export const QuoteCheckerSection = ({
             <div className="rounded-2xl p-8 flex flex-col items-start transition-colors h-full" style={{
               backgroundColor: '#0f0f0f',
               border: '1px solid rgba(255, 255, 255, 0.1)'
-            }} onMouseEnter={e => {
+            }} onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = 'rgba(67, 147, 219, 0.3)';
-            }} onMouseLeave={e => {
+            }} onMouseLeave={(e) => {
               e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
             }}>
               <div className="w-12 h-12 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: 'rgba(67, 147, 219, 0.1)' }}>
@@ -104,10 +104,10 @@ export const QuoteCheckerSection = ({
               <Button variant="outline" className="w-full mt-auto font-bold py-6 bg-transparent transition-all" style={{
                 borderColor: '#4393DB',
                 color: '#4393DB'
-              }} onClick={handleTextClick} onMouseEnter={e => {
+              }} onClick={handleTextClick} onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#4393DB';
                 e.currentTarget.style.color = '#FFFFFF';
-              }} onMouseLeave={e => {
+              }} onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent';
                 e.currentTarget.style.color = '#4393DB';
               }}>
@@ -146,19 +146,19 @@ export const QuoteCheckerSection = ({
                   accept="image/*,.pdf"
                   onChange={handleFileInput}
                   className="hidden"
-                  aria-label="Upload contractor quote"
-                />
+                  aria-label="Upload contractor quote" />
+
                 <Button
                   className="w-full font-bold py-6 transition-all"
                   style={{ backgroundColor: '#4393DB', color: '#FFFFFF' }}
                   onClick={handleUploadClick}
-                  onMouseEnter={e => {
+                  onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#3580c2';
                   }}
-                  onMouseLeave={e => {
+                  onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = '#4393DB';
-                  }}
-                >
+                  }}>
+
                   <Upload className="w-5 h-5 mr-2" />
                   Upload Quote Now
                 </Button>
@@ -174,9 +174,9 @@ export const QuoteCheckerSection = ({
             <div className="rounded-2xl p-8 flex flex-col items-start transition-colors h-full" style={{
               backgroundColor: '#0f0f0f',
               border: '1px solid rgba(255, 255, 255, 0.1)'
-            }} onMouseEnter={e => {
+            }} onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-            }} onMouseLeave={e => {
+            }} onMouseLeave={(e) => {
               e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
             }}>
               <div className="w-12 h-12 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)' }}>
@@ -191,10 +191,10 @@ export const QuoteCheckerSection = ({
               <Button variant="outline" className="w-full mt-auto font-bold py-6 bg-transparent transition-all" style={{
                 borderColor: '#22c55e',
                 color: '#22c55e'
-              }} onClick={handleBookClick} onMouseEnter={e => {
+              }} onClick={handleBookClick} onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#22c55e';
                 e.currentTarget.style.color = '#FFFFFF';
-              }} onMouseLeave={e => {
+              }} onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent';
                 e.currentTarget.style.color = '#22c55e';
               }}>
@@ -211,6 +211,6 @@ export const QuoteCheckerSection = ({
           </div>
         </AnimateOnScroll>
       </div>
-    </section>
-  );
+    </section>);
+
 };
