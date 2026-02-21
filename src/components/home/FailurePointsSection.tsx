@@ -105,7 +105,7 @@ export function FailurePointsSection() {
         </div>
         
         <div className="max-w-3xl mx-auto mb-16">
-          <h3 className="text-xl font-semibold text-foreground mb-6 text-center">The Four Failure Points</h3>
+          <h3 className="text-xl font-semibold mb-6 text-center text-black">The Four Failure Points</h3>
           <div className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
             {failurePoints.map((point, index) => {
               // Desktop 2x2 grid: alternating left/right reveals
