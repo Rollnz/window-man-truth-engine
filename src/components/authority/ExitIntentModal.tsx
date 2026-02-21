@@ -13,27 +13,27 @@
 // 6. Segmented control supports Arrow keys for 2x2 grid
 // 7. Fat-finger safety: min-h-[48px] buttons, mt-6 + border-t + pt-4 for decline
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { X, ArrowLeft, ShieldCheck, AlertTriangle, FileText } from 'lucide-react';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { useFormValidation, commonSchemas, formatPhoneNumber } from '@/hooks/useFormValidation';
-import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
-import { useSessionData } from '@/hooks/useSessionData';
-import { useLeadIdentity } from '@/hooks/useLeadIdentity';
-import { trackEvent, generateEventId } from '@/lib/gtm';
-import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
-import { getLeadAnchor } from '@/lib/leadAnchor';
-import type { SourceTool } from '@/types/sourceTool';
-import { scheduleWhenIdle } from '@/lib/deferredInit';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { X, ArrowLeft, ShieldCheck, AlertTriangle, FileText } from "lucide-react";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { useFormValidation, commonSchemas, formatPhoneNumber } from "@/hooks/useFormValidation";
+import { useLeadFormSubmit } from "@/hooks/useLeadFormSubmit";
+import { useSessionData } from "@/hooks/useSessionData";
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
+import { trackEvent, generateEventId } from "@/lib/gtm";
+import { getOrCreateClientId, getOrCreateSessionId } from "@/lib/tracking";
+import { getLeadAnchor } from "@/lib/leadAnchor";
+import type { SourceTool } from "@/types/sourceTool";
+import { scheduleWhenIdle } from "@/lib/deferredInit";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
-type GauntletStep = 'insider_price' | 'storm_sentinel' | 'kitchen_table';
+type GauntletStep = "insider_price" | "storm_sentinel" | "kitchen_table";
 
 interface ExitIntentModalProps {
   sourceTool: SourceTool;
@@ -52,15 +52,15 @@ interface PrefillSnapshot {
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const STORAGE_KEY_PREFIX = 'gauntlet_exit_intent_';
+const STORAGE_KEY_PREFIX = "gauntlet_exit_intent_";
 const MIN_TIME_ON_PAGE = 10000; // 10 seconds
 const MIN_SCROLL_DEPTH = 0.3; // 30%
 
 const WINDOW_COUNT_OPTIONS = [
-  { label: '1–5', value: '1-5' },
-  { label: '6–10', value: '6-10' },
-  { label: '11–20', value: '11-20' },
-  { label: '20+', value: '20+' },
+  { label: "1–5", value: "1-5" },
+  { label: "6–10", value: "6-10" },
+  { label: "11–20", value: "11-20" },
+  { label: "20+", value: "20+" },
 ];
 
 const STEP_CONFIG = {
@@ -87,20 +87,20 @@ function WindowCountSelector({ value, onChange, error }: WindowCountSelectorProp
     let newIndex = index;
 
     switch (e.key) {
-      case 'ArrowRight':
+      case "ArrowRight":
         newIndex = (index + 1) % WINDOW_COUNT_OPTIONS.length;
         break;
-      case 'ArrowLeft':
+      case "ArrowLeft":
         newIndex = (index - 1 + WINDOW_COUNT_OPTIONS.length) % WINDOW_COUNT_OPTIONS.length;
         break;
-      case 'ArrowDown':
+      case "ArrowDown":
         newIndex = (index + cols) % WINDOW_COUNT_OPTIONS.length;
         break;
-      case 'ArrowUp':
+      case "ArrowUp":
         newIndex = (index - cols + WINDOW_COUNT_OPTIONS.length) % WINDOW_COUNT_OPTIONS.length;
         break;
-      case 'Enter':
-      case ' ':
+      case "Enter":
+      case " ":
         e.preventDefault();
         onChange(WINDOW_COUNT_OPTIONS[index].value);
         return;
@@ -118,17 +118,15 @@ function WindowCountSelector({ value, onChange, error }: WindowCountSelectorProp
       <label id="window-count-label" className="text-sm font-semibold text-slate-300">
         Scope of Project (Window Count)
       </label>
-      <div
-        role="radiogroup"
-        aria-labelledby="window-count-label"
-        className="grid grid-cols-2 gap-2"
-      >
+      <div role="radiogroup" aria-labelledby="window-count-label" className="grid grid-cols-2 gap-2">
         {WINDOW_COUNT_OPTIONS.map((opt, index) => {
           const isSelected = value === opt.value;
           return (
             <button
               key={opt.value}
-              ref={(el) => { optionRefs.current[index] = el; }}
+              ref={(el) => {
+                optionRefs.current[index] = el;
+              }}
               type="button"
               role="radio"
               aria-checked={isSelected}
@@ -138,9 +136,10 @@ function WindowCountSelector({ value, onChange, error }: WindowCountSelectorProp
               className={`
                 flex-1 py-3 px-4 rounded-lg border text-sm font-bold transition-all
                 min-h-[48px] focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-[hsl(220,20%,11%)]
-                ${isSelected
-                  ? 'bg-cyan-900/40 text-cyan-300 border-cyan-500 shadow-[0_0_10px_rgba(8,145,178,0.2)]'
-                  : 'bg-[hsl(220,25%,8%)] text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200'
+                ${
+                  isSelected
+                    ? "bg-cyan-900/40 text-cyan-300 border-cyan-500 shadow-[0_0_10px_rgba(8,145,178,0.2)]"
+                    : "bg-[hsl(220,25%,8%)] text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
                 }
               `}
             >
@@ -158,16 +157,12 @@ function WindowCountSelector({ value, onChange, error }: WindowCountSelectorProp
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════
 
-export function ExitIntentModal({
-  sourceTool,
-  hasConverted = false,
-  onSuccess,
-}: ExitIntentModalProps) {
+export function ExitIntentModal({ sourceTool, hasConverted = false, onSuccess }: ExitIntentModalProps) {
   // ─────────────────────────────────────────────────────────────────────────
   // STATE
   // ─────────────────────────────────────────────────────────────────────────
   const [isOpen, setIsOpen] = useState(false);
-  const [currentStep, setCurrentStep] = useState<GauntletStep>('insider_price');
+  const [currentStep, setCurrentStep] = useState<GauntletStep>("insider_price");
   const [hasDeclined, setHasDeclined] = useState<Record<GauntletStep, boolean>>({
     insider_price: false,
     storm_sentinel: false,
@@ -207,9 +202,9 @@ export function ExitIntentModal({
   // ─────────────────────────────────────────────────────────────────────────
   const captureSnapshot = useCallback(() => {
     prefillSnapshotRef.current = {
-      name: sessionData.name || '',
-      email: sessionData.email || '',
-      phone: sessionData.phone || '',
+      name: sessionData.name || "",
+      email: sessionData.email || "",
+      phone: sessionData.phone || "",
     };
   }, [sessionData.name, sessionData.email, sessionData.phone]);
 
@@ -225,23 +220,23 @@ export function ExitIntentModal({
   // ─────────────────────────────────────────────────────────────────────────
   const step1Form = useFormValidation({
     initialValues: {
-      name: prefillSnapshotRef.current?.name || '',
-      email: prefillSnapshotRef.current?.email || '',
-      phone: prefillSnapshotRef.current?.phone || '',
-      windowCount: '',
+      name: prefillSnapshotRef.current?.name || "",
+      email: prefillSnapshotRef.current?.email || "",
+      phone: prefillSnapshotRef.current?.phone || "",
+      windowCount: "",
     },
     schemas: {
       name: commonSchemas.name,
       email: commonSchemas.email,
       phone: commonSchemas.phone,
-      windowCount: z.string().min(1, 'Please select window count'),
+      windowCount: z.string().min(1, "Please select window count"),
     },
     formatters: { phone: formatPhoneNumber },
   });
 
   const step2Form = useFormValidation({
     initialValues: {
-      phone: prefillSnapshotRef.current?.phone || '',
+      phone: prefillSnapshotRef.current?.phone || "",
     },
     schemas: {
       phone: commonSchemas.phone,
@@ -251,7 +246,7 @@ export function ExitIntentModal({
 
   const step3Form = useFormValidation({
     initialValues: {
-      email: prefillSnapshotRef.current?.email || '',
+      email: prefillSnapshotRef.current?.email || "",
     },
     schemas: {
       email: commonSchemas.email,
@@ -263,24 +258,24 @@ export function ExitIntentModal({
   // ─────────────────────────────────────────────────────────────────────────
   const step1Submit = useLeadFormSubmit({
     sourceTool,
-    formLocation: 'exit_gauntlet_insider',
+    formLocation: "exit_gauntlet_insider",
     leadScore: 100,
-    successTitle: 'Success!',
-    successDescription: 'Your local pricing data is on the way.',
+    successTitle: "Success!",
+    successDescription: "Your local pricing data is on the way.",
     aiContext: {
       offer_step: 1,
-      source: 'exit_intent_modal',
+      source: "exit_intent_modal",
     },
     onSuccess: () => {
       setHasSubmitted((prev) => ({ ...prev, insider_price: true }));
       try {
-        trackEvent('lead_submitted', {
-          step: 'insider_price',
+        trackEvent("lead_submitted", {
+          step: "insider_price",
           lead_score: 100,
           sessionId: sessionIdRef.current,
         });
       } catch (e) {
-        console.error('Analytics error:', e);
+        console.error("Analytics error:", e);
       }
       handleCloseAfterSubmit();
     },
@@ -288,24 +283,24 @@ export function ExitIntentModal({
 
   const step2Submit = useLeadFormSubmit({
     sourceTool,
-    formLocation: 'exit_gauntlet_storm',
+    formLocation: "exit_gauntlet_storm",
     leadScore: 60,
-    successTitle: 'You\'re on the list!',
-    successDescription: 'We\'ll text you when storms or deals hit.',
+    successTitle: "You're on the list!",
+    successDescription: "We'll text you when storms or deals hit.",
     aiContext: {
       offer_step: 2,
-      source: 'exit_intent_modal',
+      source: "exit_intent_modal",
     },
     onSuccess: () => {
       setHasSubmitted((prev) => ({ ...prev, storm_sentinel: true }));
       try {
-        trackEvent('lead_submitted', {
-          step: 'storm_sentinel',
+        trackEvent("lead_submitted", {
+          step: "storm_sentinel",
           lead_score: 60,
           sessionId: sessionIdRef.current,
         });
       } catch (e) {
-        console.error('Analytics error:', e);
+        console.error("Analytics error:", e);
       }
       handleCloseAfterSubmit();
     },
@@ -313,24 +308,24 @@ export function ExitIntentModal({
 
   const step3Submit = useLeadFormSubmit({
     sourceTool,
-    formLocation: 'exit_gauntlet_kitchen',
+    formLocation: "exit_gauntlet_kitchen",
     leadScore: 30,
-    successTitle: 'Check your inbox!',
-    successDescription: 'Your cheat sheet is on the way.',
+    successTitle: "Check your inbox!",
+    successDescription: "Your cheat sheet is on the way.",
     aiContext: {
       offer_step: 3,
-      source: 'exit_intent_modal',
+      source: "exit_intent_modal",
     },
     onSuccess: () => {
       setHasSubmitted((prev) => ({ ...prev, kitchen_table: true }));
       try {
-        trackEvent('lead_submitted', {
-          step: 'kitchen_table',
+        trackEvent("lead_submitted", {
+          step: "kitchen_table",
           lead_score: 30,
           sessionId: sessionIdRef.current,
         });
       } catch (e) {
-        console.error('Analytics error:', e);
+        console.error("Analytics error:", e);
       }
       handleCloseAfterSubmit();
     },
@@ -341,7 +336,7 @@ export function ExitIntentModal({
   // ─────────────────────────────────────────────────────────────────────────
   const canShowModal = useCallback(() => {
     if (hasConverted) return false;
-    if (typeof window === 'undefined') return false;
+    if (typeof window === "undefined") return false;
 
     const alreadyShown = sessionStorage.getItem(storageKey);
     if (alreadyShown) return false;
@@ -367,7 +362,7 @@ export function ExitIntentModal({
       prefillSnapshotRef.current?.phone
     );
 
-    const startingStep: GauntletStep = fullIdentity ? 'storm_sentinel' : 'insider_price';
+    const startingStep: GauntletStep = fullIdentity ? "storm_sentinel" : "insider_price";
 
     // Initialize forms with snapshot values
     if (prefillSnapshotRef.current) {
@@ -375,7 +370,7 @@ export function ExitIntentModal({
         name: prefillSnapshotRef.current.name,
         email: prefillSnapshotRef.current.email,
         phone: prefillSnapshotRef.current.phone,
-        windowCount: '',
+        windowCount: "",
       });
       step2Form.setValues({
         phone: prefillSnapshotRef.current.phone,
@@ -387,7 +382,7 @@ export function ExitIntentModal({
 
     setCurrentStep(startingStep);
     setIsOpen(true);
-    sessionStorage.setItem(storageKey, 'true');
+    sessionStorage.setItem(storageKey, "true");
     hasUserEditedRef.current = false;
 
     // Skip analytics will be fired in the useEffect below
@@ -401,23 +396,23 @@ export function ExitIntentModal({
       const externalId = existingLeadId || getLeadAnchor() || null;
 
       try {
-        trackEvent('modal_opened', { sessionId: sessionIdRef.current });
-        
+        trackEvent("modal_opened", { sessionId: sessionIdRef.current });
+
         // Enriched dataLayer push for exit intent modal
         window.dataLayer = window.dataLayer || [];
         window.dataLayer.push({
-          event: 'exit_intent_modal_opened',
+          event: "exit_intent_modal_opened",
           event_id: generateEventId(),
           client_id: getOrCreateClientId(),
           session_id: getOrCreateSessionId(),
           external_id: externalId,
           source_tool: sourceTool,
-          source_system: 'web',
-          modal_name: 'exit_intent_gauntlet',
+          source_system: "web",
+          modal_name: "exit_intent_gauntlet",
           starting_step: currentStep,
         });
       } catch (e) {
-        console.error('Analytics error:', e);
+        console.error("Analytics error:", e);
       }
 
       // If we skipped Step 1, fire step_skipped
@@ -429,13 +424,13 @@ export function ExitIntentModal({
 
       if (fullIdentity) {
         try {
-          trackEvent('step_skipped', {
-            step: 'insider_price',
-            reason: 'identity_complete',
+          trackEvent("step_skipped", {
+            step: "insider_price",
+            reason: "identity_complete",
             sessionId: sessionIdRef.current,
           });
         } catch (e) {
-          console.error('Analytics error:', e);
+          console.error("Analytics error:", e);
         }
       }
     }
@@ -446,29 +441,29 @@ export function ExitIntentModal({
   useEffect(() => {
     if (isOpen && currentStep !== prevStepRef.current) {
       const externalId = existingLeadId || getLeadAnchor() || null;
-      
+
       try {
-        trackEvent('step_viewed', {
+        trackEvent("step_viewed", {
           step: currentStep,
           sessionId: sessionIdRef.current,
         });
-        
+
         // Enriched dataLayer push for step views
         window.dataLayer = window.dataLayer || [];
         window.dataLayer.push({
-          event: 'exit_intent_step_viewed',
+          event: "exit_intent_step_viewed",
           event_id: generateEventId(),
           client_id: getOrCreateClientId(),
           session_id: getOrCreateSessionId(),
           external_id: externalId,
           source_tool: sourceTool,
-          source_system: 'web',
-          form_name: 'exit_intent_gauntlet',
+          source_system: "web",
+          form_name: "exit_intent_gauntlet",
           step_name: currentStep,
           step_index: STEP_CONFIG[currentStep].number,
         });
       } catch (e) {
-        console.error('Analytics error:', e);
+        console.error("Analytics error:", e);
       }
       prevStepRef.current = currentStep;
     }
@@ -487,26 +482,29 @@ export function ExitIntentModal({
   useEffect(() => {
     let rafId: number | null = null;
     let cleanup: (() => void) | null = null;
-    
+
     // Defer scroll listener setup by 2 seconds to avoid blocking initial render
-    const cancelIdle = scheduleWhenIdle(() => {
-      const handleScroll = () => {
-        // RAF-throttle to avoid excessive calculations
-        if (rafId !== null) return;
-        
-        rafId = requestAnimationFrame(() => {
-          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-          const currentScrollDepth = scrollHeight > 0 ? window.scrollY / scrollHeight : 0;
+    const cancelIdle = scheduleWhenIdle(
+      () => {
+        const handleScroll = () => {
+          // RAF-throttle to avoid excessive calculations
+          if (rafId !== null) return;
 
-          maxScrollDepthRef.current = Math.max(maxScrollDepthRef.current, currentScrollDepth);
-          lastScrollYRef.current = window.scrollY;
-          rafId = null;
-        });
-      };
+          rafId = requestAnimationFrame(() => {
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const currentScrollDepth = scrollHeight > 0 ? window.scrollY / scrollHeight : 0;
 
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      cleanup = () => window.removeEventListener('scroll', handleScroll);
-    }, { minDelay: 2000 });
+            maxScrollDepthRef.current = Math.max(maxScrollDepthRef.current, currentScrollDepth);
+            lastScrollYRef.current = window.scrollY;
+            rafId = null;
+          });
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        cleanup = () => window.removeEventListener("scroll", handleScroll);
+      },
+      { minDelay: 2000 },
+    );
 
     return () => {
       cancelIdle();
@@ -518,17 +516,20 @@ export function ExitIntentModal({
   // Desktop: Mouse leave detection - deferred
   useEffect(() => {
     let cleanup: (() => void) | null = null;
-    
-    const cancelIdle = scheduleWhenIdle(() => {
-      const handleMouseLeave = (e: MouseEvent) => {
-        if (e.clientY <= 0) {
-          showModal();
-        }
-      };
 
-      document.addEventListener('mouseleave', handleMouseLeave);
-      cleanup = () => document.removeEventListener('mouseleave', handleMouseLeave);
-    }, { minDelay: 2000 });
+    const cancelIdle = scheduleWhenIdle(
+      () => {
+        const handleMouseLeave = (e: MouseEvent) => {
+          if (e.clientY <= 0) {
+            showModal();
+          }
+        };
+
+        document.addEventListener("mouseleave", handleMouseLeave);
+        cleanup = () => document.removeEventListener("mouseleave", handleMouseLeave);
+      },
+      { minDelay: 2000 },
+    );
 
     return () => {
       cancelIdle();
@@ -539,24 +540,27 @@ export function ExitIntentModal({
   // Mobile: Scroll up detection - deferred
   useEffect(() => {
     let cleanup: (() => void) | null = null;
-    
-    const cancelIdle = scheduleWhenIdle(() => {
-      let lastY = lastScrollYRef.current;
 
-      const handleScrollUp = () => {
-        if (window.innerWidth > 768) return;
-        if (maxScrollDepthRef.current < 0.5) return;
+    const cancelIdle = scheduleWhenIdle(
+      () => {
+        let lastY = lastScrollYRef.current;
 
-        const currentY = window.scrollY;
-        if (currentY < lastY - 80) {
-          showModal();
-        }
-        lastY = currentY;
-      };
+        const handleScrollUp = () => {
+          if (window.innerWidth > 768) return;
+          if (maxScrollDepthRef.current < 0.5) return;
 
-      window.addEventListener('scroll', handleScrollUp, { passive: true });
-      cleanup = () => window.removeEventListener('scroll', handleScrollUp);
-    }, { minDelay: 2000 });
+          const currentY = window.scrollY;
+          if (currentY < lastY - 80) {
+            showModal();
+          }
+          lastY = currentY;
+        };
+
+        window.addEventListener("scroll", handleScrollUp, { passive: true });
+        cleanup = () => window.removeEventListener("scroll", handleScrollUp);
+      },
+      { minDelay: 2000 },
+    );
 
     return () => {
       cancelIdle();
@@ -567,25 +571,25 @@ export function ExitIntentModal({
   // ESC key handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        handleClose('escape');
+      if (e.key === "Escape" && isOpen) {
+        handleClose("escape");
       }
     };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // HANDLERS
   // ─────────────────────────────────────────────────────────────────────────
-  const handleClose = useCallback((reason: 'user_closed' | 'backdrop' | 'escape') => {
+  const handleClose = useCallback((reason: "user_closed" | "backdrop" | "escape") => {
     try {
-      trackEvent('modal_closed', {
+      trackEvent("modal_closed", {
         reason,
         sessionId: sessionIdRef.current,
       });
     } catch (e) {
-      console.error('Analytics error:', e);
+      console.error("Analytics error:", e);
     }
 
     sessionIdRef.current = null;
@@ -604,37 +608,37 @@ export function ExitIntentModal({
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
-      handleClose('backdrop');
+      handleClose("backdrop");
     }
   };
 
   const handleDecline = useCallback(() => {
     try {
-      trackEvent('offer_declined', {
+      trackEvent("offer_declined", {
         step: currentStep,
         sessionId: sessionIdRef.current,
       });
     } catch (e) {
-      console.error('Analytics error:', e);
+      console.error("Analytics error:", e);
     }
 
     setHasDeclined((prev) => ({ ...prev, [currentStep]: true }));
 
-    if (currentStep === 'insider_price') {
-      setCurrentStep('storm_sentinel');
-    } else if (currentStep === 'storm_sentinel') {
-      setCurrentStep('kitchen_table');
+    if (currentStep === "insider_price") {
+      setCurrentStep("storm_sentinel");
+    } else if (currentStep === "storm_sentinel") {
+      setCurrentStep("kitchen_table");
     } else {
-      handleClose('user_closed');
+      handleClose("user_closed");
     }
   }, [currentStep, handleClose]);
 
   const handleBack = useCallback(() => {
     // Back does NOT clear declined/submitted flags
-    if (currentStep === 'storm_sentinel') {
-      setCurrentStep('insider_price');
-    } else if (currentStep === 'kitchen_table') {
-      setCurrentStep('storm_sentinel');
+    if (currentStep === "storm_sentinel") {
+      setCurrentStep("insider_price");
+    } else if (currentStep === "kitchen_table") {
+      setCurrentStep("storm_sentinel");
     }
   }, [currentStep]);
 
@@ -660,7 +664,7 @@ export function ExitIntentModal({
     await step2Submit.submit({
       email: emailToUse,
       phone: step2Form.values.phone,
-      name: prefillSnapshotRef.current?.name || 'Storm Alert Subscriber',
+      name: prefillSnapshotRef.current?.name || "Storm Alert Subscriber",
     });
   };
 
@@ -670,7 +674,7 @@ export function ExitIntentModal({
 
     await step3Submit.submit({
       email: step3Form.values.email,
-      name: prefillSnapshotRef.current?.name || 'Cheat Sheet Requester',
+      name: prefillSnapshotRef.current?.name || "Cheat Sheet Requester",
     });
   };
 
@@ -686,9 +690,24 @@ export function ExitIntentModal({
   // STEP TRACKER DATA
   // ─────────────────────────────────────────────────────────────────────────
   const stepTrackerItems = [
-    { number: 1, title: 'Pricing Intelligence', desc: 'Access verified local installation data.', key: 'insider_price' as GauntletStep },
-    { number: 2, title: 'Storm Sentinel', desc: 'Real-time alerts on supply chain delays.', key: 'storm_sentinel' as GauntletStep },
-    { number: 3, title: 'Defense Protocol', desc: 'The 3-question cheat sheet against high-pressure sales.', key: 'kitchen_table' as GauntletStep },
+    {
+      number: 1,
+      title: "Pricing Intelligence",
+      desc: "Access verified local installation data.",
+      key: "insider_price" as GauntletStep,
+    },
+    {
+      number: 2,
+      title: "Storm Sentinel",
+      desc: "Real-time alerts on supply chain delays.",
+      key: "storm_sentinel" as GauntletStep,
+    },
+    {
+      number: 3,
+      title: "Defense Protocol",
+      desc: "The 3-question cheat sheet against high-pressure sales.",
+      key: "kitchen_table" as GauntletStep,
+    },
   ];
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -728,7 +747,7 @@ export function ExitIntentModal({
                 linear-gradient(hsl(200,60%,50%) 1px, transparent 1px),
                 linear-gradient(90deg, hsl(200,60%,50%) 1px, transparent 1px)
               `,
-              backgroundSize: '40px 40px',
+              backgroundSize: "40px 40px",
             }}
           />
 
@@ -745,14 +764,11 @@ export function ExitIntentModal({
                 </div>
                 <div>
                   <div className="text-lg font-bold">
-                    <span className="text-cyan-400">Forensic</span>{' '}
-                    <span className="text-white">Ally</span>
+                    <span className="text-cyan-400">Forensic</span> <span className="text-white">Ally</span>
                   </div>
                 </div>
               </div>
-              <p className="text-slate-500 text-xs tracking-wider uppercase">
-                For Impact Window Decisions
-              </p>
+              <p className="text-slate-500 text-xs tracking-wider uppercase">For Impact Window Decisions</p>
             </div>
 
             {/* Character / Visual Area */}
@@ -776,21 +792,18 @@ export function ExitIntentModal({
                     <div
                       className={`
                         flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border
-                        ${isActive
-                          ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400'
-                          : 'bg-slate-800 border-slate-700 text-slate-500'
+                        ${
+                          isActive
+                            ? "bg-cyan-500/20 border-cyan-500 text-cyan-400"
+                            : "bg-slate-800 border-slate-700 text-slate-500"
                         }
                       `}
                     >
                       {item.number}
                     </div>
                     <div>
-                      <p className={`text-sm font-bold ${isActive ? 'text-white' : 'text-slate-500'}`}>
-                        {item.title}
-                      </p>
-                      <p className={`text-xs ${isActive ? 'text-slate-400' : 'text-slate-600'}`}>
-                        {item.desc}
-                      </p>
+                      <p className={`text-sm font-bold ${isActive ? "text-white" : "text-slate-500"}`}>{item.title}</p>
+                      <p className={`text-xs ${isActive ? "text-slate-400" : "text-slate-600"}`}>{item.desc}</p>
                     </div>
                   </div>
                 );
@@ -805,7 +818,7 @@ export function ExitIntentModal({
         <div className="flex-1 bg-[hsl(220,20%,11%)] p-6 sm:p-8 overflow-y-auto max-h-[90vh] md:max-h-none relative">
           {/* Close Button */}
           <button
-            onClick={() => handleClose('user_closed')}
+            onClick={() => handleClose("user_closed")}
             className="absolute top-4 right-4 p-2 rounded-full text-slate-500 hover:text-white hover:bg-slate-800 transition-colors z-10"
             aria-label="Close modal"
           >
@@ -814,7 +827,7 @@ export function ExitIntentModal({
 
           {/* Step Header */}
           <div className="flex items-center justify-between mb-6">
-            {currentStep !== 'insider_price' ? (
+            {currentStep !== "insider_price" ? (
               <button
                 type="button"
                 onClick={handleBack}
@@ -829,10 +842,7 @@ export function ExitIntentModal({
                 <span className="text-sm font-bold text-white">Forensic Ally</span>
               </div>
             )}
-            <span
-              className="text-cyan-400 text-xs tracking-wider uppercase ml-auto"
-              aria-live="polite"
-            >
+            <span className="text-cyan-400 text-xs tracking-wider uppercase ml-auto" aria-live="polite">
               Step {stepNumber} of 3
             </span>
           </div>
@@ -840,18 +850,21 @@ export function ExitIntentModal({
           {/* ═══════════════════════════════════════════════════════════ */}
           {/* STEP 1: INSIDER PRICE (Lead Score: 100)                   */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          {currentStep === 'insider_price' && (
+          {currentStep === "insider_price" && (
             <div className="space-y-5">
               <div>
                 <Badge className="mb-3 text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20">
                   INTELLIGENCE DATABASE
                 </Badge>
 
-                <h2 id="gauntlet-title" className="text-xl sm:text-2xl font-bold text-white mb-2 uppercase tracking-tight">
-                  See What Your Neighbors Actually Paid.
+                <h2
+                  id="gauntlet-title"
+                  className="text-xl sm:text-2xl font-bold text-white mb-2 uppercase tracking-tight"
+                >
+                  Discover what your neighbors are paying.
                 </h2>
                 <p className="text-sm text-slate-400">
-                  Stop guessing. Unlock our proprietary database of recent impact window project costs verified in your exact zip code.
+                  Unlock our proprietary database of recent impact window project costs verified in your exact zip code.
                 </p>
               </div>
 
@@ -863,14 +876,14 @@ export function ExitIntentModal({
                     <Input
                       ref={firstInputRef}
                       type="text"
-                      {...step1Form.getFieldProps('name')}
-                      onChange={handleInputChange('name', step1Form.getFieldProps('name').onChange)}
+                      {...step1Form.getFieldProps("name")}
+                      onChange={handleInputChange("name", step1Form.getFieldProps("name").onChange)}
                       placeholder="Your name"
-                      className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step1Form.hasError('name') ? 'border-destructive' : ''}`}
+                      className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step1Form.hasError("name") ? "border-destructive" : ""}`}
                       disabled={step1Submit.isSubmitting}
                     />
-                    {step1Form.hasError('name') && (
-                      <p className="text-xs text-destructive">{step1Form.getError('name')}</p>
+                    {step1Form.hasError("name") && (
+                      <p className="text-xs text-destructive">{step1Form.getError("name")}</p>
                     )}
                   </div>
 
@@ -878,14 +891,14 @@ export function ExitIntentModal({
                     <label className="text-sm font-semibold text-slate-300">Phone Number</label>
                     <Input
                       type="tel"
-                      {...step1Form.getFieldProps('phone')}
-                      onChange={handleInputChange('phone', step1Form.getFieldProps('phone').onChange)}
+                      {...step1Form.getFieldProps("phone")}
+                      onChange={handleInputChange("phone", step1Form.getFieldProps("phone").onChange)}
                       placeholder="(555) 555-5555"
-                      className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step1Form.hasError('phone') ? 'border-destructive' : ''}`}
+                      className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step1Form.hasError("phone") ? "border-destructive" : ""}`}
                       disabled={step1Submit.isSubmitting}
                     />
-                    {step1Form.hasError('phone') && (
-                      <p className="text-xs text-destructive">{step1Form.getError('phone')}</p>
+                    {step1Form.hasError("phone") && (
+                      <p className="text-xs text-destructive">{step1Form.getError("phone")}</p>
                     )}
                   </div>
                 </div>
@@ -895,21 +908,21 @@ export function ExitIntentModal({
                   <label className="text-sm font-semibold text-slate-300">Email Address</label>
                   <Input
                     type="email"
-                    {...step1Form.getFieldProps('email')}
-                    onChange={handleInputChange('email', step1Form.getFieldProps('email').onChange)}
+                    {...step1Form.getFieldProps("email")}
+                    onChange={handleInputChange("email", step1Form.getFieldProps("email").onChange)}
                     placeholder="your@email.com"
-                    className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step1Form.hasError('email') ? 'border-destructive' : ''}`}
+                    className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step1Form.hasError("email") ? "border-destructive" : ""}`}
                     disabled={step1Submit.isSubmitting}
                   />
-                  {step1Form.hasError('email') && (
-                    <p className="text-xs text-destructive">{step1Form.getError('email')}</p>
+                  {step1Form.hasError("email") && (
+                    <p className="text-xs text-destructive">{step1Form.getError("email")}</p>
                   )}
                 </div>
 
                 <WindowCountSelector
                   value={step1Form.values.windowCount}
-                  onChange={(val) => step1Form.setValue('windowCount', val)}
-                  error={step1Form.getError('windowCount')}
+                  onChange={(val) => step1Form.setValue("windowCount", val)}
+                  error={step1Form.getError("windowCount")}
                 />
 
                 {/* CTA Button */}
@@ -918,7 +931,7 @@ export function ExitIntentModal({
                   className="w-full min-h-[48px] inline-flex items-center justify-center rounded-lg font-bold text-white transition-all bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 shadow-[0_0_15px_rgba(8,145,178,0.3)] hover:shadow-[0_0_25px_rgba(8,145,178,0.5)] border border-cyan-400/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                   disabled={step1Submit.isSubmitting}
                 >
-                  {step1Submit.isSubmitting ? 'Accessing Secure Database...' : 'Reveal Local Pricing Data'}
+                  {step1Submit.isSubmitting ? "Accessing Secure Database..." : "Reveal Local Pricing Data"}
                 </button>
 
                 {/* Decline — fat-finger safety */}
@@ -938,19 +951,22 @@ export function ExitIntentModal({
           {/* ═══════════════════════════════════════════════════════════ */}
           {/* STEP 2: STORM SENTINEL (Lead Score: 60)                   */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          {currentStep === 'storm_sentinel' && (
+          {currentStep === "storm_sentinel" && (
             <div className="space-y-5">
               <div>
                 <div className="inline-flex items-center justify-center w-11 h-11 bg-amber-500/10 border border-amber-500/20 rounded-full mb-3">
                   <AlertTriangle className="w-6 h-6 text-amber-400" />
                 </div>
 
-                <h2 id="gauntlet-title" className="text-lg sm:text-xl font-bold text-white mb-2 uppercase tracking-tight">
-                  Don't Get Caught in{' '}
-                  <span className="block">Supply Chain Gridlock.</span>
+                <h2
+                  id="gauntlet-title"
+                  className="text-lg sm:text-xl font-bold text-white mb-2 uppercase tracking-tight"
+                >
+                  Don't Get Caught in <span className="block">Supply Chain Gridlock.</span>
                 </h2>
                 <p className="text-sm text-slate-400">
-                  When named storms approach, lead times triple overnight. Activate our early-warning SMS system for immediate manufacturing delays and flash price drops.
+                  When named storms approach, lead times triple overnight. Activate our early-warning SMS system for
+                  immediate manufacturing delays and flash price drops.
                 </p>
               </div>
 
@@ -960,14 +976,14 @@ export function ExitIntentModal({
                   <Input
                     ref={firstInputRef}
                     type="tel"
-                    {...step2Form.getFieldProps('phone')}
-                    onChange={handleInputChange('phone', step2Form.getFieldProps('phone').onChange)}
+                    {...step2Form.getFieldProps("phone")}
+                    onChange={handleInputChange("phone", step2Form.getFieldProps("phone").onChange)}
                     placeholder="(555) 555-5555"
-                    className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step2Form.hasError('phone') ? 'border-destructive' : ''}`}
+                    className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step2Form.hasError("phone") ? "border-destructive" : ""}`}
                     disabled={step2Submit.isSubmitting}
                   />
-                  {step2Form.hasError('phone') && (
-                    <p className="text-xs text-destructive">{step2Form.getError('phone')}</p>
+                  {step2Form.hasError("phone") && (
+                    <p className="text-xs text-destructive">{step2Form.getError("phone")}</p>
                   )}
                 </div>
 
@@ -977,7 +993,7 @@ export function ExitIntentModal({
                   className="w-full min-h-[48px] inline-flex items-center justify-center rounded-lg font-bold text-white transition-all bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 shadow-[0_0_15px_rgba(8,145,178,0.3)] hover:shadow-[0_0_25px_rgba(8,145,178,0.5)] border border-cyan-400/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                   disabled={step2Submit.isSubmitting}
                 >
-                  {step2Submit.isSubmitting ? 'Activating Sentinel...' : 'Activate Instant SMS Alerts'}
+                  {step2Submit.isSubmitting ? "Activating Sentinel..." : "Activate Instant SMS Alerts"}
                 </button>
 
                 {/* Decline — fat-finger safety */}
@@ -997,7 +1013,7 @@ export function ExitIntentModal({
           {/* ═══════════════════════════════════════════════════════════ */}
           {/* STEP 3: KITCHEN TABLE DEFENSE (Lead Score: 30)            */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          {currentStep === 'kitchen_table' && (
+          {currentStep === "kitchen_table" && (
             <div className="space-y-4">
               <div>
                 <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-500/10 border border-blue-500/20 rounded-full mb-3">
@@ -1005,11 +1021,11 @@ export function ExitIntentModal({
                 </div>
 
                 <h2 id="gauntlet-title" className="text-lg font-bold text-white mb-2 uppercase tracking-tight">
-                  Arm Yourself With{' '}
-                  <span className="block">The Defense Protocol.</span>
+                  Arm Yourself With <span className="block">The Defense Protocol.</span>
                 </h2>
                 <p className="text-sm text-slate-400">
-                  Preparing for in-home quotes? Download the definitive '3-Question Blueprint' engineered to instantly disarm high-pressure sales tactics.
+                  Preparing for in-home quotes? Download the definitive '3-Question Blueprint' engineered to instantly
+                  disarm high-pressure sales tactics.
                 </p>
               </div>
 
@@ -1019,14 +1035,14 @@ export function ExitIntentModal({
                   <Input
                     ref={firstInputRef}
                     type="email"
-                    {...step3Form.getFieldProps('email')}
-                    onChange={handleInputChange('email', step3Form.getFieldProps('email').onChange)}
+                    {...step3Form.getFieldProps("email")}
+                    onChange={handleInputChange("email", step3Form.getFieldProps("email").onChange)}
                     placeholder="your@email.com"
-                    className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step3Form.hasError('email') ? 'border-destructive' : ''}`}
+                    className={`bg-[hsl(220,25%,8%)] text-slate-200 border-slate-700 placeholder:text-slate-500 focus-visible:ring-cyan-500 ${step3Form.hasError("email") ? "border-destructive" : ""}`}
                     disabled={step3Submit.isSubmitting}
                   />
-                  {step3Form.hasError('email') && (
-                    <p className="text-xs text-destructive">{step3Form.getError('email')}</p>
+                  {step3Form.hasError("email") && (
+                    <p className="text-xs text-destructive">{step3Form.getError("email")}</p>
                   )}
                 </div>
 
@@ -1036,7 +1052,7 @@ export function ExitIntentModal({
                   className="w-full min-h-[48px] inline-flex items-center justify-center rounded-lg font-bold text-white transition-all bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 shadow-[0_0_15px_rgba(8,145,178,0.3)] hover:shadow-[0_0_25px_rgba(8,145,178,0.5)] border border-cyan-400/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                   disabled={step3Submit.isSubmitting}
                 >
-                  {step3Submit.isSubmitting ? 'Transmitting...' : 'Send The Blueprint Securely'}
+                  {step3Submit.isSubmitting ? "Transmitting..." : "Send The Blueprint Securely"}
                 </button>
 
                 {/* Decline — fat-finger safety */}
