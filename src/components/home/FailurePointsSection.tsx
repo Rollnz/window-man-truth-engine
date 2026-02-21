@@ -83,20 +83,20 @@ export function FailurePointsSection() {
       <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.03)_0%,transparent_70%)] pointer-events-none" />
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-8">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-black">
             Most Homeowners Don't Get Burned by Bad Decisions.
             <span className="block mt-2 text-[hsl(var(--secondary))]">They Get Burned by Technicalities.</span>
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-muted">
             The window industry doesn't fail homeowners emotionally. It fails them <em>technically</em>.
           </p>
         </div>
         
         <div className="max-w-3xl mx-auto mb-12">
-          <p className="text-lg text-muted-foreground leading-relaxed text-center">
+          <p className="text-lg leading-relaxed text-center text-muted">
             Most homeowners approach window upgrades responsibly. They compare quotes. They ask questions. They choose "impact-rated" products. They trust licensed contractors.
           </p>
-          <p className="text-lg text-muted-foreground leading-relaxed text-center mt-4">
+          <p className="text-lg leading-relaxed text-center mt-4 text-muted">
             And still — many lose coverage, fail inspections, or discover gaps only when it's too late.
           </p>
           <p className="text-xl font-semibold text-center mt-6 text-black">
