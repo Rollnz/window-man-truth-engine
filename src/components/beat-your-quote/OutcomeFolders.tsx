@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Shield, ArrowRight, ClipboardCheck, Loader2, Mail } from 'lucide-react';
+import { CheckCircle, Shield, ArrowRight, ClipboardCheck, Loader2, ArrowBigDownDash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,7 +33,7 @@ export function OutcomeFolders({
     leadId: hookLeadId,
     setLeadId
   } = useLeadIdentity();
-  const [activeOutcome, setActiveOutcome] = useState<'alpha' | 'bravo' | null>('alpha');
+  const [activeOutcome, setActiveOutcome] = useState<'alpha' | 'bravo' | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -419,7 +419,7 @@ export function OutcomeFolders({
               <DialogHeader>
                 <div className="flex justify-center mb-2">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Mail className="w-4 h-4 text-primary" />
+                    <ArrowBigDownDash className="w-4 h-4 text-primary" />
                   </div>
                 </div>
                 <DialogTitle className="text-center text-xl font-bold text-slate-900">Start Your Mission</DialogTitle>
