@@ -33,7 +33,7 @@ export function OutcomeFolders({
     leadId: hookLeadId,
     setLeadId
   } = useLeadIdentity();
-  const [activeOutcome, setActiveOutcome] = useState<'alpha' | 'bravo' | null>(null);
+  const [activeOutcome, setActiveOutcome] = useState<'alpha' | 'bravo' | null>('alpha');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
