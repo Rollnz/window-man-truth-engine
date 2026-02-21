@@ -13,7 +13,7 @@ interface DossierHeroProps {
 
 export function DossierHero({
   onFileSelect,
-  onNoQuoteClick,
+  onNoQuoteClick
 }: DossierHeroProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -63,10 +63,10 @@ export function DossierHero({
       <div className="relative z-10 container px-4 text-center max-w-4xl pt-24 pb-16">
         {/* AI Badge with Dossier Theme */}
         <div className="mb-4 animate-fade-in">
-          <ShimmerBadge 
-            text="AI Quote Intelligence" 
-            variant="dossier"
-          />
+          <ShimmerBadge
+            text="AI Quote Intelligence"
+            variant="dossier" />
+
         </div>
         
         {/* Classified Stamp */}
@@ -106,11 +106,11 @@ export function DossierHero({
             className={cn(
               "relative border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-200",
               "flex flex-col items-center justify-center p-8 gap-4 min-h-[180px]",
-              isDragging
-                ? "border-primary bg-primary/10 scale-[1.01]"
-                : "border-white/30 hover:border-primary/50 bg-white/5 hover:bg-white/10"
-            )}
-          >
+              isDragging ?
+              "border-primary bg-primary/10 scale-[1.01]" :
+              "border-white/30 hover:border-primary/50 bg-white/5 hover:bg-white/10"
+            )}>
+
             <div className="w-16 h-16 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
               <Upload className="w-8 h-8 text-primary" />
             </div>
@@ -132,23 +132,23 @@ export function DossierHero({
               accept="image/*,.pdf"
               onChange={handleFileInput}
               className="hidden"
-              aria-label="Upload contractor quote"
-            />
+              aria-label="Upload contractor quote" />
+
           </div>
 
           {/* "No quote yet?" escape hatch */}
           <button
             type="button"
             onClick={onNoQuoteClick}
-            className="mt-4 text-sm text-primary/80 hover:text-primary underline underline-offset-4 transition-colors"
-          >
+            className="mt-4 text-sm text-primary/80 hover:text-primary underline underline-offset-4 transition-colors">
+
             Don't have a quote yet? Get started here →
           </button>
 
           {/* Trust indicators with tooltip */}
           <div className="flex items-center justify-center gap-2 text-sm text-white/90 mt-4">
             <Shield className="w-4 h-4 text-primary" />
-            <span>Your quote is encrypted and analyzed by AI. We never share your data.</span>
+            <span>"Safely encrypted we scan your quote to instantly detect inflated prices, sub-par materials, missing warranties & more"          </span>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -169,6 +169,6 @@ export function DossierHero({
           <ChevronDown className="w-8 h-8 text-primary opacity-60 mx-auto" />
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 }
