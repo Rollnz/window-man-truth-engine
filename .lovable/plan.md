@@ -1,24 +1,27 @@
 
 
-# Fix: Keep Subtext Horizontal on Mobile
+# Replace FAQ "Call Window Man" Link with Click-to-Call
 
-## Problem
-On mobile, the subtext beneath the headings — "We beat your quote" and "We can't beat it" — is wrapping to multiple lines, breaking the compact folder-tab design.
+## What Changes
 
-## Changes (1 file)
+**File: `src/components/sample-report/FAQSection.tsx`**
 
-**File: `src/components/beat-your-quote/OutcomeFolders.tsx`**
-
-### Heading fixes (from previous approval, included here for completeness)
-1. **Line 290** — "WE BEAT IT" h4: Add `whitespace-nowrap` and responsive sizing (`text-lg sm:text-2xl`)
-2. **Line 344** — "OR VALIDATE IT" h4: Add `whitespace-nowrap` and responsive sizing (`text-base sm:text-xl`)
-
-### Subtext fixes (this request)
-3. **Line 293** — "We beat your quote" p tag: Add `whitespace-nowrap`
-4. **Line 347** — "We can't beat it" p tag: Add `whitespace-nowrap`
+1. Import `CallWindowManButton` from `@/components/consultation/CallWindowManButton`.
+2. Replace the plain `<button>` element at the bottom of the FAQ section (line 75) with `<CallWindowManButton source="faq_section" variant="outline" size="sm" />` styled inline to match the current link appearance.
+3. Since the `onOpenPreQuoteModal` prop is no longer needed by this section's footer, it can remain on the interface (other components may still use it), but the bottom link will no longer call it.
 
 ## What Does NOT Change
-- Expand/collapse behavior, state logic, analytics tracking
-- All other text, icons, layout, and styling
-- No other files touched
+
+- The FAQ questions, answers, accordion behavior, and layout remain untouched.
+- The `CallWindowManButton` component itself is not modified -- it already implements the exact mobile-dial / desktop-reveal logic.
+- No other files are affected.
+
+## Technical Detail
+
+The current code at line 75:
+```
+<button onClick={() => onOpenPreQuoteModal?.('faq_talk')} className="text-primary hover:underline">Call Window Man</button>
+```
+
+Will be replaced with the `CallWindowManButton` component, styled as an inline text-link to preserve the current visual appearance, passing `source="faq_section"` for analytics tracking.
 
