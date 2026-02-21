@@ -5,7 +5,7 @@ import { ROUTES } from '@/config/navigation';
 
 export function WeaponizeAuditSection() {
   return (
-    <section className="py-20 md:py-32 relative bg-[hsl(var(--surface-3))] overflow-hidden">
+    <section className="py-20 md:py-32 relative bg-gradient-to-b from-[hsl(28,30%,97.2%)] to-[hsl(210,24%,95.9%)] overflow-hidden isolate pattern-scanlines">
       {/* Ambient mesh blobs */}
       <div className="absolute top-0 left-0 w-80 h-80 rounded-full bg-[radial-gradient(circle,hsl(var(--secondary)/0.04)_0%,transparent_70%)] pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.03)_0%,transparent_70%)] pointer-events-none" />
