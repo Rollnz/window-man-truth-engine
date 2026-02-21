@@ -148,7 +148,7 @@ export function CaseFileCard({
       {/* Expandable Testimonial */}
       <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="px-5 pb-5 border-t border-border/30 pt-4">
-          <p className="text-sm text-muted-foreground leading-relaxed italic">
+          <p className="text-sm leading-relaxed italic text-secondary-foreground">
             "{data.testimonial}"
           </p>
           <p className="text-xs text-muted-foreground/60 mt-3">
