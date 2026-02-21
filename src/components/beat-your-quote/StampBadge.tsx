@@ -17,11 +17,11 @@ export function StampBadge({ children, variant = 'red', className = '' }: StampB
         transform -rotate-3
         ${variantStyles[variant]}
         ${className}
-      `}
-    >
-      <span className="text-sm font-mono tracking-declassified uppercase font-bold">
+      `}>
+
+      <span className="text-sm font-mono tracking-declassified uppercase font-bold text-sidebar-primary">
         {children}
       </span>
-    </div>
-  );
+    </div>);
+
 }
