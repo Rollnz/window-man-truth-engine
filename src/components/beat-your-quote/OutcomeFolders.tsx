@@ -387,8 +387,8 @@ export function OutcomeFolders({
       <div className="max-w-lg mx-auto p-6 rounded-lg border border-border/30 bg-background/5 text-center">
         <p className="text-xl text-primary-foreground">Either Way, <span className="text-tools-truth-engine font-bold">You Win.</span>
         </p>
-        <p className="text-tools-truth-engine/60 italic mt-2 text-base">
-          "The only failed mission is the one you never start."
+        <p className="text-tools-truth-engine/60 italic mt-2 text-base text-glow">
+          "This either exposes a bad deal, or confirms a great one. Zero risk."
         </p>
       </div>
 
