@@ -287,10 +287,10 @@ export function OutcomeFolders({
               <CheckCircle className="w-5 h-5 text-green-400" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-green-400 uppercase tracking-wide font-mono text-lg sm:text-2xl whitespace-nowrap">
+              <h4 className="font-bold text-green-400 uppercase tracking-wide font-mono text-2xl">
                 WE BEAT IT
               </h4>
-              <p className="text-sm text-primary-foreground whitespace-nowrap">We beat your quote</p>
+              <p className="text-sm text-primary-foreground">We beat your quote</p>
             </div>
             {activeOutcome === 'alpha' && <span className="text-xs font-mono text-green-400/60 tracking-wider">OUTCOME ALPHA</span>}
           </div>
@@ -341,10 +341,10 @@ export function OutcomeFolders({
               <Shield className="w-5 h-5 text-tools-truth-engine" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono text-base sm:text-xl whitespace-nowrap">
+              <h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono text-xl">
                 OR VALIDATE IT 
               </h4>
-              <p className="text-sm text-muted-foreground whitespace-nowrap">We can't beat it</p>
+              <p className="text-sm text-muted-foreground">We can't beat it</p>
             </div>
             {activeOutcome === 'bravo' && <span className="text-xs font-mono text-tools-truth-engine/60 tracking-wider">OUTCOME BRAVO</span>}
           </div>
@@ -399,7 +399,7 @@ export function OutcomeFolders({
           <ArrowRight className="ml-2 w-5 h-5" />
         </Button>
         <p className="mt-3 text-primary-foreground text-base">
-          Upload your quote. Get results in 24 hours.
+          Upload Your Quote For Instant Analysis         
         </p>
       </div>
 
@@ -434,7 +434,7 @@ export function OutcomeFolders({
                     <Label htmlFor="mission-name" className="font-semibold text-slate-900">Name</Label>
                     {isNameValid && <CheckCircle className="w-4 h-4 text-green-500" />}
                   </div>
-                  <Input id="mission-name" type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} onFocus={() => handleFieldFocus('name')} disabled={isLoading} autoFocus className="h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm" />
+                  <Input id="mission-name" type="text" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} onFocus={() => handleFieldFocus('name')} disabled={isLoading} autoFocus className="h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm" />
                 </div>
 
                 <div className="space-y-2">
@@ -469,7 +469,7 @@ export function OutcomeFolders({
                       <Label htmlFor="mission-windows" className="font-semibold text-slate-900">Window Count</Label>
                       {windowCount && <CheckCircle className="w-4 h-4 text-green-500" />}
                     </div>
-                    <Input id="mission-windows" type="number" placeholder="10" min="1" max="100" value={windowCount} onChange={e => setWindowCount(e.target.value)} disabled={isLoading} className="h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm" />
+                    <Input id="mission-windows" type="number" placeholder="10" min="1" max="100" value={windowCount} onChange={(e) => setWindowCount(e.target.value)} disabled={isLoading} className="h-9 bg-white border-gray-300 text-slate-900 placeholder:text-slate-400 shadow-sm" />
                   </div>
                 </div>
 
@@ -490,9 +490,9 @@ export function OutcomeFolders({
 }
 function Zap({
   className
-}: {
-  className?: string;
-}) {
+
+
+}: {className?: string;}) {
   return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
     </svg>;
