@@ -47,11 +47,11 @@ DialogFooter.displayName = "DialogFooter";
 const DialogTitle = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Title>, React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>>(({
   className,
   ...props
-}, ref) => <DialogPrimitive.Title ref={ref} className={cn("text-xl font-bold leading-tight tracking-tight text-primary-foreground", className)} {...props} />);
+}, ref) => <DialogPrimitive.Title ref={ref} className={cn("text-xl font-bold leading-tight tracking-tight text-foreground", className)} {...props} />);
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 const DialogDescription = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Description>, React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>>(({
   className,
   ...props
-}, ref) => <DialogPrimitive.Description ref={ref} className={cn("text-base font-normal text-primary-foreground", className)} {...props} />);
+}, ref) => <DialogPrimitive.Description ref={ref} className={cn("text-base font-normal text-foreground", className)} {...props} />);
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 export { Dialog, DialogPortal, DialogOverlay, DialogClose, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription };
