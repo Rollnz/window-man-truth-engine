@@ -15,6 +15,7 @@ import RealityReport from "@/components/reality-check/RealityReport";
 import { LeadCaptureModal } from "@/components/conversion/LeadCaptureModal";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { ExitIntentModal } from "@/components/authority";
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { trackLeadCapture, trackConsultation, trackToolCompletion } from "@/lib/gtm";
 import { getSmartRelatedTools, getFrameControl } from "@/config/toolRegistry";
 import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
@@ -123,6 +124,7 @@ const calculateScore = (answers: Record<string, string | number | undefined>) =>
 const RealityCheck = () => {
   usePageTracking('reality-check');
   const { sessionData, updateField, updateFields, markToolCompleted, getPrefilledValue } = useSessionData();
+  const { hasIdentity } = useLeadIdentity();
   const { trackToolComplete } = useTrackToolCompletion();
   const [currentStep, setCurrentStep] = useState(1);
   const [answers, setAnswers] = useState<Record<string, string | number | undefined>>({});
@@ -277,7 +279,7 @@ const RealityCheck = () => {
         {/* Exit Intent Modal - 3-step re-engagement */}
         <ExitIntentModal 
           sourceTool="reality-check"
-          hasConverted={!!sessionData.leadId}
+          hasConverted={hasIdentity}
           resultSummary={`Reality Score of ${score}`}
         />
       </div>

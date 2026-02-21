@@ -36,12 +36,15 @@ import { RelatedToolsGrid } from "@/components/ui/RelatedToolsGrid";
 import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
 import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 import type { SourceTool } from "@/types/sourceTool";
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
+import { ExitIntentModal } from "@/components/authority";
 
 export default function ClaimSurvival() {
   usePageTracking("claim-survival-kit");
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { sessionData, updateField, updateFields, markToolCompleted } = useSessionData();
+  const { hasIdentity } = useLeadIdentity();
   const { toast } = useToast();
 
   // Generate or retrieve session ID for anonymous uploads
@@ -474,6 +477,12 @@ export default function ClaimSurvival() {
           title={getFrameControl("claim-survival").title}
           description={getFrameControl("claim-survival").description}
           tools={getSmartRelatedTools("claim-survival", sessionData.toolsCompleted)}
+        />
+
+        <ExitIntentModal
+          sourceTool="claim-survival-kit"
+          hasConverted={hasIdentity}
+          resultSummary="Insurance Claim Survival Kit"
         />
 
       </div>

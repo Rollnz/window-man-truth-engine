@@ -28,6 +28,7 @@ import { getGuidePageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index
 import { ProTipBox } from '@/components/seo';
 import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
 import { SalesTacticsGuideModal } from '@/components/conversion/SalesTacticsGuideModal';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 
 const SalesTacticsGuide = () => {
   usePageTracking('sales-tactics-guide');
@@ -36,6 +37,7 @@ const SalesTacticsGuide = () => {
   const frameControl = getFrameControl('sales-tactics-guide');
   const smartTools = getSmartRelatedTools('sales-tactics-guide', sessionData.toolsCompleted);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { hasIdentity } = useLeadIdentity();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -365,7 +367,7 @@ const SalesTacticsGuide = () => {
       {/* Exit Intent Modal for lead capture */}
       <ExitIntentModal
         sourceTool="sales-tactics-guide"
-        hasConverted={isModalOpen}
+        hasConverted={hasIdentity}
         resultSummary="11 Sales Tactics Guide"
       />
 

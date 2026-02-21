@@ -10,6 +10,8 @@ import { getToolPageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas";
 import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { useSessionData } from "@/hooks/useSessionData";
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
+import { ExitIntentModal } from "@/components/authority";
 
 const redFlags = [
   "Quotes without line-item pricing for glass, frames, and installation.",
@@ -20,6 +22,7 @@ const redFlags = [
 const Defense = () => {
   const [showConsultationModal, setShowConsultationModal] = useState(false);
   const { sessionData } = useSessionData();
+  const { hasIdentity } = useLeadIdentity();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -90,6 +93,12 @@ const Defense = () => {
         onSuccess={() => setShowConsultationModal(false)}
         sessionData={sessionData}
         sourceTool="consultation"
+      />
+
+      <ExitIntentModal
+        sourceTool="fast-win"
+        hasConverted={hasIdentity}
+        resultSummary="Quote Defense Checklist"
       />
     </div>
   );

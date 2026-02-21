@@ -25,6 +25,7 @@ import ValueStackSection from '@/components/spec-checklist/ValueStackSection';
 import FAQSection from '@/components/spec-checklist/FAQSection';
 import SecondaryCTASection from '@/components/spec-checklist/SecondaryCTASection';
 import { ExitIntentModal } from '@/components/authority';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 
 const CONVERSION_STORAGE_KEY = 'spec_checklist_converted';
 
@@ -37,6 +38,7 @@ const SpecChecklistGuide = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mainCtaRef = useRef<HTMLDivElement>(null);
   const { sessionData } = useSessionData();
+  const { hasIdentity } = useLeadIdentity();
   const frameControl = getFrameControl('spec-checklist-guide');
   const smartTools = getSmartRelatedTools('spec-checklist-guide', sessionData.toolsCompleted);
 
@@ -121,7 +123,7 @@ const SpecChecklistGuide = () => {
       {/* Exit Intent Modal - Uses authority 3-step workflow */}
       <ExitIntentModal 
         sourceTool="spec-checklist-guide" 
-        hasConverted={hasConverted} 
+        hasConverted={hasIdentity} 
         onSuccess={handleConversionSuccess} 
       />
     </div>

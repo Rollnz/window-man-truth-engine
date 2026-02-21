@@ -18,6 +18,7 @@ import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas/index'
 import { ProTipBox } from '@/components/seo';
 import { ReviewedByBadge, ExitIntentModal } from '@/components/authority';
 import { KitchenTableGuideModal } from '@/components/conversion/KitchenTableGuideModal';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 const KitchenTableGuide = () => {
   usePageTracking('kitchen-table-guide');
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ const KitchenTableGuide = () => {
   const frameControl = getFrameControl('kitchen-table-guide');
   const smartTools = getSmartRelatedTools('kitchen-table-guide', sessionData.toolsCompleted);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { hasIdentity } = useLeadIdentity();
 
   // Single source of truth for book image
   const defenseKitResource = getResourceById('defense-kit');
@@ -412,7 +414,7 @@ const KitchenTableGuide = () => {
       </div>
 
       {/* Exit Intent Modal for lead capture */}
-      <ExitIntentModal sourceTool="kitchen-table-guide" hasConverted={isSubmitting} resultSummary="Kitchen Table Defense Guide" />
+      <ExitIntentModal sourceTool="kitchen-table-guide" hasConverted={hasIdentity} resultSummary="Kitchen Table Defense Guide" />
 
       {/* Kitchen Table Guide Modal */}
       <KitchenTableGuideModal

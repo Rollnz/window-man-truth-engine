@@ -16,12 +16,15 @@ import { getToolPageSchemas, getBreadcrumbSchema, generateEvidenceLibrarySchemas
 import { PillarBreadcrumb } from "@/components/seo/PillarBreadcrumb";
 import type { SourceTool } from "@/types/sourceTool";
 import { ROUTES } from "@/config/navigation";
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
+import { ExitIntentModal } from "@/components/authority";
 
 export default function Evidence() {
   usePageTracking("evidence-locker");
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { sessionData, updateFields, markToolCompleted } = useSessionData();
+  const { hasIdentity } = useLeadIdentity();
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Modals state
@@ -183,6 +186,12 @@ export default function Evidence() {
         sessionData={sessionData}
         leadId={sessionData.leadId}
         sourceTool="evidence-locker"
+      />
+
+      <ExitIntentModal
+        sourceTool="evidence-locker"
+        hasConverted={hasIdentity}
+        resultSummary="Evidence Locker Case Studies"
       />
     </div>
   );

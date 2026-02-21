@@ -25,6 +25,7 @@ import { WhyUseSection } from "@/components/expert/WhyUseSection";
 import { TimelineSection } from "@/components/expert/TimelineSection";
 import { TrustSection } from "@/components/expert/TrustSection";
 import { FinalCTASection } from "@/components/expert/FinalCTASection";
+import { ExitIntentModal } from "@/components/authority";
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -256,6 +257,12 @@ export default function Expert() {
       <LeadCaptureModal isOpen={showLeadModal} onClose={() => setShowLeadModal(false)} onSuccess={handleLeadCaptureSuccess} sourceTool={"expert-system" satisfies SourceTool} sessionData={sessionData} leadId={sessionData.leadId} chatHistory={messages} />
 
       <ConsultationBookingModal isOpen={showConsultationModal} onClose={() => setShowConsultationModal(false)} onSuccess={handleConsultationSuccess} leadId={sessionData.leadId} sessionData={sessionData} sourceTool="expert-system" />
+
+      <ExitIntentModal
+        sourceTool="expert-system"
+        hasConverted={!!leadId}
+        resultSummary="Window Expert AI Consultation"
+      />
 
     </div>;
 }

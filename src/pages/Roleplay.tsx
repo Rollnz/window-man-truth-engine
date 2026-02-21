@@ -16,6 +16,8 @@ import { RelatedToolsGrid } from '@/components/ui/RelatedToolsGrid';
 import { getToolPageSchemas, getBreadcrumbSchema } from '@/lib/seoSchemas';
 import { PillarBreadcrumb } from '@/components/seo/PillarBreadcrumb';
 import type { Difficulty, GameResult, AnalysisResult } from '@/types/roleplay';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { ExitIntentModal } from '@/components/authority';
 
 const cn = (...classes: (string | undefined | null | false)[]) => {
   return classes.filter(Boolean).join(' ');
@@ -23,6 +25,7 @@ const cn = (...classes: (string | undefined | null | false)[]) => {
 
 export default function Roleplay() {
   const { gameState, config, startGame, addMessage, updateResistance, useHint, endGame, checkWinCondition, checkLossCondition, resetGame } = useRoleplayGame();
+  const { hasIdentity } = useLeadIdentity();
   const { sendMessage, analyzeGame, isLoading, error: aiError } = useRoleplayAI({ difficulty: gameState.difficulty });
   
   const [currentHint, setCurrentHint] = useState<string | null>(null);
@@ -223,6 +226,12 @@ export default function Roleplay() {
         title={getFrameControl('roleplay').title}
         description={getFrameControl('roleplay').description}
         tools={getSmartRelatedTools('roleplay')}
+      />
+
+      <ExitIntentModal
+        sourceTool="roleplay"
+        hasConverted={hasIdentity}
+        resultSummary="Sales Pressure Roleplay Simulator"
       />
     </div>
   );
