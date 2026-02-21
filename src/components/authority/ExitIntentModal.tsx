@@ -70,6 +70,420 @@ const STEP_CONFIG = {
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
+// SOURCETOOL-AWARE COPY — Context-Aware Conversion Copy
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface StepCopyConfig {
+  badge?: string;
+  headline: string;
+  subheadline: string;
+  ctaLabel: string;
+  ctaLoading: string;
+  declineText: string;
+}
+
+interface SourceToolCopyConfig {
+  step1: StepCopyConfig;
+  step2: StepCopyConfig;
+  step3: StepCopyConfig;
+}
+
+// Category-based Step 2 & 3 presets to avoid repetition
+const STEP2_COST: StepCopyConfig = {
+  headline: "Price Drops Happen Fast.\nDon't Miss the Window.",
+  subheadline: "Get instant SMS alerts when local suppliers cut prices or offer flash promotions — before your neighbors find out.",
+  ctaLabel: "Activate Price Drop Alerts",
+  ctaLoading: "Activating Alerts...",
+  declineText: "Skip — I'll pay full price",
+};
+
+const STEP2_RISK: StepCopyConfig = {
+  headline: "Storm Alerts Have Saved\nHomeowners Thousands.",
+  subheadline: "When a named storm enters the cone, lead times triple overnight. Get early-warning SMS so you act before the rush.",
+  ctaLabel: "Activate Storm Alerts",
+  ctaLoading: "Activating Sentinel...",
+  declineText: "Skip — I'll take my chances",
+};
+
+const STEP2_SALES: StepCopyConfig = {
+  headline: "Flash Deals Expose\nthe Real Markup.",
+  subheadline: "Contractors run limited promos that reveal true margins. We'll text you the second one drops in your area.",
+  ctaLabel: "Activate Deal Alerts",
+  ctaLoading: "Activating Alerts...",
+  declineText: "Skip — I trust the sticker price",
+};
+
+const STEP2_DEFAULT: StepCopyConfig = {
+  headline: "Don't Get Caught in\nSupply Chain Gridlock.",
+  subheadline: "When named storms approach, lead times triple overnight. Activate our early-warning SMS system for immediate alerts.",
+  ctaLabel: "Activate Instant SMS Alerts",
+  ctaLoading: "Activating Sentinel...",
+  declineText: "Skip — I'll risk the backorder",
+};
+
+const STEP3_COST: StepCopyConfig = {
+  headline: "Take the Price\nVerification Checklist.",
+  subheadline: "The exact line items to compare across quotes — so you never overpay for materials, labor, or permits.",
+  ctaLabel: "Send My Checklist",
+  ctaLoading: "Transmitting...",
+  declineText: "Skip — I'll wing the negotiation",
+};
+
+const STEP3_RISK: StepCopyConfig = {
+  headline: "Download the Hurricane\nPrep Blueprint.",
+  subheadline: "The step-by-step protocol to protect your home and insurance claim before the next storm season.",
+  ctaLabel: "Send My Blueprint",
+  ctaLoading: "Transmitting...",
+  declineText: "Skip — I'll figure it out later",
+};
+
+const STEP3_SALES: StepCopyConfig = {
+  headline: "Arm Yourself With\nthe Anti-Sales Playbook.",
+  subheadline: "3 questions that instantly disarm high-pressure tactics. Used by homeowners who refuse to be outsold.",
+  ctaLabel: "Send The Playbook",
+  ctaLoading: "Transmitting...",
+  declineText: "Skip — I enjoy sales pitches",
+};
+
+const STEP3_DEFAULT: StepCopyConfig = {
+  headline: "Arm Yourself With\nThe Defense Protocol.",
+  subheadline: "Download the '3-Question Blueprint' engineered to instantly disarm high-pressure sales tactics.",
+  ctaLabel: "Send The Blueprint Securely",
+  ctaLoading: "Transmitting...",
+  declineText: "Skip — I enjoy sales pitches",
+};
+
+const SOURCE_TOOL_COPY: Record<string, SourceToolCopyConfig> = {
+  // ── High-Intent Tool Pages ──────────────────────────────────────────────
+  "quote-scanner": {
+    step1: {
+      badge: "QUOTE ANALYSIS",
+      headline: "Don't Sign That Quote Blind.",
+      subheadline: "Our AI flagged potential issues in quotes like yours. Get a full forensic breakdown with verified local pricing before you commit.",
+      ctaLabel: "Unlock My Quote Report",
+      ctaLoading: "Analyzing Quote Data...",
+      declineText: "Skip — I trust the contractor",
+    },
+    step2: STEP2_COST,
+    step3: STEP3_COST,
+  },
+  "beat-your-quote": {
+    step1: {
+      badge: "NEGOTIATION INTEL",
+      headline: "Leave Now and You Leave Money on the Table.",
+      subheadline: "We've identified leverage points in your quote. Get a personalized counter-offer strategy with real local comps.",
+      ctaLabel: "Get My Counter-Offer Ammo",
+      ctaLoading: "Building Your Strategy...",
+      declineText: "Skip — I'll pay what they asked",
+    },
+    step2: STEP2_COST,
+    step3: STEP3_SALES,
+  },
+  "vulnerability-test": {
+    step1: {
+      badge: "RISK ASSESSMENT",
+      headline: "Storm Season Won't Wait for You to Come Back.",
+      subheadline: "Your home's vulnerability profile is partially mapped. Complete your risk score and get a prioritized action plan.",
+      ctaLabel: "Complete My Risk Report",
+      ctaLoading: "Calculating Risk Score...",
+      declineText: "Skip — my windows are fine",
+    },
+    step2: STEP2_RISK,
+    step3: STEP3_RISK,
+  },
+  "comparison-tool": {
+    step1: {
+      badge: "COMPARISON DATA",
+      headline: "Budget vs. Premium: The 10-Year Truth.",
+      subheadline: "See the real cost-per-year breakdown that contractors never show you. The cheapest option rarely wins over a decade.",
+      ctaLabel: "Reveal the 10-Year Math",
+      ctaLoading: "Crunching Numbers...",
+      declineText: "Skip — I'll guess which is better",
+    },
+    step2: STEP2_COST,
+    step3: STEP3_COST,
+  },
+
+  // ── Pillar Pages ────────────────────────────────────────────────────────
+  "window-cost-truth": {
+    step1: {
+      badge: "LOCAL PRICING DATA",
+      headline: "Stop Guessing. Get Your Exact Local Price.",
+      subheadline: "Our database has verified installation costs from your zip code. See what homeowners actually paid — not what salespeople quote.",
+      ctaLabel: "Reveal My Local Pricing",
+      ctaLoading: "Pulling Local Data...",
+      declineText: "Skip — I'll trust the first quote",
+    },
+    step2: STEP2_COST,
+    step3: STEP3_COST,
+  },
+  "window-sales-truth": {
+    step1: {
+      badge: "SALES DEFENSE",
+      headline: "Every Salesperson Hopes You Don't Know This.",
+      subheadline: "The tactics they'll use at your kitchen table are predictable. Get the playbook that levels the field before they arrive.",
+      ctaLabel: "Get the Insider Playbook",
+      ctaLoading: "Preparing Your Defense...",
+      declineText: "Skip — I can handle the pitch",
+    },
+    step2: STEP2_SALES,
+    step3: STEP3_SALES,
+  },
+  "window-risk-and-code": {
+    step1: {
+      badge: "CODE COMPLIANCE",
+      headline: "One Code Violation Could Void Your Insurance.",
+      subheadline: "Florida building codes changed in 2024. Verify your installation meets current HVHZ requirements before a storm tests it.",
+      ctaLabel: "Check My Compliance Status",
+      ctaLoading: "Scanning Code Database...",
+      declineText: "Skip — I'm sure it's up to code",
+    },
+    step2: STEP2_RISK,
+    step3: STEP3_RISK,
+  },
+  "window-verification-system": {
+    step1: {
+      badge: "VERIFICATION CHECK",
+      headline: "3 Out of 5 Quotes Fail Our Verification Check.",
+      subheadline: "NOA numbers, installation specs, permit requirements — our system catches what homeowners miss. Verify before you sign.",
+      ctaLabel: "Run My Verification Check",
+      ctaLoading: "Running Verification...",
+      declineText: "Skip — I trust the paperwork",
+    },
+    step2: STEP2_SALES,
+    step3: STEP3_COST,
+  },
+
+  // ── Tier-2 Educational Pages ────────────────────────────────────────────
+  "risk-diagnostic": {
+    step1: {
+      badge: "RISK PROFILE",
+      headline: "Your Home's Risk Profile Is Almost Ready.",
+      subheadline: "We've started mapping your vulnerabilities. Complete your assessment to get a prioritized protection plan.",
+      ctaLabel: "Complete My Risk Profile",
+      ctaLoading: "Finalizing Profile...",
+      declineText: "Skip — I'll assess it myself",
+    },
+    step2: STEP2_RISK,
+    step3: STEP3_RISK,
+  },
+  "cost-calculator": {
+    step1: {
+      badge: "SAVINGS ESTIMATE",
+      headline: "Your Custom Savings Estimate Is Waiting.",
+      subheadline: "Based on your inputs, we can show you exactly where the savings are hiding. Don't leave without your personalized numbers.",
+      ctaLabel: "Unlock My Savings Estimate",
+      ctaLoading: "Calculating Savings...",
+      declineText: "Skip — I'll do the math myself",
+    },
+    step2: STEP2_COST,
+    step3: STEP3_COST,
+  },
+  "true-cost-calculator": {
+    step1: {
+      badge: "TRUE COST ANALYSIS",
+      headline: "Your Custom Savings Estimate Is Waiting.",
+      subheadline: "The true cost includes what contractors leave out: permits, disposal, trim, and callbacks. See the real number.",
+      ctaLabel: "Reveal the True Cost",
+      ctaLoading: "Calculating True Cost...",
+      declineText: "Skip — I'll trust the estimate",
+    },
+    step2: STEP2_COST,
+    step3: STEP3_COST,
+  },
+  "fair-price-quiz": {
+    step1: {
+      badge: "PRICE RANGE",
+      headline: "Your Fair Price Range Is Ready — Don't Lose It.",
+      subheadline: "We've calibrated a fair market range for your project. Leave now and you'll have to start over.",
+      ctaLabel: "Lock In My Price Range",
+      ctaLoading: "Saving Your Range...",
+      declineText: "Skip — I'll start over later",
+    },
+    step2: STEP2_COST,
+    step3: STEP3_COST,
+  },
+  "claim-survival-kit": {
+    step1: {
+      badge: "CLAIM TOOLKIT",
+      headline: "Your Insurance Claim Checklist Is Ready to Download.",
+      subheadline: "Missing one document can delay your claim by weeks. Get the complete checklist adjusters use internally.",
+      ctaLabel: "Download My Claim Kit",
+      ctaLoading: "Preparing Kit...",
+      declineText: "Skip — I'll figure out the claim",
+    },
+    step2: STEP2_RISK,
+    step3: STEP3_RISK,
+  },
+  "evidence-locker": {
+    step1: {
+      badge: "EVIDENCE FILE",
+      headline: "The Evidence File Is Compiled. Take It With You.",
+      subheadline: "Real case studies, exposed markups, and verified data points — everything you need to negotiate from a position of strength.",
+      ctaLabel: "Access the Evidence File",
+      ctaLoading: "Compiling Evidence...",
+      declineText: "Skip — I don't need proof",
+    },
+    step2: STEP2_SALES,
+    step3: STEP3_SALES,
+  },
+  "intel-library": {
+    step1: {
+      badge: "INTELLIGENCE BRIEF",
+      headline: "Your Intelligence Briefing Is Standing By.",
+      subheadline: "Curated guides, price data, and industry intel — organized for homeowners who do their homework before signing.",
+      ctaLabel: "Access My Intel Briefing",
+      ctaLoading: "Loading Intel...",
+      declineText: "Skip — I'll go in blind",
+    },
+    step2: STEP2_SALES,
+    step3: STEP3_COST,
+  },
+  "roleplay": {
+    step1: {
+      badge: "SALES TRAINING",
+      headline: "Prepare for the Sales Pitch. Practice Makes Perfect.",
+      subheadline: "Salespeople rehearse their pitch hundreds of times. Shouldn't you practice saying no at least once?",
+      ctaLabel: "Start My Practice Session",
+      ctaLoading: "Loading Simulation...",
+      declineText: "Skip — I'll improvise",
+    },
+    step2: STEP2_SALES,
+    step3: STEP3_SALES,
+  },
+  "fast-win": {
+    step1: {
+      badge: "QUICK SAVINGS",
+      headline: "Your Fastest Path to Savings Is One Click Away.",
+      subheadline: "We identified the single highest-impact action you can take today. It takes 5 minutes and could save thousands.",
+      ctaLabel: "Show Me My Fast Win",
+      ctaLoading: "Finding Your Win...",
+      declineText: "Skip — I have plenty of time",
+    },
+    step2: STEP2_COST,
+    step3: STEP3_COST,
+  },
+  "expert-system": {
+    step1: {
+      badge: "EXPERT ANALYSIS",
+      headline: "Your Expert Analysis Is Almost Complete.",
+      subheadline: "Our AI expert has been building your personalized recommendation. Leave now and you'll lose the context.",
+      ctaLabel: "Complete My Analysis",
+      ctaLoading: "Finalizing Analysis...",
+      declineText: "Skip — I know what I need",
+    },
+    step2: STEP2_COST,
+    step3: STEP3_SALES,
+  },
+  "reality-check": {
+    step1: {
+      badge: "REALITY CHECK",
+      headline: "The Reality Check Results Are In.",
+      subheadline: "We've stress-tested your assumptions against real market data. The truth might surprise you — in a good way.",
+      ctaLabel: "See My Reality Check",
+      ctaLoading: "Loading Results...",
+      declineText: "Skip — I trust my gut",
+    },
+    step2: STEP2_COST,
+    step3: STEP3_COST,
+  },
+  "kitchen-table-guide": {
+    step1: {
+      badge: "NEGOTIATION GUIDE",
+      headline: "The Kitchen Table Playbook — Free Before You Leave.",
+      subheadline: "What to say, what to ask, and what to never agree to when the salesperson sits at your table.",
+      ctaLabel: "Get My Playbook",
+      ctaLoading: "Preparing Playbook...",
+      declineText: "Skip — I'll wing it",
+    },
+    step2: STEP2_SALES,
+    step3: STEP3_SALES,
+  },
+  "sales-tactics-guide": {
+    step1: {
+      badge: "TACTICS DECODER",
+      headline: "The Tactics Decoder Cheat Sheet — Yours Free.",
+      subheadline: "Every pressure tactic has a counter-move. Learn the exact responses that stop manipulative closing techniques cold.",
+      ctaLabel: "Decode the Tactics",
+      ctaLoading: "Preparing Decoder...",
+      declineText: "Skip — I can spot a trick",
+    },
+    step2: STEP2_SALES,
+    step3: STEP3_SALES,
+  },
+  "spec-checklist-guide": {
+    step1: {
+      badge: "SPEC CHECKLIST",
+      headline: "Your Spec Verification Checklist Is Ready.",
+      subheadline: "The 17-point inspection that separates a legitimate quote from a bait-and-switch. Don't sign without checking.",
+      ctaLabel: "Get My Spec Checklist",
+      ctaLoading: "Loading Checklist...",
+      declineText: "Skip — I trust the specs",
+    },
+    step2: STEP2_SALES,
+    step3: STEP3_COST,
+  },
+  "insurance-savings-guide": {
+    step1: {
+      badge: "INSURANCE SAVINGS",
+      headline: "Your Insurance Discount Roadmap — Take It.",
+      subheadline: "Impact windows can slash your premiums by up to 45%. This guide shows exactly which upgrades qualify and how to file.",
+      ctaLabel: "Get My Savings Roadmap",
+      ctaLoading: "Building Roadmap...",
+      declineText: "Skip — I'll call my agent",
+    },
+    step2: STEP2_RISK,
+    step3: STEP3_RISK,
+  },
+  "floating-estimate-form": {
+    step1: {
+      badge: "ESTIMATE PENDING",
+      headline: "Your Personalized Estimate Is Almost Ready.",
+      subheadline: "We've started building your custom estimate. Complete it now to lock in today's pricing data.",
+      ctaLabel: "Complete My Estimate",
+      ctaLoading: "Finalizing Estimate...",
+      declineText: "Skip — I'll get quotes the hard way",
+    },
+    step2: STEP2_COST,
+    step3: STEP3_COST,
+  },
+  "slide-over-ai-qa": {
+    step1: {
+      badge: "EXPERT ANSWERS",
+      headline: "Your Expert Answered — Don't Lose the Thread.",
+      subheadline: "The Q&A session has valuable context. Get a summary of the key insights emailed to you before you leave.",
+      ctaLabel: "Email My Q&A Summary",
+      ctaLoading: "Packaging Summary...",
+      declineText: "Skip — I'll remember it",
+    },
+    step2: STEP2_SALES,
+    step3: STEP3_DEFAULT,
+  },
+
+  // ── Default Fallback ────────────────────────────────────────────────────
+  DEFAULT: {
+    step1: {
+      badge: "INTELLIGENCE DATABASE",
+      headline: "Wait — Your Custom Report Is Almost Ready.",
+      subheadline: "Get verified local pricing data and insider analysis before you go. No spam, no obligation — just the truth.",
+      ctaLabel: "Unlock My Free Report",
+      ctaLoading: "Accessing Secure Database...",
+      declineText: "Skip — I don't care about pricing",
+    },
+    step2: STEP2_DEFAULT,
+    step3: STEP3_DEFAULT,
+  },
+};
+
+/**
+ * Resolves the correct copy for a given sourceTool and step.
+ * Falls back to DEFAULT if the sourceTool is not mapped.
+ */
+function getStepCopy(sourceTool: string, step: "step1" | "step2" | "step3"): StepCopyConfig {
+  return SOURCE_TOOL_COPY[sourceTool]?.[step] ?? SOURCE_TOOL_COPY.DEFAULT[step];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // WINDOW COUNT SELECTOR (Segmented Control)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -850,21 +1264,23 @@ export function ExitIntentModal({ sourceTool, hasConverted = false, onSuccess }:
           {/* ═══════════════════════════════════════════════════════════ */}
           {/* STEP 1: INSIDER PRICE (Lead Score: 100)                   */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          {currentStep === "insider_price" && (
+          {currentStep === "insider_price" && (() => {
+            const copy = getStepCopy(sourceTool, "step1");
+            return (
             <div className="space-y-5">
               <div>
                 <Badge className="mb-3 text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20">
-                  INTELLIGENCE DATABASE
+                  {copy.badge || "INTELLIGENCE DATABASE"}
                 </Badge>
 
                 <h2
                   id="gauntlet-title"
                   className="text-xl sm:text-2xl font-bold text-white mb-2 uppercase tracking-tight"
                 >
-                  Discover what your neighbors are paying.
+                  {copy.headline}
                 </h2>
                 <p className="text-sm text-slate-400">
-                  Unlock our proprietary database of recent impact window project costs verified in your exact zip code.
+                  {copy.subheadline}
                 </p>
               </div>
 
@@ -931,7 +1347,7 @@ export function ExitIntentModal({ sourceTool, hasConverted = false, onSuccess }:
                   className="w-full min-h-[48px] inline-flex items-center justify-center rounded-lg font-bold text-white transition-all bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 shadow-[0_0_15px_rgba(8,145,178,0.3)] hover:shadow-[0_0_25px_rgba(8,145,178,0.5)] border border-cyan-400/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                   disabled={step1Submit.isSubmitting}
                 >
-                  {step1Submit.isSubmitting ? "Accessing Secure Database..." : "Reveal Local Pricing Data"}
+                  {step1Submit.isSubmitting ? copy.ctaLoading : copy.ctaLabel}
                 </button>
 
                 {/* Decline — fat-finger safety */}
@@ -941,17 +1357,20 @@ export function ExitIntentModal({ sourceTool, hasConverted = false, onSuccess }:
                     onClick={handleDecline}
                     className="text-slate-500 hover:text-slate-300 underline underline-offset-4 uppercase text-xs tracking-wider"
                   >
-                    Skip — I don't care about pricing
+                    {copy.declineText}
                   </button>
                 </div>
               </form>
             </div>
-          )}
+            );
+          })()}
 
           {/* ═══════════════════════════════════════════════════════════ */}
           {/* STEP 2: STORM SENTINEL (Lead Score: 60)                   */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          {currentStep === "storm_sentinel" && (
+          {currentStep === "storm_sentinel" && (() => {
+            const copy = getStepCopy(sourceTool, "step2");
+            return (
             <div className="space-y-5">
               <div>
                 <div className="inline-flex items-center justify-center w-11 h-11 bg-amber-500/10 border border-amber-500/20 rounded-full mb-3">
@@ -960,13 +1379,12 @@ export function ExitIntentModal({ sourceTool, hasConverted = false, onSuccess }:
 
                 <h2
                   id="gauntlet-title"
-                  className="text-lg sm:text-xl font-bold text-white mb-2 uppercase tracking-tight"
+                  className="text-lg sm:text-xl font-bold text-white mb-2 uppercase tracking-tight whitespace-pre-line"
                 >
-                  Don't Get Caught in <span className="block">Supply Chain Gridlock.</span>
+                  {copy.headline}
                 </h2>
                 <p className="text-sm text-slate-400">
-                  When named storms approach, lead times triple overnight. Activate our early-warning SMS system for
-                  immediate manufacturing delays and flash price drops.
+                  {copy.subheadline}
                 </p>
               </div>
 
@@ -993,7 +1411,7 @@ export function ExitIntentModal({ sourceTool, hasConverted = false, onSuccess }:
                   className="w-full min-h-[48px] inline-flex items-center justify-center rounded-lg font-bold text-white transition-all bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 shadow-[0_0_15px_rgba(8,145,178,0.3)] hover:shadow-[0_0_25px_rgba(8,145,178,0.5)] border border-cyan-400/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                   disabled={step2Submit.isSubmitting}
                 >
-                  {step2Submit.isSubmitting ? "Activating Sentinel..." : "Activate Instant SMS Alerts"}
+                  {step2Submit.isSubmitting ? copy.ctaLoading : copy.ctaLabel}
                 </button>
 
                 {/* Decline — fat-finger safety */}
@@ -1003,29 +1421,31 @@ export function ExitIntentModal({ sourceTool, hasConverted = false, onSuccess }:
                     onClick={handleDecline}
                     className="text-slate-500 hover:text-slate-300 underline underline-offset-4 uppercase text-xs tracking-wider"
                   >
-                    Skip — I'll risk the backorder
+                    {copy.declineText}
                   </button>
                 </div>
               </form>
             </div>
-          )}
+            );
+          })()}
 
           {/* ═══════════════════════════════════════════════════════════ */}
           {/* STEP 3: KITCHEN TABLE DEFENSE (Lead Score: 30)            */}
           {/* ═══════════════════════════════════════════════════════════ */}
-          {currentStep === "kitchen_table" && (
+          {currentStep === "kitchen_table" && (() => {
+            const copy = getStepCopy(sourceTool, "step3");
+            return (
             <div className="space-y-4">
               <div>
                 <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-500/10 border border-blue-500/20 rounded-full mb-3">
                   <FileText className="w-6 h-6 text-blue-400" />
                 </div>
 
-                <h2 id="gauntlet-title" className="text-lg font-bold text-white mb-2 uppercase tracking-tight">
-                  Arm Yourself With <span className="block">The Defense Protocol.</span>
+                <h2 id="gauntlet-title" className="text-lg font-bold text-white mb-2 uppercase tracking-tight whitespace-pre-line">
+                  {copy.headline}
                 </h2>
                 <p className="text-sm text-slate-400">
-                  Preparing for in-home quotes? Download the definitive '3-Question Blueprint' engineered to instantly
-                  disarm high-pressure sales tactics.
+                  {copy.subheadline}
                 </p>
               </div>
 
@@ -1052,7 +1472,7 @@ export function ExitIntentModal({ sourceTool, hasConverted = false, onSuccess }:
                   className="w-full min-h-[48px] inline-flex items-center justify-center rounded-lg font-bold text-white transition-all bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 shadow-[0_0_15px_rgba(8,145,178,0.3)] hover:shadow-[0_0_25px_rgba(8,145,178,0.5)] border border-cyan-400/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                   disabled={step3Submit.isSubmitting}
                 >
-                  {step3Submit.isSubmitting ? "Transmitting..." : "Send The Blueprint Securely"}
+                  {step3Submit.isSubmitting ? copy.ctaLoading : copy.ctaLabel}
                 </button>
 
                 {/* Decline — fat-finger safety */}
@@ -1062,12 +1482,13 @@ export function ExitIntentModal({ sourceTool, hasConverted = false, onSuccess }:
                     onClick={handleDecline}
                     className="text-slate-500 hover:text-slate-300 underline underline-offset-4 uppercase text-xs tracking-wider"
                   >
-                    Skip — I enjoy sales pitches
+                    {copy.declineText}
                   </button>
                 </div>
               </form>
             </div>
-          )}
+            );
+          })()}
 
           {/* Trust Footer */}
           <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-slate-800">
