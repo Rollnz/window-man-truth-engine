@@ -1,60 +1,140 @@
+# Move 1: SourceTool-Aware Copy Customization
 
+## What This Does
 
-# Tier-2 Rollout: ExitIntentModal Expansion
+Transforms the ExitIntentModal from a one-size-fits-all modal into a context-aware conversion engine. When a user tries to leave `/ai-scanner`, they see copy about their unfinished quote analysis. When they leave `/vulnerability-test`, they see copy about their home's exposed risk score. The offer feels like a natural continuation of what they were doing, not a generic popup.
 
-## What Tier-2 Covers
+## Why This Matters
 
-Tier-2 has **two parts**:
+Generic exit modals convert at 2-4%. Context-aware modals convert at 8-15% because the copy matches the user's current mental state and sunk-cost psychology ("You already started X, don't leave without Y").
 
-### Part A: Fix the `hasConverted` bug on 7 existing pages
-These pages already have ExitIntentModal but use incorrect suppression logic (the same bug we just fixed on the pillar pages). They use `!!sessionData.leadId`, `isSubmitting`, `isModalOpen`, or `!!userEmail` — none of which reflect the true global lead identity.
+## Scope
 
-| Page | Current (broken) | Fix |
-|------|------------------|-----|
-| CostCalculator | `!!sessionData.leadId` | `hasIdentity` via `useLeadIdentity` |
-| RiskDiagnostic | `!!sessionData.leadId` | `hasIdentity` via `useLeadIdentity` |
-| RealityCheck | `!!sessionData.leadId` | `hasIdentity` via `useLeadIdentity` |
-| KitchenTableGuide | `isSubmitting` | `hasIdentity` via `useLeadIdentity` |
-| InsuranceSavingsGuide | `isSubmitting` | `hasIdentity` via `useLeadIdentity` |
-| SalesTacticsGuide | `isModalOpen` | `hasIdentity` via `useLeadIdentity` |
-| FairPriceQuiz | `!!userEmail` | `hasIdentity` (hook already imported) |
-| SpecChecklistGuide | custom localStorage flag | `hasIdentity` via `useLeadIdentity` |
+- **1 file modified**: `src/components/authority/ExitIntentModal.tsx`
+- **0 files created or deleted**
+- **No state logic, trigger logic, or layout changes**
+- Only the text content, badge text, CTA labels, and decline copy become dynamic
 
-### Part B: Add ExitIntentModal to 7 new pages
-These educational/tool pages currently have zero exit-intent capture.
+## Architecture
 
-| Page | sourceTool | resultSummary | Risk Analysis |
-|------|-----------|---------------|---------------|
-| Defense (`/defense`) | `"fast-win"` (defensive content) | "Quote Defense Checklist" | No conflict — simple content page with ConsultationBookingModal only |
-| Evidence (`/evidence`) | `"evidence-locker"` | "Evidence Locker Case Studies" | Has LeadCaptureModal + ConsultationBookingModal, but exit intent only fires for unconverted users — no overlap |
-| ClaimSurvival (`/claim-survival`) | `"claim-survival-kit"` | "Insurance Claim Survival Kit" | Has LeadCaptureModal gate for uploads. Exit intent catches users who browse but never upload — complementary |
-| Expert (`/expert`) | `"expert-system"` | "Window Expert AI Consultation" | AI chat page; already imports useLeadIdentity. No conflict |
-| FastWin (`/fast-win`) | `"fast-win"` | "Fastest Win Strategy" | Has LeadCaptureModal for results. Exit intent catches users who leave before completing — complementary |
-| Intel (`/intel`) | `"intel-library"` | "Intelligence Library Resources" | Hub page linking to guides. Catches browsers who don't click through |
-| Roleplay (`/roleplay`) | `"roleplay"` | "Sales Pressure Roleplay Simulator" | AI game page. Catches users who leave mid-game or before starting |
+A single `SOURCE_TOOL_COPY` mapping object will be added near the top of the file. It maps each `sourceTool` string to customized copy for all 3 steps:
 
-**Pages deliberately excluded from Tier-2:**
-- **Consultation** (`/consultation`) — This IS the conversion page. Adding an exit-intent to catch people leaving a booking form could feel aggressive and counterproductive.
+```text
+SOURCE_TOOL_COPY = {
+  "quote-scanner": {
+    step1: { badge, headline, subheadline, ctaLabel, ctaLoading, declineText },
+    step2: { headline, subheadline, ctaLabel, ctaLoading, declineText },
+    step3: { headline, subheadline, ctaLabel, ctaLoading, declineText },
+  },
+  "beat-your-quote": { ... },
+  ...
+}
+```
 
-## Conflict Analysis
+A `getStepCopy(sourceTool, step)` helper function resolves the correct copy with a strong default fallback.
 
-**No new errors will be introduced because:**
-1. `useLeadIdentity` is a pure read hook from `useSessionData` context — already available on all pages wrapped in `PublicLayout`
-2. ExitIntentModal already handles its own trigger prerequisites (10s dwell, 30% scroll) and sessionStorage suppression
-3. The modal co-exists with SilentAllyInterceptor via shared `gauntlet_exit_intent_*` sessionStorage keys
-4. Pages with existing modals (LeadCaptureModal, ConsultationBookingModal) won't conflict because ExitIntentModal only fires for unconverted users, and those other modals are user-initiated (button clicks)
+## The Copy — 3 Headlines Per Page (Best Option Marked)
 
-**One edge case worth noting:** On SpecChecklistGuide, the current `hasConverted` uses a localStorage flag (`spec_checklist_converted`) which persists across sessions. Switching to `useLeadIdentity` (session-based) means a returning user who converted last session but has no `leadId` in the current session could see the exit modal again. This is actually **desirable** — it's a re-engagement opportunity.
+### High-Intent Tool Pages
 
-## Technical Implementation
+**quote-scanner / ai-scanner**
 
-For each file, the same 3-step pattern:
+- Option C: "Don't Sign That Quote Blind."
 
-1. Add import: `import { useLeadIdentity } from '@/hooks/useLeadIdentity'` and (if missing) `import { ExitIntentModal } from '@/components/authority'`
-2. Add hook call: `const { hasIdentity } = useLeadIdentity()` inside the component
-3. Add or update the component: `<ExitIntentModal sourceTool="..." hasConverted={hasIdentity} resultSummary="..." />`
+**beat-your-quote**
 
-**Total files modified: 15** (8 bug fixes + 7 new additions)
+- Option C: "Leave Now and You Leave Money on the Table."
 
-No new dependencies, no schema changes, no edge function changes, no CSS/layout modifications.
+**vulnerability-test**
 
+- Option C: "Storm Season Won't Wait for You to Come Back."
+
+**comparison-tool**
+
+- Option C: "Budget vs. Premium: The 10-Year Truth."
+
+### Pillar Pages (Educational Authority)
+
+**window-cost-truth**
+
+- Option C: "Stop Guessing. Get Your Exact Local Price."
+
+**window-sales-truth**
+
+- Option C: "Every Salesperson Hopes You Don't Know This."
+
+**window-risk-and-code**
+
+- Option B: "One Code Violation Could Void Your Insurance." (BEST — fear of loss)
+
+**window-verification-system**
+
+- Option C: "3 Out of 5 Quotes Fail Our Verification Check."
+
+### Tier-2 Educational Pages
+
+**risk-diagnostic**: "Your Home's Risk Profile Is Almost Ready."
+**cost-calculator / true-cost-calculator**: "Your Custom Savings Estimate Is Waiting."
+**fair-price-quiz**: "Your Fair Price Range Is Ready — Don't Lose It."  
+**claim-survival-kit**: "Your Insurance Claim Checklist Is Ready to Download."
+**evidence-locker**: "The Evidence File Is Compiled. Take It With You."
+**intel-library**: "Your Intelligence Briefing Is Standing By."
+**roleplay**: Prepare for the sales pitch. Practice makes perfect"  
+**fast-win**: "Your Fastest Path to Savings Is One Click Away."
+**expert-system**: "Your Expert Analysis Is Almost Complete."
+**reality-check**: "The Reality Check Results Are In."
+**kitchen-table-guide**: "The Kitchen Table Playbook — Free Before You Leave."
+**sales-tactics-guide**: "The Tactics Decoder Cheat Sheet — Yours Free."
+**spec-checklist-guide**: "Your Spec Verification Checklist Is Ready."
+**insurance-savings-guide**: "Your Insurance Discount Roadmap — Take It."
+**floating-estimate-form**: "Your Personalized Estimate Is Almost Ready."
+**slide-over-ai-qa**: "Your Expert Answered — Don't Lose the Thread."
+
+### Default Fallback (Unknown sourceTool)
+
+- Headline: "Wait — Your Custom Report Is Almost Ready."
+- Sub: "Get local pricing data and insider analysis before you go."
+- CTA: "Unlock My Free Report"
+
+## Step 2 and Step 3 Customization Strategy
+
+Steps 2 and 3 will also get page-aware copy but with lighter variation since they're downsell tiers:
+
+- **Step 2 (Storm Sentinel)**: Adjusts the urgency framing to match the page context. On cost pages: "Price drops happen fast." On risk pages: "Storm alerts save thousands." On sales pages: "Flash deals expose markups."
+- **Step 3 (Kitchen Table)**: Adjusts the cheat sheet framing. On sales pages: "The Anti-Sales Playbook." On cost pages: "The Price Verification Checklist." On risk pages: "The Hurricane Prep Blueprint."
+
+## Technical Details
+
+### Changes to ExitIntentModal.tsx
+
+1. **Add `SourceToolCopyConfig` interface** (lines ~35-50 area) defining the shape of each step's copy
+2. **Add `SOURCE_TOOL_COPY` constant** (lines ~70-300 area) — a Record mapping sourceTool strings to copy configs for all 3 steps, plus a `DEFAULT` key
+3. **Add `getStepCopy()` helper** — looks up `SOURCE_TOOL_COPY[sourceTool]` with fallback to `SOURCE_TOOL_COPY.DEFAULT`
+4. **Replace hardcoded strings in the render section** (lines ~856-1070):
+  - Step 1: Badge text, h2 text, p text, submit button label, decline text
+  - Step 2: h2 text, p text, submit button label, decline text
+  - Step 3: h2 text, p text, submit button label, decline text
+5. **No changes to**: state management, trigger logic, form schemas, analytics, prefill logic, step navigation, or CSS
+
+### What Is NOT Changing
+
+- No new props on ExitIntentModal
+- No new dependencies
+- No changes to any page files
+- No route changes
+- The `sourceTool` prop is already passed by every page — this change just makes the component read it for copy selection
+- CTA destinations (links) are NOT wired yet since ExitIntentModal submits forms, not navigates — the "destination" concept will be part of the post-submit redirect logic in a future enhancement  
+  
+GUARDRAILS FOR IMPLEMENTATION:
+
+1. CONSTANT PLACEMENT (Performance): 
+Make sure you define the `SOURCE_TOOL_COPY` object and the `SourceToolCopyConfig` interface OUTSIDE of the `ExitIntentModal` component function. Do not define it inside the render cycle, or it will be recreated on every single keystroke when the user types in their phone number.
+
+2. TYPESCRIPT SAFETY (The Undefined Trap):
+Ensure the `getStepCopy` helper function is completely bulletproof. If a `sourceTool` is passed that does not exist in the object, it MUST seamlessly fall back to `SOURCE_TOOL_COPY.DEFAULT` without throwing an undefined error. Use optional chaining where necessary.
+
+3. LAYOUT PROTECTION (Text Lengths):
+Do NOT alter any existing Tailwind classes `className="..."`) on the text elements (h2, p, span, etc.). The new dynamic copy must slot perfectly into the existing UI. Ensure the copy you generate for the sub-headlines does not exceed 2 short sentences, so we don't cause vertical overflow issues on mobile screens.
+
+4. IGNORING resultSummary (For Now):
+Some pages currently pass a `resultSummary` prop into this modal. For this specific refactor, do not attempt to merge `resultSummary` into the dynamic copy. Rely purely on the `SOURCE_TOOL_COPY` mapping based on the `sourceTool` string. 
