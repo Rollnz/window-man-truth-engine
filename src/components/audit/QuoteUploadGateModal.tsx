@@ -210,9 +210,10 @@ export function QuoteUploadGateModal({
                 onBlur={() => handleBlur('firstName')}
                 disabled={isLoading}
                 className={cn(
-                  "h-10 bg-white text-slate-900 border-slate-300",
+                  "h-10 bg-white text-slate-900 border-slate-500",
                   errors.firstName && "border-destructive focus-visible:ring-destructive"
                 )}
+                aria-required="true"
                 aria-describedby={errors.firstName ? 'firstName-error' : undefined} />
 
               {errors.firstName &&
@@ -234,9 +235,10 @@ export function QuoteUploadGateModal({
                 onBlur={() => handleBlur('lastName')}
                 disabled={isLoading}
                 className={cn(
-                  "h-10 bg-white text-slate-900 border-slate-300",
+                  "h-10 bg-white text-slate-900 border-slate-500",
                   errors.lastName && "border-destructive focus-visible:ring-destructive"
                 )}
+                aria-required="true"
                 aria-describedby={errors.lastName ? 'lastName-error' : undefined} />
 
               {errors.lastName &&
@@ -263,9 +265,10 @@ export function QuoteUploadGateModal({
               onBlur={() => handleBlur('email')}
               disabled={isLoading}
               className={cn(
-                "h-10 bg-white text-slate-900 border-slate-300",
+                "h-10 bg-white text-slate-900 border-slate-500",
                 errors.email && "border-destructive focus-visible:ring-destructive"
               )}
+              aria-required="true"
               aria-describedby={errors.email ? 'email-error' : undefined} />
 
             {errors.email &&
@@ -292,9 +295,10 @@ export function QuoteUploadGateModal({
               onBlur={() => handleBlur('phone')}
               disabled={isLoading}
               className={cn(
-                "h-10 bg-white text-slate-900 border-slate-300",
+                "h-10 bg-white text-slate-900 border-slate-500",
                 errors.phone && "border-destructive focus-visible:ring-destructive"
               )}
+              aria-required="true"
               aria-describedby={errors.phone ? 'phone-error' : undefined} />
 
             {errors.phone &&

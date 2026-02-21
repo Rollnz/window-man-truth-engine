@@ -117,6 +117,7 @@ export function ExplainScoreGate({ onSubmit }: ExplainScoreGateProps) {
               "h-10 bg-white text-slate-900 border-slate-300",
               errors.email && "border-destructive focus-visible:ring-destructive"
             )}
+            aria-required="true"
             aria-invalid={!!errors.email}
           />
           {errors.email && (
