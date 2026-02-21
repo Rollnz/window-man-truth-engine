@@ -21,7 +21,7 @@ function RiskCard({
   return <div className="group relative p-6 rounded-xl transition-all duration-300 hover:translate-y-[-4px] hover:shadow-lg border-2 border-primary bg-[#eef6fc]">
       <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-bold text-primary-foreground shadow-lg">{number}</div>
       <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-4", iconColor)}>{icon}</div>
-      <h4 className="text-lg font-semibold mb-1 text-secondary-foreground">{title}</h4><p className="text-sm font-medium text-[hsl(var(--secondary))] mb-3">{subtitle}</p><p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+      <h4 className="text-lg font-semibold mb-1 text-black">{title}</h4><p className="text-sm font-medium text-[hsl(var(--secondary))] mb-3">{subtitle}</p><p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
     </div>;
 }
 export function SecretPlaybookSection() {
