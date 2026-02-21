@@ -115,6 +115,9 @@ export function BlurGate({ analysis, onSubmit }: BlurGateProps) {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="First name"
+                  autoComplete="given-name"
+                  aria-required="true"
+                  aria-invalid={!!errors.firstName}
                   className={errors.firstName ? 'border-destructive' : ''}
                 />
                 {errors.firstName && (
@@ -129,6 +132,8 @@ export function BlurGate({ analysis, onSubmit }: BlurGateProps) {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Last name"
+                  autoComplete="family-name"
+                  aria-invalid={!!errors.lastName}
                   className={errors.lastName ? 'border-destructive' : ''}
                 />
                 {errors.lastName && (
@@ -146,6 +151,9 @@ export function BlurGate({ analysis, onSubmit }: BlurGateProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
+                autoComplete="email"
+                aria-required="true"
+                aria-invalid={!!errors.email}
                 className={errors.email ? 'border-destructive' : ''}
               />
               {errors.email && (
@@ -162,6 +170,8 @@ export function BlurGate({ analysis, onSubmit }: BlurGateProps) {
                 value={phone}
                 onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
                 placeholder="(555) 123-4567"
+                autoComplete="tel"
+                aria-invalid={!!errors.phone}
                 className={errors.phone ? 'border-destructive' : ''}
               />
               <p className="text-xs text-slate-500 mt-1">

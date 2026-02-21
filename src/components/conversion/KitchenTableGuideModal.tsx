@@ -293,7 +293,7 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
         {/* Row 1: First Name | Last Name */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="modal-firstName" className="sr-only">First Name</Label>
+            <Label htmlFor="modal-firstName" className="text-sm font-medium text-slate-700 mb-1 block">First Name *</Label>
             <Input
               id="modal-firstName"
               {...getFieldProps('firstName')}
@@ -301,13 +301,14 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
               className={`${inputBaseClass} border-black ${hasError('firstName') ? 'border-destructive' : ''}`}
               disabled={isSubmitting}
               autoComplete="given-name"
+              aria-required="true"
               aria-invalid={hasError('firstName')}
               aria-describedby={hasError('firstName') ? 'modal-firstName-error' : undefined}
             />
             {hasError('firstName') && <p id="modal-firstName-error" className="text-xs text-destructive mt-1">{getError('firstName')}</p>}
           </div>
           <div>
-            <Label htmlFor="modal-lastName" className="sr-only">Last Name</Label>
+            <Label htmlFor="modal-lastName" className="text-sm font-medium text-slate-700 mb-1 block">Last Name</Label>
             <Input
               id="modal-lastName"
               {...getFieldProps('lastName')}
@@ -322,7 +323,7 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
         {/* Row 2: Email | Phone */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="modal-email" className="sr-only">Email Address</Label>
+            <Label htmlFor="modal-email" className="text-sm font-medium text-slate-700 mb-1 block">Email *</Label>
             <Input
               id="modal-email"
               type="email"
@@ -341,13 +342,14 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
               }}
               disabled={isSubmitting}
               autoComplete="email"
+              aria-required="true"
               aria-invalid={hasError('email')}
               aria-describedby={hasError('email') ? 'modal-email-error' : undefined}
             />
             {hasError('email') && <p id="modal-email-error" className="text-xs text-destructive mt-1">{getError('email')}</p>}
           </div>
           <div>
-            <Label htmlFor="modal-phone" className="sr-only">Phone Number</Label>
+            <Label htmlFor="modal-phone" className="text-sm font-medium text-slate-700 mb-1 block">Phone</Label>
             <Input
               id="modal-phone"
               type="tel"
