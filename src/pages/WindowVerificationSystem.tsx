@@ -3,6 +3,7 @@ import clipboardHeroImg from "@/assets/impact_truth_clipboard_1-2.webp";
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
 import { ReviewedByBadge, ExitIntentModal } from "@/components/authority";
@@ -128,6 +129,7 @@ const guides = [
 ];
 
 const WindowVerificationSystem = () => {
+  const { hasIdentity } = useLeadIdentity();
   const pillarSchemaGraph = generatePillarSchemaGraph('window-verification-system');
   const faqSchema = generateFAQSchema(faqs);
 
@@ -207,7 +209,7 @@ const WindowVerificationSystem = () => {
 
       <ExitIntentModal
         sourceTool="window-verification-system"
-        hasConverted={false}
+        hasConverted={hasIdentity}
         resultSummary="Verifying window quotes and installers before signing"
       />
     </div>

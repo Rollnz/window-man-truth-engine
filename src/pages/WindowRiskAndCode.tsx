@@ -2,6 +2,7 @@ import { ShieldCheck, AlertTriangle, FileText, Scale, Wind, Percent, RefreshCw }
 import { SEO } from "@/components/SEO";
 import { Navbar } from "@/components/home/Navbar";
 
+import { useLeadIdentity } from "@/hooks/useLeadIdentity";
 import { PILLARS } from "@/config/pillarMapping";
 import { ROUTES } from "@/config/navigation";
 import { ReviewedByBadge, ExitIntentModal } from "@/components/authority";
@@ -122,6 +123,7 @@ const guides = [
 ];
 
 const WindowRiskAndCode = () => {
+  const { hasIdentity } = useLeadIdentity();
   const pillarSchemaGraph = generatePillarSchemaGraph('window-risk-and-code');
   const faqSchema = generateFAQSchema(faqs);
 
@@ -197,7 +199,7 @@ const WindowRiskAndCode = () => {
 
       <ExitIntentModal
         sourceTool="window-risk-and-code"
-        hasConverted={false}
+        hasConverted={hasIdentity}
         resultSummary="Understanding Florida hurricane protection requirements and building codes"
       />
     </div>
