@@ -253,31 +253,13 @@ export default function QuoteScanner() {
                     {/* Phase: idle — benefit preview + dual CTAs */}
                     {gated.phase === 'idle' && (
                       <div className="flex-1 relative rounded-xl border border-dashed border-border/20 dark:border-border/15 overflow-hidden">
-                        {/* ── Blurred ghost report background ── */}
-                        <div className="absolute inset-0 flex flex-col items-center pt-10 px-8 gap-4 blur-sm opacity-25 pointer-events-none">
-                          {/* Score donut placeholder */}
-                          <div className="w-20 h-20 rounded-full border-[6px] border-primary/60 flex-shrink-0" />
-                          <div className="h-3 w-32 rounded-full bg-foreground/40" />
-
-                          {/* Category score rows */}
-                          <div className="w-full max-w-[280px] space-y-3 mt-2">
-                            {[75, 60, 90, 45, 80].map((w, i) => (
-                              <div key={i} className="flex items-center gap-3">
-                                <div className="h-2.5 w-16 rounded-full bg-muted-foreground/30 flex-shrink-0" />
-                                <div className="flex-1 h-2.5 rounded-full bg-muted-foreground/20">
-                                  <div className="h-full rounded-full bg-primary/40" style={{ width: `${w}%` }} />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Flagged items pills */}
-                          <div className="w-full max-w-[280px] space-y-2 mt-3">
-                            {[85, 70, 55].map((w, i) => (
-                              <div key={i} className="h-6 rounded-full bg-destructive/15" style={{ width: `${w}%` }} />
-                            ))}
-                          </div>
-                        </div>
+                        {/* ── Forensic Clipboard ghost preview background ── */}
+                        <img
+                          src="/lovable-uploads/ai_decoded_results_g.webp"
+                          alt=""
+                          aria-hidden="true"
+                          className="absolute inset-0 w-full h-full object-cover object-top opacity-20 blur-[2px] pointer-events-none select-none"
+                        />
 
                         {/* Vignette overlay */}
                         <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/40 to-background/80 pointer-events-none" />
