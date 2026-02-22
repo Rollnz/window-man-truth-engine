@@ -50,7 +50,7 @@ export function ChoiceStepDispatcher({
       panel_variant: variant,
       has_location_data: !!locationData,
       engagement_score: engagementScore,
-      route_context_key: routeContext.key,
+      route_context_key: routeContext?.key ?? 'default',
     });
   }, [variant, locationData, engagementScore, routeContext.key]);
 
