@@ -47,16 +47,28 @@ export function useSessionSync() {
 
         console.log('[SessionSync] Syncing session data...', meaningfulKeys.length, 'fields');
 
-        const { data, error } = await invokeEdgeFunction('sync-session', {
-          body: {
-            sessionData,
-            syncReason: 'auth_login',
-          },
-          isIdempotent: true,
-        });
+        let data, error;
+        try {
+          const result = await invokeEdgeFunction('sync-session', {
+            body: {
+              sessionData,
+              syncReason: 'auth_login',
+            },
+            isIdempotent: true,
+          });
+          data = result.data;
+          error = result.error;
+        } catch (invokeErr) {
+          // invokeEdgeFunction may throw on dead sessions — never let it crash the app
+          console.warn('[SessionSync] invokeEdgeFunction threw (dead session?):', invokeErr);
+          hasSynced.current = true; // prevent retry loop
+          return;
+        }
 
         if (error) {
-          console.error('[SessionSync] Sync failed:', error);
+          console.warn('[SessionSync] Sync returned error (session likely expired):', error);
+          // Do NOT re-throw — SessionExpiredOverlay handles the UI
+          hasSynced.current = true; // prevent retry loop
         } else {
           console.log('[SessionSync] Sync complete:', data);
           hasSynced.current = true;
