@@ -1,6 +1,7 @@
 import type { PanelVariant } from '@/hooks/usePanelVariant';
 import type { AiQaMode } from '@/lib/panelVariants';
 import type { LocationPersonalization } from '@/hooks/useLocationPersonalization';
+import type { RouteContext } from '@/lib/routeContext';
 import { VariantA_ProofTransparency } from './VariantA_ProofTransparency';
 import { VariantB_DiagnosticQuiz } from './VariantB_DiagnosticQuiz';
 import { VariantC_IncentiveOffer } from './VariantC_IncentiveOffer';
@@ -18,6 +19,7 @@ interface ChoiceStepDispatcherProps {
   locationLoading: boolean;
   onResolveZip: (zip: string) => Promise<void>;
   engagementScore: number;
+  routeContext: RouteContext;
 }
 
 const VARIANT_COMPONENTS = {
@@ -40,6 +42,7 @@ export function ChoiceStepDispatcher({
   locationLoading,
   onResolveZip,
   engagementScore,
+  routeContext,
 }: ChoiceStepDispatcherProps) {
   // Track which variant is viewed
   useEffect(() => {
@@ -47,8 +50,9 @@ export function ChoiceStepDispatcher({
       panel_variant: variant,
       has_location_data: !!locationData,
       engagement_score: engagementScore,
+      route_context_key: routeContext.key,
     });
-  }, [variant, locationData, engagementScore]);
+  }, [variant, locationData, engagementScore, routeContext.key]);
 
   const VariantComponent = VARIANT_COMPONENTS[variant];
 
@@ -74,6 +78,7 @@ export function ChoiceStepDispatcher({
       locationLoading={locationLoading}
       onResolveZip={onResolveZip}
       engagementScore={engagementScore}
+      routeContext={routeContext}
     />
   );
 }

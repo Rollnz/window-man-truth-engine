@@ -13,34 +13,45 @@ import type { ChoiceVariantProps } from './types';
  * Variant E: "Window Man Concierge" (AI Concierge)
  *
  * Conversation-first approach. AI Q&A is the primary CTA.
- * Suggested question chips are county-aware.
+ * Suggested question chips are route-aware and county-aware.
  */
 export function VariantE_AiConcierge({
   onCallClick,
   onStartForm,
   onStartAiQa,
   locationData,
+  routeContext,
 }: ChoiceVariantProps) {
   const config = PANEL_VARIANT_CONFIG.E;
   const { total } = useTickerStats();
 
   const countyLabel = locationData?.county;
 
-  // Suggested question chips (county-aware)
-  const suggestedQuestions = [
-    'How much do impact windows cost?',
-    countyLabel
-      ? `Do I need a permit in ${countyLabel}?`
-      : 'Do I need a building permit?',
-    'Is my quote fair?',
-  ];
+  // Build chips: route-specific first, then geo chip if not duplicated, cap at 5
+  const baseChips = [...routeContext.chips];
+  if (countyLabel) {
+    const geoChip = `Do I need a permit in ${countyLabel}?`;
+    if (!baseChips.some((c) => c.toLowerCase().includes('permit'))) {
+      baseChips.push(geoChip);
+    }
+  }
+  const suggestedQuestions = baseChips.slice(0, 5);
 
   const handleChipClick = (question: string) => {
     trackEvent('ai_qa_chip_clicked', {
       panel_variant: 'E',
       question,
     });
-    onStartAiQa('concierge', question);
+    // Also fire new canonical chip event
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'wm_panel_chip_clicked',
+      route_context_key: routeContext.key,
+      chip_text: question,
+      resolved_mode: routeContext.defaultMode,
+      panel_variant: 'E',
+    });
+    onStartAiQa(routeContext.defaultMode, question);
   };
 
   return (
@@ -59,6 +70,11 @@ export function VariantE_AiConcierge({
           aria-label="Window Man AI Concierge"
         />
         <ShimmerBadge text="AI Concierge" />
+        {routeContext.modeBadgeLabel && (
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground border border-border">
+            {routeContext.modeBadgeLabel}
+          </span>
+        )}
       </div>
 
       {/* Headline */}
@@ -78,14 +94,14 @@ export function VariantE_AiConcierge({
               cta_type: 'ai_qa',
               third_cta_category: 'ai_concierge',
             });
-            onStartAiQa('concierge');
+            onStartAiQa(routeContext.defaultMode);
           }}
           variant="cta"
           size="lg"
           className="w-full"
         >
           <MessageCircle className="h-4 w-4 mr-2" />
-          {config.thirdCtaLabel}
+          {routeContext.ctaPrimaryLabel || config.thirdCtaLabel}
         </Button>
         <p className="text-xs text-muted-foreground text-center mt-1">
           {config.thirdCtaSubtext}
@@ -134,7 +150,7 @@ export function VariantE_AiConcierge({
           className="w-full text-muted-foreground"
         >
           <FileText className="h-4 w-4 mr-2" />
-          {config.estimateCtaLabel}
+          {routeContext.ctaSecondaryLabel || config.estimateCtaLabel}
         </Button>
       </div>
 

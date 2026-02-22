@@ -481,6 +481,7 @@ export function AiQaStep({
         savings: 'How much could I save by upgrading my windows?',
         storm: 'How prepared is my home for the next hurricane?',
         concierge: 'Hi, I have some questions about impact windows.',
+        forensic_ally: 'I just got a quote and something feels off. Can you take a look?',
       };
       sendMessage(greetings[mode]);
     }
