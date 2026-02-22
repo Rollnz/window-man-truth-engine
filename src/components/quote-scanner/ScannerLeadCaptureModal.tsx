@@ -4,7 +4,7 @@ import { TrustModal } from '@/components/forms/TrustModal';
 import { ScannerStep1Contact } from './steps/ScannerStep1Contact';
 import { ScannerStep2Project } from './steps/ScannerStep2Project';
 import { ScannerStep3Analysis } from './steps/ScannerStep3Analysis';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useScore } from '@/contexts/ScoreContext';
@@ -89,7 +89,7 @@ export function ScannerLeadCaptureModal({
       const { firstName, lastName } = normalizeNameFields(data.firstName, data.lastName);
 
       // Save lead via edge function
-      const { data: result, error } = await supabase.functions.invoke('save-lead', {
+      const { data: result, error } = await invokeEdgeFunction('save-lead', {
         body: {
           email: data.email,
           firstName,
@@ -168,7 +168,7 @@ export function ScannerLeadCaptureModal({
       const leadId = sessionData.leadId;
       if (leadId && data.phone) {
         // Update lead via CRM function
-        await supabase.functions.invoke('crm-leads', {
+        await invokeEdgeFunction('crm-leads', {
           body: {
             leadId,
             updates: {

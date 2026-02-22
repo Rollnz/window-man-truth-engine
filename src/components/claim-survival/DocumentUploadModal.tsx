@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Upload, X, FileText, Image, Loader2, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 import { claimDocuments } from '@/data/claimSurvivalData';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useAuth } from '@/hooks/useAuth';
@@ -146,7 +147,7 @@ export function DocumentUploadModal({
       if (session?.access_token) {
         const userEmail = sessionData?.email;
         if (userEmail) {
-          supabase.functions.invoke('send-email-notification', {
+          invokeEdgeFunction('send-email-notification', {
             body: {
               email: userEmail,
               type: 'claim-vault-upload-confirmation',

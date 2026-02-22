@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CRMLead, LeadStatus, DisqualificationReason } from '@/types/crm';
 import { trackEvent } from '@/lib/gtm';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
+import { fetchEdgeFunction } from '@/lib/edgeFunction';
+import { SessionRefreshedError } from '@/lib/errors';
 
 interface CRMSummary {
   total: number;
@@ -50,39 +53,14 @@ export function useCRMLeads(): UseCRMLeadsReturn {
     setError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError('Not authenticated');
-        setIsLoading(false);
-        return;
-      }
-
       const params = new URLSearchParams();
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       if (options?.hasQuote) params.append('has_quote', 'true');
       if (options?.analyzed) params.append('analyzed', 'true');
 
-      // Use GET request with query params (edge function only handles GET)
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const queryString = params.toString();
-      const url = `${supabaseUrl}/functions/v1/crm-leads${queryString ? `?${queryString}` : ''}`;
+      const { data } = await fetchEdgeFunction('crm-leads', { params });
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Failed to fetch leads (${response.status})`);
-      }
-
-      const data = await response.json();
       setLeads(data.leads || []);
       setSummary(data.summary || null);
     } catch (err) {
@@ -108,17 +86,9 @@ export function useCRMLeads(): UseCRMLeadsReturn {
    */
   const markQualifiedConversion = useCallback(async (leadId: string): Promise<{ fired: boolean }> => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.warn('[markQualifiedConversion] Not authenticated');
-        return { fired: false };
-      }
-
-      const response = await supabase.functions.invoke('mark-qualified-conversion', {
+      const response = await invokeEdgeFunction('mark-qualified-conversion', {
         body: { leadId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        isIdempotent: true,
       });
 
       if (response.error) {
@@ -149,33 +119,25 @@ export function useCRMLeads(): UseCRMLeadsReturn {
     extras?: UpdateLeadExtras
   ): Promise<boolean> => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: 'Error',
-          description: 'Not authenticated',
-          variant: 'destructive',
-        });
-        return false;
-      }
-
       // Optimistic update
       setLeads(prev => prev.map(lead => 
         lead.id === leadId ? { ...lead, status: newStatus } : lead
       ));
 
-      const response = await supabase.functions.invoke('crm-disposition', {
+      const response = await invokeEdgeFunction('crm-disposition', {
         body: {
           leadId,
           newStatus,
           ...extras,
         },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
       });
 
       if (response.error) {
+        if (response.error instanceof SessionRefreshedError) {
+          toast({ title: 'Session re-synced', description: 'Please try the status change again.' });
+          await fetchLeads();
+          return false;
+        }
         throw new Error(response.error.message || 'Failed to update lead');
       }
 

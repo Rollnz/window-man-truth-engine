@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ArrowLeft } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { useToast } from '@/hooks/use-toast';
 import { useLeadSuppression } from '@/hooks/forms/useLeadSuppression';
 import { trackLeadCapture, trackEvent } from '@/lib/gtm';
@@ -224,7 +224,7 @@ export function PreQuoteLeadModalV2({
           sourcePage ||
           (typeof window !== 'undefined' ? window.location.pathname : '');
 
-        const { data: result, error } = await supabase.functions.invoke(
+        const { data: result, error } = await invokeEdgeFunction(
           'save-lead',
           {
             body: {
@@ -374,8 +374,7 @@ export function PreQuoteLeadModalV2({
     const phoneSourceTool = getV2PhoneSourceTool(source);
 
     // Fire-and-forget: never block UI
-    supabase.functions
-      .invoke('enqueue-phonecall', {
+    invokeEdgeFunction('enqueue-phonecall', {
         body: {
           leadId: currentLeadId,
           sourceTool: phoneSourceTool,
@@ -394,10 +393,9 @@ export function PreQuoteLeadModalV2({
                 : '',
           },
         },
-      })
-      .catch((err) =>
-        console.warn('[V2] Phone enqueue failed (non-blocking):', err)
-      );
+      }).then(({ error }) => {
+        if (error) console.warn('[V2] Phone enqueue failed (non-blocking):', error);
+      });
   }, [contactData, scoringResult?.score]);
 
   // Step 5 is special: after selection, compute score, PATCH, then show result
@@ -425,7 +423,7 @@ export function PreQuoteLeadModalV2({
 
           // PATCH lead via update-lead-qualification
           try {
-            const { error: patchError } = await supabase.functions.invoke(
+            const { error: patchError } = await invokeEdgeFunction(
               'update-lead-qualification',
               {
                 body: {

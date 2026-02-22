@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Zap, Download, ArrowRight, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { useToast } from "@/hooks/use-toast";
 import { trackLeadCapture } from "@/lib/gtm";
 import { wmLead } from "@/lib/wmTracking";
@@ -131,7 +131,7 @@ export function PreQuoteLeadModal({ isOpen, onClose, onSuccess, ctaSource = "unk
     setIsSubmitting(true);
 
     try {
-      const { data: result, error } = await supabase.functions.invoke("save-lead", {
+      const { data: result, error } = await invokeEdgeFunction("save-lead", {
         body: {
           email: formData.email,
           firstName: formData.firstName,

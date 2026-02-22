@@ -14,7 +14,7 @@ import {
   BadgeDollarSign } from
 'lucide-react';
 import { ConsultationSchema } from '@/components/consultation/ConsultationSchema';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { trackEvent } from '@/lib/gtm';
 import { wmLead } from '@/lib/wmTracking';
 import { useCanonicalScore, getOrCreateAnonId } from '@/hooks/useCanonicalScore';
@@ -47,7 +47,7 @@ export default function Consultation() {
 
     try {
       // Call save-lead edge function
-      const { data: leadData, error: leadError } = await supabase.functions.invoke('save-lead', {
+      const { data: leadData, error: leadError } = await invokeEdgeFunction('save-lead', {
         body: {
           email: data.email,
           phone: data.phone,

@@ -55,6 +55,18 @@ export function isRateLimitError(error: unknown): error is RateLimitError {
 }
 
 /**
+ * Thrown when a 401 was recovered via session refresh but the request
+ * was non-idempotent (POST/PATCH/PUT/DELETE). Callers should catch this
+ * and show a friendly "please try again" info toast — NOT a red error.
+ */
+export class SessionRefreshedError extends Error {
+  constructor() {
+    super('Session was refreshed. Please try again.');
+    this.name = 'SessionRefreshedError';
+  }
+}
+
+/**
  * Get a user-friendly error message
  */
 export function getErrorMessage(error: unknown): string {

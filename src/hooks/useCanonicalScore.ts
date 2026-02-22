@@ -7,6 +7,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { wmInternal } from '@/lib/wmTracking';
 import { useAuth } from '@/hooks/useAuth';
 import { getGoldenThreadId } from '@/lib/goldenThread';
@@ -106,7 +107,7 @@ export function useCanonicalScore(): UseCanonicalScoreReturn {
     setState(prev => ({ ...prev, isLoading: true, lastError: null }));
 
     try {
-      const { data, error } = await supabase.functions.invoke('score-event', {
+      const { data, error } = await invokeEdgeFunction('score-event', {
         body: {
           event_type: eventType,
           source_entity_type: sourceEntityType,
@@ -114,6 +115,7 @@ export function useCanonicalScore(): UseCanonicalScoreReturn {
           event_id: eventId,
           anon_id: anonId,
         },
+        isIdempotent: true,
       });
 
       if (error) {

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Mail, Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
+import { SessionRefreshedError } from '@/lib/errors';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useSessionData, SessionData } from '@/hooks/useSessionData';
 import { trackEvent } from '@/lib/gtm';
@@ -48,7 +49,7 @@ export function EmailResultsButton({ sessionData, userEmail }: EmailResultsButto
         updateField('claimVaultSessionId', sessionId);
       }
 
-      const { data, error } = await supabase.functions.invoke('email-vault-summary', {
+      const { data, error } = await invokeEdgeFunction('email-vault-summary', {
         body: {
           email: userEmail,
           sessionData,
@@ -77,6 +78,10 @@ export function EmailResultsButton({ sessionData, userEmail }: EmailResultsButto
       // Reset sent state after 3 seconds
       setTimeout(() => setSent(false), 3000);
     } catch (error) {
+      if (error instanceof SessionRefreshedError) {
+        toast({ title: 'Session re-synced', description: 'Please click "Email My Results" again.' });
+        return;
+      }
       console.error('Error sending email:', error);
       toast({
         title: "Failed to send",

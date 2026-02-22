@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 interface TickerStats {
   total: number;
   today: number;
@@ -56,7 +55,7 @@ async function fetchTickerStats(): Promise<{ total: number; today: number } | nu
   // Start new fetch
   fetchPromise = (async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('get-ticker-stats');
+      const { data, error } = await invokeEdgeFunction('get-ticker-stats', { isIdempotent: true });
 
       if (error) {
         console.warn('[useTickerStats] Edge function error:', error);

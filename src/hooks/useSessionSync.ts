@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSessionData, SessionData } from '@/hooks/useSessionData';
 import { supabase } from '@/integrations/supabase/client';
 import { scheduleWhenIdle } from '@/lib/deferredInit';
-import { handleAuthError } from '@/lib/authErrorHandler';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 
 /**
  * useSessionSync - Automatically syncs localStorage session data to database on authentication
@@ -47,7 +47,7 @@ export function useSessionSync() {
 
         console.log('[SessionSync] Syncing session data...', meaningfulKeys.length, 'fields');
 
-        const { data, error } = await supabase.functions.invoke('sync-session', {
+        const { data, error } = await invokeEdgeFunction('sync-session', {
           body: {
             sessionData,
             syncReason: 'auth_login',
@@ -56,19 +56,12 @@ export function useSessionSync() {
 
         if (error) {
           console.error('[SessionSync] Sync failed:', error);
-          // Handle 401 gracefully — refresh or sign out
-          const was401 = await handleAuthError(error);
-          if (was401) {
-            hasSynced.current = true; // Don't retry on auth failure
-          }
         } else {
           console.log('[SessionSync] Sync complete:', data);
           hasSynced.current = true;
         }
       } catch (err) {
         console.error('[SessionSync] Unexpected error:', err);
-        // Handle 401 gracefully if it surfaces as a thrown error
-        await handleAuthError(err);
       } finally {
         syncInProgress.current = false;
       }

@@ -13,7 +13,7 @@ import { ArrowRight, CheckCircle2, Calendar, Phone, Home, Building2, MapPin, Clo
 import { trackModalOpen, trackEvent } from '@/lib/gtm';
 import { wmLead } from '@/lib/wmTracking';
 import { normalizeToE164 } from '@/lib/phoneFormat';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { getFullAttributionData } from '@/lib/attribution';
 import { SOUTHEAST_STATES, DEFAULT_STATE } from '@/constants/states';
@@ -227,7 +227,7 @@ export function KitchenTableGuideModal({ isOpen, onClose, onSuccess }: KitchenTa
     try {
       const phoneE164 = normalizeToE164(values.phone);
       
-      await supabase.functions.invoke('save-lead', {
+      await invokeEdgeFunction('save-lead', {
         body: {
           email: values.email,
           firstName: values.firstName,

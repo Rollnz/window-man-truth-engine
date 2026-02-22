@@ -23,7 +23,7 @@ import { wmLead } from '@/lib/wmTracking';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
 import { setLeadAnchor, getLeadAnchor } from '@/lib/leadAnchor';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { ROUTES } from '@/config/navigation';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -122,7 +122,7 @@ export function SampleReportLeadModal({
       };
 
       // Call save-lead edge function
-      const { data, error } = await supabase.functions.invoke('save-lead', {
+      const { data, error } = await invokeEdgeFunction('save-lead', {
         body: payload,
       });
 
