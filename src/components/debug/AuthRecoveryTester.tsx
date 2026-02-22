@@ -4,8 +4,8 @@
  * Development-only floating debug panel to manually test the 3 edge cases
  * of the centralized auth error recovery system:
  * 
- * 1. Idempotent GET — silent retry after token refresh
- * 2. Non-idempotent POST — SessionRefreshedError with friendly toast
+ * 1. Idempotent — silent retry after token refresh
+ * 2. Non-idempotent — SessionRefreshedError with friendly toast
  * 3. Dead session — SessionExpiredOverlay modal
  * 
  * Corrupts the session token to force a 401, then fires the appropriate
@@ -14,12 +14,14 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchEdgeFunction, invokeEdgeFunction } from '@/lib/edgeFunction';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { SessionRefreshedError } from '@/lib/errors';
 import { toast } from 'sonner';
 import { ShieldAlert, X } from 'lucide-react';
 
 type LogEntry = { time: string; msg: string; level: 'info' | 'ok' | 'warn' | 'error' };
+
+const SYNC_BODY = { syncReason: 'auth_test', sessionData: {} };
 
 export function AuthRecoveryTester() {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,7 +42,6 @@ export function AuthRecoveryTester() {
    * The refresh_token remains intact so `refreshSession()` can recover.
    */
   const corruptAccessToken = async () => {
-    // Find the Supabase auth storage key
     const storageKey = Object.keys(localStorage).find(k =>
       k.startsWith('sb-') && k.endsWith('-auth-token')
     );
@@ -53,14 +54,11 @@ export function AuthRecoveryTester() {
       const raw = localStorage.getItem(storageKey);
       if (!raw) { log('❌ Auth token is empty', 'error'); return false; }
       const parsed = JSON.parse(raw);
-      // Corrupt the access_token by appending junk
       if (parsed.access_token) {
         parsed.access_token = parsed.access_token + '_CORRUPTED';
         localStorage.setItem(storageKey, JSON.stringify(parsed));
         log('🔧 Access token corrupted in localStorage', 'warn');
       }
-      // Also force GoTrueClient to re-read the corrupted token
-      // by calling getSession which will pick up the localStorage value
       await supabase.auth.getSession();
       return true;
     } catch (e) {
@@ -70,65 +68,65 @@ export function AuthRecoveryTester() {
   };
 
   /**
-   * Test 1: Idempotent GET via fetchEdgeFunction
+   * Test 1: Idempotent call via invokeEdgeFunction
    * Expected: 401 → refresh → silent retry → success (no toast)
    */
   const testIdempotentGet = async () => {
     setRunning('get');
     clearLogs();
-    log('🧪 TEST 1: Idempotent GET (silent recovery)');
+    log('🧪 TEST 1: Idempotent (silent recovery)');
     log('Expected: 401 → refresh lock → retry → success, NO error toast');
 
     const ok = await corruptAccessToken();
     if (!ok) { setRunning(null); return; }
 
-    try {
-      log('📡 Calling fetchEdgeFunction("get-ticker-stats", GET)...');
-      const { data } = await fetchEdgeFunction('get-ticker-stats');
+    log('📡 Calling invokeEdgeFunction("sync-session", isIdempotent: true)...');
+    const { data, error } = await invokeEdgeFunction('sync-session', {
+      body: SYNC_BODY,
+      isIdempotent: true,
+    });
+
+    if (error) {
+      if (error instanceof SessionRefreshedError) {
+        log('⚠️ UNEXPECTED SessionRefreshedError for idempotent call — this should NOT happen', 'error');
+      } else {
+        log(`❌ Request failed: ${error.message}`, 'error');
+      }
+    } else {
       log(`✅ SUCCESS — Data received: ${JSON.stringify(data).slice(0, 100)}`, 'ok');
       log('✅ No toast should have appeared. Token was silently refreshed.', 'ok');
-    } catch (err) {
-      if (err instanceof SessionRefreshedError) {
-        log('⚠️ UNEXPECTED SessionRefreshedError for GET — this should NOT happen', 'error');
-      } else {
-        log(`❌ Request failed: ${err instanceof Error ? err.message : err}`, 'error');
-      }
     }
     setRunning(null);
   };
 
   /**
-   * Test 2: Non-idempotent POST via invokeEdgeFunction
-   * Expected: 401 → refresh → SessionRefreshedError → friendly toast
+   * Test 2: Non-idempotent call via invokeEdgeFunction
+   * Expected: 401 → refresh → SessionRefreshedError returned (not thrown) → friendly toast
    */
   const testNonIdempotentPost = async () => {
     setRunning('post');
     clearLogs();
-    log('🧪 TEST 2: Non-Idempotent POST (SessionRefreshedError)');
+    log('🧪 TEST 2: Non-Idempotent (SessionRefreshedError)');
     log('Expected: 401 → refresh → abort retry → friendly info toast');
 
     const ok = await corruptAccessToken();
     if (!ok) { setRunning(null); return; }
 
-    try {
-      log('📡 Calling invokeEdgeFunction("get-ticker-stats", isIdempotent: false)...');
-      const { data, error } = await invokeEdgeFunction('get-ticker-stats', {
-        isIdempotent: false,
-      });
+    log('📡 Calling invokeEdgeFunction("sync-session", isIdempotent: false)...');
+    const { data, error } = await invokeEdgeFunction('sync-session', {
+      body: SYNC_BODY,
+      isIdempotent: false,
+    });
 
-      if (error) {
-        log(`❌ Got error object (not thrown): ${error.message}`, 'error');
-      } else {
-        log(`⚠️ UNEXPECTED success — POST should have thrown SessionRefreshedError`, 'warn');
-      }
-    } catch (err) {
-      if (err instanceof SessionRefreshedError) {
-        log('✅ Caught SessionRefreshedError as expected!', 'ok');
-        toast.info('Session re-synced! Please click submit one more time.');
-        log('✅ Friendly info toast displayed (check top-right)', 'ok');
-      } else {
-        log(`❌ Unexpected error type: ${err instanceof Error ? err.constructor.name : typeof err}: ${err}`, 'error');
-      }
+    if (error instanceof SessionRefreshedError) {
+      log('✅ Got SessionRefreshedError as expected!', 'ok');
+      toast.info('Session re-synced! Please click submit one more time.');
+      log('✅ Friendly info toast displayed (check top-right)', 'ok');
+    } else if (error) {
+      log(`❌ Got unexpected error: ${error.message}`, 'error');
+    } else {
+      log(`⚠️ UNEXPECTED success — should have returned SessionRefreshedError`, 'warn');
+      log(`Data: ${JSON.stringify(data).slice(0, 100)}`, 'warn');
     }
     setRunning(null);
   };
@@ -143,7 +141,6 @@ export function AuthRecoveryTester() {
     log('🧪 TEST 3: Dead Session (SessionExpiredOverlay)');
     log('Expected: 401 → refresh fails → overlay appears, NO redirect');
 
-    // Nuke BOTH access and refresh tokens
     const storageKey = Object.keys(localStorage).find(k =>
       k.startsWith('sb-') && k.endsWith('-auth-token')
     );
@@ -162,16 +159,24 @@ export function AuthRecoveryTester() {
       localStorage.setItem(storageKey, JSON.stringify(parsed));
       log('💀 Both access_token AND refresh_token destroyed', 'warn');
 
-      // Force GoTrueClient to pick up the corrupted values
       await supabase.auth.getSession();
 
-      log('📡 Calling fetchEdgeFunction("get-ticker-stats", GET) with dead session...');
-      const { data } = await fetchEdgeFunction('get-ticker-stats');
-      log(`⚠️ UNEXPECTED success: ${JSON.stringify(data).slice(0, 80)}`, 'warn');
+      log('📡 Calling invokeEdgeFunction("sync-session", isIdempotent: true) with dead session...');
+      const { data, error } = await invokeEdgeFunction('sync-session', {
+        body: SYNC_BODY,
+        isIdempotent: true,
+      });
+
+      if (error) {
+        log(`🔴 Request failed (expected): ${error.message}`, 'info');
+        log('✅ SessionExpiredOverlay should now be visible on screen', 'ok');
+        log('✅ Current URL should NOT have changed to /auth', 'ok');
+      } else {
+        log(`⚠️ UNEXPECTED success: ${JSON.stringify(data).slice(0, 80)}`, 'warn');
+      }
     } catch (err) {
-      log(`🔴 Request failed (expected): ${err instanceof Error ? err.message : err}`, 'info');
+      log(`🔴 Thrown error (expected): ${err instanceof Error ? err.message : err}`, 'info');
       log('✅ SessionExpiredOverlay should now be visible on screen', 'ok');
-      log('✅ Current URL should NOT have changed to /auth', 'ok');
     }
     setRunning(null);
   };
@@ -208,14 +213,14 @@ export function AuthRecoveryTester() {
           disabled={!!running}
           className="text-xs px-3 py-2 rounded bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 text-left"
         >
-          {running === 'get' ? '⏳ Running...' : '1️⃣ Test Idempotent GET (silent retry)'}
+          {running === 'get' ? '⏳ Running...' : '1️⃣ Test Idempotent (silent retry)'}
         </button>
         <button
           onClick={testNonIdempotentPost}
           disabled={!!running}
           className="text-xs px-3 py-2 rounded bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 text-left"
         >
-          {running === 'post' ? '⏳ Running...' : '2️⃣ Test Non-Idempotent POST (friendly toast)'}
+          {running === 'post' ? '⏳ Running...' : '2️⃣ Test Non-Idempotent (friendly toast)'}
         </button>
         <button
           onClick={testDeadSession}
