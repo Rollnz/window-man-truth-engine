@@ -16,7 +16,7 @@ import { AdminLayout } from "@/layouts/AdminLayout";
 import { GTMDebugPanel } from "@/components/debug/GTMDebugPanel";
 import { EMQValidatorOverlay } from "@/components/debug/EMQValidatorOverlay";
 import { SessionExpiredOverlay } from "@/components/auth/SessionExpiredOverlay";
-import { AuthRecoveryTester } from "@/components/debug/AuthRecoveryTester";
+
 
 // Critical path - load immediately
 import Index from "./pages/Index";
@@ -186,7 +186,7 @@ function AppContent() {
       {/* Debug Panels - only render in development mode */}
       <GTMDebugPanel />
       <EMQValidatorOverlay />
-      {import.meta.env.DEV && <AuthRecoveryTester />}
+      
     </main>
   );
 }

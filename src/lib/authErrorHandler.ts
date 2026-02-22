@@ -59,6 +59,16 @@ function isUnauthorizedError(error: unknown): boolean {
     if ((error as any).status === 401) return true;
   }
 
+  // Check FunctionsHttpError from Supabase SDK — the message is a generic
+  // "Edge Function returned a non-2xx status code" so we must inspect
+  // error.context (a Response object) for the actual HTTP status.
+  if (typeof error === 'object' && error !== null && 'context' in error) {
+    const ctx = (error as any).context;
+    if (ctx && typeof ctx === 'object' && 'status' in ctx) {
+      if (ctx.status === 401) return true;
+    }
+  }
+
   if (error instanceof Error) {
     const msg = error.message || '';
     return (
