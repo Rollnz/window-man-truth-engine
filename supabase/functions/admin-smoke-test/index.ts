@@ -2,7 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ===== Config =====
 // Database-driven admin check via user_roles table
-async function hasAdminRole(supabase: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+// deno-lint-ignore no-explicit-any
+async function hasAdminRole(supabase: any, userId: string): Promise<boolean> {
   const { data, error } = await supabase
     .from("user_roles")
     .select("id")

@@ -12,7 +12,8 @@ const corsHeaders = {
 };
 
 // Database-driven admin check via user_roles table
-async function hasAdminRole(supabaseAdmin: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+// deno-lint-ignore no-explicit-any
+async function hasAdminRole(supabaseAdmin: any, userId: string): Promise<boolean> {
   const { data, error } = await supabaseAdmin
     .from("user_roles")
     .select("id")
