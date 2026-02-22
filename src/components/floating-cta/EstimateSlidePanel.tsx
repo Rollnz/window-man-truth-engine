@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ShimmerBadge } from '@/components/ui/ShimmerBadge';
@@ -20,11 +20,13 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { useEngagementScore } from '@/hooks/useEngagementScore';
 import { usePanelVariant } from '@/hooks/usePanelVariant';
 import { useLocationPersonalization } from '@/hooks/useLocationPersonalization';
+import { useRouteContext } from '@/hooks/useRouteContext';
 import { supabase } from '@/integrations/supabase/client';
 import { trackEvent, trackLeadCapture, generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
 import type { AiQaMode } from '@/lib/panelVariants';
+import type { RouteContext } from '@/lib/routeContext';
 import type { SourceTool } from '@/types/sourceTool';
 import { FORENSIC_ALLY_INITIAL_MESSAGE } from '@/components/authority/SilentAllyInterceptor';
 
@@ -86,16 +88,17 @@ interface EstimateSlidePanelProps {
 export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlidePanelProps>(
   function EstimateSlidePanel({ onClose, triggerSource, triggerMode, triggerInitialMessage }, ref) {
   const isForensicAlly = triggerSource === 'exit_intent_ally';
+  const routeContext = useRouteContext();
+  const routeContextFrozenRef = useRef<RouteContext | null>(null);
+
+  // Mode resolution: triggerMode > routeContext.defaultMode > 'concierge'
+  const resolvedMode: AiQaMode = (triggerMode as AiQaMode) || routeContext.defaultMode || 'concierge';
 
   const [step, setStep] = useState<Step>(() => isForensicAlly ? 'ai-qa' : 'choice');
   const [formData, setFormData] = useState<EstimateFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [aiQaMode, setAiQaMode] = useState<AiQaMode>(() => {
-    if (triggerMode === 'savings') return 'savings';
-    if (isForensicAlly) return 'concierge';
-    return 'concierge';
-  });
+  const [aiQaMode, setAiQaMode] = useState<AiQaMode>(resolvedMode);
   const [aiQaInitialMessage, setAiQaInitialMessage] = useState<string | undefined>(() => {
     if (isForensicAlly && !triggerInitialMessage) {
       return FORENSIC_ALLY_INITIAL_MESSAGE;
@@ -144,9 +147,12 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
 
   // Track slide-over OPEN (navigation event, NOT lead intent)
   useEffect(() => {
+    const openSource = isForensicAlly ? 'silent_ally' : (triggerSource ? 'explicit_event' : 'floating_button');
+    
     trackEvent('floating_cta_opened', {
       engagement_score: engagementScore,
       lead_id: leadId,
+      route_context_key: routeContext.key,
     });
     
     // Resolve external_id: hook leadId > lead anchor > null
@@ -164,6 +170,23 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
       source_system: 'web',
       trigger_source: 'floating_cta',
       panel_variant: panelVariant,
+      route_context_key: routeContext.key,
+      resolved_mode: resolvedMode,
+    });
+
+    // New canonical panel-opened event
+    window.dataLayer.push({
+      event: 'wm_panel_opened',
+      event_id: generateEventId(),
+      client_id: getOrCreateClientId(),
+      session_id: getOrCreateSessionId(),
+      external_id: externalId,
+      route_path: window.location.pathname,
+      route_context_key: routeContext.key,
+      resolved_mode: resolvedMode,
+      panel_variant: panelVariant,
+      open_source: openSource,
+      engagement_score: engagementScore,
     });
   }, []);
 
@@ -375,7 +398,7 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
         )}
 
         <SheetTitle className="text-2xl font-bold text-foreground">
-          {step === 'choice' && 'Get Your Free Estimate'}
+          {step === 'choice' && (isForensicAlly ? 'Get Your Free Estimate' : routeContext.headline)}
           {step === 'ai-qa' && (isForensicAlly ? '🛡️ Forensic Ally' : 'Ask Window Man')}
           {step === 'project' && 'Project Details'}
           {step === 'contact' && 'Contact Information'}
@@ -384,7 +407,7 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
         </SheetTitle>
 
         <SheetDescription className="text-muted-foreground">
-          {step === 'choice' && 'Choose how you\'d like to connect with us.'}
+          {step === 'choice' && (isForensicAlly ? 'Choose how you\'d like to connect with us.' : routeContext.subheadline)}
           {step === 'ai-qa' && (isForensicAlly ? 'Independent. Unbiased. On your side.' : 'Get instant answers about impact windows.')}
           {step === 'project' && 'Tell us about your window project.'}
           {step === 'contact' && 'How can we reach you?'}
@@ -405,6 +428,8 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
             setStep('project');
           }}
           onStartAiQa={(mode: AiQaMode, initialMsg?: string) => {
+            // Freeze routeContext on entry to ai-qa
+            routeContextFrozenRef.current = routeContext;
             setAiQaMode(mode);
             setAiQaInitialMessage(initialMsg);
             setStep('ai-qa');
@@ -413,6 +438,7 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
           locationLoading={locationLoading}
           onResolveZip={resolveZip}
           engagementScore={engagementScore}
+          routeContext={routeContext}
         />
       )}
 

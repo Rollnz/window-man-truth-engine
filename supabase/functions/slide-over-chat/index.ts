@@ -48,7 +48,7 @@ interface TruthContext {
   completedTools?: string[];
 }
 
-type AiQaMode = 'proof' | 'diagnostic' | 'savings' | 'storm' | 'concierge';
+type AiQaMode = 'proof' | 'diagnostic' | 'savings' | 'storm' | 'concierge' | 'forensic_ally';
 
 interface RequestBody {
   messages: Message[];
@@ -239,6 +239,13 @@ FOCUS: General window Q&A. Answer whatever they ask honestly.
 Common topics: cost, permits, insurance, energy savings, hurricane protection, contractor selection.
 Be the Hurricane Hero — the knowledgeable protector who has their back.
 After 2-3 exchanges, naturally suggest one of your tools or offer to connect them with a specialist.`,
+
+    forensic_ally: `
+FOCUS: Forensic analysis mode. The homeowner has been intercepted because they may be about to make a costly mistake.
+Be especially protective and skeptical of contractor claims. Treat every number as suspect until verified.
+Lead with "Let me take a closer look at this for you" energy. Your job: find what the contractor is hiding.
+Prioritize recommending the AI Scanner or Beat Your Quote tools. Be direct about red flags.
+This is your most protective mode — zero tolerance for vague warranties, missing line items, or inflated pricing.`,
   };
 
   return `${persona}

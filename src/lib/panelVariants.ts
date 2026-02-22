@@ -1,6 +1,6 @@
 import type { PanelVariant } from '@/hooks/usePanelVariant';
 
-export type AiQaMode = 'proof' | 'diagnostic' | 'savings' | 'storm' | 'concierge';
+export type AiQaMode = 'proof' | 'diagnostic' | 'savings' | 'storm' | 'concierge' | 'forensic_ally';
 
 export type ThirdCtaCategory =
   | 'proof'
