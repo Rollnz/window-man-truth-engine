@@ -97,10 +97,12 @@ export function useZipLookup(): UseZipLookupReturn {
 
       if (!response.ok) {
         if (response.status === 404) {
-          setError('ZIP code not found');
+          setError('ZIP code not recognized');
           return null;
         }
-        throw new Error(`HTTP ${response.status}`);
+        console.warn(`[useZipLookup] HTTP ${response.status} for ZIP ${cleanZip}`);
+        setError('Unable to lookup ZIP code');
+        return null;
       }
 
       const data: ZippopotamResponse = await response.json();
