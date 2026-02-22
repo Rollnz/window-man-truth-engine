@@ -4,6 +4,23 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
+function getOAuthErrorMessage(error: unknown): { title: string; description: string } {
+  const msg = (error instanceof Error ? error.message : String(error)).toLowerCase();
+
+  if (msg.includes('redirect_uri_mismatch'))
+    return { title: 'Configuration issue', description: "Google sign-in isn't available in this environment. Please try from the published app." };
+  if (msg.includes('access_denied') || msg.includes('user_denied'))
+    return { title: 'Sign-in cancelled', description: 'You cancelled the Google sign-in. You can try again anytime.' };
+  if (msg.includes('popup_closed') || msg.includes('popup_blocked'))
+    return { title: 'Pop-up blocked', description: 'Your browser blocked the sign-in window. Please allow pop-ups and try again.' };
+  if (msg.includes('network') || msg.includes('fetch'))
+    return { title: 'Connection problem', description: "Couldn't reach Google. Check your internet connection and try again." };
+  if (msg.includes('temporarily_unavailable') || msg.includes('server_error'))
+    return { title: 'Google is unavailable', description: 'Google sign-in is temporarily down. Please try again in a few minutes.' };
+
+  return { title: 'Sign-in failed', description: 'Something went wrong with Google sign-in. Please try again or use email instead.' };
+}
+
 interface GoogleSignInButtonProps {
   mode?: 'signin' | 'signup';
 }
@@ -22,19 +39,13 @@ export function GoogleSignInButton({ mode = 'signin' }: GoogleSignInButtonProps)
       const error = result?.error ? (result.error instanceof Error ? result.error : new Error(String(result.error))) : null;
       
       if (error) {
-        toast({
-          title: "Sign in failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        const { title, description } = getOAuthErrorMessage(error);
+        toast({ title, description, variant: "destructive" });
       }
     } catch (err) {
       console.error('Google sign-in error:', err);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      const { title, description } = getOAuthErrorMessage(err);
+      toast({ title, description, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
