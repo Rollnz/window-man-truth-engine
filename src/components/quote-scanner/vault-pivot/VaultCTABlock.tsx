@@ -7,7 +7,7 @@ import { useFormValidation, commonSchemas } from "@/hooks/useFormValidation";
 import { useState } from "react";
 
 interface VaultCTABlockProps {
-  /** Mock callback for demo - will be replaced with real auth */
+  /** Triggers real Google OAuth via lovable.auth.signInWithOAuth */
   onGoogleAuth?: () => void;
   onEmailSubmit?: (data: { firstName: string; lastName: string; email: string }) => void;
   isLoading?: boolean;
