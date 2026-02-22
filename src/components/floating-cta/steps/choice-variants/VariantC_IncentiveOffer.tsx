@@ -5,6 +5,7 @@ import { ReviewedByBadge } from '@/components/authority/ReviewedByBadge';
 import { CtaCard } from './shared/CtaCard';
 import { MiniTrustBar } from './shared/MiniTrustBar';
 import { trackEvent } from '@/lib/gtm';
+import { useTickerStats } from '@/hooks/useTickerStats';
 import { cn } from '@/lib/utils';
 import type { ChoiceVariantProps } from './types';
 
@@ -22,6 +23,7 @@ export function VariantC_IncentiveOffer({
   engagementScore,
 }: ChoiceVariantProps) {
   const config = PANEL_VARIANT_CONFIG.C;
+  const { total } = useTickerStats();
   const [isHovered, setIsHovered] = useState(false);
 
   const cityLabel = locationData?.city || 'Florida';
@@ -107,6 +109,7 @@ export function VariantC_IncentiveOffer({
       {/* Trust bar */}
       <ReviewedByBadge variant="inline" className="justify-center" />
       <MiniTrustBar
+        stat={`${total.toLocaleString()}+ Quotes Analyzed`}
         riskReversal="No obligation. Cancel anytime. Your data stays private."
       />
     </div>
