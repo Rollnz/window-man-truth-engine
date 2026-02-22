@@ -1187,13 +1187,14 @@ export function ExitIntentModal({ sourceTool, hasConverted = false, onSuccess }:
 
             {/* Character / Visual Area */}
             <div className="flex-1 flex items-center justify-center my-4">
-              <div className="relative w-40 h-40">
+              <div className="relative">
                 {/* Cyan ambient glow */}
-                <div className="absolute inset-0 rounded-full bg-cyan-500/10 blur-2xl" />
-                {/* Placeholder silhouette */}
-                <div className="relative w-full h-full rounded-full bg-[hsl(220,25%,12%)] border border-slate-700/50 flex items-center justify-center">
-                  <ShieldCheck className="w-16 h-16 text-cyan-500/30" />
-                </div>
+                <div className="absolute -inset-4 rounded-xl bg-cyan-500/10 blur-2xl" />
+                <img
+                  src="/lovable-uploads/ai_decoded_b_1_1.webp"
+                  alt="Forensic Ally analysis preview"
+                  className="relative w-48 h-auto max-h-56 object-contain rounded-xl border border-slate-700/50 shadow-lg"
+                />
               </div>
             </div>
 
