@@ -40,6 +40,7 @@ import { TalkToExpertCTA } from '@/components/quote-scanner/TalkToExpertCTA';
 import { AnalysisTheaterScreen } from '@/components/quote-scanner/AnalysisTheaterScreen';
 // Attribution & tracking for NoQuotePivotSection handler
 import { supabase } from '@/integrations/supabase/client';
+import { lovable } from '@/integrations/lovable';
 import { useToast } from '@/hooks/use-toast';
 import { getOrCreateClientId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
@@ -434,8 +435,21 @@ export default function QuoteScanner() {
             <NoQuotePivotSection 
               isLoading={isNoQuoteSubmitting}
               isSubmitted={isNoQuoteSubmitted}
-              onGoogleAuth={() => {
-                console.log('Google OAuth clicked - will redirect to /vault');
+              onGoogleAuth={async () => {
+                try {
+                  const result = await lovable.auth.signInWithOAuth("google", {
+                    redirect_uri: window.location.origin,
+                  });
+                  const error = result?.error
+                    ? result.error instanceof Error ? result.error : new Error(String(result.error))
+                    : null;
+                  if (error) {
+                    toast({ title: "Sign-in failed", description: error.message, variant: "destructive" });
+                  }
+                } catch (err) {
+                  console.error("Google OAuth error:", err);
+                  toast({ title: "Sign-in failed", description: "Something went wrong. Please try again.", variant: "destructive" });
+                }
               }}
               onEmailSubmit={async (data) => {
                 setIsNoQuoteSubmitting(true);

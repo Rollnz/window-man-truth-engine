@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { VaultAdvantageGrid } from './VaultAdvantageGrid';
 import { VaultCTABlock } from './VaultCTABlock';
 interface NoQuotePivotSectionProps {
-  /** Mock handler for Google auth - will be wired to real Supabase later */
+  /** Triggers real Google OAuth via lovable.auth.signInWithOAuth */
   onGoogleAuth?: () => void;
   onEmailSubmit?: (data: {
     firstName: string;
