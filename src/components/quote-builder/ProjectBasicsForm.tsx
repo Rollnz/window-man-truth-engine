@@ -2,9 +2,11 @@
 // Quote Builder - Project Basics Form (Step 1)
 // ============================================
 
+import { useEffect } from "react";
 import { FieldLabel } from "./FieldLabel";
 import { WALL_OPTIONS, CONFIG } from "@/utils/quoteCalculatorConstants";
 import type { QuoteBuilderState, ProductType } from "@/types/quote-builder";
+import { useZipLookup } from "@/hooks/forms/useZipLookup";
 
 interface ProjectBasicsFormProps {
   state: QuoteBuilderState;
@@ -13,6 +15,16 @@ interface ProjectBasicsFormProps {
 }
 
 export const ProjectBasicsForm = ({ state, setState, setStyleValue }: ProjectBasicsFormProps) => {
+  const { lookup, error: zipError, clearError } = useZipLookup();
+
+  useEffect(() => {
+    if (state.zipCode.length === 5) {
+      lookup(state.zipCode);
+    } else {
+      clearError();
+    }
+  }, [state.zipCode, lookup, clearError]);
+
   return (
     <section className="bg-card rounded-xl border border-border p-6 shadow-lg transition-colors duration-300">
       <div className="flex items-center gap-3 mb-6">
@@ -56,6 +68,9 @@ export const ProjectBasicsForm = ({ state, setState, setStyleValue }: ProjectBas
               value={state.zipCode}
               onChange={e => setState(prev => ({ ...prev, zipCode: e.target.value.replace(/\D/g, "").slice(0, 5) }))}
             />
+            {zipError === 'ZIP code not recognized' && (
+              <p className="text-xs text-amber-600 mt-1">ZIP not recognized – you can still continue</p>
+            )}
           </div>
           <div>
             <FieldLabel label="Wall Type" tooltip="Wood frame requires additional structural work." />

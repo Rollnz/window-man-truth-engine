@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Send, MapPin, Building, Map, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
 import type { EstimateFormData } from '../EstimateSlidePanel';
+import { useZipLookup } from '@/hooks/forms/useZipLookup';
 
 interface AddressDetailsStepProps {
   formData: EstimateFormData;
@@ -48,6 +49,18 @@ export function AddressDetailsStep({
   error 
 }: AddressDetailsStepProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const { lookup, error: zipError } = useZipLookup();
+
+  const handleZipChange = useCallback(async (zip: string) => {
+    const clean = zip.replace(/\D/g, '').slice(0, 5);
+    updateFormData({ zip: clean });
+    if (clean.length === 5) {
+      const result = await lookup(clean);
+      if (result) {
+        updateFormData({ city: result.city, state: result.stateCode });
+      }
+    }
+  }, [lookup, updateFormData]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -175,13 +188,16 @@ export function AddressDetailsStep({
             type="text"
             placeholder="33101"
             value={formData.zip}
-            onChange={(e) => updateFormData({ zip: e.target.value.replace(/\D/g, '').slice(0, 5) })}
+            onChange={(e) => handleZipChange(e.target.value)}
             className={errors.zip ? 'border-destructive' : ''}
             autoComplete="postal-code"
             maxLength={5}
           />
           {errors.zip && (
             <p className="text-sm text-destructive">{errors.zip}</p>
+          )}
+          {!errors.zip && zipError === 'ZIP code not recognized' && (
+            <p className="text-sm text-amber-600">ZIP not recognized – you can still submit</p>
           )}
         </div>
       </div>

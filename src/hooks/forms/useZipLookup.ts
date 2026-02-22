@@ -56,6 +56,9 @@ interface UseZipLookupReturn {
 // Simple in-memory cache
 const zipCache = new Map<string, ZipLookupResult>();
 
+// Negative cache: ZIPs known to be invalid/not-found
+const zipNotFound = new Set<string>();
+
 export function useZipLookup(): UseZipLookupReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +77,13 @@ export function useZipLookup(): UseZipLookupReturn {
       return null;
     }
 
-    // Check cache first
+    // Check negative cache first (known-bad ZIPs)
+    if (zipNotFound.has(cleanZip)) {
+      setError('ZIP code not recognized');
+      return null;
+    }
+
+    // Check positive cache
     const cached = zipCache.get(cleanZip);
     if (cached) {
       return cached;
@@ -97,6 +106,7 @@ export function useZipLookup(): UseZipLookupReturn {
 
       if (!response.ok) {
         if (response.status === 404) {
+          zipNotFound.add(cleanZip);
           setError('ZIP code not recognized');
           return null;
         }

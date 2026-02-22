@@ -78,6 +78,8 @@ export function useLocationPersonalization(): UseLocationPersonalizationReturn {
         setLocationData(
           buildLocation(zip, result.city, result.stateCode, resolvedCounty)
         );
+      } else {
+        console.debug(`[useLocationPersonalization] ZIP ${zip} lookup returned null – skipping location data`);
       }
       setIsLoading(false);
     })();
