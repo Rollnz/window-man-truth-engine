@@ -1,51 +1,55 @@
 
-# Animated Score Reveal + Key Issues Detected Block
 
-## Overview
-Two enhancements to the `QuoteAnalysisResults` component: (1) upgrade each score row with animated count-up numbers, severity badges, gradient progress bars, and staggered reveal animations; (2) add a "Key Issues Detected" summary block between the overall score and the category scores.
+# Fix Edge Function Build Errors + Google OAuth Verification
 
-## Changes
+## Google OAuth Status: VERIFIED
 
-### File: `src/components/quote-scanner/QuoteAnalysisResults.tsx` (full rewrite of component internals)
+The Google sign-up flow was tested end-to-end:
+1. Navigated to `/auth?mode=signup`
+2. The "Sign up with Google" button was visible and properly styled
+3. Clicking it completed the OAuth flow successfully
+4. User was redirected to the Protection Dashboard (Vault) as expected
+5. "Sign Out" button visible in the header confirming authenticated state
 
-#### Enhancement A: Animated Score Reveal
+No changes needed for Google OAuth -- it is fully working.
 
-**ScoreRow upgrades:**
-- Replace static score text with a count-up animation (reuse the easeOutCubic pattern from `AnimatedNumber` / `EvidenceStat`) -- implemented inline via `useState` + `useEffect` + `requestAnimationFrame`
-- Add a `SeverityBadge` next to each score label showing "Concern" (score < 60, critical), "Caution" (60-79, warning), or "Strong" (>= 80, info)
-- Replace the single-color progress bar with a CSS gradient bar: `bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400` as the track, with width still driven by the score percentage
-- Add a small triangular marker at the score position on the bar (CSS `border` triangle, absolutely positioned)
-- Each ScoreRow receives a `delay` prop (0, 150, 300, 450, 600ms) to stagger the count-up start, creating a cascading reveal effect
-- Wrap each row in `motion-safe:animate-fade-in` with staggered `animation-delay`
+---
 
-**Overall score upgrades:**
-- The large `text-5xl` number uses the same count-up animation (0 to final score over ~1200ms)
-- Add a circular icon badge beside the score number: emerald CheckCircle2 (>= 80), amber AlertTriangle (60-79), rose XCircle (< 60)
+## Build Error Fix
 
-#### Enhancement B: Key Issues Detected Summary Block
+There are 12 type errors across edge functions, all with the same root cause:
 
-Insert a new section between the overall score box (line 128) and the category scores (line 131):
+**Problem:** The `hasAdminRole` function in each file declares its parameter type as `ReturnType<typeof createClient>`, but when `createClient(url, key)` is called with arguments, TypeScript infers a more specific generic type (`SupabaseClient<any, "public", "public", ...>`) that doesn't match the base `ReturnType<typeof createClient>` signature (which resolves to `SupabaseClient<unknown, ...never...>`).
 
-- Only renders when `result` exists and has warnings or missing items
-- Header: "KEY ISSUES DETECTED" with a count badge (total warnings + missing items) -- rose pill badge
-- Content: numbered list combining warnings and missing items (warnings first, then missing items), each with a rose/amber icon prefix
-- Max 5 items shown; if more exist, a "...and N more" line
-- Styled with `bg-rose-500/5 border border-rose-500/20 rounded-lg p-4`
+**Fix:** Change the parameter type annotation from `ReturnType<typeof createClient>` to `any` in all 12 files. This is safe because the function only calls `.from("user_roles").select().eq().eq().maybeSingle()` -- standard Supabase query chain that works on any client instance.
 
-### Technical Details
+### Files to update (single-line change each):
 
-**New imports needed:**
-- `{ useEffect, useState, useRef }` from React
-- `CheckCircle2` from lucide-react (already have `AlertTriangle`, `XCircle`)
-- `SeverityBadge` from `@/components/forensic/SeverityBadge`
+1. `supabase/functions/admin-call-activity/index.ts` (line 24)
+2. `supabase/functions/admin-executive-profit/index.ts` (line 15)
+3. `supabase/functions/admin-lead-detail/index.ts` (line 11)
+4. `supabase/functions/admin-quotes/index.ts` (line 9)
+5. `supabase/functions/admin-revenue/index.ts` (line 10)
+6. `supabase/functions/admin-smoke-test/index.ts` (line 5)
+7. `supabase/functions/admin-update-call-agent/index.ts`
+8. `supabase/functions/admin-webhook-receipts/index.ts` (line 30)
+9. `supabase/functions/crm-disposition/index.ts` (line 10)
+10. `supabase/functions/crm-leads/index.ts` (line 10)
+11. `supabase/functions/enqueue-manual-call/index.ts` (line 15)
+12. `supabase/functions/mark-qualified-conversion/index.ts` (line 25)
 
-**No new files, no new dependencies, no database changes.**
+In each file, the change is identical -- replacing:
 
-**Helper functions added inside the file:**
-- `getSeverityLevel(score)` -- returns `'critical' | 'warning' | 'info'`
-- `getSeverityLabel(score)` -- returns `'Concern' | 'Caution' | 'Strong'`
-- `useAnimatedScore(target, delay, duration)` -- small inline hook for the count-up with stagger delay
+```typescript
+async function hasAdminRole(supabaseAdmin: ReturnType<typeof createClient>, userId: string)
+```
 
-**Accessibility:**
-- Count-up respects `prefers-reduced-motion` (skip animation, show final value immediately)
-- Severity badges have `aria-label` (already built into `SeverityBadge`)
+with:
+
+```typescript
+// deno-lint-ignore no-explicit-any
+async function hasAdminRole(supabaseAdmin: any, userId: string)
+```
+
+### No new files, no new dependencies, no database changes.
+
