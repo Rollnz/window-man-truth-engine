@@ -56,7 +56,7 @@ export function ToolFAQSection({
           <Accordion type="single" collapsible className="space-y-3">
             {faqs.map((faq, index) => <AccordionItem key={index} value={`faq-${index}`} className={cn("rounded-lg px-4 md:px-6", isDossier ? "bg-white/5 border border-white/10 data-[state=open]:border-[#3E8FDA]/50" : "", isGradient ? "[background:var(--accordion)] border border-primary/20 data-[state=open]:border-primary/50" : "", !isDossier && !isGradient ? "bg-background border border-border data-[state=open]:border-primary/30" : "")}>
                 <AccordionTrigger className="text-left hover:no-underline py-4">
-                  <span className={cn("font-medium text-base md:text-lg pr-4", isDossier || isGradient ? "text-white" : "")}>
+                  <span className={cn("text-base md:text-lg pr-4 text-black font-bold", isDossier || isGradient ? "text-white" : "")}>
                     {faq.question}
                   </span>
                 </AccordionTrigger>
