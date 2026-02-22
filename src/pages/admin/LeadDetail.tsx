@@ -21,17 +21,49 @@ import { LeadNavigation } from '@/components/admin/LeadNavigation';
 import { SearchKeyboardHint } from '@/components/admin/GlobalLeadSearch';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 
-function ViewOriginalQuoteButton({ fileId, getQuoteFileUrl }: { fileId: string; getQuoteFileUrl: (id: string) => Promise<string | null> }) {
+function ViewOriginalQuoteButton({
+  fileId,
+  fileName,
+  getQuoteFileUrl,
+}: {
+  fileId: string;
+  fileName?: string;
+  getQuoteFileUrl: (id: string) => Promise<string | null>;
+}) {
   const [loading, setLoading] = useState(false);
+
   const handleClick = async () => {
     setLoading(true);
     try {
-      const url = await getQuoteFileUrl(fileId);
-      if (url) window.open(url, '_blank');
+      const signedUrl = await getQuoteFileUrl(fileId);
+      if (!signedUrl) return;
+
+      // Fetch the file as a Blob so we never navigate directly to the
+      // Supabase storage domain (avoids ERR_BLOCKED_BY_CLIENT).
+      const response = await fetch(signedUrl);
+      if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      // Open a new tab with the blob: URL — same-origin, never blocked.
+      const tab = window.open(objectUrl, '_blank');
+      if (!tab) {
+        // Fallback: force a download if popup was blocked
+        const anchor = document.createElement('a');
+        anchor.href = objectUrl;
+        anchor.download = fileName ?? 'quote.pdf';
+        anchor.click();
+      }
+
+      // Clean up the object URL after a delay
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
+    } catch (err) {
+      console.error('[ViewOriginalQuoteButton] Failed to open quote:', err);
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <div className="mb-4">
       <Button variant="outline" onClick={handleClick} disabled={loading} className="gap-2">
@@ -170,7 +202,7 @@ function LeadDetailContent() {
           onTriggerAnalysis={aiPreAnalysis?.quote_file_id ? () => triggerAnalysis(aiPreAnalysis.quote_file_id!) : undefined}
         />
         {files.length > 0 && (
-          <ViewOriginalQuoteButton fileId={files[0].id} getQuoteFileUrl={getQuoteFileUrl} />
+          <ViewOriginalQuoteButton fileId={files[0].id} fileName={files[0].file_name} getQuoteFileUrl={getQuoteFileUrl} />
         )}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Pane: Identity + Intent + Revenue */}

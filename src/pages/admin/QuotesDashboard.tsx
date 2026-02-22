@@ -59,6 +59,42 @@ function formatDate(dateString: string): string {
   });
 }
 
+/**
+ * Downloads a file from a remote URL as a Blob and triggers a browser
+ * save-dialog via a temporary <a download> anchor.
+ *
+ * This bypasses ERR_BLOCKED_BY_CLIENT that occurs when navigating directly
+ * to third-party storage URLs (e.g. Supabase signed URLs), because:
+ *   1. The fetch() runs in the background — no page navigation occurs.
+ *   2. The resulting blob: URL is same-origin and never hits ad-blocker lists.
+ *   3. The anchor click is synchronous, so popup-blockers don't interfere.
+ */
+async function downloadQuoteFile(signedUrl: string, fileName: string): Promise<void> {
+  const response = await fetch(signedUrl);
+  if (!response.ok) {
+    throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+  }
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+
+  try {
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    // Ensure the saved filename always has a .pdf extension
+    const safeName = fileName.toLowerCase().endsWith('.pdf')
+      ? fileName
+      : `${fileName}.pdf`;
+    anchor.download = safeName;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  } finally {
+    // Revoke the object URL after a short delay to allow the download to start
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+  }
+}
+
 export default function QuotesDashboard() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -72,6 +108,7 @@ export default function QuotesDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const ITEMS_PER_PAGE = 20;
 
   // Check admin access
@@ -351,13 +388,34 @@ export default function QuotesDashboard() {
                     {/* Actions */}
                     <div className="flex-shrink-0">
                       {quote.signed_url ? (
-                        <a href={quote.signed_url} target="_blank" rel="noopener noreferrer">
-                          <Button size="sm" className="gap-2">
-                            <Download className="h-4 w-4" />
-                            Download
-                            <ExternalLink className="h-3 w-3" />
-                          </Button>
-                        </a>
+                        <Button
+                          size="sm"
+                          className="gap-2"
+                          disabled={downloadingId === quote.id}
+                          onClick={async () => {
+                            setDownloadingId(quote.id);
+                            try {
+                              await downloadQuoteFile(quote.signed_url!, quote.file_name);
+                            } catch (err) {
+                              console.error('[QuotesDashboard] Download failed:', err);
+                              toast.error('Download failed. Please try again.');
+                            } finally {
+                              setDownloadingId(null);
+                            }
+                          }}
+                        >
+                          {downloadingId === quote.id ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                              Downloading…
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-4 w-4" />
+                              Download PDF
+                            </>
+                          )}
+                        </Button>
                       ) : (
                         <Button size="sm" disabled variant="outline">
                           No URL
