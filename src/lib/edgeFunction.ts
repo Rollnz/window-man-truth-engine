@@ -73,8 +73,21 @@ export async function invokeEdgeFunction<T = any>(
     return { data: null, error: new SessionRefreshedError() };
   }
 
-  // Safe retry (exactly once — no recursion)
-  const retry = await supabase.functions.invoke(functionName, invokeOpts);
+  // Safe retry — explicitly fetch the fresh token rather than trusting SDK global state
+  const { data: { session: freshSession } } = await supabase.auth.getSession();
+  if (!freshSession) {
+    return { data: null, error: new Error('No session available after refresh') };
+  }
+
+  const retryOpts = {
+    ...invokeOpts,
+    headers: {
+      ...invokeOpts.headers,
+      Authorization: `Bearer ${freshSession.access_token}`,
+    },
+  };
+
+  const retry = await supabase.functions.invoke(functionName, retryOpts);
   return {
     data: retry.data as T,
     error: retry.error

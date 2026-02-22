@@ -38,15 +38,26 @@ async function doRefresh(): Promise<boolean> {
   console.log('[AuthRefreshLock] Starting session refresh');
 
   try {
-    const { error } = await supabase.auth.refreshSession();
+    // Nudge the SDK: getUser() forces a server round-trip which triggers
+    // the SDK's internal auto-refresh if the access token is corrupted
+    // but the refresh token is still valid. This synchronizes in-memory
+    // auth state before we explicitly call refreshSession().
+    try {
+      await supabase.auth.getUser();
+      console.log('[AuthRefreshLock] getUser() nudge succeeded');
+    } catch {
+      console.log('[AuthRefreshLock] getUser() nudge failed (expected with corrupted token)');
+    }
 
-    if (error) {
-      console.warn('[AuthRefreshLock] Refresh failed:', error.message);
+    const { data, error } = await supabase.auth.refreshSession();
+
+    if (error || !data.session) {
+      console.warn('[AuthRefreshLock] Refresh failed:', error?.message ?? 'no session returned');
       await supabase.auth.signOut();
       return false;
     }
 
-    console.log('[AuthRefreshLock] Session refreshed successfully');
+    console.log('[AuthRefreshLock] Session refreshed successfully, new token acquired');
     return true;
   } catch (err) {
     console.error('[AuthRefreshLock] Unexpected refresh error:', err);
