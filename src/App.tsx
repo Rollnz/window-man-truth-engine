@@ -15,6 +15,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { GTMDebugPanel } from "@/components/debug/GTMDebugPanel";
 import { EMQValidatorOverlay } from "@/components/debug/EMQValidatorOverlay";
+import { SessionExpiredOverlay } from "@/components/auth/SessionExpiredOverlay";
 
 // Critical path - load immediately
 import Index from "./pages/Index";
@@ -177,6 +178,9 @@ function AppContent() {
         {/* Internal dev tools (no footer) */}
         <Route path="/button-audit" element={<ButtonAudit />} />
       </Routes>
+      
+      {/* Session expired overlay — preserves form state */}
+      <SessionExpiredOverlay />
       
       {/* Debug Panels - only render in development mode */}
       <GTMDebugPanel />

@@ -7,7 +7,8 @@
 // PHASE 1A: Sets explicit_submission_flag ONLY after successful lead POST
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
+import { SessionRefreshedError } from '@/lib/errors';
 import { toast } from '@/hooks/use-toast';
 import { useLeadIdentity } from './useLeadIdentity';
 import { useSessionData } from './useSessionData';
@@ -164,7 +165,7 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
 
       // Submit to API
       const { data: responseData, error: apiError } = await withTimeout(
-        supabase.functions.invoke('save-lead', {
+        invokeEdgeFunction('save-lead', {
           body: payload,
         }),
         LEAD_SUBMIT_TIMEOUT_MS,
@@ -261,6 +262,14 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
     } catch (err) {
       console.error('[useLeadFormSubmit] Submission error:', err);
       
+      if (err instanceof SessionRefreshedError) {
+        toast({
+          title: 'Session re-synced',
+          description: 'Please click submit one more time.',
+        });
+        return false;
+      }
+
       const errorMessage = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       setError(errorMessage);
       

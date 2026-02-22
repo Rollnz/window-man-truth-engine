@@ -40,6 +40,7 @@ import { TalkToExpertCTA } from '@/components/quote-scanner/TalkToExpertCTA';
 import { AnalysisTheaterScreen } from '@/components/quote-scanner/AnalysisTheaterScreen';
 // Attribution & tracking for NoQuotePivotSection handler
 import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { lovable } from '@/integrations/lovable';
 import { useToast } from '@/hooks/use-toast';
 import { getOrCreateClientId } from '@/lib/tracking';
@@ -438,7 +439,7 @@ export default function QuoteScanner() {
                 try {
                   const sessionId = registeredSessionId || await getRegisteredSessionId();
                   
-                  const { data: result, error } = await supabase.functions.invoke('save-lead', {
+                  const { data: result, error } = await invokeEdgeFunction('save-lead', {
                     body: {
                       email: data.email,
                       firstName: data.firstName,

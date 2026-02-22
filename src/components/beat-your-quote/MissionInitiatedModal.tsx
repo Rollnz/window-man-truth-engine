@@ -15,7 +15,7 @@ import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
 import { getAttributionData } from '@/lib/attribution';
 import { trackFormSubmit } from '@/lib/gtm';
 import { wmLead, wmRetarget } from '@/lib/wmTracking';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { emailInputProps, phoneInputProps } from '@/lib/formAccessibility';
@@ -117,7 +117,7 @@ export function MissionInitiatedModal({
         ...(existingLeadId && { leadId: existingLeadId }),
       };
 
-      const { data, error } = await supabase.functions.invoke('save-lead', {
+      const { data, error } = await invokeEdgeFunction('save-lead', {
         body: payload,
       });
 

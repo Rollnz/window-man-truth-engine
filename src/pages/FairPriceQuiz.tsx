@@ -16,7 +16,7 @@ import { usePageTracking } from '@/hooks/usePageTracking';
 import { useTrackToolCompletion } from '@/hooks/useTrackToolCompletion';
 import { trackEvent, trackLeadCapture, trackToolCompletion } from '@/lib/gtm';
 import { wmLead } from '@/lib/wmTracking';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { getAttributionData, getLastNonDirectAttribution } from '@/lib/attribution';
 import { getOrCreateSessionId } from '@/lib/tracking';
 import { getOrCreateAnonId } from '@/hooks/useCanonicalScore';
@@ -166,7 +166,7 @@ export default function FairPriceQuiz() {
 
     // Save lead to database with V2 contract
     try {
-      const { data: responseData, error } = await supabase.functions.invoke('save-lead', {
+      const { data: responseData, error } = await invokeEdgeFunction('save-lead', {
         body: {
           email,
           firstName,
@@ -259,7 +259,7 @@ export default function FairPriceQuiz() {
 
     // Trigger PhoneCall.bot via secure edge function
     try {
-      await supabase.functions.invoke('trigger-phone-call', {
+      await invokeEdgeFunction('trigger-phone-call', {
         body: {
           phone: phone || userPhone,
           name: userFirstName,
@@ -286,7 +286,7 @@ export default function FairPriceQuiz() {
       });
 
       // Update lead with phone in DB (V2 field names)
-      await supabase.functions.invoke('save-lead', {
+      await invokeEdgeFunction('save-lead', {
         body: {
           email: userEmail,
           phone: phone.replace(/\D/g, '') || null,

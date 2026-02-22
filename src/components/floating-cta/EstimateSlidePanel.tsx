@@ -21,7 +21,7 @@ import { useEngagementScore } from '@/hooks/useEngagementScore';
 import { usePanelVariant } from '@/hooks/usePanelVariant';
 import { useLocationPersonalization } from '@/hooks/useLocationPersonalization';
 import { useRouteContext } from '@/hooks/useRouteContext';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { trackEvent, trackLeadCapture, generateEventId } from '@/lib/gtm';
 import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
@@ -264,7 +264,7 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
       };
 
       // Call the save-lead edge function
-      const { data, error: saveError } = await supabase.functions.invoke('save-lead', {
+      const { data, error: saveError } = await invokeEdgeFunction('save-lead', {
         body: payload,
       });
 
