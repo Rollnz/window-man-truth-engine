@@ -52,6 +52,7 @@ export function useSessionSync() {
             sessionData,
             syncReason: 'auth_login',
           },
+          isIdempotent: true,
         });
 
         if (error) {
