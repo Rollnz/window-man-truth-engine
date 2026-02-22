@@ -1,44 +1,51 @@
 
-# Fix AuthRecoveryTester Button 2: Non-Idempotent POST Test
 
-## Problem
+# Fix AuthRecoveryTester and useSessionSync
 
-The "Test Non-Idempotent POST" button calls `score-event` with a dummy payload. The edge function rejects it with a **400 Bad Request** ("Missing required fields") before the auth layer even checks the token. Since 400 is not 401, the auth recovery wrapper correctly passes it through as a normal error -- but the tester treats it as unexpected.
+## Two Files, Three Fixes
 
-Additionally, the corrupted token also caused `sync-session` to return 401, which is a separate background call unrelated to the test button.
+### 1. `src/components/debug/AuthRecoveryTester.tsx`
 
-## Fix
+**Fix A: Switch all 3 tests to use `sync-session`** (which validates JWT via `supabase.auth.getUser()` and returns a proper 401 for corrupted tokens).
 
-One change in `src/components/debug/AuthRecoveryTester.tsx`:
+- **Test 1 (Idempotent):** Replace `fetchEdgeFunction('get-ticker-stats')` with `invokeEdgeFunction('sync-session', { body: { syncReason: 'auth_test', sessionData: {} }, isIdempotent: true })`. On success after silent retry, it returns `{ success: true, merged: false }` with no side effects.
 
-**Replace the `score-event` call with `get-ticker-stats` using `isIdempotent: false`.**
+- **Test 2 (Non-Idempotent):** Replace `invokeEdgeFunction('get-ticker-stats', { isIdempotent: false })` with `invokeEdgeFunction('sync-session', { body: { syncReason: 'auth_test', sessionData: {} }, isIdempotent: false })`. **Critical fix:** `invokeEdgeFunction` returns `{ error: SessionRefreshedError }` — it does NOT throw. The current code has a try/catch looking for a thrown error that will never come. Fix the check to inspect the returned `error` field:
+  ```
+  const { data, error } = await invokeEdgeFunction(...);
+  if (error instanceof SessionRefreshedError) {
+    // Show friendly toast
+  }
+  ```
 
-`get-ticker-stats` is a simple read-only function that will:
-1. Receive the corrupted token
-2. Return a proper 401 Unauthorized
-3. Trigger the auth recovery wrapper
-4. Since `isIdempotent: false`, the wrapper will refresh the token but throw `SessionRefreshedError` instead of retrying
-5. The catch block displays the friendly info toast
+- **Test 3 (Dead Session):** Replace `fetchEdgeFunction('get-ticker-stats')` with `invokeEdgeFunction('sync-session', { body: { syncReason: 'auth_test', sessionData: {} }, isIdempotent: true })`. With both tokens destroyed, the wrapper will fail to refresh and dispatch `auth:session-expired`, triggering the overlay.
 
-### Specific Change (lines 114-118)
+**Fix B: Remove `fetchEdgeFunction` import** since all tests now use `invokeEdgeFunction`.
 
-Before:
+### 2. `src/hooks/useSessionSync.ts`
+
+**Fix C: Add `isIdempotent: true`** to the existing `invokeEdgeFunction` call (line 50). The sync call is safe to auto-retry because the edge function merges data idempotently. This prevents background crashes when the tester corrupts the token — the wrapper will silently refresh and retry instead of returning a `SessionRefreshedError`.
+
+Change line 50-55 from:
 ```
-log('Calling invokeEdgeFunction("score-event", POST, isIdempotent: false)...');
-const { data, error } = await invokeEdgeFunction('score-event', {
-  body: { eventType: 'auth_test', entityType: 'debug', entityId: 'test-123', points: 0 },
-  isIdempotent: false,
+const { data, error } = await invokeEdgeFunction('sync-session', {
+  body: { sessionData, syncReason: 'auth_login' },
+});
+```
+To:
+```
+const { data, error } = await invokeEdgeFunction('sync-session', {
+  body: { sessionData, syncReason: 'auth_login' },
+  isIdempotent: true,
 });
 ```
 
-After:
-```
-log('Calling invokeEdgeFunction("get-ticker-stats", isIdempotent: false)...');
-const { data, error } = await invokeEdgeFunction('get-ticker-stats', {
-  isIdempotent: false,
-});
-```
+## No changes to `src/lib/edgeFunction.ts`
 
-This removes the dummy body entirely and uses an endpoint we know returns a clean 401 when the token is bad, allowing the `SessionRefreshedError` flow to trigger correctly.
+The core wrapper logic is correct. The `isIdempotent` flag works as designed — the bugs were in the test endpoint choice and the tester's error-checking pattern.
 
-No other files need changes. The `sync-session` 401 error was a side effect of the token corruption and will resolve itself once the token is refreshed.
+## Implementation Order
+
+1. Update `useSessionSync.ts` (one-line flag addition)
+2. Rewrite all 3 test functions in `AuthRecoveryTester.tsx`
+
