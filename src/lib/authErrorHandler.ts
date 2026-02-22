@@ -51,7 +51,7 @@ export async function handleAuthError(error: unknown): Promise<AuthErrorResult> 
  * - Generic Error with "401" or "Unauthorized" in message
  * - Response-like objects with status property
  */
-function isUnauthorizedError(error: unknown): boolean {
+export function isUnauthorizedError(error: unknown): boolean {
   if (!error) return false;
 
   // Check for status property (e.g. from fetchEdgeFunction enriched errors)
