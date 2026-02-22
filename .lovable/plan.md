@@ -1,24 +1,47 @@
 
-# Improve Google OAuth Error Handling
+
+# Wire VaultCTABlock to Real Google OAuth
 
 ## Overview
-Update `GoogleSignInButton.tsx` to detect specific OAuth error types and show clear, actionable toast messages instead of raw error strings.
+Replace the mock `console.log` callback on the "GET PREPARED FOR QUOTES" button with a real Google OAuth call using `lovable.auth.signInWithOAuth`.
 
-## Changes (1 file)
+## Changes
 
-### `src/components/auth/GoogleSignInButton.tsx`
+### 1. `src/pages/QuoteScanner.tsx`
+- Import `lovable` from `@/integrations/lovable`
+- Replace the `onGoogleAuth` mock callback (line 437-439) with a function that calls `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })`
+- Add error handling using the same `getOAuthErrorMessage` pattern from `GoogleSignInButton` (or a shared utility), showing a toast on failure
 
-Add a helper function `getOAuthErrorMessage(error)` that pattern-matches against the error message string to return user-friendly copy:
+### 2. `src/components/quote-scanner/vault-pivot/VaultCTABlock.tsx`
+- Update the JSDoc comment on `onGoogleAuth` prop from "Mock callback for demo" to reflect it now triggers real OAuth
 
-| Error pattern | Toast title | Toast description |
-|---|---|---|
-| `redirect_uri_mismatch` | "Configuration issue" | "Google sign-in isn't available in this environment. Please try from the published app." |
-| `access_denied` / `user_denied` | "Sign-in cancelled" | "You cancelled the Google sign-in. You can try again anytime." |
-| `popup_closed` / `popup_blocked` | "Pop-up blocked" | "Your browser blocked the sign-in window. Please allow pop-ups and try again." |
-| `network` / `fetch` | "Connection problem" | "Couldn't reach Google. Check your internet connection and try again." |
-| `temporarily_unavailable` / `server_error` | "Google is unavailable" | "Google sign-in is temporarily down. Please try again in a few minutes." |
-| Default fallback | "Sign-in failed" | "Something went wrong with Google sign-in. Please try again or use email instead." |
+### 3. `src/components/quote-scanner/vault-pivot/NoQuotePivotSection.tsx`
+- Update the JSDoc comment on `onGoogleAuth` prop similarly
 
-Apply this mapping in both the `if (error)` block (returned errors) and the `catch` block (thrown errors). The catch block will also check the error message for the same patterns.
+## Technical Details
 
-No new files, no new dependencies. Purely a UX improvement to the existing component.
+The `onGoogleAuth` callback in `QuoteScanner.tsx` (line 437) currently logs to console and does nothing. It will be replaced with:
+
+```typescript
+onGoogleAuth={async () => {
+  try {
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    const error = result?.error
+      ? result.error instanceof Error ? result.error : new Error(String(result.error))
+      : null;
+    if (error) {
+      toast({ title: "Sign-in failed", description: error.message, variant: "destructive" });
+    }
+  } catch (err) {
+    console.error("Google OAuth error:", err);
+    toast({ title: "Sign-in failed", description: "Something went wrong. Please try again.", variant: "destructive" });
+  }
+}}
+```
+
+After successful OAuth, the existing `onAuthStateChange` listener in `useAuth` will pick up the session, and the app's routing/redirect logic will handle navigation (e.g., to Vault).
+
+No new files, no new dependencies, no database changes.
+
