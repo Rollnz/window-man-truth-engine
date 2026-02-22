@@ -61,14 +61,14 @@ export function useSessionSync() {
         } catch (invokeErr) {
           // invokeEdgeFunction may throw on dead sessions — never let it crash the app
           console.warn('[SessionSync] invokeEdgeFunction threw (dead session?):', invokeErr);
-          hasSynced.current = true; // prevent retry loop
+          hasSynced.current = true;
           return;
         }
 
         if (error) {
-          console.warn('[SessionSync] Sync returned error (session likely expired):', error);
-          // Do NOT re-throw — SessionExpiredOverlay handles the UI
-          hasSynced.current = true; // prevent retry loop
+          // Silently absorb — SessionExpiredOverlay handles dead sessions
+          console.warn('[SessionSync] Sync error (non-fatal):', error?.message ?? error);
+          hasSynced.current = true;
         } else {
           console.log('[SessionSync] Sync complete:', data);
           hasSynced.current = true;
