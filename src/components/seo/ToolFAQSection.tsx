@@ -63,7 +63,7 @@ export function ToolFAQSection({
                 <AccordionContent className="pb-4 pt-0">
                   <div className={cn("space-y-4", isDossier ? "text-white/85" : "", isGradient ? "text-white" : "", !isDossier && !isGradient ? "text-muted-foreground" : "")}>
                     {/* Direct Answer + Elaboration */}
-                    <p className={cn("leading-relaxed text-black font-medium", isDossier ? "text-white" : isGradient ? "text-white" : "text-foreground")}>{faq.answer}</p>
+                    <p className={cn("leading-relaxed font-medium text-black", isDossier ? "text-white" : isGradient ? "text-white" : "text-foreground")}>{faq.answer}</p>
 
                     {/* Tool CTA (if provided) */}
                     {faq.toolCTA && <Link to={faq.toolCTA.href} className="inline-flex items-center gap-2 font-medium text-sm text-secondary">
