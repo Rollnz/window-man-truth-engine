@@ -14,7 +14,7 @@ interface MiniTrustBarProps {
  * Shows a stat badge and risk-reversal microcopy.
  */
 export function MiniTrustBar({
-  stat = '3,400+ Quotes Analyzed',
+  stat,
   riskReversal = 'No spam. No pressure. 100% free.',
   className,
 }: MiniTrustBarProps) {

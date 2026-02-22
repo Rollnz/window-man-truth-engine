@@ -2,7 +2,9 @@ import { Phone, FileText, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ShimmerBadge } from '@/components/ui/ShimmerBadge';
 import { ReviewedByBadge } from '@/components/authority/ReviewedByBadge';
+import { MiniTrustBar } from './shared/MiniTrustBar';
 import { PANEL_VARIANT_CONFIG } from '@/lib/panelVariants';
+import { useTickerStats } from '@/hooks/useTickerStats';
 import { trackEvent } from '@/lib/gtm';
 import { cn } from '@/lib/utils';
 import type { ChoiceVariantProps } from './types';
@@ -20,6 +22,7 @@ export function VariantE_AiConcierge({
   locationData,
 }: ChoiceVariantProps) {
   const config = PANEL_VARIANT_CONFIG.E;
+  const { total } = useTickerStats();
 
   const countyLabel = locationData?.county;
 
@@ -138,6 +141,7 @@ export function VariantE_AiConcierge({
       {/* Trust bar */}
       <div className="space-y-2 pt-2">
         <ReviewedByBadge variant="inline" className="justify-center" />
+        <MiniTrustBar stat={`${total.toLocaleString()}+ Quotes Analyzed`} />
       </div>
     </div>
   );

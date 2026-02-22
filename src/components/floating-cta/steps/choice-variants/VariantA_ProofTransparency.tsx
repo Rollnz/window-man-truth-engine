@@ -4,6 +4,7 @@ import { PANEL_VARIANT_CONFIG } from '@/lib/panelVariants';
 import { CtaCard } from './shared/CtaCard';
 import { LocationBadge } from './shared/LocationBadge';
 import { MiniTrustBar } from './shared/MiniTrustBar';
+import { useTickerStats } from '@/hooks/useTickerStats';
 import { trackEvent } from '@/lib/gtm';
 import type { ChoiceVariantProps } from './types';
 
@@ -22,6 +23,7 @@ export function VariantA_ProofTransparency({
   onResolveZip,
 }: ChoiceVariantProps) {
   const config = PANEL_VARIANT_CONFIG.A;
+  const { total } = useTickerStats();
 
   const countyLabel = locationData
     ? `See What We Found for ${locationData.county} Homeowners`
@@ -89,7 +91,7 @@ export function VariantA_ProofTransparency({
       />
 
       {/* Trust bar */}
-      <MiniTrustBar />
+      <MiniTrustBar stat={`${total.toLocaleString()}+ Quotes Analyzed`} />
     </div>
   );
 }
