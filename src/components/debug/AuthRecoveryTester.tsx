@@ -111,9 +111,8 @@ export function AuthRecoveryTester() {
     if (!ok) { setRunning(null); return; }
 
     try {
-      log('📡 Calling invokeEdgeFunction("score-event", POST, isIdempotent: false)...');
-      const { data, error } = await invokeEdgeFunction('score-event', {
-        body: { eventType: 'auth_test', entityType: 'debug', entityId: 'test-123', points: 0 },
+      log('📡 Calling invokeEdgeFunction("get-ticker-stats", isIdempotent: false)...');
+      const { data, error } = await invokeEdgeFunction('get-ticker-stats', {
         isIdempotent: false,
       });
 
