@@ -163,20 +163,15 @@ export default {
   				'monospace'
   			],
   			sans: [
-  				'Inter',
   				'ui-sans-serif',
   				'system-ui',
-  				'-apple-system',
-  				'BlinkMacSystemFont',
-  				'Segoe UI',
-  				'Roboto',
-  				'Helvetica Neue',
-  				'Arial',
-  				'Noto Sans',
-  				'sans-serif'
+  				'sans-serif',
+  				'Apple Color Emoji',
+  				'Segoe UI Emoji',
+  				'Segoe UI Symbol',
+  				'Noto Color Emoji'
   			],
   			serif: [
-  				'Lora',
   				'ui-serif',
   				'Georgia',
   				'Cambria',
@@ -185,7 +180,6 @@ export default {
   				'serif'
   			],
   			mono: [
-  				'Space Mono',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',
@@ -202,10 +196,9 @@ export default {
   			md: 'var(--shadow-md)',
   			lg: 'var(--shadow-lg)',
   			xl: 'var(--shadow-xl)',
-  			'2xl': 'var(--shadow-lg), 0 25px 60px -10px hsl(25 95% 50% / 0.15)',
+  			'2xl': 'var(--shadow-2xl)',
   			'2xs': 'var(--shadow-2xs)',
-  			xs: 'var(--shadow-xs)',
-  			'2xl': 'var(--shadow-2xl)'
+  			xs: 'var(--shadow-xs)'
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -267,7 +260,7 @@ export default {
   					boxShadow: '0 0 30px hsl(var(--glow) / 0.6)'
   				}
   			},
-  			'shimmer': {
+  			shimmer: {
   				'0%': {
   					backgroundPosition: '-200% 0'
   				},
@@ -275,7 +268,7 @@ export default {
   					backgroundPosition: '200% 0'
   				}
   			},
-  			'float': {
+  			float: {
   				'0%, 100%': {
   					transform: 'translateY(0)'
   				},
@@ -358,8 +351,8 @@ export default {
   			'fade-in-up': 'fade-in-up 0.6s ease-out forwards',
   			'count-up': 'count-up 0.4s ease-out forwards',
   			'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
-  			'shimmer': 'shimmer 2s linear infinite',
-  			'float': 'float 6s ease-in-out infinite',
+  			shimmer: 'shimmer 2s linear infinite',
+  			float: 'float 6s ease-in-out infinite',
   			'glow-pulse': 'glow-pulse 3s ease-in-out infinite',
   			'border-shimmer': 'border-shimmer 3s ease-in-out infinite',
   			'trivia-fade': 'trivia-fade 3.5s ease-in-out',
