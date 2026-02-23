@@ -1,154 +1,130 @@
 
 
-# Step 5: Client-Server Handshake (with 100/100 Tweaks)
+# Step 6: Smart Deduplication Verification (The ROI Protector)
 
-## Overview
+## Summary
 
-Add a "Lead Verification" system that confirms browser-captured leads actually reach the database. When the Guardian detects a `wm_lead` event with a `lead_id`, it automatically pings the server at 10s/30s/60s intervals to confirm the lead was saved. If missing after 60s, a "Lost Lead Recovery Card" appears with the full payload and a copy button.
-
-Three hardening tweaks from the user's feedback are integrated:
-1. Timer Persistence -- surviving page redirects
-2. Manual Force Re-check button on lost leads
-3. Deep Event Verification -- also checking `wm_event_log` for CAPI event parity
+Cross-reference browser `event_id` values against server-side `wm_event_log` records to prove that Meta/Google see exactly one event per lead. Includes fuzzy ID matching, cookie parity verification (`fbp`/`fbc`), and cross-component hover highlighting.
 
 ---
 
-## Files
+## Files to Change
 
-| Action | File | Purpose |
-|--------|------|---------|
-| CREATE | `supabase/functions/verify-lead-exists/index.ts` | Admin-only endpoint to check leads + wm_event_log |
-| MODIFY | `supabase/config.toml` | Add verify_jwt = false entry |
-| MODIFY | `src/hooks/useDataLayerMonitor.ts` | Add handshake subsystem with timer persistence |
-| MODIFY | `src/pages/admin/TrackingTest.tsx` | Add Lead Verification UI section |
+| Action | File | What Changes |
+|--------|------|-------------|
+| MODIFY | `supabase/functions/verify-lead-exists/index.ts` | Add batch `event_ids` parity mode with cookie data |
+| MODIFY | `src/hooks/useDataLayerMonitor.ts` | Add `ParityState`, `normalizeId`, `runParityCheck`, `highlightedEventId` |
+| MODIFY | `src/pages/admin/TrackingTest.tsx` | Add DeduplicationParityCard with hover linkage |
+
+No database changes. No new files. No new edge functions.
 
 ---
 
-## File 1: `supabase/functions/verify-lead-exists/index.ts` (NEW, ~60 lines)
+## Technical Details
 
-A JWT-protected admin endpoint that checks two tables:
+### 1. Edge Function: `verify-lead-exists/index.ts`
 
-**Request:** `POST { lead_id: string }`
+Currently accepts `{ lead_id }`. Will accept an optional `event_ids: string[]` (max 20) alongside or independently.
 
-**Logic:**
-1. Validate admin JWT using existing `validateAdminRequest()` from `_shared/adminAuth.ts`
-2. Query `leads` table: `SELECT id, created_at FROM leads WHERE id = :lead_id LIMIT 1`
-3. Query `wm_event_log` table: `SELECT event_id, event_name, created_at FROM wm_event_log WHERE lead_id = :lead_id LIMIT 5` (Tweak #3: Deep Event Verification)
-4. Return:
+When `event_ids` is provided:
+- Query `wm_event_log` using `.in('event_id', eventIds)` selecting `event_id, event_name, ingested_by, source_system, fbp, fbc, created_at`
+- Return a `parityResults` array:
+
 ```json
 {
-  "leadExists": true,
-  "leadCreatedAt": "2025-01-15T...",
-  "capiEvents": [
-    { "event_id": "abc...", "event_name": "wm_lead", "created_at": "..." }
-  ],
-  "capiEventCount": 1,
-  "checkedAt": "..."
+  "parityResults": [
+    {
+      "event_id": "abc-123",
+      "serverFound": true,
+      "event_name": "wm_lead",
+      "ingested_by": "capi",
+      "source_system": "log-event",
+      "fbp": "fb.1.1234567890.987654321",
+      "fbc": "fb.1.1234567890.IwAR..."
+    }
+  ]
 }
 ```
 
-This confirms both that the lead was saved AND that the CAPI event was logged for Meta deduplication.
+Both `lead_id` and `event_ids` remain optional -- the function handles whichever is provided. Existing lead verification behavior is untouched.
 
-## File 2: Config Update
+### 2. Hook: `useDataLayerMonitor.ts`
 
-Add to `supabase/config.toml`:
-```toml
-[functions.verify-lead-exists]
-verify_jwt = false
-```
-
-## File 3: `src/hooks/useDataLayerMonitor.ts` (MODIFY, ~80 lines added)
-
-### New Types
-
+**New types:**
 ```typescript
-export interface HandshakeResult {
-  leadId: string;
-  status: 'pending' | 'confirmed' | 'lost';
-  attempts: number;
-  confirmedAt: number | null;
-  leadCreatedAt: string | null;
-  capiEventCount: number;
-  capturedAt: number;        // when browser first saw the event
-  eventPayload: Record<string, unknown>;
+export interface ParityResult {
+  eventId: string;
+  browserEventName: string;
+  serverFound: boolean;
+  serverEventName: string | null;
+  serverIngestedBy: string | null;
+  serverSourceSystem: string | null;
+  serverFbp: string | null;
+  serverFbc: string | null;
+  browserFbp: string | null;
+  cookieMatch: boolean;
+  checkedAt: number;
+}
+
+export interface ParityState {
+  results: ParityResult[];
+  browserOnlyCount: number;
+  serverConfirmedCount: number;
+  lastCheckedAt: number | null;
+  isChecking: boolean;
 }
 ```
 
-Add `handshakeResults` to `MonitorState` as `HandshakeResult[]` (max 10, newest first).
+**New helper -- `normalizeId`:**
+Strips GTM/Meta wrapper prefixes: `const normalizeId = (id: string) => id.replace(/^(gtm|meta)\.[^.]+\./, '');`
 
-### Handshake Logic in `processEntry()`
+**New state:** `parityState` added to `MonitorState`, persisted in `sessionStorage`.
 
-When a `wm_lead` event is detected with a `lead_id`:
-1. Create a `HandshakeResult` with `status: 'pending'`, `capturedAt: Date.now()`
-2. Persist to sessionStorage immediately
-3. Schedule verification at T+10s via `setTimeout`
-4. The verification function:
-   - Calls `supabase.functions.invoke('verify-lead-exists', { body: { lead_id } })`
-   - Uses the auth token from the current session (admin is logged in)
-   - If `leadExists === true`: mark `'confirmed'`, store `capiEventCount`
-   - If not found and `attempts < 3`: schedule next check (30s for attempt 2, 60s for attempt 3)
-   - If not found after 3 attempts: mark `'lost'`, escalate `systemHealth` to `'conflict'`
+**New state:** `highlightedEventId: string | null` added to `MonitorState` for cross-component hover linking.
 
-### Tweak #1: Timer Persistence (surviving redirects)
+**New exported functions:**
+- `runParityCheck()` -- collects unique `wm_*` event_ids from `liveEvents`, batch-calls `verify-lead-exists` with `{ event_ids }`, normalizes IDs for comparison, reads browser `_fbp` cookie via `document.cookie`, compares against server `fbp` value, updates `parityState`.
+- `setHighlightedEventId(id: string | null)` -- sets the hover-linked event ID.
 
-On hook mount, scan sessionStorage for any `'pending'` handshake results. For each:
-- Calculate `elapsed = Date.now() - capturedAt`
-- If elapsed < 10000 (10s): schedule check at `10000 - elapsed` ms
-- If elapsed < 30000: schedule check at `30000 - elapsed` ms
-- If elapsed < 60000: schedule check at `60000 - elapsed` ms
-- If elapsed >= 60000 and still pending: mark as `'lost'` immediately
+**Auto-trigger:** Parity check runs automatically 15 seconds after `startMonitoring()` is called (only if there are `wm_*` events with event_ids).
 
-This means if the page redirects at T+5s, when the admin navigates back to the tracking page, the hook picks up where it left off.
+**Health integration:** If `browserOnlyCount > 0`, escalate to `warning` with reason: "Parity Gap: N browser event(s) not confirmed on server. Meta may be under-counting conversions."
 
-### Tweak #2: Force Re-check
+### 3. UI: `TrackingTest.tsx`
 
-Export a `forceRecheck(leadId: string)` function from the hook that manually triggers a verification call regardless of attempt count. Updates the handshake result in-place.
+**New component: `DeduplicationParityCard`**
 
-### Cleanup
+Inserted between LeadVerificationCard and CROInsightCard. Only renders when `parityState.results.length > 0` or monitoring is active with events.
 
-All `setTimeout` IDs stored in a `Map<string, NodeJS.Timeout>` ref, cleared on unmount.
+Layout:
+- Header: "Deduplication Parity" with Database icon and "Check Now" button
+- Circular progress gauge showing match percentage (e.g., "4/5 Matched = 80%")
+- Summary badges: Green "N Confirmed" + Red/Amber "N Browser-Only"
+- Per-result rows:
+  - Truncated `event_id` (monospace)
+  - Browser event name badge
+  - Green checkmark + "Matched" + `ingested_by` badge, OR Red X + "Server Missing"
+  - Cookie Match badge: Green "fbp Match" or Amber "fbp Mismatch"
+- **Hover linkage:** `onMouseEnter` sets `highlightedEventId`, `onMouseLeave` clears it. The corresponding row in `LiveActivityLog` gets a `ring-2 ring-primary` highlight when IDs match.
 
-## File 4: `src/pages/admin/TrackingTest.tsx` (MODIFY, ~100 lines added)
+**LiveActivityLog update:** Accept `highlightedEventId` prop. Apply `ring-2 ring-primary` class to any row whose `event_id` (normalized) matches.
 
-### New UI Section: Lead Verification Card
+**Parity Gap Alert:** If `browserOnlyCount > 0`, show amber warning: "Parity Gap Detected: N event(s) fired in the browser but missing from the server event log."
 
-Inserted between the Live Activity Log and the CRO Insight Card. Only renders when `handshakeResults.length > 0`.
-
-**Layout per handshake result:**
-
-| Status | Visual |
-|--------|--------|
-| `pending` | Amber spinner + "Verifying lead abc123... (attempt 1/3)" with a pulsing dot |
-| `confirmed` | Green checkmark + "Server confirmed lead abc123" + "CAPI events: 1" badge + time delta (e.g., "confirmed in 2.4s") |
-| `lost` | Red alert card (expanded) with full recovery tools |
-
-**Lost Lead Recovery Card:**
-- Red border, `bg-destructive/10`
-- Title: "LOST LEAD: lead abc123 captured in browser but NOT found in database after 60s"
-- "Force Re-check" button (Tweak #2) -- calls `forceRecheck(leadId)`
-- "Copy Payload" button -- copies the full `eventPayload` JSON to clipboard using existing `copyToClipboard` utility
-- Scrollable `<pre>` block showing the raw event JSON
-- CAPI status: if `capiEventCount === 0`, show additional warning: "No CAPI events found -- Meta will not receive this conversion"
-- The System Health Gauge escalates to `conflict` with reason: "Lead Verification Failed: 1 lead captured in browser but missing from database"
-
-### New Imports
-- `Copy`, `RotateCcw`, `Loader2` from lucide-react (Copy and RotateCcw are new)
-- `copyToClipboard` from `@/utils/clipboard`
-- `supabase` from `@/integrations/supabase/client` (already used elsewhere in admin pages)
+**Perfect Parity:** If all match, green success: "Perfect Parity: All browser events confirmed on server."
 
 ---
+
+## Hardening Requirements Addressed
+
+1. **Fuzzy Matching** -- `normalizeId()` strips `gtm.` and `meta.` prefixes before comparison, preventing false mismatches from wrapper formatting.
+2. **Cookie Handshake** -- Server returns `fbp`/`fbc` from `wm_event_log`; client reads browser `_fbp` cookie and compares. Mismatch = amber badge warning.
+3. **UI Linkage** -- Cross-component hover highlighting via `highlightedEventId` state shared between ParityCard and ActivityLog.
+4. **Batching** -- All event_ids sent in a single edge function call, not N individual requests.
 
 ## Security
 
-- The edge function uses `validateAdminRequest()` which checks JWT + admin role in `user_roles` table
-- Queries use `service_role` client internally (bypasses RLS safely)
-- The client-side code uses `supabase.functions.invoke()` which automatically includes the auth token
-- No new database tables, no schema changes, no RLS modifications needed
-
-## Why This is 100/100
-
-1. **Timer Persistence** -- The hook resumes pending handshakes after page redirects by calculating elapsed time from `capturedAt`. No lost timers.
-2. **Force Re-check** -- One-click manual retry for edge cases beyond the 60s window (regional outages, temporary DB locks).
-3. **Deep Event Verification** -- Checks both `leads` AND `wm_event_log` tables. A lead can exist in the DB but if the CAPI event wasn't logged, Meta will never see it. This catches that gap.
-4. **Recovery Card with Copy** -- Turns a catastrophic "lost lead" into a recoverable incident. At $10K per window job, this single feature pays for itself.
+- Same admin JWT validation via `validateAdminRequest()` -- no new auth surface.
+- `event_ids` array capped at 20 to prevent abuse.
+- Queries use existing `service_role` client on `wm_event_log` (no RLS changes needed).
 
