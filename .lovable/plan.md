@@ -1,69 +1,76 @@
 
 
-# Before Card Mobile Redesign
+# Comprehensive Light Mode Accessibility and Contrast Audit
 
-## Problems to Fix
+## Problem Diagnosed
 
-1. Wasted vertical space from forced `aspect-square` on mobile
-2. Sample quote + callouts invisible behind the CTA overlay
-3. Two CTAs competing with equal visual weight
-4. Dashed border feels unfinished
-5. No persuasive context inside the card itself
+The /tools page has **two invisible text blocks** in light mode:
 
-## Solution: Compact Persuasion-First Upload Card
+1. **Tools.tsx subtitle** (line 17): Uses `text-primary-foreground` which resolves to pure white (`0 0% 100%`) in both themes. On the light `bg-background` (near-white), this text is completely invisible.
+2. **ToolGrid.tsx heading** "12 Tools to Discover the Truth" (line 90): Uses inherited `text-foreground` which is `209 80% 12%` in light mode -- this is actually legible but very dark blue. The real issue is the subtitle below it uses `text-muted-foreground` at `209 25% 42%` which may appear weak.
 
-Remove the `aspect-square` on mobile, kill the hidden sample quote layer, and redesign the CTA block as a tight, trust-building action card.
+The root cause is **misuse of the `text-primary-foreground` token**. This token is white in both themes, designed ONLY for text sitting on `bg-primary` surfaces (buttons, banners with blue backgrounds). When used as body text on the page's default background, it becomes invisible in light mode.
 
-### File: `src/components/quote-scanner/QuoteUploadZone.tsx`
+## Scope of Changes
 
-**Change 1: Drop aspect-square on mobile**
-- Line 100: Change `"aspect-square"` to `"aspect-auto min-h-[320px] md:aspect-square"`
-- This lets the card size to its content on mobile instead of forcing a giant empty square
+### Tier 1: Critical Fixes (invisible text)
 
-**Change 2: Hide the sample quote + callouts on mobile**
-- Lines 180-216: Wrap the `showBeforeUploadOverlay` block in a `hidden md:block` container
-- The sample quote is a desktop showpiece. On mobile it's invisible behind the CTA anyway -- remove the wasted render
+**File: `src/pages/Tools.tsx`**
+- Line 17: Change `text-primary-foreground` to `text-muted-foreground`
+- This is the subtitle "Everything you need to make smarter window decisions..."
 
-**Change 3: Redesign the CTA overlay for mobile**
-- Replace the current card-in-a-card layout with a cleaner structure:
-  - Remove the inner `bg-card/95 ... rounded-2xl` wrapper on mobile (the parent card already provides the surface)
-  - Add a short persuasion line: "Most quotes have hidden issues. Find yours in 60 seconds."
-  - Make "Upload Your Quote" the dominant full-width CTA
-  - Demote "Download Sample" to a text link (`variant="ghost"`, smaller size) instead of a competing orange button
-  - Replace the dashed border with a solid subtle border on mobile: `border-dashed md:border-dashed border-solid` or just remove the dashed style entirely and use the parent card's border
+### Tier 2: Light-Mode Contrast Improvements
 
-**Change 4: Swap dashed border for solid on mobile**
-- Line 99: Change to `"relative rounded-xl border-2 md:border-dashed border-border/60 transition-all duration-300 overflow-hidden"`
-- Solid border on mobile, dashed only on desktop where the sample quote context makes the "drop zone" metaphor make sense
+**File: `src/components/home/ToolGrid.tsx`**
+- Line 101: The "You're in control" badge uses `bg-[#2473c2]` with `text-foreground`. In light mode, foreground is dark (`209 80% 12%`) on blue -- poor contrast. Change to `text-white` since this is a locked dark-blue surface.
 
-**Change 5: Add a micro trust signal inside the card**
-- Below the description text, add a small inline trust badge: a Shield icon + "Free and private" in muted text
-- This replaces the persuasion void with a friction-reducer
+### Tier 3: Global Theme Token Hardening
 
-### Visual Result (Mobile)
+**File: `src/index.css` (light theme variables, lines 107-165)**
+- Darken `--muted-foreground` from `209 25% 42%` to `209 25% 35%` for stronger body text contrast (currently ~4.2:1, target 5:1+)
+- Darken `--border` from `209 35% 86%` to `209 30% 78%` for more visible card/input borders
+- Darken `--input` from `209 35% 88%` to `209 30% 80%` for more defined input fields
 
-```text
-+----------------------------------+
-|                                  |
-|        [Scan icon]               |
-|     Analyze Your Quote           |
-|                                  |
-|  Most quotes have hidden issues. |
-|  Find yours in 60 seconds.       |
-|                                  |
-|  [====== Upload Your Quote =====]|
-|                                  |
-|  No quote yet? Download a sample |
-|                                  |
-|     Shield  Free and private     |
-+----------------------------------+
-```
+### Tier 4: Card and Container Border Definition
 
-### Files Changed
+**File: `src/components/ui/card.tsx`**
+- Add `shadow-sm` to the base Card component for light-mode elevation
+- The current class is `rounded-lg border bg-card text-card-foreground shadow-sm` -- shadow-sm is already there, but the border relies on `--border` which we are darkening in Tier 3
 
-| File | What |
-|------|------|
-| `src/components/quote-scanner/QuoteUploadZone.tsx` | All 5 changes above -- aspect ratio, hidden sample on mobile, CTA hierarchy, border style, trust signal |
+**File: `src/components/ui/input.tsx` (if it exists)**
+- Ensure input border uses the darkened `--input` token
 
-No new files. No new dependencies. The parent card in `QuoteScanner.tsx` (lines 171-179) stays untouched -- it already provides the surface, shadow, and border for the Before column.
+### Tier 5: Audit of `text-primary-foreground` Misuse Across Pages
+
+After reviewing all 46 files with `text-primary-foreground`:
+- **Correct usage (no change needed):** Files using it on `bg-primary` surfaces (buttons, hero banners with blue backgrounds) -- e.g., `Consultation.tsx` line 153 has `bg-primary text-primary-foreground`, `CalculateEstimate.tsx` line 59 has `bg-primary ... text-primary-foreground`. These are correct.
+- **Incorrect usage (needs fix):** `Tools.tsx` line 17 (already in Tier 1). The beat-your-quote components (`OutcomeFolders.tsx`, `CaseFileCard.tsx`) use `text-primary-foreground` but live inside the Dossier theme which force-locks a dark background, so those are safe.
+- **Upload components** (`UploadZoneXRay.tsx`): Uses `text-primary-foreground` inside cards that appear to have dark/themed backgrounds -- needs visual verification but likely safe since they sit inside the dossier/forensic theme zone.
+
+## Summary of Files to Change
+
+| File | Lines | Change |
+|------|-------|--------|
+| `src/pages/Tools.tsx` | 17 | `text-primary-foreground` to `text-muted-foreground` |
+| `src/components/home/ToolGrid.tsx` | 101-103 | `text-foreground` to `text-white` on the locked blue badge |
+| `src/index.css` | 128 | Darken `--muted-foreground` to `209 25% 35%` |
+| `src/index.css` | 130 | Darken `--border` to `209 30% 78%` |
+| `src/index.css` | 131 | Darken `--input` to `209 30% 80%` |
+
+## What This Does NOT Touch
+
+- ImpactWindowCard: Already has a theme protection layer forcing dark tokens (`!important` overrides in index.css lines 1447-1457). This is correctly locked.
+- Dossier/beat-your-quote pages: Already locked to dark theme via `.dossier-page` overrides.
+- Evidence page: Already has its own inverted contrast system.
+- Dark mode: All changes are scoped to the `.light` CSS block or use semantic tokens that already work in dark mode.
+
+## Contrast Ratios After Fix
+
+| Element | Before (light) | After (light) |
+|---------|----------------|---------------|
+| Tools subtitle | 1:1 (white on white, invisible) | ~7:1 (dark gray on white) |
+| Muted body text | ~4.2:1 (below AA) | ~5.5:1 (AA compliant) |
+| Card borders | Barely visible | Clearly defined |
+| Input field borders | Washed out | Distinct |
+| "You're in control" badge | Dark on blue (~3:1) | White on blue (~8:1) |
 

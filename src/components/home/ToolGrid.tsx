@@ -99,8 +99,8 @@ export function ToolGrid() {
         {/* Control message */}
         <div className="text-center text-sm mb-12">
           <span className="inline-flex flex-col items-center gap-1 px-5 py-3 rounded-2xl border-2 border-border shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.3)] bg-[#2473c2]">
-            <span className="text-white font-bold">✓ You're in control</span>
-            <span className="text-white/90 font-semibold">Explore any tool in any order</span>
+            <span className="text-foreground font-bold">✓ You're in control</span>
+            <span className="text-foreground font-semibold">Explore any tool in any order</span>
           </span>
         </div>
 

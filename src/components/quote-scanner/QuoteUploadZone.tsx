@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, forwardRef } from 'react';
-import { Upload, FileImage, Loader2, RefreshCw, FileText, ScanSearch, FileDown, Shield } from 'lucide-react';
+import { Upload, FileImage, Loader2, RefreshCw, FileText, ScanSearch, FileDown } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -96,8 +96,8 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          "relative rounded-xl border-2 border-solid md:border-dashed transition-all duration-300 overflow-hidden",
-          "min-h-[320px] md:aspect-square",
+          "relative rounded-xl border-2 border-dashed transition-all duration-300 overflow-hidden",
+          "aspect-square",
           isDragOver
             ? "border-primary bg-primary/5 scale-[1.02]"
             : "border-border hover:border-primary/50 bg-card/50",
@@ -178,7 +178,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
 
         {/* Before Upload Overlay - Sample Quote + Floating Callouts */}
         {showBeforeUploadOverlay && (
-          <div className="hidden md:block">
+          <>
             <SampleQuoteDocument />
 
             {/* Enhanced Floating Callouts — repositioned per reference */}
@@ -212,21 +212,18 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
               fromRight
               animationDelay="800ms"
             />
-          </div>
+          </>
         )}
 
         {/* Upload CTA Overlay */}
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 z-20">
           {!imagePreview && !isAnalyzing && (
-            <div className="md:bg-card/95 md:backdrop-blur-sm md:shadow-xl md:rounded-2xl p-5 md:p-6 max-w-xs w-full text-center md:border md:border-border/50">
+            <div className="bg-card/95 backdrop-blur-sm shadow-xl rounded-2xl p-5 md:p-6 max-w-xs w-full text-center border border-border/50">
               <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-3">
                 <ScanSearch className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-lg font-bold text-primary mb-1">Analyze Your Quote</h3>
-              <p className="text-sm text-muted-foreground mb-1 md:hidden">
-                Most quotes have hidden issues. Find yours in 60 seconds.
-              </p>
-              <p className="text-xs text-muted-foreground mb-4 hidden md:block">
+              <h3 className="text-lg font-bold text-primary mb-1">Analyze Quote</h3>
+              <p className="text-xs text-muted-foreground mb-4">
                 Take a photo or upload a screenshot. Supports JPG, PNG, and PDF. Max 10MB.
               </p>
 
@@ -238,49 +235,24 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
               </Button>
 
               {onNoQuoteClick && (
-                <>
-                  {/* Mobile: demoted ghost text link */}
-                  <div className="mt-4 flex flex-col items-center md:hidden">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5 text-muted-foreground"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        trackEvent('no_quote_sample_click', { location: 'before_card' });
-                        onNoQuoteClick();
-                      }}
-                    >
-                      <FileDown className="w-3.5 h-3.5" />
-                      No quote yet? Download a sample
-                    </Button>
-                  </div>
-                  {/* Desktop: original prominent CTA */}
-                  <div className="mt-4 flex-col items-center gap-2 hidden md:flex">
-                    <span className="text-sm font-bold text-foreground">No Quote To Analyze Yet</span>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="gap-2 w-full border-none text-white font-semibold shadow-[0_4px_14px_rgba(245,158,66,0.45)]"
-                      style={{ backgroundColor: '#f59e42' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        trackEvent('no_quote_sample_click', { location: 'before_card' });
-                        onNoQuoteClick();
-                      }}
-                    >
-                      <FileDown className="w-4 h-4" />
-                      Download Sample
-                    </Button>
-                  </div>
-                </>
+                <div className="mt-4 flex flex-col items-center gap-2">
+                  <span className="text-sm font-bold text-foreground">No Quote To Analyze Yet</span>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="gap-2 w-full border-none text-white font-semibold shadow-[0_4px_14px_rgba(245,158,66,0.45)]"
+                    style={{ backgroundColor: '#f59e42' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      trackEvent('no_quote_sample_click', { location: 'before_card' });
+                      onNoQuoteClick();
+                    }}
+                  >
+                    <FileDown className="w-4 h-4" />
+                    Download Sample
+                  </Button>
+                </div>
               )}
-
-              {/* Trust signal */}
-              <div className="mt-4 flex items-center justify-center gap-1.5 text-muted-foreground">
-                <Shield className="w-3.5 h-3.5" />
-                <span className="text-xs">Free and private</span>
-              </div>
             </div>
           )}
 
