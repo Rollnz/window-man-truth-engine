@@ -215,7 +215,7 @@ export function WhoIsWindowManSection() {
             <div className="text-center p-6 rounded-xl bg-gradient-to-br from-primary/10 to-[hsl(var(--secondary)/0.1)] border border-primary/20">
               <p className="text-lg text-muted-foreground mb-2">Your Contractor Makes More Money When You Know Less.</p>
               <p className="text-2xl font-bold text-foreground">
-                Window Man Only Succeeds When You know <span className="text-primary">MORE</span>.
+                Window Man Only Succeeds When You know <span className="text-[hsl(var(--primary-light))]">MORE</span>.
               </p>
               <p className="text-lg text-[hsl(var(--secondary))] font-medium mt-2">That's Why This Works.</p>
             </div>

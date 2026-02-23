@@ -30,7 +30,7 @@ export function MarketRealitySection() {
         <div className="max-w-4xl mx-auto mb-10">
           <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-background to-[hsl(var(--secondary)/0.08)] p-6 md:p-8">
             <div className="flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-wide text-primary mb-4">
-              <Activity className="w-4 h-4" /> Live Validation
+              <Activity className="w-4 h-4" /> <span className="text-[hsl(var(--primary-light))]">Live Validation</span>
             </div>
             <p className="text-center text-base md:text-lg text-muted-foreground mb-4">
               Real homeowner quote activity right now — not static marketing claims.

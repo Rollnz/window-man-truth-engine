@@ -100,7 +100,7 @@ export function FailurePointsSection() {
             And still — many lose coverage, fail inspections, or discover gaps only when it's too late.
           </p>
           <p className="text-xl font-semibold text-center mt-6 text-foreground">
-            That's because the system doesn't reward effort or intent. It rewards <span className="text-primary">precision</span>.
+            That's because the system doesn't reward effort or intent. It rewards <span className="text-[hsl(var(--primary-light))]">precision</span>.
           </p>
         </div>
         
@@ -143,7 +143,7 @@ export function FailurePointsSection() {
         <div className="max-w-3xl mx-auto text-center">
           <div className="p-8 rounded-2xl bg-gradient-to-r from-[hsl(var(--secondary)/0.1)] via-transparent to-[hsl(var(--secondary)/0.1)] border border-[hsl(var(--secondary)/0.2)]">
             <p className="text-lg mb-4 text-foreground">When something goes wrong, insurers don't ask whether you tried your best.</p>
-            <p className="text-xl font-semibold text-secondary-foreground">They ask whether everything was done <em>exactly right</em>.</p>
+            <p className="text-xl font-semibold text-foreground">They ask whether everything was done <em>exactly right</em>.</p>
             <p className="text-lg mt-4 text-foreground">And most window quotes don't give homeowners the information needed to know the difference.</p>
           </div>
         </div>
