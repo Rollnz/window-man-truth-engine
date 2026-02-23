@@ -406,7 +406,14 @@ function validateSeoSchemasFile(): { valid: boolean; issues: string[] } {
   }
   
   // Check for SITE_URL consistency
-  if (!content.includes('https://itswindowman.com')) {
+  const siteUrlPatterns = [
+    "const SITE_URL = 'https://itswindowman.com'",
+    'const SITE_URL = "https://itswindowman.com"',
+    "export const SITE_URL = 'https://itswindowman.com'",
+    'export const SITE_URL = "https://itswindowman.com"'
+  ];
+  const hasProductionSiteUrl = siteUrlPatterns.some(pattern => content.includes(pattern));
+  if (!hasProductionSiteUrl) {
     issues.push('SITE_URL may not be set to production domain');
   }
   
