@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { 
   Play, 
   CheckCircle2, 
@@ -24,6 +26,12 @@ import {
   Database,
   Fingerprint,
   Trash2,
+  ShieldCheck,
+  AlertTriangle,
+  XOctagon,
+  Activity,
+  Mail,
+  Phone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +43,240 @@ import {
   validateDataLayerEvent,
   type TrackingVerificationReport 
 } from '@/lib/trackingVerificationTest';
+import { useDataLayerMonitor, type SystemHealth } from '@/hooks/useDataLayerMonitor';
+import { formatRelativeTime } from '@/utils/relativeTime';
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function SystemHealthGauge({
+  health,
+  reason,
+  isMonitoring,
+  onStart,
+  onStop,
+}: {
+  health: SystemHealth;
+  reason: string;
+  isMonitoring: boolean;
+  onStart: () => void;
+  onStop: () => void;
+}) {
+  const config: Record<SystemHealth, { bg: string; icon: React.ReactNode; defaultMsg: string }> = {
+    idle: {
+      bg: 'bg-muted/50 border-border',
+      icon: <ShieldCheck className="h-6 w-6 text-muted-foreground" />,
+      defaultMsg: 'Guardian inactive. Click Start Monitoring to begin.',
+    },
+    healthy: {
+      bg: 'bg-emerald-600/10 border-emerald-600/20',
+      icon: <ShieldCheck className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />,
+      defaultMsg: 'All signals nominal. Deduplication pipeline active.',
+    },
+    warning: {
+      bg: 'bg-amber-600/10 border-amber-600/20',
+      icon: <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />,
+      defaultMsg: '',
+    },
+    conflict: {
+      bg: 'bg-destructive/10 border-destructive/20',
+      icon: <XOctagon className="h-6 w-6 text-destructive" />,
+      defaultMsg: '',
+    },
+  };
+
+  const c = config[health];
+
+  return (
+    <Card className={cn('border-2', c.bg)}>
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            {c.icon}
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold truncate">
+                {health === 'idle' && 'Guardian Inactive'}
+                {health === 'healthy' && 'System Healthy'}
+                {health === 'warning' && 'Warning'}
+                {health === 'conflict' && 'Conflict Detected'}
+              </h3>
+              <p className="text-xs text-muted-foreground line-clamp-2">
+                {reason || c.defaultMsg}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant={isMonitoring ? 'outline' : 'default'}
+            size="sm"
+            onClick={isMonitoring ? onStop : onStart}
+            className="shrink-0"
+          >
+            {isMonitoring ? 'Stop Monitoring' : 'Start Monitoring'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EmqDot({ score }: { score: number | null }) {
+  if (score === null) return <span className="inline-block h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />;
+  const color =
+    score >= 8
+      ? 'bg-emerald-500'
+      : score >= 5
+        ? 'bg-amber-500'
+        : 'bg-destructive';
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={cn('inline-block h-2.5 w-2.5 rounded-full', color)} />
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs">
+          EMQ {score.toFixed(1)}/10
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+function LiveActivityLog({
+  events,
+  isMonitoring,
+}: {
+  events: import('@/hooks/useDataLayerMonitor').MonitorEvent[];
+  isMonitoring: boolean;
+}) {
+  const display = events.slice(0, 10);
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Activity className="h-4 w-4" />
+          Live Activity Log
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {display.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {isMonitoring
+              ? 'Monitoring active. Waiting for dataLayer events…'
+              : 'Start monitoring to see live events.'}
+          </p>
+        ) : (
+          <div className="space-y-1.5">
+            {display.map((ev, i) => (
+              <div
+                key={`${ev.timestamp}-${i}`}
+                className={cn(
+                  'flex items-center gap-2 rounded-md px-2 py-1.5 text-xs',
+                  ev.collision && 'ring-1 ring-destructive/40 bg-destructive/5',
+                )}
+              >
+                {/* Timestamp */}
+                <span className="text-muted-foreground w-16 shrink-0 text-right tabular-nums">
+                  {formatRelativeTime(new Date(ev.timestamp).toISOString())}
+                </span>
+
+                {/* Event name */}
+                <Badge variant="secondary" className="font-mono text-[10px] px-1.5 shrink-0">
+                  {ev.event}
+                </Badge>
+
+                {/* EMQ dot */}
+                <EmqDot score={ev.emqScore} />
+
+                {/* PII indicators */}
+                <Mail
+                  className={cn(
+                    'h-3.5 w-3.5 shrink-0',
+                    ev.hasEmail ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground/30',
+                  )}
+                />
+                <Phone
+                  className={cn(
+                    'h-3.5 w-3.5 shrink-0',
+                    ev.hasPhone ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground/30',
+                  )}
+                />
+
+                {/* Collision badge */}
+                {ev.collision && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="destructive" className="text-[10px] px-1.5 shrink-0">
+                          COLLISION
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs text-xs font-mono break-all">
+                        {ev.collisionSource ?? 'Source unknown'}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CROInsightCard({
+  events,
+}: {
+  events: import('@/hooks/useDataLayerMonitor').MonitorEvent[];
+}) {
+  const latestConversion = events.find(
+    (e) => e.event.startsWith('wm_') && e.scrollDepth > 0,
+  );
+  if (!latestConversion) return null;
+
+  const depth = latestConversion.scrollDepth;
+  let recommendation: string;
+  if (depth > 75) {
+    recommendation =
+      'Users scroll deep before converting. Consider moving your primary CTA higher to capture low-intent browsers.';
+  } else if (depth > 50) {
+    recommendation =
+      'Mid-page conversion. Your content flow is balanced — users read enough to trust before acting.';
+  } else if (depth > 25) {
+    recommendation =
+      'Above-fold influence is strong. Your hero section is doing heavy lifting.';
+  } else {
+    recommendation =
+      'Lightning-fast conversion. Your above-fold value proposition is your strongest asset. Protect it.';
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <AlertCircle className="h-4 w-4" />
+          CRO Insight
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Based on scroll depth at <span className="font-mono">{latestConversion.event}</span>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Scroll depth at conversion</span>
+            <span className="font-mono">{depth}%</span>
+          </div>
+          <Progress value={depth} className="h-2" />
+        </div>
+        <p className="text-sm">{recommendation}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Quick-Check Types ───────────────────────────────────────────────────────
 
 interface QuickCheckResult {
   eventCount: number;
@@ -44,6 +286,8 @@ interface QuickCheckResult {
   validationScore: number | null;
 }
 
+// ─── Main Page ───────────────────────────────────────────────────────────────
+
 export default function TrackingTestPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [report, setReport] = useState<TrackingVerificationReport | null>(null);
@@ -51,10 +295,14 @@ export default function TrackingTestPage() {
   const [quickCheckResult, setQuickCheckResult] = useState<QuickCheckResult | null>(null);
   const { toast } = useToast();
 
+  // Phase 2: Active Guardian
+  const { state: monitorState, startMonitoring, stopMonitoring } = useDataLayerMonitor();
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
   const handleRunTest = useCallback(async () => {
     setIsRunning(true);
     setError(null);
-    
     try {
       const result = await runTrackingVerificationTest();
       setReport(result);
@@ -91,10 +339,7 @@ export default function TrackingTestPage() {
     });
 
     if (eventCount > 0) {
-      toast({
-        title: 'DataLayer Active',
-        description: `Found ${eventCount} events.`,
-      });
+      toast({ title: 'DataLayer Active', description: `Found ${eventCount} events.` });
     } else {
       toast({
         title: 'Warning: DataLayer Empty',
@@ -103,6 +348,8 @@ export default function TrackingTestPage() {
       });
     }
   }, [toast]);
+
+  // ── Status helpers (for full-test report section) ────────────────────────
 
   const getStatusIcon = (status: 'PASS' | 'PARTIAL' | 'FAIL') => {
     switch (status) {
@@ -126,6 +373,8 @@ export default function TrackingTestPage() {
     }
   };
 
+  // ── Render ───────────────────────────────────────────────────────────────
+
   return (
     <>
       <Helmet>
@@ -146,7 +395,26 @@ export default function TrackingTestPage() {
           </Badge>
         </div>
 
-        {/* Test Controls */}
+        {/* ═══ Phase 2: Active Guardian ═══ */}
+        <SystemHealthGauge
+          health={monitorState.systemHealth}
+          reason={monitorState.healthReason}
+          isMonitoring={monitorState.isMonitoring}
+          onStart={startMonitoring}
+          onStop={stopMonitoring}
+        />
+
+        {monitorState.isMonitoring && (
+          <>
+            <LiveActivityLog
+              events={monitorState.liveEvents}
+              isMonitoring={monitorState.isMonitoring}
+            />
+            <CROInsightCard events={monitorState.liveEvents} />
+          </>
+        )}
+
+        {/* ═══ Phase 1: Test Controls (unchanged) ═══ */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -159,11 +427,7 @@ export default function TrackingTestPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-3">
-              <Button 
-                onClick={handleRunTest} 
-                disabled={isRunning}
-                className="gap-2"
-              >
+              <Button onClick={handleRunTest} disabled={isRunning} className="gap-2">
                 {isRunning ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -176,17 +440,13 @@ export default function TrackingTestPage() {
                   </>
                 )}
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleQuickCheck}
-                className="gap-2"
-              >
+              <Button variant="outline" onClick={handleQuickCheck} className="gap-2">
                 <RefreshCw className="h-4 w-4" />
                 Quick DataLayer Check
               </Button>
               {quickCheckResult && (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={() => setQuickCheckResult(null)}
                   className="gap-1 text-muted-foreground"
@@ -202,20 +462,17 @@ export default function TrackingTestPage() {
               <div className="space-y-4 pt-2">
                 <Separator />
                 <div className="grid sm:grid-cols-3 gap-3">
-                  {/* Event Counter */}
                   <div className="bg-muted rounded-lg p-4 text-center">
                     <p className="text-3xl font-bold">{quickCheckResult.eventCount}</p>
                     <p className="text-xs text-muted-foreground mt-1">DataLayer Events</p>
                   </div>
-
-                  {/* Deduplication Badge */}
                   <div className="bg-muted rounded-lg p-4 flex flex-col items-center justify-center gap-2">
-                    <Badge 
+                    <Badge
                       variant={quickCheckResult.hasLeadId && quickCheckResult.hasEventId ? 'default' : 'secondary'}
                       className={cn(
                         quickCheckResult.hasLeadId && quickCheckResult.hasEventId
                           ? 'bg-emerald-600/15 text-emerald-600 dark:text-emerald-400 border border-emerald-600/20'
-                          : 'bg-amber-600/15 text-amber-600 dark:text-amber-400 border border-amber-600/20'
+                          : 'bg-amber-600/15 text-amber-600 dark:text-amber-400 border border-amber-600/20',
                       )}
                     >
                       {quickCheckResult.hasLeadId && quickCheckResult.hasEventId
@@ -228,8 +485,6 @@ export default function TrackingTestPage() {
                       {quickCheckResult.hasEventId ? '✓ event_id' : '✗ event_id'}
                     </p>
                   </div>
-
-                  {/* Validation Score */}
                   <div className="bg-muted rounded-lg p-4 text-center">
                     {quickCheckResult.validationScore !== null ? (
                       <>
@@ -247,8 +502,6 @@ export default function TrackingTestPage() {
                     )}
                   </div>
                 </div>
-
-                {/* Live JSON Preview */}
                 {quickCheckResult.latestEvent && (
                   <div>
                     <p className="text-xs font-medium text-muted-foreground mb-2">Latest wm_lead Event</p>
@@ -261,7 +514,7 @@ export default function TrackingTestPage() {
                 )}
               </div>
             )}
-            
+
             {error && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
                 {error}
@@ -270,10 +523,9 @@ export default function TrackingTestPage() {
           </CardContent>
         </Card>
 
-        {/* Test Results */}
+        {/* ═══ Full Test Results (unchanged) ═══ */}
         {report && (
           <>
-            {/* Overall Status */}
             <Card className={cn('border-2', getStatusColor(report.overallStatus))}>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -281,9 +533,11 @@ export default function TrackingTestPage() {
                     {getStatusIcon(report.overallStatus)}
                     <div>
                       <h3 className="text-lg font-semibold">
-                        {report.overallStatus === 'PASS' ? 'All Checks Passed' : 
-                         report.overallStatus === 'PARTIAL' ? 'Partial Success' : 
-                         'Issues Detected'}
+                        {report.overallStatus === 'PASS'
+                          ? 'All Checks Passed'
+                          : report.overallStatus === 'PARTIAL'
+                            ? 'Partial Success'
+                            : 'Issues Detected'}
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         Tested at {new Date(report.timestamp).toLocaleTimeString()}
@@ -301,9 +555,7 @@ export default function TrackingTestPage() {
               </CardContent>
             </Card>
 
-            {/* Detailed Results Grid */}
             <div className="grid md:grid-cols-2 gap-4">
-              {/* DataLayer Check */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -318,7 +570,6 @@ export default function TrackingTestPage() {
                       {report.dataLayerCheck.found ? 'Yes' : 'No'}
                     </Badge>
                   </div>
-                  
                   {report.dataLayerCheck.validation && (
                     <>
                       <div className="flex items-center justify-between">
@@ -327,7 +578,6 @@ export default function TrackingTestPage() {
                           {report.dataLayerCheck.validation.score.toFixed(1)}/10
                         </span>
                       </div>
-                      
                       {report.dataLayerCheck.validation.issues.length > 0 && (
                         <div className="space-y-1 pt-2 border-t">
                           <p className="text-xs font-medium text-muted-foreground">Issues:</p>
@@ -341,7 +591,6 @@ export default function TrackingTestPage() {
                 </CardContent>
               </Card>
 
-              {/* Event ID Parity */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -371,7 +620,6 @@ export default function TrackingTestPage() {
                 </CardContent>
               </Card>
 
-              {/* Network Capture */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -382,9 +630,7 @@ export default function TrackingTestPage() {
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Pixel Requests</span>
-                    <Badge variant="outline">
-                      {report.networkCapture.requestsCaptured}
-                    </Badge>
+                    <Badge variant="outline">{report.networkCapture.requestsCaptured}</Badge>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">eventID in Pixel</span>
@@ -401,7 +647,6 @@ export default function TrackingTestPage() {
                 </CardContent>
               </Card>
 
-              {/* GTM Tag Status */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -430,7 +675,6 @@ export default function TrackingTestPage() {
               </Card>
             </div>
 
-            {/* Action Items */}
             {report.actionItems.length > 0 && (
               <Card className="border-amber-600/30 bg-amber-600/5">
                 <CardHeader className="pb-3">
@@ -449,7 +693,6 @@ export default function TrackingTestPage() {
               </Card>
             )}
 
-            {/* Raw Event Data */}
             {report.dataLayerCheck.event && (
               <Card>
                 <CardHeader className="pb-3">
@@ -467,7 +710,7 @@ export default function TrackingTestPage() {
           </>
         )}
 
-        {/* Instructions */}
+        {/* Instructions placeholder */}
         {!report && !isRunning && (
           <Card className="border-dashed">
             <CardContent className="pt-6 text-center text-muted-foreground">
