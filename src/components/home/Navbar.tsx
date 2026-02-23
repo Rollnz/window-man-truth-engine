@@ -94,7 +94,7 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
         {/* Logo */}
         <Link to={ROUTES.HOME} className="flex items-center gap-2 font-bold text-lg">
           <img src="/icon-512.webp" alt="Its Window Man Logo" width={36} height={36} className="w-9 h-9 object-contain" />
-          <span style={{ color: '#2278BF' }}>Its Window Man</span>
+          <span className="text-primary">Its Window Man</span>
         </Link>
 
         {/* Desktop Navigation - Hidden in Funnel Mode */}
