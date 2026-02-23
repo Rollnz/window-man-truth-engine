@@ -125,10 +125,10 @@
     --accent-foreground: 209 60% 20%;
 
     --muted: 209 30% 92%;
-    --muted-foreground: 209 25% 42%;
+    --muted-foreground: 209 25% 35%;
 
-    --border: 209 35% 86%;
-    --input: 209 35% 88%;
+    --border: 209 30% 78%;
+    --input: 209 30% 80%;
 
     --destructive: 0 84% 40%;
     --destructive-foreground: 0 0% 100%;
