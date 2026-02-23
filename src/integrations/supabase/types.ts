@@ -426,6 +426,7 @@ export type Database = {
           fbp: string | null
           first_name: string | null
           first_touch: Json | null
+          gbraid: string | null
           gclid: string | null
           has_quote: string | null
           homeowner: boolean | null
@@ -436,6 +437,7 @@ export type Database = {
           intent_score: number | null
           ip_hash: string | null
           landing_page: string | null
+          landing_page_url: string | null
           last_activity_at: string | null
           last_evidence: Json | null
           last_name: string | null
@@ -452,6 +454,12 @@ export type Database = {
           lead_segment: string | null
           lead_status: string | null
           lead_type: string | null
+          meta_ad_id: string | null
+          meta_adset_id: string | null
+          meta_campaign_id: string | null
+          meta_creative_id: string | null
+          meta_placement: string | null
+          meta_site_source_name: string | null
           msclkid: string | null
           name: string | null
           original_session_id: string | null
@@ -465,6 +473,7 @@ export type Database = {
           specific_detail: string | null
           state: string | null
           timeline: string | null
+          ttclid: string | null
           updated_at: string | null
           urgency_level: string | null
           user_id: string | null
@@ -473,6 +482,7 @@ export type Database = {
           utm_medium: string | null
           utm_source: string | null
           utm_term: string | null
+          wbraid: string | null
           window_count: number | null
           window_scope: string | null
           zip: string | null
@@ -493,6 +503,7 @@ export type Database = {
           fbp?: string | null
           first_name?: string | null
           first_touch?: Json | null
+          gbraid?: string | null
           gclid?: string | null
           has_quote?: string | null
           homeowner?: boolean | null
@@ -503,6 +514,7 @@ export type Database = {
           intent_score?: number | null
           ip_hash?: string | null
           landing_page?: string | null
+          landing_page_url?: string | null
           last_activity_at?: string | null
           last_evidence?: Json | null
           last_name?: string | null
@@ -519,6 +531,12 @@ export type Database = {
           lead_segment?: string | null
           lead_status?: string | null
           lead_type?: string | null
+          meta_ad_id?: string | null
+          meta_adset_id?: string | null
+          meta_campaign_id?: string | null
+          meta_creative_id?: string | null
+          meta_placement?: string | null
+          meta_site_source_name?: string | null
           msclkid?: string | null
           name?: string | null
           original_session_id?: string | null
@@ -532,6 +550,7 @@ export type Database = {
           specific_detail?: string | null
           state?: string | null
           timeline?: string | null
+          ttclid?: string | null
           updated_at?: string | null
           urgency_level?: string | null
           user_id?: string | null
@@ -540,6 +559,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          wbraid?: string | null
           window_count?: number | null
           window_scope?: string | null
           zip?: string | null
@@ -560,6 +580,7 @@ export type Database = {
           fbp?: string | null
           first_name?: string | null
           first_touch?: Json | null
+          gbraid?: string | null
           gclid?: string | null
           has_quote?: string | null
           homeowner?: boolean | null
@@ -570,6 +591,7 @@ export type Database = {
           intent_score?: number | null
           ip_hash?: string | null
           landing_page?: string | null
+          landing_page_url?: string | null
           last_activity_at?: string | null
           last_evidence?: Json | null
           last_name?: string | null
@@ -586,6 +608,12 @@ export type Database = {
           lead_segment?: string | null
           lead_status?: string | null
           lead_type?: string | null
+          meta_ad_id?: string | null
+          meta_adset_id?: string | null
+          meta_campaign_id?: string | null
+          meta_creative_id?: string | null
+          meta_placement?: string | null
+          meta_site_source_name?: string | null
           msclkid?: string | null
           name?: string | null
           original_session_id?: string | null
@@ -599,6 +627,7 @@ export type Database = {
           specific_detail?: string | null
           state?: string | null
           timeline?: string | null
+          ttclid?: string | null
           updated_at?: string | null
           urgency_level?: string | null
           user_id?: string | null
@@ -607,6 +636,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          wbraid?: string | null
           window_count?: number | null
           window_scope?: string | null
           zip?: string | null
@@ -1491,9 +1521,11 @@ export type Database = {
           facebook_page_name: string | null
           fbclid: string | null
           first_name: string | null
+          gbraid: string | null
           gclid: string | null
           id: string
           landing_page: string | null
+          landing_page_url: string | null
           last_contacted_at: string | null
           last_name: string | null
           last_non_direct_channel: string | null
@@ -1504,6 +1536,13 @@ export type Database = {
           last_non_direct_utm_source: string | null
           lead_id: string | null
           lead_quality: string | null
+          meta_ad_id: string | null
+          meta_adset_id: string | null
+          meta_campaign_id: string | null
+          meta_creative_id: string | null
+          meta_placement: string | null
+          meta_site_source_name: string | null
+          msclkid: string | null
           notes: string | null
           original_client_id: string | null
           original_session_id: string | null
@@ -1515,6 +1554,7 @@ export type Database = {
           social_instagram_url: string | null
           state: string | null
           status: Database["public"]["Enums"]["lead_status"]
+          ttclid: string | null
           updated_at: string
           utm_campaign: string | null
           utm_content: string | null
@@ -1522,6 +1562,7 @@ export type Database = {
           utm_source: string | null
           utm_term: string | null
           verified_social_url: string | null
+          wbraid: string | null
           zip: string | null
         }
         Insert: {
@@ -1540,9 +1581,11 @@ export type Database = {
           facebook_page_name?: string | null
           fbclid?: string | null
           first_name?: string | null
+          gbraid?: string | null
           gclid?: string | null
           id?: string
           landing_page?: string | null
+          landing_page_url?: string | null
           last_contacted_at?: string | null
           last_name?: string | null
           last_non_direct_channel?: string | null
@@ -1553,6 +1596,13 @@ export type Database = {
           last_non_direct_utm_source?: string | null
           lead_id?: string | null
           lead_quality?: string | null
+          meta_ad_id?: string | null
+          meta_adset_id?: string | null
+          meta_campaign_id?: string | null
+          meta_creative_id?: string | null
+          meta_placement?: string | null
+          meta_site_source_name?: string | null
+          msclkid?: string | null
           notes?: string | null
           original_client_id?: string | null
           original_session_id?: string | null
@@ -1564,6 +1614,7 @@ export type Database = {
           social_instagram_url?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
+          ttclid?: string | null
           updated_at?: string
           utm_campaign?: string | null
           utm_content?: string | null
@@ -1571,6 +1622,7 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           verified_social_url?: string | null
+          wbraid?: string | null
           zip?: string | null
         }
         Update: {
@@ -1589,9 +1641,11 @@ export type Database = {
           facebook_page_name?: string | null
           fbclid?: string | null
           first_name?: string | null
+          gbraid?: string | null
           gclid?: string | null
           id?: string
           landing_page?: string | null
+          landing_page_url?: string | null
           last_contacted_at?: string | null
           last_name?: string | null
           last_non_direct_channel?: string | null
@@ -1602,6 +1656,13 @@ export type Database = {
           last_non_direct_utm_source?: string | null
           lead_id?: string | null
           lead_quality?: string | null
+          meta_ad_id?: string | null
+          meta_adset_id?: string | null
+          meta_campaign_id?: string | null
+          meta_creative_id?: string | null
+          meta_placement?: string | null
+          meta_site_source_name?: string | null
+          msclkid?: string | null
           notes?: string | null
           original_client_id?: string | null
           original_session_id?: string | null
@@ -1613,6 +1674,7 @@ export type Database = {
           social_instagram_url?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
+          ttclid?: string | null
           updated_at?: string
           utm_campaign?: string | null
           utm_content?: string | null
@@ -1620,6 +1682,7 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           verified_social_url?: string | null
+          wbraid?: string | null
           zip?: string | null
         }
         Relationships: [

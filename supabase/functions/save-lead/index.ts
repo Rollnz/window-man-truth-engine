@@ -50,6 +50,20 @@ const attributionSchema = z.object({
   fbp: z.string().max(255).optional().nullable(),
   gclid: z.string().max(255).optional().nullable(),
   msclkid: z.string().max(255).optional().nullable(),
+  // Meta Ads granular params
+  meta_placement: z.string().max(255).optional().nullable(),
+  meta_campaign_id: z.string().max(255).optional().nullable(),
+  meta_adset_id: z.string().max(255).optional().nullable(),
+  meta_ad_id: z.string().max(255).optional().nullable(),
+  meta_site_source_name: z.string().max(100).optional().nullable(),
+  meta_creative_id: z.string().max(255).optional().nullable(),
+  // Google iOS click IDs
+  gbraid: z.string().max(255).optional().nullable(),
+  wbraid: z.string().max(255).optional().nullable(),
+  // TikTok click ID
+  ttclid: z.string().max(255).optional().nullable(),
+  // Full landing page URL
+  landing_page_url: z.string().max(2000).optional().nullable(),
 }).optional().nullable();
 
 // Last Non-Direct Attribution schema (Phase 1B - preserves paid attribution)
@@ -633,6 +647,19 @@ serve(async (req) => {
       fbp: attribution?.fbp || null,
       gclid: attribution?.gclid || null,
       msclkid: attribution?.msclkid || null,
+      // Meta Ads granular params
+      meta_placement: attribution?.meta_placement || null,
+      meta_campaign_id: attribution?.meta_campaign_id || null,
+      meta_adset_id: attribution?.meta_adset_id || null,
+      meta_ad_id: attribution?.meta_ad_id || null,
+      meta_site_source_name: attribution?.meta_site_source_name || null,
+      meta_creative_id: attribution?.meta_creative_id || null,
+      // Google iOS + TikTok click IDs
+      gbraid: attribution?.gbraid || null,
+      wbraid: attribution?.wbraid || null,
+      ttclid: attribution?.ttclid || null,
+      // Full landing page URL
+      landing_page_url: attribution?.landing_page_url || null,
       // Last Non-Direct attribution (Phase 1B - preserves paid attribution)
       last_non_direct_utm_source: lastNonDirect?.utm_source || null,
       last_non_direct_utm_medium: lastNonDirect?.utm_medium || null,
@@ -671,13 +698,16 @@ serve(async (req) => {
         last_non_direct_gclid: string | null;
         last_non_direct_fbclid: string | null;
         client_id: string | null;
+        gbraid: string | null;
+        wbraid: string | null;
+        ttclid: string | null;
       } | null = null;
 
       // PRIORITY 1: If leadId is provided, use it directly (Golden Thread)
       if (providedLeadId) {
         const { data: leadById, error: leadByIdError } = await supabase
           .from('leads')
-          .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id')
+          .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id, gbraid, wbraid, ttclid')
           .eq('id', providedLeadId)
           .maybeSingle();
 
@@ -698,7 +728,7 @@ serve(async (req) => {
         // This prevents PGRST116 errors when multiple leads share the same email
         const { data: leadsArray, error: emailSelectError } = await supabase
           .from('leads')
-          .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id')
+          .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id, gbraid, wbraid, ttclid')
           .eq('email', normalizedEmail)
           .order('created_at', { ascending: false })  // Most recent first
           .limit(1);
@@ -786,6 +816,25 @@ serve(async (req) => {
           updateRecord.last_non_direct_fbclid = lastNonDirect.fbclid;
         }
         
+        // New click IDs: preserve first-touch
+        if (!existingLead?.gbraid && attribution?.gbraid) {
+          updateRecord.gbraid = attribution.gbraid;
+        }
+        if (!existingLead?.wbraid && attribution?.wbraid) {
+          updateRecord.wbraid = attribution.wbraid;
+        }
+        if (!existingLead?.ttclid && attribution?.ttclid) {
+          updateRecord.ttclid = attribution.ttclid;
+        }
+        // Meta granular: always update (last-touch)
+        if (attribution?.meta_placement) updateRecord.meta_placement = attribution.meta_placement;
+        if (attribution?.meta_campaign_id) updateRecord.meta_campaign_id = attribution.meta_campaign_id;
+        if (attribution?.meta_adset_id) updateRecord.meta_adset_id = attribution.meta_adset_id;
+        if (attribution?.meta_ad_id) updateRecord.meta_ad_id = attribution.meta_ad_id;
+        if (attribution?.meta_site_source_name) updateRecord.meta_site_source_name = attribution.meta_site_source_name;
+        if (attribution?.meta_creative_id) updateRecord.meta_creative_id = attribution.meta_creative_id;
+        if (attribution?.landing_page_url) updateRecord.landing_page_url = attribution.landing_page_url;
+
         // Backfill client_id if missing (identity persistence for Truth Engine)
         if (!existingLead?.client_id && clientId) {
           updateRecord.client_id = clientId;

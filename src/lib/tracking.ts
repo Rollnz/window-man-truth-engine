@@ -10,10 +10,10 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { getFullAttributionData, type AttributionData } from './attribution';
 
 const CLIENT_ID_KEY = 'wm_client_id';
 const SESSION_ID_KEY = 'wm_session_id';
-const ATTRIBUTION_KEY = 'wm_attribution';
 
 // =====================================================
 // ID Management
@@ -54,88 +54,8 @@ export function getOrCreateSessionId(): string {
   return sessionId;
 }
 
-// =====================================================
-// Attribution
-// =====================================================
-
-export interface Attribution {
-  first_touch: TouchPoint;
-  last_touch: TouchPoint;
-}
-
-export interface TouchPoint {
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-  utm_term?: string;
-  utm_content?: string;
-  gclid?: string;
-  fbclid?: string;
-  msclkid?: string;
-  referrer?: string;
-  landing_page?: string;
-  timestamp: string;
-}
-
-/** Parse current URL for attribution params */
-function parseCurrentAttribution(): TouchPoint {
-  if (typeof window === 'undefined') {
-    return { timestamp: new Date().toISOString() };
-  }
-
-  const url = new URL(window.location.href);
-  const pick = (key: string) => url.searchParams.get(key) || undefined;
-
-  return {
-    utm_source: pick('utm_source'),
-    utm_medium: pick('utm_medium'),
-    utm_campaign: pick('utm_campaign'),
-    utm_term: pick('utm_term'),
-    utm_content: pick('utm_content'),
-    gclid: pick('gclid'),
-    fbclid: pick('fbclid'),
-    msclkid: pick('msclkid'),
-    referrer: document.referrer || undefined,
-    landing_page: window.location.pathname,
-    timestamp: new Date().toISOString(),
-  };
-}
-
-/** Get attribution with first/last touch management */
-export function getAttribution(): Attribution {
-  if (typeof window === 'undefined') {
-    const now = { timestamp: new Date().toISOString() };
-    return { first_touch: now, last_touch: now };
-  }
-
-  const current = parseCurrentAttribution();
-  const hasNewParams = current.utm_source || current.gclid || current.fbclid || current.msclkid;
-
-  try {
-    const stored = localStorage.getItem(ATTRIBUTION_KEY);
-    if (stored) {
-      const parsed: Attribution = JSON.parse(stored);
-      
-      // Update last touch if new attribution params exist
-      if (hasNewParams) {
-        parsed.last_touch = current;
-        localStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(parsed));
-      }
-      
-      return parsed;
-    }
-  } catch {
-    // Corrupted storage, reset
-  }
-
-  // First visit - set both touches
-  const attribution: Attribution = {
-    first_touch: current,
-    last_touch: current,
-  };
-  localStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution));
-  return attribution;
-}
+// Attribution is now handled by src/lib/attribution.ts (Three-Tier system)
+// Legacy types removed: Attribution, TouchPoint, parseCurrentAttribution, getAttribution
 
 // =====================================================
 // Event Tracking
@@ -167,7 +87,11 @@ interface TrackEnvelope {
   page_path: string;
   section_id?: string;
   payload: Record<string, unknown>;
-  attribution: Attribution;
+  attribution: {
+    first_touch: AttributionData;
+    last_touch: AttributionData;
+    last_non_direct: AttributionData;
+  };
   timestamp: string;
   user_agent: string;
   device_type: 'mobile' | 'tablet' | 'desktop';
@@ -206,7 +130,7 @@ export async function track(
   const event_id = generateUUID();
   const client_id = getOrCreateClientId();
   const session_id = getOrCreateSessionId();
-  const attribution = getAttribution();
+  const attribution = getFullAttributionData();
   const user_id = await getCurrentUserId();
 
   const envelope: TrackEnvelope = {
