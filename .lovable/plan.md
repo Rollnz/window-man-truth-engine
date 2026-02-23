@@ -1,159 +1,154 @@
 
 
-# Tracking Autopilot Phase 2: Active Guardian (with Hardening Tweaks)
+# Step 5: Client-Server Handshake (with 100/100 Tweaks)
 
-## What We Are Building
+## Overview
 
-A real-time monitoring system that watches `window.dataLayer` as events arrive, detects collisions, captures scroll depth at conversion, and provides instant health feedback -- all without requiring a button click. Three architectural hardening tweaks are integrated directly into the core design.
+Add a "Lead Verification" system that confirms browser-captured leads actually reach the database. When the Guardian detects a `wm_lead` event with a `lead_id`, it automatically pings the server at 10s/30s/60s intervals to confirm the lead was saved. If missing after 60s, a "Lost Lead Recovery Card" appears with the full payload and a copy button.
+
+Three hardening tweaks from the user's feedback are integrated:
+1. Timer Persistence -- surviving page redirects
+2. Manual Force Re-check button on lost leads
+3. Deep Event Verification -- also checking `wm_event_log` for CAPI event parity
+
+---
 
 ## Files
 
-| Action | File | Lines Added |
-|--------|------|-------------|
-| CREATE | `src/hooks/useDataLayerMonitor.ts` | ~200 |
-| MODIFY | `src/pages/admin/TrackingTest.tsx` | ~150 added |
-
-No database, edge function, or other file changes.
+| Action | File | Purpose |
+|--------|------|---------|
+| CREATE | `supabase/functions/verify-lead-exists/index.ts` | Admin-only endpoint to check leads + wm_event_log |
+| MODIFY | `supabase/config.toml` | Add verify_jwt = false entry |
+| MODIFY | `src/hooks/useDataLayerMonitor.ts` | Add handshake subsystem with timer persistence |
+| MODIFY | `src/pages/admin/TrackingTest.tsx` | Add Lead Verification UI section |
 
 ---
 
-## File 1: `src/hooks/useDataLayerMonitor.ts` (NEW)
+## File 1: `supabase/functions/verify-lead-exists/index.ts` (NEW, ~60 lines)
 
-### Exported Interface
+A JWT-protected admin endpoint that checks two tables:
 
-```typescript
-interface MonitorEvent {
-  event: string;
-  event_id: string | undefined;
-  timestamp: number;
-  emqScore: number | null;
-  hasEmail: boolean;
-  hasPhone: boolean;
-  collision: boolean;
-  collisionSource: string | null;   // Tweak #2: source attribution
-  scrollDepth: number;
-  raw: Record<string, unknown>;
+**Request:** `POST { lead_id: string }`
+
+**Logic:**
+1. Validate admin JWT using existing `validateAdminRequest()` from `_shared/adminAuth.ts`
+2. Query `leads` table: `SELECT id, created_at FROM leads WHERE id = :lead_id LIMIT 1`
+3. Query `wm_event_log` table: `SELECT event_id, event_name, created_at FROM wm_event_log WHERE lead_id = :lead_id LIMIT 5` (Tweak #3: Deep Event Verification)
+4. Return:
+```json
+{
+  "leadExists": true,
+  "leadCreatedAt": "2025-01-15T...",
+  "capiEvents": [
+    { "event_id": "abc...", "event_name": "wm_lead", "created_at": "..." }
+  ],
+  "capiEventCount": 1,
+  "checkedAt": "..."
 }
-
-interface MonitorState {
-  systemHealth: 'idle' | 'healthy' | 'warning' | 'conflict';
-  healthReason: string;
-  liveEvents: MonitorEvent[];       // max 20, newest first
-  collisions: Map<string, number>;  // event_id -> occurrence count
-  isMonitoring: boolean;
-}
-
-// Hook return
-{ state, startMonitoring, stopMonitoring }
 ```
 
-### Core Mechanics
+This confirms both that the lead was saved AND that the CAPI event was logged for Meta deduplication.
 
-**A. DataLayer Push Proxy**
-- On `startMonitoring()`, save a reference to `window.dataLayer.push` and replace it with a proxy function
-- The proxy calls the original push, then processes the new entry
-- On `stopMonitoring()` or unmount, restore the original
+## File 2: Config Update
 
-**B. Tweak #1 -- sessionStorage Persistence**
-- On every state update, serialize `liveEvents` and `collisions` to `sessionStorage` under key `__wm_monitor_state`
-- On hook mount, hydrate state from sessionStorage if present
-- This survives page redirects (e.g., form submission to thank-you page) but clears on tab close
-- The `startMonitoring` flag itself is NOT persisted (user must re-enable after refresh -- intentional safety)
+Add to `supabase/config.toml`:
+```toml
+[functions.verify-lead-exists]
+verify_jwt = false
+```
 
-**C. Tweak #2 -- Source Attribution for Collisions**
-- When a collision is detected (event_id already in the Set), capture the script source using `new Error().stack`
-- Parse the stack trace to extract the first non-monitor file path (e.g., `gtm.js:42` or `fbevents.js:118`)
-- Store as `collisionSource` on the MonitorEvent
-- This tells you whether GTM or a hardcoded pixel caused the duplicate
+## File 3: `src/hooks/useDataLayerMonitor.ts` (MODIFY, ~80 lines added)
 
-**D. Tweak #3 -- Race Condition Guard (DataLayer Hijack Protection)**
-- After applying the proxy, start a `setInterval(2000)` watchdog that checks if `window.dataLayer.push` is still the proxy function
-- If a third-party script has replaced the array (reset to `[]`) or overwritten `.push`, the watchdog re-applies the proxy and logs a warning: `"[Guardian] DataLayer was reset by external script. Re-applying proxy."`
-- The watchdog interval is cleared on `stopMonitoring()` or unmount
+### New Types
 
-**E. Collision Detection**
-- Maintain a `Set<string>` of all `event_id` values seen this session
-- When a duplicate is found: increment count in `collisions` Map, set `collision: true` on event, escalate `systemHealth` to `'conflict'`
+```typescript
+export interface HandshakeResult {
+  leadId: string;
+  status: 'pending' | 'confirmed' | 'lost';
+  attempts: number;
+  confirmedAt: number | null;
+  leadCreatedAt: string | null;
+  capiEventCount: number;
+  capturedAt: number;        // when browser first saw the event
+  eventPayload: Record<string, unknown>;
+}
+```
 
-**F. Scroll Depth Capture**
-- Attach a passive scroll listener on `startMonitoring()`
-- Track `maxScrollPercent` = `Math.round((scrollTop + viewportHeight) / documentHeight * 100)`
-- Debounced at 200ms
-- When any `wm_*` event fires, stamp current `maxScrollPercent` onto the event record
+Add `handshakeResults` to `MonitorState` as `HandshakeResult[]` (max 10, newest first).
 
-**G. EMQ Scoring per Event**
-- For events where `event.event` starts with `wm_`, run `validateDataLayerEvent()` (imported from trackingVerificationTest.ts) and store the score
-- Non-wm events get `emqScore: null`
+### Handshake Logic in `processEntry()`
 
-**H. Health State Logic**
-- `idle`: monitoring not started
-- `healthy`: monitoring active, no issues
-- `warning`: a `wm_*` event arrived missing hashed email (`user_data.em`) or phone (`user_data.ph`)
-- `conflict`: a collision was detected (overrides warning)
-- `healthReason` string provides the human-readable explanation
+When a `wm_lead` event is detected with a `lead_id`:
+1. Create a `HandshakeResult` with `status: 'pending'`, `capturedAt: Date.now()`
+2. Persist to sessionStorage immediately
+3. Schedule verification at T+10s via `setTimeout`
+4. The verification function:
+   - Calls `supabase.functions.invoke('verify-lead-exists', { body: { lead_id } })`
+   - Uses the auth token from the current session (admin is logged in)
+   - If `leadExists === true`: mark `'confirmed'`, store `capiEventCount`
+   - If not found and `attempts < 3`: schedule next check (30s for attempt 2, 60s for attempt 3)
+   - If not found after 3 attempts: mark `'lost'`, escalate `systemHealth` to `'conflict'`
 
----
+### Tweak #1: Timer Persistence (surviving redirects)
 
-## File 2: `src/pages/admin/TrackingTest.tsx` (MODIFIED)
+On hook mount, scan sessionStorage for any `'pending'` handshake results. For each:
+- Calculate `elapsed = Date.now() - capturedAt`
+- If elapsed < 10000 (10s): schedule check at `10000 - elapsed` ms
+- If elapsed < 30000: schedule check at `30000 - elapsed` ms
+- If elapsed < 60000: schedule check at `60000 - elapsed` ms
+- If elapsed >= 60000 and still pending: mark as `'lost'` immediately
+
+This means if the page redirects at T+5s, when the admin navigates back to the tracking page, the hook picks up where it left off.
+
+### Tweak #2: Force Re-check
+
+Export a `forceRecheck(leadId: string)` function from the hook that manually triggers a verification call regardless of attempt count. Updates the handshake result in-place.
+
+### Cleanup
+
+All `setTimeout` IDs stored in a `Map<string, NodeJS.Timeout>` ref, cleared on unmount.
+
+## File 4: `src/pages/admin/TrackingTest.tsx` (MODIFY, ~100 lines added)
+
+### New UI Section: Lead Verification Card
+
+Inserted between the Live Activity Log and the CRO Insight Card. Only renders when `handshakeResults.length > 0`.
+
+**Layout per handshake result:**
+
+| Status | Visual |
+|--------|--------|
+| `pending` | Amber spinner + "Verifying lead abc123... (attempt 1/3)" with a pulsing dot |
+| `confirmed` | Green checkmark + "Server confirmed lead abc123" + "CAPI events: 1" badge + time delta (e.g., "confirmed in 2.4s") |
+| `lost` | Red alert card (expanded) with full recovery tools |
+
+**Lost Lead Recovery Card:**
+- Red border, `bg-destructive/10`
+- Title: "LOST LEAD: lead abc123 captured in browser but NOT found in database after 60s"
+- "Force Re-check" button (Tweak #2) -- calls `forceRecheck(leadId)`
+- "Copy Payload" button -- copies the full `eventPayload` JSON to clipboard using existing `copyToClipboard` utility
+- Scrollable `<pre>` block showing the raw event JSON
+- CAPI status: if `capiEventCount === 0`, show additional warning: "No CAPI events found -- Meta will not receive this conversion"
+- The System Health Gauge escalates to `conflict` with reason: "Lead Verification Failed: 1 lead captured in browser but missing from database"
 
 ### New Imports
-- `useDataLayerMonitor` from new hook
-- `ShieldCheck`, `ShieldAlert`, `AlertTriangle`, `XOctagon`, `Activity`, `Mail`, `Phone`, `ArrowDown` from lucide-react
-- `Progress` from `@/components/ui/progress`
-
-### New UI Sections (inserted BEFORE the existing "Run Verification Test" card)
-
-#### Section 1: System Health Gauge
-
-A full-width banner card. Four visual states:
-
-| State | Background | Icon | Message |
-|-------|-----------|------|---------|
-| `idle` | `bg-muted/50 border-border` | ShieldCheck (gray) | "Guardian inactive. Click Start Monitoring to begin." |
-| `healthy` | `bg-emerald-600/10 border-emerald-600/20` | ShieldCheck (green) | "All signals nominal. Deduplication pipeline active." |
-| `warning` | `bg-amber-600/10 border-amber-600/20` | AlertTriangle (amber) | Dynamic reason from hook (e.g., "Low Match Quality...") |
-| `conflict` | `bg-destructive/10 border-destructive/20` | XOctagon (red) | Dynamic reason (e.g., "Collision on ID abc123...") |
-
-Right side: Toggle button "Start Monitoring" / "Stop Monitoring"
-
-#### Section 2: Live Activity Log
-
-A card with title "Live Activity Log" and an Activity icon.
-
-- Shows the last 10 events from `state.liveEvents` (newest first)
-- Each row is a horizontal flex with:
-  - Relative timestamp (e.g., "3s ago") -- `text-muted-foreground text-xs`
-  - Event name in monospace badge -- `bg-muted font-mono text-xs`
-  - EMQ dot: green circle (8+), amber (5-7.9), red (<5), gray (non-conversion)
-  - PII indicators: Mail icon (filled if `hasEmail`, outlined if not), Phone icon (same)
-  - If `collision === true`: red "COLLISION" badge with `ring-1 ring-destructive/40` on the row, plus a tooltip or subtitle showing `collisionSource` (the stack trace snippet from Tweak #2)
-- Empty state: "Monitoring active. Waiting for dataLayer events..." in muted text
-- If not monitoring: "Start monitoring to see live events."
-- Events persist across redirects thanks to sessionStorage (Tweak #1)
-
-#### Section 3: CRO Insight Card
-
-Only renders when `state.liveEvents` contains at least one `wm_*` event with `scrollDepth > 0`.
-
-- Shows the most recent conversion event's scroll depth as a `Progress` bar (0-100%)
-- Below the bar, a dynamic text recommendation:
-  - `> 75%`: "Users scroll deep before converting. Consider moving your primary CTA higher."
-  - `50-75%`: "Mid-page conversion. Content flow is balanced."
-  - `25-50%`: "Above-fold influence is strong. Hero section doing heavy lifting."
-  - `< 25%`: "Lightning-fast conversion. Your above-fold value proposition is your strongest asset."
-- Subtitle shows the event name and scroll percentage
-
-### Existing Sections -- UNCHANGED
-
-The Quick DataLayer Check panel (Phase 1), Run Full Test, and all result cards remain exactly as they are. The new sections are inserted above them.
+- `Copy`, `RotateCcw`, `Loader2` from lucide-react (Copy and RotateCcw are new)
+- `copyToClipboard` from `@/utils/clipboard`
+- `supabase` from `@/integrations/supabase/client` (already used elsewhere in admin pages)
 
 ---
 
-## Why These Tweaks Make It 100
+## Security
 
-1. **sessionStorage** solves the #1 real-world failure: you submit a form, the page redirects, and your diagnostic data vanishes. Now it survives. Using sessionStorage (not localStorage) means it auto-clears when the tab closes, so stale data never accumulates.
+- The edge function uses `validateAdminRequest()` which checks JWT + admin role in `user_roles` table
+- Queries use `service_role` client internally (bypasses RLS safely)
+- The client-side code uses `supabase.functions.invoke()` which automatically includes the auth token
+- No new database tables, no schema changes, no RLS modifications needed
 
-2. **Source attribution** turns a "something is wrong" alert into a "this specific script caused it" alert. The `new Error().stack` approach costs zero runtime overhead (only triggered on collision, which is already an error state).
+## Why This is 100/100
 
-3. **Race condition guard** handles the scenario where Google Optimize, Hotjar, or a poorly-coded A/B testing script replaces `window.dataLayer` after page load. A 2-second watchdog is lightweight and catches this within one polling cycle.
+1. **Timer Persistence** -- The hook resumes pending handshakes after page redirects by calculating elapsed time from `capturedAt`. No lost timers.
+2. **Force Re-check** -- One-click manual retry for edge cases beyond the 60s window (regional outages, temporary DB locks).
+3. **Deep Event Verification** -- Checks both `leads` AND `wm_event_log` tables. A lead can exist in the DB but if the CAPI event wasn't logged, Meta will never see it. This catches that gap.
+4. **Recovery Card with Copy** -- Turns a catastrophic "lost lead" into a recoverable incident. At $10K per window job, this single feature pays for itself.
 
