@@ -1,25 +1,16 @@
 
 
-# Attribution System Upgrade: Final Corrected Plan
+# Attribution System Upgrade: Implementation Plan
 
 ## Overview
 
-Add 10 new attribution columns across the full pipeline (Meta granular params, Google iOS, TikTok), consolidate `tracking.ts` duplicate interfaces, and deploy bottom-up: DB first, then edge function, then frontend.
+Add 10 new attribution columns across the full pipeline (Meta granular params, Google iOS click IDs, TikTok click ID, landing page URL), consolidate `tracking.ts` duplicate interfaces, and deploy bottom-up.
 
-## Corrections Applied (Your Feedback)
-
-| Issue | Fix |
-|-------|-----|
-| Naming mismatch: Zod expects `placement` but interface sends `meta_placement` | All Zod fields use `meta_` prefix to match `AttributionData` |
-| `landing_page_url` mapped from `referer` header (wrong) | Mapped from `attribution.landing_page_url` (the actual arrival URL) |
-| `msclkid` missing from `wm_leads` trigger UPDATE block | Explicitly included with `COALESCE(NEW.msclkid, OLD.msclkid)` |
-| `decodeURIComponent` for Meta params | Applied to `placement` and `site_source_name` which can contain encoded chars |
-
----
-
-## Phase 1: Database Migration (Deploy First)
+## Phase 1: Database Migration
 
 ### 1A. Add 10 columns to `leads` table
+
+The `leads` table is missing all 10 new columns:
 
 ```sql
 ALTER TABLE public.leads
@@ -56,40 +47,47 @@ ALTER TABLE public.wm_leads
 
 ### 1C. Replace `handle_new_lead_to_crm()` trigger
 
-The INSERT block adds all 11 new columns. The UPDATE block adds all 11 with `COALESCE(NEW.x, OLD.x)` preservation -- including `msclkid`.
+The current trigger syncs ~20 fields from `leads` to `wm_leads`. We add 11 new fields to both the INSERT and UPDATE blocks:
 
-Key mapping note: `leads.fbc` maps to `wm_leads.fbclid` (existing convention preserved).
+**INSERT block** -- add to column list and VALUES:
+- `msclkid` (mapped from `NEW.msclkid`)
+- `meta_placement`, `meta_campaign_id`, `meta_adset_id`, `meta_ad_id`
+- `meta_site_source_name`, `meta_creative_id`
+- `gbraid`, `wbraid`, `ttclid`
+- `landing_page_url`
+
+**UPDATE block** -- add with COALESCE preservation:
+- `msclkid = COALESCE(NEW.msclkid, OLD.msclkid)` (preserves first-touch)
+- Same COALESCE pattern for all 10 other new fields
+
+Key existing mapping preserved: `leads.fbc` maps to `wm_leads.fbclid`.
 
 ---
 
-## Phase 2: Edge Function `save-lead` (Deploy Second)
+## Phase 2: Edge Function (`save-lead`)
 
 ### 2A. Update `attributionSchema` (line 43)
 
-All fields use the `meta_` prefix to match the frontend `AttributionData` interface:
+Add 10 new fields using `meta_` prefix to match the frontend interface:
 
 ```typescript
-const attributionSchema = z.object({
-  // ... existing 9 fields unchanged ...
-  meta_placement: z.string().max(255).optional().nullable(),
-  meta_campaign_id: z.string().max(255).optional().nullable(),
-  meta_adset_id: z.string().max(255).optional().nullable(),
-  meta_ad_id: z.string().max(255).optional().nullable(),
-  meta_site_source_name: z.string().max(100).optional().nullable(),
-  meta_creative_id: z.string().max(255).optional().nullable(),
-  gbraid: z.string().max(255).optional().nullable(),
-  wbraid: z.string().max(255).optional().nullable(),
-  ttclid: z.string().max(255).optional().nullable(),
-  landing_page_url: z.string().max(2000).optional().nullable(),
-}).optional().nullable();
+meta_placement: z.string().max(255).optional().nullable(),
+meta_campaign_id: z.string().max(255).optional().nullable(),
+meta_adset_id: z.string().max(255).optional().nullable(),
+meta_ad_id: z.string().max(255).optional().nullable(),
+meta_site_source_name: z.string().max(100).optional().nullable(),
+meta_creative_id: z.string().max(255).optional().nullable(),
+gbraid: z.string().max(255).optional().nullable(),
+wbraid: z.string().max(255).optional().nullable(),
+ttclid: z.string().max(255).optional().nullable(),
+landing_page_url: z.string().max(2000).optional().nullable(),
 ```
 
 ### 2B. Update `leadRecord` (line 601)
 
-Mapping uses `attribution?.meta_placement` (not `referer`):
+Add 10 new fields mapped from `attribution?.meta_placement` etc. (not from `referer` header):
 
 ```typescript
-// New attribution fields
 meta_placement: attribution?.meta_placement || null,
 meta_campaign_id: attribution?.meta_campaign_id || null,
 meta_adset_id: attribution?.meta_adset_id || null,
@@ -104,38 +102,15 @@ landing_page_url: attribution?.landing_page_url || null,
 
 ### 2C. Update the UPDATE path (line 728)
 
-Add first-touch preservation for click IDs, always-update for the rest:
-
-```typescript
-// New click IDs: preserve first-touch
-if (!existingLead?.gbraid && attribution?.gbraid) {
-  updateRecord.gbraid = attribution.gbraid;
-}
-if (!existingLead?.wbraid && attribution?.wbraid) {
-  updateRecord.wbraid = attribution.wbraid;
-}
-if (!existingLead?.ttclid && attribution?.ttclid) {
-  updateRecord.ttclid = attribution.ttclid;
-}
-// Meta granular: always update (last-touch)
-updateRecord.meta_placement = attribution?.meta_placement || undefined;
-updateRecord.meta_campaign_id = attribution?.meta_campaign_id || undefined;
-updateRecord.meta_adset_id = attribution?.meta_adset_id || undefined;
-updateRecord.meta_ad_id = attribution?.meta_ad_id || undefined;
-updateRecord.meta_site_source_name = attribution?.meta_site_source_name || undefined;
-updateRecord.meta_creative_id = attribution?.meta_creative_id || undefined;
-updateRecord.landing_page_url = attribution?.landing_page_url || undefined;
-```
-
-Also need to expand the `existingLead` SELECT (line 680) to include `gbraid`, `wbraid`, `ttclid`.
+Add first-touch preservation for click IDs (`gbraid`, `wbraid`, `ttclid`) and always-update for Meta granular fields. Expand the `existingLead` SELECT (line 680) to include `gbraid`, `wbraid`, `ttclid`.
 
 ---
 
-## Phase 3: Frontend Changes (Deploy Last)
+## Phase 3: Frontend Changes
 
 ### 3A. `index.html` -- Early Capture Script (line 36)
 
-Add inside the existing `try...catch`:
+Add 10 new params inside the existing `try...catch`:
 
 ```javascript
 placement: params.get('placement') || undefined,
@@ -150,37 +125,32 @@ ttclid: params.get('ttclid') || undefined,
 landing_page_url: window.location.href,
 ```
 
-Update `hasAttribution` check to include `gbraid`, `wbraid`, `ttclid`.
+Update `hasAttribution` to include `gbraid`, `wbraid`, `ttclid`. Push all to `dataLayer` event and `wm_early_attribution` sessionStorage.
 
-Push all to `dataLayer` event and `wm_early_attribution` sessionStorage.
-
-### 3B. `src/lib/attribution.ts` -- `AttributionData` interface
+### 3B. `src/lib/attribution.ts` -- `AttributionData` interface (line 20)
 
 Add 10 new optional fields:
 
 ```typescript
-export interface AttributionData {
-  // ... existing fields ...
-  // Meta Ads granular params
-  meta_placement?: string;
-  meta_campaign_id?: string;
-  meta_adset_id?: string;
-  meta_ad_id?: string;
-  meta_site_source_name?: string;
-  meta_creative_id?: string;
-  // Google iOS tracking
-  gbraid?: string;
-  wbraid?: string;
-  // TikTok
-  ttclid?: string;
-  // Full landing page URL
-  landing_page_url?: string;
-}
+// Meta Ads granular params
+meta_placement?: string;
+meta_campaign_id?: string;
+meta_adset_id?: string;
+meta_ad_id?: string;
+meta_site_source_name?: string;
+meta_creative_id?: string;
+// Google iOS tracking
+gbraid?: string;
+wbraid?: string;
+// TikTok
+ttclid?: string;
+// Full landing page URL
+landing_page_url?: string;
 ```
 
-### 3C. `src/lib/attribution.ts` -- `captureAttributionFromUrl()`
+### 3C. `src/lib/attribution.ts` -- `captureAttributionFromUrl()` (line 186)
 
-Add capture with `decodeURIComponent` for Meta string params:
+Add capture for all new params with early capture fallback and `decodeURIComponent` for `placement` and `site_source_name`:
 
 ```typescript
 meta_placement: (() => {
@@ -188,64 +158,32 @@ meta_placement: (() => {
   try { return v ? decodeURIComponent(v) : undefined; } catch { return v; }
 })(),
 meta_campaign_id: pick('campaign_id') || earlyCapture.campaign_id,
-meta_adset_id: pick('adset_id') || earlyCapture.adset_id,
-meta_ad_id: pick('ad_id') || earlyCapture.ad_id,
-meta_site_source_name: (() => {
-  const v = pick('site_source_name') || earlyCapture.site_source_name;
-  try { return v ? decodeURIComponent(v) : undefined; } catch { return v; }
-})(),
-meta_creative_id: pick('creative_id') || earlyCapture.creative_id,
-gbraid: pick('gbraid') || earlyCapture.gbraid,
-wbraid: pick('wbraid') || earlyCapture.wbraid,
-ttclid: pick('ttclid') || earlyCapture.ttclid,
+// ... etc for all 10 fields
 landing_page_url: window.location.href,
 ```
 
-### 3D. `src/lib/attribution.ts` -- `determineChannel()`
+### 3D. `src/lib/attribution.ts` -- `determineChannel()` and `isMeaningfulTouch()`
 
-Add new channel detection:
+Add channel detection for `gbraid`/`wbraid` (google_ads) and `ttclid` (tiktok_ads). Add these click IDs to the meaningful touch check.
 
-```typescript
-if (data.gbraid || data.wbraid) return 'google_ads';
-if (data.ttclid) return 'tiktok_ads';
-```
+### 3E. `src/lib/tracking.ts` -- Consolidation
 
-### 3E. `src/lib/attribution.ts` -- `isMeaningfulTouch()`
-
-Add new click IDs:
-
-```typescript
-if (data.gbraid || data.wbraid || data.ttclid) return true;
-```
-
-### 3F. `src/lib/tracking.ts` -- Consolidation
-
-**Remove** (confirmed: zero external imports):
+**Remove** (confirmed zero external imports):
 - `Attribution` interface (lines 61-63)
 - `TouchPoint` interface (lines 66-78)
 - `parseCurrentAttribution()` function (lines 81-102)
 - `getAttribution()` function (lines 105-138)
 
-**Add** import:
+**Add** import from `attribution.ts`:
 ```typescript
 import { getFullAttributionData, type AttributionData } from './attribution';
 ```
 
-**Update** `TrackEnvelope` (line 170):
-```typescript
-attribution: {
-  first_touch: AttributionData;
-  last_touch: AttributionData;
-  last_non_direct: AttributionData;
-};
-```
+**Update** `TrackEnvelope` (line 170): change `attribution` field type to use `AttributionData` tiers.
 
-**Update** `track()` (line 209):
-```typescript
-const attribution = getFullAttributionData(); // replaces getAttribution()
-```
+**Update** `track()` (line 209): replace `getAttribution()` with `getFullAttributionData()`.
 
-All exported functions stay identical: `getOrCreateClientId`, `getOrCreateSessionId`, `track`, `trackSectionView`, `trackCTAClick`, `trackToolRoute`.
+All exported functions remain unchanged: `getOrCreateClientId`, `getOrCreateSessionId`, `track`, `trackSectionView`, `trackCTAClick`, `trackToolRoute`.
 
 ---
 
@@ -254,9 +192,9 @@ All exported functions stay identical: `getOrCreateClientId`, `getOrCreateSessio
 | File | Change |
 |------|--------|
 | New SQL migration | Add columns to `leads` + `wm_leads`, replace trigger |
-| `supabase/functions/save-lead/index.ts` | Zod schema + leadRecord + update path (all using `meta_` prefix) |
+| `supabase/functions/save-lead/index.ts` | Zod schema + leadRecord + update path |
 | `index.html` | Capture 10 new URL params in early script |
-| `src/lib/attribution.ts` | 10 new fields in interface + capture + channel + meaningful touch |
+| `src/lib/attribution.ts` | 10 new fields + capture + channel + meaningful touch |
 | `src/lib/tracking.ts` | Remove 4 internal constructs, import from `attribution.ts` |
 
 ## What Does NOT Change
@@ -264,5 +202,5 @@ All exported functions stay identical: `getOrCreateClientId`, `getOrCreateSessio
 - All 24 files importing functions from `tracking.ts` (none import the removed types)
 - All 20 files importing from `attribution.ts` (additive interface change)
 - `gtm.ts`, `wmTracking.ts`, admin pages, test files
-- `leads_dashboard` view (auto-inherits new columns)
+- `leads_dashboard` view (auto-inherits new columns from `leads` table)
 
