@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ShimmerBadge } from '@/components/ui/ShimmerBadge';
 import { cn } from '@/lib/utils';
+import { UrgencyTicker } from '@/components/social-proof';
 
 interface DossierHeroProps {
   onFileSelect: (file: File) => void;
@@ -162,6 +163,11 @@ export function DossierHero({
               </Tooltip>
             </TooltipProvider>
           </div>
+        </div>
+
+        {/* Live Scan Counter */}
+        <div className="mt-6 animate-fade-in">
+          <UrgencyTicker variant="cyberpunk" size="sm" />
         </div>
 
         {/* Scroll Indicator */}
