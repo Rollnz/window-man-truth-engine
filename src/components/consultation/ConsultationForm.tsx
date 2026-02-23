@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { CallWindowManButton } from './CallWindowManButton';
 import { QuoteUploadDropzone } from '@/components/beat-your-quote/QuoteUploadDropzone';
 import { toast } from 'sonner';
+import { formatPhoneNumber } from '@/hooks/useFormValidation';
 
 interface ConsultationFormProps {
   onSubmit: (data: ConsultationFormData) => Promise<void>;
@@ -196,13 +197,6 @@ export function ConsultationForm({
     }), {}));
     return newErrors;
   }, [formData, validateField]);
-
-  const formatPhoneNumber = (value: string): string => {
-    const digits = value.replace(/\\D/g, '');
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-  };
 
   const isFormValid = !Object.values(errors).some(Boolean) && formData.firstName && formData.lastName && formData.email && formData.phone && formData.propertyType && formData.cityZip && formData.windowCount && formData.impactRequired && formData.hasQuote;
 

@@ -168,6 +168,21 @@ export const formatPhoneNumber = (value: string): string => {
   }
 };
 
+// Common validators
+
+/** Returns true if the string matches a basic email format (local@domain.tld). */
+export const validateEmail = (email: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+/**
+ * Returns true if the phone number contains exactly 10 digits (US numbers).
+ * Accepts any formatting — digits are extracted before the length check.
+ */
+export const validatePhone = (phone: string): boolean => {
+  const digits = phone.replace(/\D/g, '');
+  return digits.length === 10;
+};
+
 // Common schemas
 export const commonSchemas = {
   email: z.string()
