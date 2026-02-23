@@ -83,29 +83,29 @@ export function FailurePointsSection() {
       <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.03)_0%,transparent_70%)] pointer-events-none" />
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-8">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-black">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-foreground">
             Most Homeowners Don't Get Burned by Bad Decisions.
             <span className="block mt-2 text-[hsl(var(--secondary))]">They Get Burned by Technicalities.</span>
           </h2>
-          <p className="text-lg text-gray-950">
+          <p className="text-lg text-foreground">
             The window industry doesn't fail homeowners emotionally. It fails them <em>technically</em>.
           </p>
         </div>
         
         <div className="max-w-3xl mx-auto mb-12">
-          <p className="text-lg leading-relaxed text-center text-black">
+          <p className="text-lg leading-relaxed text-center text-foreground">
             Most homeowners approach window upgrades responsibly. They compare quotes. They ask questions. They choose "impact-rated" products. They trust licensed contractors.
           </p>
-          <p className="text-lg leading-relaxed text-center mt-4 text-black">
+          <p className="text-lg leading-relaxed text-center mt-4 text-foreground">
             And still — many lose coverage, fail inspections, or discover gaps only when it's too late.
           </p>
-          <p className="text-xl font-semibold text-center mt-6 text-black">
+          <p className="text-xl font-semibold text-center mt-6 text-foreground">
             That's because the system doesn't reward effort or intent. It rewards <span className="text-primary">precision</span>.
           </p>
         </div>
         
         <div className="max-w-3xl mx-auto mb-16">
-          <h3 className="text-xl font-semibold mb-6 text-center text-black">The Four Failure Points</h3>
+          <h3 className="text-xl font-semibold mb-6 text-center text-foreground">The Four Failure Points</h3>
           <div className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
             {failurePoints.map((point, index) => {
               // Desktop 2x2 grid: alternating left/right reveals
@@ -142,9 +142,9 @@ export function FailurePointsSection() {
         
         <div className="max-w-3xl mx-auto text-center">
           <div className="p-8 rounded-2xl bg-gradient-to-r from-[hsl(var(--secondary)/0.1)] via-transparent to-[hsl(var(--secondary)/0.1)] border border-[hsl(var(--secondary)/0.2)]">
-            <p className="text-lg mb-4 text-gray-900">When something goes wrong, insurers don't ask whether you tried your best.</p>
+            <p className="text-lg mb-4 text-foreground">When something goes wrong, insurers don't ask whether you tried your best.</p>
             <p className="text-xl font-semibold text-secondary-foreground">They ask whether everything was done <em>exactly right</em>.</p>
-            <p className="text-lg mt-4 text-gray-900">And most window quotes don't give homeowners the information needed to know the difference.</p>
+            <p className="text-lg mt-4 text-foreground">And most window quotes don't give homeowners the information needed to know the difference.</p>
           </div>
         </div>
       </div>
