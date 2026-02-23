@@ -1,6 +1,13 @@
 import { RefreshCw } from 'lucide-react';
 import { SOURCE_TOOL_LABELS } from '@/constants/sourceToolLabels';
 import { ActivityFilters } from '@/hooks/useCallActivity';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ActivityFilterBarProps {
   filters: ActivityFilters;
@@ -13,7 +20,7 @@ const statusOptions = [
   { label: "Pending", value: "pending", activeClass: "bg-yellow-500 text-white" },
   { label: "Completed", value: "completed", activeClass: "bg-green-500 text-white" },
   { label: "Failed", value: "dead_letter", activeClass: "bg-red-500 text-white" },
-  { label: "No Answer", value: "no_answer", activeClass: "bg-gray-500 text-white" },
+  { label: "No Answer", value: "no_answer", activeClass: "bg-muted-foreground text-white" },
 ];
 
 export function ActivityFilterBar({
@@ -23,21 +30,25 @@ export function ActivityFilterBar({
 }: ActivityFilterBarProps) {
   return (
     <div className="flex items-center justify-between py-3">
-      {/* Left: Source Tool Dropdown */}
-      <select
-        value={filters.source_tool}
-        onChange={(e) =>
-          onFilterChange({ ...filters, source_tool: e.target.value })
+      {/* Left: Source Tool Dropdown — shadcn Select */}
+      <Select
+        value={filters.source_tool || "__all__"}
+        onValueChange={(val) =>
+          onFilterChange({ ...filters, source_tool: val === "__all__" ? "" : val })
         }
-        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       >
-        <option value="">All Tools</option>
-        {Object.entries(SOURCE_TOOL_LABELS).map(([key, label]) => (
-          <option key={key} value={key}>
-            {label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className="w-[160px]">
+          <SelectValue placeholder="All Tools" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">All Tools</SelectItem>
+          {Object.entries(SOURCE_TOOL_LABELS).map(([key, label]) => (
+            <SelectItem key={key} value={key}>
+              {label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
       {/* Center: Status Filter Pills */}
       <div className="flex">
@@ -60,7 +71,7 @@ export function ActivityFilterBar({
                 ${
                   isSelected
                     ? option.activeClass
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }
               `}
             >
@@ -73,9 +84,9 @@ export function ActivityFilterBar({
       {/* Right: Refresh Button */}
       <button
         onClick={onRefresh}
-        className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+        className="p-2 rounded-md border border-border hover:bg-muted transition-colors"
       >
-        <RefreshCw className="w-4 h-4 text-gray-600" />
+        <RefreshCw className="w-4 h-4 text-muted-foreground" />
       </button>
     </div>
   );

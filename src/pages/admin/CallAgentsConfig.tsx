@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { RefreshCw, Power } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { CallAgentTable } from '@/components/admin/CallAgentTable';
 import { KillSwitchDialog } from '@/components/admin/KillSwitchDialog';
@@ -11,8 +12,6 @@ import { useCallAgents } from '@/hooks/useCallAgents';
 import { useCallActivity } from '@/hooks/useCallActivity';
 import { SOURCE_TOOL_LABELS } from '@/constants/sourceToolLabels';
 import { AudioPlaybackProvider } from '@/contexts/AudioPlaybackContext';
-
-type ActiveTab = 'agents' | 'activity';
 
 function CallAgentsConfigContent() {
   const { 
@@ -42,7 +41,6 @@ function CallAgentsConfigContent() {
     refetch: refetchActivity,
   } = useCallActivity();
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('agents');
   const [isKillSwitchOpen, setIsKillSwitchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showMode, setShowMode] = useState<ShowMode>('all');
@@ -53,11 +51,8 @@ function CallAgentsConfigContent() {
   // Filter agents based on search and show mode
   const filteredAgents = useMemo(() => {
     return agents.filter(agent => {
-      // Show mode filter
       if (showMode === 'enabled' && !agent.enabled) return false;
       if (showMode === 'disabled' && agent.enabled) return false;
-
-      // Search filter — only runs if query is non-empty
       if (searchQuery.trim() === '') return true;
       const q = searchQuery.trim().toLowerCase();
       const nameMatch = agent.agent_name.toLowerCase().includes(q);
@@ -79,7 +74,6 @@ function CallAgentsConfigContent() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {/* Kill Switch Button - hidden when no agents are enabled */}
               {enabledCount > 0 && (
                 <Button
                   variant="destructive"
@@ -106,45 +100,23 @@ function CallAgentsConfigContent() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto p-4 lg:p-6">
-        {/* Stats Cards - uses FULL agents array */}
+        {/* Stats Cards */}
         <StatsCards summary={summary} totalAgents={agents.length} />
 
-        {/* Tab Bar */}
-        <div className="flex border-b border-gray-200 mt-4">
-          <button
-            onClick={() => setActiveTab('agents')}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              activeTab === 'agents'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Agents
-          </button>
-          <button
-            onClick={() => setActiveTab('activity')}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              activeTab === 'activity'
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Activity
-          </button>
-        </div>
+        {/* Tabs — shadcn for ARIA + consistent styling */}
+        <Tabs defaultValue="agents" className="mt-4">
+          <TabsList>
+            <TabsTrigger value="agents">Agents</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+          </TabsList>
 
-        {/* Tab Content */}
-        {activeTab === 'agents' ? (
-          <>
-            {/* Search & Filter Bar */}
+          <TabsContent value="agents">
             <SearchFilterBar
               onFilterChange={({ query, showMode: mode }) => {
                 setSearchQuery(query);
                 setShowMode(mode);
               }}
             />
-
-            {/* Agent Table - uses FILTERED agents */}
             <CallAgentTable
               agents={filteredAgents}
               loading={loading}
@@ -156,22 +128,24 @@ function CallAgentsConfigContent() {
               updateTemplate={updateTemplate}
               updateAgentName={updateAgentName}
             />
-          </>
-        ) : (
-          <AudioPlaybackProvider>
-            <ActivityFeed
-              calls={calls}
-              loading={activityLoading}
-              error={activityError}
-              hasMore={hasMore}
-              isLoadingMore={isLoadingMore}
-              onLoadMore={loadMore}
-              onRefresh={refetchActivity}
-              filters={activityFilters}
-              onFilterChange={setActivityFilters}
-            />
-          </AudioPlaybackProvider>
-        )}
+          </TabsContent>
+
+          <TabsContent value="activity">
+            <AudioPlaybackProvider>
+              <ActivityFeed
+                calls={calls}
+                loading={activityLoading}
+                error={activityError}
+                hasMore={hasMore}
+                isLoadingMore={isLoadingMore}
+                onLoadMore={loadMore}
+                onRefresh={refetchActivity}
+                filters={activityFilters}
+                onFilterChange={setActivityFilters}
+              />
+            </AudioPlaybackProvider>
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Kill Switch Dialog */}

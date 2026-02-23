@@ -104,12 +104,12 @@ export function AudioPlayer({ src, autoStart = false, playerId }: AudioPlayerPro
 
   if (playerState === "error") {
     return (
-      <div className="flex items-center gap-2 text-sm bg-red-50 border border-red-200 rounded-md p-2 text-red-700">
+      <div className="flex items-center gap-2 text-sm bg-destructive/10 border border-destructive/30 rounded-md p-2 text-destructive">
         <AlertCircle className="w-4 h-4" />
         <span>Failed to load recording</span>
         <button
           onClick={togglePlay}
-          className="ml-auto text-blue-600 underline text-xs"
+          className="ml-auto text-primary underline text-xs"
         >
           Retry
         </button>
@@ -118,7 +118,7 @@ export function AudioPlayer({ src, autoStart = false, playerId }: AudioPlayerPro
   }
 
   return (
-    <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
+    <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3">
       {/* Play/Pause button */}
       <button
         onClick={togglePlay}
@@ -145,10 +145,10 @@ export function AudioPlayer({ src, autoStart = false, playerId }: AudioPlayerPro
           className="w-full h-1.5 cursor-pointer accent-green-500"
         />
         <div className="flex justify-between mt-0.5">
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {formatTime(currentTime)}
           </span>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {duration > 0 ? formatTime(duration) : "—"}
           </span>
         </div>
