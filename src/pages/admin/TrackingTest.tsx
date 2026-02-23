@@ -32,6 +32,9 @@ import {
   Activity,
   Mail,
   Phone,
+  Copy,
+  RotateCcw,
+  Link2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -43,8 +46,9 @@ import {
   validateDataLayerEvent,
   type TrackingVerificationReport 
 } from '@/lib/trackingVerificationTest';
-import { useDataLayerMonitor, type SystemHealth } from '@/hooks/useDataLayerMonitor';
+import { useDataLayerMonitor, type SystemHealth, type HandshakeResult } from '@/hooks/useDataLayerMonitor';
 import { formatRelativeTime } from '@/utils/relativeTime';
+import { copyToClipboard } from '@/utils/clipboard';
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -174,20 +178,13 @@ function LiveActivityLog({
                   ev.collision && 'ring-1 ring-destructive/40 bg-destructive/5',
                 )}
               >
-                {/* Timestamp */}
                 <span className="text-muted-foreground w-16 shrink-0 text-right tabular-nums">
                   {formatRelativeTime(new Date(ev.timestamp).toISOString())}
                 </span>
-
-                {/* Event name */}
                 <Badge variant="secondary" className="font-mono text-[10px] px-1.5 shrink-0">
                   {ev.event}
                 </Badge>
-
-                {/* EMQ dot */}
                 <EmqDot score={ev.emqScore} />
-
-                {/* PII indicators */}
                 <Mail
                   className={cn(
                     'h-3.5 w-3.5 shrink-0',
@@ -200,8 +197,6 @@ function LiveActivityLog({
                     ev.hasPhone ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground/30',
                   )}
                 />
-
-                {/* Collision badge */}
                 {ev.collision && (
                   <TooltipProvider>
                     <Tooltip>
@@ -220,6 +215,128 @@ function LiveActivityLog({
             ))}
           </div>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LeadVerificationCard({
+  results,
+  onForceRecheck,
+  onCopyPayload,
+}: {
+  results: HandshakeResult[];
+  onForceRecheck: (leadId: string) => void;
+  onCopyPayload: (payload: Record<string, unknown>) => void;
+}) {
+  if (results.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Link2 className="h-4 w-4" />
+          Lead Verification (Handshake)
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Confirms browser-captured leads reach the database
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {results.map((h) => (
+          <div key={h.leadId}>
+            {h.status === 'pending' && (
+              <div className="flex items-center gap-3 rounded-lg border border-amber-600/20 bg-amber-600/5 p-3">
+                <Loader2 className="h-4 w-4 animate-spin text-amber-600 dark:text-amber-400 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">
+                    Verifying lead <code className="text-xs bg-muted px-1 rounded">{h.leadId.slice(0, 12)}…</code>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Attempt {h.attempts + 1}/3 · Checking server…
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {h.status === 'confirmed' && (
+              <div className="flex items-center gap-3 rounded-lg border border-emerald-600/20 bg-emerald-600/5 p-3">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">
+                    Server confirmed lead <code className="text-xs bg-muted px-1 rounded">{h.leadId.slice(0, 12)}…</code>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {h.confirmedAt
+                      ? `Confirmed in ${((h.confirmedAt - h.capturedAt) / 1000).toFixed(1)}s`
+                      : 'Confirmed'}
+                    {h.leadCreatedAt && ` · Created ${formatRelativeTime(h.leadCreatedAt)}`}
+                  </p>
+                </div>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'shrink-0 text-[10px]',
+                    h.capiEventCount > 0
+                      ? 'border-emerald-600/30 text-emerald-600 dark:text-emerald-400'
+                      : 'border-amber-600/30 text-amber-600 dark:text-amber-400',
+                  )}
+                >
+                  CAPI: {h.capiEventCount}
+                </Badge>
+              </div>
+            )}
+
+            {h.status === 'lost' && (
+              <div className="rounded-lg border-2 border-destructive/30 bg-destructive/5 p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <XOctagon className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-destructive">
+                      LOST LEAD
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Lead <code className="bg-muted px-1 rounded">{h.leadId.slice(0, 16)}…</code> was
+                      captured in browser but NOT found in database after 60s.
+                    </p>
+                    {h.capiEventCount === 0 && (
+                      <p className="text-xs text-destructive mt-1">
+                        ⚠ No CAPI events found — Meta will not receive this conversion.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs"
+                    onClick={() => onForceRecheck(h.leadId)}
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Force Re-check
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs"
+                    onClick={() => onCopyPayload(h.eventPayload)}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy Payload
+                  </Button>
+                </div>
+
+                <ScrollArea className="h-32 w-full rounded-md border bg-muted/50">
+                  <pre className="p-3 text-[10px] font-mono">
+                    {JSON.stringify(h.eventPayload, null, 2)}
+                  </pre>
+                </ScrollArea>
+              </div>
+            )}
+          </div>
+        ))}
       </CardContent>
     </Card>
   );
@@ -295,8 +412,8 @@ export default function TrackingTestPage() {
   const [quickCheckResult, setQuickCheckResult] = useState<QuickCheckResult | null>(null);
   const { toast } = useToast();
 
-  // Phase 2: Active Guardian
-  const { state: monitorState, startMonitoring, stopMonitoring } = useDataLayerMonitor();
+  // Phase 2: Active Guardian + Step 5: Handshake
+  const { state: monitorState, startMonitoring, stopMonitoring, forceRecheck } = useDataLayerMonitor();
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -348,6 +465,16 @@ export default function TrackingTestPage() {
       });
     }
   }, [toast]);
+
+  const handleCopyPayload = useCallback(async (payload: Record<string, unknown>) => {
+    await copyToClipboard(JSON.stringify(payload, null, 2));
+    toast({ title: 'Copied', description: 'Lead payload copied to clipboard.' });
+  }, [toast]);
+
+  const handleForceRecheck = useCallback(async (leadId: string) => {
+    toast({ title: 'Re-checking…', description: `Querying server for lead ${leadId.slice(0, 12)}…` });
+    await forceRecheck(leadId);
+  }, [forceRecheck, toast]);
 
   // ── Status helpers (for full-test report section) ────────────────────────
 
@@ -410,11 +537,28 @@ export default function TrackingTestPage() {
               events={monitorState.liveEvents}
               isMonitoring={monitorState.isMonitoring}
             />
+
+            {/* ═══ Step 5: Lead Verification ═══ */}
+            <LeadVerificationCard
+              results={monitorState.handshakeResults}
+              onForceRecheck={handleForceRecheck}
+              onCopyPayload={handleCopyPayload}
+            />
+
             <CROInsightCard events={monitorState.liveEvents} />
           </>
         )}
 
-        {/* ═══ Phase 1: Test Controls (unchanged) ═══ */}
+        {/* Show handshake results even when not monitoring (persisted from session) */}
+        {!monitorState.isMonitoring && monitorState.handshakeResults.length > 0 && (
+          <LeadVerificationCard
+            results={monitorState.handshakeResults}
+            onForceRecheck={handleForceRecheck}
+            onCopyPayload={handleCopyPayload}
+          />
+        )}
+
+        {/* ═══ Phase 1: Test Controls ═══ */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -523,7 +667,7 @@ export default function TrackingTestPage() {
           </CardContent>
         </Card>
 
-        {/* ═══ Full Test Results (unchanged) ═══ */}
+        {/* ═══ Full Test Results ═══ */}
         {report && (
           <>
             <Card className={cn('border-2', getStatusColor(report.overallStatus))}>
