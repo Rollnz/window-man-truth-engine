@@ -51,7 +51,7 @@ export function StatsCards({ summary, totalAgents }: StatsCardsProps) {
       </Card>
 
       {/* Card 3: Errors Today */}
-      <Card className={`border-l-4 ${errorBorderColor}`}>
+      <Card className={`border-l-4 ${errorBorderColor} ${summary.errors_24h > 0 ? 'ring-1 ring-red-500/30' : ''}`}>
         <CardContent className="pt-4 pb-4">
           <p className="text-sm text-muted-foreground">Errors Today</p>
           <p className={`text-2xl font-bold ${errorTextColor}`}>{summary.errors_24h}</p>

@@ -32,7 +32,7 @@ export function SearchFilterBar({ onFilterChange }: SearchFilterBarProps) {
       if (mode === 'disabled') return `${baseClasses} bg-gray-500 text-white`;
     }
 
-    return `${baseClasses} bg-gray-100 text-gray-600 hover:bg-gray-200`;
+    return `${baseClasses} bg-muted text-muted-foreground hover:bg-muted/80`;
   };
 
   return (

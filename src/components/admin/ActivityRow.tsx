@@ -42,10 +42,10 @@ export function ActivityRow({ call }: ActivityRowProps) {
       {/* Collapsed Row */}
       <div
         onClick={handleRowClick}
-        className="flex items-center gap-3 py-3 px-4 cursor-pointer hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-3 py-3 px-4 cursor-pointer hover:bg-muted/50 transition-colors"
       >
         {/* Relative time */}
-        <span className="text-xs text-gray-500 w-24 flex-shrink-0">
+        <span className="text-xs text-muted-foreground w-24 flex-shrink-0">
           {formatRelativeTime(call.triggered_at)}
         </span>
 
@@ -63,7 +63,7 @@ export function ActivityRow({ call }: ActivityRowProps) {
 
         {/* Duration */}
         {call.duration_seconds !== null && (
-          <span className="text-xs text-gray-400 flex-shrink-0">
+          <span className="text-xs text-muted-foreground/70 flex-shrink-0">
             {formatTime(call.duration_seconds)}
           </span>
         )}
@@ -82,7 +82,7 @@ export function ActivityRow({ call }: ActivityRowProps) {
 
           {/* Expand/collapse chevron */}
           <ChevronDown
-            className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+            className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
               isExpanded ? "rotate-180" : ""
             }`}
           />
@@ -91,11 +91,11 @@ export function ActivityRow({ call }: ActivityRowProps) {
 
       {/* Expanded Panel */}
       {isExpanded && (
-        <div className="bg-gray-50 border-t border-gray-200 p-4 space-y-4">
+        <div className="bg-muted/50 border-t border-border p-4 space-y-4">
           {/* A: Audio Player */}
           {call.recording_url && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                 Recording
               </p>
               <AudioPlayer src={call.recording_url} autoStart={playOnOpen} playerId={call.id} />
@@ -105,10 +105,10 @@ export function ActivityRow({ call }: ActivityRowProps) {
           {/* B: Transcript */}
           {call.transcript && call.transcript.trim() !== "" && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                 Transcript
               </p>
-              <div className="bg-white border border-gray-200 rounded-md p-3 max-h-48 overflow-y-auto text-sm text-gray-700 whitespace-pre-wrap">
+              <div className="bg-background border border-border rounded-md p-3 max-h-48 overflow-y-auto text-sm text-foreground whitespace-pre-wrap">
                 {call.transcript}
               </div>
             </div>
@@ -116,19 +116,19 @@ export function ActivityRow({ call }: ActivityRowProps) {
 
           {/* C: Details grid */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
               Details
             </p>
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
               <div>
-                <span className="text-gray-500">Phone</span>
-                <span className="text-gray-800 ml-2">
+                <span className="text-muted-foreground">Phone</span>
+                <span className="text-foreground ml-2">
                   {call.phone_masked || "Unknown"}
                 </span>
               </div>
               <div className="flex items-center">
-                <span className="text-gray-500">Lead ID</span>
-                <span className="text-gray-800 ml-2 font-mono text-xs">
+                <span className="text-muted-foreground">Lead ID</span>
+                <span className="text-foreground ml-2 font-mono text-xs">
                   {call.wm_lead_id || "—"}
                 </span>
                 {call.wm_lead_id && (
@@ -137,33 +137,33 @@ export function ActivityRow({ call }: ActivityRowProps) {
                       copyToClipboard(call.wm_lead_id!);
                       toast({ description: "Lead ID copied" });
                     }}
-                    className="ml-1.5 text-gray-400 hover:text-gray-600"
+                    className="ml-1.5 text-muted-foreground hover:text-foreground"
                   >
                     <Copy className="w-3 h-3" />
                   </button>
                 )}
               </div>
               <div>
-                <span className="text-gray-500">Dispatched</span>
-                <span className="text-gray-800 ml-2">
+                <span className="text-muted-foreground">Dispatched</span>
+                <span className="text-foreground ml-2">
                   {new Date(call.triggered_at).toLocaleString()}
                 </span>
               </div>
               <div>
-                <span className="text-gray-500">Status</span>
+                <span className="text-muted-foreground">Status</span>
                 <span className={`ml-2 ${statusStyle.textClass}`}>
                   {statusStyle.label}
                 </span>
               </div>
               <div>
-                <span className="text-gray-500">Sentiment</span>
-                <span className="text-gray-800 ml-2">
+                <span className="text-muted-foreground">Sentiment</span>
+                <span className="text-foreground ml-2">
                   {call.sentiment || "—"}
                 </span>
               </div>
               <div>
-                <span className="text-gray-500">Duration</span>
-                <span className="text-gray-800 ml-2">
+                <span className="text-muted-foreground">Duration</span>
+                <span className="text-foreground ml-2">
                   {formatTime(call.duration_seconds)}
                 </span>
               </div>
@@ -172,9 +172,9 @@ export function ActivityRow({ call }: ActivityRowProps) {
 
           {/* D: Error details */}
           {call.status === "dead_letter" && call.error_message && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-xs font-semibold text-red-600 mb-1">Error</p>
-              <p className="text-sm text-red-700">{call.error_message}</p>
+            <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3">
+              <p className="text-xs font-semibold text-destructive mb-1">Error</p>
+              <p className="text-sm text-destructive">{call.error_message}</p>
             </div>
           )}
         </div>
