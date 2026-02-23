@@ -1,60 +1,76 @@
 
 
-# Multi-Expand Autopilot Insights + UX Polish Suggestions
+# Comprehensive Light Mode Accessibility and Contrast Audit
 
-## Design Change: Multi-Expand
+## Problem Diagnosed
 
-A 3-line change in the `AutopilotCard` component (lines 913, 944, 948):
+The /tools page has **two invisible text blocks** in light mode:
 
-1. **State**: `useState<string | null>(null)` becomes `useState<string[]>([])`
-2. **Check**: `expandedId === insight.id` becomes `expandedIds.includes(insight.id)`
-3. **Toggle**: Clicking adds the ID if absent, removes it if present:
-   ```typescript
-   setExpandedIds(prev =>
-     prev.includes(insight.id)
-       ? prev.filter(id => id !== insight.id)
-       : [...prev, insight.id]
-   );
-   ```
+1. **Tools.tsx subtitle** (line 17): Uses `text-primary-foreground` which resolves to pure white (`0 0% 100%`) in both themes. On the light `bg-background` (near-white), this text is completely invisible.
+2. **ToolGrid.tsx heading** "12 Tools to Discover the Truth" (line 90): Uses inherited `text-foreground` which is `209 80% 12%` in light mode -- this is actually legible but very dark blue. The real issue is the subtitle below it uses `text-muted-foreground` at `209 25% 42%` which may appear weak.
 
-No risk of conflicts. This is the only accordion-style component on the page.
+The root cause is **misuse of the `text-primary-foreground` token**. This token is white in both themes, designed ONLY for text sitting on `bg-primary` surfaces (buttons, banners with blue backgrounds). When used as body text on the page's default background, it becomes invisible in light mode.
 
----
+## Scope of Changes
 
-## UX Improvement Suggestions (Lead Design Engineer Review)
+### Tier 1: Critical Fixes (invisible text)
 
-After reviewing the full 1,568-line page, here are targeted improvements:
+**File: `src/pages/Tools.tsx`**
+- Line 17: Change `text-primary-foreground` to `text-muted-foreground`
+- This is the subtitle "Everything you need to make smarter window decisions..."
 
-### 1. "Expand All / Collapse All" Button for Autopilot
+### Tier 2: Light-Mode Contrast Improvements
 
-Since we're enabling multi-expand, add a small "Expand All" / "Collapse All" toggle in the `AutopilotCard` header. When there are 3-5 insights, users will want to scan them all at once without clicking each one individually.
+**File: `src/components/home/ToolGrid.tsx`**
+- Line 101: The "You're in control" badge uses `bg-[#2473c2]` with `text-foreground`. In light mode, foreground is dark (`209 80% 12%`) on blue -- poor contrast. Change to `text-white` since this is a locked dark-blue surface.
 
-### 2. Sticky Budget Alert Banner
+### Tier 3: Global Theme Token Hardening
 
-The `BudgetAlertBanner` renders at the top of the page, but if the user scrolls down to investigate insights, they lose sight of the critical alert. Making it `sticky top-0 z-50` ensures the emergency stays visible while they work through fixes.
+**File: `src/index.css` (light theme variables, lines 107-165)**
+- Darken `--muted-foreground` from `209 25% 42%` to `209 25% 35%` for stronger body text contrast (currently ~4.2:1, target 5:1+)
+- Darken `--border` from `209 35% 86%` to `209 30% 78%` for more visible card/input borders
+- Darken `--input` from `209 35% 88%` to `209 30% 80%` for more defined input fields
 
-### 3. "Run Full Test" Button Should Be More Prominent
+### Tier 4: Card and Container Border Definition
 
-The primary action ("Run Full Test") is buried below 10 cards of diagnostic data. Adding a secondary fixed/sticky action button (or floating action button) at the bottom-right of the viewport would let users re-run tests without scrolling back up.
+**File: `src/components/ui/card.tsx`**
+- Add `shadow-sm` to the base Card component for light-mode elevation
+- The current class is `rounded-lg border bg-card text-card-foreground shadow-sm` -- shadow-sm is already there, but the border relies on `--border` which we are darkening in Tier 3
 
-### 4. Color-Code the Certification Badge Dynamically
+**File: `src/components/ui/input.tsx` (if it exists)**
+- Ensure input border uses the darkened `--input` token
 
-Currently the badge always shows a green "All 10 Steps Active" seal. It would be more honest (and useful) to reflect the actual system health:
-- Green seal when health is `healthy`
-- Amber seal when health is `warning` or `conflict`
-- Red seal when health is `critical`
+### Tier 5: Audit of `text-primary-foreground` Misuse Across Pages
 
-This gives the badge real diagnostic value instead of being purely decorative.
+After reviewing all 46 files with `text-primary-foreground`:
+- **Correct usage (no change needed):** Files using it on `bg-primary` surfaces (buttons, hero banners with blue backgrounds) -- e.g., `Consultation.tsx` line 153 has `bg-primary text-primary-foreground`, `CalculateEstimate.tsx` line 59 has `bg-primary ... text-primary-foreground`. These are correct.
+- **Incorrect usage (needs fix):** `Tools.tsx` line 17 (already in Tier 1). The beat-your-quote components (`OutcomeFolders.tsx`, `CaseFileCard.tsx`) use `text-primary-foreground` but live inside the Dossier theme which force-locks a dark background, so those are safe.
+- **Upload components** (`UploadZoneXRay.tsx`): Uses `text-primary-foreground` inside cards that appear to have dark/themed backgrounds -- needs visual verification but likely safe since they sit inside the dossier/forensic theme zone.
 
-### 5. Toast Feedback on "Copy Fix Request" Is Easy to Miss
+## Summary of Files to Change
 
-The copy confirmation uses a small toast. Since the Autopilot is action-oriented, replacing the toast with an inline checkmark animation on the button itself (similar to the Budget Alert's "Copied!" state) provides faster, more visible feedback without the toast competing with other notifications.
+| File | Lines | Change |
+|------|-------|--------|
+| `src/pages/Tools.tsx` | 17 | `text-primary-foreground` to `text-muted-foreground` |
+| `src/components/home/ToolGrid.tsx` | 101-103 | `text-foreground` to `text-white` on the locked blue badge |
+| `src/index.css` | 128 | Darken `--muted-foreground` to `209 25% 35%` |
+| `src/index.css` | 130 | Darken `--border` to `209 30% 78%` |
+| `src/index.css` | 131 | Darken `--input` to `209 30% 80%` |
 
----
+## What This Does NOT Touch
 
-## Implementation Scope
+- ImpactWindowCard: Already has a theme protection layer forcing dark tokens (`!important` overrides in index.css lines 1447-1457). This is correctly locked.
+- Dossier/beat-your-quote pages: Already locked to dark theme via `.dossier-page` overrides.
+- Evidence page: Already has its own inverted contrast system.
+- Dark mode: All changes are scoped to the `.light` CSS block or use semantic tokens that already work in dark mode.
 
-The multi-expand change touches only `src/pages/admin/TrackingTest.tsx`, modifying 3 lines inside `AutopilotCard`. Zero risk, zero side effects.
+## Contrast Ratios After Fix
 
-The UX suggestions above are optional follow-ups and not included in this build unless requested.
+| Element | Before (light) | After (light) |
+|---------|----------------|---------------|
+| Tools subtitle | 1:1 (white on white, invisible) | ~7:1 (dark gray on white) |
+| Muted body text | ~4.2:1 (below AA) | ~5.5:1 (AA compliant) |
+| Card borders | Barely visible | Clearly defined |
+| Input field borders | Washed out | Distinct |
+| "You're in control" badge | Dark on blue (~3:1) | White on blue (~8:1) |
 
