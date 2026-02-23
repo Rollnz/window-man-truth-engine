@@ -28,10 +28,11 @@
     --popover: 220 18% 10%;
     --popover-foreground: 210 40% 98%;
 
-    /* Primary = Window Blue */
-    --primary: 209 68% 55%;
+    /* Primary = Window Blue (darkened for WCAG AA 4.5:1 against white) */
+    --primary: 209 68% 46%;
     --primary-foreground: 0 0% 100%;
-    --ring: 209 68% 55%;
+    --primary-light: 209 68% 65%;
+    --ring: 209 68% 46%;
 
     /* Secondary = Safety Orange (real contrast / CTA offset) */
     --secondary: 25 95% 55%;
@@ -53,8 +54,8 @@
     --radius: 0.5rem;
 
     /* Glow follows primary (site-wide) */
-    --glow: 209 68% 55%;
-    --glow-muted: 209 55% 45%;
+    --glow: 209 68% 46%;
+    --glow-muted: 209 55% 40%;
 
     /* Semantic colors preserved */
     --success: 142 71% 45%;
@@ -65,12 +66,12 @@
     /* Sidebar (keep consistent with site-wide theme) */
     --sidebar-background: 220 20% 8%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 209 68% 55%;
+    --sidebar-primary: 209 68% 46%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 18% 14%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 220 12% 22%;
-    --sidebar-ring: 209 68% 55%;
+    --sidebar-ring: 209 68% 46%;
 
     /* ============================================================
        DEPTH SYSTEM — surfaces, elevation, text lift

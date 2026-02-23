@@ -40,13 +40,13 @@ export function WhoIsWindowManSection() {
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-12">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
-            You Shouldn't Need a Law Degree<span className="block mt-2 text-primary">to Buy Windows.</span>
+            You Shouldn't Need a Law Degree<span className="block mt-2 text-[hsl(var(--primary-light))]">to Buy Windows.</span>
           </h2>
           <p className="text-lg text-muted-foreground">
             The window industry runs on a knowledge gap. Contractors know the loopholes. Insurers know the exclusions.
             <span className="block mt-2 text-foreground font-medium">Homeowners just get the bill.</span>
           </p>
-          <p className="text-xl font-semibold text-primary mt-4">
+          <p className="text-xl font-semibold text-[hsl(var(--primary-light))] mt-4">
             Window Man exists to flip that script — and put the power back in your hands.
           </p>
         </div>
@@ -94,7 +94,7 @@ export function WhoIsWindowManSection() {
         </div>
         <div className="max-w-4xl mx-auto mb-16">
           <div className="text-center mb-10">
-            <p className="text-sm font-medium text-primary mb-2">WHAT WINDOW MAN ACTUALLY IS</p>
+            <p className="text-sm font-medium text-[hsl(var(--primary-light))] mb-2">WHAT WINDOW MAN ACTUALLY IS</p>
             <h3 className="text-2xl md:text-3xl font-bold text-foreground">Your Private Market Advocate</h3>
             <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
               We use elite-level AI to stress-test window quotes against the same technical standards used by
@@ -125,7 +125,7 @@ export function WhoIsWindowManSection() {
             <p className="text-muted-foreground">
               We don't sell windows. We don't represent brands. We don't work for installers.
             </p>
-            <p className="text-xl font-semibold text-primary mt-2">We work for homeowners.</p>
+            <p className="text-xl font-semibold text-[hsl(var(--primary-light))] mt-2">We work for homeowners.</p>
           </div>
         </div>
         <AnimateOnScroll direction="up" duration={600} threshold={0.2} className="my-10">

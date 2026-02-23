@@ -119,7 +119,7 @@ export function UnifiedFooter() {
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button asChild variant="outline" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 hover:text-primary font-semibold" onClick={() => handleCTAClick('scan_quote')}>
+                        <Button asChild variant="outline" className="bg-primary/15 text-slate-900 border-primary/30 hover:bg-primary/20 hover:text-slate-900 font-semibold" onClick={() => handleCTAClick('scan_quote')}>
                           <Link to={FOOTER_NAV.SCAN_QUOTE}>
                             <ScanSearch className="w-4 h-4 mr-2" aria-hidden="true" />
                             Scan Quote
