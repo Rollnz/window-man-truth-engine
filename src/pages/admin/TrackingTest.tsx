@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -853,6 +854,7 @@ interface QuickCheckResult {
 
 export default function TrackingTestPage() {
   const [isRunning, setIsRunning] = useState(false);
+  const [runPhase, setRunPhase] = useState<'idle' | 'creating-lead' | 'running-test'>('idle');
   const [report, setReport] = useState<TrackingVerificationReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [quickCheckResult, setQuickCheckResult] = useState<QuickCheckResult | null>(null);
@@ -874,16 +876,51 @@ export default function TrackingTestPage() {
   const handleRunTest = useCallback(async () => {
     setIsRunning(true);
     setError(null);
+    setRunPhase('creating-lead');
+
+    // Step A: Create a real lead in the database so the Guardian handshake confirms
+    const testLeadId = crypto.randomUUID();
+    const testEmail = `test.guardian.${Date.now().toString(36)}@windowman-test.com`;
+
     try {
-      const result = await runTrackingVerificationTest();
+      const { error: saveError } = await supabase.functions.invoke('save-lead', {
+        body: {
+          leadId: testLeadId,
+          firstName: 'Test',
+          lastName: 'Guardian',
+          email: testEmail,
+          phone: '+15555555555',
+          sourceTool: 'e2e-verification',
+        },
+      });
+
+      if (saveError) {
+        console.error('[TrackingTest] save-lead error:', saveError);
+        toast({
+          title: 'Server Error',
+          description: 'Could not create test lead. Check Edge Function logs.',
+          variant: 'destructive',
+        });
+        setError('save-lead failed: ' + (saveError.message ?? 'Unknown error'));
+        setIsRunning(false);
+        setRunPhase('idle');
+        return;
+      }
+
+      console.log('[TrackingTest] Real test lead created:', testLeadId.slice(0, 12) + '…');
+
+      // Step B: Fire tracking events with the same lead ID
+      setRunPhase('running-test');
+      const result = await runTrackingVerificationTest(testLeadId);
       setReport(result);
     } catch (err) {
       console.error('[TrackingTest] Error:', err);
       setError(err instanceof Error ? err.message : 'Test failed');
     } finally {
       setIsRunning(false);
+      setRunPhase('idle');
     }
-  }, []);
+  }, [toast]);
 
   const handleQuickCheck = useCallback(() => {
     const dataLayer = typeof window !== 'undefined' ? (window as any).dataLayer : undefined;
@@ -1056,7 +1093,7 @@ export default function TrackingTestPage() {
                 {isRunning ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Running Test...
+                    {runPhase === 'creating-lead' ? 'Creating real test lead...' : 'Running Test...'}
                   </>
                 ) : (
                   <>

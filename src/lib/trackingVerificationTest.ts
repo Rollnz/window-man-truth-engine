@@ -288,7 +288,7 @@ export interface TrackingVerificationReport {
 /**
  * Run the complete E2E tracking verification test using wmLead
  */
-export async function runTrackingVerificationTest(): Promise<TrackingVerificationReport> {
+export async function runTrackingVerificationTest(overrideLeadId?: string): Promise<TrackingVerificationReport> {
   console.log('═══════════════════════════════════════════════════════════════');
   console.log('  E2E TRACKING VERIFICATION TEST (wmTracking v1.0)');
   console.log('  Canonical Pipeline Check');
@@ -298,7 +298,13 @@ export async function runTrackingVerificationTest(): Promise<TrackingVerificatio
   
   console.log('\n[1/5] Generating synthetic lead data...');
   const testLead = generateSyntheticLead();
-  console.log('  Lead ID:', testLead.leadId.slice(0, 8) + '...');
+  // If a real lead was pre-created, use its ID so handshake confirms
+  if (overrideLeadId) {
+    testLead.leadId = overrideLeadId;
+    console.log('  Using pre-created lead ID:', overrideLeadId.slice(0, 8) + '...');
+  } else {
+    console.log('  Lead ID:', testLead.leadId.slice(0, 8) + '...');
+  }
   
   console.log('\n[2/5] Starting network interception...');
   startPixelInterception();
