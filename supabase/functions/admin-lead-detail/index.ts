@@ -583,14 +583,36 @@ serve(async (req) => {
         }
 
         // Diagnostic logging
+        const supabaseHost = new URL(Deno.env.get('SUPABASE_URL') || 'http://unknown').hostname;
         console.log('[get_quote_file_url] Signing:', {
           bucket: 'quotes',
           fileId,
           file_path: file.file_path,
           normalizedPath: objectPath,
-          hasUrl: !!Deno.env.get('SUPABASE_URL'),
+          supabaseHost,
           srkLen: (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '').length,
         });
+
+        // Pre-check: verify object exists in storage before signing
+        const folderPath = objectPath.substring(0, objectPath.lastIndexOf('/'));
+        const fileName = objectPath.substring(objectPath.lastIndexOf('/') + 1);
+        const { data: objectList, error: listError } = await supabase
+          .storage.from('quotes')
+          .list(folderPath, { search: fileName, limit: 1 });
+
+        if (listError) {
+          console.warn('[get_quote_file_url] List check failed:', listError.message);
+        }
+
+        const objectExists = !!(objectList && objectList.length > 0);
+        if (!objectExists) {
+          console.warn('[get_quote_file_url] Object NOT found in storage pre-check', {
+            normalizedPath: objectPath,
+            folderPath,
+            fileName,
+            supabaseHost,
+          });
+        }
 
         // Generate signed URL server-side (service_role has bucket access)
         const { data: signedData, error: signError } = await supabase
@@ -613,6 +635,9 @@ serve(async (req) => {
               file_path: file.file_path,
               normalized_path: objectPath,
               storage_error: signError?.message || 'No signed URL returned',
+              object_found_in_storage: objectExists,
+              environment_host: supabaseHost,
+              environment_hint: 'File may exist in Live but not Test. Try the published URL.',
             },
             timestamp: new Date().toISOString(),
           }), {
