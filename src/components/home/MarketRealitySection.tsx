@@ -14,7 +14,7 @@ function StatCard({ value, label, description, icon, iconColor, delay = 0 }: Sta
     <div ref={ref} className={`relative p-8 rounded-2xl bg-card border border-border/50 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: `${delay}ms` }}>
       <div className={`absolute top-0 left-0 w-full h-1 rounded-t-2xl ${iconColor}`} />
       <div className="flex items-start gap-4">
-        <div className={`p-3 rounded-xl ${iconColor.replace('-500', '-500/10')} border ${iconColor.replace('bg-', 'border-').replace('-500', '-500/30')}`}>{icon}</div>
+<div className={`p-3 rounded-xl ${iconColor.replace('-500', '-500/10')} border ${iconColor.replace('bg-', 'border-').replace('-500', '-500/30')}`}>{icon}</div>
         <div className="flex-1"><div className="text-4xl md:text-5xl font-bold text-foreground mb-2">{value}</div><div className="text-lg font-semibold text-foreground mb-1">{label}</div>{description && <p className="text-sm text-muted-foreground">{description}</p>}</div>
       </div>
     </div>
