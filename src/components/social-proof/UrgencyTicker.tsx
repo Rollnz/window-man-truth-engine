@@ -102,7 +102,7 @@ export function UrgencyTicker({
   const totalCount = useCountUp(isVisible ? total : 0, 2500);
   const todayCount = useCountUp(isVisible && showToday ? today : 0, 2500);
   const permitFlagsCount = Math.max(1, Math.min(6, Math.round(todayCount * 0.35)));
-  return <div ref={ref} className={cn("flex items-end justify-center shadow-2xl", className)}>
+  return <div ref={ref} className={cn("flex items-end justify-center shadow-none", className)}>
       <div className={cn('inline-flex items-center divide-x rounded-lg border overflow-hidden whitespace-nowrap', styles.container)}>
         {/* Left: Total Count */}
         <div className={cn('flex items-center gap-1.5 sm:gap-2 flex-shrink-0', sizes.padding)}>
