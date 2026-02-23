@@ -1,76 +1,169 @@
 
 
-# Comprehensive Light Mode Accessibility and Contrast Audit
+# 5 CRO Layout Options for Before/After Hero Images on /ai-scanner
 
-## Problem Diagnosed
+## The Assets
 
-The /tools page has **two invisible text blocks** in light mode:
+- **Image A** (BEFORE): Silhouette surrounded by red question marks and chaos. Emotional state: confusion, vulnerability.
+- **Image B** (AFTER): Silhouette with shield, green checkmarks, data dashboards. Emotional state: confidence, control.
+- **Image C** (AI Decoded Results): Forensic clipboard showing the 6-category audit checklist. Product proof artifact.
 
-1. **Tools.tsx subtitle** (line 17): Uses `text-primary-foreground` which resolves to pure white (`0 0% 100%`) in both themes. On the light `bg-background` (near-white), this text is completely invisible.
-2. **ToolGrid.tsx heading** "12 Tools to Discover the Truth" (line 90): Uses inherited `text-foreground` which is `209 80% 12%` in light mode -- this is actually legible but very dark blue. The real issue is the subtitle below it uses `text-muted-foreground` at `209 25% 42%` which may appear weak.
+## Current Page Structure (relevant section)
 
-The root cause is **misuse of the `text-primary-foreground` token**. This token is white in both themes, designed ONLY for text sitting on `bg-primary` surfaces (buttons, banners with blue backgrounds). When used as body text on the page's default background, it becomes invisible in light mode.
+```text
+QuoteScannerHero
+UrgencyTicker
+SectionFrame ("Forensic Pipeline" + ScanPipelineStrip)
+  |
+  v  <--- images would go somewhere around here
+  |
+Before/After Two-Column Cards (upload zone + report preview)
+```
 
-## Scope of Changes
+---
 
-### Tier 1: Critical Fixes (invisible text)
+## Option 1: Paired Column Headers (Recommended for CRO)
 
-**File: `src/pages/Tools.tsx`**
-- Line 17: Change `text-primary-foreground` to `text-muted-foreground`
-- This is the subtitle "Everything you need to make smarter window decisions..."
+Place Image A directly above the BEFORE card and Image B directly above the AFTER card, inside the same `grid grid-cols-1 lg:grid-cols-2` container. Each image sits as a `max-w-[280px]` centered thumbnail with rounded corners and a subtle shadow, acting as the emotional "thesis statement" for the card below it.
 
-### Tier 2: Light-Mode Contrast Improvements
+**Why it converts:** The user sees the emotional contrast (chaos vs. control) and immediately understands what the upload action transforms. The images pre-frame the value proposition before the user even reads the card content.
 
-**File: `src/components/home/ToolGrid.tsx`**
-- Line 101: The "You're in control" badge uses `bg-[#2473c2]` with `text-foreground`. In light mode, foreground is dark (`209 80% 12%`) on blue -- poor contrast. Change to `text-white` since this is a locked dark-blue surface.
+**Layout:**
+```text
+[BEFORE image]          [AFTER image]
+[Upload card]           [Report preview card]
+```
 
-### Tier 3: Global Theme Token Hardening
+**Implementation:** Add two `<img>` elements inside the existing `AnimateOnScroll` wrappers, above the header text (lines 152 and 228), inheriting the same directional entrance animations (left/right).
 
-**File: `src/index.css` (light theme variables, lines 107-165)**
-- Darken `--muted-foreground` from `209 25% 42%` to `209 25% 35%` for stronger body text contrast (currently ~4.2:1, target 5:1+)
-- Darken `--border` from `209 35% 86%` to `209 30% 78%` for more visible card/input borders
-- Darken `--input` from `209 35% 88%` to `209 30% 80%` for more defined input fields
+---
 
-### Tier 4: Card and Container Border Definition
+## Option 2: Full-Width Narrative Strip (Story Arc)
 
-**File: `src/components/ui/card.tsx`**
-- Add `shadow-sm` to the base Card component for light-mode elevation
-- The current class is `rounded-lg border bg-card text-card-foreground shadow-sm` -- shadow-sm is already there, but the border relies on `--border` which we are darkening in Tier 3
+A horizontal 3-panel strip placed between the ScanPipelineStrip and the Before/After cards. Left: Image A. Center: Image C (the clipboard). Right: Image B. Connected by subtle arrow/chevron dividers. Reads as: "You start here -> We decode this -> You end here."
 
-**File: `src/components/ui/input.tsx` (if it exists)**
-- Ensure input border uses the darkened `--input` token
+**Why it converts:** Creates a clear 3-act story. The clipboard in the center positions the AI tool as the transformation mechanism. Strong for users who scan quickly -- the visual narrative communicates the value in under 2 seconds.
 
-### Tier 5: Audit of `text-primary-foreground` Misuse Across Pages
+**Layout:**
+```text
+[BEFORE img] --> [AI Decoded clipboard] --> [AFTER img]
+          "Your Journey From Confusion to Clarity"
+```
 
-After reviewing all 46 files with `text-primary-foreground`:
-- **Correct usage (no change needed):** Files using it on `bg-primary` surfaces (buttons, hero banners with blue backgrounds) -- e.g., `Consultation.tsx` line 153 has `bg-primary text-primary-foreground`, `CalculateEstimate.tsx` line 59 has `bg-primary ... text-primary-foreground`. These are correct.
-- **Incorrect usage (needs fix):** `Tools.tsx` line 17 (already in Tier 1). The beat-your-quote components (`OutcomeFolders.tsx`, `CaseFileCard.tsx`) use `text-primary-foreground` but live inside the Dossier theme which force-locks a dark background, so those are safe.
-- **Upload components** (`UploadZoneXRay.tsx`): Uses `text-primary-foreground` inside cards that appear to have dark/themed backgrounds -- needs visual verification but likely safe since they sit inside the dossier/forensic theme zone.
+**Implementation:** New `TransformationStripSection` component rendered between lines 133 and 135 in QuoteScanner.tsx. Uses `grid grid-cols-3` on desktop, stacks vertically on mobile.
 
-## Summary of Files to Change
+---
 
-| File | Lines | Change |
-|------|-------|--------|
-| `src/pages/Tools.tsx` | 17 | `text-primary-foreground` to `text-muted-foreground` |
-| `src/components/home/ToolGrid.tsx` | 101-103 | `text-foreground` to `text-white` on the locked blue badge |
-| `src/index.css` | 128 | Darken `--muted-foreground` to `209 25% 35%` |
-| `src/index.css` | 130 | Darken `--border` to `209 30% 78%` |
-| `src/index.css` | 131 | Darken `--input` to `209 30% 80%` |
+## Option 3: Stacked Transformation Banner (Emotional Punch)
 
-## What This Does NOT Touch
+A full-width section with Image A and Image B side by side at large scale (400px each), with a bold headline between them: "This Is the Difference." Below: a single-line subhead and a CTA button that scrolls to the upload zone. Image C is NOT used here (reserved for the After card's ghost preview, which already exists).
 
-- ImpactWindowCard: Already has a theme protection layer forcing dark tokens (`!important` overrides in index.css lines 1447-1457). This is correctly locked.
-- Dossier/beat-your-quote pages: Already locked to dark theme via `.dossier-page` overrides.
-- Evidence page: Already has its own inverted contrast system.
-- Dark mode: All changes are scoped to the `.light` CSS block or use semantic tokens that already work in dark mode.
+**Why it converts:** Maximum emotional impact. The large-scale contrast hits hard. Works best for cold traffic that needs to be convinced of the problem before engaging with the tool.
 
-## Contrast Ratios After Fix
+**Layout:**
+```text
+[  BEFORE (large)  ]  |  [  AFTER (large)  ]
+       "This Is What Our AI Does For You"
+              [ Start My Free Audit ]
+```
 
-| Element | Before (light) | After (light) |
-|---------|----------------|---------------|
-| Tools subtitle | 1:1 (white on white, invisible) | ~7:1 (dark gray on white) |
-| Muted body text | ~4.2:1 (below AA) | ~5.5:1 (AA compliant) |
-| Card borders | Barely visible | Clearly defined |
-| Input field borders | Washed out | Distinct |
-| "You're in control" badge | Dark on blue (~3:1) | White on blue (~8:1) |
+**Implementation:** New `TransformationBannerSection` between ScanPipelineStrip and the Before/After cards. Full bleed dark background to match the forensic theme.
+
+---
+
+## Option 4: Floating Card Accents (Subtle Authority)
+
+Image A as a small (180px) rounded thumbnail pinned to the top-left corner of the BEFORE card (overlapping the card border by 30%). Image B same treatment on the AFTER card. Image C replaces the current ghost preview background inside the AFTER card's idle state (it already uses `ai_decoded_results_g.webp` -- swap for the new uploaded version at higher opacity).
+
+**Why it converts:** Doesn't add vertical scroll. The images act as visual badges that reinforce the card identity without interrupting the primary conversion flow (upload). Lowest risk option for existing conversion rates.
+
+**Layout:**
+```text
+  [A]                        [B]
+[BEFORE card]          [AFTER card]
+```
+
+Images overlap the card corners with `absolute -top-6 -left-4` positioning inside a `relative` wrapper.
+
+---
+
+## Option 5: Scroll-Triggered Transformation (Interactive)
+
+A single centered image container above both cards. On load, shows Image A with a red-tinted overlay and the text "BEFORE: This is you right now." As the user scrolls past 40% of the viewport, it crossfades to Image B with a green-tinted overlay: "AFTER: This is you in 60 seconds." Image C appears as a small floating badge anchored to the bottom-right of the container.
+
+**Why it converts:** Creates a micro-interaction moment that makes the transformation feel tangible. The scroll trigger maps the physical act of scrolling to the emotional journey. High engagement, memorable.
+
+**Layout:**
+```text
+[ Single container that morphs A -> B on scroll ]
+           [C badge in corner]
+[BEFORE card]          [AFTER card]
+```
+
+**Implementation:** New component with `IntersectionObserver` and CSS `transition-opacity` for the crossfade. Image C uses `absolute bottom-4 right-4` with a `w-[120px]` size.
+
+---
+
+## CRO Recommendation
+
+**Option 1 (Paired Column Headers)** is the strongest default because:
+- Zero additional scroll depth added (images sit inside existing card columns)
+- Reinforces the Before/After mental model that the card content already uses
+- Lowest implementation risk -- no new sections, no scroll observers
+- Mobile-friendly: images stack naturally in the single-column layout
+
+**Option 2 (Narrative Strip)** is the runner-up if you want a stronger "story arc" before the user reaches the cards.
+
+---
+
+## Implementation Plan (Option 1 -- Recommended)
+
+### Files to Change
+
+| Action | File | What Changes |
+|--------|------|-------------|
+| COPY | `user-uploads://Screenshot_2026-02-15_130445.png` to `src/assets/before-confused.png` | Before image asset |
+| COPY | `user-uploads://Screenshot_2026-02-15_130509.png` to `src/assets/after-armed.png` | After image asset |
+| COPY | `user-uploads://Screenshot_2026-02-21_175920.png` to `src/assets/ai-decoded-clipboard.png` | AI Decoded clipboard (reserved for future use or Option 2) |
+| MODIFY | `src/pages/QuoteScanner.tsx` | Add image imports; insert `<img>` elements above each card header |
+
+### Technical Details
+
+1. Import assets at the top of QuoteScanner.tsx:
+```typescript
+import beforeConfusedImg from '@/assets/before-confused.png';
+import afterArmedImg from '@/assets/after-armed.png';
+```
+
+2. Inside each `AnimateOnScroll` wrapper, above the header `<div>`, add a centered image:
+
+**Left column (before line 152):**
+```tsx
+<div className="flex justify-center mb-4">
+  <img
+    src={beforeConfusedImg}
+    alt="Before: Confused by jargon, vulnerable to tactics"
+    className="w-full max-w-[280px] h-auto rounded-xl shadow-lg"
+    loading="lazy"
+    decoding="async"
+  />
+</div>
+```
+
+**Right column (before line 228):**
+```tsx
+<div className="flex justify-center mb-4">
+  <img
+    src={afterArmedImg}
+    alt="After: Clear understanding, armed with leverage"
+    className="w-full max-w-[280px] h-auto rounded-xl shadow-lg"
+    loading="lazy"
+    decoding="async"
+  />
+</div>
+```
+
+3. The images inherit the parent `AnimateOnScroll` directional animations (left entrance for Before, right entrance for After), creating a cohesive reveal.
+
+4. On mobile (single column), the images stack naturally above each card.
 
