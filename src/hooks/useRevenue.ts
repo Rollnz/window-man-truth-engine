@@ -81,19 +81,19 @@ export function useRevenue(filters: RevenueFilters = {}): UseRevenueReturn {
       const queryString = params.toString();
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-revenue${queryString ? `?${queryString}` : ''}`;
       
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${authSession.access_token}`,
           'Content-Type': 'application/json',
         },
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
+      if (!response.ok) {
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to fetch revenue data');
       }
 
-      const data = await res.json();
+      const data = await response.json();
       setKpis(data.kpis || {
         dealsWon: 0,
         totalRevenue: 0,

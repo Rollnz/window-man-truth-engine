@@ -84,14 +84,14 @@ function SystemHealthGauge({
     },
   };
 
-  const c = config[health];
+  const healthConfig = config[health];
 
   return (
-    <Card className={cn('border-2', c.bg)}>
+    <Card className={cn('border-2', healthConfig.bg)}>
       <CardContent className="pt-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            {c.icon}
+            {healthConfig.icon}
             <div className="min-w-0">
               <h3 className="text-sm font-semibold truncate">
                 {health === 'idle' && 'Guardian Inactive'}
@@ -100,7 +100,7 @@ function SystemHealthGauge({
                 {health === 'conflict' && 'Conflict Detected'}
               </h3>
               <p className="text-xs text-muted-foreground line-clamp-2">
-                {reason || c.defaultMsg}
+                {reason || healthConfig.defaultMsg}
               </p>
             </div>
           </div>

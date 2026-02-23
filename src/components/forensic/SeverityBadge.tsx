@@ -25,14 +25,14 @@ interface SeverityBadgeProps {
 }
 
 export function SeverityBadge({ level, label }: SeverityBadgeProps) {
-  const c = config[level];
+  const severityConfig = config[level];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${c.bg} ${c.text}`}
-      aria-label={`Severity: ${label ?? c.default}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${severityConfig.bg} ${severityConfig.text}`}
+      aria-label={`Severity: ${label ?? severityConfig.default}`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
-      {label ?? c.default}
+      <span className={`h-1.5 w-1.5 rounded-full ${severityConfig.dot}`} />
+      {label ?? severityConfig.default}
     </span>
   );
 }

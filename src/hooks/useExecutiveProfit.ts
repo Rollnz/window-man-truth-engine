@@ -144,7 +144,7 @@ export function useExecutiveProfit({
       params.set('basis', basis);
 
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-executive-profit?${params}`;
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
@@ -157,9 +157,9 @@ export function useExecutiveProfit({
         return; // Stale request, ignore result
       }
 
-      const result: ExecutiveResponse = await res.json();
+      const result: ExecutiveResponse = await response.json();
 
-      if (!res.ok || !result.ok) {
+      if (!response.ok || !result.ok) {
         throw new Error(result.error || 'Failed to fetch executive data');
       }
 

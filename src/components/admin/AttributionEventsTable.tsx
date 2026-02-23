@@ -110,10 +110,10 @@ export function AttributionEventsTable({
   const handleExport = () => {
     const blob = new Blob([csvData], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `attribution-events-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    a.click();
+    const downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = `attribution-events-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    downloadLink.click();
     URL.revokeObjectURL(url);
   };
 

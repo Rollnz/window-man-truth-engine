@@ -113,19 +113,19 @@ export function useLeadFinancials(wmLeadId: string | undefined): UseLeadFinancia
       }
 
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-lead-detail?id=${wmLeadId}`;
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${authSession.access_token}`,
           'Content-Type': 'application/json',
         },
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
+      if (!response.ok) {
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to fetch financials');
       }
 
-      const data = await res.json();
+      const data = await response.json();
       setOpportunities(data.opportunities || []);
       setDeals(data.deals || []);
       setSummary(data.financialSummary || {
@@ -159,7 +159,7 @@ export function useLeadFinancials(wmLeadId: string | undefined): UseLeadFinancia
       }
 
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-lead-detail?id=${wmLeadId}`;
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authSession.access_token}`,
@@ -168,8 +168,8 @@ export function useLeadFinancials(wmLeadId: string | undefined): UseLeadFinancia
         body: JSON.stringify({ action, ...data }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
+      if (!response.ok) {
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Action failed');
       }
 

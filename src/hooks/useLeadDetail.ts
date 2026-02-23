@@ -194,19 +194,19 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
       }
 
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-lead-detail?id=${leadId}`;
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${authSession.access_token}`,
           'Content-Type': 'application/json',
         },
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
+      if (!response.ok) {
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to fetch lead');
       }
 
-      const data = await res.json();
+      const data = await response.json();
       setLead(data.lead);
       setEvents(data.events || []);
       setFiles(data.files || []);
@@ -269,8 +269,8 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
               }),
             });
           }
-        } catch (e) {
-          console.error('[useLeadDetail] Failed to sync timeout to DB:', e);
+        } catch (timeoutSyncError) {
+          console.error('[useLeadDetail] Failed to sync timeout to DB:', timeoutSyncError);
         }
       }
     }, 120_000);
@@ -288,7 +288,7 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
       }
 
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-lead-detail?id=${leadId}`;
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authSession.access_token}`,
@@ -297,8 +297,8 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
         body: JSON.stringify({ action, ...data }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
+      if (!response.ok) {
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Action failed');
       }
 
@@ -396,7 +396,7 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
       }
 
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-trigger-analysis`;
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authSession.access_token}`,
@@ -405,8 +405,8 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
         body: JSON.stringify({ quoteFileId, leadId: lead.lead_id }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
+      if (!response.ok) {
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to trigger analysis');
       }
 
@@ -431,7 +431,7 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
       }
 
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-lead-detail?id=${leadId}`;
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authSession.access_token}`,
@@ -440,12 +440,12 @@ export function useLeadDetail(leadId: string | undefined): UseLeadDetailReturn {
         body: JSON.stringify({ action: 'get_quote_file_url', fileId }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
+      if (!response.ok) {
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to get file URL');
       }
 
-      const data = await res.json();
+      const data = await response.json();
       return data.signedUrl || null;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not open uploaded document';

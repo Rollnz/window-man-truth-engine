@@ -83,19 +83,19 @@ export function useAttributionROAS({
       params.set('group_by', groupBy);
 
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-attribution-roas?${params}`;
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
+      if (!response.ok) {
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to fetch ROAS data');
       }
 
-      const result = await res.json();
+      const result = await response.json();
       setData(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load ROAS data';

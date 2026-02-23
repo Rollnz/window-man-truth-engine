@@ -14,9 +14,9 @@ interface ActivityRowProps {
 
 function formatTime(secs: number | null): string {
   if (secs === null || isNaN(secs)) return "—";
-  const m = Math.floor(secs / 60);
-  const s = Math.floor(secs % 60);
-  return m + ":" + (s < 10 ? "0" : "") + s;
+  const minutes = Math.floor(secs / 60);
+  const secondsRemainder = Math.floor(secs % 60);
+  return minutes + ":" + (secondsRemainder < 10 ? "0" : "") + secondsRemainder;
 }
 
 export function ActivityRow({ call }: ActivityRowProps) {

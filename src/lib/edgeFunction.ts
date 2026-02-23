@@ -137,7 +137,7 @@ export async function fetchEdgeFunction<T = any>(
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const url = `${supabaseUrl}/functions/v1/${functionName}${queryString}`;
 
-    const res = await fetch(url, {
+    const httpResponse = await fetch(url, {
       method,
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -148,16 +148,16 @@ export async function fetchEdgeFunction<T = any>(
       ...(signal ? { signal } : {}),
     });
 
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      const err = new Error(errorData.error || `${res.status} ${res.statusText}`);
+    if (!httpResponse.ok) {
+      const errorData = await httpResponse.json().catch(() => ({}));
+      const httpError = new Error(errorData.error || `${httpResponse.status} ${httpResponse.statusText}`);
       // Attach status for downstream checks
-      (err as any).status = res.status;
-      throw err;
+      (httpError as any).status = httpResponse.status;
+      throw httpError;
     }
 
-    const data = await res.json();
-    return { data: data as T, response: res };
+    const data = await httpResponse.json();
+    return { data: data as T, response: httpResponse };
   };
 
   try {

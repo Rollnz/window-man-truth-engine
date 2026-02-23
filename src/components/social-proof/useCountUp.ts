@@ -27,9 +27,9 @@ export function useCountUp(end: number, duration: number = 2500) {
       const progress = timestamp - startTime;
 
       if (progress < duration) {
-        const t = progress / duration;
+        const normalizedProgress = progress / duration;
         // easeOutExpo easing function
-        const ease = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+        const ease = normalizedProgress === 1 ? 1 : 1 - Math.pow(2, -10 * normalizedProgress);
         setCount(Math.floor(ease * end));
         animationFrame = requestAnimationFrame(animate);
       } else {

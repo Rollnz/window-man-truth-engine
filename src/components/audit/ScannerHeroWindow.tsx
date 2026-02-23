@@ -24,11 +24,11 @@ export function ScannerHeroWindow({ onScanClick, onViewSampleClick }: ScannerHer
   }, []);
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width * 100;
-    const y = (e.clientY - rect.top) / rect.height * 100;
+    const mouseXPercent = (e.clientX - rect.left) / rect.width * 100;
+    const mouseYPercent = (e.clientY - rect.top) / rect.height * 100;
     setMousePosition({
-      x,
-      y
+      x: mouseXPercent,
+      y: mouseYPercent
     });
   };
   return (

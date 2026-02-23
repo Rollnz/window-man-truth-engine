@@ -21,8 +21,8 @@ interface WindowTriviaLoaderProps {
 // Logarithmic progress: fast start, slow finish
 // Formula: progress = 90 * (1 - e^(-t/8)) where t is seconds elapsed
 const calculateProgress = (elapsedMs: number): number => {
-  const t = elapsedMs / 1000;
-  const progress = 90 * (1 - Math.exp(-t / 8));
+  const elapsedSeconds = elapsedMs / 1000;
+  const progress = 90 * (1 - Math.exp(-elapsedSeconds / 8));
   return Math.min(progress, 90);
 };
 

@@ -54,9 +54,9 @@ function CallAgentsConfigContent() {
       if (showMode === 'enabled' && !agent.enabled) return false;
       if (showMode === 'disabled' && agent.enabled) return false;
       if (searchQuery.trim() === '') return true;
-      const q = searchQuery.trim().toLowerCase();
-      const nameMatch = agent.agent_name.toLowerCase().includes(q);
-      const labelMatch = (SOURCE_TOOL_LABELS[agent.source_tool] || '').toLowerCase().includes(q);
+      const normalizedQuery = searchQuery.trim().toLowerCase();
+      const nameMatch = agent.agent_name.toLowerCase().includes(normalizedQuery);
+      const labelMatch = (SOURCE_TOOL_LABELS[agent.source_tool] || '').toLowerCase().includes(normalizedQuery);
       return nameMatch || labelMatch;
     });
   }, [agents, searchQuery, showMode]);

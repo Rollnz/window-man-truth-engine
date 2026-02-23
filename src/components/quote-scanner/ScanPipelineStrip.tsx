@@ -202,8 +202,8 @@ function CircuitTraces({ opacity = 0.08 }: { opacity?: number }) {
 
 // ─── Scene 1: Extraction ──────────────────────────────────────────────────────
 function ExtractionScene({ isMobile }: { isMobile: boolean }) {
-  const docW = isMobile ? 56 : 66;
-  const docH = isMobile ? 72 : 84;
+  const documentWidth = isMobile ? 56 : 66;
+  const documentHeight = isMobile ? 72 : 84;
 
   return (
     <div
@@ -218,15 +218,15 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
       }}
     >
       {/* Document illustration */}
-      <div style={{ position: "relative", width: docW + 24, height: docH + 10, marginBottom: 12 }}>
+      <div style={{ position: "relative", width: documentWidth + 24, height: documentHeight + 10, marginBottom: 12 }}>
         {/* Shadow copies */}
         {[2, 1].map((i) => (
           <div
             key={i}
             style={{
               position: "absolute",
-              width: docW,
-              height: docH,
+              width: documentWidth,
+              height: documentHeight,
               borderRadius: 4,
               background: C.bgCard,
               border: `1px solid ${C.cyanDim}`,
@@ -240,8 +240,8 @@ function ExtractionScene({ isMobile }: { isMobile: boolean }) {
         <div
           style={{
             position: "relative",
-            width: docW,
-            height: docH,
+            width: documentWidth,
+            height: documentHeight,
             borderRadius: 4,
             background: `linear-gradient(180deg, ${C.bgCard}, hsl(var(--sp-bg)))`,
             border: `1px solid ${C.cyanMid}`,
