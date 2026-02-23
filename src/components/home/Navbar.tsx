@@ -1,9 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Vault, LogIn, Menu, X, Sun, Moon, Phone } from 'lucide-react';
+import { Vault, LogIn, Menu, X, Phone } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
 import { ROUTES } from '@/config/navigation';
 
 interface NavbarProps {
@@ -83,10 +82,6 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
   } = useDeferredAuth();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const {
-    setTheme,
-    resolvedTheme
-  } = useTheme();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -131,22 +126,6 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
 
         {/* Desktop Right Side - Always visible */}
         <div className="hidden md:flex items-center gap-3">
-          {/* Theme Toggle */}
-          <button 
-            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} 
-            className={`h-9 w-9 flex items-center justify-center rounded transition-colors ${
-              resolvedTheme === 'dark' 
-                ? 'bg-amber-50 hover:bg-amber-100' 
-                : 'bg-slate-800 hover:bg-slate-700'
-            }`}
-            aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {resolvedTheme === 'dark' 
-              ? <Sun className="h-4 w-4 text-orange-500" /> 
-              : <Moon className="h-4 w-4 text-white" />
-            }
-          </button>
-          
           {/* Auth Button */}
           {!loading && (isAuthenticated ? (
             <Button variant="outline" size="sm" asChild className="relative">
@@ -221,25 +200,6 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
               Beat Your Quote
             </span>
           </Link>
-          
-          
-          {/* Theme Toggle - Mobile */}
-          <button 
-            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} 
-            className="w-full flex items-center gap-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <span className={`h-8 w-8 flex items-center justify-center rounded transition-colors ${
-              resolvedTheme === 'dark' 
-                ? 'bg-amber-50' 
-                : 'bg-slate-800'
-            }`}>
-              {resolvedTheme === 'dark' 
-                ? <Sun className="h-4 w-4 text-orange-500" /> 
-                : <Moon className="h-4 w-4 text-white" />
-              }
-            </span>
-            {resolvedTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-          </button>
           
           {!loading && (isAuthenticated ? (
             <Button variant="outline" size="sm" asChild className="w-full relative">
