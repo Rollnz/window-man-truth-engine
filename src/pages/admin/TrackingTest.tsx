@@ -23,19 +23,33 @@ import {
   Network,
   Database,
   Fingerprint,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 import { 
   runTrackingVerificationTest, 
   quickDataLayerCheck,
   generateSyntheticLead,
+  findWmLeadEvent,
+  validateDataLayerEvent,
   type TrackingVerificationReport 
 } from '@/lib/trackingVerificationTest';
+
+interface QuickCheckResult {
+  eventCount: number;
+  latestEvent: Record<string, unknown> | null;
+  hasLeadId: boolean;
+  hasEventId: boolean;
+  validationScore: number | null;
+}
 
 export default function TrackingTestPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [report, setReport] = useState<TrackingVerificationReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [quickCheckResult, setQuickCheckResult] = useState<QuickCheckResult | null>(null);
+  const { toast } = useToast();
 
   const handleRunTest = useCallback(async () => {
     setIsRunning(true);
@@ -53,9 +67,42 @@ export default function TrackingTestPage() {
   }, []);
 
   const handleQuickCheck = useCallback(() => {
-    quickDataLayerCheck();
-    console.log('Check browser console for results');
-  }, []);
+    const dataLayer = typeof window !== 'undefined' ? (window as any).dataLayer : undefined;
+    const eventCount = Array.isArray(dataLayer) ? dataLayer.length : 0;
+
+    const wmLeadEvent = findWmLeadEvent();
+    let validationScore: number | null = null;
+    let hasLeadId = false;
+    let hasEventId = false;
+
+    if (wmLeadEvent) {
+      const validation = validateDataLayerEvent(wmLeadEvent);
+      validationScore = validation.score;
+      hasLeadId = !!wmLeadEvent.lead_id;
+      hasEventId = !!wmLeadEvent.event_id;
+    }
+
+    setQuickCheckResult({
+      eventCount,
+      latestEvent: wmLeadEvent as Record<string, unknown> | null,
+      hasLeadId,
+      hasEventId,
+      validationScore,
+    });
+
+    if (eventCount > 0) {
+      toast({
+        title: 'DataLayer Active',
+        description: `Found ${eventCount} events.`,
+      });
+    } else {
+      toast({
+        title: 'Warning: DataLayer Empty',
+        description: 'Check for ad-blockers or GTM configuration.',
+        variant: 'destructive',
+      });
+    }
+  }, [toast]);
 
   const getStatusIcon = (status: 'PASS' | 'PARTIAL' | 'FAIL') => {
     switch (status) {
@@ -137,7 +184,83 @@ export default function TrackingTestPage() {
                 <RefreshCw className="h-4 w-4" />
                 Quick DataLayer Check
               </Button>
+              {quickCheckResult && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setQuickCheckResult(null)}
+                  className="gap-1 text-muted-foreground"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Clear Results
+                </Button>
+              )}
             </div>
+
+            {/* Quick Check Results Panel */}
+            {quickCheckResult && (
+              <div className="space-y-4 pt-2">
+                <Separator />
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {/* Event Counter */}
+                  <div className="bg-muted rounded-lg p-4 text-center">
+                    <p className="text-3xl font-bold">{quickCheckResult.eventCount}</p>
+                    <p className="text-xs text-muted-foreground mt-1">DataLayer Events</p>
+                  </div>
+
+                  {/* Deduplication Badge */}
+                  <div className="bg-muted rounded-lg p-4 flex flex-col items-center justify-center gap-2">
+                    <Badge 
+                      variant={quickCheckResult.hasLeadId && quickCheckResult.hasEventId ? 'default' : 'secondary'}
+                      className={cn(
+                        quickCheckResult.hasLeadId && quickCheckResult.hasEventId
+                          ? 'bg-emerald-600/15 text-emerald-600 dark:text-emerald-400 border border-emerald-600/20'
+                          : 'bg-amber-600/15 text-amber-600 dark:text-amber-400 border border-amber-600/20'
+                      )}
+                    >
+                      {quickCheckResult.hasLeadId && quickCheckResult.hasEventId
+                        ? 'Deduplication Ready'
+                        : 'Incomplete'}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground">
+                      {quickCheckResult.hasLeadId ? '✓ lead_id' : '✗ lead_id'}
+                      {' · '}
+                      {quickCheckResult.hasEventId ? '✓ event_id' : '✗ event_id'}
+                    </p>
+                  </div>
+
+                  {/* Validation Score */}
+                  <div className="bg-muted rounded-lg p-4 text-center">
+                    {quickCheckResult.validationScore !== null ? (
+                      <>
+                        <p className="text-3xl font-bold">
+                          {quickCheckResult.validationScore.toFixed(1)}
+                          <span className="text-lg text-muted-foreground">/10</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">EMQ Score</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-lg font-medium text-muted-foreground">—</p>
+                        <p className="text-xs text-muted-foreground mt-1">No wm_lead event</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Live JSON Preview */}
+                {quickCheckResult.latestEvent && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Latest wm_lead Event</p>
+                    <ScrollArea className="h-48 w-full rounded-md border bg-muted/50">
+                      <pre className="p-4 text-xs font-mono">
+                        {JSON.stringify(quickCheckResult.latestEvent, null, 2)}
+                      </pre>
+                    </ScrollArea>
+                  </div>
+                )}
+              </div>
+            )}
             
             {error && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
