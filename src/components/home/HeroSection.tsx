@@ -20,7 +20,7 @@ export function HeroSection() {
           <p className="text-xl md:text-2xl font-semibold text-foreground mb-8 animate-fade-in-up" style={{
           animationDelay: '0.25s'
         }}>Window Man exists to end that imbalance.</p>
-          <div className="max-w-2xl mx-auto mb-10 p-6 rounded-xl bg-card/50 border border-border/50 backdrop-blur-sm animate-fade-in-up" style={{
+          <div className="max-w-2xl mx-auto mb-10 p-6 rounded-xl bg-card/80 md:bg-card/50 border border-border/50 md:backdrop-blur-sm animate-fade-in-up" style={{
           animationDelay: '0.3s'
         }}>
             <p className="text-muted-foreground leading-relaxed">The impact window industry isn't broken because contractors are dishonest. It's broken because the system rewards technical knowledge — and homeowners aren't given access to it.<span className="block mt-3 text-foreground font-medium">Until now.</span></p>

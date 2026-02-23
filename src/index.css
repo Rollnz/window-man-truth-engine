@@ -8,9 +8,6 @@
 
 @layer base {
   :root {
-    /* Mobile sticky footer height (used by PublicLayout for bottom padding) */
-    --mobile-sticky-footer-h: 104px;
-
     /* Accordion - PERMANENT, theme-independent */
     --accordion: linear-gradient(to bottom, #cfe7fa 0%, #6393c1 100%);
 
@@ -604,10 +601,28 @@
       box-shadow: 0 0 20px hsl(var(--secondary) / 0.3);
     }
 
+    .badge-shimmer::before {
+      animation: none;
+      opacity: 0;
+    }
+
     .pattern-crosshatch::before,
     .pattern-dots::before,
     .pattern-scanlines::before {
       opacity: 0 !important;
+    }
+  }
+
+  /* Disable expensive animations on mobile for performance */
+  @media (max-width: 767px) {
+    .cta-glow {
+      animation: none;
+      box-shadow: 0 0 20px hsl(var(--secondary) / 0.3);
+    }
+
+    .badge-shimmer::before {
+      animation: none;
+      opacity: 0;
     }
   }
 

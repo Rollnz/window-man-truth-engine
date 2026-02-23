@@ -121,7 +121,7 @@ export function QuoteScannerHero() {
       <div
         className="absolute inset-0 z-[10]"
         style={{
-          backgroundImage: 'url(/images/hero/window_background.jpg)',
+          backgroundImage: 'url(/images/hero/window_background.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           clipPath: prefersReducedMotion

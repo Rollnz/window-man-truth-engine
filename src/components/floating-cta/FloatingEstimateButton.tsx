@@ -109,7 +109,7 @@ export const FloatingEstimateButton = forwardRef<HTMLButtonElement, Record<strin
             className={cn(
               // Positioning - above mobile footer, normal on desktop
               'fixed right-4 z-50',
-              'bottom-[120px] md:bottom-6 md:right-6',
+              'bottom-6 md:right-6',
               
               // Size: 52px mobile, 64px desktop
               'h-[52px] w-[52px] md:h-16 md:w-16',
