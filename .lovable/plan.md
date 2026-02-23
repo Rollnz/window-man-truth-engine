@@ -1,61 +1,74 @@
 
 
-# Fix: Hardcoded `text-black` Color Contrast Across FAQ Components
+# Fix: "Object Not Found" Storage Error on View File
 
-## Problem
-Multiple FAQ sections and other components use hardcoded `text-black` for text color. This works in light mode but breaks in dark mode where the background is dark, making text invisible. This violates the project's unified theme standard which prohibits hardcoded hex/color values in favor of semantic theme tokens.
+## Root Cause (NOT a code bug)
 
-## Root Cause
-The base `AccordionContent` component already applies `text-muted-foreground` by default. Individual components override this with `text-black`, which forces black text regardless of theme -- invisible on dark backgrounds.
+The file physically exists in **Live** storage but not in **Test** storage. When you click "View File" from the preview app, the edge function runs against the **Test** environment. It finds the `quote_files` database record (which was synced), but the actual storage blob was never copied to Test.
 
-## Files to Fix
+This is the documented behavior: **storage files (data) never sync between Test and Live environments.**
 
-### Primary Target: `src/components/seo/ToolFAQSection.tsx`
-This is the component used on `/cost-calculator` and 5 other tool pages.
+## Immediate Fix: Test from Published URL
 
-| Line | Current | Fix |
-|------|---------|-----|
-| 59 | `text-black font-bold` | `text-foreground font-bold` |
-| 66 | `text-black` (in default variant) | `text-foreground` |
+To verify the feature works, use the published URL instead of the preview:
+`https://window-man-truth-engine.lovable.app/admin/leads/e0a82a9f-d17a-4fdd-bbd7-68941d2c890c`
 
-The dossier/gradient variants already correctly use `text-white` and stay untouched.
+This hits the Live environment where the file actually exists.
 
-**Pages affected:** `/cost-calculator`, `/free-estimate`, `/reality-check`, `/ai-scanner`, `/comparison`, `/risk-diagnostic`
+## Code Improvement: Better Error Messaging
 
-### `src/pages/FAQ.tsx` (line 56)
-- `text-black` on AccordionContent -> remove it (let base `text-muted-foreground` apply)
+Even though the code is correct, we can improve the error response to help diagnose environment mismatches in the future.
 
-### `src/components/quote-scanner/ScannerFAQSection.tsx` (lines 73, 75)
-- Question: `text-black` -> `text-foreground`
-- Answer: `text-black` -> remove (inherits `text-muted-foreground`)
+### File: `supabase/functions/admin-lead-detail/index.ts` (lines 595-622)
 
-### `src/components/fair-price-quiz/WhyVaultFAQ.tsx` (line 45)
-- AccordionContent `text-black` -> `text-foreground`
+**Before signing**, add a storage existence check and environment-aware logging:
 
-### `src/components/spec-checklist/FAQSection.tsx` (line 33)
-- `text-primary-foreground` on answer text -> `text-muted-foreground`
+1. After path normalization (line 583), add a `storage.objects` list check to verify the file exists before attempting to sign it
+2. If the file doesn't exist in storage, return a more descriptive error that suggests an environment mismatch
+3. Log the environment context (SUPABASE_URL hostname) to make it obvious which environment is being hit
 
-## Non-FAQ Files (Same Pattern, Bonus Fix)
+**Changes:**
 
-These also use `text-black` on theme-aware backgrounds:
+```typescript
+// After line 593 (after diagnostic logging), add:
 
-| File | Lines | Fix |
-|------|-------|-----|
-| `SecretPlaybookSection.tsx` | 24 | `text-black` -> `text-foreground` |
-| `FailurePointsSection.tsx` | 86, 96, 99, 102, 108 | `text-black` -> `text-foreground` |
-| `WeaponizeAuditSection.tsx` | 13, 14 | `text-black` -> `text-foreground` |
-| `KitchenTableGuideModal.tsx` | 371, 376 | `text-black` -> `text-foreground` |
-| `SalesTacticsGuideModal.tsx` | 371, 376 | `text-black` -> `text-foreground` |
-| `SpecChecklistGuideModal.tsx` | 400, 405 | `text-black` -> `text-foreground` |
+// Pre-check: verify object exists in storage before signing
+const { data: objectList, error: listError } = await supabase
+  .storage.from('quotes')
+  .list(objectPath.substring(0, objectPath.lastIndexOf('/')), {
+    search: objectPath.substring(objectPath.lastIndexOf('/') + 1),
+    limit: 1,
+  });
 
-## The Rule
-- `text-foreground` for primary/heading text (adapts to both themes)
-- `text-muted-foreground` for body/secondary text (adapts to both themes)
-- `text-white` only on locked dark backgrounds (dossier, gradient variants)
-- `text-black` is prohibited on theme-aware surfaces
+if (listError) {
+  console.warn('[get_quote_file_url] List check failed:', listError.message);
+  // Continue to sign attempt — list failure doesn't mean sign will fail
+}
+
+const objectExists = objectList && objectList.length > 0;
+if (!objectExists) {
+  const envHint = (Deno.env.get('SUPABASE_URL') || '').includes('localhost')
+    ? 'local' : 'cloud';
+  console.warn('[get_quote_file_url] Object NOT found in storage pre-check', {
+    normalizedPath: objectPath,
+    environment: envHint,
+    supabaseUrlHost: new URL(Deno.env.get('SUPABASE_URL') || 'http://x').hostname,
+  });
+}
+```
+
+Then update the sign-failure response (line 606-621) to include the pre-check result:
+
+```typescript
+// In the sign failure response details, add:
+object_found_in_storage: objectExists,
+environment_hint: 'File may exist in Live but not Test. Try the published URL.',
+```
 
 ## Scope
-- ~12 files modified
-- ~25 line changes (all single-token replacements)
-- Zero structural changes -- only swapping color classes
+
+- **1 file changed**: `supabase/functions/admin-lead-detail/index.ts`
+- ~20 lines added (pre-check + enhanced error details)
+- Zero breaking changes — the happy path is unchanged
+- Redeploy of the edge function is automatic
 
