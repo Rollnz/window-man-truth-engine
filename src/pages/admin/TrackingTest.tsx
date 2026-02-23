@@ -35,6 +35,7 @@ import {
   Copy,
   RotateCcw,
   Link2,
+  Cookie,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -46,7 +47,7 @@ import {
   validateDataLayerEvent,
   type TrackingVerificationReport 
 } from '@/lib/trackingVerificationTest';
-import { useDataLayerMonitor, type SystemHealth, type HandshakeResult } from '@/hooks/useDataLayerMonitor';
+import { useDataLayerMonitor, normalizeId, type SystemHealth, type HandshakeResult, type ParityResult, type ParityState } from '@/hooks/useDataLayerMonitor';
 import { formatRelativeTime } from '@/utils/relativeTime';
 import { copyToClipboard } from '@/utils/clipboard';
 
@@ -147,9 +148,11 @@ function EmqDot({ score }: { score: number | null }) {
 function LiveActivityLog({
   events,
   isMonitoring,
+  highlightedEventId,
 }: {
   events: import('@/hooks/useDataLayerMonitor').MonitorEvent[];
   isMonitoring: boolean;
+  highlightedEventId: string | null;
 }) {
   const display = events.slice(0, 10);
 
@@ -170,49 +173,54 @@ function LiveActivityLog({
           </p>
         ) : (
           <div className="space-y-1.5">
-            {display.map((ev, i) => (
-              <div
-                key={`${ev.timestamp}-${i}`}
-                className={cn(
-                  'flex items-center gap-2 rounded-md px-2 py-1.5 text-xs',
-                  ev.collision && 'ring-1 ring-destructive/40 bg-destructive/5',
-                )}
-              >
-                <span className="text-muted-foreground w-16 shrink-0 text-right tabular-nums">
-                  {formatRelativeTime(new Date(ev.timestamp).toISOString())}
-                </span>
-                <Badge variant="secondary" className="font-mono text-[10px] px-1.5 shrink-0">
-                  {ev.event}
-                </Badge>
-                <EmqDot score={ev.emqScore} />
-                <Mail
+            {display.map((ev, i) => {
+              const isHighlighted = highlightedEventId && ev.event_id &&
+                normalizeId(ev.event_id) === normalizeId(highlightedEventId);
+              return (
+                <div
+                  key={`${ev.timestamp}-${i}`}
                   className={cn(
-                    'h-3.5 w-3.5 shrink-0',
-                    ev.hasEmail ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground/30',
+                    'flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-all',
+                    ev.collision && 'ring-1 ring-destructive/40 bg-destructive/5',
+                    isHighlighted && 'ring-2 ring-primary bg-primary/5',
                   )}
-                />
-                <Phone
-                  className={cn(
-                    'h-3.5 w-3.5 shrink-0',
-                    ev.hasPhone ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground/30',
+                >
+                  <span className="text-muted-foreground w-16 shrink-0 text-right tabular-nums">
+                    {formatRelativeTime(new Date(ev.timestamp).toISOString())}
+                  </span>
+                  <Badge variant="secondary" className="font-mono text-[10px] px-1.5 shrink-0">
+                    {ev.event}
+                  </Badge>
+                  <EmqDot score={ev.emqScore} />
+                  <Mail
+                    className={cn(
+                      'h-3.5 w-3.5 shrink-0',
+                      ev.hasEmail ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground/30',
+                    )}
+                  />
+                  <Phone
+                    className={cn(
+                      'h-3.5 w-3.5 shrink-0',
+                      ev.hasPhone ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground/30',
+                    )}
+                  />
+                  {ev.collision && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="destructive" className="text-[10px] px-1.5 shrink-0">
+                            COLLISION
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs text-xs font-mono break-all">
+                          {ev.collisionSource ?? 'Source unknown'}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
-                />
-                {ev.collision && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge variant="destructive" className="text-[10px] px-1.5 shrink-0">
-                          COLLISION
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs text-xs font-mono break-all">
-                        {ev.collisionSource ?? 'Source unknown'}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>
@@ -342,6 +350,211 @@ function LeadVerificationCard({
   );
 }
 
+// ─── Step 6: Deduplication Parity Card ────────────────────────────────────────
+
+function ParityMatchGauge({ confirmed, total }: { confirmed: number; total: number }) {
+  const pct = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+  const circumference = 2 * Math.PI * 36;
+  const offset = circumference - (pct / 100) * circumference;
+  const color = pct === 100
+    ? 'text-emerald-600 dark:text-emerald-400'
+    : pct >= 50
+      ? 'text-amber-600 dark:text-amber-400'
+      : 'text-destructive';
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg className="h-20 w-20 -rotate-90" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="36" fill="none" strokeWidth="6" className="stroke-muted" />
+        <circle
+          cx="40" cy="40" r="36" fill="none" strokeWidth="6"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className={cn('transition-all duration-500', color.replace('text-', 'stroke-'))}
+        />
+      </svg>
+      <div className="absolute flex flex-col items-center">
+        <span className={cn('text-lg font-bold', color)}>{pct}%</span>
+      </div>
+    </div>
+  );
+}
+
+function DeduplicationParityCard({
+  parityState,
+  isMonitoring,
+  onCheckNow,
+  onHoverEvent,
+}: {
+  parityState: ParityState;
+  isMonitoring: boolean;
+  onCheckNow: () => void;
+  onHoverEvent: (id: string | null) => void;
+}) {
+  const { results, browserOnlyCount, serverConfirmedCount, isChecking, lastCheckedAt } = parityState;
+  const total = results.length;
+
+  // Don't render if no results and not monitoring
+  if (total === 0 && !isMonitoring) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Deduplication Parity
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onCheckNow}
+            disabled={isChecking}
+            className="gap-1.5 text-xs"
+          >
+            {isChecking ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Checking…
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-3.5 w-3.5" />
+                Check Now
+              </>
+            )}
+          </Button>
+        </div>
+        <CardDescription className="text-xs">
+          Cross-references browser event_ids against the server event log
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {total === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {isChecking
+              ? 'Checking event parity against server…'
+              : 'Click "Check Now" or wait for auto-check after monitoring starts.'}
+          </p>
+        ) : (
+          <>
+            {/* Summary row */}
+            <div className="flex items-center gap-4">
+              <ParityMatchGauge confirmed={serverConfirmedCount} total={total} />
+              <div className="flex flex-col gap-2 flex-1">
+                <div className="flex gap-2 flex-wrap">
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-600/30 text-emerald-600 dark:text-emerald-400 text-xs"
+                  >
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    {serverConfirmedCount} Confirmed
+                  </Badge>
+                  {browserOnlyCount > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="border-destructive/30 text-destructive text-xs"
+                    >
+                      <XCircle className="h-3 w-3 mr-1" />
+                      {browserOnlyCount} Browser-Only
+                    </Badge>
+                  )}
+                </div>
+                {lastCheckedAt && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Last checked {formatRelativeTime(new Date(lastCheckedAt).toISOString())}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Parity alert */}
+            {browserOnlyCount > 0 && (
+              <div className="rounded-lg border border-amber-600/20 bg-amber-600/5 p-3">
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                  <AlertTriangle className="h-3.5 w-3.5 inline mr-1 -mt-0.5" />
+                  Parity Gap Detected: {browserOnlyCount} event(s) fired in the browser but missing
+                  from the server event log. These conversions will NOT be reported to Meta/Google.
+                </p>
+              </div>
+            )}
+
+            {browserOnlyCount === 0 && total > 0 && (
+              <div className="rounded-lg border border-emerald-600/20 bg-emerald-600/5 p-3">
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                  <CheckCircle2 className="h-3.5 w-3.5 inline mr-1 -mt-0.5" />
+                  Perfect Parity: All browser events confirmed on server. Deduplication pipeline is fully operational.
+                </p>
+              </div>
+            )}
+
+            {/* Per-result rows */}
+            <div className="space-y-1.5">
+              {results.map((r) => (
+                <div
+                  key={r.eventId}
+                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted/50 transition-colors cursor-default"
+                  onMouseEnter={() => onHoverEvent(r.eventId)}
+                  onMouseLeave={() => onHoverEvent(null)}
+                >
+                  <code className="text-[10px] font-mono text-muted-foreground w-24 shrink-0 truncate">
+                    {r.eventId.slice(0, 16)}…
+                  </code>
+                  <Badge variant="secondary" className="font-mono text-[10px] px-1.5 shrink-0">
+                    {r.browserEventName}
+                  </Badge>
+                  {r.serverFound ? (
+                    <>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span className="text-emerald-600 dark:text-emerald-400 text-[10px]">Matched</span>
+                      {r.serverIngestedBy && (
+                        <Badge variant="outline" className="text-[10px] px-1 shrink-0">
+                          {r.serverIngestedBy}
+                        </Badge>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                      <span className="text-destructive text-[10px]">Server Missing</span>
+                    </>
+                  )}
+                  {/* Cookie match badge */}
+                  {r.serverFound && r.browserFbp && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'text-[10px] px-1 shrink-0 gap-0.5',
+                              r.cookieMatch
+                                ? 'border-emerald-600/30 text-emerald-600 dark:text-emerald-400'
+                                : 'border-amber-600/30 text-amber-600 dark:text-amber-400',
+                            )}
+                          >
+                            <Cookie className="h-2.5 w-2.5" />
+                            {r.cookieMatch ? 'fbp ✓' : 'fbp ✗'}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-[10px] max-w-xs">
+                          <p>Browser: {r.browserFbp ?? 'none'}</p>
+                          <p>Server: {r.serverFbp ?? 'none'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function CROInsightCard({
   events,
 }: {
@@ -412,8 +625,15 @@ export default function TrackingTestPage() {
   const [quickCheckResult, setQuickCheckResult] = useState<QuickCheckResult | null>(null);
   const { toast } = useToast();
 
-  // Phase 2: Active Guardian + Step 5: Handshake
-  const { state: monitorState, startMonitoring, stopMonitoring, forceRecheck } = useDataLayerMonitor();
+  // Phase 2: Active Guardian + Step 5: Handshake + Step 6: Parity
+  const {
+    state: monitorState,
+    startMonitoring,
+    stopMonitoring,
+    forceRecheck,
+    runParityCheck,
+    setHighlightedEventId,
+  } = useDataLayerMonitor();
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -536,6 +756,7 @@ export default function TrackingTestPage() {
             <LiveActivityLog
               events={monitorState.liveEvents}
               isMonitoring={monitorState.isMonitoring}
+              highlightedEventId={monitorState.highlightedEventId}
             />
 
             {/* ═══ Step 5: Lead Verification ═══ */}
@@ -545,16 +766,33 @@ export default function TrackingTestPage() {
               onCopyPayload={handleCopyPayload}
             />
 
+            {/* ═══ Step 6: Deduplication Parity ═══ */}
+            <DeduplicationParityCard
+              parityState={monitorState.parityState}
+              isMonitoring={monitorState.isMonitoring}
+              onCheckNow={runParityCheck}
+              onHoverEvent={setHighlightedEventId}
+            />
+
             <CROInsightCard events={monitorState.liveEvents} />
           </>
         )}
 
-        {/* Show handshake results even when not monitoring (persisted from session) */}
+        {/* Show persisted results even when not monitoring */}
         {!monitorState.isMonitoring && monitorState.handshakeResults.length > 0 && (
           <LeadVerificationCard
             results={monitorState.handshakeResults}
             onForceRecheck={handleForceRecheck}
             onCopyPayload={handleCopyPayload}
+          />
+        )}
+
+        {!monitorState.isMonitoring && monitorState.parityState.results.length > 0 && (
+          <DeduplicationParityCard
+            parityState={monitorState.parityState}
+            isMonitoring={false}
+            onCheckNow={runParityCheck}
+            onHoverEvent={setHighlightedEventId}
           />
         )}
 
