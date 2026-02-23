@@ -33,7 +33,7 @@ export function OutcomeFolders({
     leadId: hookLeadId,
     setLeadId
   } = useLeadIdentity();
-  const [activeOutcome, setActiveOutcome] = useState<'alpha' | 'bravo' | null>(null);
+  const [activeOutcome, setActiveOutcome] = useState<'alpha' | 'bravo' | null>('alpha');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -287,7 +287,7 @@ export function OutcomeFolders({
               <CheckCircle className="w-5 h-5 text-green-400" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-green-400 uppercase tracking-wide font-mono text-2xl">
+              <h4 className="font-bold text-green-400 uppercase tracking-wide font-mono text-2xl whitespace-nowrap">
                 WE BEAT IT
               </h4>
               <p className="text-sm text-primary-foreground">We beat your quote</p>
@@ -341,7 +341,7 @@ export function OutcomeFolders({
               <Shield className="w-5 h-5 text-tools-truth-engine" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono text-xl">
+              <h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono text-xl whitespace-nowrap">
                 OR VALIDATE IT 
               </h4>
               <p className="text-sm text-muted-foreground">We can't beat it</p>
