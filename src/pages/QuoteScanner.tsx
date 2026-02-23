@@ -28,6 +28,8 @@ import { QuoteSafetyChecklist } from '@/components/quote-scanner/QuoteSafetyChec
 // Vault Pivot Conversion Engine
 import { SoftInterceptionAnchor, NoQuotePivotSection } from '@/components/quote-scanner/vault-pivot';
 import { PreQuoteLeadModal } from '@/components/sample-report/PreQuoteLeadModal';
+import beforeConfusedImg from '@/assets/before-confused.png';
+import afterArmedImg from '@/assets/after-armed.png';
 import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 import { AIComparisonSection } from '@/components/quote-scanner/AIComparisonSection';
 import { UrgencyTicker } from '@/components/social-proof';
@@ -148,6 +150,16 @@ export default function QuoteScanner() {
               {/* ═══ Left column — BEFORE ═══ */}
               <AnimateOnScroll direction="left" duration={400} threshold={0.2}>
                 <div className="flex flex-col">
+                  {/* Before hero image */}
+                  <div className="flex justify-center mb-4">
+                    <img
+                      src={beforeConfusedImg}
+                      alt="Before: Confused by jargon, vulnerable to tactics"
+                      className="w-full max-w-[280px] h-auto rounded-xl shadow-lg"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
                   {/* Header — outside the card */}
                   <div className="flex items-center gap-2 mb-3">
                     <FileText className="w-5 h-5 text-rose-600 dark:text-rose-400" />
@@ -223,6 +235,16 @@ export default function QuoteScanner() {
                 {/* ═══ Right column — AFTER ═══ */}
               <AnimateOnScroll direction="right" duration={400} delay={150} threshold={0.2}>
                 <div className="flex flex-col">
+                  {/* After hero image */}
+                  <div className="flex justify-center mb-4">
+                    <img
+                      src={afterArmedImg}
+                      alt="After: Clear understanding, armed with leverage"
+                      className="w-full max-w-[280px] h-auto rounded-xl shadow-lg"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
                   {/* Header — outside the card */}
                   <div className="flex items-center gap-2 mb-3">
                     <ShieldCheck className="w-5 h-5 text-primary" />
