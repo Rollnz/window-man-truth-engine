@@ -910,7 +910,7 @@ function BudgetAlertBanner({ lostLeadRate }: { lostLeadRate: number }) {
 // ─── Step 10: Autopilot Card ─────────────────────────────────────────────────
 
 function AutopilotCard({ insights }: { insights: AutopilotInsight[] }) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const { toast } = useToast();
 
   if (insights.length === 0) return null;
@@ -941,11 +941,11 @@ function AutopilotCard({ insights }: { insights: AutopilotInsight[] }) {
       </CardHeader>
       <CardContent className="space-y-2">
         {insights.map((insight) => {
-          const isExpanded = expandedId === insight.id;
+          const isExpanded = expandedIds.includes(insight.id);
           return (
             <div key={insight.id} className="rounded-lg border">
               <button
-                onClick={() => setExpandedId(isExpanded ? null : insight.id)}
+                onClick={() => setExpandedIds(prev => isExpanded ? prev.filter(id => id !== insight.id) : [...prev, insight.id])}
                 className="flex items-center gap-3 w-full p-3 text-left hover:bg-muted/50 transition-colors"
               >
                 {severityIcon(insight.severity)}
