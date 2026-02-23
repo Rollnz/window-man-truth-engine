@@ -29,10 +29,14 @@ Deno.serve(async (req: Request) => {
   // Parse body
   let leadId: string | undefined;
   let eventIds: string[] | undefined;
+  let intentScore: number | undefined;
+  let intentLabel: string | undefined;
   try {
     const body = await req.json();
     leadId = body.lead_id;
     eventIds = body.event_ids;
+    intentScore = body.intent_score;
+    intentLabel = body.intent_label;
 
     if (!leadId && !eventIds) {
       return errorResponse(400, "bad_request", "lead_id or event_ids is required");
@@ -86,6 +90,23 @@ Deno.serve(async (req: Request) => {
     result.leadCreatedAt = leadRow?.created_at ?? null;
     result.capiEvents = capiEvents;
     result.capiEventCount = capiEvents.length;
+
+    // Step 7: Write intent data to leads table if provided
+    if (leadRow && intentScore !== undefined && intentLabel) {
+      const validScore = typeof intentScore === 'number' && intentScore >= 1 && intentScore <= 10;
+      const validLabel = ['hot', 'warm', 'cold'].includes(intentLabel);
+      if (validScore && validLabel) {
+        const { error: updateErr } = await supabaseAdmin
+          .from("leads")
+          .update({ intent_score: intentScore, intent_label: intentLabel })
+          .eq("id", leadId);
+        if (updateErr) {
+          console.error("[verify-lead-exists] intent update error:", updateErr.message);
+        } else {
+          result.intentUpdated = true;
+        }
+      }
+    }
   }
 
   // ── Mode 2: Batch parity check ─────────────────────────────────────────

@@ -1,0 +1,2 @@
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS intent_score integer;
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS intent_label text;

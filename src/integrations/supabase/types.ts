@@ -432,6 +432,8 @@ export type Database = {
           id: string
           identity_version: number | null
           insurance_carrier: string | null
+          intent_label: string | null
+          intent_score: number | null
           ip_hash: string | null
           landing_page: string | null
           last_activity_at: string | null
@@ -497,6 +499,8 @@ export type Database = {
           id?: string
           identity_version?: number | null
           insurance_carrier?: string | null
+          intent_label?: string | null
+          intent_score?: number | null
           ip_hash?: string | null
           landing_page?: string | null
           last_activity_at?: string | null
@@ -562,6 +566,8 @@ export type Database = {
           id?: string
           identity_version?: number | null
           insurance_carrier?: string | null
+          intent_label?: string | null
+          intent_score?: number | null
           ip_hash?: string | null
           landing_page?: string | null
           last_activity_at?: string | null

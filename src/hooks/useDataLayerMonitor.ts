@@ -29,6 +29,13 @@ export interface MonitorEvent {
   collisionSource: string | null;
   scrollDepth: number;
   raw: Record<string, unknown>;
+  // Step 7: Intent Intelligence
+  ttc: number | null;
+  intentScore: number | null;
+  intentLabel: 'hot' | 'warm' | 'cold' | null;
+  // Step 8: Attribution Health
+  attributionHealth: 'healthy' | 'repaired' | 'broken' | null;
+  missingCookies: string[];
 }
 
 export interface HandshakeResult {
@@ -103,6 +110,86 @@ function getBrowserFbp(): string | null {
   }
 }
 
+// ─── Step 7: Intent Scoring ──────────────────────────────────────────────────
+
+export function calculateIntentScore(
+  ttcSeconds: number,
+  scrollDepth: number,
+): { score: number; label: 'hot' | 'warm' | 'cold' } {
+  // Bot / accidental detection
+  if (ttcSeconds < 3 && scrollDepth < 5) return { score: 1, label: 'cold' };
+  if (ttcSeconds < 10) return { score: 3, label: 'cold' };
+
+  let score = 5; // baseline
+
+  // Time component
+  if (ttcSeconds >= 120) score += 3;
+  else if (ttcSeconds >= 60) score += 2;
+  else if (ttcSeconds >= 30) score += 1;
+
+  // Scroll component
+  if (scrollDepth >= 75) score += 2;
+  else if (scrollDepth >= 50) score += 1;
+
+  // Returning visitor bonus
+  try {
+    if (sessionStorage.getItem('__wm_returning_visitor')) score += 1;
+  } catch { /* noop */ }
+
+  score = Math.min(10, Math.max(1, score));
+  const label: 'hot' | 'warm' | 'cold' = score >= 9 ? 'hot' : score >= 6 ? 'warm' : 'cold';
+  return { score, label };
+}
+
+// ─── Step 8: Attribution Cookie Check + Healer ───────────────────────────────
+
+const FBP_BACKUP_KEY = '__wm_fbp_backup';
+
+export function checkAttributionCookies(): {
+  health: 'healthy' | 'repaired' | 'broken';
+  missing: string[];
+  repairedFbp: string | null;
+} {
+  const missing: string[] = [];
+  let repairedFbp: string | null = null;
+
+  try {
+    const cookies = document.cookie;
+    const hasFbp = /(?:^|;\s*)_fbp=/.test(cookies);
+    const hasGclAu = /(?:^|;\s*)_gcl_au=/.test(cookies);
+
+    // Healer: backup _fbp if present
+    if (hasFbp) {
+      const match = cookies.match(/(?:^|;\s*)_fbp=([^;]+)/);
+      if (match) {
+        try { sessionStorage.setItem(FBP_BACKUP_KEY, match[1]); } catch { /* noop */ }
+      }
+    }
+
+    if (!hasFbp) {
+      // Try to heal from sessionStorage
+      try {
+        const backup = sessionStorage.getItem(FBP_BACKUP_KEY);
+        if (backup) {
+          repairedFbp = backup;
+        } else {
+          missing.push('_fbp');
+        }
+      } catch {
+        missing.push('_fbp');
+      }
+    }
+
+    if (!hasGclAu) missing.push('_gcl_au');
+
+    if (repairedFbp) return { health: 'repaired', missing, repairedFbp };
+    if (missing.length > 0) return { health: 'broken', missing, repairedFbp: null };
+    return { health: 'healthy', missing: [], repairedFbp: null };
+  } catch {
+    return { health: 'broken', missing: ['_fbp', '_gcl_au'], repairedFbp: null };
+  }
+}
+
 function parseCollisionSource(): string | null {
   try {
     const stack = new Error().stack;
@@ -130,29 +217,31 @@ interface StoredState {
   seenIdArray: string[];
   handshakeResults: HandshakeResult[];
   parityState?: ParityState;
+  pageLoadTimestamp?: number;
 }
 
-function hydrateFromStorage(): { events: MonitorEvent[]; seenIds: Set<string>; handshakeResults: HandshakeResult[]; parityState: ParityState } {
+function hydrateFromStorage(): { events: MonitorEvent[]; seenIds: Set<string>; handshakeResults: HandshakeResult[]; parityState: ParityState; pageLoadTimestamp: number } {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return { events: [], seenIds: new Set(), handshakeResults: [], parityState: DEFAULT_PARITY_STATE };
+    if (!raw) return { events: [], seenIds: new Set(), handshakeResults: [], parityState: DEFAULT_PARITY_STATE, pageLoadTimestamp: Date.now() };
     const parsed = JSON.parse(raw) as StoredState;
     return {
       events: parsed.events ?? [],
       seenIds: new Set(parsed.seenIdArray ?? []),
       handshakeResults: parsed.handshakeResults ?? [],
       parityState: parsed.parityState ?? DEFAULT_PARITY_STATE,
+      pageLoadTimestamp: parsed.pageLoadTimestamp ?? Date.now(),
     };
   } catch {
-    return { events: [], seenIds: new Set(), handshakeResults: [], parityState: DEFAULT_PARITY_STATE };
+    return { events: [], seenIds: new Set(), handshakeResults: [], parityState: DEFAULT_PARITY_STATE, pageLoadTimestamp: Date.now() };
   }
 }
 
-function persistToStorage(events: MonitorEvent[], seenIds: Set<string>, handshakeResults: HandshakeResult[], parityState: ParityState) {
+function persistToStorage(events: MonitorEvent[], seenIds: Set<string>, handshakeResults: HandshakeResult[], parityState: ParityState, pageLoadTimestamp?: number) {
   try {
     sessionStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ events, seenIdArray: Array.from(seenIds), handshakeResults, parityState } as StoredState),
+      JSON.stringify({ events, seenIdArray: Array.from(seenIds), handshakeResults, parityState, pageLoadTimestamp } as StoredState),
     );
   } catch { /* quota exceeded */ }
 }
@@ -191,11 +280,13 @@ export function useDataLayerMonitor() {
   });
 
   // Mutable refs
-  const seenIdsRef = useRef<Set<string>>(hydrateFromStorage().seenIds);
+  const hydrated0 = hydrateFromStorage();
+  const seenIdsRef = useRef<Set<string>>(hydrated0.seenIds);
   const eventsRef = useRef<MonitorEvent[]>(state.liveEvents);
   const handshakeRef = useRef<HandshakeResult[]>(state.handshakeResults);
   const parityRef = useRef<ParityState>(state.parityState);
   const scrollRef = useRef<number>(0);
+  const pageLoadTimestampRef = useRef<number>(hydrated0.pageLoadTimestamp);
   const proxyFnRef = useRef<((...args: unknown[]) => number) | null>(null);
   const originalPushRef = useRef<((...args: unknown[]) => number) | null>(null);
   const watchdogRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -253,8 +344,18 @@ export function useDataLayerMonitor() {
 
   const verifyLead = useCallback(async (leadId: string, attemptIndex: number) => {
     try {
+      // Find the matching event for intent data
+      const matchingEvent = eventsRef.current.find(
+        (e) => e.event === 'wm_lead' && e.raw?.lead_id === leadId,
+      );
+      const bodyPayload: Record<string, unknown> = { lead_id: leadId };
+      if (matchingEvent?.intentScore != null && matchingEvent?.intentLabel) {
+        bodyPayload.intent_score = matchingEvent.intentScore;
+        bodyPayload.intent_label = matchingEvent.intentLabel;
+      }
+
       const { data, error } = await supabase.functions.invoke('verify-lead-exists', {
-        body: { lead_id: leadId },
+        body: bodyPayload,
       });
 
       if (error) {
@@ -504,6 +605,27 @@ export function useDataLayerMonitor() {
       emqScore = validation.score;
     }
 
+    // Step 7 & 8: Intent + Attribution for wm_* conversion events
+    let ttc: number | null = null;
+    let intentScore: number | null = null;
+    let intentLabel: MonitorEvent['intentLabel'] = null;
+    let attributionHealth: MonitorEvent['attributionHealth'] = null;
+    let missingCookies: string[] = [];
+
+    if (eventName.startsWith('wm_')) {
+      ttc = (Date.now() - pageLoadTimestampRef.current) / 1000;
+      const intent = calculateIntentScore(ttc, scrollRef.current);
+      intentScore = intent.score;
+      intentLabel = intent.label;
+
+      const attrCheck = checkAttributionCookies();
+      attributionHealth = attrCheck.health;
+      missingCookies = attrCheck.missing;
+
+      // Set returning visitor flag after first wm_* event
+      try { sessionStorage.setItem('__wm_returning_visitor', '1'); } catch { /* noop */ }
+    }
+
     const monitorEvent: MonitorEvent = {
       event: eventName,
       event_id: eventId,
@@ -515,6 +637,11 @@ export function useDataLayerMonitor() {
       collisionSource,
       scrollDepth: scrollRef.current,
       raw: entry,
+      ttc,
+      intentScore,
+      intentLabel,
+      attributionHealth,
+      missingCookies,
     };
 
     const updated = [monitorEvent, ...eventsRef.current].slice(0, MAX_EVENTS);
@@ -544,6 +671,13 @@ export function useDataLayerMonitor() {
       systemHealth = 'warning';
       healthReason = `Parity Gap: ${parityGap} browser event(s) not confirmed on server. Meta may be under-counting conversions.`;
     } else if (
+      monitorEvent.event === 'wm_lead' &&
+      monitorEvent.ttc !== null && monitorEvent.ttc < 3 &&
+      monitorEvent.scrollDepth < 5
+    ) {
+      systemHealth = 'warning';
+      healthReason = `Potential Bot: Lead converted in ${monitorEvent.ttc.toFixed(1)}s with ${monitorEvent.scrollDepth}% scroll. Verify manually.`;
+    } else if (
       monitorEvent.event.startsWith('wm_') &&
       !monitorEvent.hasEmail &&
       !monitorEvent.hasPhone
@@ -552,7 +686,7 @@ export function useDataLayerMonitor() {
       healthReason = 'Low Match Quality. Meta can only attribute ~30% of these leads without hashed email/phone data.';
     }
 
-    persistToStorage(updated, seenIdsRef.current, handshakeRef.current, parityRef.current);
+    persistToStorage(updated, seenIdsRef.current, handshakeRef.current, parityRef.current, pageLoadTimestampRef.current);
 
     setState((prev) => ({
       ...prev,
@@ -692,6 +826,13 @@ export function useDataLayerMonitor() {
     };
   }, [handleScroll]);
 
+  // ── Computed: Intent Distribution ─────────────────────────────────────────
+  const intentDistribution = {
+    hot: state.liveEvents.filter((e) => e.intentLabel === 'hot').length,
+    warm: state.liveEvents.filter((e) => e.intentLabel === 'warm').length,
+    cold: state.liveEvents.filter((e) => e.intentLabel === 'cold').length,
+  };
+
   return {
     state,
     startMonitoring,
@@ -699,5 +840,6 @@ export function useDataLayerMonitor() {
     forceRecheck,
     runParityCheck,
     setHighlightedEventId,
+    intentDistribution,
   };
 }
