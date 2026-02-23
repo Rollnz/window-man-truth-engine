@@ -79,7 +79,7 @@ const Index = () => {
       <Navbar funnelMode={true} />
       <div className="pt-14 border-secondary">
         <HeroSection />
-        <div className="container px-4 -mt-16 relative z-10 border-secondary my-0 py-0">
+        <div className="container px-4 -mt-16 relative z-10 border-secondary my-0 py-0 min-h-[56px]">
           <UrgencyTicker variant="homepage" size="lg" />
         </div>
         <MarketRealitySection />

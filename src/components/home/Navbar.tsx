@@ -93,7 +93,7 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between relative">
         {/* Logo */}
         <Link to={ROUTES.HOME} className="flex items-center gap-2 font-bold text-lg">
-          <img src="/icon-512.webp" alt="Its Window Man Logo" width={36} height={36} className="w-9 h-9 object-contain" />
+          <img src="/icon-512.webp" alt="Its Window Man Logo" width={36} height={36} className="w-9 h-9 object-contain" fetchPriority="high" />
           <span className="text-primary">Its Window Man</span>
         </Link>
 
