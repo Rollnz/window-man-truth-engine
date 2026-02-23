@@ -368,12 +368,12 @@ export function SalesTacticsGuideModal({ isOpen, onClose, onSuccess }: SalesTact
           {!isSubmitting && <ArrowRight className="w-4 h-4" />}
         </Button>
         
-        <p className="text-xs text-black text-center">
+        <p className="text-xs text-foreground text-center">
           We'll also save this to your private Windowman Vault.
         </p>
       </form>
 
-      <div className="flex flex-wrap justify-center gap-4 mt-6 pt-6 border-t border-slate-200 text-xs text-black">
+      <div className="flex flex-wrap justify-center gap-4 mt-6 pt-6 border-t border-slate-200 text-xs text-foreground">
         <span className="flex items-center gap-1">
           <CheckCircle2 className="w-3.5 h-3.5" /> No Spam
         </span>

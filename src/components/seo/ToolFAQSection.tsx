@@ -56,14 +56,14 @@ export function ToolFAQSection({
           <Accordion type="single" collapsible className="space-y-3">
             {faqs.map((faq, index) => <AccordionItem key={index} value={`faq-${index}`} className={cn("rounded-lg px-4 md:px-6", isDossier ? "bg-white/5 border border-white/10 data-[state=open]:border-[#3E8FDA]/50" : "", isGradient ? "[background:var(--accordion)] border border-primary/20 data-[state=open]:border-primary/50" : "", !isDossier && !isGradient ? "bg-background border border-border data-[state=open]:border-primary/30" : "")}>
                 <AccordionTrigger className="text-left hover:no-underline py-4">
-                  <span className={cn("text-base md:text-lg pr-4 text-black font-bold", isDossier || isGradient ? "text-white" : "")}>
+                  <span className={cn("text-base md:text-lg pr-4 text-foreground font-bold", isDossier || isGradient ? "text-white" : "")}>
                     {faq.question}
                   </span>
                 </AccordionTrigger>
                 <AccordionContent className="pb-4 pt-0">
                   <div className={cn("space-y-4", isDossier ? "text-white/85" : "", isGradient ? "text-white" : "", !isDossier && !isGradient ? "text-muted-foreground" : "")}>
                     {/* Direct Answer + Elaboration */}
-                    <p className={cn("leading-relaxed font-medium text-black", isDossier ? "text-white" : isGradient ? "text-white" : "text-foreground")}>{faq.answer}</p>
+                    <p className={cn("leading-relaxed font-medium text-foreground", isDossier ? "text-white" : isGradient ? "text-white" : "")}>{faq.answer}</p>
 
                     {/* Tool CTA (if provided) */}
                     {faq.toolCTA && <Link to={faq.toolCTA.href} className="inline-flex items-center gap-2 font-medium text-sm text-secondary">

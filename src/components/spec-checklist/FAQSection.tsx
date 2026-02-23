@@ -24,7 +24,7 @@ const FAQSection: React.FC = () => {
                 </span>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
-                <p className="leading-relaxed text-primary-foreground">
+                <p className="leading-relaxed text-muted-foreground">
                   {faq.answer}
                 </p>
               </AccordionContent>
