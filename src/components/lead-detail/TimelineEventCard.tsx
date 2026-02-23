@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { 
   Eye, 
   Calculator, 
@@ -23,8 +24,8 @@ interface TimelineEventCardProps {
   isFacebookSource?: boolean;
 }
 
-export function TimelineEventCard({ event, isFirst, isLast, isFacebookSource }: TimelineEventCardProps) {
-  const getEventConfig = () => {
+export const TimelineEventCard = memo(function TimelineEventCard({ event, isFirst, isLast, isFacebookSource }: TimelineEventCardProps) {
+  const config = useMemo(() => {
     const name = event.event_name.toLowerCase();
     const category = event.event_category?.toLowerCase() || '';
 
@@ -89,29 +90,26 @@ export function TimelineEventCard({ event, isFirst, isLast, isFacebookSource }: 
 
     // Default
     return { icon: Eye, color: 'bg-gray-400', label: event.event_name.replace(/_/g, ' ') };
-  };
+  }, [event.event_name, event.event_category]);
 
-  const config = getEventConfig();
   const Icon = config.icon;
 
-  const getEventDetails = (): string[] => {
-    const details: string[] = [];
+  const details = useMemo((): string[] => {
+    const result: string[] = [];
     
     if (event.page_path) {
-      details.push(event.page_path);
+      result.push(event.page_path);
     }
     
     if (event.event_data && typeof event.event_data === 'object') {
       const data = event.event_data as Record<string, unknown>;
-      if (data.tool_name) details.push(`Tool: ${data.tool_name}`);
-      if (data.score !== undefined) details.push(`Score: ${data.score}`);
-      if (data.result) details.push(`Result: ${data.result}`);
+      if (data.tool_name) result.push(`Tool: ${data.tool_name}`);
+      if (data.score !== undefined) result.push(`Score: ${data.score}`);
+      if (data.result) result.push(`Result: ${data.result}`);
     }
     
-    return details;
-  };
-
-  const details = getEventDetails();
+    return result;
+  }, [event.page_path, event.event_data]);
 
   return (
     <div className="flex gap-3">
@@ -147,4 +145,4 @@ export function TimelineEventCard({ event, isFirst, isLast, isFacebookSource }: 
       </div>
     </div>
   );
-}
+});

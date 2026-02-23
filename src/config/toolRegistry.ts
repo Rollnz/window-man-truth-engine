@@ -728,7 +728,11 @@ export function getTool(id: string): ToolDefinition | undefined {
  * Get multiple tools by their IDs
  */
 export function getTools(ids: string[]): ToolDefinition[] {
-  return ids.map(id => TOOL_REGISTRY[id]).filter(Boolean) as ToolDefinition[];
+  return ids.reduce<ToolDefinition[]>((acc, id) => {
+    const tool = TOOL_REGISTRY[id];
+    if (tool) acc.push(tool);
+    return acc;
+  }, []);
 }
 
 /**
