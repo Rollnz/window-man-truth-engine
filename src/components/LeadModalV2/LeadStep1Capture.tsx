@@ -3,27 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CheckCircle2, Zap, Loader2 } from 'lucide-react';
+import { formatPhoneNumber, validateEmail, validatePhone } from '@/hooks/useFormValidation';
 import type { ContactData, ContactFormErrors } from './types';
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Validation helpers (same as V1 for consistency)
-// ═══════════════════════════════════════════════════════════════════════════
-
-function formatPhoneNumber(value: string): string {
-  const digits = value.replace(/\D/g, '');
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-}
-
-function validateEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function validatePhone(phone: string): boolean {
-  const digits = phone.replace(/\D/g, '');
-  return digits.length === 10;
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Props

@@ -12,6 +12,7 @@ import { getOrCreateClientId } from "@/lib/tracking";
 import { getAttributionData } from "@/lib/attribution";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/config/navigation";
+import { formatPhoneNumber, validateEmail, validatePhone } from "@/hooks/useFormValidation";
 
 interface PreQuoteLeadModalProps {
   isOpen: boolean;
@@ -32,24 +33,6 @@ interface FormErrors {
   lastName?: string;
   email?: string;
   phone?: string;
-}
-
-// Phone formatting helper
-function formatPhoneNumber(value: string): string {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-}
-
-// Validation helpers
-function validateEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function validatePhone(phone: string): boolean {
-  const digits = phone.replace(/\D/g, "");
-  return digits.length === 10;
 }
 
 export function PreQuoteLeadModal({ isOpen, onClose, onSuccess, ctaSource = "unknown" }: PreQuoteLeadModalProps) {

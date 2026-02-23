@@ -9,6 +9,7 @@ import { getOrCreateClientId, getOrCreateSessionId } from '@/lib/tracking';
 import { getLeadAnchor } from '@/lib/leadAnchor';
 import { emailInputProps, phoneInputProps } from '@/lib/formAccessibility';
 import { formMicroCopy } from '@/components/forms/InlineFieldStatus';
+import { formatPhoneNumber, validateEmail } from '@/hooks/useFormValidation';
 import type { EstimateFormData } from '../EstimateSlidePanel';
 
 interface ContactDetailsStepProps {
@@ -16,24 +17,6 @@ interface ContactDetailsStepProps {
   updateFormData: (updates: Partial<EstimateFormData>) => void;
   onNext: () => void;
 }
-
-// Simple email validation regex
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// Phone formatting helper
-const formatPhoneNumber = (value: string): string => {
-  // Remove all non-digits
-  const digits = value.replace(/\D/g, '');
-  
-  // Format as (XXX) XXX-XXXX
-  if (digits.length <= 3) {
-    return digits;
-  } else if (digits.length <= 6) {
-    return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  } else {
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-  }
-};
 
 export function ContactDetailsStep({ formData, updateFormData, onNext }: ContactDetailsStepProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -50,7 +33,7 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
     
     if (!formData.email.trim()) {
       newErrors.email = 'Please enter your email';
-    } else if (!EMAIL_REGEX.test(formData.email)) {
+    } else if (!validateEmail(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
     
