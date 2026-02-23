@@ -69,29 +69,31 @@ function maskPhone(phone: string): string {
   return `****${phone.slice(-4)}`;
 }
 
+const STATUS_BADGE_VARIANTS: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
+  pending: { variant: 'outline', label: 'Pending' },
+  processing: { variant: 'secondary', label: 'Processing' },
+  called: { variant: 'default', label: 'Called' },
+  completed: { variant: 'default', label: 'Completed' },
+  no_answer: { variant: 'secondary', label: 'No Answer' },
+  failed: { variant: 'destructive', label: 'Failed' },
+  dead_letter: { variant: 'destructive', label: 'Dead Letter' },
+  in_progress: { variant: 'secondary', label: 'In Progress' },
+};
+
 function getStatusBadge(status: string) {
-  const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
-    pending: { variant: 'outline', label: 'Pending' },
-    processing: { variant: 'secondary', label: 'Processing' },
-    called: { variant: 'default', label: 'Called' },
-    completed: { variant: 'default', label: 'Completed' },
-    no_answer: { variant: 'secondary', label: 'No Answer' },
-    failed: { variant: 'destructive', label: 'Failed' },
-    dead_letter: { variant: 'destructive', label: 'Dead Letter' },
-    in_progress: { variant: 'secondary', label: 'In Progress' },
-  };
-  const config = variants[status] || { variant: 'outline' as const, label: status };
+  const config = STATUS_BADGE_VARIANTS[status] || { variant: 'outline' as const, label: status };
   return <Badge variant={config.variant}>{config.label}</Badge>;
 }
 
+const SENTIMENT_BADGE_VARIANTS: Record<string, { variant: 'default' | 'secondary' | 'destructive'; label: string }> = {
+  positive: { variant: 'default', label: '😊 Positive' },
+  neutral: { variant: 'secondary', label: '😐 Neutral' },
+  negative: { variant: 'destructive', label: '😞 Negative' },
+};
+
 function getSentimentBadge(sentiment: string | null) {
   if (!sentiment) return null;
-  const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive'; label: string }> = {
-    positive: { variant: 'default', label: '😊 Positive' },
-    neutral: { variant: 'secondary', label: '😐 Neutral' },
-    negative: { variant: 'destructive', label: '😞 Negative' },
-  };
-  const config = variants[sentiment] || { variant: 'secondary' as const, label: sentiment };
+  const config = SENTIMENT_BADGE_VARIANTS[sentiment] || { variant: 'secondary' as const, label: sentiment };
   return <Badge variant={config.variant}>{config.label}</Badge>;
 }
 

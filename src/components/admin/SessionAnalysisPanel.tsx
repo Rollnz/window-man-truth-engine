@@ -82,7 +82,10 @@ export function SessionAnalysisPanel({
     const durationMs = new Date(last.created_at).getTime() - new Date(first.created_at).getTime();
     const durationMins = Math.round(durationMs / 60000);
 
-    const uniquePages = new Set(events.map(e => e.page_path).filter(Boolean)).size;
+    const uniquePages = events.reduce((set, e) => {
+      if (e.page_path) set.add(e.page_path);
+      return set;
+    }, new Set<string>()).size;
     const hasLead = events.some(e => e.event_data?.lead_id);
 
     return {

@@ -1,4 +1,5 @@
-import { Search, User, Clock, Loader2, FileText, Mail, Phone, MapPin, Tag, PhoneCall, ExternalLink, Filter, Calendar, Upload, MessageSquare, Users } from 'lucide-react';
+import { memo } from 'react';
+import { Search, User, Clock, Loader2, FileText, Phone, Filter, Calendar, Upload, MessageSquare, Users, PhoneCall, ExternalLink } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -70,13 +71,13 @@ function formatTimeAgo(dateString: string): string {
 /**
  * Renders a single search result with entity-type icon and highlighting
  */
-function SearchResultItemComponent({ 
+const SearchResultItemComponent = memo(function SearchResultItemComponent({ 
   result, 
-  onSelect,
+  onNavigate,
   isSelected,
 }: { 
   result: SearchResultItem; 
-  onSelect: () => void;
+  onNavigate: (result: SearchResultItem) => void;
   isSelected: boolean;
 }) {
   const config = ENTITY_TYPE_CONFIG[result.entity_type] || ENTITY_TYPE_CONFIG.lead;
@@ -93,7 +94,7 @@ function SearchResultItemComponent({
   return (
     <CommandItem
       value={`${result.title} ${result.subtitle} ${result.entity_id}`}
-      onSelect={onSelect}
+      onSelect={() => onNavigate(result)}
       className={cn(
         "cursor-pointer",
         isSelected && "bg-accent"
@@ -155,7 +156,7 @@ function SearchResultItemComponent({
       </div>
     </CommandItem>
   );
-}
+});
 
 /**
  * Entity type filter component
@@ -367,7 +368,7 @@ export function GlobalLeadSearch() {
                       <SearchResultItemComponent
                         key={`${result.entity_type}-${result.entity_id}`}
                         result={result}
-                        onSelect={() => navigateToResult(result)}
+                        onNavigate={navigateToResult}
                         isSelected={selectedIndex === globalIndex}
                       />
                     );
