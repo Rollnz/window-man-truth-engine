@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle2, XCircle, AlertCircle, ChevronDown, ChevronUp, Eye, EyeOff, X, Minimize2, Copy, Check } from 'lucide-react';
 import { validateEMQEvent, isConversionEvent, EXPECTED_VALUES, type EMQValidationResult } from '@/lib/emqValidator';
 
@@ -27,7 +27,7 @@ function hasDebugParam(): boolean {
   return params.get('debug') === 'true';
 }
 
-function EMQValidatorOverlayInner() {
+const EMQValidatorOverlayInner = React.forwardRef<HTMLDivElement>(function EMQValidatorOverlayInner(_props, ref) {
   const [isOpen, setIsOpen] = useState(() => {
     const stored = sessionStorage.getItem('emq-validator-open');
     return stored === 'true';
@@ -133,7 +133,7 @@ function EMQValidatorOverlayInner() {
 
   if (isMinimized) {
     return (
-      <div className="fixed bottom-[180px] right-4 md:bottom-6 md:right-6 z-[9999] bg-slate-900 text-white rounded-lg shadow-xl">
+      <div ref={ref as React.Ref<HTMLDivElement>} className="fixed bottom-[180px] right-4 md:bottom-6 md:right-6 z-[9999] bg-slate-900 text-white rounded-lg shadow-xl">
         <div className="flex items-center gap-2 px-3 py-2">
           <span className="text-xs">📊</span>
           <span className="text-sm font-mono">EMQ Validator</span>
@@ -157,7 +157,7 @@ function EMQValidatorOverlayInner() {
   }
 
   return (
-    <div className="fixed bottom-[180px] right-4 md:bottom-6 md:right-6 z-[9998] w-[360px] max-h-[520px] bg-slate-900 text-white rounded-lg shadow-2xl overflow-hidden flex flex-col">
+    <div ref={ref as React.Ref<HTMLDivElement>} className="fixed bottom-[180px] right-4 md:bottom-6 md:right-6 z-[9998] w-[360px] max-h-[520px] bg-slate-900 text-white rounded-lg shadow-2xl overflow-hidden flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 bg-slate-800">
         <div className="flex items-center gap-2">
@@ -311,7 +311,8 @@ function EMQValidatorOverlayInner() {
       </div>
     </div>
   );
-}
+});
+EMQValidatorOverlayInner.displayName = 'EMQValidatorOverlayInner';
 
 interface ValidationRowProps {
   label: string;
