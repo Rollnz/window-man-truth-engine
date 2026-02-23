@@ -29,6 +29,20 @@ export interface AttributionData {
   fbp?: string;  // Facebook browser ID (from cookie)
   gclid?: string; // Google click ID
   msclkid?: string; // Microsoft/Bing click ID
+  // Meta Ads granular params
+  meta_placement?: string;
+  meta_campaign_id?: string;
+  meta_adset_id?: string;
+  meta_ad_id?: string;
+  meta_site_source_name?: string;
+  meta_creative_id?: string;
+  // Google iOS tracking
+  gbraid?: string;
+  wbraid?: string;
+  // TikTok
+  ttclid?: string;
+  // Full landing page URL
+  landing_page_url?: string;
   // Channel classification
   channel?: string;
   landing_page?: string;
@@ -65,9 +79,10 @@ function isSameSiteReferrer(referrer: string): boolean {
  * Determine the channel type from attribution data
  */
 function determineChannel(data: AttributionData): string {
-  if (data.gclid) return 'google_ads';
+  if (data.gclid || data.gbraid || data.wbraid) return 'google_ads';
   if (data.fbc || data.fbp) return 'meta_ads';
   if (data.msclkid) return 'microsoft_ads';
+  if (data.ttclid) return 'tiktok_ads';
   
   const source = data.utm_source?.toLowerCase();
   const medium = data.utm_medium?.toLowerCase();
@@ -97,7 +112,7 @@ function determineChannel(data: AttributionData): string {
  */
 export function isMeaningfulTouch(data: AttributionData): boolean {
   // Click IDs are always meaningful
-  if (data.gclid || data.fbc || data.msclkid) {
+  if (data.gclid || data.fbc || data.msclkid || data.gbraid || data.wbraid || data.ttclid) {
     return true;
   }
   
@@ -193,6 +208,26 @@ const captureAttributionFromUrl = (): AttributionData => {
     msclkid: pick('msclkid') || earlyCapture.msclkid,
     fbc,
     fbp,
+    // Meta Ads granular params (with decodeURIComponent for encoded values)
+    meta_placement: (() => {
+      const v = pick('placement') || earlyCapture.placement;
+      try { return v ? decodeURIComponent(v) : undefined; } catch { return v; }
+    })(),
+    meta_campaign_id: pick('campaign_id') || earlyCapture.campaign_id,
+    meta_adset_id: pick('adset_id') || earlyCapture.adset_id,
+    meta_ad_id: pick('ad_id') || earlyCapture.ad_id,
+    meta_site_source_name: (() => {
+      const v = pick('site_source_name') || earlyCapture.site_source_name;
+      try { return v ? decodeURIComponent(v) : undefined; } catch { return v; }
+    })(),
+    meta_creative_id: pick('creative_id') || earlyCapture.creative_id,
+    // Google iOS click IDs
+    gbraid: pick('gbraid') || earlyCapture.gbraid,
+    wbraid: pick('wbraid') || earlyCapture.wbraid,
+    // TikTok click ID
+    ttclid: pick('ttclid') || earlyCapture.ttclid,
+    // Full landing page URL
+    landing_page_url: window.location.href,
     landing_page: earlyCapture.original_location || 
                   (window.location.pathname + window.location.search),
   };

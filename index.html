@@ -40,12 +40,23 @@
             gclid: params.get('gclid') || undefined,
             fbclid: params.get('fbclid') || undefined,
             msclkid: params.get('msclkid') || undefined,
+            placement: params.get('placement') || undefined,
+            campaign_id: params.get('campaign_id') || undefined,
+            adset_id: params.get('adset_id') || undefined,
+            ad_id: params.get('ad_id') || undefined,
+            site_source_name: params.get('site_source_name') || undefined,
+            creative_id: params.get('creative_id') || undefined,
+            gbraid: params.get('gbraid') || undefined,
+            wbraid: params.get('wbraid') || undefined,
+            ttclid: params.get('ttclid') || undefined,
+            landing_page_url: window.location.href,
             original_location: window.location.href,
             page_path: window.location.pathname
           };
           
           var hasAttribution = attribution.utm_source || attribution.gclid || 
-                               attribution.fbclid || attribution.msclkid;
+                               attribution.fbclid || attribution.msclkid ||
+                               attribution.gbraid || attribution.wbraid || attribution.ttclid;
           
           if (hasAttribution) {
             window.dataLayer.push({
@@ -59,6 +70,16 @@
               gclid: attribution.gclid,
               fbclid: attribution.fbclid,
               msclkid: attribution.msclkid,
+              placement: attribution.placement,
+              campaign_id: attribution.campaign_id,
+              adset_id: attribution.adset_id,
+              ad_id: attribution.ad_id,
+              site_source_name: attribution.site_source_name,
+              creative_id: attribution.creative_id,
+              gbraid: attribution.gbraid,
+              wbraid: attribution.wbraid,
+              ttclid: attribution.ttclid,
+              landing_page_url: attribution.landing_page_url,
               original_location: attribution.original_location,
               page_path: attribution.page_path
             });
