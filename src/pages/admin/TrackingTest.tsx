@@ -36,6 +36,10 @@ import {
   RotateCcw,
   Link2,
   Cookie,
+  Flame,
+  ShieldPlus,
+  Clock,
+  Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -47,7 +51,7 @@ import {
   validateDataLayerEvent,
   type TrackingVerificationReport 
 } from '@/lib/trackingVerificationTest';
-import { useDataLayerMonitor, normalizeId, type SystemHealth, type HandshakeResult, type ParityResult, type ParityState } from '@/hooks/useDataLayerMonitor';
+import { useDataLayerMonitor, normalizeId, type SystemHealth, type HandshakeResult, type ParityResult, type ParityState, type MonitorEvent } from '@/hooks/useDataLayerMonitor';
 import { formatRelativeTime } from '@/utils/relativeTime';
 import { copyToClipboard } from '@/utils/clipboard';
 
@@ -150,7 +154,7 @@ function LiveActivityLog({
   isMonitoring,
   highlightedEventId,
 }: {
-  events: import('@/hooks/useDataLayerMonitor').MonitorEvent[];
+  events: MonitorEvent[];
   isMonitoring: boolean;
   highlightedEventId: string | null;
 }) {
@@ -214,6 +218,44 @@ function LiveActivityLog({
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-xs text-xs font-mono break-all">
                           {ev.collisionSource ?? 'Source unknown'}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                  {/* Step 7: Intent icon for wm_* events */}
+                  {ev.event.startsWith('wm_') && ev.intentScore !== null && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Flame className={cn(
+                            'h-3.5 w-3.5 shrink-0',
+                            ev.intentLabel === 'hot' ? 'text-destructive' :
+                            ev.intentLabel === 'warm' ? 'text-amber-600 dark:text-amber-400' :
+                            'text-muted-foreground/50',
+                          )} />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Intent: {ev.intentScore}/10 ({ev.intentLabel === 'hot' ? 'Hot Lead' : ev.intentLabel === 'warm' ? 'Warm' : 'Cold'})
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                  {/* Step 8: Attribution icon for wm_* events */}
+                  {ev.event.startsWith('wm_') && ev.attributionHealth && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <ShieldPlus className={cn(
+                            'h-3.5 w-3.5 shrink-0',
+                            ev.attributionHealth === 'healthy' ? 'text-emerald-600 dark:text-emerald-400' :
+                            ev.attributionHealth === 'repaired' ? 'text-amber-600 dark:text-amber-400' :
+                            'text-destructive',
+                          )} />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs max-w-xs">
+                          {ev.attributionHealth === 'healthy' ? 'Attribution: Healthy' :
+                           ev.attributionHealth === 'repaired' ? 'Attribution: Repaired from session backup' :
+                           `Attribution: Broken — missing ${ev.missingCookies.join(', ')}`}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -555,10 +597,201 @@ function DeduplicationParityCard({
   );
 }
 
+// ─── Step 7: Intent Intelligence Card ─────────────────────────────────────────
+
+function IntentIntelligenceCard({
+  events,
+  intentDistribution,
+}: {
+  events: MonitorEvent[];
+  intentDistribution: { hot: number; warm: number; cold: number };
+}) {
+  const scoredEvents = events.filter((e) => e.intentScore !== null);
+  if (scoredEvents.length === 0) return null;
+
+  const latest = scoredEvents[0];
+  const ttcMinutes = latest.ttc ? Math.floor(latest.ttc / 60) : 0;
+  const ttcSeconds = latest.ttc ? Math.round(latest.ttc % 60) : 0;
+  const ttcDisplay = ttcMinutes > 0 ? `${ttcMinutes}m ${ttcSeconds}s` : `${ttcSeconds}s`;
+
+  const scoreColor = latest.intentLabel === 'hot'
+    ? 'text-destructive'
+    : latest.intentLabel === 'warm'
+      ? 'text-amber-600 dark:text-amber-400'
+      : 'text-muted-foreground';
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Flame className="h-4 w-4 text-destructive" />
+          Intent Intelligence
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Predicts lead quality from behavioral signals
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Distribution badges */}
+        <div className="flex gap-2 flex-wrap">
+          {intentDistribution.hot > 0 && (
+            <Badge variant="outline" className="border-destructive/30 text-destructive text-xs gap-1">
+              <Flame className="h-3 w-3" /> {intentDistribution.hot} Hot
+            </Badge>
+          )}
+          {intentDistribution.warm > 0 && (
+            <Badge variant="outline" className="border-amber-600/30 text-amber-600 dark:text-amber-400 text-xs gap-1">
+              {intentDistribution.warm} Warm
+            </Badge>
+          )}
+          {intentDistribution.cold > 0 && (
+            <Badge variant="outline" className="border-border text-muted-foreground text-xs gap-1">
+              {intentDistribution.cold} Cold
+            </Badge>
+          )}
+        </div>
+
+        {/* Latest lead spotlight */}
+        <div className="rounded-lg border p-3 space-y-2">
+          <div className="flex items-center gap-3">
+            <span className={cn('text-2xl font-bold', scoreColor)}>
+              {latest.intentScore}/10
+            </span>
+            <Badge variant={latest.intentLabel === 'hot' ? 'destructive' : 'secondary'} className="text-xs">
+              {latest.intentLabel === 'hot' ? 'Hot Lead' : latest.intentLabel === 'warm' ? 'Warm' : 'Cold'}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Converted in {ttcDisplay} with {latest.scrollDepth}% scroll depth
+          </p>
+          <p className="text-sm">
+            {latest.intentLabel === 'hot'
+              ? `High Value: User spent ${ttcDisplay} reading before converting. Call immediately.`
+              : latest.intentLabel === 'warm'
+                ? 'Moderate Intent: User engaged but may need nurturing.'
+                : 'Low Intent: Likely accidental submission or bot behavior. Verify before calling.'}
+          </p>
+          {latest.intentScore === 1 && (
+            <div className="rounded-md border border-destructive/20 bg-destructive/5 p-2">
+              <p className="text-xs text-destructive font-medium">
+                <AlertTriangle className="h-3 w-3 inline mr-1 -mt-0.5" />
+                Potential Bot or Accidental Click detected.
+              </p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Step 8: Attribution Health Card ──────────────────────────────────────────
+
+function AttributionHealthCard({
+  events,
+}: {
+  events: MonitorEvent[];
+}) {
+  const latestWm = events.find((e) => e.event.startsWith('wm_') && e.attributionHealth);
+  if (!latestWm) return null;
+
+  const { attributionHealth, missingCookies } = latestWm;
+  const hasFbp = !missingCookies.includes('_fbp');
+  const hasGclAu = !missingCookies.includes('_gcl_au');
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <ShieldPlus className="h-4 w-4" />
+          Attribution Health
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Cookie &amp; tracking status for latest conversion
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Cookie status */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            {hasFbp ? (
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            ) : attributionHealth === 'repaired' ? (
+              <Wrench className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+            ) : (
+              <XCircle className="h-3.5 w-3.5 text-destructive" />
+            )}
+            <span>
+              {hasFbp
+                ? 'Meta Pixel Active'
+                : attributionHealth === 'repaired'
+                  ? 'Meta Pixel Repaired (from session backup)'
+                  : 'Meta Pixel Missing'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            {hasGclAu ? (
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            ) : (
+              <XCircle className="h-3.5 w-3.5 text-destructive" />
+            )}
+            <span>{hasGclAu ? 'Google Tag Active' : 'Google Tag Missing'}</span>
+          </div>
+        </div>
+
+        {/* Attribution status badge */}
+        <div className={cn(
+          'rounded-lg border p-3',
+          attributionHealth === 'healthy'
+            ? 'border-emerald-600/20 bg-emerald-600/5'
+            : attributionHealth === 'repaired'
+              ? 'border-amber-600/20 bg-amber-600/5'
+              : 'border-destructive/20 bg-destructive/5',
+        )}>
+          <div className="flex items-center gap-2">
+            <ShieldPlus className={cn(
+              'h-4 w-4',
+              attributionHealth === 'healthy' ? 'text-emerald-600 dark:text-emerald-400' :
+              attributionHealth === 'repaired' ? 'text-amber-600 dark:text-amber-400' :
+              'text-destructive',
+            )} />
+            <span className="text-sm font-medium">
+              {attributionHealth === 'healthy' ? 'Full Attribution' :
+               attributionHealth === 'repaired' ? 'Attribution Repaired' :
+               'Attribution Broken'}
+            </span>
+          </div>
+          {attributionHealth === 'repaired' && (
+            <p className="text-xs text-muted-foreground mt-1">
+              _fbp cookie was stripped mid-session but recovered from session backup. Attribution data preserved.
+            </p>
+          )}
+          {attributionHealth === 'broken' && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Ad-blocker or privacy settings detected. Lead source will report as Direct/Unknown in ad accounts.
+            </p>
+          )}
+        </div>
+
+        {/* Ad-blocker warning */}
+        {attributionHealth === 'broken' && (
+          <div className="rounded-lg border border-amber-600/20 bg-amber-600/5 p-3">
+            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+              <AlertTriangle className="h-3.5 w-3.5 inline mr-1 -mt-0.5" />
+              Warning: User is likely using an Ad-Blocker. Attribution data is incomplete — this lead's ad source will not be tracked by Meta/Google.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function CROInsightCard({
   events,
 }: {
-  events: import('@/hooks/useDataLayerMonitor').MonitorEvent[];
+  events: MonitorEvent[];
 }) {
   const latestConversion = events.find(
     (e) => e.event.startsWith('wm_') && e.scrollDepth > 0,
@@ -625,7 +858,7 @@ export default function TrackingTestPage() {
   const [quickCheckResult, setQuickCheckResult] = useState<QuickCheckResult | null>(null);
   const { toast } = useToast();
 
-  // Phase 2: Active Guardian + Step 5: Handshake + Step 6: Parity
+  // Phase 2: Active Guardian + Step 5-8
   const {
     state: monitorState,
     startMonitoring,
@@ -633,6 +866,7 @@ export default function TrackingTestPage() {
     forceRecheck,
     runParityCheck,
     setHighlightedEventId,
+    intentDistribution,
   } = useDataLayerMonitor();
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -773,6 +1007,15 @@ export default function TrackingTestPage() {
               onCheckNow={runParityCheck}
               onHoverEvent={setHighlightedEventId}
             />
+
+            {/* ═══ Step 7: Intent Intelligence ═══ */}
+            <IntentIntelligenceCard
+              events={monitorState.liveEvents}
+              intentDistribution={intentDistribution}
+            />
+
+            {/* ═══ Step 8: Attribution Health ═══ */}
+            <AttributionHealthCard events={monitorState.liveEvents} />
 
             <CROInsightCard events={monitorState.liveEvents} />
           </>
