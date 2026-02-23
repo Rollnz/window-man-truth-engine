@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Search, User, Clock, Loader2, FileText, Phone, Filter, Calendar, Upload, MessageSquare, Users, PhoneCall, ExternalLink } from 'lucide-react';
+import { Search, User, Clock, Loader2, FileText, Phone, Filter, Calendar, Upload, Users, PhoneCall, ExternalLink } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
