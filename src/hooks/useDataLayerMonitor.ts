@@ -71,7 +71,16 @@ export interface ParityState {
   isChecking: boolean;
 }
 
-export type SystemHealth = 'idle' | 'healthy' | 'warning' | 'conflict';
+export type SystemHealth = 'idle' | 'healthy' | 'warning' | 'conflict' | 'critical';
+
+export interface AutopilotInsight {
+  id: string;
+  severity: 'info' | 'warning' | 'critical';
+  title: string;
+  description: string;
+  proposedFix: string;
+  copyText: string;
+}
 
 export interface MonitorState {
   systemHealth: SystemHealth;
@@ -833,13 +842,101 @@ export function useDataLayerMonitor() {
     cold: state.liveEvents.filter((e) => e.intentLabel === 'cold').length,
   };
 
+  // ── Computed: Lost Lead Rate & Critical State ───────────────────────────
+  const recentHandshakes = state.handshakeResults.slice(0, 10);
+  const lostCount = recentHandshakes.filter((h) => h.status === 'lost').length;
+  const lostLeadRate = recentHandshakes.length > 0
+    ? Math.round((lostCount / recentHandshakes.length) * 100)
+    : 0;
+  const isCritical = recentHandshakes.length >= 2 && lostLeadRate >= 15;
+
+  // Override system health to critical if threshold exceeded
+  const effectiveHealth: SystemHealth = isCritical ? 'critical' : state.systemHealth;
+  const effectiveReason = isCritical
+    ? `BUDGET ALERT: ${lostLeadRate}% of recent leads are not reaching the database. Your ad spend may be wasted. Pause campaigns immediately.`
+    : state.healthReason;
+
+  // ── Computed: Autopilot Insights ────────────────────────────────────────
+  const autopilotInsights: AutopilotInsight[] = [];
+
+  // 1. Parity Gap
+  if (state.parityState.browserOnlyCount > 0) {
+    autopilotInsights.push({
+      id: 'parity-gap',
+      severity: 'warning',
+      title: 'Server Not Receiving Browser Events',
+      description: `${state.parityState.browserOnlyCount} event(s) fired in the browser but missing from the server event log. These conversions will not be reported to Meta/Google.`,
+      proposedFix: 'Check that your GTM Server-Side container is running and that the GA4 tag is configured to forward events. Verify the transport_url in your GTM web container matches your server endpoint.',
+      copyText: `Fix Request: ${state.parityState.browserOnlyCount} browser event(s) are not reaching the server. Please verify the GTM Server-Side container is running, the GA4 tag forwards events, and the transport_url matches the server endpoint.`,
+    });
+  }
+
+  // 2. High Ad-Blocker Impact
+  const wmEvents = state.liveEvents.filter((e) => e.event.startsWith('wm_') && e.attributionHealth);
+  const brokenOrRepaired = wmEvents.filter((e) => e.attributionHealth === 'broken' || e.attributionHealth === 'repaired');
+  if (wmEvents.length > 0 && brokenOrRepaired.length / wmEvents.length > 0.5) {
+    autopilotInsights.push({
+      id: 'adblocker-impact',
+      severity: 'warning',
+      title: 'High Ad-Blocker Impact Detected',
+      description: `${Math.round((brokenOrRepaired.length / wmEvents.length) * 100)}% of conversion events have broken or repaired attribution. Ad-blockers are stripping tracking cookies.`,
+      proposedFix: 'Move the Meta Pixel and Google Tag initialization higher in the document <head> (before any deferred scripts). Consider implementing server-side tracking as a fallback.',
+      copyText: 'Fix Request: Over 50% of conversion events are losing attribution cookies due to ad-blockers. Move Meta Pixel and Google Tag initialization higher in <head> and consider server-side tracking as a fallback.',
+    });
+  }
+
+  // 3. Cookie Mismatch
+  const cookieMismatches = state.parityState.results.filter((r) => !r.cookieMatch);
+  if (cookieMismatches.length > 0) {
+    autopilotInsights.push({
+      id: 'cookie-mismatch',
+      severity: 'warning',
+      title: 'Browser/Server Cookie Mismatch',
+      description: `${cookieMismatches.length} event(s) show different _fbp cookie values between browser and server. This usually means the server is using a different Meta Pixel ID or the cookie domain is misconfigured.`,
+      proposedFix: 'Ensure the server-side Meta Pixel ID matches the browser-side Pixel ID. Verify cookie domain settings match across environments.',
+      copyText: `Fix Request: _fbp cookie mismatch detected on ${cookieMismatches.length} event(s). Browser and server Pixel IDs may differ. Verify Pixel ID and cookie domain configuration.`,
+    });
+  }
+
+  // 4. Bot Traffic
+  const botEvents = state.liveEvents.filter((e) => e.intentScore === 1);
+  if (botEvents.length > 0) {
+    autopilotInsights.push({
+      id: 'bot-traffic',
+      severity: 'info',
+      title: 'Potential Bot Traffic Detected',
+      description: `${botEvents.length} lead(s) converted in under 3 seconds with minimal scroll. These are likely bots or accidental clicks.`,
+      proposedFix: 'Consider adding a CAPTCHA or honeypot field to your lead forms. Filter out leads with intent_score === 1 from your CRM pipeline.',
+      copyText: `Fix Request: ${botEvents.length} potential bot submission(s) detected (converted in <3s with <5% scroll). Add CAPTCHA or honeypot to lead forms.`,
+    });
+  }
+
+  // 5. Lost Lead Pattern (2+ consecutive)
+  let consecutiveLost = 0;
+  for (const h of state.handshakeResults) {
+    if (h.status === 'lost') { consecutiveLost++; } else { break; }
+  }
+  if (consecutiveLost >= 2) {
+    autopilotInsights.push({
+      id: 'lost-lead-pattern',
+      severity: 'critical',
+      title: 'Lead Save Pipeline Broken',
+      description: `${consecutiveLost} consecutive leads failed to reach the database. The save-lead edge function may be failing.`,
+      proposedFix: 'Check backend logs for errors. Common causes: database connection limits, RLS policy blocking inserts, or payload validation failures.',
+      copyText: `CRITICAL: ${consecutiveLost} consecutive leads failed the Guardian handshake. Check save-lead edge function logs. Likely causes: DB connection limits, RLS policy issues, or payload validation errors.`,
+    });
+  }
+
   return {
-    state,
+    state: { ...state, systemHealth: effectiveHealth, healthReason: effectiveReason },
     startMonitoring,
     stopMonitoring,
     forceRecheck,
     runParityCheck,
     setHighlightedEventId,
     intentDistribution,
+    lostLeadRate,
+    isCritical,
+    autopilotInsights,
   };
 }
