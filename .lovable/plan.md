@@ -1,102 +1,75 @@
 
 
-# Fix: Call Agents Command Center - Dark Mode Contrast + UX Polish
+# Pro-Active DataLayer Diagnostic Tool
 
-## Problem Summary
+## What Changes
 
-The `/admin/call-agents` page uses hardcoded light-mode-only colors throughout: `text-gray-500`, `bg-gray-100`, `bg-white`, `bg-gray-50`, `bg-red-50`, `border-gray-200/300`, etc. On the dark background, these produce invisible text, jarring white surfaces, and broken contrast. The screenshot confirms: dropdown options are nearly invisible, filter pills blend into the background, and empty-state text disappears.
+Single file update: `src/pages/admin/TrackingTest.tsx`
 
-## Affected Files (6 files, ~80 line changes)
+No changes to `trackingVerificationTest.ts` -- all existing exports (`findWmLeadEvent`, `validateDataLayerEvent`) are already available and will be reused directly in the page component.
 
-### 1. `src/components/admin/ActivityFilterBar.tsx`
-The worst offender visible in the screenshot.
+## Implementation Details
 
-| Line | Current | Fix |
-|------|---------|-----|
-| 32 | `bg-white` on select dropdown | `bg-background text-foreground` |
-| 32 | `border-gray-300` | `border-border` |
-| 63 | Inactive pill: `bg-gray-100 text-gray-600 hover:bg-gray-200` | `bg-muted text-muted-foreground hover:bg-muted/80` |
-| 76 | Refresh button: `border-gray-300 hover:bg-gray-50` | `border-border hover:bg-muted` |
-| 77 | Refresh icon: `text-gray-600` | `text-muted-foreground` |
+### 1. New State Variables (3 additions)
 
-### 2. `src/components/admin/ActivityFeed.tsx`
-Loading skeletons, error banners, empty states.
+```typescript
+const [quickCheckResult, setQuickCheckResult] = useState<{
+  eventCount: number;
+  latestEvent: Record<string, unknown> | null;
+  hasLeadId: boolean;
+  hasEventId: boolean;
+  validationScore: number | null;
+} | null>(null);
+```
 
-| Lines | Current | Fix |
-|-------|---------|-----|
-| 44 | `bg-gray-100` skeleton | `bg-muted` |
-| 49 | `bg-red-50 border-red-200` error | `bg-destructive/10 border-destructive/30` |
-| 50 | `text-red-700` | `text-destructive` |
-| 53 | `text-red-600` retry link | `text-destructive` |
-| 60 | `text-gray-300` empty icon | `text-muted-foreground/50` |
-| 63, 70 | `text-gray-600` empty title | `text-muted-foreground` |
-| 64, 72 | `text-gray-400` empty subtitle | `text-muted-foreground/70` |
-| 80 | `border-gray-200 divide-gray-100` list wrapper | `border-border divide-border` |
-| 93 | Load More button: `border-gray-300 text-gray-600 hover:bg-gray-50` | `border-border text-muted-foreground hover:bg-muted` |
+### 2. Rewritten `handleQuickCheck` Function
 
-### 3. `src/components/admin/ActivityRow.tsx`
-Row hover, expanded panel, detail grid.
+- Safely read `window.dataLayer` (handle `undefined`)
+- Count total entries, find the most recent `wm_lead` event using `findWmLeadEvent()`
+- If a `wm_lead` event exists, run `validateDataLayerEvent()` to get the score
+- Check for `lead_id` and `event_id` presence for deduplication readiness
+- Store results in `quickCheckResult` state
+- Fire a toast via `useToast`:
+  - Events found: `"DataLayer Active: Found [X] events."` (default/success variant)
+  - Zero events: `"Warning: DataLayer Empty. Check for ad-blockers."` (destructive variant)
 
-| Lines | Current | Fix |
-|-------|---------|-----|
-| 45 | `hover:bg-gray-50` row hover | `hover:bg-muted/50` |
-| 48 | `text-gray-500` timestamp | `text-muted-foreground` |
-| 66 | `text-gray-400` duration | `text-muted-foreground/70` |
-| 85 | `text-gray-400` chevron | `text-muted-foreground` |
-| 94 | `bg-gray-50 border-gray-200` expanded panel | `bg-muted/50 border-border` |
-| 98, 108, 119 | `text-gray-500` section labels | `text-muted-foreground` |
-| 111 | `bg-white border-gray-200 text-gray-700` transcript box | `bg-background border-border text-foreground` |
-| 124, 130, 147, 159, 165 | `text-gray-500` detail labels | `text-muted-foreground` |
-| 125, 131, 148, 161, 166 | `text-gray-800` detail values | `text-foreground` |
-| 140 | `text-gray-400 hover:text-gray-600` copy button | `text-muted-foreground hover:text-foreground` |
-| 175 | `bg-red-50 border-red-200` error box | `bg-destructive/10 border-destructive/30` |
-| 176 | `text-red-600` | `text-destructive` |
-| 177 | `text-red-700` | `text-destructive` |
+### 3. New UI Section: Quick Check Results Panel
 
-### 4. `src/components/admin/SearchFilterBar.tsx`
-Agent tab filter toggle buttons.
+Renders below the "Quick DataLayer Check" button, only when `quickCheckResult !== null`.
 
-| Lines | Current | Fix |
-|-------|---------|-----|
-| 35 | Inactive: `bg-gray-100 text-gray-600 hover:bg-gray-200` | `bg-muted text-muted-foreground hover:bg-muted/80` |
+Layout:
+- **Event Counter**: A metric card showing the total dataLayer event count, styled with `bg-muted rounded-lg` and large bold number
+- **Deduplication Badge**: Green "Deduplication Ready" badge if both `lead_id` and `event_id` are present; Yellow/amber "Incomplete" badge if either is missing
+- **Validation Score**: Display the EMQ validation score (e.g., "7.5/10") if a wm_lead event was found
+- **Live JSON Preview**: A scrollable `<pre>` block inside `<ScrollArea>` (already imported) with `bg-muted rounded-md p-4 font-mono text-xs` showing the latest event as pretty-printed JSON
+- **Clear Results Button**: A small outline button that sets `quickCheckResult` back to `null`
 
-### 5. `src/components/admin/AudioPlayer.tsx`
-Player surfaces and time labels.
+### 4. New Import
 
-| Lines | Current | Fix |
-|-------|---------|-----|
-| 107 | `bg-red-50 border-red-200 text-red-700` error state | `bg-destructive/10 border-destructive/30 text-destructive` |
-| 113 | `text-blue-600` retry link | `text-primary` |
-| 121 | `bg-gray-50` player wrapper | `bg-muted/50` |
-| 148, 151 | `text-gray-500` time labels | `text-muted-foreground` |
+Add `useToast` from `@/hooks/use-toast` (already available in project).
 
-### 6. `src/pages/admin/CallAgentsConfig.tsx`
-Tab bar uses hardcoded gray for inactive tabs.
+### 5. Visual Hierarchy
 
-| Lines | Current | Fix |
-|-------|---------|-----|
-| 102 | `border-gray-200` tab bar border | `border-border` |
-| 108 | Inactive tab: `text-gray-500 hover:text-gray-700` | `text-muted-foreground hover:text-foreground` |
-| 116 | Same for Activity tab | Same fix |
-
----
-
-## Top 3 UX/Design Improvements (Beyond Contrast Fixes)
-
-### 1. Upgrade the `<select>` dropdown to a styled component
-The native `<select>` in ActivityFilterBar looks like a foreign element. Replace it with a shadcn `Select` component (already installed) for visual consistency with the rest of the design system -- proper rounded corners, focus rings, and theme-aware styling.
-
-### 2. Unify the tab bar with the design system
-The custom tab bar (lines 99-118 in CallAgentsConfig) uses raw `<button>` elements with hardcoded border colors. Replace with shadcn `Tabs` / `TabsList` / `TabsTrigger` for consistent sizing, focus states, and keyboard navigation (arrow keys, Home/End). This also gives you proper ARIA `role="tablist"` for free.
-
-### 3. Add status-aware card borders to StatsCards
-Currently all stat cards have static left borders (blue, purple, green/red). When there are active errors or low success rates, the cards should pulse or glow subtly to draw attention. Add a `ring-1 ring-red-500/30` on the Errors card when `errors_24h > 0`, creating a visual urgency signal without being distracting.
-
----
+```
++--------------------------------------------------+
+| Quick DataLayer Check  [button]  [Clear Results]  |
++--------------------------------------------------+
+| Event Count: 14          | Deduplication Ready [G]|
+| Validation: 8.5/10       |                        |
++--------------------------------------------------+
+| Live JSON Preview                                  |
+| {                                                  |
+|   "event": "wm_lead",                             |
+|   "event_id": "263b817f-...",                      |
+|   "lead_id": "263b817f-...",                       |
+|   ...                                              |
+| }                                                  |
++--------------------------------------------------+
+```
 
 ## Scope
-- **6 files modified**
-- ~80 single-token class replacements (gray-* to theme tokens)
-- 3 UX upgrades (select component, tabs component, status card glow)
-- Zero structural/logic changes
+- 1 file modified: `src/pages/admin/TrackingTest.tsx`
+- 0 new files
+- 0 backend changes
+- Uses only existing imports and exports (Badge, ScrollArea, Card, useToast, findWmLeadEvent, validateDataLayerEvent)
 
