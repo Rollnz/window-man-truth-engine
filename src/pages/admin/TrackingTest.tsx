@@ -864,7 +864,7 @@ function BudgetAlertBanner({ lostLeadRate }: { lostLeadRate: number }) {
   }, [lostLeadRate]);
 
   return (
-    <div className="rounded-lg border-2 border-destructive bg-destructive/10 p-6 space-y-4 animate-pulse-slow">
+    <div className="sticky top-0 z-50 rounded-lg border-2 border-destructive bg-destructive/10 p-6 space-y-4 animate-pulse-slow backdrop-blur-sm">
       <div className="flex items-start gap-4">
         <AlertOctagon className="h-8 w-8 text-destructive shrink-0 animate-pulse" />
         <div className="space-y-2">
@@ -911,9 +911,15 @@ function BudgetAlertBanner({ lostLeadRate }: { lostLeadRate: number }) {
 
 function AutopilotCard({ insights }: { insights: AutopilotInsight[] }) {
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
-  const { toast } = useToast();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   if (insights.length === 0) return null;
+
+  const allExpanded = expandedIds.length === insights.length;
+
+  const toggleExpandAll = () => {
+    setExpandedIds(allExpanded ? [] : insights.map((i) => i.id));
+  };
 
   const severityIcon = (severity: AutopilotInsight['severity']) => {
     switch (severity) {
@@ -923,18 +929,25 @@ function AutopilotCard({ insights }: { insights: AutopilotInsight[] }) {
     }
   };
 
-  const handleCopyFix = async (copyText: string) => {
+  const handleCopyFix = async (insightId: string, copyText: string) => {
     await copyToClipboard(copyText);
-    toast({ title: 'Copied', description: 'Fix request copied to clipboard.' });
+    setCopiedId(insightId);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Cpu className="h-4 w-4" />
-          Truth Engine Autopilot
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Cpu className="h-4 w-4" />
+            Truth Engine Autopilot
+          </CardTitle>
+          <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-7" onClick={toggleExpandAll}>
+            {allExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {allExpanded ? 'Collapse All' : 'Expand All'}
+          </Button>
+        </div>
         <CardDescription className="text-xs">
           AI-driven gap analysis with proposed fixes
         </CardDescription>
@@ -942,6 +955,7 @@ function AutopilotCard({ insights }: { insights: AutopilotInsight[] }) {
       <CardContent className="space-y-2">
         {insights.map((insight) => {
           const isExpanded = expandedIds.includes(insight.id);
+          const isCopied = copiedId === insight.id;
           return (
             <div key={insight.id} className="rounded-lg border">
               <button
@@ -963,10 +977,10 @@ function AutopilotCard({ insights }: { insights: AutopilotInsight[] }) {
                     variant="outline"
                     size="sm"
                     className="gap-1.5 text-xs"
-                    onClick={() => handleCopyFix(insight.copyText)}
+                    onClick={() => handleCopyFix(insight.id, insight.copyText)}
                   >
-                    <Copy className="h-3.5 w-3.5" />
-                    Copy Fix Request
+                    {isCopied ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                    {isCopied ? 'Copied!' : 'Copy Fix Request'}
                   </Button>
                 </div>
               )}
@@ -983,15 +997,23 @@ function AutopilotCard({ insights }: { insights: AutopilotInsight[] }) {
 
 // ─── Certification Badge ─────────────────────────────────────────────────────
 
-function TruthEngineCertification({ handshakeResults }: { handshakeResults: HandshakeResult[] }) {
+function TruthEngineCertification({ handshakeResults, systemHealth }: { handshakeResults: HandshakeResult[]; systemHealth: SystemHealth }) {
   const verifiedSpend = handshakeResults.filter((h) => h.status === 'confirmed').length * 10;
 
+  const badgeConfig: Record<string, { border: string; icon: string; text: string }> = {
+    healthy: { border: 'border-emerald-600/30 bg-emerald-600/5', icon: 'text-emerald-600 dark:text-emerald-400', text: 'All 10 Steps Active' },
+    warning: { border: 'border-amber-600/30 bg-amber-600/5', icon: 'text-amber-600 dark:text-amber-400', text: 'Warning — Review Insights' },
+    conflict: { border: 'border-amber-600/30 bg-amber-600/5', icon: 'text-amber-600 dark:text-amber-400', text: 'Conflict Detected' },
+    critical: { border: 'border-destructive/30 bg-destructive/5', icon: 'text-destructive', text: 'Critical — Action Required' },
+  };
+  const cfg = badgeConfig[systemHealth] ?? { border: 'border-border/50 bg-muted/30', icon: 'text-muted-foreground', text: 'Idle' };
+
   return (
-    <div className="rounded-lg border border-border/50 bg-muted/30 p-6 text-center space-y-2">
+    <div className={cn('rounded-lg border p-6 text-center space-y-2', cfg.border)}>
       <div className="flex items-center justify-center gap-2">
-        <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+        <CheckCircle2 className={cn('h-5 w-5', cfg.icon)} />
         <span className="text-sm font-semibold text-muted-foreground">
-          Truth Engine v1.0
+          Truth Engine v1.0 — {cfg.text}
         </span>
       </div>
       <p className="text-xs text-muted-foreground">
@@ -1561,7 +1583,29 @@ export default function TrackingTestPage() {
         )}
 
         {/* ═══ Certification Badge ═══ */}
-        <TruthEngineCertification handshakeResults={monitorState.handshakeResults} />
+        <TruthEngineCertification handshakeResults={monitorState.handshakeResults} systemHealth={monitorState.systemHealth} />
+      </div>
+
+      {/* ═══ Floating Run Test FAB ═══ */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="lg"
+                variant="cta"
+                className="rounded-full h-14 w-14 p-0 shadow-xl"
+                disabled={isRunning}
+                onClick={handleRunTest}
+              >
+                {isRunning ? <Loader2 className="h-6 w-6 animate-spin" /> : <Play className="h-6 w-6" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              {isRunning ? 'Test Running…' : 'Run Full Test'}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </>
   );
