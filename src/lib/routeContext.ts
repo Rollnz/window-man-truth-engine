@@ -5,6 +5,10 @@ export interface RouteContext {
   defaultMode: AiQaMode;
   headline: string;
   subheadline: string;
+  /** Heading shown in the slide-over chat panel when the AI Q&A step is active. */
+  chatTitle: string;
+  /** Subheading shown beneath chatTitle in the AI Q&A step. */
+  chatSubtitle: string;
   ctaPrimaryLabel: string;
   ctaSecondaryLabel: string;
   chips: string[];
@@ -24,6 +28,8 @@ const ROUTE_ENTRIES: RouteEntry[] = [
       defaultMode: 'savings',
       headline: 'Find the Hidden Markup',
       subheadline: 'Let Window Man expose what your contractor won\'t show you.',
+      chatTitle: '💰 Savings Analysis',
+      chatSubtitle: 'Let\'s break down your quote and expose the markup.',
       ctaPrimaryLabel: 'Analyze My Quote',
       ctaSecondaryLabel: 'Request a Free Estimate',
       chips: [
@@ -41,6 +47,8 @@ const ROUTE_ENTRIES: RouteEntry[] = [
       defaultMode: 'proof',
       headline: 'Investigate Your Quote',
       subheadline: 'Upload your quote. We\'ll scan for red flags.',
+      chatTitle: '🔍 Quote Inspector',
+      chatSubtitle: 'Let\'s look for red flags in your quote together.',
       ctaPrimaryLabel: 'Scan My Quote',
       ctaSecondaryLabel: 'Request a Free Estimate',
       chips: [
@@ -58,6 +66,8 @@ const ROUTE_ENTRIES: RouteEntry[] = [
       defaultMode: 'diagnostic',
       headline: 'What Should You Really Pay?',
       subheadline: 'Get an honest price range in 60 seconds.',
+      chatTitle: '📊 Price Diagnostic',
+      chatSubtitle: 'Is that number fair? Let\'s find out.',
       ctaPrimaryLabel: 'Check My Price',
       ctaSecondaryLabel: 'Request a Free Estimate',
       chips: [
@@ -75,6 +85,8 @@ const ROUTE_ENTRIES: RouteEntry[] = [
       defaultMode: 'proof',
       headline: 'See What We Uncover',
       subheadline: 'Real analysis. Real results. No fluff.',
+      chatTitle: '📋 Report Review',
+      chatSubtitle: 'Ask me about what you\'re seeing in the report.',
       ctaPrimaryLabel: 'Get My Own Report',
       ctaSecondaryLabel: 'Request a Free Estimate',
       chips: [
@@ -92,6 +104,8 @@ const ROUTE_ENTRIES: RouteEntry[] = [
       defaultMode: 'concierge',
       headline: 'Book Your Free Consult',
       subheadline: 'Talk to an expert. Zero pressure.',
+      chatTitle: '💬 Expert Concierge',
+      chatSubtitle: 'I\'ll walk you through everything. Zero pressure.',
       ctaPrimaryLabel: 'Schedule Now',
       ctaSecondaryLabel: 'Request a Free Estimate',
       chips: [
@@ -109,6 +123,8 @@ const ROUTE_ENTRIES: RouteEntry[] = [
       defaultMode: 'savings',
       headline: 'Understand the Real Costs',
       subheadline: 'Transparent pricing. No hidden fees.',
+      chatTitle: '💡 Cost Advisor',
+      chatSubtitle: 'Let\'s make sense of the numbers together.',
       ctaPrimaryLabel: 'Calculate My Cost',
       ctaSecondaryLabel: 'Request a Free Estimate',
       chips: [
@@ -126,6 +142,8 @@ const ROUTE_ENTRIES: RouteEntry[] = [
       defaultMode: 'diagnostic',
       headline: 'Know Your Risk Level',
       subheadline: 'Assess your windows in under 2 minutes.',
+      chatTitle: '⚠️ Risk Advisor',
+      chatSubtitle: 'Tell me about your current windows and I\'ll assess the risk.',
       ctaPrimaryLabel: 'Check My Risk',
       ctaSecondaryLabel: 'Request a Free Estimate',
       chips: [
@@ -143,6 +161,8 @@ const ROUTE_ENTRIES: RouteEntry[] = [
       defaultMode: 'diagnostic',
       headline: 'Check Your Exposure',
       subheadline: 'Find out where your home is most vulnerable.',
+      chatTitle: '🛡️ Vulnerability Check',
+      chatSubtitle: 'Let\'s find where your home is most exposed.',
       ctaPrimaryLabel: 'Run My Test',
       ctaSecondaryLabel: 'Request a Free Estimate',
       chips: [
@@ -160,6 +180,8 @@ const ROUTE_ENTRIES: RouteEntry[] = [
       defaultMode: 'concierge',
       headline: 'Window Man Is Standing By',
       subheadline: 'Get honest answers. No sales pitch.',
+      chatTitle: 'Ask Window Man',
+      chatSubtitle: 'Get honest answers. No sales pitch.',
       ctaPrimaryLabel: 'Ask Me Anything About Windows',
       ctaSecondaryLabel: 'Request a Free Estimate',
       chips: [
@@ -177,6 +199,8 @@ const DEFAULT_CONTEXT: RouteContext = {
   defaultMode: 'concierge',
   headline: 'Get Your Free Estimate',
   subheadline: 'Choose how you\'d like to connect with us.',
+  chatTitle: 'Ask Window Man',
+  chatSubtitle: 'Get instant answers about impact windows.',
   ctaPrimaryLabel: 'Ask Me Anything About Windows',
   ctaSecondaryLabel: 'Request a Free Estimate',
   chips: [
