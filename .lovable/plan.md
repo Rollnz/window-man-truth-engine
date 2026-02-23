@@ -1,133 +1,60 @@
 
 
-# Phase 6: Budget Kill Switch, Autopilot, forwardRef Fixes, and Certification Badge
+# Multi-Expand Autopilot Insights + UX Polish Suggestions
 
-## Summary
+## Design Change: Multi-Expand
 
-This build delivers four things in one pass:
+A 3-line change in the `AutopilotCard` component (lines 913, 944, 948):
 
-1. **forwardRef Fixes** -- Wrap `SystemHealthGauge` (and any other warning-producing components) in `React.forwardRef` to eliminate console warnings.
-2. **Step 9: Budget Protection Kill Switch** -- Add a `critical` health state triggered when Lost Lead rate exceeds 15%. Renders a full-width red alert banner with links to pause ad campaigns.
-3. **Step 10: Truth Engine Autopilot** -- Cross-references Parity, Attribution, and Handshake data to generate actionable "Proposed Fix" cards with copy-to-clipboard instructions.
-4. **Certification Badge** -- A `TruthEngineCertification` footer at the bottom of the page proving all 10 steps are active, with a "Verified Ad Spend" counter.
+1. **State**: `useState<string | null>(null)` becomes `useState<string[]>([])`
+2. **Check**: `expandedId === insight.id` becomes `expandedIds.includes(insight.id)`
+3. **Toggle**: Clicking adds the ID if absent, removes it if present:
+   ```typescript
+   setExpandedIds(prev =>
+     prev.includes(insight.id)
+       ? prev.filter(id => id !== insight.id)
+       : [...prev, insight.id]
+   );
+   ```
 
-Zero database changes. Zero new edge functions.
-
----
-
-## Files to Change
-
-| Action | File | What Changes |
-|--------|------|-------------|
-| MODIFY | `src/hooks/useDataLayerMonitor.ts` | Add `critical` to SystemHealth type; add `lostLeadRate`, `isCritical`, `intentDistribution`, and `autopilotInsights` exports |
-| MODIFY | `src/pages/admin/TrackingTest.tsx` | Add BudgetAlertBanner, AutopilotCard, TruthEngineCertification components; add `critical` config to SystemHealthGauge; fix forwardRef warnings |
-| MODIFY | `src/components/debug/EMQValidatorOverlay.tsx` | Wrap EMQValidatorOverlayInner in React.forwardRef (if warning originates here) |
+No risk of conflicts. This is the only accordion-style component on the page.
 
 ---
 
-## Technical Details
+## UX Improvement Suggestions (Lead Design Engineer Review)
 
-### 1. Hook Changes (`useDataLayerMonitor.ts`)
+After reviewing the full 1,568-line page, here are targeted improvements:
 
-**A. Expand SystemHealth:**
-```typescript
-export type SystemHealth = 'idle' | 'healthy' | 'warning' | 'conflict' | 'critical';
-```
+### 1. "Expand All / Collapse All" Button for Autopilot
 
-**B. Kill-switch logic (computed after handshake updates):**
-- Look at the last 10 handshake results
-- Count entries with `status === 'lost'`
-- If lost / total >= 0.15, set health to `critical` (overrides all other states)
-- Health reason: "BUDGET ALERT: X% of recent leads are not reaching the database. Pause campaigns immediately."
+Since we're enabling multi-expand, add a small "Expand All" / "Collapse All" toggle in the `AutopilotCard` header. When there are 3-5 insights, users will want to scan them all at once without clicking each one individually.
 
-**C. New exports added to hook return:**
-- `lostLeadRate: number` (0-100)
-- `isCritical: boolean`
-- `intentDistribution: { hot: number; warm: number; cold: number }` (computed from liveEvents)
-- `autopilotInsights: AutopilotInsight[]`
+### 2. Sticky Budget Alert Banner
 
-**D. AutopilotInsight type and gap analysis:**
-```typescript
-interface AutopilotInsight {
-  id: string;
-  severity: 'info' | 'warning' | 'critical';
-  title: string;
-  description: string;
-  proposedFix: string;
-  copyText: string;
-}
-```
+The `BudgetAlertBanner` renders at the top of the page, but if the user scrolls down to investigate insights, they lose sight of the critical alert. Making it `sticky top-0 z-50` ensures the emergency stays visible while they work through fixes.
 
-Five detection rules:
-1. **Parity Gap** -- browserOnlyCount > 0: "Server Not Receiving Browser Events"
-2. **High Ad-Blocker Impact** -- >50% of conversion events have broken/repaired attribution
-3. **Cookie Mismatch** -- any parity result has cookieMatch === false
-4. **Bot Traffic** -- any events with intentScore === 1
-5. **Lost Lead Pattern** -- 2+ consecutive lost handshakes
+### 3. "Run Full Test" Button Should Be More Prominent
 
-### 2. UI Components (`TrackingTest.tsx`)
+The primary action ("Run Full Test") is buried below 10 cards of diagnostic data. Adding a secondary fixed/sticky action button (or floating action button) at the bottom-right of the viewport would let users re-run tests without scrolling back up.
 
-**A. SystemHealthGauge -- add `critical` config:**
-```typescript
-critical: {
-  bg: 'bg-red-700/20 border-red-700/40',
-  icon: <AlertOctagon className="h-6 w-6 text-red-600 animate-pulse" />,
-  defaultMsg: '',
-}
-```
-Label renders as "CRITICAL" with pulsing styling.
+### 4. Color-Code the Certification Badge Dynamically
 
-**B. BudgetAlertBanner (new component):**
-- Full-width red banner, only renders when `systemHealth === 'critical'`
-- Pulsing border, `Siren` or `AlertOctagon` icon
-- Headline: "BUDGET PROTECTION ALERT"
-- Two buttons: "Pause Google Ads" (opens ads.google.com) and "Pause Meta Ads" (opens business.facebook.com/adsmanager)
-- "Copy Emergency Alert" button that copies a pre-formatted incident summary to clipboard
+Currently the badge always shows a green "All 10 Steps Active" seal. It would be more honest (and useful) to reflect the actual system health:
+- Green seal when health is `healthy`
+- Amber seal when health is `warning` or `conflict`
+- Red seal when health is `critical`
 
-**C. AutopilotCard (new component):**
-- Header: "Truth Engine Autopilot" with `Cpu` icon
-- Each insight renders as an expandable item with severity icon
-- "Copy Fix Request" button per insight copies the `copyText` to clipboard
-- Summary line: "X insight(s) detected"
+This gives the badge real diagnostic value instead of being purely decorative.
 
-**D. TruthEngineCertification (new component):**
-- Renders at the very bottom of the page, below test controls
-- Centered badge with `CheckCircle2` icon
-- Text: "Truth Engine v1.0: All 10 Steps of the Deduplication and Attribution Pipeline are Active."
-- Verified spend counter: `handshakeResults.filter(h => h.status === 'confirmed').length * 10`
-- Display: "This session has verified $[verifiedSpend] of projected conversion value."
-- Subtle styling: muted border, small text, professional "seal" appearance
+### 5. Toast Feedback on "Copy Fix Request" Is Easy to Miss
 
-**E. forwardRef fix on SystemHealthGauge:**
-- Wrap the function component in `React.forwardRef`
-- Forward the ref to the outer `<Card>` element
-- Set `displayName = 'SystemHealthGauge'`
-
-### 3. Page Layout Order (final)
-
-1. BudgetAlertBanner (Step 9, conditional)
-2. SystemHealthGauge (with critical state)
-3. LiveActivityLog
-4. LeadVerificationCard (Step 5)
-5. DeduplicationParityCard (Step 6)
-6. IntentIntelligenceCard (Step 7)
-7. AttributionHealthCard (Step 8)
-8. AutopilotCard (Step 10)
-9. CROInsightCard (Step 4)
-10. Run Verification Test controls
-11. **TruthEngineCertification** (new, bottom)
-
-### 4. EMQValidatorOverlay forwardRef
-
-Wrap `EMQValidatorOverlayInner` in `React.forwardRef`, forwarding ref to its outermost `<div>`. Add `displayName`.
+The copy confirmation uses a small toast. Since the Autopilot is action-oriented, replacing the toast with an inline checkmark animation on the button itself (similar to the Budget Alert's "Copied!" state) provides faster, more visible feedback without the toast competing with other notifications.
 
 ---
 
-## Scope Summary
+## Implementation Scope
 
-- `useDataLayerMonitor.ts`: ~60 lines added (critical state, lost-lead rate, autopilot insights, intent distribution)
-- `TrackingTest.tsx`: ~200 lines added (BudgetAlertBanner, AutopilotCard, TruthEngineCertification, critical gauge config, forwardRef fixes)
-- `EMQValidatorOverlay.tsx`: ~5 lines changed (forwardRef wrap)
-- Zero backend changes
-- Zero database changes
+The multi-expand change touches only `src/pages/admin/TrackingTest.tsx`, modifying 3 lines inside `AutopilotCard`. Zero risk, zero side effects.
+
+The UX suggestions above are optional follow-ups and not included in this build unless requested.
 
