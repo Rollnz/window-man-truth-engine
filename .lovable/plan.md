@@ -1,51 +1,37 @@
 
 
-# Fix AuthRecoveryTester and useSessionSync
+# Fix: "Its Window Man" Brand Text Color in Navbar
 
-## Two Files, Three Fixes
-
-### 1. `src/components/debug/AuthRecoveryTester.tsx`
-
-**Fix A: Switch all 3 tests to use `sync-session`** (which validates JWT via `supabase.auth.getUser()` and returns a proper 401 for corrupted tokens).
-
-- **Test 1 (Idempotent):** Replace `fetchEdgeFunction('get-ticker-stats')` with `invokeEdgeFunction('sync-session', { body: { syncReason: 'auth_test', sessionData: {} }, isIdempotent: true })`. On success after silent retry, it returns `{ success: true, merged: false }` with no side effects.
-
-- **Test 2 (Non-Idempotent):** Replace `invokeEdgeFunction('get-ticker-stats', { isIdempotent: false })` with `invokeEdgeFunction('sync-session', { body: { syncReason: 'auth_test', sessionData: {} }, isIdempotent: false })`. **Critical fix:** `invokeEdgeFunction` returns `{ error: SessionRefreshedError }` — it does NOT throw. The current code has a try/catch looking for a thrown error that will never come. Fix the check to inspect the returned `error` field:
-  ```
-  const { data, error } = await invokeEdgeFunction(...);
-  if (error instanceof SessionRefreshedError) {
-    // Show friendly toast
-  }
-  ```
-
-- **Test 3 (Dead Session):** Replace `fetchEdgeFunction('get-ticker-stats')` with `invokeEdgeFunction('sync-session', { body: { syncReason: 'auth_test', sessionData: {} }, isIdempotent: true })`. With both tokens destroyed, the wrapper will fail to refresh and dispatch `auth:session-expired`, triggering the overlay.
-
-**Fix B: Remove `fetchEdgeFunction` import** since all tests now use `invokeEdgeFunction`.
-
-### 2. `src/hooks/useSessionSync.ts`
-
-**Fix C: Add `isIdempotent: true`** to the existing `invokeEdgeFunction` call (line 50). The sync call is safe to auto-retry because the edge function merges data idempotently. This prevents background crashes when the tester corrupts the token — the wrapper will silently refresh and retry instead of returning a `SessionRefreshedError`.
-
-Change line 50-55 from:
+## The Problem
+The brand text "Its Window Man" in the Navbar (`src/components/home/Navbar.tsx`, line 97) currently has a hardcoded inline style:
 ```
-const { data, error } = await invokeEdgeFunction('sync-session', {
-  body: { sessionData, syncReason: 'auth_login' },
-});
+style={{ color: '#2278BF' }}
 ```
-To:
-```
-const { data, error } = await invokeEdgeFunction('sync-session', {
-  body: { sessionData, syncReason: 'auth_login' },
-  isIdempotent: true,
-});
+This was a manual workaround to make the text visible in light mode, but hardcoded hex values don't adapt to theme changes and bypass the design system.
+
+## The Fix
+**File:** `src/components/home/Navbar.tsx` (line 97)
+
+Replace the hardcoded `style={{ color: '#2278BF' }}` with the theme-aware Tailwind class `text-primary`.
+
+**Before:**
+```html
+<span style={{ color: '#2278BF' }}>Its Window Man</span>
 ```
 
-## No changes to `src/lib/edgeFunction.ts`
+**After:**
+```html
+<span className="text-primary">Its Window Man</span>
+```
 
-The core wrapper logic is correct. The `isIdempotent` flag works as designed — the bugs were in the test endpoint choice and the tester's error-checking pattern.
+## Why This Works
+- The project's `--primary` CSS variable is set to Industrial Blue (209 68% 38%) in the unified theme system (memory: `style/theme/unified-system-v6`).
+- In dark mode, `--primary` resolves to a lighter, high-contrast blue that reads well on dark backgrounds.
+- In light mode, `--primary` resolves to a darkened blue that meets 6:1 ARIA contrast compliance against the light `--background`.
+- This single class handles both themes automatically with no hardcoded values.
 
-## Implementation Order
-
-1. Update `useSessionSync.ts` (one-line flag addition)
-2. Rewrite all 3 test functions in `AuthRecoveryTester.tsx`
+## Scope
+- **1 file changed**, **1 line modified**
+- No other components affected
+- No risk of regressions -- this simply replaces a static hex with the existing design token
 
