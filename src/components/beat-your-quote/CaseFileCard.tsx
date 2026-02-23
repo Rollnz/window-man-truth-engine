@@ -148,10 +148,10 @@ export function CaseFileCard({
       {/* Expandable Testimonial */}
       <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="px-5 pb-5 border-t border-border/30 pt-4">
-          <p className="text-sm leading-relaxed italic text-secondary-foreground">
+          <p className="text-sm leading-relaxed italic text-white/90">
             "{data.testimonial}"
           </p>
-          <p className="text-xs mt-3 text-slate-400">
+          <p className="text-xs mt-3 text-white/60">
             — {data.homeowner}, {data.location}
           </p>
         </div>
