@@ -1,50 +1,36 @@
 
 
-# Fix: Outcome Folders Default State and Text Wrapping
+# Add UrgencyTicker to Beat-Your-Quote Hero
 
-## File: `src/components/beat-your-quote/OutcomeFolders.tsx`
+## What's Changing
 
-### Change 1: Default "WE BEAT IT" to open on load
+Place the existing `UrgencyTicker` component (the live "X quotes scanned / +Y today" stat bar) into the `DossierHero` section on `/beat-your-quote`. It will sit between the trust indicators and the bouncing scroll-down chevron -- visually at the bottom of the hero, above the scan line, right before the page scrolls to the next section.
 
-**Line 36** -- Change initial state from `null` to `'alpha'`:
+## File: `src/components/beat-your-quote/DossierHero.tsx`
 
+### 1. Add import (line 7)
 ```typescript
-// Before
-const [activeOutcome, setActiveOutcome] = useState<'alpha' | 'bravo' | null>(null);
-
-// After
-const [activeOutcome, setActiveOutcome] = useState<'alpha' | 'bravo' | null>('alpha');
+import { UrgencyTicker } from '@/components/social-proof';
 ```
 
-### Change 2: Prevent heading text from wrapping vertically on mobile
+### 2. Insert the ticker between the trust text and the scroll chevron (after line 164, before the scroll indicator div)
 
-**Line 290** -- Add `whitespace-nowrap` to "WE BEAT IT" heading:
-
-```html
-<!-- Before -->
-<h4 className="font-bold text-green-400 uppercase tracking-wide font-mono text-2xl">
-
-<!-- After -->
-<h4 className="font-bold text-green-400 uppercase tracking-wide font-mono text-2xl whitespace-nowrap">
+```tsx
+{/* Live Scan Counter */}
+<div className="mt-6 animate-fade-in">
+  <UrgencyTicker variant="cyberpunk" size="sm" />
+</div>
 ```
 
-**Line 344** -- Add `whitespace-nowrap` to "OR VALIDATE IT" heading:
-
-```html
-<!-- Before -->
-<h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono text-xl">
-
-<!-- After -->
-<h4 className="font-bold text-tools-truth-engine uppercase tracking-wide font-mono text-xl whitespace-nowrap">
-```
+The `cyberpunk` variant matches the dark dossier aesthetic of this hero (dark background with cyan/emerald accents). Size `sm` keeps it compact so it doesn't compete with the upload dropzone.
 
 ### Summary
 
-| Line | What | Fix |
-|------|------|-----|
-| 36 | Initial state | `null` to `'alpha'` (green card open by default) |
-| 290 | "WE BEAT IT" heading | Add `whitespace-nowrap` |
-| 344 | "OR VALIDATE IT" heading | Add `whitespace-nowrap` |
+| Change | Detail |
+|--------|--------|
+| Import | `UrgencyTicker` from `@/components/social-proof` |
+| Placement | After trust indicators, before scroll chevron |
+| Variant | `cyberpunk` (dark glass with emerald/amber accents) |
+| Size | `sm` (compact) |
 
-Three single-line changes. No side effects. "OR VALIDATE IT" remains closed until tapped. Text stays horizontal on all viewports.
-
+One file, two additions (one import line, one JSX block). No new dependencies.
