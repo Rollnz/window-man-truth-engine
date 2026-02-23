@@ -141,9 +141,13 @@ export function DossierHero({
           <button
             type="button"
             onClick={onNoQuoteClick}
-            className="mt-4 text-sm text-primary/80 hover:text-primary underline underline-offset-4 transition-colors">
-
-            Don't have a quote yet? Get started here →
+            className="group relative mt-4 inline-flex items-center gap-1.5 text-sm text-primary/80 hover:text-primary transition-colors">
+            <span className="relative bg-[length:200%_100%] bg-[linear-gradient(90deg,hsl(var(--primary)/0.8)_0%,hsl(var(--primary-foreground))_50%,hsl(var(--primary)/0.8)_100%)] bg-clip-text text-transparent animate-shimmer">
+              Don't have a quote yet? Get started here
+            </span>
+            <span className="inline-block animate-bounce text-primary">→</span>
+            {/* Pulsing glow underline */}
+            <span className="absolute -bottom-1 left-0 right-0 h-px bg-primary/50 rounded-full shadow-[0_0_8px_hsl(var(--primary)/0.5)] animate-pulse-glow" />
           </button>
 
           {/* Trust indicators with tooltip */}
