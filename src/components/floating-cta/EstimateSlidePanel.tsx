@@ -399,7 +399,7 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
 
         <SheetTitle className="text-2xl font-bold text-foreground">
           {step === 'choice' && (isForensicAlly ? 'Get Your Free Estimate' : routeContext.headline)}
-          {step === 'ai-qa' && (isForensicAlly ? '🛡️ Forensic Ally' : 'Ask Window Man')}
+          {step === 'ai-qa' && (isForensicAlly ? '🛡️ Forensic Ally' : routeContext.chatTitle)}
           {step === 'project' && 'Project Details'}
           {step === 'contact' && 'Contact Information'}
           {step === 'address' && 'Property Address'}
@@ -408,7 +408,7 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
 
         <SheetDescription className="text-muted-foreground">
           {step === 'choice' && (isForensicAlly ? 'Choose how you\'d like to connect with us.' : routeContext.subheadline)}
-          {step === 'ai-qa' && (isForensicAlly ? 'Independent. Unbiased. On your side.' : 'Get instant answers about impact windows.')}
+          {step === 'ai-qa' && (isForensicAlly ? 'Independent. Unbiased. On your side.' : routeContext.chatSubtitle)}
           {step === 'project' && 'Tell us about your window project.'}
           {step === 'contact' && 'How can we reach you?'}
           {step === 'address' && 'Where is the property located?'}
