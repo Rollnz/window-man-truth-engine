@@ -14,7 +14,7 @@ const Tools = () => {
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               All Tools
             </h1>
-            <p className="text-lg max-w-2xl mx-auto text-primary-foreground">
+            <p className="text-lg max-w-2xl mx-auto text-muted-foreground">
               Everything you need to make smarter window decisions — from cost calculators to expert guidance.
             </p>
           </div>
