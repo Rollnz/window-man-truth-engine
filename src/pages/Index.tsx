@@ -1,17 +1,34 @@
+import { lazy, Suspense } from 'react';
 import { Navbar } from '@/components/home/Navbar';
 import { HeroSection } from '@/components/home/HeroSection';
-import { MarketRealitySection } from '@/components/home/MarketRealitySection';
-import { FailurePointsSection } from '@/components/home/FailurePointsSection';
-import { WhoIsWindowManSection } from '@/components/home/WhoIsWindowManSection';
-import { SecretPlaybookSection } from '@/components/home/SecretPlaybookSection';
-import { SampleReportSection } from '@/components/home/SampleReportSection';
-import { WeaponizeAuditSection } from '@/components/home/WeaponizeAuditSection';
-import { FinalDecisionSection } from '@/components/home/FinalDecisionSection';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
 import { getBreadcrumbSchema, getPillarHasPartReferences, generateLocalBusinessSchema } from '@/lib/seoSchemas/index';
 import { getReviewBoardSchema } from '@/config/expertIdentity';
 import { UrgencyTicker } from '@/components/social-proof';
+
+// Below-fold sections — lazy loaded to reduce initial bundle
+const MarketRealitySection = lazy(() =>
+  import('@/components/home/MarketRealitySection').then(m => ({ default: m.MarketRealitySection }))
+);
+const FailurePointsSection = lazy(() =>
+  import('@/components/home/FailurePointsSection').then(m => ({ default: m.FailurePointsSection }))
+);
+const WhoIsWindowManSection = lazy(() =>
+  import('@/components/home/WhoIsWindowManSection').then(m => ({ default: m.WhoIsWindowManSection }))
+);
+const SecretPlaybookSection = lazy(() =>
+  import('@/components/home/SecretPlaybookSection').then(m => ({ default: m.SecretPlaybookSection }))
+);
+const SampleReportSection = lazy(() =>
+  import('@/components/home/SampleReportSection').then(m => ({ default: m.SampleReportSection }))
+);
+const WeaponizeAuditSection = lazy(() =>
+  import('@/components/home/WeaponizeAuditSection').then(m => ({ default: m.WeaponizeAuditSection }))
+);
+const FinalDecisionSection = lazy(() =>
+  import('@/components/home/FinalDecisionSection').then(m => ({ default: m.FinalDecisionSection }))
+);
 
 const Index = () => {
   usePageTracking('homepage');
@@ -82,19 +99,33 @@ const Index = () => {
         <div className="container px-4 -mt-16 relative z-10 border-secondary my-0 py-0 min-h-[56px]">
           <UrgencyTicker variant="homepage" size="lg" />
         </div>
-        <MarketRealitySection />
+        <Suspense fallback={<div className="min-h-[600px]" />}>
+          <MarketRealitySection />
+        </Suspense>
         {/* Edge glow divider */}
         <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--primary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--surface-1)), hsl(var(--muted)))' }} aria-hidden="true" />
-        <FailurePointsSection />
+        <Suspense fallback={<div className="min-h-[500px]" />}>
+          <FailurePointsSection />
+        </Suspense>
         <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--secondary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--muted)), hsl(var(--surface-3)))' }} aria-hidden="true" />
-        <WhoIsWindowManSection />
+        <Suspense fallback={<div className="min-h-[400px]" />}>
+          <WhoIsWindowManSection />
+        </Suspense>
         <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--primary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--surface-3)), hsl(var(--muted)))' }} aria-hidden="true" />
-        <SecretPlaybookSection />
+        <Suspense fallback={<div className="min-h-[500px]" />}>
+          <SecretPlaybookSection />
+        </Suspense>
         <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--secondary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--muted)), hsl(var(--surface-2)))' }} aria-hidden="true" />
-        <SampleReportSection />
+        <Suspense fallback={<div className="min-h-[400px]" />}>
+          <SampleReportSection />
+        </Suspense>
         <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--primary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--surface-2)), hsl(var(--muted)))' }} aria-hidden="true" />
-        <WeaponizeAuditSection />
-        <FinalDecisionSection />
+        <Suspense fallback={<div className="min-h-[400px]" />}>
+          <WeaponizeAuditSection />
+        </Suspense>
+        <Suspense fallback={<div className="min-h-[400px]" />}>
+          <FinalDecisionSection />
+        </Suspense>
       </div>
     </div>;
 };
