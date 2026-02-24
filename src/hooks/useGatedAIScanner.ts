@@ -9,7 +9,6 @@ import { heavyAIRequest } from '@/lib/aiRequest';
 import { getErrorMessage } from '@/lib/errors';
 import { useToast } from '@/hooks/use-toast';
 import { useSessionData } from '@/hooks/useSessionData';
-import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import { useLeadFormSubmit } from '@/hooks/useLeadFormSubmit';
 import { trackEvent, trackModalOpen } from '@/lib/gtm';
 import { wmScannerUpload } from '@/lib/wmTracking';
@@ -139,7 +138,7 @@ const INITIAL_STATE: GatedAIScannerState = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function persistState(data: PersistedState): void {
-  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch {}
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch (e) { console.warn('[useGatedAIScanner] persistState failed:', e); }
 }
 
 function readPersistedState(): PersistedState | null {
@@ -151,7 +150,7 @@ function readPersistedState(): PersistedState | null {
 }
 
 function clearPersistedState(): void {
-  try { sessionStorage.removeItem(SESSION_KEY); } catch {}
+  try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { console.warn('[useGatedAIScanner] clearPersistedState failed:', e); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -166,7 +165,6 @@ function clearPersistedState(): void {
 export function useGatedAIScanner(): UseGatedAIScannerReturn {
   const { toast } = useToast();
   const { sessionData, sessionId, updateField } = useSessionData();
-  const { leadId: existingLeadId, setLeadId } = useLeadIdentity();
   const { awardScore } = useCanonicalScore();
 
   const [state, setState] = useState<GatedAIScannerState>(INITIAL_STATE);
@@ -247,7 +245,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
       phase: 'uploaded',
       had_file: !!state.file,
     });
-  }, [state.scanAttemptId, state.file]);
+  }, [state.scanAttemptId, state.file, state.fileName, state.fileType, state.fileSize]);
 
   // ── reopenModal → uploaded ──────────────────────────────────────────
   const reopenModal = useCallback(() => {
@@ -267,29 +265,35 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
     setState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      // 1. Submit lead
+      // 1. Submit lead; capture the returned leadId synchronously to avoid the async setLeadId race condition
       const fullName = [data.firstName, data.lastName].filter(Boolean).join(' ');
-      const success = await submitLead({
+      const capturedLeadId = await submitLead({
         firstName: data.firstName,
         name: fullName || undefined,
         email: data.email,
         phone: data.phone,
       });
-      if (!success) throw new Error('Failed to save lead');
-
-      const capturedLeadId = existingLeadId || null;
+      if (!capturedLeadId) throw new Error('Failed to save lead');
 
       trackEvent('quote_upload_gate_success', {
         source_tool: 'quote-scanner',
         scan_attempt_id: state.scanAttemptId,
       });
 
-      // 2. Persist before analysis (Safari resilience)
+      // 2. Fire the single wmScannerUpload event immediately after lead capture (non-blocking)
+      if (state.scanAttemptId) {
+        wmScannerUpload(
+          { email: data.email, phone: data.phone, leadId: capturedLeadId || undefined },
+          state.scanAttemptId,
+          { source_tool: 'quote-scanner' },
+        ).catch(err => console.warn('[Non-critical] Scanner upload tracking failed:', err));
+      }
+
+      // 3. Persist state for resilience and transition UI
       if (state.scanAttemptId) {
         persistState({ phase: 'analyzing', leadId: capturedLeadId, scanAttemptId: state.scanAttemptId, fileName: state.fileName, fileType: state.fileType, fileSize: state.fileSize });
       }
 
-      // 3. Transition to analyzing
       setState(prev => ({
         ...prev,
         isModalOpen: false,
@@ -299,12 +303,6 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
 
       // 4. Compress and analyze
       const { base64, mimeType } = await compressImage(state.file);
-
-      await wmScannerUpload(
-        { email: data.email, phone: data.phone, leadId: capturedLeadId || undefined },
-        state.scanAttemptId || '',
-        { source_tool: 'quote-scanner' },
-      );
 
       const { data: analysisData, error: requestError } = await heavyAIRequest.sendRequest<QuoteAnalysisResult & { error?: string }>(
         'quote-scanner',
@@ -322,13 +320,14 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
 
       if (requestError) throw requestError;
       if (analysisData?.error) throw new Error(analysisData.error);
+      if (!analysisData) throw new Error('Analysis returned no data');
 
       const resultWithTimestamp: QuoteAnalysisResult = {
-        ...analysisData!,
+        ...analysisData,
         analyzedAt: new Date().toISOString(),
       };
 
-      // Track completion
+      // 5. Track completion and award points (internal tracking)
       trackEvent('analysis_complete', {
         score: resultWithTimestamp.overallScore,
         warnings_count: resultWithTimestamp.warnings?.length || 0,
@@ -342,16 +341,14 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
           sourceEntityType: 'quote',
           sourceEntityId: state.scanAttemptId,
         });
-        await wmScannerUpload(
-          { email: data.email, phone: data.phone, leadId: capturedLeadId || undefined },
-          state.scanAttemptId,
-          { source_tool: 'quote-scanner' },
-        );
+        // NOTE: Second wmScannerUpload call previously here was removed as redundant
       }
 
+      const priceStr = resultWithTimestamp.pricePerOpening ?? '';
+      const parsedPrice = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
       await logScannerCompleted({
         score: resultWithTimestamp.overallScore,
-        quoteAmount: parseFloat(resultWithTimestamp.pricePerOpening.replace(/[^0-9.]/g, '')) || undefined,
+        quoteAmount: !isNaN(parsedPrice) ? parsedPrice : undefined,
         fileSize: state.file.size,
         fileType: state.file.type,
         leadId: capturedLeadId || undefined,
@@ -362,7 +359,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
       updateField('quoteAnalysisResult', resultWithTimestamp);
       clearPersistedState();
 
-      // 5. Reveal
+      // 6. Reveal
       setState(prev => ({
         ...prev,
         phase: 'revealed',
@@ -382,7 +379,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
         variant: 'destructive',
       });
     }
-  }, [state.file, state.scanAttemptId, submitLead, sessionData.windowCount, sessionId, existingLeadId, awardScore, updateField, toast]);
+  }, [state.file, state.scanAttemptId, state.fileName, state.fileType, state.fileSize, submitLead, sessionData.windowCount, sessionId, awardScore, updateField, toast]);
 
   // ── reset ───────────────────────────────────────────────────────────
   const reset = useCallback(() => {
