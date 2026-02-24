@@ -53,8 +53,8 @@ export interface LeadFormSubmitOptions {
 }
 
 export interface LeadFormSubmitResult {
-  /** Submit function - pass form data */
-  submit: (data: LeadFormData) => Promise<boolean>;
+  /** Submit function - pass form data. Returns the leadId string on success, false on failure. */
+  submit: (data: LeadFormData) => Promise<string | false>;
   /** Whether submission is in progress */
   isSubmitting: boolean;
   /** Error message if submission failed */
@@ -258,7 +258,7 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
         }, redirectDelay);
       }
 
-      return true;
+      return effectiveLeadId || false;
     } catch (err) {
       console.error('[useLeadFormSubmit] Submission error:', err);
       
