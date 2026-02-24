@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
+import { SilentAllyInterceptor } from '@/components/authority/SilentAllyInterceptor';
 
 // Below-fold components — lazy loaded to keep initial bundle minimal
 const UnifiedFooter = lazy(() =>
@@ -8,10 +9,6 @@ const UnifiedFooter = lazy(() =>
 
 const FloatingEstimateButton = lazy(() =>
   import('@/components/floating-cta/FloatingEstimateButton').then(m => ({ default: m.FloatingEstimateButton }))
-);
-
-const SilentAllyInterceptor = lazy(() =>
-  import('@/components/authority/SilentAllyInterceptor').then(m => ({ default: m.SilentAllyInterceptor }))
 );
 
 /**
@@ -44,10 +41,10 @@ export function PublicLayout() {
         <FloatingEstimateButton />
       </Suspense>
 
-      {/* Scroll-proximity exit intent interceptor bar */}
-      <Suspense fallback={null}>
-        <SilentAllyInterceptor />
-      </Suspense>
+      {/* Scroll-proximity exit intent interceptor bar — eagerly mounted so
+          pageLoadTimeRef and scroll-depth tracking start at navigation time,
+          not after chunk resolution. */}
+      <SilentAllyInterceptor />
     </div>
   );
 }
