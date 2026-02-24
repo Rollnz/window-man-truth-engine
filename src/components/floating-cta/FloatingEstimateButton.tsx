@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, forwardRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { EstimateSlidePanel } from './EstimateSlidePanel';
 import { cn } from '@/lib/utils';
@@ -7,19 +7,16 @@ import { cn } from '@/lib/utils';
  * FloatingEstimateButton
  * 
  * A persistent floating action button featuring the Window Man logo.
- * Appears in the bottom-right corner and syncs with the mobile sticky footer's
- * scroll hide/show behavior. Opens a slide-in panel for estimate requests.
+ * Appears in the bottom-right corner on all public pages.
+ * Opens a slide-in panel for estimate requests.
  */
-export const FloatingEstimateButton = forwardRef<HTMLButtonElement, Record<string, never>>((_props, ref) => {
+export function FloatingEstimateButton() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
   const [hasEntered, setHasEntered] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
   const [triggerSource, setTriggerSource] = useState<string | undefined>();
   const [triggerMode, setTriggerMode] = useState<string | undefined>();
   const [triggerInitialMessage, setTriggerInitialMessage] = useState<string | undefined>();
-  const lastScrollY = useRef(0);
-  const ticking = useRef(false);
 
   // Delayed entrance - loads last after 2 seconds, then pulse after entrance completes
   useEffect(() => {
@@ -57,35 +54,6 @@ export const FloatingEstimateButton = forwardRef<HTMLButtonElement, Record<strin
     }
   }, [isOpen]);
 
-  // Scroll handler - synced with MobileStickyFooter logic
-  const handleScroll = useCallback(() => {
-    if (!ticking.current) {
-      window.requestAnimationFrame(() => {
-        const currentScrollY = window.scrollY;
-        const scrollingDown = currentScrollY > lastScrollY.current;
-        const scrollingUp = currentScrollY < lastScrollY.current;
-        
-        // Require 10px+ delta to prevent jitter
-        if (Math.abs(currentScrollY - lastScrollY.current) > 10) {
-          if (scrollingDown && currentScrollY > 100) {
-            setIsVisible(false);
-          } else if (scrollingUp) {
-            setIsVisible(true);
-          }
-          lastScrollY.current = currentScrollY;
-        }
-        
-        ticking.current = false;
-      });
-      ticking.current = true;
-    }
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
-
   return (
     <>
       {/* Inject pulse keyframe animation */}
@@ -105,30 +73,27 @@ export const FloatingEstimateButton = forwardRef<HTMLButtonElement, Record<strin
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <button
-            ref={ref}
             className={cn(
-              // Positioning - above mobile footer, normal on desktop
+              // Positioning
               'fixed right-4 z-50',
               'bottom-6 md:right-6',
               
               // Size: 52px mobile, 64px desktop
               'h-[52px] w-[52px] md:h-16 md:w-16',
               
-              // Circular, transparent background (no shadow - logo has built-in depth)
+              // Circular, transparent background
               'rounded-full p-0 bg-transparent border-0',
               
-              // Hover scale effect (faster than entrance)
+              // Hover scale effect
               'hover:scale-110',
               
-              // Slow 1s entrance transition, faster scroll hide/show
+              // Entrance transition
               hasEntered ? 'transition-all duration-300 ease-in-out' : 'transition-all duration-1000 ease-out',
               
-              // Visibility animation - entrance slide-up, then scroll sync (mobile only)
+              // Visibility — entrance slide-up only, always visible after
               !hasEntered 
                 ? 'translate-y-32 opacity-0 pointer-events-none'
-                : isVisible 
-                  ? 'translate-y-0 opacity-100' 
-                  : 'translate-y-20 opacity-0 pointer-events-none md:translate-y-0 md:opacity-100 md:pointer-events-auto',
+                : 'translate-y-0 opacity-100',
               
               // Cursor
               'cursor-pointer'
@@ -138,7 +103,7 @@ export const FloatingEstimateButton = forwardRef<HTMLButtonElement, Record<strin
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               // Subtle pulse glow animation after entrance (plays 3 times)
-              ...(showPulse && isVisible ? {
+              ...(showPulse ? {
                 animation: 'fab-pulse 2s ease-in-out 3',
               } : {}),
             }}
@@ -155,6 +120,4 @@ export const FloatingEstimateButton = forwardRef<HTMLButtonElement, Record<strin
       </Sheet>
     </>
   );
-});
-
-FloatingEstimateButton.displayName = "FloatingEstimateButton";
+}
