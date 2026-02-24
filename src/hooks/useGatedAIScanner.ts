@@ -282,7 +282,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
 
       // 2. Fire the single wmScannerUpload event immediately after lead capture (non-blocking)
       if (state.scanAttemptId) {
-        wmScannerUpload(
+        void wmScannerUpload(
           { email: data.email, phone: data.phone, leadId: capturedLeadId || undefined },
           state.scanAttemptId,
           { source_tool: 'quote-scanner' },
