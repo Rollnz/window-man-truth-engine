@@ -1,0 +1,222 @@
+From 713395258516ff1026ba9220344030a25a852e55 Mon Sep 17 00:00:00 2001
+From: Manus AI <manus@itswindowman.com>
+Date: Mon, 23 Feb 2026 23:25:26 -0500
+Subject: [PATCH] fix(tracking): fire wmScannerUpload once, immediately after
+ lead capture
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Previously, wmScannerUpload was called twice in captureLead:
+
+  1. After image compression (mid-analysis, Step 4) with an unsafe
+     fallback key of `state.scanAttemptId || ''`. An empty string is a
+     valid Map key, which would corrupt the firedScanIds deduplication
+     set and silently suppress future events for the same session.
+
+  2. After awardScore (post-analysis, Step 5) as a redundant second
+     call that was silently deduplicated by wmTracking's firedScanIds
+     Set — dead code that obscured intent.
+
+This commit:
+  - Removes both existing calls.
+  - Adds a single authoritative call immediately after submitLead
+    succeeds and capturedLeadId is resolved — the earliest moment
+    when all required identity data (leadId, email, phone) is
+    available and scanAttemptId is guaranteed non-empty.
+  - Guards the call with `if (state.scanAttemptId)` to prevent
+    firing with an empty deduplication key.
+
+Impact:
+  - wm_scanner_upload now fires exactly once per upload, at the
+    correct moment, with a valid scanAttemptId.
+  - Meta CAPI receives the $500 ScannerUpload event with full EMQ
+    identity data (hashed email + phone + leadId).
+  - Activates value-based optimization and vLAL audience building
+    in Meta Ads Manager.
+---
+ src/hooks/useGatedAIScanner.ts | 48 ++++++++++++----------------------
+ 1 file changed, 16 insertions(+), 32 deletions(-)
+
+diff --git a/src/hooks/useGatedAIScanner.ts b/src/hooks/useGatedAIScanner.ts
+index b35ae6c..4314726 100644
+--- a/src/hooks/useGatedAIScanner.ts
++++ b/src/hooks/useGatedAIScanner.ts
+@@ -3,7 +3,6 @@
+ // Flow: Upload → Lead Modal → Analyzing (Theater) → Revealed (Authority Report)
+ // State: idle | uploaded | locked | analyzing | revealed
+ // ═══════════════════════════════════════════════════════════════════════════
+-
+ import { useState, useCallback, useRef, useEffect } from 'react';
+ import { heavyAIRequest } from '@/lib/aiRequest';
+ import { getErrorMessage } from '@/lib/errors';
+@@ -21,9 +20,7 @@ import type { ExplainScoreFormData } from '@/types/audit';
+ // ═══════════════════════════════════════════════════════════════════════════
+ // TYPES
+ // ═══════════════════════════════════════════════════════════════════════════
+-
+ export type AIScannerPhase = 'idle' | 'uploaded' | 'locked' | 'analyzing' | 'revealed';
+-
+ const SESSION_KEY = 'wte_ai_scanner_state';
+ 
+ interface PersistedState {
+@@ -64,7 +61,6 @@ export interface UseGatedAIScannerReturn extends GatedAIScannerState {
+ // ═══════════════════════════════════════════════════════════════════════════
+ // IMAGE COMPRESSION (copied from useGatedScanner)
+ // ═══════════════════════════════════════════════════════════════════════════
+-
+ async function compressImage(file: File, maxBytes = 4_000_000): Promise<{ base64: string; mimeType: string }> {
+   return new Promise((resolve, reject) => {
+     const reader = new FileReader();
+@@ -76,7 +72,6 @@ async function compressImage(file: File, maxBytes = 4_000_000): Promise<{ base64
+         resolve({ base64, mimeType: file.type });
+         return;
+       }
+-
+       if (file.type === 'application/pdf') {
+         if (base64.length > 6_000_000) {
+           reject(new Error('PDF is too large. Please upload a smaller file (max 5MB).'));
+@@ -85,7 +80,6 @@ async function compressImage(file: File, maxBytes = 4_000_000): Promise<{ base64
+         resolve({ base64, mimeType: file.type });
+         return;
+       }
+-
+       const img = new Image();
+       img.onload = () => {
+         const canvas = document.createElement('canvas');
+@@ -115,7 +109,6 @@ async function compressImage(file: File, maxBytes = 4_000_000): Promise<{ base64
+ // ═══════════════════════════════════════════════════════════════════════════
+ // INITIAL STATE
+ // ═══════════════════════════════════════════════════════════════════════════
+-
+ const INITIAL_STATE: GatedAIScannerState = {
+   phase: 'idle',
+   file: null,
+@@ -137,7 +130,6 @@ const INITIAL_STATE: GatedAIScannerState = {
+ // ═══════════════════════════════════════════════════════════════════════════
+ // SESSION STORAGE HELPERS
+ // ═══════════════════════════════════════════════════════════════════════════
+-
+ function persistState(data: PersistedState): void {
+   try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch {}
+ }
+@@ -157,7 +149,6 @@ function clearPersistedState(): void {
+ // ═══════════════════════════════════════════════════════════════════════════
+ // HOOK
+ // ═══════════════════════════════════════════════════════════════════════════
+-
+ /**
+  * Gated AI scanner state machine for the /ai-scanner page.
+  * Flow: idle → uploaded → locked (lead modal) → analyzing (theater) → revealed.
+@@ -168,7 +159,6 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
+   const { sessionData, sessionId, updateField } = useSessionData();
+   const { leadId: existingLeadId, setLeadId } = useLeadIdentity();
+   const { awardScore } = useCanonicalScore();
+-
+   const [state, setState] = useState<GatedAIScannerState>(INITIAL_STATE);
+   const scanAttemptIdRef = useRef<string>('');
+ 
+@@ -238,11 +228,9 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
+       isModalOpen: false,
+       phase: 'locked',
+     }));
+-
+     if (state.scanAttemptId) {
+       persistState({ phase: 'locked', leadId: null, scanAttemptId: state.scanAttemptId, fileName: state.fileName, fileType: state.fileType, fileSize: state.fileSize });
+     }
+-
+     trackEvent('quote_upload_gate_dismissed', {
+       phase: 'uploaded',
+       had_file: !!state.file,
+@@ -267,7 +255,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
+     setState(prev => ({ ...prev, isLoading: true }));
+ 
+     try {
+-      // 1. Submit lead
++      // 1. Submit lead and get the leadId
+       const fullName = [data.firstName, data.lastName].filter(Boolean).join(' ');
+       const success = await submitLead({
+         firstName: data.firstName,
+@@ -276,7 +264,6 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
+         phone: data.phone,
+       });
+       if (!success) throw new Error('Failed to save lead');
+-
+       const capturedLeadId = existingLeadId || null;
+ 
+       trackEvent('quote_upload_gate_success', {
+@@ -284,12 +271,20 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
+         scan_attempt_id: state.scanAttemptId,
+       });
+ 
+-      // 2. Persist before analysis (Safari resilience)
++      // 2. ✅ FIRE THE HIGH-VALUE EVENT (The Critical Step)
++      // This is the one and only time this event should fire.
+       if (state.scanAttemptId) {
+-        persistState({ phase: 'analyzing', leadId: capturedLeadId, scanAttemptId: state.scanAttemptId, fileName: state.fileName, fileType: state.fileType, fileSize: state.fileSize });
++        await wmScannerUpload(
++          { email: data.email, phone: data.phone, leadId: capturedLeadId || undefined },
++          state.scanAttemptId,
++          { source_tool: 'quote-scanner' },
++        );
+       }
+ 
+-      // 3. Transition to analyzing
++      // 3. Persist state for resilience and transition UI
++      if (state.scanAttemptId) {
++        persistState({ phase: 'analyzing', leadId: capturedLeadId, scanAttemptId: state.scanAttemptId, fileName: state.fileName, fileType: state.fileType, fileSize: state.fileSize });
++      }
+       setState(prev => ({
+         ...prev,
+         isModalOpen: false,
+@@ -297,15 +292,8 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
+         leadId: capturedLeadId,
+       }));
+ 
+-      // 4. Compress and analyze
++      // 4. Perform the heavy AI analysis
+       const { base64, mimeType } = await compressImage(state.file);
+-
+-      await wmScannerUpload(
+-        { email: data.email, phone: data.phone, leadId: capturedLeadId || undefined },
+-        state.scanAttemptId || '',
+-        { source_tool: 'quote-scanner' },
+-      );
+-
+       const { data: analysisData, error: requestError } = await heavyAIRequest.sendRequest<QuoteAnalysisResult & { error?: string }>(
+         'quote-scanner',
+         {
+@@ -328,7 +316,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
+         analyzedAt: new Date().toISOString(),
+       };
+ 
+-      // Track completion
++      // 5. Track completion and award points (internal tracking)
+       trackEvent('analysis_complete', {
+         score: resultWithTimestamp.overallScore,
+         warnings_count: resultWithTimestamp.warnings?.length || 0,
+@@ -342,11 +330,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
+           sourceEntityType: 'quote',
+           sourceEntityId: state.scanAttemptId,
+         });
+-        await wmScannerUpload(
+-          { email: data.email, phone: data.phone, leadId: capturedLeadId || undefined },
+-          state.scanAttemptId,
+-          { source_tool: 'quote-scanner' },
+-        );
++        // 🔴 REMOVED REDUNDANT SECOND CALL that was here
+       }
+ 
+       await logScannerCompleted({
+@@ -362,7 +346,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
+       updateField('quoteAnalysisResult', resultWithTimestamp);
+       clearPersistedState();
+ 
+-      // 5. Reveal
++      // 6. Reveal the results
+       setState(prev => ({
+         ...prev,
+         phase: 'revealed',
+-- 
+2.34.1
+
