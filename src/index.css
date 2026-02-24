@@ -1313,12 +1313,12 @@
   transform: translateY(8px);
   transition: opacity 350ms cubic-bezier(0.2, 0.8, 0.2, 1),
               transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  will-change: transform, opacity;
 }
 
 [data-inview="true"] .wm-reveal {
   opacity: 1;
   transform: translateY(0);
+  will-change: auto;
 }
 
 /* Stagger utilities for sequential reveals */
@@ -1335,7 +1335,6 @@
   transform: translateX(-8px);
   transition: opacity 350ms cubic-bezier(0.2, 0.8, 0.2, 1),
               transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  will-change: transform, opacity;
 }
 
 .wm-slide-right {
@@ -1343,13 +1342,13 @@
   transform: translateX(8px);
   transition: opacity 350ms cubic-bezier(0.2, 0.8, 0.2, 1),
               transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  will-change: transform, opacity;
 }
 
 [data-inview="true"] .wm-slide-left,
 [data-inview="true"] .wm-slide-right {
   opacity: 1;
   transform: translateX(0);
+  will-change: auto;
 }
 
 /* Scan sweep effect - light bar passes across element once */

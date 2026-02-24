@@ -89,7 +89,7 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
   } = useTheme();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background md:bg-background/80 md:backdrop-blur-md border-b border-border">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between relative">
         {/* Logo */}
         <Link to={ROUTES.HOME} className="flex items-center gap-2 font-bold text-lg">

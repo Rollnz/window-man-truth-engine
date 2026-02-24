@@ -1,24 +1,24 @@
 import { Outlet } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
-import { UnifiedFooter } from '@/components/navigation/UnifiedFooter';
+import { SilentAllyInterceptor } from '@/components/authority/SilentAllyInterceptor';
 
-// Lazy load FAB - ensures it's the absolute last thing to load
-const FloatingEstimateButton = lazy(() => 
-  import('@/components/floating-cta/FloatingEstimateButton').then(m => ({ default: m.FloatingEstimateButton }))
+// Below-fold components — lazy loaded to keep initial bundle minimal
+const UnifiedFooter = lazy(() =>
+  import('@/components/navigation/UnifiedFooter').then(m => ({ default: m.UnifiedFooter }))
 );
 
-// Lazy load SilentAllyInterceptor - scroll-proximity exit intent bar
-const SilentAllyInterceptor = lazy(() =>
-  import('@/components/authority/SilentAllyInterceptor').then(m => ({ default: m.SilentAllyInterceptor }))
+const FloatingEstimateButton = lazy(() =>
+  import('@/components/floating-cta/FloatingEstimateButton').then(m => ({ default: m.FloatingEstimateButton }))
 );
 
 /**
  * PublicLayout wraps all public-facing pages with the unified footer system.
- * 
+ *
  * This layout automatically includes:
- * - UnifiedFooter: Full footer at page bottom (light-surface always)
- * - MobileStickyFooter: Mobile-only sticky CTA bar (light-surface always)
- * 
+ * - UnifiedFooter: Full footer at page bottom
+ * - FloatingEstimateButton: Floating CTA button
+ * - SilentAllyInterceptor: Scroll-proximity exit intent bar
+ *
  * Excluded routes (should NOT use this layout):
  * - /vault/* (authenticated user dashboard)
  * - /admin/* (admin pages)
@@ -30,19 +30,21 @@ export function PublicLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
-      
+
       {/* Full footer at page bottom */}
-      <UnifiedFooter />
-      
+      <Suspense fallback={null}>
+        <UnifiedFooter />
+      </Suspense>
+
       {/* Floating CTA button - lazy loaded, appears last on all public pages */}
       <Suspense fallback={null}>
         <FloatingEstimateButton />
       </Suspense>
 
-      {/* Scroll-proximity exit intent interceptor bar */}
-      <Suspense fallback={null}>
-        <SilentAllyInterceptor />
-      </Suspense>
+      {/* Scroll-proximity exit intent interceptor bar — eagerly mounted so
+          pageLoadTimeRef and scroll-depth tracking start at navigation time,
+          not after chunk resolution. */}
+      <SilentAllyInterceptor />
     </div>
   );
 }
