@@ -92,7 +92,6 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
   const {
     sourceTool,
     formLocation,
-    leadScore = 50,
     onSuccess,
     redirectTo,
     redirectDelay = 1500,
@@ -108,7 +107,7 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
 
   const clearError = useCallback(() => setError(null), []);
 
-  const submit = useCallback(async (data: LeadFormData): Promise<boolean> => {
+  const submit = useCallback(async (data: LeadFormData): Promise<string | false> => {
     setError(null);
     setIsSubmitting(true);
 
@@ -286,7 +285,6 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
   }, [
     sourceTool,
     formLocation,
-    leadScore,
     onSuccess,
     redirectTo,
     redirectDelay,
