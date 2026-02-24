@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Navbar } from '@/components/home/Navbar';
+import { ErrorBoundary } from '@/components/error';
 import { HeroSection } from '@/components/home/HeroSection';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { SEO } from '@/components/SEO';
@@ -99,33 +100,75 @@ const Index = () => {
         <div className="container px-4 -mt-16 relative z-10 border-secondary my-0 py-0 min-h-[56px]">
           <UrgencyTicker variant="homepage" size="lg" />
         </div>
-        <Suspense fallback={<div className="min-h-[600px]" />}>
-          <MarketRealitySection />
-        </Suspense>
+        <ErrorBoundary
+          title="Market Reality Section Error"
+          description="We encountered an issue loading this section."
+          onReset={() => window.location.reload()}
+        >
+          <Suspense fallback={<div className="min-h-[600px]" />}>
+            <MarketRealitySection />
+          </Suspense>
+        </ErrorBoundary>
         {/* Edge glow divider */}
         <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--primary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--surface-1)), hsl(var(--muted)))' }} aria-hidden="true" />
-        <Suspense fallback={<div className="min-h-[500px]" />}>
-          <FailurePointsSection />
-        </Suspense>
+        <ErrorBoundary
+          title="Failure Points Section Error"
+          description="We encountered an issue loading this section."
+          onReset={() => window.location.reload()}
+        >
+          <Suspense fallback={<div className="min-h-[500px]" />}>
+            <FailurePointsSection />
+          </Suspense>
+        </ErrorBoundary>
         <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--secondary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--muted)), hsl(var(--surface-3)))' }} aria-hidden="true" />
-        <Suspense fallback={<div className="min-h-[400px]" />}>
-          <WhoIsWindowManSection />
-        </Suspense>
+        <ErrorBoundary
+          title="Who Is Window Man Section Error"
+          description="We encountered an issue loading this section."
+          onReset={() => window.location.reload()}
+        >
+          <Suspense fallback={<div className="min-h-[400px]" />}>
+            <WhoIsWindowManSection />
+          </Suspense>
+        </ErrorBoundary>
         <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--primary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--surface-3)), hsl(var(--muted)))' }} aria-hidden="true" />
-        <Suspense fallback={<div className="min-h-[500px]" />}>
-          <SecretPlaybookSection />
-        </Suspense>
+        <ErrorBoundary
+          title="Secret Playbook Section Error"
+          description="We encountered an issue loading this section."
+          onReset={() => window.location.reload()}
+        >
+          <Suspense fallback={<div className="min-h-[500px]" />}>
+            <SecretPlaybookSection />
+          </Suspense>
+        </ErrorBoundary>
         <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--secondary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--muted)), hsl(var(--surface-2)))' }} aria-hidden="true" />
-        <Suspense fallback={<div className="min-h-[400px]" />}>
-          <SampleReportSection />
-        </Suspense>
+        <ErrorBoundary
+          title="Sample Report Section Error"
+          description="We encountered an issue loading this section."
+          onReset={() => window.location.reload()}
+        >
+          <Suspense fallback={<div className="min-h-[400px]" />}>
+            <SampleReportSection />
+          </Suspense>
+        </ErrorBoundary>
         <div className="h-[clamp(52px,7vw,84px)]" style={{ background: 'radial-gradient(ellipse at center, hsl(var(--primary) / 0.08) 0%, transparent 60%), linear-gradient(to bottom, hsl(var(--surface-2)), hsl(var(--muted)))' }} aria-hidden="true" />
-        <Suspense fallback={<div className="min-h-[400px]" />}>
-          <WeaponizeAuditSection />
-        </Suspense>
-        <Suspense fallback={<div className="min-h-[400px]" />}>
-          <FinalDecisionSection />
-        </Suspense>
+        <ErrorBoundary
+          title="Weaponize Audit Section Error"
+          description="We encountered an issue loading this section."
+          onReset={() => window.location.reload()}
+        >
+          <Suspense fallback={<div className="min-h-[400px]" />}>
+            <WeaponizeAuditSection />
+          </Suspense>
+        </ErrorBoundary>
+        <ErrorBoundary
+          title="Final Decision Section Error"
+          description="We encountered an issue loading this section."
+          onReset={() => window.location.reload()}
+        >
+          <Suspense fallback={<div className="min-h-[400px]" />}>
+            <FinalDecisionSection />
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </div>;
 };
