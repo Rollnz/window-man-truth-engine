@@ -15,23 +15,23 @@ function ValueCard({ icon, title, description, highlight }: ValueCardProps) {
     <div
       className={cn(
         "p-6 rounded-xl border transition-all duration-300 hover:translate-y-[-4px]",
-        highlight
-          ? "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30 hover:border-primary/50"
-          : "bg-card/50 border-border/50 hover:border-border",
-      )}
-    >
+        highlight ?
+        "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30 hover:border-primary/50" :
+        "bg-card/50 border-border/50 hover:border-border"
+      )}>
+
       <div
         className={cn(
           "w-12 h-12 rounded-xl flex items-center justify-center mb-4",
-          highlight ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground",
-        )}
-      >
+          highlight ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+        )}>
+
         {icon}
       </div>
       <h4 className="text-lg font-semibold text-foreground mb-2">{title}</h4>
       <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
-    </div>
-  );
+    </div>);
+
 }
 
 export function WhoIsWindowManSection() {
@@ -106,20 +106,20 @@ export function WhoIsWindowManSection() {
               icon={<ShieldCheck className="w-6 h-6" />}
               title="Your Agent"
               description="We act as your agent in a technically hostile market, protecting your interests first."
-              highlight
-            />
+              highlight />
+
             <ValueCard
               icon={<Scale className="w-6 h-6" />}
               title="Market Equalizer"
               description="A market equalizer in a $3.8B industry where knowledge has always meant power."
-              highlight
-            />
+              highlight />
+
             <ValueCard
               icon={<Zap className="w-6 h-6" />}
               title="Unfair Advantage"
               description="Your unfair advantage when everything is on the line. You're no longer guessing — you're verifying."
-              highlight
-            />
+              highlight />
+
           </div>
           <div className="mt-8 text-center">
             <p className="text-muted-foreground">
@@ -138,12 +138,12 @@ export function WhoIsWindowManSection() {
                 loading="lazy"
                 decoding="async"
                 width={1456}
-                height={816}
-              />
+                height={816} />
+
               <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-background/0 to-background/60" />
             </div>
-            <p className="text-center text-sm text-muted-foreground mt-3 italic">
-              Your advocate. Not your salesman.
+            <p className="text-center text-sm mt-3 italic text-gray-100 font-bold">
+              I'm Your  Man. Not your salesman.
             </p>
           </div>
         </AnimateOnScroll>
@@ -222,6 +222,6 @@ export function WhoIsWindowManSection() {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 }
