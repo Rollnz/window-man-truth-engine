@@ -306,18 +306,33 @@ export function PreQuoteLeadModalV2({
   // ═══════════════════════════════════════════════════════════════════════
   const handleTimelineSelect = useCallback((value: Timeline) => {
     setQualification((prev) => ({ ...prev, timeline: value }));
+    wmInternal('prequote_step_timeline', {
+      lead_id: leadId,
+      source_tool: 'prequote-v2',
+      timeline: value,
+    });
     setStep('quote');
-  }, []);
+  }, [leadId]);
 
   const handleQuoteSelect = useCallback((value: HasQuote) => {
     setQualification((prev) => ({ ...prev, hasQuote: value }));
+    wmInternal('prequote_step_quote', {
+      lead_id: leadId,
+      source_tool: 'prequote-v2',
+      has_quote: value,
+    });
     setStep('homeowner');
-  }, []);
+  }, [leadId]);
 
   const handleHomeownerSelect = useCallback((value: boolean) => {
     setQualification((prev) => ({ ...prev, homeowner: value }));
+    wmInternal('prequote_step_homeowner', {
+      lead_id: leadId,
+      source_tool: 'prequote-v2',
+      homeowner: value,
+    });
     setStep('windowCount');
-  }, []);
+  }, [leadId]);
 
   // ═══════════════════════════════════════════════════════════════════════
   // GTM segment events (CRITICAL: only fire after PATCH and segment known)
@@ -466,6 +481,18 @@ export function PreQuoteLeadModalV2({
             leadId,
             ctaSource
           );
+
+          wmRetarget('wm_qualified_funnel_complete', {
+            lead_id: leadId,
+            lead_score: result.score,
+            lead_segment: result.segment,
+            timeline: finalQualification.timeline,
+            has_quote: finalQualification.hasQuote,
+            homeowner: finalQualification.homeowner,
+            window_scope: finalQualification.windowScope,
+            source_tool: 'prequote-v2',
+            source: `prequote-v2:${contextKey}`,
+          });
 
           // Mark completed AFTER result screen is shown (deferred to onClose)
           // — moved to result screen dismiss handler below

@@ -275,7 +275,12 @@ export const EstimateSlidePanel = React.forwardRef<HTMLDivElement, EstimateSlide
       // Update the Golden Thread with the returned leadId
       if (data?.leadId) {
         setLeadId(data.leadId);
-        updateFields({ leadId: data.leadId });
+        updateFields({
+          leadId: data.leadId,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zip,
+        });
       }
 
       // Track the successful submission with full metadata (Phase 4)

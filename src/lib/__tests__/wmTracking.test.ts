@@ -10,7 +10,6 @@
  * - Scanner upload dedupe guard works
  * - QualifiedLead session dedupe + upload suppression
  * - qualifiesForQualifiedLead threshold logic
- * - Legacy bridge events fire as RT (no value)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -101,6 +100,7 @@ describe('wmLead', () => {
     expect(meta.category).toBe('opt');
     expect(meta.send).toBe(true);
     expect(meta.meta_event_name).toBe('Lead');
+    expect(meta.wm_tracking_version).toBe('2.0.0');
   });
 
   it('uses bare leadId as event_id (matches server-side CAPI for Meta dedup)', async () => {
@@ -110,17 +110,15 @@ describe('wmLead', () => {
     expect(event!.event_id).toBe(TEST_LEAD_ID);
   });
 
-  it('fires legacy bridge lead_submission_success as RT (no value)', async () => {
+  it('does not fire legacy bridge names', async () => {
     await wmLead(testIdentity);
 
-    const bridge = mockDataLayer.find(e => e.event === 'lead_submission_success');
-    expect(bridge).toBeDefined();
-    expect(bridge!.legacy_bridge).toBe(true);
-    expect(bridge!.value).toBeUndefined();
-    expect(bridge!.currency).toBeUndefined();
-    const meta = bridge!.meta as Record<string, unknown>;
-    expect(meta.category).toBe('rt');
+    const legacyNames = ['lead_submission_success', 'quote_upload_success', 'booking_confirmed', 'phone_lead_captured'];
+    for (const legacyName of legacyNames) {
+      expect(mockDataLayer.find(e => e.event === legacyName)).toBeUndefined();
+    }
   });
+
 
   it('includes lead_id and external_id from identity', async () => {
     await wmLead(testIdentity);
@@ -156,6 +154,8 @@ describe('wmQualifiedLead', () => {
     expect(event).toBeDefined();
     expect(event!.value).toBe(100);
     expect(event!.currency).toBe('USD');
+    const meta = event!.meta as Record<string, unknown>;
+    expect(meta.meta_event_name).toBe('CompleteRegistration');
   });
 
   it('uses deterministic event_id: ql:{leadId}', async () => {
@@ -193,14 +193,6 @@ describe('wmQualifiedLead', () => {
     expect(fired).toBe(false);
   });
 
-  it('fires legacy bridge phone_lead_captured as RT', async () => {
-    await wmQualifiedLead(testIdentity);
-
-    const bridge = mockDataLayer.find(e => e.event === 'phone_lead_captured');
-    expect(bridge).toBeDefined();
-    expect(bridge!.legacy_bridge).toBe(true);
-    expect(bridge!.value).toBeUndefined();
-  });
 });
 
 describe('wmScannerUpload', () => {
@@ -212,6 +204,8 @@ describe('wmScannerUpload', () => {
     expect(event).toBeDefined();
     expect(event!.value).toBe(500);
     expect(event!.currency).toBe('USD');
+    const meta = event!.meta as Record<string, unknown>;
+    expect(meta.meta_event_name).toBe('SubmitApplication');
   });
 
   it('deduplicates per scanAttemptId (second call returns null)', async () => {
@@ -239,14 +233,6 @@ describe('wmScannerUpload', () => {
     expect(mockSessionStorage.get(`wm_upload_fired:${TEST_LEAD_ID}`)).toBe('1');
   });
 
-  it('fires legacy bridge quote_upload_success as RT', async () => {
-    await wmScannerUpload(testIdentity, 'scan-001');
-
-    const bridge = mockDataLayer.find(e => e.event === 'quote_upload_success');
-    expect(bridge).toBeDefined();
-    expect(bridge!.legacy_bridge).toBe(true);
-    expect(bridge!.value).toBeUndefined();
-  });
 });
 
 describe('wmAppointmentBooked', () => {
@@ -257,6 +243,8 @@ describe('wmAppointmentBooked', () => {
     expect(event).toBeDefined();
     expect(event!.value).toBe(1000);
     expect(event!.currency).toBe('USD');
+    const meta = event!.meta as Record<string, unknown>;
+    expect(meta.meta_event_name).toBe('Schedule');
   });
 
   it('uses collision-safe event_id: appt:{leadId}:{appointmentKey}', async () => {
@@ -273,14 +261,6 @@ describe('wmAppointmentBooked', () => {
     expect((event!.event_id as string).startsWith(`appt:${TEST_LEAD_ID}:`)).toBe(true);
   });
 
-  it('fires legacy bridge booking_confirmed as RT', async () => {
-    await wmAppointmentBooked(testIdentity, 'key-1');
-
-    const bridge = mockDataLayer.find(e => e.event === 'booking_confirmed');
-    expect(bridge).toBeDefined();
-    expect(bridge!.legacy_bridge).toBe(true);
-    expect(bridge!.value).toBeUndefined();
-  });
 });
 
 describe('wmSold', () => {
@@ -291,6 +271,8 @@ describe('wmSold', () => {
     expect(event).toBeDefined();
     expect(event!.value).toBe(8000);
     expect(event!.sale_amount).toBe(3000);
+    const meta = event!.meta as Record<string, unknown>;
+    expect(meta.meta_event_name).toBe('Purchase');
   });
 
   it('uses collision-safe event_id: sold:{leadId}:{dealKey}', async () => {
@@ -464,7 +446,7 @@ describe('meta field structure', () => {
     for (const evt of optEvents) {
       const meta = evt.meta as Record<string, unknown>;
       expect(meta).toBeDefined();
-      expect(meta.wm_tracking_version).toBe('1.0.0');
+      expect(meta.wm_tracking_version).toBe('2.0.0');
       expect(meta.category).toBe('opt');
       expect(meta.send).toBe(true);
     }
@@ -475,7 +457,7 @@ describe('meta field structure', () => {
 
     const event = mockDataLayer.find(e => e.event === 'test_rt');
     const meta = event!.meta as Record<string, unknown>;
-    expect(meta.wm_tracking_version).toBe('1.0.0');
+    expect(meta.wm_tracking_version).toBe('2.0.0');
   });
 
   it('INTERNAL events include meta with wm_tracking_version', () => {
@@ -483,6 +465,6 @@ describe('meta field structure', () => {
 
     const event = mockDataLayer.find(e => e.event === 'test_internal');
     const meta = event!.meta as Record<string, unknown>;
-    expect(meta.wm_tracking_version).toBe('1.0.0');
+    expect(meta.wm_tracking_version).toBe('2.0.0');
   });
 });
