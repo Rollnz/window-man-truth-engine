@@ -222,10 +222,6 @@ export function ConsultationBookingModal({
           source_system: 'web',
           form_name: 'consultation_booking',
           preferred_time: values.preferredTime,
-          user_data: {
-            first_name: firstName,
-            last_name: lastName || undefined,
-          },
         });
 
         // Track wmLead conversion event

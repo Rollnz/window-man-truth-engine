@@ -212,10 +212,6 @@ export function LeadCaptureModal({
           source_tool: sourceTool,
           source_system: 'web',
           form_name: 'lead_capture',
-          user_data: {
-            first_name: normalizedNames.firstName,
-            last_name: normalizedNames.lastName || undefined,
-          },
         });
 
         // Track successful lead capture with full metadata (Phase 4)

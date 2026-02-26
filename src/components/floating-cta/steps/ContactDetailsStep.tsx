@@ -72,10 +72,6 @@ export function ContactDetailsStep({ formData, updateFormData, onNext }: Contact
         step_name: 'contact_info',
         step_index: 2,
         step_status: 'validated',
-        user_data: {
-          first_name: firstName,
-          last_name: lastName || undefined,
-        },
       });
       onNext();
     }
