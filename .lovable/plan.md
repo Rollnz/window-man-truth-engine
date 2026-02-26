@@ -1,122 +1,169 @@
 
 
-# VaultSignupModal: Three-Theme Lead + Auth Modal
+# Traffic Cop: Route Vault Signups to `accounts` Table
 
-## Summary
+## Overview
 
-Create a `VaultSignupModal` component with three visual themes, wire it to the Vault page with test buttons, and add `'vault'` to source tool registries. The modal combines lead capture (`useLeadFormSubmit`) with Magic Link auth (`signInWithMagicLink`) in a single dual-submit flow.
-
-**Important note on edge function deployment:** This project runs on Lovable Cloud, which automatically deploys edge functions when code changes. No manual CLI deployment is needed -- updating the `sourceTools.ts` files is sufficient.
+Add a routing condition in the `save-lead` edge function so that when `sourceTool === 'vault'`, data goes to the new `accounts` table instead of `leads`. The frontend remains untouched. All downstream side effects (wm_event_log, Stape GTM, email notifications, rate limiting) continue firing using the account's `id` as `leadId`.
 
 ---
 
-## Changes
+## Step 1: Create `accounts` Table (Migration)
 
-### 1. Add 'vault' to SOURCE_TOOLS (2 files)
+Create a comprehensive table that mirrors all `leadRecord` columns plus the 4 CRM columns. Uses `fbc`/`fbp` (no underscores) to match the existing edge function convention.
 
-- `src/types/sourceTool.ts` -- add `'vault'` to the array
-- `supabase/functions/_shared/sourceTools.ts` -- add `'vault'` to the array
+**Columns (grouped):**
 
-Without this, `save-lead` will reject submissions with `sourceTool: 'vault'`.
-
-### 2. New Component: `src/components/vault/VaultSignupModal.tsx`
-
-**Props:**
-```text
-themeVariant: 'vault' | 'engine' | 'report'
-isOpen: boolean
-onClose: () => void
-onSuccess?: (leadId: string) => void
-mode: 'with-quote' | 'no-quote'
-```
-
-**Form fields (all required):**
-- First Name + Last Name (side-by-side)
-- Email (full width)
-- Phone (full width, auto-formatted as `(XXX) XXX-XXXX` using `formatPhoneDisplay`)
-
-**Validation approach:**
-- Zod schema strips non-digits from phone BEFORE checking length === 10
-- `InlineFieldStatus` renders red errors under each invalid field on submit attempt
-- Submit button disabled while any required field is empty
-
-**Phone input masking:**
-- On every keystroke, strip non-digits, cap at 10, then pass through `formatPhoneDisplay` for visual formatting
-- The raw digits (not the formatted string) are what Zod validates and what gets submitted
-
-**Dual submit (Promise.allSettled):**
-```text
-On submit:
-1. useFormLock.lockAndExecute wraps everything
-2. Promise.allSettled([
-     leadFormSubmit.submit({
-       email,
-       name: `${firstName} ${lastName}`,   // dynamic interpolation, NOT literal
-       firstName,
-       phone: digitsOnly                    // raw 10 digits
-     }),
-     signInWithMagicLink(email)
-   ])
-3. Check results:
-   - If lead save succeeded -> transition to 'success' state
-     - If magic link ALSO failed -> show warning: "Your info is saved, but the email didn't send. Try again in a few minutes."
-   - If lead save failed -> show error, stay on form, unlock for retry
-```
-
-**Key detail on `name` field:** The `LeadFormData` interface has `name` and `firstName` but no `lastName`. We pass `name: \`${firstName} ${lastName}\`` (template literal with the actual form values) and `firstName` separately. The hook splits `name` for the `wmLead` call internally.
-
-**State machine:** `'form'` -> `'submitting'` -> `'success'`
-
-**Success state:** Form content smoothly transitions to show a checkmark/mail icon with "Vault Created! Check your email for your secure Magic Link." If the magic link failed, a warning is shown instead. Modal stays open so user reads the message.
-
-**Three visual variants:**
-
-| Variant | Background | Accents | Button | Headline |
-|---|---|---|---|---|
-| `vault` | Deep charcoal `bg-[#1a1a1a]` | Gold (amber-500/600) borders | Gold gradient, dark text | "Unlock Your Private Vault" |
-| `engine` | Dark + glassmorphism (`backdrop-blur-xl`, `bg-black/60`) | Teal `#0F766E` focus rings | Teal with subtle glow shadow | "Create Your Free Truth Engine Account" |
-| `report` | Clean white | Slate borders, high contrast | Standard primary | "Secure Your Analysis" |
-
-- The `vault` and `engine` variants use custom `DialogContent` styling (dark backgrounds, so NOT wrapped in `TrustModal`)
-- The `report` variant uses `FormSurfaceProvider surface="trust"` for light-on-white inputs
-- All variants use `FormSurfaceProvider` with appropriate surface values for their backgrounds
-
-### 3. Vault Page: Add Test Buttons
-
-**File:** `src/pages/Vault.tsx`
-
-Add three temporary buttons in the hero section:
-```text
-[Test Vault Theme]  [Test Engine Theme]  [Test Report Theme]
-```
-
-Each opens `VaultSignupModal` with the corresponding `themeVariant` and `mode="no-quote"`. State tracks `isModalOpen` and `activeTheme`.
-
----
-
-## Hooks Used (no duplication)
-
-| Hook | Purpose |
+| Group | Columns |
 |---|---|
-| `useLeadFormSubmit({ sourceTool: 'vault' })` | Lead save, leadAnchor, sessionData PII, wmLead event |
-| `useAuth().signInWithMagicLink` | Sends Magic Link via `signInWithOtp` |
-| `useFormLock` | Double-click protection with 500ms min loading |
-| `InlineFieldStatus` | Red error text under fields |
-| `formatPhoneDisplay` / `isValidUSPhone` | Phone masking and validation |
+| PK | `id` (uuid, default gen_random_uuid()) |
+| Auth linkage | `supabase_user_id` (uuid, nullable, references auth.users) |
+| PII | `first_name` (text, not null), `last_name` (text, not null), `email` (text, not null, unique), `phone` (text, not null), `name` (text) |
+| CRM internal | `account_status` (text, default 'pending_verification'), `wmlead_id` (text), `phonecall_bot_status` (text, default 'idle'), `external_crm_id` (text) |
+| Identity | `client_id` (text), `original_session_id` (uuid), `identity_version` (smallint, default 2) |
+| Source | `source_tool` (text, default 'vault'), `source_page` (text), `source_form` (text) |
+| UTM (last-touch) | `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content` (all text) |
+| Click IDs | `gclid`, `fbclid`, `fbc`, `fbp`, `msclkid`, `gbraid`, `wbraid`, `ttclid` (all text) |
+| Meta granular | `meta_placement`, `meta_campaign_id`, `meta_adset_id`, `meta_ad_id`, `meta_site_source_name`, `meta_creative_id` (all text) |
+| Last Non-Direct | `last_non_direct_utm_source`, `last_non_direct_utm_medium`, `last_non_direct_gclid`, `last_non_direct_fbclid`, `last_non_direct_channel`, `last_non_direct_landing_page` (all text) |
+| Geo | `city`, `state`, `zip` (all text) |
+| Device/fingerprint | `device_type`, `referrer`, `landing_page`, `ip_hash`, `client_user_agent`, `landing_page_url` (all text) |
+| Session | `session_data` (jsonb, default '{}') |
+| Timestamps | `created_at`, `updated_at` (timestamptz, default now()) |
+
+**RLS policies:**
+- Anonymous INSERT allowed (for unauthenticated vault signups via service role in edge function -- but since edge function uses service_role_key, RLS is bypassed anyway; we still add policies for defense-in-depth)
+- Authenticated SELECT where `supabase_user_id = auth.uid()`
+- Admin SELECT/UPDATE via `has_role(auth.uid(), 'admin')`
+- No public DELETE
+
+**Trigger:** `set_updated_at` on UPDATE (reuse existing moddatetime or custom trigger pattern).
+
+---
+
+## Step 2: Update `save-lead` Edge Function (The Traffic Cop)
+
+**File:** `supabase/functions/save-lead/index.ts`
+
+**What changes:** The Golden Thread logic block (lines 691-903) gets wrapped in a routing condition. Approximately 80 lines of new code inserted.
+
+### Routing Logic (inserted at line 691)
+
+```text
+if (sourceTool === 'vault') {
+  // ═══ VAULT PATH: Route to accounts table ═══
+  
+  // 1. Check for existing account by email
+  const { data: existingAccounts } = await supabase
+    .from('accounts')
+    .select('id, first_name, last_name, phone, utm_source, gclid, fbc, msclkid, gbraid, wbraid, ttclid, client_id')
+    .eq('email', normalizedEmail)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const existingAccount = existingAccounts?.[0] || null;
+
+  if (existingAccount) {
+    // 2a. UPDATE existing account
+    // CRITICAL: DO NOT overwrite first_name, last_name, or phone
+    leadId = existingAccount.id;
+    
+    // Build update record (attribution only, NO PII overwrite)
+    const accountUpdate = {
+      updated_at: new Date().toISOString(),
+      identity_version: 2,
+      source_form: aiContext?.source_form || undefined,
+      client_user_agent: clientUserAgent,
+      // Same first-touch preservation logic as leads path
+      // UTM: only if not already set
+      // Click IDs: only if not already set  
+      // Meta granular: always update (last-touch)
+      // Last Non-Direct: always update
+    };
+    
+    await supabase.from('accounts').update(accountUpdate).eq('id', leadId);
+    
+  } else {
+    // 2b. INSERT new account
+    // Map leadRecord fields to accounts columns (same field names)
+    const accountRecord = {
+      ...leadRecord,  // All fields from the existing leadRecord object
+      // CRM defaults (not in leadRecord)
+      account_status: 'pending_verification',
+      phonecall_bot_status: 'idle',
+    };
+    
+    const { data: newAccount, error: insertError } = await supabase
+      .from('accounts')
+      .insert(accountRecord)
+      .select('id')
+      .single();
+      
+    if (insertError || !newAccount) throw new Error('Database error creating account');
+    
+    leadId = newAccount.id;
+    
+    // Fire admin notification + Stape GTM (same as leads path)
+    triggerEmailNotification({ ... });
+    sendStapeGTMEvent({ ... });
+  }
+  
+} else {
+  // ═══ LEGACY PATH: Existing leads logic (lines 691-903 unchanged) ═══
+  // ... all existing Golden Thread lead lookup + insert/update code ...
+}
+```
+
+### Key Implementation Details
+
+1. **`leadRecord` reuse**: The `leadRecord` object (built at lines 615-686) is already constructed before the routing block. For the accounts INSERT path, we spread it directly since accounts columns match leads columns (same names: `fbc`, `fbp`, `utm_source`, etc.). We just add the 4 CRM columns.
+
+2. **PII protection on UPDATE**: When an account already exists, the update record explicitly excludes `first_name`, `last_name`, `phone`, and `email`. Only attribution, meta granular, last-non-direct, and device fields are updated.
+
+3. **First-touch preservation**: Same logic as the existing leads UPDATE path -- only set `utm_source`, `gclid`, `fbc`, `msclkid`, `gbraid`, `wbraid`, `ttclid` if not already present on the existing record.
+
+4. **`leadId` variable**: After the routing block, `leadId` holds either `accounts.id` or `leads.id`. Everything downstream (lines 938-1353) uses this variable unchanged:
+   - Quote file linking
+   - Consultation creation
+   - Email notifications
+   - Rate limit recording
+   - `wm_events` attribution logging
+   - `wm_event_log` canonical ledger write
+   - Stape GTM server-side event
+   - Response: `{ success: true, leadId }`
+
+5. **Frontend compatibility**: `useLeadFormSubmit` reads `responseData.leadId` and passes it to `setLeadId`, `setExplicitSubmission`, `setLeadAnchor`, `updateFields`. All continue working because the value is a valid UUID from `accounts.id`.
+
+6. **Columns that accounts has but leadRecord doesn't**: `account_status`, `wmlead_id`, `phonecall_bot_status`, `external_crm_id`, `supabase_user_id` -- these use defaults or null on INSERT. The edge function doesn't need to populate them.
+
+7. **Columns that leadRecord has but accounts doesn't need differently**: `chat_history` exists in leadRecord but won't be in accounts (vault signups don't have chat). We'll exclude it from the accounts insert to keep the table clean. Similarly `window_count`, `specific_detail`, `emotional_state`, `urgency_level`, `insurance_carrier` -- AI context fields that don't apply to vault signups will be excluded.
+
+---
+
+## Step 3: Auth Linkage Trigger (SQL provided, not executed)
+
+Since we cannot modify the `auth` schema directly, the linkage will be handled by extending the existing `handle_new_user` trigger function (which already fires on `auth.users` INSERT). We will provide SQL that:
+
+1. Adds logic to the existing trigger: when a new auth user is created, check if `accounts.email` matches and set `accounts.supabase_user_id = NEW.id`
+2. Also handles the email confirmation case: a separate function callable via RPC or a scheduled check
+
+**Alternative approach**: Since Magic Link creates the user AND confirms email in one step (`signInWithOtp`), the `handle_new_user` trigger fires when the user clicks the link. At that point we can link the account. SQL will be provided in the implementation for you to review and run manually.
+
+---
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `src/types/sourceTool.ts` | Add `'vault'` |
-| `supabase/functions/_shared/sourceTools.ts` | Add `'vault'` |
-| `src/components/vault/VaultSignupModal.tsx` | **New** -- three-variant auth + lead modal |
-| `src/pages/Vault.tsx` | Add 3 test buttons + modal rendering |
+| Database migration | Create `accounts` table (~50 columns) + RLS + updated_at trigger |
+| `supabase/functions/save-lead/index.ts` | Add vault routing condition (~80 lines wrapping lines 691-903) |
+| SQL snippet (provided as comment) | Auth linkage trigger for manual execution |
 
-## What This Does NOT Do
+## What Stays Untouched
 
-- Does not change routing or remove AuthGuard (separate task)
-- Does not add nav links to header/footer (separate task)
-- Does not handle file upload or scanner triggering (separate task)
-- Does not modify `save-lead` edge function or database schema
+- `src/components/vault/VaultSignupModal.tsx` -- zero changes
+- `src/hooks/useLeadFormSubmit.ts` -- zero changes
+- All other edge functions
+- All existing leads table logic (wrapped in `else` branch)
+- All downstream side effects (wm_event_log, Stape GTM, email, rate limiting)
 
