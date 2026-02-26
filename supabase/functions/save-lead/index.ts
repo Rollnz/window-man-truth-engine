@@ -686,220 +686,369 @@ serve(async (req) => {
     };
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // GOLDEN THREAD LOGIC: leadId takes precedence over email matching
+    // TRAFFIC COP: Route vault signups to accounts table, everything else to leads
     // ═══════════════════════════════════════════════════════════════════════════
     try {
-      let existingLead: { 
-        id: string; 
-        utm_source: string | null; 
-        gclid: string | null; 
-        fbc: string | null; 
-        msclkid: string | null;
-        last_non_direct_gclid: string | null;
-        last_non_direct_fbclid: string | null;
-        client_id: string | null;
-        gbraid: string | null;
-        wbraid: string | null;
-        ttclid: string | null;
-      } | null = null;
+      if (sourceTool === 'vault') {
+        // ═══ VAULT PATH: Route to accounts table ═══
+        console.log('[TrafficCop] Vault signup detected, routing to accounts table');
 
-      // PRIORITY 1: If leadId is provided, use it directly (Golden Thread)
-      if (providedLeadId) {
-        const { data: leadById, error: leadByIdError } = await supabase
-          .from('leads')
-          .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id, gbraid, wbraid, ttclid')
-          .eq('id', providedLeadId)
-          .maybeSingle();
-
-        if (leadByIdError) {
-          console.error('Error fetching lead by ID:', leadByIdError);
-          // Don't throw - fall through to email lookup
-        } else if (leadById) {
-          existingLead = leadById;
-          console.log('Golden Thread: Found lead by ID:', providedLeadId);
-        } else {
-          console.warn('Golden Thread: Provided leadId not found, falling back to email lookup:', providedLeadId);
-        }
-      }
-
-      // PRIORITY 2: Fallback to email lookup if no lead found by ID
-      if (!existingLead) {
-        // SAFE: Use limit(1) instead of maybeSingle() to handle duplicate emails gracefully
-        // This prevents PGRST116 errors when multiple leads share the same email
-        const { data: leadsArray, error: emailSelectError } = await supabase
-          .from('leads')
-          .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id, gbraid, wbraid, ttclid')
+        // 1. Check for existing account by email
+        const { data: existingAccounts, error: accountLookupError } = await supabase
+          .from('accounts')
+          .select('id, first_name, last_name, phone, utm_source, gclid, fbc, msclkid, gbraid, wbraid, ttclid, client_id')
           .eq('email', normalizedEmail)
-          .order('created_at', { ascending: false })  // Most recent first
+          .order('created_at', { ascending: false })
           .limit(1);
 
-        if (emailSelectError) {
-          console.error('Error checking existing lead by email:', {
-            error: emailSelectError,
-            email: normalizedEmail.slice(0, 3) + '***',
-            code: emailSelectError.code,
-            details: emailSelectError.details,
-          });
-          throw new Error('Database error while checking lead');
+        if (accountLookupError) {
+          console.error('[TrafficCop] Error checking existing account:', accountLookupError);
+          throw new Error('Database error while checking account');
         }
 
-        // Take first result if exists (handles 0, 1, or 2+ rows safely)
-        existingLead = leadsArray && leadsArray.length > 0 ? leadsArray[0] : null;
-        if (existingLead) {
-          console.log('Found lead by email:', existingLead.id, '(selected most recent)');
-        }
-      }
+        const existingAccount = existingAccounts && existingAccounts.length > 0 ? existingAccounts[0] : null;
 
-      if (existingLead) {
-        // Update existing lead - preserve first-touch attribution if already set
-        leadId = existingLead.id;
-        
-        // Only update attribution if not already set (first-touch attribution model)
-        const updateRecord: Record<string, unknown> = {
-          name: name || undefined,
-          phone: phone || undefined,
-          source_tool: sourceTool,
-          session_data: sessionData || {},
-          chat_history: chatHistory || [],
-          updated_at: new Date().toISOString(),
-          // ═══════════════════════════════════════════════════════════════════════
-          // GOLDEN THREAD v4: Upgrade identity version on re-engagement
-          // This ensures returning users get upgraded to v2 identity tracking
-          // ═══════════════════════════════════════════════════════════════════════
-          identity_version: 2,
-          // AI Context always updates (last-touch for context)
-          source_form: aiContext?.source_form || undefined,
-          specific_detail: aiContext?.specific_detail || undefined,
-          emotional_state: aiContext?.emotional_state || undefined,
-          urgency_level: aiContext?.urgency_level || undefined,
-          insurance_carrier: aiContext?.insurance_carrier || undefined,
-          window_count: convertWindowCount(aiContext?.window_count),
-          // EMQ 9.5+: Update address fields if provided (enrichment)
-          city: aiContext?.city || undefined,
-          state: aiContext?.state || (sessionData as Record<string, unknown>)?.state as string || undefined,
-          zip: aiContext?.zip_code || undefined,
-          // EMQ 9.5+: Update user agent on each interaction
-          client_user_agent: clientUserAgent,
-        };
-        
-        // Only set attribution if not already present (first-touch)
-        if (!existingLead?.utm_source && attribution?.utm_source) {
-          updateRecord.utm_source = attribution.utm_source;
-          updateRecord.utm_medium = attribution?.utm_medium;
-          updateRecord.utm_campaign = attribution?.utm_campaign;
-          updateRecord.utm_term = attribution?.utm_term;
-          updateRecord.utm_content = attribution?.utm_content;
-        }
-        if (!existingLead?.gclid && attribution?.gclid) {
-          updateRecord.gclid = attribution.gclid;
-        }
-        if (!existingLead?.fbc && (attribution?.fbc || attribution?.fbp)) {
-          updateRecord.fbc = attribution?.fbc;
-          updateRecord.fbp = attribution?.fbp;
-        }
-        if (!existingLead?.msclkid && attribution?.msclkid) {
-          updateRecord.msclkid = attribution.msclkid;
-        }
-        
-        // Phase 1B: Last Non-Direct attribution - ALWAYS update if provided (newer wins)
-        // This preserves the most recent paid attribution even on updates
-        if (lastNonDirect?.utm_source) {
-          updateRecord.last_non_direct_utm_source = lastNonDirect.utm_source;
-          updateRecord.last_non_direct_utm_medium = lastNonDirect.utm_medium;
-          updateRecord.last_non_direct_channel = lastNonDirect.channel;
-          updateRecord.last_non_direct_landing_page = lastNonDirect.landing_page;
-        }
-        if (lastNonDirect?.gclid) {
-          updateRecord.last_non_direct_gclid = lastNonDirect.gclid;
-        }
-        if (lastNonDirect?.fbclid) {
-          updateRecord.last_non_direct_fbclid = lastNonDirect.fbclid;
-        }
-        
-        // New click IDs: preserve first-touch
-        if (!existingLead?.gbraid && attribution?.gbraid) {
-          updateRecord.gbraid = attribution.gbraid;
-        }
-        if (!existingLead?.wbraid && attribution?.wbraid) {
-          updateRecord.wbraid = attribution.wbraid;
-        }
-        if (!existingLead?.ttclid && attribution?.ttclid) {
-          updateRecord.ttclid = attribution.ttclid;
-        }
-        // Meta granular: always update (last-touch)
-        if (attribution?.meta_placement) updateRecord.meta_placement = attribution.meta_placement;
-        if (attribution?.meta_campaign_id) updateRecord.meta_campaign_id = attribution.meta_campaign_id;
-        if (attribution?.meta_adset_id) updateRecord.meta_adset_id = attribution.meta_adset_id;
-        if (attribution?.meta_ad_id) updateRecord.meta_ad_id = attribution.meta_ad_id;
-        if (attribution?.meta_site_source_name) updateRecord.meta_site_source_name = attribution.meta_site_source_name;
-        if (attribution?.meta_creative_id) updateRecord.meta_creative_id = attribution.meta_creative_id;
-        if (attribution?.landing_page_url) updateRecord.landing_page_url = attribution.landing_page_url;
+        if (existingAccount) {
+          // 2a. UPDATE existing account
+          // CRITICAL: DO NOT overwrite first_name, last_name, phone, or email
+          leadId = existingAccount.id;
+          console.log('[TrafficCop] Found existing account:', leadId, '- updating attribution only');
 
-        // Backfill client_id if missing (identity persistence for Truth Engine)
-        if (!existingLead?.client_id && clientId) {
-          updateRecord.client_id = clientId;
-        }
+          const accountUpdate: Record<string, unknown> = {
+            updated_at: new Date().toISOString(),
+            identity_version: 2,
+            source_form: aiContext?.source_form || undefined,
+            client_user_agent: clientUserAgent,
+            device_type: leadRecord.device_type,
+            referrer: leadRecord.referrer,
+            landing_page: leadRecord.landing_page,
+            ip_hash: leadRecord.ip_hash,
+            landing_page_url: leadRecord.landing_page_url,
+            source_page: leadRecord.source_page,
+            session_data: leadRecord.session_data,
+          };
 
-        const { error: updateError } = await supabase
-          .from('leads')
-          .update(updateRecord)
-          .eq('id', leadId);
+          // First-touch preservation: only set UTM if not already present
+          if (!existingAccount.utm_source && attribution?.utm_source) {
+            accountUpdate.utm_source = attribution.utm_source;
+            accountUpdate.utm_medium = attribution?.utm_medium;
+            accountUpdate.utm_campaign = attribution?.utm_campaign;
+            accountUpdate.utm_term = attribution?.utm_term;
+            accountUpdate.utm_content = attribution?.utm_content;
+          }
+          // First-touch preservation: click IDs
+          if (!existingAccount.gclid && attribution?.gclid) {
+            accountUpdate.gclid = attribution.gclid;
+          }
+          if (!existingAccount.fbc && (attribution?.fbc || attribution?.fbp)) {
+            accountUpdate.fbc = attribution?.fbc;
+            accountUpdate.fbp = attribution?.fbp;
+          }
+          if (!existingAccount.msclkid && attribution?.msclkid) {
+            accountUpdate.msclkid = attribution.msclkid;
+          }
+          if (!existingAccount.gbraid && attribution?.gbraid) {
+            accountUpdate.gbraid = attribution.gbraid;
+          }
+          if (!existingAccount.wbraid && attribution?.wbraid) {
+            accountUpdate.wbraid = attribution.wbraid;
+          }
+          if (!existingAccount.ttclid && attribution?.ttclid) {
+            accountUpdate.ttclid = attribution.ttclid;
+          }
 
-        if (updateError) {
-          console.error('Error updating lead:', updateError);
-          throw new Error('Database error while updating lead');
-        }
+          // Meta granular: always update (last-touch)
+          if (attribution?.meta_placement) accountUpdate.meta_placement = attribution.meta_placement;
+          if (attribution?.meta_campaign_id) accountUpdate.meta_campaign_id = attribution.meta_campaign_id;
+          if (attribution?.meta_adset_id) accountUpdate.meta_adset_id = attribution.meta_adset_id;
+          if (attribution?.meta_ad_id) accountUpdate.meta_ad_id = attribution.meta_ad_id;
+          if (attribution?.meta_site_source_name) accountUpdate.meta_site_source_name = attribution.meta_site_source_name;
+          if (attribution?.meta_creative_id) accountUpdate.meta_creative_id = attribution.meta_creative_id;
 
-        console.log('Updated existing lead:', leadId);
-      } else {
-        // Create new lead with all fields
-        const { data: newLead, error: insertError } = await supabase
-          .from('leads')
-          .insert(leadRecord)
-          .select('id')
-          .single();
+          // Last Non-Direct: always update (newer wins)
+          if (lastNonDirect?.utm_source) {
+            accountUpdate.last_non_direct_utm_source = lastNonDirect.utm_source;
+            accountUpdate.last_non_direct_utm_medium = lastNonDirect.utm_medium;
+            accountUpdate.last_non_direct_channel = lastNonDirect.channel;
+            accountUpdate.last_non_direct_landing_page = lastNonDirect.landing_page;
+          }
+          if (lastNonDirect?.gclid) {
+            accountUpdate.last_non_direct_gclid = lastNonDirect.gclid;
+          }
+          if (lastNonDirect?.fbclid) {
+            accountUpdate.last_non_direct_fbclid = lastNonDirect.fbclid;
+          }
 
-        if (insertError || !newLead) {
-          console.error('Error creating lead:', insertError);
-          throw new Error('Database error while creating lead');
-        }
+          // Backfill client_id if missing
+          if (!existingAccount.client_id && clientId) {
+            accountUpdate.client_id = clientId;
+          }
 
-        leadId = newLead.id;
-        console.log('Created new lead:', leadId);
-        
-        // Trigger admin notification for new lead with SANITIZED data
-        triggerEmailNotification({
-          email: 'admin@thewindowman.com',
-          type: 'new-lead',
-          data: {
-            leadEmail: normalizedEmail,
-            leadId,
-            sourceTool,
-            sessionSummary: sanitizeSessionDataForEmail(sessionData),
-            attribution: {
-              utm_source: attribution?.utm_source,
-              utm_medium: attribution?.utm_medium,
-              gclid: attribution?.gclid ? 'present' : undefined,
-              fbc: attribution?.fbc ? 'present' : undefined,
+          const { error: updateError } = await supabase
+            .from('accounts')
+            .update(accountUpdate)
+            .eq('id', leadId);
+
+          if (updateError) {
+            console.error('[TrafficCop] Error updating account:', updateError);
+            throw new Error('Database error while updating account');
+          }
+
+          console.log('[TrafficCop] Updated existing account:', leadId);
+        } else {
+          // 2b. INSERT new account
+          // Build account record from leadRecord, excluding leads-only fields
+          const {
+            chat_history,
+            window_count,
+            specific_detail,
+            emotional_state,
+            urgency_level,
+            insurance_carrier,
+            ...accountFields
+          } = leadRecord as Record<string, unknown>;
+
+          const accountRecord = {
+            ...accountFields,
+            // CRM defaults (not in leadRecord)
+            account_status: 'pending_verification',
+            phonecall_bot_status: 'idle',
+          };
+
+          const { data: newAccount, error: insertError } = await supabase
+            .from('accounts')
+            .insert(accountRecord)
+            .select('id')
+            .single();
+
+          if (insertError || !newAccount) {
+            console.error('[TrafficCop] Error creating account:', insertError);
+            throw new Error('Database error while creating account');
+          }
+
+          leadId = newAccount.id;
+          console.log('[TrafficCop] Created new account:', leadId);
+
+          // Trigger admin notification for new vault signup
+          triggerEmailNotification({
+            email: 'admin@thewindowman.com',
+            type: 'new-lead',
+            data: {
+              leadEmail: normalizedEmail,
+              leadId,
+              sourceTool,
+              sessionSummary: sanitizeSessionDataForEmail(sessionData),
+              attribution: {
+                utm_source: attribution?.utm_source,
+                utm_medium: attribution?.utm_medium,
+                gclid: attribution?.gclid ? 'present' : undefined,
+                fbc: attribution?.fbc ? 'present' : undefined,
+              },
             },
-          },
-        });
+          });
 
-        // ═══════════════════════════════════════════════════════════════════════
-        // STAPE GTM: Send server-side conversion event (non-blocking)
-        // Deduplication via event_id (leadId) - Stape will ignore duplicates
-        // ═══════════════════════════════════════════════════════════════════════
-        sendStapeGTMEvent({
-          leadId,
-          email: normalizedEmail,
-          phone: phone || null,
-          firstName: normalizedFirstName,  // EMQ 9.5+: Server-side name hashing
-          lastName: normalizedLastName,    // EMQ 9.5+: Server-side name hashing
-          fbp: attribution?.fbp || null,
-          fbc: attribution?.fbc || null,
-          userAgent: clientUserAgent,
-          eventSourceUrl: referer || aiContext?.source_form || 'https://itswindowman.com',
-        });
+          // Stape GTM server-side conversion event
+          sendStapeGTMEvent({
+            leadId,
+            email: normalizedEmail,
+            phone: phone || null,
+            firstName: normalizedFirstName,
+            lastName: normalizedLastName,
+            fbp: attribution?.fbp || null,
+            fbc: attribution?.fbc || null,
+            userAgent: clientUserAgent,
+            eventSourceUrl: referer || aiContext?.source_form || 'https://itswindowman.com',
+          });
+        }
+      } else {
+        // ═══ LEGACY PATH: Existing leads logic (unchanged) ═══
+        let existingLead: { 
+          id: string; 
+          utm_source: string | null; 
+          gclid: string | null; 
+          fbc: string | null; 
+          msclkid: string | null;
+          last_non_direct_gclid: string | null;
+          last_non_direct_fbclid: string | null;
+          client_id: string | null;
+          gbraid: string | null;
+          wbraid: string | null;
+          ttclid: string | null;
+        } | null = null;
+
+        // PRIORITY 1: If leadId is provided, use it directly (Golden Thread)
+        if (providedLeadId) {
+          const { data: leadById, error: leadByIdError } = await supabase
+            .from('leads')
+            .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id, gbraid, wbraid, ttclid')
+            .eq('id', providedLeadId)
+            .maybeSingle();
+
+          if (leadByIdError) {
+            console.error('Error fetching lead by ID:', leadByIdError);
+          } else if (leadById) {
+            existingLead = leadById;
+            console.log('Golden Thread: Found lead by ID:', providedLeadId);
+          } else {
+            console.warn('Golden Thread: Provided leadId not found, falling back to email lookup:', providedLeadId);
+          }
+        }
+
+        // PRIORITY 2: Fallback to email lookup if no lead found by ID
+        if (!existingLead) {
+          const { data: leadsArray, error: emailSelectError } = await supabase
+            .from('leads')
+            .select('id, utm_source, gclid, fbc, msclkid, last_non_direct_gclid, last_non_direct_fbclid, client_id, gbraid, wbraid, ttclid')
+            .eq('email', normalizedEmail)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (emailSelectError) {
+            console.error('Error checking existing lead by email:', {
+              error: emailSelectError,
+              email: normalizedEmail.slice(0, 3) + '***',
+              code: emailSelectError.code,
+              details: emailSelectError.details,
+            });
+            throw new Error('Database error while checking lead');
+          }
+
+          existingLead = leadsArray && leadsArray.length > 0 ? leadsArray[0] : null;
+          if (existingLead) {
+            console.log('Found lead by email:', existingLead.id, '(selected most recent)');
+          }
+        }
+
+        if (existingLead) {
+          leadId = existingLead.id;
+          
+          const updateRecord: Record<string, unknown> = {
+            name: name || undefined,
+            phone: phone || undefined,
+            source_tool: sourceTool,
+            session_data: sessionData || {},
+            chat_history: chatHistory || [],
+            updated_at: new Date().toISOString(),
+            identity_version: 2,
+            source_form: aiContext?.source_form || undefined,
+            specific_detail: aiContext?.specific_detail || undefined,
+            emotional_state: aiContext?.emotional_state || undefined,
+            urgency_level: aiContext?.urgency_level || undefined,
+            insurance_carrier: aiContext?.insurance_carrier || undefined,
+            window_count: convertWindowCount(aiContext?.window_count),
+            city: aiContext?.city || undefined,
+            state: aiContext?.state || (sessionData as Record<string, unknown>)?.state as string || undefined,
+            zip: aiContext?.zip_code || undefined,
+            client_user_agent: clientUserAgent,
+          };
+          
+          if (!existingLead?.utm_source && attribution?.utm_source) {
+            updateRecord.utm_source = attribution.utm_source;
+            updateRecord.utm_medium = attribution?.utm_medium;
+            updateRecord.utm_campaign = attribution?.utm_campaign;
+            updateRecord.utm_term = attribution?.utm_term;
+            updateRecord.utm_content = attribution?.utm_content;
+          }
+          if (!existingLead?.gclid && attribution?.gclid) {
+            updateRecord.gclid = attribution.gclid;
+          }
+          if (!existingLead?.fbc && (attribution?.fbc || attribution?.fbp)) {
+            updateRecord.fbc = attribution?.fbc;
+            updateRecord.fbp = attribution?.fbp;
+          }
+          if (!existingLead?.msclkid && attribution?.msclkid) {
+            updateRecord.msclkid = attribution.msclkid;
+          }
+          
+          if (lastNonDirect?.utm_source) {
+            updateRecord.last_non_direct_utm_source = lastNonDirect.utm_source;
+            updateRecord.last_non_direct_utm_medium = lastNonDirect.utm_medium;
+            updateRecord.last_non_direct_channel = lastNonDirect.channel;
+            updateRecord.last_non_direct_landing_page = lastNonDirect.landing_page;
+          }
+          if (lastNonDirect?.gclid) {
+            updateRecord.last_non_direct_gclid = lastNonDirect.gclid;
+          }
+          if (lastNonDirect?.fbclid) {
+            updateRecord.last_non_direct_fbclid = lastNonDirect.fbclid;
+          }
+          
+          if (!existingLead?.gbraid && attribution?.gbraid) {
+            updateRecord.gbraid = attribution.gbraid;
+          }
+          if (!existingLead?.wbraid && attribution?.wbraid) {
+            updateRecord.wbraid = attribution.wbraid;
+          }
+          if (!existingLead?.ttclid && attribution?.ttclid) {
+            updateRecord.ttclid = attribution.ttclid;
+          }
+          if (attribution?.meta_placement) updateRecord.meta_placement = attribution.meta_placement;
+          if (attribution?.meta_campaign_id) updateRecord.meta_campaign_id = attribution.meta_campaign_id;
+          if (attribution?.meta_adset_id) updateRecord.meta_adset_id = attribution.meta_adset_id;
+          if (attribution?.meta_ad_id) updateRecord.meta_ad_id = attribution.meta_ad_id;
+          if (attribution?.meta_site_source_name) updateRecord.meta_site_source_name = attribution.meta_site_source_name;
+          if (attribution?.meta_creative_id) updateRecord.meta_creative_id = attribution.meta_creative_id;
+          if (attribution?.landing_page_url) updateRecord.landing_page_url = attribution.landing_page_url;
+
+          if (!existingLead?.client_id && clientId) {
+            updateRecord.client_id = clientId;
+          }
+
+          const { error: updateError } = await supabase
+            .from('leads')
+            .update(updateRecord)
+            .eq('id', leadId);
+
+          if (updateError) {
+            console.error('Error updating lead:', updateError);
+            throw new Error('Database error while updating lead');
+          }
+
+          console.log('Updated existing lead:', leadId);
+        } else {
+          const { data: newLead, error: insertError } = await supabase
+            .from('leads')
+            .insert(leadRecord)
+            .select('id')
+            .single();
+
+          if (insertError || !newLead) {
+            console.error('Error creating lead:', insertError);
+            throw new Error('Database error while creating lead');
+          }
+
+          leadId = newLead.id;
+          console.log('Created new lead:', leadId);
+          
+          triggerEmailNotification({
+            email: 'admin@thewindowman.com',
+            type: 'new-lead',
+            data: {
+              leadEmail: normalizedEmail,
+              leadId,
+              sourceTool,
+              sessionSummary: sanitizeSessionDataForEmail(sessionData),
+              attribution: {
+                utm_source: attribution?.utm_source,
+                utm_medium: attribution?.utm_medium,
+                gclid: attribution?.gclid ? 'present' : undefined,
+                fbc: attribution?.fbc ? 'present' : undefined,
+              },
+            },
+          });
+
+          sendStapeGTMEvent({
+            leadId,
+            email: normalizedEmail,
+            phone: phone || null,
+            firstName: normalizedFirstName,
+            lastName: normalizedLastName,
+            fbp: attribution?.fbp || null,
+            fbc: attribution?.fbc || null,
+            userAgent: clientUserAgent,
+            eventSourceUrl: referer || aiContext?.source_form || 'https://itswindowman.com',
+          });
+        }
       }
     } catch (dbError) {
       console.error('Database operation failed:', dbError);

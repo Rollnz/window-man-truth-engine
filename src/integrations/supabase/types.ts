@@ -14,6 +14,177 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          account_status: string | null
+          city: string | null
+          client_id: string | null
+          client_user_agent: string | null
+          created_at: string | null
+          device_type: string | null
+          email: string
+          external_crm_id: string | null
+          fbc: string | null
+          fbclid: string | null
+          fbp: string | null
+          first_name: string
+          gbraid: string | null
+          gclid: string | null
+          id: string
+          identity_version: number | null
+          ip_hash: string | null
+          landing_page: string | null
+          landing_page_url: string | null
+          last_name: string
+          last_non_direct_channel: string | null
+          last_non_direct_fbclid: string | null
+          last_non_direct_gclid: string | null
+          last_non_direct_landing_page: string | null
+          last_non_direct_utm_medium: string | null
+          last_non_direct_utm_source: string | null
+          meta_ad_id: string | null
+          meta_adset_id: string | null
+          meta_campaign_id: string | null
+          meta_creative_id: string | null
+          meta_placement: string | null
+          meta_site_source_name: string | null
+          msclkid: string | null
+          name: string | null
+          original_session_id: string | null
+          phone: string
+          phonecall_bot_status: string | null
+          referrer: string | null
+          session_data: Json | null
+          source_form: string | null
+          source_page: string | null
+          source_tool: string | null
+          state: string | null
+          supabase_user_id: string | null
+          ttclid: string | null
+          updated_at: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          wbraid: string | null
+          wmlead_id: string | null
+          zip: string | null
+        }
+        Insert: {
+          account_status?: string | null
+          city?: string | null
+          client_id?: string | null
+          client_user_agent?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          email: string
+          external_crm_id?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
+          first_name: string
+          gbraid?: string | null
+          gclid?: string | null
+          id?: string
+          identity_version?: number | null
+          ip_hash?: string | null
+          landing_page?: string | null
+          landing_page_url?: string | null
+          last_name: string
+          last_non_direct_channel?: string | null
+          last_non_direct_fbclid?: string | null
+          last_non_direct_gclid?: string | null
+          last_non_direct_landing_page?: string | null
+          last_non_direct_utm_medium?: string | null
+          last_non_direct_utm_source?: string | null
+          meta_ad_id?: string | null
+          meta_adset_id?: string | null
+          meta_campaign_id?: string | null
+          meta_creative_id?: string | null
+          meta_placement?: string | null
+          meta_site_source_name?: string | null
+          msclkid?: string | null
+          name?: string | null
+          original_session_id?: string | null
+          phone: string
+          phonecall_bot_status?: string | null
+          referrer?: string | null
+          session_data?: Json | null
+          source_form?: string | null
+          source_page?: string | null
+          source_tool?: string | null
+          state?: string | null
+          supabase_user_id?: string | null
+          ttclid?: string | null
+          updated_at?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          wbraid?: string | null
+          wmlead_id?: string | null
+          zip?: string | null
+        }
+        Update: {
+          account_status?: string | null
+          city?: string | null
+          client_id?: string | null
+          client_user_agent?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          email?: string
+          external_crm_id?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
+          first_name?: string
+          gbraid?: string | null
+          gclid?: string | null
+          id?: string
+          identity_version?: number | null
+          ip_hash?: string | null
+          landing_page?: string | null
+          landing_page_url?: string | null
+          last_name?: string
+          last_non_direct_channel?: string | null
+          last_non_direct_fbclid?: string | null
+          last_non_direct_gclid?: string | null
+          last_non_direct_landing_page?: string | null
+          last_non_direct_utm_medium?: string | null
+          last_non_direct_utm_source?: string | null
+          meta_ad_id?: string | null
+          meta_adset_id?: string | null
+          meta_campaign_id?: string | null
+          meta_creative_id?: string | null
+          meta_placement?: string | null
+          meta_site_source_name?: string | null
+          msclkid?: string | null
+          name?: string | null
+          original_session_id?: string | null
+          phone?: string
+          phonecall_bot_status?: string | null
+          referrer?: string | null
+          session_data?: Json | null
+          source_form?: string | null
+          source_page?: string | null
+          source_tool?: string | null
+          state?: string | null
+          supabase_user_id?: string | null
+          ttclid?: string | null
+          updated_at?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          wbraid?: string | null
+          wmlead_id?: string | null
+          zip?: string | null
+        }
+        Relationships: []
+      }
       ad_spend_daily: {
         Row: {
           account_id: string | null
