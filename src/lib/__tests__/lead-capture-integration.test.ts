@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   trackLeadCapture,
 } from '../gtm';
-import { wmLead, wmAppointmentBooked, _resetScannerUploadGuard } from '../wmTracking';
+import { wmLead, wmAppointmentBooked, _resetScannerUploadGuard, _resetWmLeadGuard } from '../wmTracking';
 import { setLeadAnchor, getLeadAnchor, clearLeadAnchor } from '../leadAnchor';
 import { setExplicitSubmission, hasExplicitSubmission, clearExplicitSubmission } from '../consent';
 
@@ -45,6 +45,7 @@ describe('Lead Capture Integration Flow', () => {
     clearLeadAnchor();
     clearExplicitSubmission();
     _resetScannerUploadGuard();
+    _resetWmLeadGuard();
   });
 
   afterEach(() => {
