@@ -163,7 +163,7 @@ const INITIAL_STATE: GatedScannerState = {
 export function useGatedScanner(): UseGatedScannerReturn {
   const { toast } = useToast();
   const { sessionData, sessionId, updateField } = useSessionData();
-  const { leadId: existingLeadId, setLeadId } = useLeadIdentity();
+  const { leadId: existingLeadId, setLeadId, isVerifiedLead } = useLeadIdentity();
   const { awardScore } = useCanonicalScore();
   
   const [state, setState] = useState<GatedScannerState>(INITIAL_STATE);
@@ -213,10 +213,104 @@ export function useGatedScanner(): UseGatedScannerReturn {
   // COMPLETE PRE-GATE INTERSTITIAL
   // ═══════════════════════════════════════════════════════════════════════════
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RUN ANALYSIS (shared by captureLead and gate bypass)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const runAnalysis = useCallback(async (file: File, scanAttemptId: string, leadId: string | null) => {
+    setState(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      const { base64, mimeType } = await compressImage(file);
+
+      wmScannerUpload(
+        { email: sessionData.email, phone: sessionData.phone, leadId: leadId || undefined },
+        scanAttemptId,
+        { source_tool: 'audit-scanner' },
+      ).catch(err => console.warn('[Non-critical] Scanner upload tracking failed:', err));
+
+      const { data: analysisData, error: requestError } = await heavyAIRequest.sendRequest<AuditAnalysisResult & { error?: string }>(
+        'quote-scanner',
+        {
+          mode: 'analyze',
+          imageBase64: base64,
+          mimeType,
+          openingCount: sessionData.windowCount,
+          areaName: 'Florida',
+          sessionId,
+          leadId: leadId || undefined,
+        }
+      );
+
+      if (requestError) throw requestError;
+      if (analysisData?.error) throw new Error(analysisData.error);
+
+      const resultWithTimestamp: AuditAnalysisResult = {
+        ...analysisData!,
+        analyzedAt: new Date().toISOString(),
+      };
+
+      trackEvent('analysis_complete', {
+        score: resultWithTimestamp.overallScore,
+        warnings_count: resultWithTimestamp.warnings?.length || 0,
+        missing_count: resultWithTimestamp.missingItems?.length || 0,
+        event_id: `analysis_complete:${scanAttemptId}`,
+      });
+
+      awardScore({
+        eventType: 'QUOTE_UPLOADED',
+        sourceEntityType: 'quote',
+        sourceEntityId: scanAttemptId,
+      }).catch(err => console.warn('[Non-critical] Canonical score award failed:', err));
+
+      updateField('quoteAnalysisResult', resultWithTimestamp);
+
+      setState(prev => ({
+        ...prev,
+        phase: 'revealed',
+        result: resultWithTimestamp,
+        isLoading: false,
+        imageBase64: base64,
+        imageMimeType: mimeType,
+      }));
+    } catch (err) {
+      console.error('Gated scanner analysis error:', err);
+      const message = getErrorMessage(err);
+      setState(prev => ({ ...prev, isLoading: false, error: message }));
+      toast({
+        title: message.includes('timed out') ? 'Request Timed Out' : 'Analysis Failed',
+        description: message,
+        variant: 'destructive',
+      });
+    }
+  }, [sessionData.email, sessionData.phone, sessionData.windowCount, sessionId, awardScore, updateField, toast]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COMPLETE PRE-GATE INTERSTITIAL
+  // ═══════════════════════════════════════════════════════════════════════════
+
   const completePreGate = useCallback(() => {
     // Idempotent: only fires if still in pre-gate phase
     setState(prev => {
       if (prev.phase !== 'pre-gate') return prev;
+
+      if (isVerifiedLead) {
+        // Known lead — skip gate, go straight to analysis
+        trackEvent('gate_auto_bypassed', {
+          lead_id: existingLeadId,
+          source: 'audit-scanner',
+          scan_attempt_id: scanAttemptIdRef.current,
+        });
+
+        // Trigger analysis for the bypassed lead
+        if (prev.file && prev.scanAttemptId) {
+          // Use setTimeout to avoid setState-in-setState
+          setTimeout(() => runAnalysis(prev.file!, prev.scanAttemptId!, existingLeadId || null), 0);
+        }
+
+        return { ...prev, phase: 'analyzing', isModalOpen: false, isLeadCaptured: true, leadId: existingLeadId || prev.leadId };
+      }
+
       return {
         ...prev,
         phase: 'uploaded',
@@ -224,14 +318,15 @@ export function useGatedScanner(): UseGatedScannerReturn {
       };
     });
 
-    trackEvent('pre_gate_interstitial_complete', {
-      scan_attempt_id: scanAttemptIdRef.current,
-      file_type: state.fileType,
-      file_size_kb: state.fileSize ? Math.round(state.fileSize / 1024) : null,
-    });
-
-    trackModalOpen({ modalName: 'quote_upload_gate' });
-  }, [state.fileType, state.fileSize]);
+    if (!isVerifiedLead) {
+      trackEvent('pre_gate_interstitial_complete', {
+        scan_attempt_id: scanAttemptIdRef.current,
+        file_type: state.fileType,
+        file_size_kb: state.fileSize ? Math.round(state.fileSize / 1024) : null,
+      });
+      trackModalOpen({ modalName: 'quote_upload_gate' });
+    }
+  }, [state.fileType, state.fileSize, isVerifiedLead, existingLeadId, runAnalysis]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MODAL CONTROLS
@@ -297,73 +392,8 @@ export function useGatedScanner(): UseGatedScannerReturn {
         phase: 'analyzing',
       }));
 
-      // 3. Start AI analysis
-      const { base64, mimeType } = await compressImage(state.file);
-
-      // Track scanner upload
-      wmScannerUpload(
-        { email: data.email, phone: data.phone, leadId: existingLeadId || undefined },
-        state.scanAttemptId || '',
-        { source_tool: 'audit-scanner' },
-      ).catch(err => console.warn('[Non-critical] Scanner upload tracking failed:', err));
-
-      // Call AI analysis API
-      const { data: analysisData, error: requestError } = await heavyAIRequest.sendRequest<AuditAnalysisResult & { error?: string }>(
-        'quote-scanner',
-        {
-          mode: 'analyze',
-          imageBase64: base64,
-          mimeType,
-          openingCount: sessionData.windowCount,
-          areaName: 'Florida',
-          sessionId,
-          leadId: existingLeadId || undefined,
-        }
-      );
-
-      if (requestError) throw requestError;
-      if (analysisData?.error) throw new Error(analysisData.error);
-
-      const resultWithTimestamp: AuditAnalysisResult = {
-        ...analysisData!,
-        analyzedAt: new Date().toISOString(),
-      };
-
-      // Track analysis complete
-      trackEvent('analysis_complete', {
-        score: resultWithTimestamp.overallScore,
-        warnings_count: resultWithTimestamp.warnings?.length || 0,
-        missing_count: resultWithTimestamp.missingItems?.length || 0,
-        event_id: `analysis_complete:${state.scanAttemptId}`,
-      });
-
-      // Award canonical score
-      if (state.scanAttemptId) {
-        awardScore({
-          eventType: 'QUOTE_UPLOADED',
-          sourceEntityType: 'quote',
-          sourceEntityId: state.scanAttemptId,
-        }).catch(err => console.warn('[Non-critical] Canonical score award failed:', err));
-
-        wmScannerUpload(
-          { email: data.email, phone: data.phone, leadId: existingLeadId || undefined },
-          state.scanAttemptId,
-          { source_tool: 'audit-scanner' },
-        ).catch(err => console.warn('[Non-critical] Post-analysis tracking failed:', err));
-      }
-
-      // Save result to session
-      updateField('quoteAnalysisResult', resultWithTimestamp);
-
-      // 4. Transition to revealed phase + persist image for Q&A
-      setState(prev => ({
-        ...prev,
-        phase: 'revealed',
-        result: resultWithTimestamp,
-        isLoading: false,
-        imageBase64: base64,
-        imageMimeType: mimeType,
-      }));
+      // 3. Delegate to shared analysis runner
+      await runAnalysis(state.file, state.scanAttemptId || '', existingLeadId || null);
 
     } catch (err) {
       console.error('Gated scanner error:', err);
@@ -381,7 +411,7 @@ export function useGatedScanner(): UseGatedScannerReturn {
         variant: 'destructive',
       });
     }
-  }, [state.file, state.scanAttemptId, submitLead, sessionData.windowCount, sessionId, existingLeadId, awardScore, updateField, toast]);
+  }, [state.file, state.scanAttemptId, submitLead, existingLeadId, runAnalysis, toast]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ASK QUESTION (Q&A about the analysis)

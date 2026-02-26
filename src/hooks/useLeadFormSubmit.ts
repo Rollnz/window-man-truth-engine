@@ -103,7 +103,7 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { leadId: existingLeadId, setLeadId } = useLeadIdentity();
-  const { sessionData } = useSessionData();
+  const { sessionData, updateFields } = useSessionData();
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -187,6 +187,15 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
         setLeadAnchor(newLeadId);
         
         console.log('[useLeadFormSubmit] Lead anchor + explicit submission set for:', newLeadId.slice(0, 8) + '...');
+
+        // Persist contact fields to sessionData for identity-aware gating
+        // This closes the split-brain gap: every form now writes PII to the shared session store
+        updateFields({
+          leadId: newLeadId,
+          firstName: data.firstName || normalizedName || undefined,
+          email: data.email,
+          phone: data.phone || undefined,
+        });
       }
 
       // Track analytics with lead_id
@@ -294,6 +303,7 @@ export function useLeadFormSubmit(options: LeadFormSubmitOptions): LeadFormSubmi
     existingLeadId,
     setLeadId,
     sessionData.claimVaultSessionId,
+    updateFields,
   ]);
 
   return {
