@@ -6,7 +6,7 @@
  * 2. meta.category = 'opt' on all OPT events
  * 3. Hashed PII in user_data (Enhanced Conversions)
  * 4. Deduplication guards (scanner upload, qualified lead)
- * 5. Legacy bridge events fire as RT (no value)
+ * 5. Legacy bridge aliases are fully removed
  * 
  * Legacy functions (trackLeadSubmissionSuccess, trackBookingConfirmed, etc.)
  * have been removed — all conversion tracking goes through wmTracking.ts
@@ -27,6 +27,7 @@ import {
   wmInternal,
   _resetScannerUploadGuard,
   _resetSessionGuards,
+  _resetWmLeadGuard,
 } from '../wmTracking';
 import { normalizeToE164 } from '../phoneFormat';
 
@@ -44,6 +45,7 @@ beforeEach(() => {
     clear: vi.fn(),
   });
   _resetScannerUploadGuard();
+  _resetWmLeadGuard();
   Object.keys(mockSessionStorage).forEach(k => delete mockSessionStorage[k]);
 });
 
@@ -64,17 +66,25 @@ describe('wmLead', () => {
     expect(event.currency).toBe('USD');
     expect(event.meta.send).toBe(true);
     expect(event.meta.category).toBe('opt');
-    expect(event.event_id).toBe('lead:test-lead-1');
+    expect(event.event_id).toBe('test-lead-1');
   });
 
-  it('should fire legacy bridge lead_submission_success as RT', async () => {
-    await wmLead({ leadId: 'bridge-1', email: 'b@test.com' });
+  it('should not fire any legacy bridge aliases', async () => {
+    const legacyNames = [
+      'lead_submission_success',
+      'quote_upload_success',
+      'booking_confirmed',
+      'phone_lead_captured',
+    ];
 
-    const bridge = mockDataLayer.find(e => e.event === 'lead_submission_success');
-    expect(bridge).toBeDefined();
-    expect(bridge.meta.category).toBe('rt');
-    expect(bridge.value).toBeUndefined();
-    expect(bridge.legacy_bridge).toBe(true);
+    await wmLead({ leadId: 'bridge-1', email: 'b@test.com' });
+    await wmQualifiedLead({ leadId: 'bridge-1', email: 'b@test.com' });
+    await wmScannerUpload({ leadId: 'bridge-1', email: 'b@test.com' }, 'bridge-scan-1');
+    await wmAppointmentBooked({ leadId: 'bridge-1', email: 'b@test.com' }, 'bridge-appt-1');
+
+    for (const legacyName of legacyNames) {
+      expect(mockDataLayer.find(e => e.event === legacyName)).toBeUndefined();
+    }
   });
 
   it('should include hashed user_data for EMQ', async () => {
