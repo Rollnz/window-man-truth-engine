@@ -5,7 +5,7 @@
  * 1. wmLead fires with hardcoded $10 value
  * 2. wmAppointmentBooked fires with hardcoded $1000 value
  * 3. All events include meta.category='opt' for GTM firewall
- * 4. Legacy lead_submission_success bridge fires as RT (no value)
+ * 4. No legacy bridge aliases are emitted
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -34,11 +34,12 @@ describe('Lead Capture Integration Flow', () => {
       clear: vi.fn(() => { Object.keys(mockSessionStorage).forEach(key => delete mockSessionStorage[key]); }),
     });
 
+    const mockLocalStorage: Record<string, string> = {};
     vi.stubGlobal('localStorage', {
-      getItem: vi.fn(() => null),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-      clear: vi.fn(),
+      getItem: vi.fn((key: string) => mockLocalStorage[key] ?? null),
+      setItem: vi.fn((key: string, value: string) => { mockLocalStorage[key] = value; }),
+      removeItem: vi.fn((key: string) => { delete mockLocalStorage[key]; }),
+      clear: vi.fn(() => { Object.keys(mockLocalStorage).forEach(key => delete mockLocalStorage[key]); }),
     });
 
     clearLeadAnchor();
@@ -89,25 +90,26 @@ describe('Lead Capture Integration Flow', () => {
       expect(meta?.category).toBe('opt');
     });
 
-    it('should fire legacy bridge as RT (no value)', async () => {
+    it('should not fire any legacy bridge aliases', async () => {
       const leadId = 'wm-lead-bridge-002';
+      const legacyNames = [
+        'lead_submission_success',
+        'quote_upload_success',
+        'booking_confirmed',
+        'phone_lead_captured',
+      ];
 
       await wmLead(
         { leadId, email: 'bridge@test.com' },
         { source_tool: 'quote-builder' },
       );
 
-      const bridgeEvent = mockDataLayer.find(e => e.event === 'lead_submission_success');
-      expect(bridgeEvent).toBeDefined();
-
-      // Bridge must be RT — no value/currency
-      const meta = bridgeEvent?.meta as Record<string, unknown>;
-      expect(meta?.category).toBe('rt');
-      expect(bridgeEvent?.value).toBeUndefined();
-      expect(bridgeEvent?.currency).toBeUndefined();
+      for (const legacyName of legacyNames) {
+        expect(mockDataLayer.find(e => e.event === legacyName)).toBeUndefined();
+      }
     });
 
-    it('should use deterministic event_id format lead:{leadId}', async () => {
+    it('should use deterministic event_id format as bare leadId', async () => {
       const leadId = 'deterministic-id-003';
 
       await wmLead(
@@ -116,7 +118,7 @@ describe('Lead Capture Integration Flow', () => {
       );
 
       const event = mockDataLayer.find(e => e.event === 'wm_lead');
-      expect(event?.event_id).toBe(`lead:${leadId}`);
+      expect(event?.event_id).toBe(leadId);
     });
   });
 
@@ -176,8 +178,8 @@ describe('Lead Capture Integration Flow', () => {
  * ✅ Golden Thread: Lead identity persistence via leadAnchor
  * ✅ Explicit Submission: PII tracking enablement
  * ✅ wmLead: $10 hardcoded value, meta.category='opt'
- * ✅ Legacy bridge: lead_submission_success fires as RT (no value)
- * ✅ Deterministic event_id: lead:{leadId} format
+ * ✅ Legacy bridge removal: no legacy aliases emitted
+ * ✅ Deterministic event_id: bare leadId format
  * ✅ wmAppointmentBooked: $1000 hardcoded value
  * ✅ trackLeadCapture: Internal analytics still works
  * ✅ Error Handling: Graceful minimal data
