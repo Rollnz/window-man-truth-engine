@@ -80,10 +80,6 @@ export const LeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }: LeadModal
         source_tool: 'quote-builder',
         source_system: 'web',
         form_name: 'quote_builder_lead',
-        user_data: {
-          first_name: firstName,
-          last_name: lastName || undefined,
-        },
       });
       
       await wmLead(

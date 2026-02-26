@@ -18,6 +18,14 @@ describe('trackVoiceEstimateConfirmed', () => {
     mockDataLayer = [];
     vi.stubGlobal('window', {
       dataLayer: mockDataLayer,
+      location: {
+        pathname: '/test-path',
+        href: 'https://example.com/test-path',
+        search: '',
+      },
+      document: {
+        referrer: '',
+      },
     });
     vi.stubGlobal('crypto', {
       randomUUID: () => 'test-uuid-1234',
@@ -60,15 +68,15 @@ describe('trackVoiceEstimateConfirmed', () => {
     expect(event?.event_id).toBe('test-uuid-1234');
   });
 
-  it('should include value and currency for value-based bidding', async () => {
+  it('should not include value/currency because this is an internal event', async () => {
     await trackVoiceEstimateConfirmed({
       call_duration: 120,
       agent_confidence: 0.85,
     });
 
     const event = mockDataLayer.find(e => e.event === 'voice_estimate_confirmed');
-    expect(event?.value).toBe(30); // VOICE_ESTIMATE_VALUE constant
-    expect(event?.currency).toBe('USD');
+    expect(event?.value).toBeUndefined();
+    expect(event?.currency).toBeUndefined();
   });
 
   it('should include user_data with hashed email when provided', async () => {
@@ -180,6 +188,5 @@ describe('trackVoiceEstimateConfirmed', () => {
  * ✅ user_data.sha256_email_address: SHA-256 hashed email (Google format)
  * ✅ user_data.sha256_phone_number: SHA-256 hashed phone (Google format)
  * ✅ user_data.external_id: Lead ID for cross-platform matching
- * ✅ value: $30 USD for value-based bidding
- * ✅ currency: USD
+ * ✅ no value/currency on internal event payload
  */

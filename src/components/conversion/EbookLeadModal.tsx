@@ -187,10 +187,6 @@ export function EbookLeadModal({
           source_tool: sourceTool,
           source_system: 'web',
           form_name: 'ebook_lead',
-          user_data: {
-            first_name: normalizedNames.firstName,
-            last_name: normalizedNames.lastName || undefined,
-          },
         });
 
         // Track lead capture
