@@ -154,7 +154,7 @@ function AppContent() {
             Auth, Vault, Admin - no marketing footer
         ============================================ */}
         <Route path="/auth" element={<Auth />} />
-        <Route path="/vault" element={<Suspense fallback={<PageLoader />}><AuthGuard><Vault /></AuthGuard></Suspense>} />
+        <Route path="/vault" element={<Vault />} />
         <Route path="/audit" element={<Audit />} />
         
         {/* Admin Routes - wrapped with AdminLayout for global search */}
