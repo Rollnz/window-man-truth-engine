@@ -110,15 +110,6 @@ describe('wmLead', () => {
     expect(event!.event_id).toBe(TEST_LEAD_ID);
   });
 
-  it('does not fire legacy bridge names', async () => {
-    await wmLead(testIdentity);
-
-    const legacyNames = ['lead_submission_success', 'quote_upload_success', 'booking_confirmed', 'phone_lead_captured'];
-    for (const legacyName of legacyNames) {
-      expect(mockDataLayer.find(e => e.event === legacyName)).toBeUndefined();
-    }
-  });
-
 
   it('includes lead_id and external_id from identity', async () => {
     await wmLead(testIdentity);
@@ -261,6 +252,29 @@ describe('wmAppointmentBooked', () => {
     expect((event!.event_id as string).startsWith(`appt:${TEST_LEAD_ID}:`)).toBe(true);
   });
 
+});
+
+
+describe('legacy bridge removal', () => {
+  it('does not fire any legacy bridge events', async () => {
+    const legacyNames = [
+      'lead_submission_success',
+      'quote_upload_success',
+      'booking_confirmed',
+      'phone_lead_captured',
+    ];
+
+    // Call all functions that previously emitted bridge aliases.
+    await wmLead(testIdentity);
+    await wmQualifiedLead(testIdentity);
+    await wmScannerUpload(testIdentity, 'scan-1');
+    await wmAppointmentBooked(testIdentity, 'appt-1');
+
+    // Guardrail: canonical wm_* should be the only emitted event names.
+    for (const legacyName of legacyNames) {
+      expect(mockDataLayer.find(e => e.event === legacyName)).toBeUndefined();
+    }
+  });
 });
 
 describe('wmSold', () => {
