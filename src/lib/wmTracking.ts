@@ -29,7 +29,7 @@ import type { QualificationData } from '@/components/LeadModalV2/types';
 // VERSION
 // ═══════════════════════════════════════════════════════════════════════════
 
-const WM_TRACKING_VERSION = '1.0.0';
+const WM_TRACKING_VERSION = '2.0.0';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -93,20 +93,13 @@ const OPT_VALUES: Record<WmOptEvent, number> = {
 };
 
 /** Meta CAPI event name mapping (for meta.meta_event_name) */
+// CRITICAL: GTM tags must use {{DLV - meta.meta_event_name}} dynamically. Do not hardcode event names in GTM.
 const META_EVENT_NAMES: Record<WmOptEvent, string> = {
   wm_lead: 'Lead',
-  wm_qualified_lead: 'QualifiedLead',
-  wm_scanner_upload: 'ScannerUpload',
+  wm_qualified_lead: 'CompleteRegistration',
+  wm_scanner_upload: 'SubmitApplication',
   wm_appointment_booked: 'Schedule',
   wm_sold: 'Purchase',
-};
-
-/** Legacy bridge map — each OPT event also fires the old name as RT during transition */
-const LEGACY_BRIDGE: Partial<Record<WmOptEvent, string>> = {
-  wm_lead: 'lead_submission_success',
-  wm_scanner_upload: 'quote_upload_success',
-  wm_appointment_booked: 'booking_confirmed',
-  wm_qualified_lead: 'phone_lead_captured',
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -263,30 +256,6 @@ async function pushWmEvent(
   }
 }
 
-/**
- * Fire a legacy bridge event as RT (no value, no currency).
- * Tagged with `legacy_bridge: true` for easy identification and removal.
- */
-function fireLegacyBridge(
-  optEventName: WmOptEvent,
-  context?: WmEventContext,
-): void {
-  const legacyName = LEGACY_BRIDGE[optEventName];
-  if (!legacyName) return;
-
-  trackEvent(legacyName, {
-    meta: {
-      send: true,
-      category: 'rt' as WmEventCategory,
-      wm_tracking_version: WM_TRACKING_VERSION,
-    },
-    legacy_bridge: true,
-    source_system: 'website',
-    ...(context?.source_tool && { source_tool: context.source_tool }),
-    page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
-  });
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // OPT EVENT EMITTERS (the ONLY 5 functions that attach value/currency)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -318,8 +287,6 @@ export async function wmLead(
     OPT_VALUES.wm_lead, META_EVENT_NAMES.wm_lead,
     context,
   );
-
-  fireLegacyBridge('wm_lead', context);
 }
 
 /**
@@ -361,8 +328,6 @@ export async function wmQualifiedLead(
     OPT_VALUES.wm_qualified_lead, META_EVENT_NAMES.wm_qualified_lead,
     context,
   );
-
-  fireLegacyBridge('wm_qualified_lead', context);
   return true;
 }
 
@@ -402,8 +367,6 @@ export async function wmScannerUpload(
     OPT_VALUES.wm_scanner_upload, META_EVENT_NAMES.wm_scanner_upload,
     { scan_attempt_id: scanAttemptId, ...context },
   );
-
-  fireLegacyBridge('wm_scanner_upload', context);
   return eventId;
 }
 
@@ -429,8 +392,6 @@ export async function wmAppointmentBooked(
     OPT_VALUES.wm_appointment_booked, META_EVENT_NAMES.wm_appointment_booked,
     context,
   );
-
-  fireLegacyBridge('wm_appointment_booked', context);
 }
 
 /**
