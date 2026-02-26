@@ -15,6 +15,7 @@ import { wmScannerUpload } from '@/lib/wmTracking';
 import { useCanonicalScore } from '@/hooks/useCanonicalScore';
 import { logScannerCompleted } from '@/lib/highValueSignals';
 import type { QuoteAnalysisResult } from '@/hooks/useQuoteScanner';
+import { useLeadIdentity } from '@/hooks/useLeadIdentity';
 import type { ExplainScoreFormData } from '@/types/audit';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -165,6 +166,7 @@ function clearPersistedState(): void {
 export function useGatedAIScanner(): UseGatedAIScannerReturn {
   const { toast } = useToast();
   const { sessionData, sessionId, updateField } = useSessionData();
+  const { leadId: existingLeadId, isVerifiedLead } = useLeadIdentity();
   const { awardScore } = useCanonicalScore();
 
   const [state, setState] = useState<GatedAIScannerState>(INITIAL_STATE);
@@ -203,11 +205,130 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
     }
   }, []);
 
+  // ── autoAnalyze: run AI analysis without lead capture ─────────────
+  const runAnalysis = useCallback(async (file: File, scanAttemptId: string, leadId: string | null) => {
+    setState(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      const { base64, mimeType } = await compressImage(file);
+
+      const { data: analysisData, error: requestError } = await heavyAIRequest.sendRequest<QuoteAnalysisResult & { error?: string }>(
+        'quote-scanner',
+        {
+          mode: 'analyze',
+          imageBase64: base64,
+          mimeType,
+          openingCount: sessionData.windowCount,
+          areaName: 'Florida',
+          sessionId,
+          leadId: leadId || undefined,
+        },
+        { timeoutMs: 60000 }
+      );
+
+      if (requestError) throw requestError;
+      if (analysisData?.error) throw new Error(analysisData.error);
+      if (!analysisData) throw new Error('Analysis returned no data');
+
+      const resultWithTimestamp: QuoteAnalysisResult = {
+        ...analysisData,
+        analyzedAt: new Date().toISOString(),
+      };
+
+      trackEvent('analysis_complete', {
+        score: resultWithTimestamp.overallScore,
+        warnings_count: resultWithTimestamp.warnings?.length || 0,
+        missing_count: resultWithTimestamp.missingItems?.length || 0,
+        event_id: `analysis_complete:${scanAttemptId}`,
+      });
+
+      await awardScore({
+        eventType: 'QUOTE_UPLOADED',
+        sourceEntityType: 'quote',
+        sourceEntityId: scanAttemptId,
+      });
+
+      const priceStr = resultWithTimestamp.pricePerOpening ?? '';
+      const parsedPrice = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
+      await logScannerCompleted({
+        score: resultWithTimestamp.overallScore,
+        quoteAmount: !isNaN(parsedPrice) ? parsedPrice : undefined,
+        fileSize: file.size,
+        fileType: file.type,
+        leadId: leadId || undefined,
+        email: sessionData.email,
+        phone: sessionData.phone,
+      });
+
+      updateField('quoteAnalysisResult', resultWithTimestamp);
+      clearPersistedState();
+
+      setState(prev => ({
+        ...prev,
+        phase: 'revealed',
+        analysisResult: resultWithTimestamp,
+        imageBase64: base64,
+        mimeType,
+        isLoading: false,
+      }));
+    } catch (err) {
+      console.error('[useGatedAIScanner] Analysis error:', err);
+      const message = getErrorMessage(err);
+      setState(prev => ({ ...prev, isLoading: false, error: message }));
+      toast({
+        title: message.includes('timed out') ? 'Request Timed Out' : 'Analysis Failed',
+        description: message,
+        variant: 'destructive',
+      });
+    }
+  }, [sessionData.windowCount, sessionData.email, sessionData.phone, sessionId, awardScore, updateField, toast]);
+
   // ── handleFileSelect ────────────────────────────────────────────────
   const handleFileSelect = useCallback((file: File) => {
     const scanAttemptId = crypto.randomUUID();
     scanAttemptIdRef.current = scanAttemptId;
     const previewUrl = URL.createObjectURL(file);
+
+    trackEvent('quote_file_selected', {
+      source_tool: 'quote-scanner',
+      file_type: file.type,
+      file_size_kb: Math.round(file.size / 1024),
+    });
+
+    if (isVerifiedLead) {
+      // Known lead — skip modal, persist state, go straight to analyzing
+      trackEvent('gate_auto_bypassed', {
+        lead_id: existingLeadId,
+        source: 'ai-scanner',
+        scan_attempt_id: scanAttemptId,
+      });
+
+      persistState({
+        phase: 'analyzing',
+        leadId: existingLeadId || null,
+        scanAttemptId,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+      });
+
+      setState({
+        ...INITIAL_STATE,
+        phase: 'analyzing',
+        file,
+        filePreviewUrl: previewUrl,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        scanAttemptId,
+        leadId: existingLeadId || null,
+        isModalOpen: false,
+      });
+
+      // Auto-trigger analysis with stored session data
+      runAnalysis(file, scanAttemptId, existingLeadId || null);
+      return;
+    }
 
     setState({
       ...INITIAL_STATE,
@@ -221,13 +342,8 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
       isModalOpen: true,
     });
 
-    trackEvent('quote_file_selected', {
-      source_tool: 'quote-scanner',
-      file_type: file.type,
-      file_size_kb: Math.round(file.size / 1024),
-    });
     trackModalOpen({ modalName: 'quote_upload_gate' });
-  }, []);
+  }, [isVerifiedLead, existingLeadId, runAnalysis]);
 
   // ── closeModal → locked ─────────────────────────────────────────────
   const closeModal = useCallback(() => {
@@ -265,7 +381,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
     setState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      // 1. Submit lead; capture the returned leadId synchronously to avoid the async setLeadId race condition
+      // 1. Submit lead
       const fullName = [data.firstName, data.lastName].filter(Boolean).join(' ');
       const capturedLeadId = await submitLead({
         firstName: data.firstName,
@@ -280,7 +396,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
         scan_attempt_id: state.scanAttemptId,
       });
 
-      // 2. Fire the single wmScannerUpload event immediately after lead capture (non-blocking)
+      // 2. Fire wmScannerUpload (non-blocking)
       if (state.scanAttemptId) {
         void wmScannerUpload(
           { email: data.email, phone: data.phone, leadId: capturedLeadId || undefined },
@@ -301,73 +417,8 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
         leadId: capturedLeadId,
       }));
 
-      // 4. Compress and analyze
-      const { base64, mimeType } = await compressImage(state.file);
-
-      const { data: analysisData, error: requestError } = await heavyAIRequest.sendRequest<QuoteAnalysisResult & { error?: string }>(
-        'quote-scanner',
-        {
-          mode: 'analyze',
-          imageBase64: base64,
-          mimeType,
-          openingCount: sessionData.windowCount,
-          areaName: 'Florida',
-          sessionId,
-          leadId: capturedLeadId || undefined,
-        },
-        { timeoutMs: 60000 }
-      );
-
-      if (requestError) throw requestError;
-      if (analysisData?.error) throw new Error(analysisData.error);
-      if (!analysisData) throw new Error('Analysis returned no data');
-
-      const resultWithTimestamp: QuoteAnalysisResult = {
-        ...analysisData,
-        analyzedAt: new Date().toISOString(),
-      };
-
-      // 5. Track completion and award points (internal tracking)
-      trackEvent('analysis_complete', {
-        score: resultWithTimestamp.overallScore,
-        warnings_count: resultWithTimestamp.warnings?.length || 0,
-        missing_count: resultWithTimestamp.missingItems?.length || 0,
-        event_id: `analysis_complete:${state.scanAttemptId}`,
-      });
-
-      if (state.scanAttemptId) {
-        await awardScore({
-          eventType: 'QUOTE_UPLOADED',
-          sourceEntityType: 'quote',
-          sourceEntityId: state.scanAttemptId,
-        });
-        // NOTE: Second wmScannerUpload call previously here was removed as redundant
-      }
-
-      const priceStr = resultWithTimestamp.pricePerOpening ?? '';
-      const parsedPrice = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
-      await logScannerCompleted({
-        score: resultWithTimestamp.overallScore,
-        quoteAmount: !isNaN(parsedPrice) ? parsedPrice : undefined,
-        fileSize: state.file.size,
-        fileType: state.file.type,
-        leadId: capturedLeadId || undefined,
-        email: data.email,
-        phone: data.phone,
-      });
-
-      updateField('quoteAnalysisResult', resultWithTimestamp);
-      clearPersistedState();
-
-      // 6. Reveal
-      setState(prev => ({
-        ...prev,
-        phase: 'revealed',
-        analysisResult: resultWithTimestamp,
-        imageBase64: base64,
-        mimeType,
-        isLoading: false,
-      }));
+      // 4. Delegate to shared analysis runner
+      await runAnalysis(state.file, state.scanAttemptId || '', capturedLeadId);
 
     } catch (err) {
       console.error('[useGatedAIScanner] Error:', err);
@@ -379,7 +430,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
         variant: 'destructive',
       });
     }
-  }, [state.file, state.scanAttemptId, state.fileName, state.fileType, state.fileSize, submitLead, sessionData.windowCount, sessionId, awardScore, updateField, toast]);
+  }, [state.file, state.scanAttemptId, state.fileName, state.fileType, state.fileSize, submitLead, runAnalysis, toast]);
 
   // ── reset ───────────────────────────────────────────────────────────
   const reset = useCallback(() => {

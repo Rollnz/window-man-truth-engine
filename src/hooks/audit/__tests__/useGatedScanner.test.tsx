@@ -157,8 +157,8 @@ describe('useGatedScanner – fire-and-forget tracking', () => {
     expect(result.current.phase).toBe('revealed');
     expect(result.current.result).not.toBeNull();
     expect(result.current.error).toBeNull();
-    // Both wmScannerUpload calls fired (pre + post analysis)
-    expect(mockWmScannerUpload).toHaveBeenCalledTimes(2);
+    // Single wmScannerUpload call in runAnalysis (deduped from previous 2)
+    expect(mockWmScannerUpload).toHaveBeenCalledTimes(1);
     expect(mockAwardScore).toHaveBeenCalledTimes(1);
   });
 });
