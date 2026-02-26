@@ -8,6 +8,7 @@ import { MyDocumentsSection } from '@/components/vault/MyDocumentsSection';
 import { MyChecklistsSection } from '@/components/vault/MyChecklistsSection';
 import { EmailResultsButton } from '@/components/vault/EmailResultsButton';
 import { VaultWelcomeCard } from '@/components/vault/VaultWelcomeCard';
+import { VaultSignupModal, type VaultThemeVariant } from '@/components/vault/VaultSignupModal';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -46,8 +47,9 @@ export default function Vault() {
   const { sessionData, isToolCompleted, updateFields } = useSessionData();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  
   const [showWelcome, setShowWelcome] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [activeTheme, setActiveTheme] = useState<VaultThemeVariant>('engine');
 
   // Check for pending Vault sync (from Fair Price Quiz)
   useEffect(() => {
@@ -120,9 +122,33 @@ export default function Vault() {
             <h1 className="display-h1 text-lift text-3xl md:text-4xl font-bold text-foreground mb-2">
               Your Protection Dashboard
             </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
               Track your progress, view your assessment results, and manage your claim-ready documents all in one place.
             </p>
+            {/* Temporary test buttons */}
+            <div className="flex flex-wrap justify-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setActiveTheme('vault'); setModalOpen(true); }}
+              >
+                Test Vault Theme
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setActiveTheme('engine'); setModalOpen(true); }}
+              >
+                Test Engine Theme
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setActiveTheme('report'); setModalOpen(true); }}
+              >
+                Test Report Theme
+              </Button>
+            </div>
           </div>
         )}
 
@@ -149,6 +175,14 @@ export default function Vault() {
           </Button>
         </div>
       </main>
+
+      {/* Vault Signup Modal */}
+      <VaultSignupModal
+        themeVariant={activeTheme}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        mode="no-quote"
+      />
     </div>
   );
 }
