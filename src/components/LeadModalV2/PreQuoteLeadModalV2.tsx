@@ -11,7 +11,7 @@ import { getOrCreateClientId } from '@/lib/tracking';
 import { getOrCreateSessionId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
 import { getLastNonDirectAttribution } from '@/lib/attribution';
-import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { useLeadIdentity, type ContactField } from '@/hooks/useLeadIdentity';
 import { useSessionData } from '@/hooks/useSessionData';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { calculateLeadScore } from './useLeadScoring';
@@ -113,7 +113,7 @@ export function PreQuoteLeadModalV2({
   );
 
   // ─── Session data for partial lead merging ─────────────────────────────
-  const { sessionData } = useSessionData();
+  const { sessionData, updateFields } = useSessionData();
 
   // ─── Smart lead suppression ────────────────────────────────────────────
   const {
@@ -127,8 +127,8 @@ export function PreQuoteLeadModalV2({
   const { isVerifiedLead, isPartialLead, missingFields, leadId: globalLeadId } = useLeadIdentity();
 
   // Merge global identity with flow-specific suppression
-  const hasKnownLead = hasGlobalLead || isVerifiedLead;
   const resolvedLeadId = storedLeadId || globalLeadId || null;
+  const hasKnownLead = !!resolvedLeadId || hasGlobalLead || isVerifiedLead;
 
   const suppressOpen = hideAfterCompletion && hasCompletedCta;
 
@@ -252,7 +252,6 @@ export function PreQuoteLeadModalV2({
               sourcePage: resolvedSourcePage,
               sessionData: {
                 clientId,
-                client_id: clientId,
                 ctaSource,
                 contextKey,
               },
@@ -320,7 +319,7 @@ export function PreQuoteLeadModalV2({
   // Partial lead: submit only missing fields, then advance
   // ═══════════════════════════════════════════════════════════════════════
   const handlePartialSubmit = useCallback(
-    async (data: Partial<Record<string, string>>) => {
+    async (data: Partial<Record<ContactField, string>>) => {
       if (isSubmitting) return;
       setIsSubmitting(true);
 
@@ -332,19 +331,22 @@ export function PreQuoteLeadModalV2({
           sourcePage ||
           (typeof window !== 'undefined' ? window.location.pathname : '');
 
+        const mergedEmail = data.email || sessionData.email || '';
+        const mergedFirstName = data.firstName || sessionData.firstName || '';
+        const mergedPhone = (data.phone || sessionData.phone || '').replace(/\D/g, '');
+
         const { data: result, error } = await invokeEdgeFunction(
           'save-lead',
           {
             body: {
-              email: data.email || sessionData.email || '',
-              firstName: data.firstName || sessionData.firstName || '',
-              phone: (data.phone || sessionData.phone || '').replace(/\D/g, ''),
+              email: mergedEmail,
+              firstName: mergedFirstName,
+              phone: mergedPhone,
               sourceTool: resolvedContextConfig.sourceTool,
               flowVersion: 'prequote_v2_partial',
               sourcePage: resolvedSourcePage,
               sessionData: {
                 clientId,
-                client_id: clientId,
                 ctaSource,
                 contextKey,
               },
@@ -361,10 +363,19 @@ export function PreQuoteLeadModalV2({
           setLeadId(newLeadId);
           storeLeadId(newLeadId);
 
+          // Sync updated fields into shared session state
+          updateFields({
+            leadId: newLeadId,
+            ...(data.email && { email: data.email }),
+            ...(data.firstName && { firstName: data.firstName }),
+            ...(data.phone && { phone: data.phone }),
+          });
+
           trackEvent('partial_lead_completed', {
             lead_id: newLeadId,
             fields_completed: Object.keys(data),
             cta_source: ctaSource,
+            identity_source: isVerifiedLead ? 'lead_anchor' : 'session_storage',
           });
 
           onSuccess?.(newLeadId);
@@ -387,9 +398,11 @@ export function PreQuoteLeadModalV2({
       onSuccess,
       toast,
       isSubmitting,
+      isVerifiedLead,
       contextKey,
       resolvedContextConfig,
       resolvedLeadId,
+      updateFields,
       sessionData.email,
       sessionData.firstName,
       sessionData.phone,

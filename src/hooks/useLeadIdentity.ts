@@ -55,6 +55,10 @@ export function useLeadIdentity(): LeadIdentity {
   // Check if we have an identity
   const hasIdentity = useMemo(() => !!leadId, [leadId]);
 
+  // Read anchor + verified status once for stable references across memo/effect
+  const leadAnchor = getLeadAnchor();
+  const leadVerifiedFlag = isLeadVerified();
+
   // Compute which contact fields are missing
   // lastName is intentionally excluded — many forms only require first name
   const missingFields = useMemo(() => {
@@ -68,23 +72,23 @@ export function useLeadIdentity(): LeadIdentity {
   // Identity-aware gating: true when leadAnchor exists AND core PII is complete,
   // OR when the persisted verified flag is set (survives sessionData clearing)
   const isVerifiedLead = useMemo(() => {
-    const hasAnchor = !!getLeadAnchor();
+    const hasAnchor = !!leadAnchor;
     const piiComplete = hasAnchor && missingFields.length === 0;
-    return piiComplete || isLeadVerified();
-  }, [missingFields]);
+    return piiComplete || leadVerifiedFlag;
+  }, [leadAnchor, leadVerifiedFlag, missingFields]);
 
   // Persist verified flag when PII becomes complete
   useEffect(() => {
-    if (!!getLeadAnchor() && missingFields.length === 0) {
+    if (leadAnchor && missingFields.length === 0) {
       setLeadVerified(true);
     }
-  }, [missingFields]);
+  }, [leadAnchor, missingFields]);
 
-  // Partial lead: has some identity signals but not fully verified
+  // Partial lead: has a stable identifier but not fully verified
   const isPartialLead = useMemo(() => {
-    const hasAnyIdentity = hasIdentity || !!getLeadAnchor() || missingFields.length < 3;
-    return hasAnyIdentity && !isVerifiedLead;
-  }, [hasIdentity, isVerifiedLead, missingFields]);
+    const hasStableIdentity = hasIdentity || !!leadAnchor || !!leadId;
+    return hasStableIdentity && !isVerifiedLead;
+  }, [hasIdentity, leadAnchor, leadId, isVerifiedLead]);
 
   // Set the lead ID - this triggers a React state update via useSessionData
   const setLeadId = useCallback((id: string) => {

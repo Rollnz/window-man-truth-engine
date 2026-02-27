@@ -164,15 +164,18 @@ export function hasLeadAnchor(): boolean {
 
 /**
  * Mark the anchored lead as having complete contact info.
- * Persists across sessions via localStorage so isVerifiedLead()
- * can return true even if sessionData hasn't hydrated yet.
+ * Stores the specific leadId so verification is scoped — if the anchor
+ * changes to a different lead, the old verification doesn't carry over.
  */
 export function setLeadVerified(verified: boolean): void {
   if (typeof window === 'undefined') return;
 
   try {
     if (verified) {
-      localStorage.setItem(VERIFIED_KEY, '1');
+      const currentAnchor = getLeadAnchor();
+      if (currentAnchor) {
+        localStorage.setItem(VERIFIED_KEY, currentAnchor);
+      }
     } else {
       localStorage.removeItem(VERIFIED_KEY);
     }
@@ -183,13 +186,16 @@ export function setLeadVerified(verified: boolean): void {
 
 /**
  * Check if the anchored lead has been marked as verified
- * (complete contact info was captured).
+ * (complete contact info was captured). Compares the stored value
+ * against the current anchor to prevent stale verification.
  */
 export function isLeadVerified(): boolean {
   if (typeof window === 'undefined') return false;
 
   try {
-    return localStorage.getItem(VERIFIED_KEY) === '1' && hasLeadAnchor();
+    const verifiedLeadId = localStorage.getItem(VERIFIED_KEY);
+    const currentAnchor = getLeadAnchor();
+    return !!verifiedLeadId && verifiedLeadId === currentAnchor;
   } catch {
     return false;
   }

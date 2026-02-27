@@ -172,8 +172,11 @@ const SampleReport = () => {
       />
 
       {/* Main Content - blurred and scroll-locked until gate is completed */}
-      <ScrollLockWrapper enabled={showAccessGate && !isContentUnlocked}>
-        <main className={`pt-28 transition-all duration-500 ${!isContentUnlocked && !hasLead ? 'blur-sm pointer-events-none select-none' : ''}`}>
+      <ScrollLockWrapper enabled={!isContentUnlocked}>
+        <main
+          className={`pt-28 transition-all duration-500 ${!isContentUnlocked ? 'blur-sm pointer-events-none select-none' : ''}`}
+          aria-hidden={!isContentUnlocked}
+        >
           <HeroSection firstName={firstNameFromNav} onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
           <ComparisonSection />
           <ScoreboardSection />

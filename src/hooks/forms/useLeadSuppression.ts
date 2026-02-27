@@ -50,7 +50,7 @@ export interface UseLeadSuppressionResult {
   hasGlobalLead: boolean;
   /** True if THIS specific ctaSource was completed through to the result screen */
   hasCompletedCta: boolean;
-  /** The persisted lead ID from sessionStorage, or null */
+  /** The persisted lead ID from sessionStorage, falling back to leadAnchor (400-day persistent), or null */
   storedLeadId: string | null;
   /** Call when the user explicitly closes the result screen */
   markCompleted: () => void;

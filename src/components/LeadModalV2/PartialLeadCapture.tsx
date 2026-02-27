@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,40 +43,39 @@ export function PartialLeadCapture({ missingFields, onSubmit, isSubmitting }: Pa
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
+  const getValidationErrors = (vals: Record<string, string>): Record<string, string> => {
+    const fieldErrors: Record<string, string> = {};
     for (const field of missingFields) {
-      const val = values[field]?.trim();
+      const val = vals[field]?.trim();
       if (!val) {
-        newErrors[field] = `Please enter your ${FIELD_CONFIG[field].label.toLowerCase()}`;
+        fieldErrors[field] = `Please enter your ${FIELD_CONFIG[field].label.toLowerCase()}`;
         continue;
       }
       if (field === 'email' && !validateEmail(val)) {
-        newErrors[field] = 'Please enter a valid email address';
+        fieldErrors[field] = 'Please enter a valid email address';
       }
       if (field === 'phone' && !validatePhone(val)) {
-        newErrors[field] = 'Please enter a valid 10-digit phone number';
+        fieldErrors[field] = 'Please enter a valid 10-digit phone number';
       }
       if (field === 'firstName' && val.length < 2) {
-        newErrors[field] = 'Please enter your first name';
+        fieldErrors[field] = 'Please enter your first name';
       }
     }
+    return fieldErrors;
+  };
+
+  const validate = (): boolean => {
+    const newErrors = getValidationErrors(values);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const isFormValid = useMemo(() => {
-    return missingFields.every(field => {
-      const val = values[field]?.trim();
-      if (!val) return false;
-      if (field === 'email') return validateEmail(val);
-      if (field === 'phone') return validatePhone(val);
-      if (field === 'firstName') return val.length >= 2;
-      return true;
-    });
-  }, [values, missingFields]);
+  const isFormValid = useMemo(
+    () => Object.keys(getValidationErrors(values)).length === 0,
+    [values, missingFields]
+  );
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
