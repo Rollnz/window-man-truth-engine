@@ -19,6 +19,8 @@ import { LeverageOptionsSection } from '@/components/sample-report/LeverageOptio
 import { CloserSection } from '@/components/sample-report/CloserSection';
 import { FAQSection } from '@/components/sample-report/FAQSection';
 import { SampleReportLeadModal } from '@/components/sample-report/SampleReportLeadModal';
+import { SampleReportAccessGate } from '@/components/sample-report/SampleReportAccessGate';
+import { ScrollLockWrapper } from '@/components/sample-report/ScrollLockWrapper';
 import { UrgencyTicker } from '@/components/social-proof';
 import { PreQuoteLeadModalV2 } from '@/components/LeadModalV2';
 import { FairPriceImageSection } from '@/components/sample-report/FairPriceImageSection';
@@ -29,15 +31,19 @@ const SampleReport = () => {
   const location = useLocation();
   const firstNameFromNav = (location.state as any)?.firstName as string | undefined;
   
-  const { leadId, hasIdentity } = useLeadIdentity();
+  const { leadId, hasIdentity, isVerifiedLead } = useLeadIdentity();
   const anchorId = getLeadAnchor();
   const hasLead = hasIdentity || !!anchorId;
+
+  // Content gate: show for strangers, auto-dismiss for verified leads
+  const [isContentUnlocked, setIsContentUnlocked] = useState(false);
+  const [showAccessGate, setShowAccessGate] = useState(false);
 
   // Lead capture modal state
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [modalCtaSource, setModalCtaSource] = useState('');
-  
-  
+
+
   // Pre-quote (no quote) modal state
   const [showPreQuoteModal, setShowPreQuoteModal] = useState(false);
   const [preQuoteCtaSource, setPreQuoteCtaSource] = useState('');
@@ -50,6 +56,17 @@ const SampleReport = () => {
     const timer = setTimeout(() => setIsCheckingLead(false), 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // After lead check: auto-unlock for verified leads, show gate for strangers
+  useEffect(() => {
+    if (isCheckingLead) return;
+    if (isVerifiedLead || hasLead) {
+      setIsContentUnlocked(true);
+      setShowAccessGate(false);
+    } else {
+      setShowAccessGate(true);
+    }
+  }, [isCheckingLead, isVerifiedLead, hasLead]);
 
   // Track page view once lead check completes
   useEffect(() => {
@@ -101,6 +118,12 @@ const SampleReport = () => {
     setTimeout(() => setShowPreQuoteModal(false), 5000);
   };
 
+  // Handle access gate completion
+  const handleAccessGateSuccess = (_newLeadId: string) => {
+    setShowAccessGate(false);
+    setIsContentUnlocked(true);
+  };
+
   // Loading state (prevents content flash)
   if (isCheckingLead) {
     return (
@@ -141,18 +164,30 @@ const SampleReport = () => {
         sourcePage="sample-report"
       />
 
-      {/* Main Content */}
-      <main className="pt-28">
-        <HeroSection firstName={firstNameFromNav} onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
-        <ComparisonSection />
-        <ScoreboardSection />
-        <PillarAccordionSection />
-        <HowItWorksSection />
-        <LeverageOptionsSection onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
-        <FairPriceImageSection />
-        <CloserSection onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
-        <FAQSection onOpenPreQuoteModal={handleOpenPreQuoteModal} />
-      </main>
+      {/* Access Gate - shown for non-leads to unlock content */}
+      <SampleReportAccessGate
+        isOpen={showAccessGate}
+        onClose={() => setShowAccessGate(false)}
+        onSuccess={handleAccessGateSuccess}
+      />
+
+      {/* Main Content - blurred and scroll-locked until gate is completed */}
+      <ScrollLockWrapper enabled={!isContentUnlocked}>
+        <main
+          className={`pt-28 transition-all duration-500 ${!isContentUnlocked ? 'blur-sm pointer-events-none select-none' : ''}`}
+          aria-hidden={!isContentUnlocked}
+        >
+          <HeroSection firstName={firstNameFromNav} onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
+          <ComparisonSection />
+          <ScoreboardSection />
+          <PillarAccordionSection />
+          <HowItWorksSection />
+          <LeverageOptionsSection onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
+          <FairPriceImageSection />
+          <CloserSection onOpenLeadModal={handleOpenLeadModal} onOpenPreQuoteModal={handleOpenPreQuoteModal} />
+          <FAQSection onOpenPreQuoteModal={handleOpenPreQuoteModal} />
+        </main>
+      </ScrollLockWrapper>
     </div>
   );
 };

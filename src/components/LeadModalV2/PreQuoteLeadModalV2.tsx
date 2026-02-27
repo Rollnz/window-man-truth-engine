@@ -11,9 +11,12 @@ import { getOrCreateClientId } from '@/lib/tracking';
 import { getOrCreateSessionId } from '@/lib/tracking';
 import { getAttributionData } from '@/lib/attribution';
 import { getLastNonDirectAttribution } from '@/lib/attribution';
+import { useLeadIdentity, type ContactField } from '@/hooks/useLeadIdentity';
+import { useSessionData } from '@/hooks/useSessionData';
 import { normalizeToE164 } from '@/lib/phoneFormat';
 import { calculateLeadScore } from './useLeadScoring';
 import { LeadStep1Capture } from './LeadStep1Capture';
+import { PartialLeadCapture } from './PartialLeadCapture';
 import { LeadStepTimeline } from './LeadStepTimeline';
 import { LeadStepQuote } from './LeadStepQuote';
 import { LeadStepHomeowner } from './LeadStepHomeowner';
@@ -109,6 +112,9 @@ export function PreQuoteLeadModalV2({
     [contextConfig]
   );
 
+  // ─── Session data for partial lead merging ─────────────────────────────
+  const { sessionData, updateFields } = useSessionData();
+
   // ─── Smart lead suppression ────────────────────────────────────────────
   const {
     hasGlobalLead,
@@ -116,6 +122,13 @@ export function PreQuoteLeadModalV2({
     storedLeadId,
     markCompleted,
   } = useLeadSuppression(ctaSource);
+
+  // Cross-flow identity check: verified leads from ANY flow skip capture
+  const { isVerifiedLead, isPartialLead, missingFields, leadId: globalLeadId } = useLeadIdentity();
+
+  // Merge global identity with flow-specific suppression
+  const resolvedLeadId = storedLeadId || globalLeadId || null;
+  const hasKnownLead = !!resolvedLeadId || hasGlobalLead || isVerifiedLead;
 
   const suppressOpen = hideAfterCompletion && hasCompletedCta;
 
@@ -145,20 +158,21 @@ export function PreQuoteLeadModalV2({
 
   // ─── Sync leadId from storage if state missed initialization ─────────
   useEffect(() => {
-    if (hasGlobalLead && !leadId && storedLeadId) {
-      setLeadId(storedLeadId);
+    if (hasKnownLead && !leadId && resolvedLeadId) {
+      setLeadId(resolvedLeadId);
     }
-  }, [hasGlobalLead, storedLeadId, leadId]);
+  }, [hasKnownLead, resolvedLeadId, leadId]);
 
   // ─── Deterministic step on every open (not just mount) ───────────────
+  // If user is a verified lead (from ANY flow via leadAnchor + PII), skip capture
   useEffect(() => {
     if (!isOpen) return;
-    if (hasGlobalLead && storedLeadId) {
+    if (hasKnownLead && resolvedLeadId) {
       setStep('timeline');
     } else {
       setStep('capture');
     }
-  }, [isOpen, hasGlobalLead, storedLeadId]);
+  }, [isOpen, hasKnownLead, resolvedLeadId]);
 
   // ─── Re-engagement tracking (once per open, ref-guarded) ─────────────
   useEffect(() => {
@@ -168,16 +182,17 @@ export function PreQuoteLeadModalV2({
     }
     if (reengagedRef.current) return;
 
-    const didSkip = hasGlobalLead && !!storedLeadId && step === 'timeline';
+    const didSkip = hasKnownLead && !!resolvedLeadId && step === 'timeline';
     if (!didSkip) return;
 
     reengagedRef.current = true;
     trackEvent('prequote_modal_reengaged', {
       cta_source: ctaSource,
-      lead_id: storedLeadId,
+      lead_id: resolvedLeadId,
       skip_capture: true,
+      identity_source: isVerifiedLead ? 'lead_anchor' : 'session_storage',
     });
-  }, [isOpen, hasGlobalLead, storedLeadId, step, ctaSource]);
+  }, [isOpen, hasKnownLead, resolvedLeadId, isVerifiedLead, step, ctaSource]);
 
   // ═══════════════════════════════════════════════════════════════════════
   // Reset on close
@@ -237,7 +252,6 @@ export function PreQuoteLeadModalV2({
               sourcePage: resolvedSourcePage,
               sessionData: {
                 clientId,
-                client_id: clientId,
                 ctaSource,
                 contextKey,
               },
@@ -298,6 +312,100 @@ export function PreQuoteLeadModalV2({
       isSubmitting,
       contextKey,
       resolvedContextConfig,
+    ]
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Partial lead: submit only missing fields, then advance
+  // ═══════════════════════════════════════════════════════════════════════
+  const handlePartialSubmit = useCallback(
+    async (data: Partial<Record<ContactField, string>>) => {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+
+      try {
+        const currentLeadId = resolvedLeadId;
+        const clientId = getOrCreateClientId();
+        const sessionId = getOrCreateSessionId();
+        const resolvedSourcePage =
+          sourcePage ||
+          (typeof window !== 'undefined' ? window.location.pathname : '');
+
+        const mergedEmail = data.email || sessionData.email || '';
+        const mergedFirstName = data.firstName || sessionData.firstName || '';
+        const mergedPhone = (data.phone || sessionData.phone || '').replace(/\D/g, '');
+
+        const { data: result, error } = await invokeEdgeFunction(
+          'save-lead',
+          {
+            body: {
+              email: mergedEmail,
+              firstName: mergedFirstName,
+              phone: mergedPhone,
+              sourceTool: resolvedContextConfig.sourceTool,
+              flowVersion: 'prequote_v2_partial',
+              sourcePage: resolvedSourcePage,
+              sessionData: {
+                clientId,
+                ctaSource,
+                contextKey,
+              },
+              sessionId,
+              leadId: currentLeadId || undefined,
+            },
+          }
+        );
+
+        if (error) throw error;
+
+        if (result?.leadId) {
+          const newLeadId = result.leadId;
+          setLeadId(newLeadId);
+          storeLeadId(newLeadId);
+
+          // Sync updated fields into shared session state
+          updateFields({
+            leadId: newLeadId,
+            ...(data.email && { email: data.email }),
+            ...(data.firstName && { firstName: data.firstName }),
+            ...(data.phone && { phone: data.phone }),
+          });
+
+          trackEvent('partial_lead_completed', {
+            lead_id: newLeadId,
+            fields_completed: Object.keys(data),
+            cta_source: ctaSource,
+            identity_source: isVerifiedLead ? 'lead_anchor' : 'session_storage',
+          });
+
+          onSuccess?.(newLeadId);
+          setStep('timeline');
+        }
+      } catch (err) {
+        console.error('[V2] Partial lead submit error:', err);
+        toast({
+          title: 'Something went wrong',
+          description: 'Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [
+      ctaSource,
+      sourcePage,
+      onSuccess,
+      toast,
+      isSubmitting,
+      isVerifiedLead,
+      contextKey,
+      resolvedContextConfig,
+      resolvedLeadId,
+      updateFields,
+      sessionData.email,
+      sessionData.firstName,
+      sessionData.phone,
     ]
   );
 
@@ -566,7 +674,15 @@ export function PreQuoteLeadModalV2({
         )}
 
         {/* Step content */}
-        {step === 'capture' && !suppressOpen && (
+        {step === 'capture' && !suppressOpen && isPartialLead && missingFields.length > 0 && (
+          <PartialLeadCapture
+            missingFields={missingFields}
+            onSubmit={handlePartialSubmit}
+            isSubmitting={isSubmitting}
+          />
+        )}
+
+        {step === 'capture' && !suppressOpen && !isPartialLead && (
           <LeadStep1Capture
             onSubmit={handleStep1Submit}
             isSubmitting={isSubmitting}
@@ -577,7 +693,7 @@ export function PreQuoteLeadModalV2({
           <LeadStepTimeline
             onSelect={handleTimelineSelect}
             selected={qualification.timeline}
-            isReturning={hasGlobalLead && !!storedLeadId}
+            isReturning={hasKnownLead && !!resolvedLeadId}
           />
         )}
 
