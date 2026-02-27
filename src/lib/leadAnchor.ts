@@ -11,6 +11,7 @@
  */
 
 const LEAD_ANCHOR_KEY = 'wm_lead_id';
+const VERIFIED_KEY = 'wm_lead_verified';
 const TTL_DAYS = 400;
 const TTL_SECONDS = TTL_DAYS * 24 * 60 * 60;
 
@@ -143,9 +144,10 @@ export function getLeadAnchor(): string | null {
  */
 export function clearLeadAnchor(): void {
   if (typeof window === 'undefined') return;
-  
+
   try {
     localStorage.removeItem(LEAD_ANCHOR_KEY);
+    localStorage.removeItem(VERIFIED_KEY);
     deleteCookie(LEAD_ANCHOR_KEY);
     console.log('[leadAnchor] Lead anchor cleared');
   } catch {
@@ -158,4 +160,37 @@ export function clearLeadAnchor(): void {
  */
 export function hasLeadAnchor(): boolean {
   return getLeadAnchor() !== null;
+}
+
+/**
+ * Mark the anchored lead as having complete contact info.
+ * Persists across sessions via localStorage so isVerifiedLead()
+ * can return true even if sessionData hasn't hydrated yet.
+ */
+export function setLeadVerified(verified: boolean): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    if (verified) {
+      localStorage.setItem(VERIFIED_KEY, '1');
+    } else {
+      localStorage.removeItem(VERIFIED_KEY);
+    }
+  } catch {
+    // Fail silently
+  }
+}
+
+/**
+ * Check if the anchored lead has been marked as verified
+ * (complete contact info was captured).
+ */
+export function isLeadVerified(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    return localStorage.getItem(VERIFIED_KEY) === '1' && hasLeadAnchor();
+  } catch {
+    return false;
+  }
 }

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { getLeadAnchor } from '@/lib/leadAnchor';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Storage keys
@@ -72,8 +73,11 @@ export function useLeadSuppression(ctaSource: string): UseLeadSuppressionResult 
   const globalCompleted = safeGet(GLOBAL_COMPLETED_KEY) === '1';
   const ctaCompleted = safeGet(ctaKey(resolvedCta)) === '1';
 
-  // hasGlobalLead is broad: leadId exists OR global flag set (critique C)
-  const hasGlobalLead = !!storedLeadId || globalCompleted;
+  // Cross-flow: also check leadAnchor (400-day persistent cookie/localStorage)
+  const anchorLeadId = getLeadAnchor();
+
+  // hasGlobalLead is broad: leadId exists OR global flag set OR leadAnchor exists
+  const hasGlobalLead = !!storedLeadId || globalCompleted || !!anchorLeadId;
   const hasCompletedCta = ctaCompleted;
 
   // Legacy cleanup — runs once, in an effect (not during render)
@@ -92,7 +96,7 @@ export function useLeadSuppression(ctaSource: string): UseLeadSuppressionResult 
   return {
     hasGlobalLead,
     hasCompletedCta,
-    storedLeadId,
+    storedLeadId: storedLeadId || anchorLeadId,
     markCompleted,
   };
 }
