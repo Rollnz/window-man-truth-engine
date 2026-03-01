@@ -52,6 +52,7 @@ export type Database = {
           name: string | null
           original_session_id: string | null
           phone: string
+          phone_verified_at: string | null
           phonecall_bot_status: string | null
           referrer: string | null
           session_data: Json | null
@@ -108,6 +109,7 @@ export type Database = {
           name?: string | null
           original_session_id?: string | null
           phone: string
+          phone_verified_at?: string | null
           phonecall_bot_status?: string | null
           referrer?: string | null
           session_data?: Json | null
@@ -164,6 +166,7 @@ export type Database = {
           name?: string | null
           original_session_id?: string | null
           phone?: string
+          phone_verified_at?: string | null
           phonecall_bot_status?: string | null
           referrer?: string | null
           session_data?: Json | null
@@ -860,6 +863,7 @@ export type Database = {
       }
       pending_calls: {
         Row: {
+          account_id: string | null
           agent_id: string
           attempt_count: number
           call_request_id: string
@@ -884,6 +888,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_id?: string | null
           agent_id: string
           attempt_count?: number
           call_request_id?: string
@@ -908,6 +913,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_id?: string | null
           agent_id?: string
           attempt_count?: number
           call_request_id?: string
@@ -931,7 +937,115 @@ export type Database = {
           triggered_at?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pending_calls_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pending_scans: {
+        Row: {
+          account_id: string | null
+          analysis_completed_at: string | null
+          analysis_started_at: string | null
+          claimed_at: string | null
+          client_id: string | null
+          created_at: string | null
+          expires_at: string | null
+          file_name: string
+          file_size_bytes: number | null
+          file_type: string | null
+          file_url: string
+          lead_id: string | null
+          scan_uuid: string
+          session_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          analysis_completed_at?: string | null
+          analysis_started_at?: string | null
+          claimed_at?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          file_name: string
+          file_size_bytes?: number | null
+          file_type?: string | null
+          file_url: string
+          lead_id?: string | null
+          scan_uuid?: string
+          session_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          analysis_completed_at?: string | null
+          analysis_started_at?: string | null
+          claimed_at?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          file_name?: string
+          file_size_bytes?: number | null
+          file_type?: string | null
+          file_url?: string
+          lead_id?: string | null
+          scan_uuid?: string
+          session_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_scans_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_scans_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_attribution_gaps"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "pending_scans_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_spam_signals"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "pending_scans_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_scans_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_dashboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_scans_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "v_conversion_integrity_check"
+            referencedColumns: ["lead_id"]
+          },
+        ]
       }
       phone_call_logs: {
         Row: {
@@ -1052,10 +1166,111 @@ export type Database = {
         }
         Relationships: []
       }
+      qualification_answers: {
+        Row: {
+          account_id: string
+          answer_id: string
+          answered_at: string | null
+          created_at: string | null
+          custom_window_count: number | null
+          event_type: string | null
+          final_score: number | null
+          has_estimate: string | null
+          is_homeowner: boolean | null
+          lead_id: string | null
+          pixel_value: number | null
+          qualifies_for_registration_completed: boolean | null
+          raw_score: number | null
+          timeline: string | null
+          updated_at: string | null
+          window_count: string | null
+        }
+        Insert: {
+          account_id: string
+          answer_id?: string
+          answered_at?: string | null
+          created_at?: string | null
+          custom_window_count?: number | null
+          event_type?: string | null
+          final_score?: number | null
+          has_estimate?: string | null
+          is_homeowner?: boolean | null
+          lead_id?: string | null
+          pixel_value?: number | null
+          qualifies_for_registration_completed?: boolean | null
+          raw_score?: number | null
+          timeline?: string | null
+          updated_at?: string | null
+          window_count?: string | null
+        }
+        Update: {
+          account_id?: string
+          answer_id?: string
+          answered_at?: string | null
+          created_at?: string | null
+          custom_window_count?: number | null
+          event_type?: string | null
+          final_score?: number | null
+          has_estimate?: string | null
+          is_homeowner?: boolean | null
+          lead_id?: string | null
+          pixel_value?: number | null
+          qualifies_for_registration_completed?: boolean | null
+          raw_score?: number | null
+          timeline?: string | null
+          updated_at?: string | null
+          window_count?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qualification_answers_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qualification_answers_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_attribution_gaps"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "qualification_answers_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_spam_signals"
+            referencedColumns: ["lead_id"]
+          },
+          {
+            foreignKeyName: "qualification_answers_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qualification_answers_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_dashboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qualification_answers_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "v_conversion_integrity_check"
+            referencedColumns: ["lead_id"]
+          },
+        ]
+      }
       quote_analyses: {
         Row: {
           ai_model_version: string | null
           analysis_json: Json
+          analyzed_at: string | null
           created_at: string
           fine_print_score: number
           id: string
@@ -1077,6 +1292,7 @@ export type Database = {
         Insert: {
           ai_model_version?: string | null
           analysis_json?: Json
+          analyzed_at?: string | null
           created_at?: string
           fine_print_score?: number
           id?: string
@@ -1098,6 +1314,7 @@ export type Database = {
         Update: {
           ai_model_version?: string | null
           analysis_json?: Json
+          analyzed_at?: string | null
           created_at?: string
           fine_print_score?: number
           id?: string

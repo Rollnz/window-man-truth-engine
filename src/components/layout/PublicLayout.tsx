@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { SilentAllyInterceptor } from '@/components/authority/SilentAllyInterceptor';
+import { TwilioDiagnostic } from '@/components/dev/TwilioDiagnostic';
 
 // Below-fold components — lazy loaded to keep initial bundle minimal
 const UnifiedFooter = lazy(() =>
@@ -45,6 +46,9 @@ export function PublicLayout() {
           pageLoadTimeRef and scroll-depth tracking start at navigation time,
           not after chunk resolution. */}
       <SilentAllyInterceptor />
+
+      {/* Dev-only Twilio diagnostic — returns null on production */}
+      <TwilioDiagnostic />
     </div>
   );
 }
