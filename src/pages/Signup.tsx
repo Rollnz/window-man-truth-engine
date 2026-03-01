@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { QuoteUploadZone } from "@/components/quote-scanner/QuoteUploadZone";
 import { useSessionData } from "@/hooks/useSessionData";
@@ -10,7 +10,10 @@ import { QualificationFlow } from "@/components/signup/QualificationFlow";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Shield, Zap } from "lucide-react";
+import { formatPhoneDisplay, stripPhone } from "@/lib/phone-mask";
 
 // ── Types ──────────────────────────────────────────────────────────────
 export type SignupFlow = "has_quote" | "no_quote";
@@ -26,7 +29,7 @@ export enum SignupState {
   REVEAL = "REVEAL",
 }
 
-// ── sessionStorage helpers ─────────────────────────────────────────────
+// ── localStorage helpers (cross-tab persistent) ────────────────────────
 const SS = {
   state: "wm.signup.state",
   flow: "wm.signup.flow",
@@ -38,17 +41,17 @@ const SS = {
 
 function ssGet<T>(key: string): T | null {
   try {
-    const raw = sessionStorage.getItem(key);
+    const raw = window.localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
   }
 }
 function ssSet(key: string, value: unknown) {
-  sessionStorage.setItem(key, JSON.stringify(value));
+  window.localStorage.setItem(key, JSON.stringify(value));
 }
 function ssDel(key: string) {
-  sessionStorage.removeItem(key);
+  window.localStorage.removeItem(key);
 }
 
 // ── Edge-function caller ───────────────────────────────────────────────
@@ -102,6 +105,14 @@ export default function Signup() {
   const [analysis, setAnalysis] = useState<OrchestrateResponse | null>(null);
   const [flowBResult, setFlowBResult] = useState<QualifyFlowBResponse | null>(null);
 
+  // Tracks whether we've already triggered SMS in this lifecycle to stay idempotent
+  const smsTriggeredRef = useRef(false);
+
+  // Re-enter phone fallback (session active, no phone in storage)
+  const [needsReenterPhone, setNeedsReenterPhone] = useState(false);
+  const [reenterPhoneValue, setReenterPhoneValue] = useState("");
+  const [reenterBusy, setReenterBusy] = useState(false);
+
   // ── Persist state machine to sessionStorage ──────────────────────────
   useEffect(() => { ssSet(SS.state, state); }, [state]);
   useEffect(() => { ssSet(SS.flow, flow); }, [flow]);
@@ -120,27 +131,80 @@ export default function Signup() {
     setPhone(null);
     setAnalysis(null);
     setFlowBResult(null);
+    setNeedsReenterPhone(false);
+    setReenterPhoneValue("");
+    smsTriggeredRef.current = false;
     Object.values(SS).forEach(ssDel);
   }, []);
 
+  // ── Scrub auth params from URL after magic-link return ───────────────
+  const scrubAuthUrl = useCallback(() => {
+    if (window.location.search || window.location.hash) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
+
+  // ── Trigger phone verification SMS (idempotent) ───────────────────────
+  const triggerPhoneVerification = useCallback(
+    async (storedPhone: string) => {
+      if (smsTriggeredRef.current) return;
+      smsTriggeredRef.current = true;
+
+      setState(SignupState.VERIFYING_PHONE);
+      ssSet(SS.state, SignupState.VERIFYING_PHONE);
+      setAuthOpen(true);
+
+      const { error } = await supabase.auth.updateUser({ phone: storedPhone });
+      if (error) {
+        toast({ title: "Phone verification failed", description: error.message, variant: "destructive" });
+        smsTriggeredRef.current = false; // allow retry
+      } else {
+        toast({ title: "Identity confirmed. Sending secure SMS..." });
+      }
+    },
+    [toast],
+  );
+
   // ── Auth redirect / phone-OTP sequencing ─────────────────────────────
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Check if session already exists on mount (e.g., magic link opened in same tab)
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session?.user) return;
       const current = ssGet<SignupState>(SS.state);
       const storedPhone = ssGet<string>(SS.phone);
+      scrubAuthUrl();
+      if (storedPhone && (current === SignupState.VERIFYING_EMAIL || current === SignupState.AUTH_GATE)) {
+        triggerPhoneVerification(storedPhone);
+      } else if (!storedPhone && current === SignupState.VERIFYING_EMAIL) {
+        // Session active but no phone stored — device/tab handoff case
+        setNeedsReenterPhone(true);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event !== "SIGNED_IN" && event !== "TOKEN_REFRESHED") return;
+      if (!session?.user) return;
+
+      const current = ssGet<SignupState>(SS.state);
+      const storedPhone = ssGet<string>(SS.phone);
+      scrubAuthUrl();
 
       if (storedPhone && (current === SignupState.VERIFYING_EMAIL || current === SignupState.AUTH_GATE)) {
-        setState(SignupState.VERIFYING_PHONE);
-        ssSet(SS.state, SignupState.VERIFYING_PHONE);
-        const { error } = await supabase.auth.updateUser({ phone: storedPhone });
-        if (error) {
-          toast({ title: "Phone verification failed", description: error.message, variant: "destructive" });
-        }
+        await triggerPhoneVerification(storedPhone);
+      } else if (!storedPhone && current === SignupState.VERIFYING_EMAIL) {
+        setNeedsReenterPhone(true);
       }
     });
     return () => subscription.unsubscribe();
-  }, [toast]);
+  }, [scrubAuthUrl, triggerPhoneVerification]);
+
+  // ── Resend SMS ───────────────────────────────────────────────────────
+  const handleResendSms = useCallback(async () => {
+    const storedPhone = phone ?? ssGet<string>(SS.phone);
+    if (!storedPhone) return;
+    smsTriggeredRef.current = false; // allow re-trigger
+    await triggerPhoneVerification(storedPhone);
+  }, [phone, triggerPhoneVerification]);
 
   // ── Flow A: upload quote ─────────────────────────────────────────────
   const handleFileSelect = useCallback(
@@ -238,7 +302,15 @@ export default function Signup() {
       try {
         const { error } = await supabase.auth.verifyOtp({ type: "phone_change", token, phone: phone ?? "" });
         if (error) throw new Error(error.message);
+
+        // Clear auth-related persisted keys to prevent stale-state loops
+        ssDel(SS.state);
+        ssDel(SS.phone);
+        ssDel(SS.profile);
+
         setAuthOpen(false);
+        setNeedsReenterPhone(false);
+        toast({ title: "Vault Verified", description: "Your identity is confirmed. Welcome to Window Man Vault." });
         setState(flow === "has_quote" ? SignupState.POLLING_ANALYSIS : SignupState.QUALIFYING);
       } catch (e: any) {
         toast({ title: "Invalid code", description: e?.message ?? "Please try again.", variant: "destructive" });
@@ -414,7 +486,61 @@ export default function Signup() {
         phone={phone ?? ""}
         onSubmitProfile={handleAuthSubmit}
         onSubmitOtp={handleVerifyOtp}
+        onResendSms={handleResendSms}
       />
+
+      {/* Continue Verification CTA — shown when modal was closed during phone step */}
+      {state === SignupState.VERIFYING_PHONE && !authOpen && !needsReenterPhone && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+          <Button
+            size="lg"
+            className="rounded-xl shadow-lg"
+            onClick={() => setAuthOpen(true)}
+          >
+            Continue Verification →
+          </Button>
+        </div>
+      )}
+
+      {/* Re-enter Phone — session active but phone missing (cross-device handoff) */}
+      {needsReenterPhone && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <Card className="w-full max-w-sm p-6 space-y-4">
+            <h3 className="text-lg font-bold">Re-enter Your Phone Number</h3>
+            <p className="text-sm text-muted-foreground">
+              We couldn't find your phone number in this browser. Enter it again to receive your verification code.
+            </p>
+            <div className="space-y-1">
+              <Label htmlFor="reenter-phone">Mobile Number</Label>
+              <Input
+                id="reenter-phone"
+                value={reenterPhoneValue}
+                onChange={(e) => setReenterPhoneValue(formatPhoneDisplay(e.target.value))}
+                placeholder="(555) 123-4567"
+                inputMode="tel"
+                autoComplete="tel"
+                disabled={reenterBusy}
+              />
+            </div>
+            <Button
+              className="w-full rounded-xl"
+              disabled={reenterBusy || stripPhone(reenterPhoneValue).length < 10}
+              onClick={async () => {
+                const stripped = stripPhone(reenterPhoneValue);
+                setPhone(stripped);
+                ssSet(SS.phone, stripped);
+                setReenterBusy(true);
+                setNeedsReenterPhone(false);
+                smsTriggeredRef.current = false;
+                await triggerPhoneVerification(stripped);
+                setReenterBusy(false);
+              }}
+            >
+              Send Verification Code
+            </Button>
+          </Card>
+        </div>
+      )}
 
       {/* Final Reveal (Flow A) */}
       {flow === "has_quote" && state === SignupState.REVEAL && analysis?.analysis_json && (
