@@ -39,6 +39,7 @@ export const SOURCE_TOOLS = [
   'e2e-verification', // Guardian E2E tracking test
   'vault', // Vault signup modal
   'signup',
+  "signup2"
   'signup-flow-b',
 ] as const;
 
