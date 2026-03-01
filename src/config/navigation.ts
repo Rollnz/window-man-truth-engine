@@ -50,6 +50,7 @@ export const ROUTES = {
 
   // User Management
   AUTH: '/auth',
+  SIGNUP: '/signup',
   VAULT: '/vault',
 
   // Legal
@@ -101,6 +102,7 @@ export const FUNNEL_ROUTES = [
   '/ai-scanner',
   '/sample-report',
   '/beat-your-quote',
+  '/signup',
 ] as const;
 
 export const ROUTE_REDIRECTS = {
