@@ -38,6 +38,8 @@ export const SOURCE_TOOLS = [
   'slide-over-ai-qa',
   'e2e-verification',
   'vault',
+  'signup',
+  'signup-flow-b',
 ] as const;
 
 export type SourceTool = typeof SOURCE_TOOLS[number];
