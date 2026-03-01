@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Activity } from 'lucide-react';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
-const TEST_PHONE = '+12038567938';
+const DEFAULT_PHONE = '+12038567938';
 const PROJECT_ID = 'kffoximblqwcnznwvugu';
 
 const DEEP_LINKS = {
@@ -42,6 +42,7 @@ function DevHealthSuiteInner() {
   });
   const [smsStep, setSmsStep] = useState<SmsStep>('idle');
   const [otpCode, setOtpCode] = useState('');
+  const [testPhone, setTestPhone] = useState(DEFAULT_PHONE);
   const [expanded, setExpanded] = useState(false);
 
   const toastError = (msg: string, link?: string) => {
@@ -91,7 +92,7 @@ function DevHealthSuiteInner() {
   const handleSendSms = async () => {
     setSmsStep('sending');
     try {
-      const { error } = await supabase.auth.signInWithOtp({ phone: TEST_PHONE });
+      const { error } = await supabase.auth.signInWithOtp({ phone: testPhone });
       if (error) {
         const msg = error.message.toLowerCase();
         if (msg.includes('credentials') || msg.includes('sid') || msg.includes('authenticate')) {
@@ -108,7 +109,7 @@ function DevHealthSuiteInner() {
         setSmsStep('idle');
         return;
       }
-      toast.success(`SMS sent to ${TEST_PHONE}. Enter the 6-digit code.`);
+      toast.success(`SMS sent to ${testPhone}. Enter the 6-digit code.`);
       setSmsStep('otp');
     } catch (e: any) {
       toastError(e?.message ?? 'Unknown error');
@@ -119,7 +120,7 @@ function DevHealthSuiteInner() {
   const handleVerifyOtp = async (token: string) => {
     setSmsStep('verifying');
     try {
-      const { error } = await supabase.auth.verifyOtp({ phone: TEST_PHONE, token, type: 'sms' });
+      const { error } = await supabase.auth.verifyOtp({ phone: testPhone, token, type: 'sms' });
       if (error) {
         toastError(`OTP Verify Failed: ${error.message}`, DEEP_LINKS.auth);
         setSmsStep('otp');
@@ -162,12 +163,23 @@ function DevHealthSuiteInner() {
             <p className="text-[11px] font-medium text-foreground">Full Loop SMS Test</p>
 
             {smsStep === 'idle' && (
-              <button
-                onClick={handleSendSms}
-                className="w-full rounded-md border border-border/40 bg-background/60 px-2 py-1.5 text-[11px] text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
-              >
-                Send Test SMS → {TEST_PHONE}
-              </button>
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-muted-foreground">Test Number</label>
+                <input
+                  type="tel"
+                  value={testPhone}
+                  onChange={(e) => setTestPhone(e.target.value)}
+                  className="w-full rounded-md border border-border/40 bg-background/60 px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
+                  placeholder="+1XXXXXXXXXX"
+                />
+                <button
+                  onClick={handleSendSms}
+                  disabled={!testPhone.trim()}
+                  className="w-full rounded-md border border-border/40 bg-background/60 px-2 py-1.5 text-[11px] text-muted-foreground hover:bg-background hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  Send Test SMS → {testPhone}
+                </button>
+              </div>
             )}
 
             {smsStep === 'sending' && (
