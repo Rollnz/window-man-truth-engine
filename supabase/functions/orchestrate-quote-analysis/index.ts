@@ -83,13 +83,12 @@ Deno.serve(async (req) => {
     });
 
     // Verify JWT and get user identity
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user: authedUser }, error: userError } = await supabaseUser.auth.getUser();
+    if (userError || !authedUser) {
       return jsonResponse({ success: false, error: 'UNAUTHORIZED', message: 'Invalid or expired token' }, 401);
     }
 
-    const userId = claimsData.claims.sub;
+    const userId = authedUser.id;
 
     // Service-role client for privileged operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
