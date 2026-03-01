@@ -21,6 +21,26 @@ export interface ScoredResult extends AnalysisData {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// LETTER GRADE RUBRIC (Single Source of Truth)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function calculateLetterGrade(score: number): string {
+  if (score >= 97) return 'A+';
+  if (score >= 93) return 'A';
+  if (score >= 90) return 'A-';
+  if (score >= 87) return 'B+';
+  if (score >= 83) return 'B';
+  if (score >= 80) return 'B-';
+  if (score >= 77) return 'C+';
+  if (score >= 73) return 'C';
+  if (score >= 70) return 'C-';
+  if (score >= 67) return 'D+';
+  if (score >= 63) return 'D';
+  if (score >= 60) return 'D-';
+  return 'F';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // HARD CAPS (Florida Statute Alignment)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -100,6 +120,7 @@ export function scoreFromSignals(signals: ExtractionSignals, openingCountHint: n
   if (!signals.isValidQuote) {
     return {
       overallScore: 0,
+      finalGrade: 'F',
       safetyScore: 0,
       scopeScore: 0,
       priceScore: 0,
@@ -332,8 +353,11 @@ export function scoreFromSignals(signals: ExtractionSignals, openingCountHint: n
     summary = "Quote has significant concerns—address warnings and missing items before proceeding.";
   }
 
+  const finalGrade = calculateLetterGrade(overallScore);
+
   return {
     overallScore,
+    finalGrade,
     safetyScore,
     scopeScore,
     priceScore,

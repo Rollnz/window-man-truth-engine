@@ -385,6 +385,7 @@ Format the output with clear section headers and make it easy to read during a p
       // Build response payload
       const responsePayload = {
         overallScore: scored.overallScore,
+        finalGrade: scored.finalGrade,
         safetyScore: scored.safetyScore,
         scopeScore: scored.scopeScore,
         priceScore: scored.priceScore,
@@ -490,6 +491,7 @@ Format the output with clear section headers and make it easy to read during a p
             hard_cap_applied: scored.hardCap.applied,
             hard_cap_reason: scored.hardCap.reason,
             hard_cap_statute: scored.hardCap.statute,
+            final_grade: scored.finalGrade,
             forensic_risk_level: forensic.riskLevel,
             detected_vendor: extractedIdentity.contractorName,
             processing_time_ms: processingTimeMs,

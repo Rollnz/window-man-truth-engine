@@ -11,6 +11,7 @@ import { z } from "./deps.ts";
 
 export const AnalysisContextSchema = z.object({
   overallScore: z.number().int().min(0).max(100).optional(),
+  finalGrade: z.string().optional(),
   safetyScore: z.number().int().min(0).max(100).optional(),
   scopeScore: z.number().int().min(0).max(100).optional(),
   priceScore: z.number().int().min(0).max(100).optional(),
@@ -242,6 +243,7 @@ export interface ExtractionSignals {
 
 export interface AnalysisData {
   overallScore: number;
+  finalGrade: string;
   safetyScore: number;
   scopeScore: number;
   priceScore: number;
