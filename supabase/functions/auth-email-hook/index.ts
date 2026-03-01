@@ -231,7 +231,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // Send email via Resend
     const { data, error } = await resend.emails.send({
-      from: "Window Truth Engine <noreply@windowman.com>",
+      from: "Window Truth Engine <noreply@notify.itswindowman.com>",
       to: [user.email],
       subject,
       html,
