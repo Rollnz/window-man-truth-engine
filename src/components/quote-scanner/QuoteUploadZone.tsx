@@ -16,6 +16,8 @@ interface QuoteUploadZoneProps {
   analysisResult?: QuoteAnalysisResult | null;
   onWarningSelect?: (categoryKey: string) => void;
   onNoQuoteClick?: () => void;
+  /** When true, removes aspect-square and reduces padding/icons for inline use */
+  isCompact?: boolean;
 }
 
 function getTopWarnings(result: QuoteAnalysisResult): Array<{
@@ -51,6 +53,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
   analysisResult,
   onWarningSelect,
   onNoQuoteClick,
+  isCompact = false,
 }, ref) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -97,7 +100,7 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
         onDrop={handleDrop}
         className={cn(
           "relative rounded-xl border-2 border-dashed transition-all duration-300 overflow-hidden",
-          "aspect-square",
+          isCompact ? "min-h-[180px]" : "aspect-square",
           isDragOver
             ? "border-primary bg-primary/5 scale-[1.02]"
             : "border-border hover:border-primary/50 bg-card/50",
@@ -218,9 +221,9 @@ export const QuoteUploadZone = forwardRef<HTMLDivElement, QuoteUploadZoneProps>(
         {/* Upload CTA Overlay */}
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 z-20">
           {!imagePreview && !isAnalyzing && (
-            <div className="bg-card/95 backdrop-blur-sm shadow-xl rounded-2xl p-5 md:p-6 max-w-xs w-full text-center border border-border/50">
-              <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-3">
-                <ScanSearch className="w-6 h-6 text-primary" />
+            <div className={cn("bg-card/95 backdrop-blur-sm shadow-xl rounded-2xl text-center border border-border/50", isCompact ? "p-3 max-w-[240px]" : "p-5 md:p-6 max-w-xs")} style={{ width: '100%' }}>
+              <div className={cn("rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto", isCompact ? "w-9 h-9 mb-2" : "w-12 h-12 mb-3")}>
+                <ScanSearch className={cn("text-primary", isCompact ? "w-4 h-4" : "w-6 h-6")} />
               </div>
               <h3 className="text-lg font-bold text-primary mb-1">Analyze Quote</h3>
               <p className="text-xs text-muted-foreground mb-4">
