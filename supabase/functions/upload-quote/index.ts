@@ -415,6 +415,8 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({
         success: true,
         file_id: insertData.id,
+        pending_scan_uuid: insertData.id,
+        quote_analysis_id: insertData.id,
         file_path: storagePath,
         file_name: sanitizedOriginalName,
         file_size: file.size,
