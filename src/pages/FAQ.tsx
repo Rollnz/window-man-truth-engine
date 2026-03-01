@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ConversionBar } from "@/components/conversion/ConversionBar";
 import { ROUTES } from "@/config/navigation";
-import { generateFAQSchema, getGuidePageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
+import { generateFAQSchema, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { useSessionData } from "@/hooks/useSessionData";
 import impactTruthClipboardImage from "@/assets/impact_truth_clipboard_1-2.webp";
@@ -88,7 +88,7 @@ const FAQ = () => {
         title="FAQ: Impact Window Quotes, Pricing, and AI Scan Questions"
         description="Get clear answers about quote scanning, privacy, pricing savings, and how Window Man helps homeowners avoid overpaying."
         canonicalUrl="https://itswindowman.com/faq"
-        jsonLd={[...getGuidePageSchemas("faq"), getBreadcrumbSchema("faq")]}
+        jsonLd={[generateFAQSchema(faqs), getBreadcrumbSchema("faq")]}
       />
       <Navbar />
 
