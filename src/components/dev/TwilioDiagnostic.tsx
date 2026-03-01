@@ -94,17 +94,19 @@ function DevHealthSuiteInner() {
     try {
       const { error } = await supabase.auth.signInWithOtp({ phone: testPhone });
       if (error) {
-        const msg = error.message.toLowerCase();
+        const status = (error as any).status ?? '???';
+        const raw = error.message;
+        const msg = raw.toLowerCase();
         if (msg.includes('credentials') || msg.includes('sid') || msg.includes('authenticate')) {
-          toastError('Twilio Auth Failed: Check Account SID/Token.', DEEP_LINKS.auth);
+          toastError(`[${status}] Twilio Auth Failed: Check Account SID/Token. Raw: ${raw}`, DEEP_LINKS.auth);
         } else if (msg.includes('unverified') || msg.includes('not a valid')) {
-          toastError("Twilio Trial: Number isn't verified in Twilio Console.", DEEP_LINKS.auth);
+          toastError(`[${status}] Twilio Trial: Number isn't verified. Raw: ${raw}`, DEEP_LINKS.auth);
         } else if (msg.includes('provider') && msg.includes('not enabled')) {
-          toastError('Phone provider not enabled.', DEEP_LINKS.auth);
+          toastError(`[${status}] Phone provider not enabled. Raw: ${raw}`, DEEP_LINKS.auth);
         } else if (msg.includes('service provider') || msg.includes('unable to get')) {
-          toastError('Unable to reach SMS provider. Check Twilio SID, Token & Messaging Service SID.', DEEP_LINKS.auth);
+          toastError(`[${status}] Unable to reach SMS provider. Check Twilio Verify Service SID field (not Messaging SID). Raw: ${raw}`, DEEP_LINKS.auth);
         } else {
-          toastError(error.message, DEEP_LINKS.auth);
+          toastError(`[${status}] ${raw}`, DEEP_LINKS.auth);
         }
         setSmsStep('idle');
         return;
