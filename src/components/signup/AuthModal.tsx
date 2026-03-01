@@ -29,8 +29,9 @@ export function AuthModal(props: {
 
   onSubmitProfile: (p: { first_name: string; last_name: string; email: string; phone: string }) => Promise<void>;
   onSubmitOtp: (token: string) => Promise<void>;
+  onResendSms?: () => Promise<void>;
 }) {
-  const { open, onOpenChange, state, flow, onSubmitProfile, onSubmitOtp } = props;
+  const { open, onOpenChange, state, onSubmitProfile, onSubmitOtp, onResendSms } = props;
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -42,6 +43,32 @@ export function AuthModal(props: {
   const [errors, setErrors] = useState<ProfileFormErrors>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [shake, setShake] = useState(false);
+
+  // Resend SMS cooldown (60 s)
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startCooldown = useCallback(() => {
+    setResendCooldown(60);
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
+    cooldownRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(cooldownRef.current!);
+          cooldownRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+    };
+  }, []);
 
   const firstNameRef = useRef<HTMLInputElement>(null);
 
@@ -348,6 +375,27 @@ export function AuthModal(props: {
                 "Unlock Vault"
               )}
             </Button>
+
+            {onResendSms && (
+              <div className="text-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={resendCooldown > 0 || busy}
+                  onClick={async () => {
+                    try {
+                      await onResendSms();
+                      startCooldown();
+                    } catch {
+                      // SMS failed; parent already toasted the error — no cooldown
+                    }
+                  }}
+                  className="text-xs text-muted-foreground"
+                >
+                  {resendCooldown > 0 ? `Resend SMS in ${resendCooldown}s` : "Resend SMS"}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </DialogContent>
