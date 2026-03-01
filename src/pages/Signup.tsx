@@ -113,7 +113,7 @@ export default function Signup() {
   const [reenterPhoneValue, setReenterPhoneValue] = useState("");
   const [reenterBusy, setReenterBusy] = useState(false);
 
-  // ── Persist state machine to sessionStorage ──────────────────────────
+  // ── Persist state machine to localStorage ───────────────────────────
   useEffect(() => { ssSet(SS.state, state); }, [state]);
   useEffect(() => { ssSet(SS.flow, flow); }, [flow]);
   useEffect(() => { if (accountId) ssSet(SS.accountId, accountId); }, [accountId]);
@@ -139,15 +139,30 @@ export default function Signup() {
 
   // ── Scrub auth params from URL after magic-link return ───────────────
   const scrubAuthUrl = useCallback(() => {
-    if (window.location.search || window.location.hash) {
-      window.history.replaceState(null, "", window.location.pathname);
+    const { href, pathname, search, hash } = window.location;
+    if (!search && !hash) return;
+    const url = new URL(href);
+    const authParamKeys = ["code", "error", "error_description"];
+    let modified = false;
+    authParamKeys.forEach((key) => {
+      if (url.searchParams.has(key)) {
+        url.searchParams.delete(key);
+        modified = true;
+      }
+    });
+    if (hash) {
+      url.hash = "";
+      modified = true;
     }
+    if (!modified) return;
+    const qs = url.searchParams.toString();
+    window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
   }, []);
 
   // ── Trigger phone verification SMS (idempotent) ───────────────────────
   const triggerPhoneVerification = useCallback(
-    async (storedPhone: string) => {
-      if (smsTriggeredRef.current) return;
+    async (storedPhone: string): Promise<boolean> => {
+      if (smsTriggeredRef.current) return false;
       smsTriggeredRef.current = true;
 
       setState(SignupState.VERIFYING_PHONE);
@@ -158,16 +173,21 @@ export default function Signup() {
       if (error) {
         toast({ title: "Phone verification failed", description: error.message, variant: "destructive" });
         smsTriggeredRef.current = false; // allow retry
-      } else {
-        toast({ title: "Identity confirmed. Sending secure SMS..." });
+        return false;
       }
+      toast({ title: "Identity confirmed. Sending secure SMS..." });
+      return true;
     },
     [toast],
   );
 
   // ── Auth redirect / phone-OTP sequencing ─────────────────────────────
   useEffect(() => {
-    // Check if session already exists on mount (e.g., magic link opened in same tab)
+    // Detect a magic-link return by the presence of auth callback params in the URL
+    const hasAuthParams =
+      window.location.search.includes("code=") || window.location.hash.length > 1;
+
+    // Check if session already exists on mount (e.g., magic link opened in same/new tab)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session?.user) return;
       const current = ssGet<SignupState>(SS.state);
@@ -175,7 +195,7 @@ export default function Signup() {
       scrubAuthUrl();
       if (storedPhone && (current === SignupState.VERIFYING_EMAIL || current === SignupState.AUTH_GATE)) {
         triggerPhoneVerification(storedPhone);
-      } else if (!storedPhone && current === SignupState.VERIFYING_EMAIL) {
+      } else if (!storedPhone && (current === SignupState.VERIFYING_EMAIL || hasAuthParams)) {
         // Session active but no phone stored — device/tab handoff case
         setNeedsReenterPhone(true);
       }
@@ -191,7 +211,8 @@ export default function Signup() {
 
       if (storedPhone && (current === SignupState.VERIFYING_EMAIL || current === SignupState.AUTH_GATE)) {
         await triggerPhoneVerification(storedPhone);
-      } else if (!storedPhone && current === SignupState.VERIFYING_EMAIL) {
+      } else if (!storedPhone && (current === SignupState.VERIFYING_EMAIL || event === "SIGNED_IN")) {
+        // SIGNED_IN from a fresh magic-link with no storage → cross-device handoff
         setNeedsReenterPhone(true);
       }
     });
@@ -203,7 +224,8 @@ export default function Signup() {
     const storedPhone = phone ?? ssGet<string>(SS.phone);
     if (!storedPhone) return;
     smsTriggeredRef.current = false; // allow re-trigger
-    await triggerPhoneVerification(storedPhone);
+    const ok = await triggerPhoneVerification(storedPhone);
+    if (!ok) throw new Error("SMS send failed");
   }, [phone, triggerPhoneVerification]);
 
   // ── Flow A: upload quote ─────────────────────────────────────────────

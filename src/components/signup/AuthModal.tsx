@@ -63,15 +63,6 @@ export function AuthModal(props: {
     }, 1000);
   }, []);
 
-  // Start cooldown when we enter VERIFYING_PHONE for the first time
-  const prevVerifyPhoneRef = useRef(state);
-  useEffect(() => {
-    if (prevVerifyPhoneRef.current !== SignupState.VERIFYING_PHONE && state === SignupState.VERIFYING_PHONE) {
-      startCooldown();
-    }
-    prevVerifyPhoneRef.current = state;
-  }, [state, startCooldown]);
-
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {
@@ -392,8 +383,12 @@ export function AuthModal(props: {
                   size="sm"
                   disabled={resendCooldown > 0 || busy}
                   onClick={async () => {
-                    startCooldown();
-                    await onResendSms();
+                    try {
+                      await onResendSms();
+                      startCooldown();
+                    } catch {
+                      // SMS failed; parent already toasted the error — no cooldown
+                    }
                   }}
                   className="text-xs text-muted-foreground"
                 >
