@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.verify-lead-exists]
 verify_jwt = false
+
+[functions.orchestrate-quote-analysis]
+verify_jwt = false
