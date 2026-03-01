@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Activity } from 'lucide-react';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
-const TEST_PHONE = '+15615462799';
+const TEST_PHONE = '+12038567938';
 const PROJECT_ID = 'kffoximblqwcnznwvugu';
 
 const DEEP_LINKS = {
