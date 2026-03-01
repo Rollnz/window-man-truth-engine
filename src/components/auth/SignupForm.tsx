@@ -8,7 +8,7 @@ import { Mail, Loader2, CheckCircle } from 'lucide-react';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/config/navigation';
-import { GoogleSignInButton } from './GoogleSignInButton';
+
 
 const emailSchema = z.string().email('Please enter a valid email address');
 
@@ -99,17 +99,6 @@ export function SignupForm({ onLogin }: SignupFormProps) {
 
   return (
     <div className="space-y-4">
-      <GoogleSignInButton mode="signup" />
-      
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
-        </div>
-      </div>
-      
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
-import { GoogleSignInButton } from './GoogleSignInButton';
+
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -77,17 +77,6 @@ export function LoginForm({ onForgotPassword, onSignup, onSuccess }: LoginFormPr
 
   return (
     <div className="space-y-4">
-      <GoogleSignInButton mode="signin" />
-      
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
-        </div>
-      </div>
-      
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
