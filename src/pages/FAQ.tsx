@@ -9,6 +9,7 @@ import { ROUTES } from "@/config/navigation";
 import { generateFAQSchema, getGuidePageSchemas, getBreadcrumbSchema } from "@/lib/seoSchemas/index";
 import { ConsultationBookingModal } from "@/components/conversion/ConsultationBookingModal";
 import { useSessionData } from "@/hooks/useSessionData";
+import impactTruthClipboardImage from "@/assets/impact_truth_clipboard_1-2.webp";
 
 interface FAQItem {
   question: string;
@@ -93,19 +94,37 @@ const FAQ = () => {
 
       <main className="pt-20">
         <section className="container px-4 py-12 md:py-16 space-y-8">
-          <div className="max-w-4xl space-y-4">
-            <p className="text-sm font-semibold text-primary">FAQ</p>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">Real homeowner questions. Straight answers. Clear next steps.</h1>
-            <p className="text-base md:text-lg text-muted-foreground max-w-3xl">
-              This page is built to help you make a safer, smarter decision before signing a window contract. Read answers, then take action with a free quote scan or account setup.
-            </p>
-            <div className="flex flex-wrap gap-3 pt-2">
-              <Button asChild size="lg">
-                <Link to={ROUTES.QUOTE_SCANNER}>Upload Quote to Scan</Link>
-              </Button>
-              <Button asChild size="lg" variant="secondary-action">
-                <Link to={ROUTES.SIGNUP}>Create Free Account</Link>
-              </Button>
+          <div className="grid gap-8 items-center lg:grid-cols-[1.1fr,0.9fr]">
+            <div className="max-w-4xl space-y-4">
+              <p className="text-sm font-semibold text-primary">FAQ</p>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">Real homeowner questions. Straight answers. Clear next steps.</h1>
+              <p className="text-base md:text-lg text-muted-foreground max-w-3xl">
+                This page is built to help you make a safer, smarter decision before signing a window contract. Read answers, then take action with a free quote scan or account setup.
+              </p>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Button asChild size="lg">
+                  <Link to={ROUTES.QUOTE_SCANNER}>Upload Quote to Scan</Link>
+                </Button>
+                <Button asChild size="lg" variant="secondary-action">
+                  <Link to={ROUTES.SIGNUP}>Create Free Account</Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-2xl border border-border shadow-sm bg-slate-950/90">
+              {/* Overlay improves text readability over the hero image on all screen sizes. */}
+              <img
+                src={impactTruthClipboardImage}
+                alt="Window quote analysis interface highlighting detected issues and verified checks"
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent" />
+
+              <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
+                <p className="text-white text-sm md:text-base font-semibold">To get the truth, you must offer the truth.</p>
+                <p className="mt-1 text-xs md:text-sm text-white/80">Private AI review. No contractor notifications. Data-backed pricing and contract risk checks.</p>
+              </div>
             </div>
           </div>
 
