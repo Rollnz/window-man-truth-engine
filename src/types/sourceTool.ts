@@ -1,49 +1,49 @@
 /**
  * Allowed source tools for lead capture.
- * 
+ *
  * IMPORTANT: Keep this list in sync with:
  * - supabase/functions/_shared/sourceTools.ts (backend single source of truth)
- * 
+ *
  * Run `npm run verify:source-tools` to check synchronization.
  */
 export const SOURCE_TOOLS = [
-  'expert-system',
-  'comparison-tool',
-  'cost-calculator',
-  'true-cost-calculator',
-  'claim-survival-kit',
-  'fast-win',
-  'intel-library',
-  'risk-diagnostic',
-  'reality-check',
-  'evidence-locker',
-  'kitchen-table-guide',
-  'sales-tactics-guide',
-  'spec-checklist-guide',
-  'insurance-savings-guide',
-  'quote-builder',
-  'quote-scanner',
-  'beat-your-quote',
-  'fair-price-quiz',
-  'vulnerability-test',
-  'window-cost-truth',
-  'window-risk-and-code',
-  'window-sales-truth',
-  'window-verification-system',
-  'floating-estimate-form',
-  'roleplay', // Sales roleplay simulation
-  'consultation', // Strategy call booking
-  'sample-report', // Sample report access gate
-  'audit-sample-report', // Audit page sample report gate
-  'slide-over-ai-qa', // Slide-over panel AI Q&A mini-flow
-  'e2e-verification', // Guardian E2E tracking test
-  'vault', // Vault signup modal
-  'signup',
-  "signup2"
-  'signup-flow-b',
+  "expert-system",
+  "comparison-tool",
+  "cost-calculator",
+  "true-cost-calculator",
+  "claim-survival-kit",
+  "fast-win",
+  "intel-library",
+  "risk-diagnostic",
+  "reality-check",
+  "evidence-locker",
+  "kitchen-table-guide",
+  "sales-tactics-guide",
+  "spec-checklist-guide",
+  "insurance-savings-guide",
+  "quote-builder",
+  "quote-scanner",
+  "beat-your-quote",
+  "fair-price-quiz",
+  "vulnerability-test",
+  "window-cost-truth",
+  "window-risk-and-code",
+  "window-sales-truth",
+  "window-verification-system",
+  "floating-estimate-form",
+  "roleplay", // Sales roleplay simulation
+  "consultation", // Strategy call booking
+  "sample-report", // Sample report access gate
+  "audit-sample-report", // Audit page sample report gate
+  "slide-over-ai-qa", // Slide-over panel AI Q&A mini-flow
+  "e2e-verification", // Guardian E2E tracking test
+  "vault", // Vault signup modal
+  "signup",
+  "signup2",
+  "signup-flow-b",
 ] as const;
 
-export type SourceTool = typeof SOURCE_TOOLS[number];
+export type SourceTool = (typeof SOURCE_TOOLS)[number];
 
 /**
  * Type guard to check if a string is a valid SourceTool
