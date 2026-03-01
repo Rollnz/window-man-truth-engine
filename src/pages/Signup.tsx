@@ -26,7 +26,7 @@ export enum SignupState {
   REVEAL = "REVEAL",
 }
 
-// ── sessionStorage helpers ─────────────────────────────────────────────
+// ── localStorage helpers (cross-tab persistent) ────────────────────────
 const SS = {
   state: "wm.signup.state",
   flow: "wm.signup.flow",
@@ -38,17 +38,17 @@ const SS = {
 
 function ssGet<T>(key: string): T | null {
   try {
-    const raw = sessionStorage.getItem(key);
+    const raw = window.localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
   }
 }
 function ssSet(key: string, value: unknown) {
-  sessionStorage.setItem(key, JSON.stringify(value));
+  window.localStorage.setItem(key, JSON.stringify(value));
 }
 function ssDel(key: string) {
-  sessionStorage.removeItem(key);
+  window.localStorage.removeItem(key);
 }
 
 // ── Edge-function caller ───────────────────────────────────────────────
@@ -102,7 +102,7 @@ export default function Signup() {
   const [analysis, setAnalysis] = useState<OrchestrateResponse | null>(null);
   const [flowBResult, setFlowBResult] = useState<QualifyFlowBResponse | null>(null);
 
-  // ── Persist state machine to sessionStorage ──────────────────────────
+  // ── Persist state machine to localStorage ───────────────────────────
   useEffect(() => { ssSet(SS.state, state); }, [state]);
   useEffect(() => { ssSet(SS.flow, flow); }, [flow]);
   useEffect(() => { if (accountId) ssSet(SS.accountId, accountId); }, [accountId]);
