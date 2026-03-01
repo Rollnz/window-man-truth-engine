@@ -1268,6 +1268,7 @@ export type Database = {
       }
       quote_analyses: {
         Row: {
+          account_id: string | null
           ai_model_version: string | null
           analysis_json: Json
           analyzed_at: string | null
@@ -1290,6 +1291,7 @@ export type Database = {
           warranty_score: number
         }
         Insert: {
+          account_id?: string | null
           ai_model_version?: string | null
           analysis_json?: Json
           analyzed_at?: string | null
@@ -1312,6 +1314,7 @@ export type Database = {
           warranty_score?: number
         }
         Update: {
+          account_id?: string | null
           ai_model_version?: string | null
           analysis_json?: Json
           analyzed_at?: string | null
@@ -1334,6 +1337,13 @@ export type Database = {
           warranty_score?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "quote_analyses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quote_analyses_lead_id_fkey"
             columns: ["lead_id"]
