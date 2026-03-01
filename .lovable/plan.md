@@ -1,52 +1,92 @@
 
 
-## Fix Twilio SMS Integration -- Root Cause + Code Improvement
+## Phase 1 Security Patch Plan -- 4 Fixes
 
-### Root Cause: Dashboard Field Mapping Error
+### Fix 1: IDOR in orchestrate-quote-analysis (P0)
 
-The `VA3...` value (a **Twilio Verify Service SID**) is currently in the **Messaging Service SID** field. This is incorrect. Supabase's GoTrue uses the **Twilio Verify Service SID** field to call the Twilio Verify API. When it finds a Verify SID in the Messaging field, Twilio's Messaging API rejects it with "unable to get service provider."
+**Problem**: The function uses `SUPABASE_SERVICE_ROLE_KEY` and blindly trusts `account_id` from the request body. Any user can pass any account_id.
 
-**Fix (manual -- you must do this):**
+**Solution**:
+- Add `[functions.orchestrate-quote-analysis] verify_jwt = false` to `config.toml` (required for signing-keys compatibility)
+- Rewrite the function to:
+  1. Extract `Authorization: Bearer <jwt>` from the request header
+  2. Create a client with `SUPABASE_ANON_KEY` + the user's auth header
+  3. Call `supabase.auth.getClaims(token)` to get the authenticated `userId`
+  4. Look up `accounts` WHERE `supabase_user_id = userId` to derive the real `account_id`
+  5. Remove `account_id` from the request body entirely -- it's now server-derived
+  6. Keep a separate service-role client for the privileged DB writes (ledger, attribution)
 
-1. Open Phone provider settings in the backend configuration
-2. **Clear** the "Messaging Service SID" field (leave it empty)
-3. **Paste** the `VA3...` value into the **"Twilio Verify Service SID"** field
-4. Save
+**Files changed**: `supabase/config.toml`, `supabase/functions/orchestrate-quote-analysis/index.ts`
 
-### Code Change: Enhanced Error Reporting in TwilioDiagnostic
+---
 
-**File**: `src/components/dev/TwilioDiagnostic.tsx`
+### Fix 2: Schema Mismatch -- add account_id to quote_analyses (P0)
 
-Update the `handleSendSms` error handler to display the raw error status code and message alongside the friendly message. This prevents "silent" failures in the future.
+**Problem**: `quote_analyses.lead_id` is overloaded -- triggers and edge functions treat it as an account ID, but it's semantically a lead reference.
 
-Changes:
-- Show `error.status` (401/403/404/422/500) in the toast for every failure
-- Add the raw `error.message` as a secondary line so the exact backend response is always visible
-- Add a catch for the specific "unable to get" / "service provider" error pointing to the Verify SID field misconfiguration specifically
-
-### Why the Code Was Not the Problem
-
-- `signInWithOtp({ phone: testPhone })` -- correct, no extra options overriding
-- `verifyOtp({ phone, token, type: 'sms' })` -- correct type
-- Environment gating -- working correctly
-- No token truncation (32 chars confirmed)
-
-### Verification Steps
-
-After making the dashboard field swap:
-1. Click "Dev Health Suite" pill
-2. Click "Send Test SMS"
-3. You should receive an SMS and see the OTP input
-4. Enter the 6-digit code to complete the full loop
-
-### Technical Details
-
-The single code change adds raw error details to the toast output:
-
+**Solution** (SQL migration):
 ```text
-Before: "Unable to reach SMS provider. Check Twilio SID, Token & Messaging Service SID."
-After:  "[422] Unable to reach SMS provider. Check Twilio Verify Service SID field (not Messaging SID). Raw: <exact error message>"
+1. ALTER TABLE quote_analyses ADD COLUMN account_id UUID REFERENCES accounts(id)
+2. CREATE INDEX idx_quote_analyses_account_id ON quote_analyses(account_id)
+3. Backfill: UPDATE quote_analyses SET account_id = lead_id (since they currently hold account IDs)
+4. Update RLS policies to include account_id-based access
 ```
 
-The error handler block at line 96-108 will be updated to include `error.status` prefix on every toast, and the "service provider" / "unable to get" branch will specifically mention the Verify SID vs Messaging SID distinction.
+Then update:
+- **orchestrate-quote-analysis**: query by `.eq('account_id', account_id)` instead of `.eq('lead_id', account_id)`
+- **Trigger 2** (`fn_auto_dispatch_call_on_quote_analyzed`): read `NEW.account_id` instead of `NEW.lead_id`
+- **Frontend** (`useQuoteAnalyses.ts`): no change needed (RLS handles access; the hook doesn't filter by account_id)
+
+---
+
+### Fix 3: Trigger Column Validation -- handle_phone_confirmed (P0)
+
+**Problem**: The trigger references `phone` and `supabase_user_id` on `accounts`.
+
+**Audit result**: The `accounts` table **does** have columns named `phone` (text) and `supabase_user_id` (uuid). The current trigger matches the actual schema perfectly.
+
+**Action**: No changes needed. The trigger is safe as-is.
+
+---
+
+### Fix 4: Unsafe Cast in Trigger 2 (P1)
+
+**Problem**: `(NEW.analysis_json->>'overallScore')::int` will crash the entire UPDATE transaction if `overallScore` is missing, null, empty string, or non-numeric.
+
+**Solution** (SQL migration): Replace the trigger function with a safe cast pattern:
+
+```text
+Before:
+  (NEW.analysis_json->>'overallScore')::int
+
+After:
+  CASE
+    WHEN NEW.analysis_json->>'overallScore' ~ '^\d+$'
+    THEN (NEW.analysis_json->>'overallScore')::int
+    ELSE NULL
+  END
+```
+
+This regex-checks for digits before casting, returning NULL instead of crashing on malformed data.
+
+---
+
+### Implementation Sequence
+
+1. **SQL Migration** (single migration, 2 parts):
+   - Add `account_id` column to `quote_analyses` + backfill + index
+   - Replace `fn_auto_dispatch_call_on_quote_analyzed` with safe-cast version using `account_id`
+
+2. **Edge Function Update**: Rewrite `orchestrate-quote-analysis` with JWT auth + `account_id` ownership
+
+3. **Config Update**: Add `verify_jwt = false` entry for `orchestrate-quote-analysis`
+
+### Summary of Changes
+
+| Fix | Severity | Files | Type |
+|-----|----------|-------|------|
+| IDOR auth | P0 | config.toml, orchestrate-quote-analysis/index.ts | Edge function |
+| Schema mismatch | P0 | SQL migration, orchestrate-quote-analysis/index.ts | Migration + code |
+| Trigger columns | P0 | None -- already correct | Audit only |
+| Unsafe cast | P1 | SQL migration (trigger replacement) | Migration |
 
