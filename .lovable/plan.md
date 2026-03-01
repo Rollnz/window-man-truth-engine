@@ -1,32 +1,33 @@
 
 
-## Phase 1 Security Patch Plan -- 4 Fixes ✅ COMPLETED
+## Fix and Deploy Two Edge Functions for /signup
 
-### Fix 1: IDOR in orchestrate-quote-analysis (P0) ✅
+### Task 1: Update `upload-quote` success response
 
-**Status**: DEPLOYED  
-- Added `verify_jwt = false` to `config.toml`
-- Rewrote function to derive `account_id` from JWT via `getClaims()` → `accounts.supabase_user_id`
-- Removed `account_id` from request body
-- Service-role client used only for privileged writes (ledger, attribution)
+**File:** `supabase/functions/upload-quote/index.ts` (lines 413-424)
 
-### Fix 2: Schema Mismatch -- account_id on quote_analyses (P0) ✅
+Add `pending_scan_uuid` and `quote_analysis_id` fields (both set to `insertData.id`) to the success JSON response. This allows the `/signup` page's Flow A to receive the scan ID it needs for polling `orchestrate-quote-analysis`.
 
-**Status**: MIGRATED & DEPLOYED  
-- Added `account_id` UUID column with FK to `accounts(id)`
-- Created index `idx_quote_analyses_account_id`
-- Backfilled from `lead_id` (only valid FK references)
-- Added RLS policy for user SELECT via `account_id`
-- Edge function queries by `.eq('account_id', account_id)`
-- Trigger uses `COALESCE(NEW.account_id, NEW.lead_id)` for backward compatibility
+### Task 2: Create `qualify-flow-b` edge function
 
-### Fix 3: Trigger Column Validation -- handle_phone_confirmed (P0) ✅
+**File:** `supabase/functions/qualify-flow-b/index.ts` (new file)
 
-**Status**: NO CHANGES NEEDED  
-- Audited: `accounts.phone` (text) and `accounts.supabase_user_id` (uuid) exist and match trigger
+A new edge function that:
+- Accepts `account_id`, `is_homeowner`, `timeline`, `window_count`, `has_estimate`
+- Scores the lead (homeowner: +30, timeline: up to +25, window count: up to +20, estimate status: up to +10)
+- Qualifies if score >= 60 AND is_homeowner
+- Inserts into `qualification_answers` table
+- Returns score, qualification status, event type, and event value
 
-### Fix 4: Unsafe Cast in Trigger 2 (P1) ✅
+**Config:** Add `[functions.qualify-flow-b]` with `verify_jwt = false` to `supabase/config.toml`.
 
-**Status**: MIGRATED  
-- Replaced `(NEW.analysis_json->>'overallScore')::int` with safe regex-guarded cast
-- Also fixed trigger to use actual `pending_calls` columns (`source_tool`, `phone_e164`, etc.) instead of non-existent `call_type`/`context`
+### Task 3: Deploy both functions
+
+Deploy `upload-quote` and `qualify-flow-b` to the connected backend project.
+
+### Technical Notes
+
+- The `qualify-flow-b` function uses the service role key (no JWT verification), consistent with other public-facing edge functions in this project.
+- CORS headers follow the project's existing pattern.
+- The `qualification_answers` table already exists in the database (confirmed from triggers referencing its columns).
+
