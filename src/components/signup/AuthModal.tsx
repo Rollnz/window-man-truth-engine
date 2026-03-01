@@ -31,7 +31,7 @@ export function AuthModal(props: {
   onSubmitOtp: (token: string) => Promise<void>;
   onResendSms?: () => Promise<void>;
 }) {
-  const { open, onOpenChange, state, flow, onSubmitProfile, onSubmitOtp, onResendSms } = props;
+  const { open, onOpenChange, state, onSubmitProfile, onSubmitOtp, onResendSms } = props;
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
