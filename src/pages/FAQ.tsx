@@ -88,7 +88,7 @@ const FAQ = () => {
         title="FAQ: Impact Window Quotes, Pricing, and AI Scan Questions"
         description="Get clear answers about quote scanning, privacy, pricing savings, and how Window Man helps homeowners avoid overpaying."
         canonicalUrl="https://itswindowman.com/faq"
-        jsonLd={[...getGuidePageSchemas("faq"), getBreadcrumbSchema("faq")]}
+        jsonLd={[generateFAQSchema(faqs), getBreadcrumbSchema("faq")]}
       />
       <Navbar />
 
