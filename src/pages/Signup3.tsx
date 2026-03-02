@@ -273,7 +273,7 @@ function HeroSection() {
         </h1>
 
         {/* Subheading */}
-        <p className="animate-fade-up delay-250 mt-6 text-base sm:text-lg text-slate-400 max-w-xl mx-auto leading-relaxed">
+        <p className="animate-fade-up delay-250 mt-6 text-base sm:text-lg max-w-xl mx-auto leading-relaxed" style={{ color: "#FFFFFF" }}>
           Upload your estimate and let the AI check pricing, scope, warranties, and contract terms in seconds.
           Stop overpaying on hidden clauses.
         </p>
