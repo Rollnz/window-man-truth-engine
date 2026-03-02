@@ -18,5 +18,11 @@ verify_jwt = false
 [functions.verify-otp]
 verify_jwt = false
 
+[functions.initiate-lead-verification]
+verify_jwt = false
+
+[functions.verify-lead-otp]
+verify_jwt = false
+
 [functions.orchestrate-quote-analysis]
 verify_jwt = false
