@@ -10,9 +10,83 @@ import {
   TrendingDown,
   AlertCircle,
   Upload,
+  Menu,
 } from "lucide-react";
 import { ROUTES } from "@/config/navigation";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useScrollLock } from "@/hooks/useScrollLock";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import heroImage from "@/assets/hero-quote-scan.webp";
+import windowManLogo from "@/assets/windowman_logo_400.webp";
+
+/* ── Signup3 Header ──────────────────────────────────────── */
+function Signup3Header() {
+  const isMobile = useIsMobile();
+  const { isNavbarVisible } = useScrollLock({ enabled: isMobile, showDelay: 500 });
+
+  const navLinks = [
+    { label: "Tools", to: ROUTES.TOOLS },
+    { label: "Beat Your Quote", to: ROUTES.BEAT_YOUR_QUOTE },
+    { label: "AI Scanner", to: ROUTES.QUOTE_SCANNER },
+  ];
+
+  return (
+    <header
+      className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300 border-b backdrop-blur-md"
+      style={{
+        backgroundColor: "rgba(var(--bg-terminal-rgb, 15,23,42), 0.5)",
+        borderColor: "var(--panel-border)",
+        transform: isNavbarVisible ? "translateY(0)" : "translateY(-100%)",
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2">
+          <img src={windowManLogo} alt="WindowMan" className="h-9 w-auto" />
+          <span className="text-xl font-bold tracking-tight">
+            <span style={{ color: "#FFFFFF" }}>Window</span>
+            <span style={{ color: "#0050D8" }}>Man</span>
+          </span>
+        </Link>
+
+        {/* Desktop: empty for now (nav links coming later) */}
+        {/* Mobile: hamburger */}
+        {isMobile && (
+          <Sheet>
+            <SheetTrigger asChild>
+              <button
+                className="p-2 text-slate-300 hover:text-white transition-colors"
+                aria-label="Open menu"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+            </SheetTrigger>
+            <SheetContent
+              side="right"
+              className="border-l"
+              style={{
+                backgroundColor: "var(--bg-terminal)",
+                borderColor: "var(--panel-border)",
+              }}
+            >
+              <nav className="flex flex-col gap-4 mt-8">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className="text-slate-300 hover:text-white text-lg font-medium transition-colors px-2 py-2"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
+        )}
+      </div>
+    </header>
+  );
+}
 
 /* ── scoped styles & keyframes ───────────────────────────── */
 const styleSheet = `
@@ -460,6 +534,7 @@ export default function Signup3() {
       <style>{styleSheet}</style>
 
       <div className="min-h-screen" style={{ backgroundColor: "var(--bg-terminal)" }}>
+        <Signup3Header />
         <HeroSection />
         <FeatureSection />
       </div>
