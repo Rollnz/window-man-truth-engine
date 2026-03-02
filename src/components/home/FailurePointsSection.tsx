@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { AlertCircle, Shield, FileX, Calculator, ChevronDown } from 'lucide-react';
+import cardPermitTrap from '@/assets/card-permit-trap.webp';
+import cardExcludesLabor from '@/assets/card-excludes-labor.webp';
+import cardMonsterAnchor from '@/assets/card-monster-anchor.webp';
 import { cn } from '@/lib/utils';
 import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll';
 
@@ -137,7 +140,26 @@ export function FailurePointsSection() {
                 </AnimateOnScroll>);
 
             })}
-          </div>
+        </div>
+
+        {/* Threat Card Gallery */}
+        <div className="max-w-3xl mx-auto mb-16 grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center">
+          {[
+            { src: cardPermitTrap, alt: 'Permit Purgatory Trap — how missing permits void coverage', direction: 'left' as const },
+            { src: cardExcludesLabor, alt: 'Excludes Labor Loophole — hidden exclusion in window warranties', direction: 'up' as const },
+            { src: cardMonsterAnchor, alt: 'Monster Anchor Quote — inflated pricing tactic used by contractors', direction: 'right' as const },
+          ].map((card, i) => (
+            <AnimateOnScroll key={i} delay={i * 100} threshold={0.3} direction={card.direction} desktopDirectionOnly={true}>
+              <img
+                src={card.src}
+                alt={card.alt}
+                loading="lazy"
+                decoding="async"
+                className="max-w-[220px] w-full rounded-xl shadow-xl -translate-y-2 hover:-translate-y-3 hover:shadow-2xl transition-all duration-300 border border-border/10"
+              />
+            </AnimateOnScroll>
+          ))}
+        </div>
         </div>
         
         <div className="max-w-3xl mx-auto text-center">
