@@ -1,203 +1,208 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { createFocusTrap } from "@/lib/formAccessibility";
 
 type Timeline = "now" | "within_month" | "several_months" | "exploring";
 type WindowCount = "1-5" | "6-10" | "11+" | "whole_house";
 type HasEstimate = "yes_one" | "yes_multiple" | "no" | "not_sure";
 
+interface Answers {
+  is_homeowner: boolean;
+  timeline: Timeline;
+  window_count: WindowCount;
+  has_estimate: HasEstimate;
+}
+
+const QUESTIONS = [
+  {
+    key: "is_homeowner",
+    question: "Are you the homeowner?",
+    options: [
+      { value: true, label: "Yes, I'm the homeowner" },
+      { value: false, label: "No / Not sure" },
+    ],
+  },
+  {
+    key: "timeline",
+    question: "What's your timeline?",
+    options: [
+      { value: "now", label: "Now (within 2 weeks)" },
+      { value: "within_month", label: "Within a month" },
+      { value: "several_months", label: "Several months" },
+      { value: "exploring", label: "Just exploring" },
+    ],
+  },
+  {
+    key: "window_count",
+    question: "How many windows?",
+    options: [
+      { value: "1-5", label: "1–5 windows" },
+      { value: "6-10", label: "6–10 windows" },
+      { value: "11+", label: "11+ windows" },
+      { value: "whole_house", label: "Whole house" },
+    ],
+  },
+  {
+    key: "has_estimate",
+    question: "Do you already have an estimate?",
+    options: [
+      { value: "yes_one", label: "Yes, one estimate" },
+      { value: "yes_multiple", label: "Yes, multiple estimates" },
+      { value: "no", label: "No, not yet" },
+      { value: "not_sure", label: "Not sure" },
+    ],
+  },
+] as const;
+
 export function QualificationFlow(props: {
-  onSubmit: (answers: { is_homeowner: boolean; timeline: Timeline; window_count: WindowCount; has_estimate: HasEstimate }) => Promise<void>;
+  onSubmit: (answers: Answers) => Promise<void>;
 }) {
   const { onSubmit } = props;
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
+  const [selected, setSelected] = useState<(string | boolean | null)[]>([null, null, null, null]);
+  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [slideDir, setSlideDir] = useState<"right" | "left">("right");
+  const [animKey, setAnimKey] = useState(0);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  const [isHomeowner, setIsHomeowner] = useState<boolean | null>(null);
-  const [timeline, setTimeline] = useState<Timeline | null>(null);
-  const [windowCount, setWindowCount] = useState<WindowCount | null>(null);
-  const [hasEstimate, setHasEstimate] = useState<HasEstimate | null>(null);
-
-  const progress = useMemo(() => (step / 4) * 100, [step]);
-  const firstOptionRef = useRef<HTMLButtonElement>(null);
-
-  // Auto-focus first option when step changes
+  // Focus trap
   useEffect(() => {
-    setTimeout(() => firstOptionRef.current?.focus(), 50);
-  }, [step]);
+    if (!panelRef.current) return;
+    return createFocusTrap(panelRef.current);
+  }, []);
 
-  const canNext = useMemo(() => {
-    if (step === 1) return isHomeowner !== null;
-    if (step === 2) return timeline !== null;
-    if (step === 3) return windowCount !== null;
-    if (step === 4) return hasEstimate !== null;
-    return false;
-  }, [step, isHomeowner, timeline, windowCount, hasEstimate]);
+  const handleSelect = useCallback(
+    async (optionValue: string | boolean, optionIdx: number) => {
+      if (busy) return;
+      setHighlightIdx(optionIdx);
+      const next = [...selected];
+      next[step] = optionValue;
+      setSelected(next);
 
-  const next = () => setStep((s) => Math.min(4, s + 1));
-  const back = () => setStep((s) => Math.max(1, s - 1));
+      // Brief highlight then advance
+      await new Promise((r) => setTimeout(r, 300));
+      setHighlightIdx(null);
 
-  const optionClass = (selected: boolean) =>
-    `h-12 rounded-xl border px-4 text-left transition-colors ${
-      selected
-        ? "border-primary bg-primary/15 text-foreground"
-        : "border-border bg-muted/30 hover:bg-muted/60 text-foreground"
-    }`;
+      if (step < 3) {
+        setSlideDir("right");
+        setStep((s) => s + 1);
+        setAnimKey((k) => k + 1);
+      } else {
+        // Final step — auto-submit
+        setBusy(true);
+        try {
+          await onSubmit({
+            is_homeowner: next[0] as boolean,
+            timeline: next[1] as Timeline,
+            window_count: next[2] as WindowCount,
+            has_estimate: next[3] as HasEstimate,
+          });
+        } finally {
+          setBusy(false);
+        }
+      }
+    },
+    [step, selected, busy, onSubmit]
+  );
+
+  const goBack = () => {
+    if (step === 0 || busy) return;
+    setSlideDir("left");
+    setStep((s) => s - 1);
+    setAnimKey((k) => k + 1);
+  };
+
+  const currentQ = QUESTIONS[step];
 
   return (
-    <Card className="bg-card border-border rounded-2xl p-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-sm font-semibold text-foreground">Calibrate Your Vault</div>
-          <div className="text-xs text-muted-foreground">Quick questions so we can route you correctly.</div>
-        </div>
-        <div className="text-xs text-muted-foreground" aria-live="polite">Step {step}/4</div>
-      </div>
-
-      <div className="mt-3">
-        <Progress value={progress} />
-      </div>
-
-      <div className="mt-5 space-y-3">
-        {step === 1 && (
-          <fieldset>
-            <legend className="text-sm font-semibold text-foreground mb-2">Are you the homeowner?</legend>
-            <div role="radiogroup" aria-label="Homeowner status" className="grid grid-cols-1 gap-2">
-              <button
-                ref={firstOptionRef}
-                className={optionClass(isHomeowner === true)}
-                onClick={() => setIsHomeowner(true)}
-                type="button"
-                role="radio"
-                aria-checked={isHomeowner === true}
-              >
-                Yes, I'm the homeowner
-              </button>
-              <button
-                className={optionClass(isHomeowner === false)}
-                onClick={() => setIsHomeowner(false)}
-                type="button"
-                role="radio"
-                aria-checked={isHomeowner === false}
-              >
-                No / Not sure
-              </button>
-            </div>
-          </fieldset>
-        )}
-
-        {step === 2 && (
-          <fieldset>
-            <legend className="text-sm font-semibold text-foreground mb-2">What's your timeline?</legend>
-            <div role="radiogroup" aria-label="Project timeline" className="grid grid-cols-1 gap-2">
-              {([
-                ["now", "Now (within 2 weeks)"],
-                ["within_month", "Within a month"],
-                ["several_months", "Several months"],
-                ["exploring", "Just exploring"],
-              ] as const).map(([v, label], i) => (
-                <button
-                  key={v}
-                  ref={i === 0 ? firstOptionRef : undefined}
-                  type="button"
-                  role="radio"
-                  aria-checked={timeline === v}
-                  className={optionClass(timeline === v)}
-                  onClick={() => setTimeline(v)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-        )}
-
-        {step === 3 && (
-          <fieldset>
-            <legend className="text-sm font-semibold text-foreground mb-2">How many windows?</legend>
-            <div role="radiogroup" aria-label="Window count" className="grid grid-cols-1 gap-2">
-              {([
-                ["1-5", "1–5 windows"],
-                ["6-10", "6–10 windows"],
-                ["11+", "11+ windows"],
-                ["whole_house", "Whole house"],
-              ] as const).map(([v, label], i) => (
-                <button
-                  key={v}
-                  ref={i === 0 ? firstOptionRef : undefined}
-                  type="button"
-                  role="radio"
-                  aria-checked={windowCount === v}
-                  className={optionClass(windowCount === v)}
-                  onClick={() => setWindowCount(v)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-        )}
-
-        {step === 4 && (
-          <fieldset>
-            <legend className="text-sm font-semibold text-foreground mb-2">Do you already have an estimate?</legend>
-            <div role="radiogroup" aria-label="Estimate status" className="grid grid-cols-1 gap-2">
-              {([
-                ["yes_one", "Yes, one estimate"],
-                ["yes_multiple", "Yes, multiple estimates"],
-                ["no", "No, not yet"],
-                ["not_sure", "Not sure"],
-              ] as const).map(([v, label], i) => (
-                <button
-                  key={v}
-                  ref={i === 0 ? firstOptionRef : undefined}
-                  type="button"
-                  role="radio"
-                  aria-checked={hasEstimate === v}
-                  className={optionClass(hasEstimate === v)}
-                  onClick={() => setHasEstimate(v)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-        )}
-      </div>
-
-      <div className="mt-5 flex items-center justify-between gap-3">
-        <Button variant="outline" className="rounded-xl h-11" onClick={back} disabled={step === 1 || busy}>
-          Back
-        </Button>
-
-        {step < 4 ? (
-          <Button className="rounded-xl h-11" onClick={next} disabled={!canNext || busy}>
-            Next
-          </Button>
-        ) : (
-          <Button
-            className="rounded-xl h-11"
-            disabled={!canNext || busy}
-            onClick={async () => {
-              if (isHomeowner === null || !timeline || !windowCount || !hasEstimate) return;
-              setBusy(true);
-              try {
-                await onSubmit({
-                  is_homeowner: isHomeowner,
-                  timeline,
-                  window_count: windowCount,
-                  has_estimate: hasEstimate,
-                });
-              } finally {
-                setBusy(false);
-              }
-            }}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Calibrate Your Vault"
+    >
+      <div
+        ref={panelRef}
+        className="relative max-w-md w-full mx-4 rounded-2xl bg-card p-6 shadow-2xl"
+      >
+        {/* Header row: back arrow + dots + step label */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            type="button"
+            onClick={goBack}
+            disabled={step === 0 || busy}
+            className={cn(
+              "rounded-full p-1.5 transition-colors",
+              step === 0 ? "text-muted-foreground/30 cursor-not-allowed" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+            aria-label="Go back"
           >
-            {busy ? "Submitting…" : "Complete Profile"}
-          </Button>
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          {/* Progress dots */}
+          <div className="flex items-center gap-2" aria-label={`Step ${step + 1} of 4`}>
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className={cn(
+                  "h-2 w-2 rounded-full transition-colors duration-200",
+                  i <= step ? "bg-primary" : "bg-muted-foreground/25"
+                )}
+              />
+            ))}
+          </div>
+
+          <span className="text-xs text-muted-foreground">{step + 1} of 4</span>
+        </div>
+
+        {/* Question + options with slide animation */}
+        <div
+          key={animKey}
+          className={cn(
+            "animate-in duration-200",
+            slideDir === "right" ? "slide-in-from-right-8 fade-in" : "slide-in-from-left-8 fade-in"
+          )}
+        >
+          <h2 className="text-lg font-semibold text-foreground mb-4">{currentQ.question}</h2>
+
+          <div className="space-y-2.5" role="radiogroup" aria-label={currentQ.question}>
+            {currentQ.options.map((opt, idx) => {
+              const isSelected = selected[step] === opt.value;
+              const isHighlighted = highlightIdx === idx;
+
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  disabled={busy}
+                  onClick={() => handleSelect(opt.value, idx)}
+                  className={cn(
+                    "w-full h-12 rounded-xl border px-4 text-left text-sm font-medium transition-all duration-150",
+                    isHighlighted
+                      ? "border-primary bg-primary/20 text-foreground scale-[1.02]"
+                      : isSelected
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border bg-muted/30 text-foreground hover:bg-muted/60"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {busy && (
+          <p className="mt-4 text-center text-sm text-muted-foreground animate-pulse">
+            Submitting…
+          </p>
         )}
       </div>
-    </Card>
+    </div>
   );
 }
