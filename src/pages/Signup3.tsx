@@ -131,14 +131,24 @@ function HeroSection() {
       style={{ backgroundColor: "var(--bg-terminal)" }}
       onMouseMove={handleMouseMove}
     >
-      {/* Hero background image */}
-      <img
-        src={heroImage}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        style={{ opacity: 0.3 }}
-      />
+      {/* Hero background image (parallax -- matching Signup2) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute inset-0 will-change-transform"
+          style={{
+            transform: `translate(${mousePos.x}px, ${mousePos.y}px) scale(1.05)`,
+            transition: 'transform 0.7s ease-out',
+          }}
+        >
+          <img
+            src={heroImage}
+            alt=""
+            aria-hidden="true"
+            className="w-full h-full object-cover"
+            style={{ opacity: 0.3 }}
+          />
+        </div>
+      </div>
 
       {/* Parallax Grid Background */}
       <div
