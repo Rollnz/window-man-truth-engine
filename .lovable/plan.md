@@ -1,39 +1,29 @@
 
 
-# Break the Grid: Threat Card Gallery Layout Update
+# Full-Bleed Threat Card Gallery
 
-## What's Changing
-The Threat Card gallery currently sits inside the same `max-w-3xl` container as the text content (~768px). We'll widen it to break out of that constraint, add generous vertical spacing, increase gaps between cards, and enhance the "floating" depth effect.
+## Change
+Make the Threat Card gallery span the full width of the viewport, breaking out of the `container` and `max-w` constraints.
 
-## Visual Changes
-- **Gallery max-width**: Increase from `max-w-3xl` (~768px) to `max-w-5xl` (~1024px), creating a ~250px wider footprint than the surrounding text
-- **Vertical breathing room**: Increase top margin (`mt-12`) and keep bottom margin (`mb-16`) so cards don't crowd the accordion or the quote block
-- **Card gaps**: Increase from `gap-6` to `gap-8` (desktop) for more horizontal breathing room
-- **Card size**: Bump `max-w-[220px]` to `max-w-[260px]` so cards fill the wider container proportionally
-- **Enhanced depth**: Stronger shadow (`shadow-2xl`) at rest, plus the existing hover lift
+## Technical Detail
 
-## Technical Details
+In `src/components/home/FailurePointsSection.tsx`, the gallery div currently sits inside the `container` div. We need to either:
+- Move it outside the container, or
+- Use a CSS "break-out" technique with negative margins and `vw` units
 
-### File: `src/components/home/FailurePointsSection.tsx`
-One block edit on the Threat Card gallery div (around line 144):
+The cleanest approach: close the `max-w-3xl` wrapper before the gallery, render the gallery at full width with its own padding, then reopen the wrapper for the closing quote.
 
-**Current:**
-```html
-<div className="max-w-3xl mx-auto mb-16 grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center">
+Specifically, the gallery div (currently around line 146) changes from:
+```
+<div className="max-w-5xl mx-auto mt-12 mb-16 grid ...">
+```
+to a full-bleed break-out using relative positioning and viewport width:
+```
+<div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen mt-12 mb-16">
+  <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 justify-items-center">
 ```
 
-**Updated to:**
-```html
-<div className="max-w-5xl mx-auto mt-12 mb-16 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 justify-items-center">
-```
+This makes the gallery stretch edge-to-edge while keeping the cards themselves centered within a generous `max-w-6xl` container. The surrounding text content remains at `max-w-3xl`.
 
-And each card image class changes from:
-```
-max-w-[220px] ... shadow-xl -translate-y-2
-```
-to:
-```
-max-w-[260px] ... shadow-2xl -translate-y-3
-```
-
-No new files, no new components, no new dependencies. Just two class string updates in the existing file.
+### File modified
+- `src/components/home/FailurePointsSection.tsx` — one block edit on the gallery wrapper
