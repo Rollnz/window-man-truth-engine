@@ -254,7 +254,7 @@ function HeroSection() {
         {/* Badge */}
         <div className="animate-fade-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-sky-400/20 bg-sky-500/10 text-sky-300 text-sm font-medium mb-6">
           <Search className="w-4 h-4" />
-          Free AI Quote Scan
+          Powered by Gemini OCR
         </div>
 
         {/* H1 */}
