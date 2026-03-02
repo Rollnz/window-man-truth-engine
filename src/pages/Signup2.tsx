@@ -46,7 +46,7 @@ async function callEdge<T>(fnName: string, body: unknown, token?: string | null)
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(body),
@@ -141,7 +141,7 @@ export default function Signup2() {
 
         const uploadRes = await fetch(uploadUrl, {
           method: 'POST',
-          headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
+          headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
           body: form,
         });
         const uploadJson = (await uploadRes.json()) as UploadQuoteResponse;
@@ -180,7 +180,7 @@ export default function Signup2() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({ account_id: acctId, quote_analysis_id: qaId }),

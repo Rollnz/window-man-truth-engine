@@ -65,7 +65,7 @@ async function callEdgeJson<T>(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
     body: JSON.stringify(body),
@@ -245,7 +245,7 @@ export default function Signup() {
 
         const res = await fetch(url, {
           method: "POST",
-          headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
+          headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
           body: form,
         });
 
