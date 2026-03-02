@@ -31,42 +31,7 @@ Deno.serve(async (req) => {
       else normalized = "+" + normalized;
     }
 
-    // ── Rate limiting ──────────────────────────────────────────────
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const identifier = `otp:${normalized}`;
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-
-    const { count, error: countError } = await supabase
-      .from("rate_limits")
-      .select("id", { count: "exact", head: true })
-      .eq("endpoint", "send-otp")
-      .eq("identifier", identifier)
-      .gte("created_at", oneHourAgo);
-
-    if (countError) {
-      console.error("Rate limit check failed:", countError);
-      return new Response(
-        JSON.stringify({ error: "Internal error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if ((count ?? 0) >= RATE_LIMIT_MAX) {
-      return new Response(
-        JSON.stringify({ error: "Too many OTP requests. Please try again later." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Record rate limit hit
-    await supabase.from("rate_limits").insert({
-      endpoint: "send-otp",
-      identifier,
-    });
+    // ── TESTING MODE: Rate limiting removed ──────────────────────
 
     // ── Send via Twilio Verify ─────────────────────────────────────
     const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
