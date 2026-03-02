@@ -143,22 +143,24 @@ export function FailurePointsSection() {
         </div>
 
         {/* Threat Card Gallery */}
-        <div className="max-w-5xl mx-auto mt-12 mb-16 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 justify-items-center">
-          {[
-            { src: cardPermitTrap, alt: 'Permit Purgatory Trap — how missing permits void coverage', direction: 'left' as const },
-            { src: cardExcludesLabor, alt: 'Excludes Labor Loophole — hidden exclusion in window warranties', direction: 'up' as const },
-            { src: cardMonsterAnchor, alt: 'Monster Anchor Quote — inflated pricing tactic used by contractors', direction: 'right' as const },
-          ].map((card, i) => (
-            <AnimateOnScroll key={i} delay={i * 100} threshold={0.3} direction={card.direction} desktopDirectionOnly={true}>
-              <img
-                src={card.src}
-                alt={card.alt}
-                loading="lazy"
-                decoding="async"
-                className="max-w-[260px] w-full rounded-xl shadow-2xl -translate-y-3 hover:-translate-y-4 hover:shadow-[0_25px_60px_-12px_rgba(0,0,0,0.4)] transition-all duration-300 border border-border/10"
-              />
-            </AnimateOnScroll>
-          ))}
+        <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen mt-12 mb-16">
+          <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 justify-items-center">
+            {[
+              { src: cardPermitTrap, alt: 'Permit Purgatory Trap — how missing permits void coverage', direction: 'left' as const },
+              { src: cardExcludesLabor, alt: 'Excludes Labor Loophole — hidden exclusion in window warranties', direction: 'up' as const },
+              { src: cardMonsterAnchor, alt: 'Monster Anchor Quote — inflated pricing tactic used by contractors', direction: 'right' as const },
+            ].map((card, i) => (
+              <AnimateOnScroll key={i} delay={i * 100} threshold={0.3} direction={card.direction} desktopDirectionOnly={true}>
+                <img
+                  src={card.src}
+                  alt={card.alt}
+                  loading="lazy"
+                  decoding="async"
+                  className="max-w-[260px] w-full rounded-xl shadow-2xl -translate-y-3 hover:-translate-y-4 hover:shadow-[0_25px_60px_-12px_rgba(0,0,0,0.4)] transition-all duration-300 border border-border/10"
+                />
+              </AnimateOnScroll>
+            ))}
+          </div>
         </div>
         </div>
         
