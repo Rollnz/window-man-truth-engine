@@ -1,51 +1,44 @@
 
 
-# Update WelcomeToast: Rebrand + Dual CTA + Mobile Stack + Modal Wiring
+# Testing Mode Override
 
-## Summary
+Apply three changes to let you test the full flow without rate limits, email blocking, or real OTP verification.
 
-Rebrand the homepage WelcomeToast, replace the single CTA with two buttons that open `PreQuoteLeadModalV2`, ensure mobile-friendly stacking, and wire dismiss/modal state correctly so the toast closes but the modal stays open.
+## 1. Remove rate limiting from `send-otp` edge function
 
-## Changes (single file: `src/components/onboarding/WelcomeToast.tsx`)
+**File:** `supabase/functions/send-otp/index.ts`
 
-### 1. Copy Updates
-- **Headline**: "The WindowMan Truth Engine" --> "The WindowMan Truth Report"
-- **Body**: "See your Readiness Score Explore tools..." --> "Audit your quote and save money."
+Strip out all rate-limiting logic (the Supabase client creation, the `rate_limits` table query, the 429 check, and the insert). Keep the Twilio Verify call and error handling intact. The function will still send real SMS but won't block repeated requests.
 
-### 2. Dual CTA Buttons
-Replace the single "Start Learning" button with:
-- **"I Have a Quote"** -- `variant="cta"`, `size="sm"`
-- **"I Want a Quote"** -- `variant="outline"`, `size="sm"`
+## 2. Make email magic link non-blocking in `Signup.tsx`
 
-### 3. Mobile Responsiveness
-Button container uses `flex flex-col sm:flex-row gap-2 sm:gap-3` so buttons stack full-width on mobile and sit side-by-side on desktop.
+**File:** `src/pages/Signup.tsx`
 
-### 4. Component Wiring (dismiss toast, keep modal open)
-- Add two state variables: `haveQuoteOpen` and `wantQuoteOpen`
-- On button click: call `dismissToast()` first, then set the respective modal state to `true`
-- Render two `PreQuoteLeadModalV2` instances **outside** the early `if (!showToast) return null` guard (so they persist after toast dismisses)
-- Each modal wired with `isOpen={stateVar}` and `onClose={() => setStateVar(false)}`
-- `ctaSource` set to `"homepage_toast_have_quote"` and `"homepage_toast_want_quote"` respectively
+After calling `signInWithOtp({ email })`, instead of stopping at `VERIFYING_EMAIL` and waiting for the user to click the magic link, immediately transition to `VERIFYING_PHONE` and auto-trigger the phone verification step. The email is still sent in the background but doesn't gate progress.
 
-### 5. Cleanup
-- Remove `handleStartScoring` function and its scroll-to-grid logic entirely
-- Update tracking labels: `toast_click_have_quote` and `toast_click_want_quote`
+Key change in `handleAuthSubmit` (~line 306-311): After the email OTP call, skip setting state to `VERIFYING_EMAIL` and instead call `triggerPhoneVerification(payload.phone)` directly.
 
-### 6. Imports
-- Add: `useState` from react, `PreQuoteLeadModalV2` from `@/components/LeadModalV2`
+## 3. Bypass OTP_GATE entirely in `Signup2.tsx`
 
-## Technical Detail
+**File:** `src/pages/Signup2.tsx`
 
-The key wiring pattern:
+- **`handleTheaterComplete`** (~line 219): Instead of transitioning to `OTP_GATE` and sending an OTP, immediately set `otpVerified = true` and transition to `REVEAL` (if analysis is ready) or stay in a waiting state that auto-transitions.
+- **`handleVerifyOtp`** (~line 234): Make it always succeed without calling the backend -- set `otpVerified = true` immediately.
+- **The `OTP_GATE` overlay** (~line 380): Will naturally not render since `otpVerified` is set to `true` before the phase even reaches `OTP_GATE`.
 
-```text
-WelcomeToast (always renders modals)
-  |-- if showToast: render toast UI with two buttons
-  |-- always: render PreQuoteLeadModalV2 x2 (controlled by local state)
+## 4. Bypass phone OTP in `Signup.tsx`
 
-Click "I Have a Quote":
-  1. trackEngagement("toast_click_have_quote", ...)
-  2. dismissToast()          // hides toast, sets localStorage
-  3. setHaveQuoteOpen(true)  // opens modal (persists because modals render outside the guard)
-```
+**File:** `src/pages/Signup.tsx`
 
+- **`handleVerifyOtp`** (~line 322): Skip `supabase.auth.verifyOtp()` entirely. Accept any code as valid and proceed to `POLLING_ANALYSIS` or `QUALIFYING`.
+- **`triggerPhoneVerification`** (~line 163): Skip `supabase.auth.updateUser({ phone })`. Just transition the state directly.
+
+## Summary of files changed
+
+| File | Change |
+|------|--------|
+| `supabase/functions/send-otp/index.ts` | Remove rate-limiting block |
+| `src/pages/Signup.tsx` | Email non-blocking + OTP auto-accept |
+| `src/pages/Signup2.tsx` | Skip OTP_GATE, auto-verify |
+
+All changes are clearly marked as testing overrides so they can be reverted later.
