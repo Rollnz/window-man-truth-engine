@@ -1,43 +1,39 @@
 
 
-# Add "Threat Card" Gallery to Failure Points Section
+# Break the Grid: Threat Card Gallery Layout Update
 
 ## What's Changing
-Insert a row of 3 tactical card images between the accordion grid ("The Four Failure Points") and the closing quote block ("When something goes wrong..."). The cards are the uploaded images: Permit Purgatory Trap, Excludes Labor Loophole, and Monster Anchor Quote.
+The Threat Card gallery currently sits inside the same `max-w-3xl` container as the text content (~768px). We'll widen it to break out of that constraint, add generous vertical spacing, increase gaps between cards, and enhance the "floating" depth effect.
 
-## Layout
-- 3 cards in a horizontal row on desktop (`grid-cols-3`), stacked on mobile (`grid-cols-1`)
-- Each card has a subtle "lift" effect: `shadow-xl` + slight negative `translateY` to float above the section
-- Hover state adds more lift (`hover:-translate-y-1 hover:shadow-2xl`) for interactivity
-
-## Scroll Animations
-- Left card: slides in from the **left**
-- Right card: slides in from the **right**
-- Center card: slides in from **below** (direction `up`)
-- Staggered delays (0ms, 100ms, 200ms) so they cascade in
-
-## Performance Considerations
-- All 3 images use `loading="lazy"` and `decoding="async"` so they don't block LCP or increase initial payload
-- Images are stored in `src/assets/` and imported as ES modules for Vite optimization (hashing, compression)
-- Wrapped in existing `AnimateOnScroll` component which uses `IntersectionObserver` (no scroll listeners) and respects `prefers-reduced-motion`
-- `will-change` is cleaned up automatically by `AnimateOnScroll` after animation completes
-
-## UX Suggestions I'd Recommend
-1. **Rounded corners + subtle border**: Add `rounded-xl border border-white/10` to give them a polished, contained feel that matches the Command Center Noir aesthetic elsewhere on the site
-2. **Max width cap on each card**: ~220px per card so they don't stretch too wide on large screens, keeping the "collectible card" proportion
-3. **`aspect-auto`**: Let the natural card aspect ratio dictate height rather than forcing a fixed ratio, avoiding distortion
+## Visual Changes
+- **Gallery max-width**: Increase from `max-w-3xl` (~768px) to `max-w-5xl` (~1024px), creating a ~250px wider footprint than the surrounding text
+- **Vertical breathing room**: Increase top margin (`mt-12`) and keep bottom margin (`mb-16`) so cards don't crowd the accordion or the quote block
+- **Card gaps**: Increase from `gap-6` to `gap-8` (desktop) for more horizontal breathing room
+- **Card size**: Bump `max-w-[220px]` to `max-w-[260px]` so cards fill the wider container proportionally
+- **Enhanced depth**: Stronger shadow (`shadow-2xl`) at rest, plus the existing hover lift
 
 ## Technical Details
 
-### New assets (copy 3 files)
-- `user-uploads://CARD_-_PERMIT_TRAP.webp` -> `src/assets/card-permit-trap.webp`
-- `user-uploads://CARD_-_EXLUDES_LABOR_1.webp` -> `src/assets/card-excludes-labor.webp`
-- `user-uploads://CARD_-_MONSTER_ANCHOR.webp` -> `src/assets/card-monster-anchor.webp`
+### File: `src/components/home/FailurePointsSection.tsx`
+One block edit on the Threat Card gallery div (around line 144):
 
-### Modified file: `src/components/home/FailurePointsSection.tsx`
-- Import the 3 card images
-- Insert a new `div` block between lines 141 and 142 (after the accordion grid, before the closing quote)
-- The block contains a `grid` with 3 `AnimateOnScroll` wrappers, each holding an `img` tag
-- Cards get: `rounded-xl shadow-xl -translate-y-2 hover:-translate-y-3 hover:shadow-2xl transition-all duration-300 border border-white/10`
+**Current:**
+```html
+<div className="max-w-3xl mx-auto mb-16 grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center">
+```
 
-No new components or dependencies needed -- this uses the existing `AnimateOnScroll` wrapper and standard Tailwind utilities.
+**Updated to:**
+```html
+<div className="max-w-5xl mx-auto mt-12 mb-16 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 justify-items-center">
+```
+
+And each card image class changes from:
+```
+max-w-[220px] ... shadow-xl -translate-y-2
+```
+to:
+```
+max-w-[260px] ... shadow-2xl -translate-y-3
+```
+
+No new files, no new components, no new dependencies. Just two class string updates in the existing file.
