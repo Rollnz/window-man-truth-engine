@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import {
@@ -11,40 +11,113 @@ import {
   AlertCircle,
   Upload,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ShimmerBadge } from "@/components/ui/ShimmerBadge";
-import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
-import { UrgencyTicker } from "@/components/social-proof/UrgencyTicker";
-import { useCountUp } from "@/components/social-proof/useCountUp";
 import { ROUTES } from "@/config/navigation";
+import heroImage from "@/assets/hero-quote-scan.webp";
 
-/* ── scoped keyframes & utility classes ───────────────────── */
-const scopedStyles = `
-  .s3-grid-pattern {
-    background-image:
-      linear-gradient(to right, rgba(30,41,59,0.3) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(30,41,59,0.3) 1px, transparent 1px);
+/* ── scoped styles & keyframes ───────────────────────────── */
+const styleSheet = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  .font-mono-jb {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  @keyframes fadeUp {
+    0% { opacity: 0; transform: translateY(24px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-fade-up {
+    opacity: 0;
+    animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .delay-150 { animation-delay: 150ms; }
+  .delay-250 { animation-delay: 250ms; }
+  .delay-350 { animation-delay: 350ms; }
+  .delay-450 { animation-delay: 450ms; }
+  .delay-550 { animation-delay: 550ms; }
+
+  @keyframes chipPingIn {
+    0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+    50% { transform: scale(1.02) translateY(-2px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .animate-chip {
+    opacity: 0;
+    animation: chipPingIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  @keyframes slowDrift {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(1deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+
+  .animate-drift {
+    animation: slowDrift 8s ease-in-out infinite;
+  }
+
+  .bg-grid-pattern {
+    background-image: linear-gradient(to right, rgba(30, 41, 59, 0.3) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(30, 41, 59, 0.3) 1px, transparent 1px);
     background-size: 40px 40px;
   }
-
-  @keyframes s3SlowDrift {
-    0%   { transform: translateY(0)    rotate(0deg); }
-    50%  { transform: translateY(-15px) rotate(1deg); }
-    100% { transform: translateY(0)    rotate(0deg); }
-  }
-  .s3-drift { animation: s3SlowDrift 8s ease-in-out infinite; }
 `;
 
-/* ── trust-row dots ───────────────────────────────────────── */
-const TrustDot = () => (
-  <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-500" aria-hidden="true" />
-);
+/* ── Ticking Counter Hook ────────────────────────────────── */
+const useCounter = (end: number, duration = 2000, startPlaying = true) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!startPlaying) return;
+    let startTimestamp: number | null = null;
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setCount(Math.floor(easeProgress * end));
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+  }, [end, duration, startPlaying]);
+
+  return count.toLocaleString();
+};
+
+/* ── Intersection Observer Hook ──────────────────────────── */
+const useOnScreen = (options?: IntersectionObserverInit): [React.RefObject<HTMLDivElement>, boolean] => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        observer.unobserve(entry.target);
+      }
+    }, options);
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+    return () => {
+      if (ref.current) observer.unobserve(ref.current);
+    };
+  }, [ref, options]);
+
+  return [ref, isVisible];
+};
 
 /* ══════════════════════════════════════════════════════════
    SCENE 1 — HERO
    ══════════════════════════════════════════════════════════ */
 function HeroSection() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const scannedCount = useCounter(142085, 3000);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const x = (e.clientX / window.innerWidth - 0.5) * 2;
@@ -55,105 +128,115 @@ function HeroSection() {
   return (
     <section
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
-      style={{ backgroundColor: "#070B14" }}
+      style={{ backgroundColor: "var(--bg-terminal)" }}
       onMouseMove={handleMouseMove}
     >
-      {/* parallax grid */}
+      {/* Hero background image */}
+      <img
+        src={heroImage}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        style={{ opacity: 0.3 }}
+      />
+
+      {/* Parallax Grid Background */}
       <div
-        className="s3-grid-pattern absolute inset-0 pointer-'none opacity-60"
+        className="bg-grid-pattern absolute inset-0 pointer-events-none opacity-60"
         style={{
           transform: `translate(${mousePos.x}px, ${mousePos.y}px)`,
-          transition: "transform 0.15s ease-out'",
+          transition: "transform 0.15s ease-out",
         }}
       />
 
-      {/* radial vignette */}
+      {/* Radial Gradient overlay for center focus */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-            background: 'radial-gradient(ellipse at center, transparent 30%, #070B14 80%)',
+          background: "radial-gradient(ellipse at center, transparent 30%, var(--bg-terminal) 80%)",
         }}
       />
 
-      {/* glow spot */}
+      {/* Subtle glow spot */}
       <div
         className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse, rgba(0,80,216,0.08), transparent 70%)',
+          background: "radial-gradient(ellipse, rgba(0,80,216,0.08), transparent 70%)",
         }}
       />
 
-      {/* content */}
+      {/* Content */}
       <div className="relative z-10 max-w-3xl mx-auto text-center px-4 sm:px-6 py-20 sm:py-28">
-        {/* badge */}
-        <AnimateOnScroll duration={500}>
-          <ShimmerBadge
-            text="Free AI Quote Scan"
-            icon={Search}
-            className="mx-auto mb-6 text-sky-300 bg-sky-500/10 border-sky-400/20"
-          />
-        </AnimateOnScroll>
+        {/* Badge */}
+        <div className="animate-fade-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-sky-400/20 bg-sky-500/10 text-sky-300 text-sm font-medium mb-6">
+          <Search className="w-4 h-4" />
+          Free AI Quote Scan
+        </div>
 
-        {/* h1 */}
-        <AnimateOnScroll duration={600} delay={100}>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight tracking-tight text-white">
-            Scan Your Quote.{" "}
-            <span
-              className="block mt-1"
-              style={{
-                background: "linear-gradient(135deg, #38BDF8, #818CF8)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              See What's Inside.
-            </span>
-          </h1>
-        </AnimateOnScroll>
+        {/* H1 */}
+        <h1 className="animate-fade-up delay-150 text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight tracking-tight text-white">
+          Scan Your Quote.{" "}
+          <span
+            className="block mt-1"
+            style={{
+              background: "linear-gradient(135deg, #38BDF8, #818CF8)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            See What's Inside.
+          </span>
+        </h1>
 
-        {/* sub */}
-        <AnimateOnScroll duration={600} delay={200}>
-          <p className="mt-6 text-base sm:text-lg text-slate-400 max-w-xl mx-auto leading-relaxed">
-            Upload your estimate and let the AI check pricing, scope,
-            warranties, and contract terms in seconds. Stop overpaying on hidden
-            clauses.
-          </p>
-        </AnimateOnScroll>
+        {/* Subheading */}
+        <p className="animate-fade-up delay-250 mt-6 text-base sm:text-lg text-slate-400 max-w-xl mx-auto leading-relaxed">
+          Upload your estimate and let the AI check pricing, scope, warranties, and contract terms in seconds.
+          Stop overpaying on hidden clauses.
+        </p>
 
         {/* CTAs */}
-        <AnimateOnScroll duration={600} delay={300}>
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button asChild variant="cta" size="lg" className="w-full sm:w-auto bg-[#0050D8] shadow-[0_8px_24px_rgba(0,80,216,0.25)] hover:shadow-[0_12px_32px_rgba(0,80,216,0.35)]">
-              <Link to={ROUTES.QUOTE_SCANNER}>
-                <Upload className="w-4 h-4" />
-                Run Free AI Scan
-              </Link>
-            </Button>
-            <Button asChild variant="frame" size="lg" className="w-full sm:w-auto border-slate-600 text-slate-300 hover:border-slate-400 hover:text-white bg-transparent">
-              <Link to="/signup">
-                Create Free Account
-                <ChevronRight className="w-4 h-4" />
-              </Link>
-            </Button>
-          </div>
-        </AnimateOnScroll>
+        <div className="animate-fade-up delay-350 mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            to={ROUTES.QUOTE_SCANNER}
+            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-white text-base"
+            style={{
+              backgroundColor: "#0050D8",
+              boxShadow: "0 8px 24px rgba(0,80,216,0.25)",
+            }}
+          >
+            <Upload className="w-4 h-4" />
+            Run Free AI Scan
+          </Link>
+          <Link
+            to="/signup"
+            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-slate-300 text-base border border-slate-600 hover:border-slate-400 hover:text-white transition-colors"
+            style={{ backgroundColor: "transparent" }}
+          >
+            Create Free Account
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
 
-        {/* trust row */}
-        <AnimateOnScroll duration={600} delay={450}>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-500">
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              No credit card
-            </span>
-            <TrustDot />
-            <span className="flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-sky-400" />
-              Private report
-            </span>
-            <TrustDot />
-            <span className="flex items-center gap-1.5">⏱ 30–60 seconds</span>
-          </div>
-        </AnimateOnScroll>
+        {/* Trust Row & Ticking Counter */}
+        <div className="animate-fade-up delay-450 mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-500">
+          <span className="flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            No credit card
+          </span>
+          <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-500" aria-hidden="true" />
+          <span className="flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-sky-400" />
+            Private report
+          </span>
+          <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-500" aria-hidden="true" />
+          <span className="flex items-center gap-1.5">
+            ⏱ 30–60 seconds
+          </span>
+          <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-500" aria-hidden="true" />
+          <span className="flex items-center gap-1.5 font-mono-jb text-sky-400">
+            {scannedCount} Quotes Analyzed
+          </span>
+        </div>
       </div>
     </section>
   );
@@ -163,105 +246,111 @@ function HeroSection() {
    SCENE 2 — FEATURES
    ══════════════════════════════════════════════════════════ */
 function FeatureSection() {
+  const [ref, isVisible] = useOnScreen({ threshold: 0.2 });
+
   return (
     <section
       className="relative py-20 sm:py-28 overflow-hidden"
-      style={{ backgroundColor: "#0D1321" }}
+      style={{ backgroundColor: "var(--panel-bg)" }}
     >
-      <div className="container px-4 sm:px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-          {/* left — copy */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div
+          ref={ref}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center"
+        >
+          {/* Left Column: Copy */}
           <div>
-            <AnimateOnScroll duration={500}>
-              <ShimmerBadge
-                text="Audit Intelligence"
-                icon={Search}
-                className="mb-6 text-sky-300 bg-sky-500/10 border-sky-400/20"
-              />
-            </AnimateOnScroll>
+            <div className="animate-fade-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-sky-400/20 bg-sky-500/10 text-sky-300 text-sm font-medium mb-6">
+              <Search className="w-4 h-4" />
+              Audit Intelligence
+            </div>
 
-            <AnimateOnScroll duration={600} delay={100}>
-              <h2 className="text-3xl sm:text-4xl font-extrabold leading-tight tracking-tight text-white">
-                AI Finds What{" "}
-                <span className="text-sky-400">Humans Miss.</span>
-              </h2>
-            </AnimateOnScroll>
+            <h2 className="animate-fade-up delay-150 text-3xl sm:text-4xl font-extrabold leading-tight tracking-tight text-white">
+              AI Finds What{" "}
+              <span className="text-sky-400">Humans Miss.</span>
+            </h2>
 
-            <AnimateOnScroll duration={600} delay={200}>
-              <p className="mt-4 text-slate-400 leading-relaxed max-w-lg">
-                Contractors bury markups in vague line items. Our
-                ledger-matching system cross-references your estimate against
-                thousands of verified market rates, instantly flagging risks and
-                highlighting exact dollar amounts you can negotiate down.
-              </p>
-            </AnimateOnScroll>
+            <p className="animate-fade-up delay-250 mt-4 text-slate-400 leading-relaxed max-w-lg">
+              Contractors bury markups in vague line items. Our ledger-matching system cross-references your estimate against thousands of verified market rates, instantly flagging risks and highlighting exact dollar amounts you can negotiate down.
+            </p>
 
-            <AnimateOnScroll duration={600} delay={300}>
-              <ul className="mt-8 space-y-4 text-sm text-slate-300">
-                <li className="flex items-center gap-3">
-                  <TrendingDown className="w-4 h-4 text-red-400 flex-shrink-0" />
-                  Identify predatory material markups
-                </li>
-                <li className="flex items-center gap-3">
-                  <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                  Flag missing warranty protections
-                </li>
-                <li className="flex items-center gap-3">
-                  <Search className="w-4 h-4 text-sky-400 flex-shrink-0" />
-                  Verify labor rate alignment
-                </li>
-              </ul>
-            </AnimateOnScroll>
+            <ul className="animate-fade-up delay-350 mt-8 space-y-4 text-sm text-slate-300">
+              <li className="flex items-center gap-3">
+                <TrendingDown className="w-4 h-4 text-red-400 flex-shrink-0" />
+                Identify predatory material markups
+              </li>
+              <li className="flex items-center gap-3">
+                <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                Flag missing warranty protections
+              </li>
+              <li className="flex items-center gap-3">
+                <Search className="w-4 h-4 text-sky-400 flex-shrink-0" />
+                Verify labor rate alignment
+              </li>
+            </ul>
           </div>
 
-          {/* right — floating paper visual */}
+          {/* Right Column: Visual */}
           <div className="relative min-h-[420px] flex items-center justify-center">
-            {/* glow */}
+            {/* Subtle Glow */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                background: 'radial-gradient(ellipse at center, rgba(56,189,248,0.06), transparent 70%)',
+                background: "radial-gradient(ellipse at center, rgba(56,189,248,0.06), transparent 70%)",
               }}
             />
 
-            {/* papers container */}
-            <div className="relative w-full max-w-sm mx-auto s3-drift">
-              {/* paper 1 — back */}
+            {/* Floating Papers Layer */}
+            <div className="relative w-full max-w-sm mx-auto animate-drift">
+              {/* Paper 1 (Back) */}
               <div
-                className="absolute top-6 left-4 w-[90%] h-56 rounded-lg border border-slate-700/40 bg-slate-800/40"
-                style={{ transform: "rotate(-3deg)" }}
+                className="absolute top-6 left-4 w-[90%] h-56 rounded-lg"
+                style={{
+                  transform: "rotate(-3deg)",
+                  border: "1px solid rgba(30,41,59,0.4)",
+                  backgroundColor: "rgba(30,41,59,0.4)",
+                }}
               >
                 <div className="p-4 space-y-3">
-                  <div className="h-2 w-3/4 rounded bg-slate-700/50" />
-                  <div className="h-2 w-1/2 rounded bg-slate-700/50" />
-                  <div className="h-2 w-2/3 rounded bg-slate-700/50" />
-                  <div className="flex justify-between text-[10px] font-mono text-slate-500 mt-4">
+                  {/* Ledger Lines */}
+                  <div className="h-2 w-3/4 rounded" style={{ backgroundColor: "rgba(51,65,85,0.5)" }} />
+                  <div className="h-2 w-1/2 rounded" style={{ backgroundColor: "rgba(51,65,85,0.5)" }} />
+                  <div className="h-2 w-2/3 rounded" style={{ backgroundColor: "rgba(51,65,85,0.5)" }} />
+                  <div className="flex justify-between text-[10px] font-mono-jb text-slate-500 mt-4">
                     <span>MAT-001</span>
                     <span>$4,250.00</span>
                   </div>
                 </div>
               </div>
 
-              {/* paper 2 — front */}
-              <div className="relative rounded-lg border border-slate-700/60 bg-[#111827] shadow-2xl">
-                <div className="flex items-center justify-between p-4 border-b border-slate-700/40">
-                  <span className="text-[10px] font-mono text-slate-400 tracking-wider">
-                    ESTIMATE #8492
-                  </span>
-                  <span className="text-sm font-bold text-white">
-                    $42,850.00
-                  </span>
+              {/* Paper 2 (Front) */}
+              <div
+                className="relative rounded-lg shadow-2xl"
+                style={{
+                  border: "1px solid rgba(30,41,59,0.6)",
+                  backgroundColor: "#111827",
+                }}
+              >
+                <div
+                  className="flex items-center justify-between p-4"
+                  style={{ borderBottom: "1px solid rgba(30,41,59,0.4)" }}
+                >
+                  <span className="text-[10px] font-mono-jb text-slate-400 tracking-wider">ESTIMATE #8492</span>
+                  <span className="text-sm font-bold text-white">$42,850.00</span>
                 </div>
 
-                {/* table header */}
-                <div className="grid grid-cols-3 gap-2 px-4 py-2 text-[9px] font-mono text-slate-500 uppercase tracking-wider border-b border-slate-700/30">
-                  <span>Description</span>
-                  <span className="text-center">Qty</span>
-                  <span className="text-right">Total</span>
+                {/* Table headers */}
+                <div
+                  className="grid grid-cols-3 gap-2 px-4 py-2 text-[9px] font-mono-jb text-slate-500 uppercase tracking-wider"
+                  style={{ borderBottom: "1px solid rgba(30,41,59,0.3)" }}
+                >
+                  <span>DESCRIPTION</span>
+                  <span className="text-center">QTY</span>
+                  <span className="text-right">TOTAL</span>
                 </div>
 
-                {/* rows */}
-                <div className="divide-y divide-slate-700/20">
+                {/* Line Items */}
+                <div className="divide-y" style={{ borderColor: "rgba(30,41,59,0.2)" }}>
                   {[
                     { desc: "Premium LVP Flooring", qty: "1200", total: "$8,400" },
                     { desc: "Labor & Prep", qty: "--", total: "$12,000" },
@@ -273,62 +362,69 @@ function FeatureSection() {
                     >
                       <span>{row.desc}</span>
                       <span className="text-center text-slate-500">{row.qty}</span>
-                      <span className="text-right font-mono">{row.total}</span>
+                      <span className="text-right font-mono-jb">{row.total}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* callout chips */}
+            {/* Callout Chips (Ping in staggered) */}
             <div className="absolute inset-0 pointer-events-none">
-              {/* chip 1 — hidden fee */}
-              <AnimateOnScroll delay={600} duration={500}>
-                <div className="absolute -right-2 sm:right-0 top-4 bg-red-950/80 border border-red-500/30 rounded-lg p-3 backdrop-blur-sm max-w-[200px]">
+              {/* Chip 1: Hidden Fee */}
+              {isVisible && (
+                <div
+                  className="animate-chip absolute -right-2 sm:right-0 top-4 rounded-lg p-3 backdrop-blur-sm max-w-[200px]"
+                  style={{
+                    backgroundColor: "rgba(69,10,10,0.8)",
+                    border: "1px solid rgba(239,68,68,0.3)",
+                    animationDelay: "200ms",
+                  }}
+                >
                   <div className="flex items-center gap-1.5 mb-1">
                     <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-                    <span className="text-[11px] font-semibold text-red-300">
-                      Hidden Fee Detected
-                    </span>
+                    <span className="text-[11px] font-semibold text-red-300">Hidden Fee Detected</span>
                   </div>
-                  <p className="text-[10px] text-red-200/70">
-                    Labor &amp; Prep is 30% above market.
-                  </p>
-                  <p className="text-[10px] font-semibold text-emerald-400 mt-1">
-                    Potential Save: $3,600
-                  </p>
+                  <p className="text-[10px] text-red-200/70">Labor &amp; Prep is 30% above market.</p>
+                  <p className="text-[10px] font-semibold text-emerald-400 mt-1">Potential Save: $3,600</p>
                 </div>
-              </AnimateOnScroll>
+              )}
 
-              {/* chip 2 — warranty */}
-              <AnimateOnScroll delay={800} duration={500}>
-                <div className="absolute -left-2 sm:left-0 bottom-24 bg-amber-950/80 border border-amber-500/30 rounded-lg p-3 backdrop-blur-sm max-w-[200px]">
+              {/* Chip 2: Warranty */}
+              {isVisible && (
+                <div
+                  className="animate-chip absolute -left-2 sm:left-0 bottom-24 rounded-lg p-3 backdrop-blur-sm max-w-[200px]"
+                  style={{
+                    backgroundColor: "rgba(69,26,3,0.8)",
+                    border: "1px solid rgba(245,158,11,0.3)",
+                    animationDelay: "500ms",
+                  }}
+                >
                   <div className="flex items-center gap-1.5 mb-1">
                     <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="text-[11px] font-semibold text-amber-300">
-                      Warranty Clause Missing
-                    </span>
+                    <span className="text-[11px] font-semibold text-amber-300">Warranty Clause Missing</span>
                   </div>
-                  <p className="text-[10px] text-amber-200/70">
-                    No material defect guarantee found.
-                  </p>
+                  <p className="text-[10px] text-amber-200/70">No material defect guarantee found.</p>
                 </div>
-              </AnimateOnScroll>
+              )}
 
-              {/* chip 3 — scope */}
-              <AnimateOnScroll delay={1000} duration={500}>
-                <div className="absolute -right-2 sm:right-0 bottom-4 bg-sky-950/80 border border-sky-500/30 rounded-lg p-3 backdrop-blur-sm max-w-[200px]">
+              {/* Chip 3: Scope */}
+              {isVisible && (
+                <div
+                  className="animate-chip absolute -right-2 sm:right-0 bottom-4 rounded-lg p-3 backdrop-blur-sm max-w-[200px]"
+                  style={{
+                    backgroundColor: "rgba(7,89,133,0.8)",
+                    border: "1px solid rgba(56,189,248,0.3)",
+                    animationDelay: "800ms",
+                  }}
+                >
                   <div className="flex items-center gap-1.5 mb-1">
                     <FileText className="w-3.5 h-3.5 text-sky-400" />
-                    <span className="text-[11px] font-semibold text-sky-300">
-                      Scope Vague
-                    </span>
+                    <span className="text-[11px] font-semibold text-sky-300">Scope Vague</span>
                   </div>
-                  <p className="text-[10px] text-sky-200/70">
-                    "Subfloor Repair" lacks specific footage.
-                  </p>
+                  <p className="text-[10px] text-sky-200/70">"Subfloor Repair" lacks specific footage.</p>
                 </div>
-              </AnimateOnScroll>
+              )}
             </div>
           </div>
         </div>
@@ -351,16 +447,10 @@ export default function Signup3() {
         />
       </Helmet>
 
-      <style>{scopedStyles}</style>
+      <style>{styleSheet}</style>
 
-      <div className="min-h-screen" style={{ backgroundColor: "#070B14" }}>
+      <div className="min-h-screen" style={{ backgroundColor: "var(--bg-terminal)" }}>
         <HeroSection />
-
-        {/* social proof break */}
-        <div className="py-6" style={{ backgroundColor: "#0A0F1C" }}>
-          <UrgencyTicker variant="cyberpunk" size="md" />
-        </div>
-
         <FeatureSection />
       </div>
     </>
