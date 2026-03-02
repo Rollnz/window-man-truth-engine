@@ -302,7 +302,7 @@ function HeroSection() {
         </div>
 
         {/* Trust Row & Ticking Counter */}
-        <div className="animate-fade-up delay-450 mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-500">
+        <div className="animate-fade-up delay-450 mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs" style={{ color: "#FFFFFF" }}>
           <span className="flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
             No credit card
