@@ -59,16 +59,7 @@ export function Signup2Form({ onSubmit, isSubmitting }: Signup2FormProps) {
     (e: React.FormEvent) => {
       e.preventDefault();
       const cleaned = { ...form, phone: stripPhone(form.phone) };
-      const result = signup2Schema.safeParse(cleaned);
-      if (!result.success) {
-        const errs: FormErrors = {};
-        for (const issue of result.error.issues) {
-          const field = issue.path[0] as keyof FormErrors;
-          if (!errs[field]) errs[field] = issue.message;
-        }
-        setErrors(errs);
-        return;
-      }
+      // TESTING MODE: All validation removed
       if (!file) {
         setFileError('Upload your quote to continue');
         return;

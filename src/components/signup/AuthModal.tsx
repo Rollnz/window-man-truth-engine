@@ -167,13 +167,7 @@ export function AuthModal(props: {
                 email: email.trim(),
                 phone: rawPhone,
               };
-              const validationErrors = validateAll(formData);
-              if (Object.keys(validationErrors).length > 0) {
-                setErrors(validationErrors);
-                setTouched(new Set(["first_name", "last_name", "email", "phone"]));
-                triggerShake();
-                return;
-              }
+              // TESTING MODE: All validation removed
               setBusy(true);
               try {
                 await onSubmitProfile(formData);
