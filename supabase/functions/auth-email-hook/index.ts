@@ -1,266 +1,304 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
-import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
+import * as React from 'npm:react@18.3.1'
+import { renderAsync } from 'npm:@react-email/components@0.0.22'
+import { sendLovableEmail, parseEmailWebhookPayload } from 'npm:@lovable.dev/email-js'
+import { WebhookError, verifyWebhookRequest } from 'npm:@lovable.dev/webhooks-js'
+import { SignupEmail } from '../_shared/email-templates/signup.tsx'
+import { InviteEmail } from '../_shared/email-templates/invite.tsx'
+import { MagicLinkEmail } from '../_shared/email-templates/magic-link.tsx'
+import { RecoveryEmail } from '../_shared/email-templates/recovery.tsx'
+import { EmailChangeEmail } from '../_shared/email-templates/email-change.tsx'
+import { ReauthenticationEmail } from '../_shared/email-templates/reauthentication.tsx'
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET") as string;
-
-interface AuthEmailPayload {
-  user: {
-    id: string;
-    email: string;
-    user_metadata?: {
-      name?: string;
-    };
-  };
-  email_data: {
-    token: string;
-    token_hash: string;
-    redirect_to: string;
-    email_action_type: "recovery" | "magiclink" | "signup" | "email_change";
-    site_url: string;
-  };
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, x-lovable-signature, x-lovable-timestamp, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
-function getEmailContent(
-  emailType: string,
-  userName: string,
-  actionUrl: string
-): { subject: string; html: string } {
-  const commonStyles = `
-    <style>
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; line-height: 1.6; color: #333; }
-      .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-      .header { text-align: center; margin-bottom: 30px; }
-      .logo { font-size: 24px; font-weight: bold; color: #0F766E; }
-      .content { background: #f9fafb; border-radius: 12px; padding: 30px; margin-bottom: 30px; }
-      .button { display: inline-block; background: #0F766E; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 20px 0; }
-      .button:hover { background: #0D6460; }
-      .footer { text-align: center; color: #6b7280; font-size: 14px; }
-      .note { background: #fef3c7; border-radius: 8px; padding: 16px; margin-top: 20px; font-size: 14px; }
-    </style>
-  `;
-
-  switch (emailType) {
-    case "recovery":
-      return {
-        subject: "Reset Your Window Truth Engine Password",
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>${commonStyles}</head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <div class="logo">🏠 Window Truth Engine</div>
-              </div>
-              <div class="content">
-                <h2>Reset Your Password</h2>
-                <p>Hi${userName ? ` ${userName}` : ""},</p>
-                <p>We received a request to reset your password. Click the button below to create a new password:</p>
-                <p style="text-align: center;">
-                  <a href="${actionUrl}" class="button">Reset Password</a>
-                </p>
-                <div class="note">
-                  <strong>⏰ This link expires in 1 hour.</strong><br>
-                  If you didn't request this, you can safely ignore this email.
-                </div>
-              </div>
-              <div class="footer">
-                <p>© ${new Date().getFullYear()} Window Truth Engine. All rights reserved.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `,
-      };
-
-    case "magiclink":
-      return {
-        subject: "Sign In to Window Truth Engine",
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>${commonStyles}</head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <div class="logo">🏠 Window Truth Engine</div>
-              </div>
-              <div class="content">
-                <h2>Sign In Request</h2>
-                <p>Hi${userName ? ` ${userName}` : ""},</p>
-                <p>Click the button below to sign in to your account:</p>
-                <p style="text-align: center;">
-                  <a href="${actionUrl}" class="button">Sign In</a>
-                </p>
-                <div class="note">
-                  <strong>⏰ This link expires in 1 hour.</strong><br>
-                  If you didn't request this, you can safely ignore this email.
-                </div>
-              </div>
-              <div class="footer">
-                <p>© ${new Date().getFullYear()} Window Truth Engine. All rights reserved.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `,
-      };
-
-    case "signup":
-      return {
-        subject: "Verify Your Window Truth Engine Email",
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>${commonStyles}</head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <div class="logo">🏠 Window Truth Engine</div>
-              </div>
-              <div class="content">
-                <h2>Welcome! Verify Your Email</h2>
-                <p>Hi${userName ? ` ${userName}` : ""},</p>
-                <p>Thanks for signing up! Please verify your email address by clicking the button below:</p>
-                <p style="text-align: center;">
-                  <a href="${actionUrl}" class="button">Verify Email</a>
-                </p>
-                <div class="note">
-                  <strong>⏰ This link expires in 24 hours.</strong>
-                </div>
-              </div>
-              <div class="footer">
-                <p>© ${new Date().getFullYear()} Window Truth Engine. All rights reserved.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `,
-      };
-
-    case "email_change":
-      return {
-        subject: "Confirm Your Email Change - Window Truth Engine",
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>${commonStyles}</head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <div class="logo">🏠 Window Truth Engine</div>
-              </div>
-              <div class="content">
-                <h2>Confirm Email Change</h2>
-                <p>Hi${userName ? ` ${userName}` : ""},</p>
-                <p>You requested to change your email address. Click the button below to confirm:</p>
-                <p style="text-align: center;">
-                  <a href="${actionUrl}" class="button">Confirm Email Change</a>
-                </p>
-                <div class="note">
-                  <strong>⏰ This link expires in 1 hour.</strong><br>
-                  If you didn't request this change, please secure your account immediately.
-                </div>
-              </div>
-              <div class="footer">
-                <p>© ${new Date().getFullYear()} Window Truth Engine. All rights reserved.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `,
-      };
-
-    default:
-      return {
-        subject: "Window Truth Engine Notification",
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>${commonStyles}</head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <div class="logo">🏠 Window Truth Engine</div>
-              </div>
-              <div class="content">
-                <p>Hi${userName ? ` ${userName}` : ""},</p>
-                <p>You have a notification from Window Truth Engine.</p>
-                <p style="text-align: center;">
-                  <a href="${actionUrl}" class="button">Take Action</a>
-                </p>
-              </div>
-              <div class="footer">
-                <p>© ${new Date().getFullYear()} Window Truth Engine. All rights reserved.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `,
-      };
-  }
+const EMAIL_SUBJECTS: Record<string, string> = {
+  signup: 'Confirm your email',
+  invite: "You've been invited",
+  magiclink: 'Your login link',
+  recovery: 'Reset your password',
+  email_change: 'Confirm your new email',
+  reauthentication: 'Your verification code',
 }
 
-serve(async (req: Request): Promise<Response> => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+// Template mapping
+const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
+  signup: SignupEmail,
+  invite: InviteEmail,
+  magiclink: MagicLinkEmail,
+  recovery: RecoveryEmail,
+  email_change: EmailChangeEmail,
+  reauthentication: ReauthenticationEmail,
+}
+
+// Configuration
+const SITE_NAME = "window-man-truth-engine"
+const SENDER_DOMAIN = "notify.itswindowman.com"
+const ROOT_DOMAIN = "itswindowman.com"
+const FROM_DOMAIN = "itswindowman.com" // Domain shown in From address (may be root or sender subdomain)
+
+// Sample data for preview mode ONLY (not used in actual email sending).
+// URLs are baked in at scaffold time from the project's real data.
+// The sample email uses a fixed placeholder (RFC 6761 .test TLD) so the Go backend
+// can always find-and-replace it with the actual recipient when sending test emails,
+// even if the project's domain has changed since the template was scaffolded.
+const SAMPLE_PROJECT_URL = "https://window-man-truth-engine.lovable.app"
+const SAMPLE_EMAIL = "user@example.test"
+const SAMPLE_DATA: Record<string, object> = {
+  signup: {
+    siteName: SITE_NAME,
+    siteUrl: SAMPLE_PROJECT_URL,
+    recipient: SAMPLE_EMAIL,
+    confirmationUrl: SAMPLE_PROJECT_URL,
+  },
+  magiclink: {
+    siteName: SITE_NAME,
+    confirmationUrl: SAMPLE_PROJECT_URL,
+  },
+  recovery: {
+    siteName: SITE_NAME,
+    confirmationUrl: SAMPLE_PROJECT_URL,
+  },
+  invite: {
+    siteName: SITE_NAME,
+    siteUrl: SAMPLE_PROJECT_URL,
+    confirmationUrl: SAMPLE_PROJECT_URL,
+  },
+  email_change: {
+    siteName: SITE_NAME,
+    email: SAMPLE_EMAIL,
+    newEmail: SAMPLE_EMAIL,
+    confirmationUrl: SAMPLE_PROJECT_URL,
+  },
+  reauthentication: {
+    token: '123456',
+  },
+}
+
+// Preview endpoint handler - returns rendered HTML without sending email
+async function handlePreview(req: Request): Promise<Response> {
+  const previewCorsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, content-type',
   }
 
-  const payload = await req.text();
-  const headers = Object.fromEntries(req.headers);
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: previewCorsHeaders })
+  }
 
+  const apiKey = Deno.env.get('LOVABLE_API_KEY')
+  const authHeader = req.headers.get('Authorization')
+
+  if (!apiKey || authHeader !== `Bearer ${apiKey}`) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...previewCorsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  let type: string
   try {
-    // Verify the webhook signature
-    const wh = new Webhook(hookSecret);
-    const {
-      user,
-      email_data: { token, token_hash, redirect_to, email_action_type, site_url },
-    } = wh.verify(payload, headers) as AuthEmailPayload;
+    const body = await req.json()
+    type = body.type
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
+      status: 400,
+      headers: { ...previewCorsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
 
-    console.log(`Processing ${email_action_type} email for ${user.email}`);
+  const EmailTemplate = EMAIL_TEMPLATES[type]
 
-    // Build the action URL
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? site_url;
-    const actionUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`;
+  if (!EmailTemplate) {
+    return new Response(JSON.stringify({ error: `Unknown email type: ${type}` }), {
+      status: 400,
+      headers: { ...previewCorsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
 
-    // Get email content based on type
-    const userName = user.user_metadata?.name || "";
-    const { subject, html } = getEmailContent(email_action_type, userName, actionUrl);
+  const sampleData = SAMPLE_DATA[type] || {}
+  const html = await renderAsync(React.createElement(EmailTemplate, sampleData))
 
-    // Send email via Resend
-    const { data, error } = await resend.emails.send({
-      from: "Window Truth Engine <noreply@notify.itswindowman.com>",
-      to: [user.email],
-      subject,
-      html,
-    });
+  return new Response(html, {
+    status: 200,
+    headers: { ...previewCorsHeaders, 'Content-Type': 'text/html; charset=utf-8' },
+  })
+}
 
-    if (error) {
-      console.error("Resend error:", error);
-      throw new Error(`Failed to send email: ${error.message}`);
+// Webhook handler - verifies signature and sends email
+async function handleWebhook(req: Request): Promise<Response> {
+  const apiKey = Deno.env.get('LOVABLE_API_KEY')
+
+  if (!apiKey) {
+    console.error('LOVABLE_API_KEY not configured')
+    return new Response(
+      JSON.stringify({ error: 'Server configuration error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Verify signature + timestamp, then parse payload.
+  let payload: any
+  let run_id = ''
+  try {
+    const verified = await verifyWebhookRequest({
+      req,
+      secret: apiKey,
+      parser: parseEmailWebhookPayload,
+    })
+    payload = verified.payload
+    run_id = payload.run_id
+  } catch (error) {
+    if (error instanceof WebhookError) {
+      switch (error.code) {
+        case 'invalid_signature':
+        case 'missing_timestamp':
+        case 'invalid_timestamp':
+        case 'stale_timestamp':
+          console.error('Invalid webhook signature', { error: error.message })
+          return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        case 'invalid_payload':
+        case 'invalid_json':
+          console.error('Invalid webhook payload', { error: error.message })
+          return new Response(
+            JSON.stringify({ error: 'Invalid webhook payload' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+      }
     }
 
-    console.log(`Email sent successfully: ${data?.id}`);
-
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error: any) {
-    console.error("Auth email hook error:", error);
+    console.error('Webhook verification failed', { error })
     return new Response(
-      JSON.stringify({
-        error: {
-          http_code: error.code || 500,
-          message: error.message,
-        },
-      }),
-      {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+      JSON.stringify({ error: 'Invalid webhook payload' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
-});
+
+  if (!run_id) {
+    console.error('Webhook payload missing run_id')
+    return new Response(
+      JSON.stringify({ error: 'Invalid webhook payload' }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
+  }
+
+  if (payload.version !== '1') {
+    console.error('Unsupported payload version', { version: payload.version, run_id })
+    return new Response(
+      JSON.stringify({ error: `Unsupported payload version: ${payload.version}` }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
+  }
+
+  // The email action type is in payload.data.action_type (e.g., "signup", "recovery")
+  // payload.type is the hook event type ("auth")
+  const emailType = payload.data.action_type
+  console.log('Received auth event', { emailType, email: payload.data.email, run_id })
+
+  const EmailTemplate = EMAIL_TEMPLATES[emailType]
+  if (!EmailTemplate) {
+    console.error('Unknown email type', { emailType, run_id })
+    return new Response(
+      JSON.stringify({ error: `Unknown email type: ${emailType}` }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Build template props from payload.data (HookData structure)
+  const templateProps = {
+    siteName: SITE_NAME,
+    siteUrl: `https://${ROOT_DOMAIN}`,
+    recipient: payload.data.email,
+    confirmationUrl: payload.data.url,
+    token: payload.data.token,
+    email: payload.data.email,
+    newEmail: payload.data.new_email,
+  }
+
+  // Render React Email to HTML and plain text
+  const html = await renderAsync(React.createElement(EmailTemplate, templateProps))
+  const text = await renderAsync(React.createElement(EmailTemplate, templateProps), {
+    plainText: true,
+  })
+
+  // Send email via Lovable Email API
+  // The callback URL is provided in the payload by Lovable, ensuring correct routing
+  // for both production and local development
+  const callbackUrl = payload.data.callback_url
+  if (!callbackUrl) {
+    console.error('No callback_url in payload', { run_id })
+    return new Response(JSON.stringify({ error: 'Missing callback_url in payload' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  let result: { message_id?: string }
+  try {
+    result = await sendLovableEmail(
+      {
+        run_id,
+        to: payload.data.email,
+        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+        sender_domain: SENDER_DOMAIN,
+        subject: EMAIL_SUBJECTS[emailType] || 'Notification',
+        html,
+        text,
+        purpose: 'transactional',
+      },
+      { apiKey, sendUrl: callbackUrl }
+    )
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to send email'
+    console.error('Email API error', { error: message, run_id })
+    return new Response(JSON.stringify({ error: 'Failed to send email' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  console.log('Email sent successfully', { message_id: result.message_id, run_id })
+
+  return new Response(
+    JSON.stringify({ success: true, message_id: result.message_id }),
+    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+Deno.serve(async (req) => {
+  const url = new URL(req.url)
+
+  // Handle CORS preflight for main endpoint
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  // Route to preview handler for /preview path
+  if (url.pathname.endsWith('/preview')) {
+    return handlePreview(req)
+  }
+
+  // Main webhook handler
+  try {
+    return await handleWebhook(req)
+  } catch (error) {
+    console.error('Webhook handler error:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+})

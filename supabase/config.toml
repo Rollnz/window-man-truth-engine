@@ -1,28 +1,23 @@
 project_id = "kffoximblqwcnznwvugu"
 
-[functions.log-event]
-verify_jwt = false
-
-[functions.analyze-consultation-quote]
-verify_jwt = false
-
-[functions.admin-trigger-analysis]
-verify_jwt = false
-
-[functions.verify-lead-exists]
-verify_jwt = false
-
-[functions.send-otp]
-verify_jwt = false
-
-[functions.verify-otp]
-verify_jwt = false
-
-[functions.initiate-lead-verification]
-verify_jwt = false
-
-[functions.verify-lead-otp]
-verify_jwt = false
-
-[functions.orchestrate-quote-analysis]
-verify_jwt = false
+[functions]
+  [functions.admin-trigger-analysis]
+    verify_jwt = false
+  [functions.analyze-consultation-quote]
+    verify_jwt = false
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.initiate-lead-verification]
+    verify_jwt = false
+  [functions.log-event]
+    verify_jwt = false
+  [functions.orchestrate-quote-analysis]
+    verify_jwt = false
+  [functions.send-otp]
+    verify_jwt = false
+  [functions.verify-lead-exists]
+    verify_jwt = false
+  [functions.verify-lead-otp]
+    verify_jwt = false
+  [functions.verify-otp]
+    verify_jwt = false
