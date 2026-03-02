@@ -1,395 +1,239 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useSessionData } from '@/hooks/useSessionData';
-import { useToast } from '@/hooks/use-toast';
-import { Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { ShieldCheck, FileText, ArrowRight, Upload, Lock, CheckCircle2, AlertTriangle, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { trackEvent } from '@/lib/gtm';
-import { stripPhone } from '@/lib/phone-mask';
-import { NOIR, EASE_EXPO_OUT, DURATION } from '@/lib/motion-tokens';
+import { ROUTES } from '@/config/navigation';
 
-import { Signup2Form } from '@/components/signup2/Signup2Form';
-import { ExtractionTheater } from '@/components/signup2/ExtractionTheater';
-import { OtpGate } from '@/components/signup2/OtpGate';
-import { AuditReveal } from '@/components/signup2/AuditReveal';
-import { SystemStatusPanel } from '@/components/signup2/SystemStatusPanel';
-
-// ── Types ──────────────────────────────────────────────────────────────
-type Phase = 'FORM' | 'UPLOADING' | 'THEATER' | 'OTP_GATE' | 'REVEAL';
-
-type SaveLeadResponse = { leadId: string };
-type UploadQuoteResponse = { pending_scan_uuid?: string; quote_analysis_id?: string; file_id?: string; success: boolean };
-type OrchestrateResponse = { success: boolean; quote_analysis_id: string; analyzed_at: string | null; analysis_json: any };
-
-// ── localStorage helpers ───────────────────────────────────────────────
-const LS = {
-  phase: 'wm.signup2.phase',
-  accountId: 'wm.signup2.account_id',
-  scanId: 'wm.signup2.scan_id',
-  phone: 'wm.signup2.phone',
-  email: 'wm.signup2.email',
-} as const;
-
-function lsGet<T>(key: string): T | null {
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : null;
-  } catch { return null; }
-}
-function lsSet(key: string, value: unknown) { window.localStorage.setItem(key, JSON.stringify(value)); }
-function lsDel(key: string) { window.localStorage.removeItem(key); }
-
-// ── Edge-function caller ───────────────────────────────────────────────
-async function callEdge<T>(fnName: string, body: unknown, token?: string | null): Promise<{ status: number; data?: T; errorText?: string }> {
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${fnName}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(body),
-  });
-  let json: any = null;
-  try { json = await res.json(); } catch { /* noop */ }
-  if (!res.ok) return { status: res.status, errorText: json?.error || json?.message || res.statusText };
-  return { status: res.status, data: json as T };
-}
-
-// ── Main Component ─────────────────────────────────────────────────────
 export default function Signup2() {
-  const { toast } = useToast();
-  const { sessionId, sessionData, updateFields } = useSessionData();
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  const [phase, setPhase] = useState<Phase>(() => lsGet<Phase>(LS.phase) ?? 'FORM');
-  const [accountId, setAccountId] = useState<string | null>(() => lsGet<string>(LS.accountId));
-  const [scanId, setScanId] = useState<string | null>(() => lsGet<string>(LS.scanId));
-  const [phone, setPhone] = useState<string>(() => lsGet<string>(LS.phone) ?? '');
-  const [email, setEmail] = useState<string>(() => lsGet<string>(LS.email) ?? '');
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [analysisReady, setAnalysisReady] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<OrchestrateResponse | null>(null);
-  const [metadata, setMetadata] = useState<{ contractor?: string; openings?: number; total?: string } | null>(null);
-  const [otpError, setOtpError] = useState<string | null>(null);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-
-  const pollingRef = useRef(false);
-  const theaterDone = useRef(false);
-
-  // Persist
-  useEffect(() => { lsSet(LS.phase, phase); }, [phase]);
-  useEffect(() => { if (accountId) lsSet(LS.accountId, accountId); }, [accountId]);
-  useEffect(() => { if (scanId) lsSet(LS.scanId, scanId); }, [scanId]);
-  useEffect(() => { if (phone) lsSet(LS.phone, phone); }, [phone]);
-  useEffect(() => { if (email) lsSet(LS.email, email); }, [email]);
-
-  const resetAll = useCallback(() => {
-    setPhase('FORM');
-    setAccountId(null);
-    setScanId(null);
-    setPhone('');
-    setEmail('');
-    setIsSubmitting(false);
-    setOtpVerified(false);
-    setAnalysisReady(false);
-    setAnalysisResult(null);
-    setMetadata(null);
-    setOtpError(null);
-    pollingRef.current = false;
-    theaterDone.current = false;
-    Object.values(LS).forEach(lsDel);
-  }, []);
-
-  // ── FORM submit ──────────────────────────────────────────────────────
-  const handleFormSubmit = useCallback(
-    async (data: { first_name: string; last_name: string; email: string; phone: string }, file: File) => {
-      setIsSubmitting(true);
-      const cleanPhone = stripPhone(data.phone);
-      setPhone(cleanPhone);
-      setEmail(data.email);
-
-      try {
-        // 1. Save lead
-        const { data: session } = await supabase.auth.getSession();
-        const token = session.session?.access_token ?? null;
-
-        const { status, data: leadData, errorText } = await callEdge<SaveLeadResponse>('save-lead', {
-          sourceTool: 'signup2',
-          firstName: data.first_name,
-          lastName: data.last_name,
-          email: data.email || undefined,
-          phone: cleanPhone,
-          metadata: { flow: 'signup2', page: '/signup2' },
-        }, token);
-
-        if (status >= 400 || !leadData?.leadId) throw new Error(errorText || 'Failed to save lead');
-        setAccountId(leadData.leadId);
-        updateFields({ firstName: data.first_name, lastName: data.last_name, email: data.email, phone: cleanPhone, leadId: leadData.leadId });
-        trackEvent('wm_lead', { source_tool: 'signup2', lead_id: leadData.leadId });
-
-        // 2. Upload file
-        setPhase('UPLOADING');
-        const uploadUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-quote`;
-        const form = new FormData();
-        form.append('file', file);
-        form.append('session_id', sessionId);
-        form.append('source_page', '/signup2');
-        form.append('lead_id', leadData.leadId);
-
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'POST',
-          headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-          body: form,
-        });
-        const uploadJson = (await uploadRes.json()) as UploadQuoteResponse;
-        if (!uploadRes.ok || !uploadJson?.success) throw new Error('Upload failed');
-
-        const id = uploadJson.pending_scan_uuid || uploadJson.quote_analysis_id || uploadJson.file_id || null;
-        if (!id) throw new Error('No scan ID returned');
-        setScanId(id);
-        trackEvent('wm_scanner_upload', { source_tool: 'signup2', scan_id: id });
-
-        // 3. Transition to THEATER + start polling
-        setPhase('THEATER');
-        startPolling(leadData.leadId, id);
-      } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : 'Please try again.';
-        toast({ title: 'Error', description: message, variant: 'destructive' });
-        setPhase('FORM');
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [sessionId, toast, updateFields],
-  );
-
-  // ── Polling ──────────────────────────────────────────────────────────
-  const startPolling = useCallback((acctId: string, qaId: string) => {
-    if (pollingRef.current) return;
-    pollingRef.current = true;
-
-    const poll = async () => {
-      try {
-        const { data: session } = await supabase.auth.getSession();
-        const token = session.session?.access_token ?? null;
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orchestrate-quote-analysis`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ account_id: acctId, quote_analysis_id: qaId }),
-        });
-
-        if (res.status === 409) {
-          // Not ready — retry
-          window.setTimeout(poll, 3000);
-          return;
-        }
-
-        const json = (await res.json()) as OrchestrateResponse;
-        if (res.ok && json?.analysis_json) {
-          // Extract metadata for theater
-          const aj = json.analysis_json;
-          setMetadata({
-            contractor: aj.extractedIdentity?.contractorName || aj.contractor,
-            openings: aj.extractedIdentity?.openingsCount ?? aj.openings,
-            total: aj.extractedIdentity?.totalPrice ?? aj.total,
-          });
-          setAnalysisResult(json);
-          setAnalysisReady(true);
-        } else {
-          // Keep polling
-          window.setTimeout(poll, 3000);
-        }
-      } catch {
-        window.setTimeout(poll, 5000);
-      }
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 20;
+      const y = (e.clientY / window.innerHeight - 0.5) * 20;
+      setMousePos({ x, y });
     };
-
-    poll();
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // ── Theater complete → OTP_GATE ──────────────────────────────────────
-  // ── TESTING MODE: Skip OTP_GATE, auto-verify ──────────────────
-  const handleTheaterComplete = useCallback(() => {
-    theaterDone.current = true;
-    setOtpVerified(true);
-    trackEvent('wm_phone_verified', { source_tool: 'signup2', testing_mode: true });
-    // If analysis is already ready, go straight to REVEAL; otherwise wait
-    if (analysisReady) {
-      setPhase('REVEAL');
-      trackEvent('wm_audit_revealed', { source_tool: 'signup2' });
-    } else {
-      setPhase('OTP_GATE'); // will auto-transition via the existing useEffect
-    }
-  }, [analysisReady]);
-
-  // ── OTP verify ───────────────────────────────────────────────────────
-  // ── TESTING MODE: Auto-accept any OTP code ────────────────────
-  const handleVerifyOtp = useCallback(async (_code: string) => {
-    setIsVerifyingOtp(true);
-    setOtpError(null);
-    setOtpVerified(true);
-    trackEvent('wm_phone_verified', { source_tool: 'signup2', testing_mode: true });
-    setIsVerifyingOtp(false);
-  }, []);
-
-  // ── OTP resend ───────────────────────────────────────────────────────
-  const handleResendOtp = useCallback(async () => {
-    const e164 = phone.length === 10 ? `+1${phone}` : `+${phone}`;
-    const { error } = await supabase.auth.signInWithOtp({ phone: e164 });
-    if (error) {
-      toast({ title: 'Resend failed', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Code resent' });
-    }
-  }, [phone, toast]);
-
-  // ── Transition to REVEAL when both gates met ─────────────────────────
-  useEffect(() => {
-    if (otpVerified && analysisReady && phase === 'OTP_GATE') {
-      setPhase('REVEAL');
-      trackEvent('wm_audit_revealed', { source_tool: 'signup2' });
-    }
-  }, [otpVerified, analysisReady, phase]);
-
-  // ── If resuming at OTP_GATE, resend OTP and restart polling ──────────
-  useEffect(() => {
-    if (phase === 'OTP_GATE' && accountId && scanId && !pollingRef.current) {
-      startPolling(accountId, scanId);
-    }
-  }, [phase, accountId, scanId, startPolling]);
-
-  // ── Render ──────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen" style={{ background: NOIR.void, color: '#fff' }}>
-      {/* Noise overlay */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'repeat',
-        }}
-      />
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap');
 
-      {/* Header */}
-      <header
-        className="sticky top-0 z-50 border-b"
-        style={{ background: `${NOIR.void}cc`, borderColor: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)' }}
-      >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <a href="/" className="flex items-center gap-2 text-sm font-bold">
-            <Shield className="h-4 w-4" style={{ color: NOIR.cyan }} />
-            WINDOW MAN
-          </a>
-          <Button variant="ghost" size="sm" className="text-xs text-white/40" onClick={resetAll}>
-            Reset
-          </Button>
-        </div>
-      </header>
+        .font-manrope { font-family: 'Manrope', sans-serif; }
 
-      {/* Main Grid */}
-      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 grid gap-6 lg:grid-cols-12">
-        {/* Left — Workflow (7 cols) */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* Hero */}
+        @keyframes s2FadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .s2-fade-up {
+          opacity: 0;
+          animation: s2FadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .s2-d150 { animation-delay: 150ms; }
+        .s2-d250 { animation-delay: 250ms; }
+        .s2-d350 { animation-delay: 350ms; }
+        .s2-d450 { animation-delay: 450ms; }
+        .s2-d550 { animation-delay: 550ms; }
+
+        .s2-grain {
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+          opacity: 0.04;
+          mix-blend-mode: multiply;
+        }
+
+        .s2-blueprint {
+          background-image:
+            linear-gradient(rgba(0, 80, 216, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 80, 216, 0.04) 1px, transparent 1px);
+          background-size: 32px 32px;
+        }
+
+        .s2-glass {
+          background: rgba(255, 255, 255, 0.75);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.5);
+          box-shadow: 0 10px 40px -10px rgba(0, 80, 216, 0.08);
+        }
+
+        @keyframes s2ScanSweep {
+          0% { top: -20%; opacity: 0; }
+          15% { opacity: 1; }
+          85% { opacity: 1; }
+          100% { top: 110%; opacity: 0; }
+        }
+        .s2-scan-beam {
+          animation: s2ScanSweep 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+          background: linear-gradient(to bottom, rgba(20, 184, 166, 0) 0%, rgba(20, 184, 166, 0.4) 50%, rgba(20, 184, 166, 0.8) 100%);
+          box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+        }
+      `}</style>
+
+      <div className="relative min-h-screen w-full overflow-hidden bg-[#F7F7F4] font-inter text-slate-800 flex items-center pt-20 pb-12 lg:py-0">
+
+        {/* Background Parallax */}
+        <div
+          className="absolute inset-0 z-0 transition-transform duration-700 ease-out will-change-transform scale-105"
+          style={{ transform: `translate(${mousePos.x}px, ${mousePos.y}px)` }}
+        >
           <div
-            className="space-y-3"
-            style={{ animation: `fadeUp ${DURATION.cinematic}s ${EASE_EXPO_OUT} forwards` }}
-          >
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Get Your Free <span style={{ color: NOIR.cyan }}>Window Audit</span>
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2600&q=80")' }}
+          />
+        </div>
+
+        {/* Overlays */}
+        <div className="absolute inset-0 z-0 bg-[#F7F7F4]/85 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 z-0 s2-blueprint pointer-events-none" />
+        <div className="absolute inset-0 z-0 s2-grain pointer-events-none" />
+
+        {/* Main Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+
+          {/* Left Column */}
+          <div className="lg:col-span-7 flex flex-col items-start pt-10 lg:pt-0">
+
+            {/* Badge */}
+            <div className="s2-fade-up s2-d150 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/60 border border-[#0050D8]/20 text-[#0050D8] mb-6 shadow-sm backdrop-blur-sm">
+              <Activity size={14} className="text-[#14B8A6]" />
+              <span className="font-mono text-xs font-semibold tracking-wide uppercase">FREE AI QUOTE SCAN</span>
+            </div>
+
+            {/* Headline */}
+            <h1 className="s2-fade-up s2-d250 font-manrope text-5xl sm:text-6xl lg:text-[68px] font-extrabold text-[#0050D8] leading-[1.05] tracking-tight mb-6">
+              Scan Your Quote.<br />
+              <span className="text-slate-800">See What's Inside.</span>
             </h1>
-            <p className="text-sm text-white/50 max-w-md">
-              Upload your contractor quote. Our AI scans for overpricing, scope gaps, and hidden clauses — verified by phone.
+
+            {/* Subhead */}
+            <p className="s2-fade-up s2-d350 text-lg sm:text-xl text-slate-600 mb-10 max-w-2xl leading-relaxed">
+              Upload your estimate and let the AI check pricing, scope, warranties, and contract terms in seconds.
             </p>
+
+            {/* CTAs */}
+            <div className="s2-fade-up s2-d450 flex flex-col sm:flex-row w-full sm:w-auto gap-4 mb-8">
+              <Button asChild size="lg" className="group relative overflow-hidden bg-[#0050D8] hover:bg-[#0042b3] text-white px-8 py-4 rounded-[20px] font-semibold text-lg shadow-[0_8px_24px_rgba(0,80,216,0.25)] hover:shadow-[0_12px_32px_rgba(0,80,216,0.35)] hover:-translate-y-0.5 transition-all duration-300 h-auto">
+                <Link to={ROUTES.QUOTE_SCANNER}>
+                  <Upload size={20} className="mr-2" />
+                  <span>Run Free AI Scan</span>
+                </Link>
+              </Button>
+
+              <Button asChild variant="outline" size="lg" className="s2-glass hover:bg-white text-[#0050D8] border-[#0050D8]/10 hover:border-[#FF6200] px-8 py-4 rounded-[20px] font-semibold text-lg transition-all duration-300 group h-auto">
+                <Link to="/signup">
+                  Create Free Account
+                  <ArrowRight size={18} className="ml-2 text-[#FF6200] group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
+            </div>
+
+            {/* Trust Row */}
+            <div className="s2-fade-up s2-d550 flex flex-wrap items-center gap-y-2 gap-x-4 text-[13px] font-mono text-slate-500">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck size={14} className="text-[#10B981]" />
+                <span>No credit card</span>
+              </div>
+              <span className="text-slate-300 hidden sm:inline">•</span>
+              <div className="flex items-center gap-1.5">
+                <Lock size={14} className="text-[#0050D8]" />
+                <span>Private report</span>
+              </div>
+              <span className="text-slate-300 hidden sm:inline">•</span>
+              <div className="flex items-center gap-1.5">
+                <Activity size={14} className="text-[#FF6200]" />
+                <span>30–60 seconds</span>
+              </div>
+            </div>
           </div>
 
-          {/* Phase content */}
-          <div
-            className="rounded-xl p-5 sm:p-6"
-            style={{
-              background: NOIR.glass,
-              border: `1px solid ${NOIR.glassBorder}`,
-              backdropFilter: 'blur(16px)',
-            }}
-          >
-            {phase === 'FORM' && (
-              <Signup2Form onSubmit={handleFormSubmit} isSubmitting={isSubmitting} />
-            )}
+          {/* Right Column: Visual Scanning Card */}
+          <div className="lg:col-span-5 relative w-full max-w-md mx-auto s2-fade-up s2-d450">
+            <div className="s2-glass rounded-[24px] p-6 relative overflow-hidden transform transition-transform duration-500 hover:scale-[1.02]">
 
-            {phase === 'UPLOADING' && (
-              <div className="flex flex-col items-center justify-center py-12 gap-4">
-                <div className="w-10 h-10 border-2 rounded-full animate-spin" style={{ borderColor: NOIR.cyan, borderTopColor: 'transparent' }} />
-                <p className="text-sm text-white/60">Uploading document…</p>
+              {/* Mock doc header */}
+              <div className="flex justify-between items-start mb-6 border-b border-slate-200/50 pb-4">
+                <div>
+                  <div className="h-2 w-16 bg-slate-200 rounded-full mb-2" />
+                  <div className="h-3 w-32 bg-slate-300 rounded-full" />
+                </div>
+                <div className="px-2 py-1 bg-[#0050D8]/10 text-[#0050D8] rounded font-mono text-[10px] font-bold tracking-wider">
+                  EST-4092
+                </div>
               </div>
-            )}
 
-            {phase === 'THEATER' && (
-              <ExtractionTheater metadata={metadata} onComplete={handleTheaterComplete} />
-            )}
+              {/* Mock rows */}
+              <div className="space-y-4 mb-8">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-[#10B981]/10 flex items-center justify-center">
+                      <CheckCircle2 size={16} className="text-[#10B981]" />
+                    </div>
+                    <div>
+                      <div className="h-2 w-20 bg-slate-300 rounded-full mb-1" />
+                      <div className="font-mono text-[10px] text-slate-400">Materials Scope</div>
+                    </div>
+                  </div>
+                  <div className="font-mono text-xs font-semibold text-[#10B981]">VERIFIED</div>
+                </div>
 
-            {phase === 'REVEAL' && analysisResult?.analysis_json && (
-              <AuditReveal
-                analysisJson={analysisResult.analysis_json}
-                hasEmail={!!email}
-                onUploadNew={resetAll}
-              />
-            )}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-[#F59E0B]/10 flex items-center justify-center">
+                      <AlertTriangle size={16} className="text-[#F59E0B]" />
+                    </div>
+                    <div>
+                      <div className="h-2 w-24 bg-slate-300 rounded-full mb-1" />
+                      <div className="font-mono text-[10px] text-slate-400">Labor Rate</div>
+                    </div>
+                  </div>
+                  <div className="font-mono text-xs font-semibold text-[#F59E0B]">+12% AVG</div>
+                </div>
 
-            {phase === 'OTP_GATE' && !otpVerified && !analysisReady && (
-              <div className="py-8 text-center space-y-2">
-                <p className="text-sm text-white/50">Finalizing extraction…</p>
-                <div className="w-8 h-8 border-2 rounded-full animate-spin mx-auto" style={{ borderColor: NOIR.cyan, borderTopColor: 'transparent' }} />
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                      <FileText size={16} className="text-slate-400" />
+                    </div>
+                    <div>
+                      <div className="h-2 w-16 bg-slate-200 rounded-full mb-1" />
+                      <div className="font-mono text-[10px] text-slate-400">Wind Mitigation</div>
+                    </div>
+                  </div>
+                  <div className="font-mono text-xs font-semibold text-slate-400">SCANNING...</div>
+                </div>
               </div>
-            )}
 
-            {phase === 'OTP_GATE' && otpVerified && !analysisReady && (
-              <div className="py-8 text-center space-y-2">
-                <p className="text-sm" style={{ color: '#10b981' }}>✓ Phone verified</p>
-                <p className="text-sm text-white/50">Waiting for analysis to complete…</p>
-                <div className="w-8 h-8 border-2 rounded-full animate-spin mx-auto" style={{ borderColor: NOIR.cyan, borderTopColor: 'transparent' }} />
+              {/* Resilience Score */}
+              <div className="bg-slate-50/80 rounded-[16px] p-4 border border-slate-100">
+                <div className="flex justify-between items-end mb-2">
+                  <span className="font-mono text-[10px] font-bold text-slate-500 uppercase">Resilience Score</span>
+                  <span className="font-manrope text-lg font-bold text-[#0050D8]">A+</span>
+                </div>
+                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden flex">
+                  <div className="h-full bg-[#EF4444] w-1/4 opacity-20" />
+                  <div className="h-full bg-[#F59E0B] w-1/4 opacity-20" />
+                  <div className="h-full bg-[#10B981] w-1/2" />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="font-mono text-[8px] text-slate-400">CRITICAL</span>
+                  <span className="font-mono text-[8px] text-slate-400">OPTIMAL</span>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* Right — Status Panel (5 cols) */}
-        <div className="lg:col-span-5">
-          <div className="lg:sticky lg:top-20">
-            <SystemStatusPanel phase={phase} />
+              {/* Scan beam */}
+              <div className="absolute left-0 right-0 h-16 s2-scan-beam pointer-events-none z-20">
+                <div className="absolute bottom-0 w-full h-[1px] bg-[#14B8A6] shadow-[0_0_8px_#14B8A6]" />
+              </div>
+            </div>
+
+            {/* Decorative border */}
+            <div className="absolute -z-10 -right-6 -bottom-6 w-full h-full border-2 border-[#0050D8]/10 rounded-[24px] pointer-events-none" />
           </div>
         </div>
       </div>
-
-      {/* OTP Gate Overlay */}
-      {phase === 'OTP_GATE' && !otpVerified && (
-        <OtpGate
-          phone={phone}
-          onVerify={handleVerifyOtp}
-          onResend={handleResendOtp}
-          isVerifying={isVerifyingOtp}
-          error={otpError}
-        />
-      )}
-
-      {/* Footer */}
-      <footer className="relative z-10 py-6 text-center text-[10px] font-mono text-white/20 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-        © {new Date().getFullYear()} WINDOW MAN • ENCRYPTED • VERIFIED
-      </footer>
-
-      <style>{`
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-    </div>
+    </>
   );
 }
