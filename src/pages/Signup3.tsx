@@ -18,7 +18,7 @@ import { useScrollLock } from "@/hooks/useScrollLock";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import heroImage from "@/assets/hero-quote-scan.webp";
 import windowManLogo from "@/assets/windowman_logo_400.webp";
-
+import ProcessSteps from "@/components/ProcessSteps";
 /* ── Signup3 Header ──────────────────────────────────────── */
 function Signup3Header() {
   const isMobile = useIsMobile();
@@ -536,6 +536,7 @@ export default function Signup3() {
       <div className="min-h-screen" style={{ backgroundColor: "var(--bg-terminal)" }}>
         <Signup3Header />
         <HeroSection />
+        <ProcessSteps />
         <FeatureSection />
       </div>
     </>
