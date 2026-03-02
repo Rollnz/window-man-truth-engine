@@ -216,37 +216,29 @@ export default function Signup2() {
   }, []);
 
   // ── Theater complete → OTP_GATE ──────────────────────────────────────
+  // ── TESTING MODE: Skip OTP_GATE, auto-verify ──────────────────
   const handleTheaterComplete = useCallback(() => {
     theaterDone.current = true;
-    setPhase('OTP_GATE');
-    // Send OTP
-    const e164 = phone.length === 10 ? `+1${phone}` : `+${phone}`;
-    supabase.auth.signInWithOtp({ phone: e164 }).then(({ error }) => {
-      if (error) {
-        toast({ title: 'OTP failed', description: error.message, variant: 'destructive' });
-      } else {
-        trackEvent('wm_phone_otp_sent', { source_tool: 'signup2' });
-      }
-    });
-  }, [phone, toast]);
+    setOtpVerified(true);
+    trackEvent('wm_phone_verified', { source_tool: 'signup2', testing_mode: true });
+    // If analysis is already ready, go straight to REVEAL; otherwise wait
+    if (analysisReady) {
+      setPhase('REVEAL');
+      trackEvent('wm_audit_revealed', { source_tool: 'signup2' });
+    } else {
+      setPhase('OTP_GATE'); // will auto-transition via the existing useEffect
+    }
+  }, [analysisReady]);
 
   // ── OTP verify ───────────────────────────────────────────────────────
-  const handleVerifyOtp = useCallback(async (code: string) => {
+  // ── TESTING MODE: Auto-accept any OTP code ────────────────────
+  const handleVerifyOtp = useCallback(async (_code: string) => {
     setIsVerifyingOtp(true);
     setOtpError(null);
-    try {
-      const e164 = phone.length === 10 ? `+1${phone}` : `+${phone}`;
-      const { error } = await supabase.auth.verifyOtp({ phone: e164, token: code, type: 'sms' });
-      if (error) throw new Error(error.message);
-      setOtpVerified(true);
-      trackEvent('wm_phone_verified', { source_tool: 'signup2' });
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Invalid code';
-      setOtpError(message);
-    } finally {
-      setIsVerifyingOtp(false);
-    }
-  }, [phone]);
+    setOtpVerified(true);
+    trackEvent('wm_phone_verified', { source_tool: 'signup2', testing_mode: true });
+    setIsVerifyingOtp(false);
+  }, []);
 
   // ── OTP resend ───────────────────────────────────────────────────────
   const handleResendOtp = useCallback(async () => {

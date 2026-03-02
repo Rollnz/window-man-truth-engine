@@ -160,6 +160,7 @@ export default function Signup() {
   }, []);
 
   // ── Trigger phone verification SMS (idempotent) ───────────────────────
+  // ── TESTING MODE: Skip actual phone verification ────────────────
   const triggerPhoneVerification = useCallback(
     async (storedPhone: string): Promise<boolean> => {
       if (smsTriggeredRef.current) return false;
@@ -169,13 +170,8 @@ export default function Signup() {
       ssSet(SS.state, SignupState.VERIFYING_PHONE);
       setAuthOpen(true);
 
-      const { error } = await supabase.auth.updateUser({ phone: storedPhone });
-      if (error) {
-        toast({ title: "Phone verification failed", description: error.message, variant: "destructive" });
-        smsTriggeredRef.current = false; // allow retry
-        return false;
-      }
-      toast({ title: "Identity confirmed. Sending secure SMS..." });
+      // TESTING MODE: Skip supabase.auth.updateUser({ phone })
+      toast({ title: "TESTING MODE: Phone step bypassed" });
       return true;
     },
     [toast],
@@ -303,12 +299,12 @@ export default function Signup() {
         updateFields({ firstName: payload.first_name, lastName: payload.last_name, email: payload.email, phone: payload.phone, leadId: data.leadId });
 
         const redirectUrl = `${window.location.origin}/signup`;
-        const { error } = await supabase.auth.signInWithOtp({ email: payload.email, options: { emailRedirectTo: redirectUrl } });
-        if (error) throw new Error(error.message);
+        // TESTING MODE: Send email in background but don't block on it
+        supabase.auth.signInWithOtp({ email: payload.email, options: { emailRedirectTo: redirectUrl } });
 
-        setState(SignupState.VERIFYING_EMAIL);
-        setAuthOpen(true);
-        toast({ title: "Check your email", description: "We sent a secure login link. Click it to continue." });
+        // Skip VERIFYING_EMAIL — go straight to phone verification
+        await triggerPhoneVerification(payload.phone);
+        toast({ title: "TESTING MODE", description: "Email sent in background. Skipping email gate." });
       } catch (e: any) {
         toast({ title: "Signup failed", description: e?.message ?? "Please try again.", variant: "destructive" });
         setState(SignupState.AUTH_GATE);
@@ -319,26 +315,20 @@ export default function Signup() {
   );
 
   // ── Verify phone OTP ────────────────────────────────────────────────
+  // ── TESTING MODE: Auto-accept any OTP code ────────────────────
   const handleVerifyOtp = useCallback(
-    async (token: string) => {
-      try {
-        const { error } = await supabase.auth.verifyOtp({ type: "phone_change", token, phone: phone ?? "" });
-        if (error) throw new Error(error.message);
+    async (_token: string) => {
+      // Clear auth-related persisted keys
+      ssDel(SS.state);
+      ssDel(SS.phone);
+      ssDel(SS.profile);
 
-        // Clear auth-related persisted keys to prevent stale-state loops
-        ssDel(SS.state);
-        ssDel(SS.phone);
-        ssDel(SS.profile);
-
-        setAuthOpen(false);
-        setNeedsReenterPhone(false);
-        toast({ title: "Vault Verified", description: "Your identity is confirmed. Welcome to Window Man Vault." });
-        setState(flow === "has_quote" ? SignupState.POLLING_ANALYSIS : SignupState.QUALIFYING);
-      } catch (e: any) {
-        toast({ title: "Invalid code", description: e?.message ?? "Please try again.", variant: "destructive" });
-      }
+      setAuthOpen(false);
+      setNeedsReenterPhone(false);
+      toast({ title: "TESTING MODE", description: "Phone verification bypassed." });
+      setState(flow === "has_quote" ? SignupState.POLLING_ANALYSIS : SignupState.QUALIFYING);
     },
-    [flow, phone, toast],
+    [flow, toast],
   );
 
   // ── Flow B: qualification ───────────────────────────────────────────
