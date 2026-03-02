@@ -1,44 +1,32 @@
 
 
-# Testing Mode Override
+# Redesign QualificationFlow as a Focus-Trap Modal
 
-Apply three changes to let you test the full flow without rate limits, email blocking, or real OTP verification.
+## Problem
+The current QualificationFlow renders as a small Card embedded in the page layout. After form submission, users don't notice it because it blends into the background. It needs to command attention.
 
-## 1. Remove rate limiting from `send-otp` edge function
+## Solution
+Rewrite `QualificationFlow` as a full-screen centered overlay (focus-trap modal) that shows one question at a time. When the user clicks an option, it auto-advances to the next question after a brief highlight animation (300ms). No "Next" or "Back" buttons needed -- just tap and go. On the final question, selecting an answer auto-submits.
 
-**File:** `supabase/functions/send-otp/index.ts`
+## Design Details
 
-Strip out all rate-limiting logic (the Supabase client creation, the `rate_limits` table query, the 429 check, and the insert). Keep the Twilio Verify call and error handling intact. The function will still send real SMS but won't block repeated requests.
+- **Full-screen overlay**: Fixed position, semi-transparent dark backdrop (`bg-black/60`), centered white card
+- **One question per screen**: Large, clear question text with big tap-friendly option buttons
+- **Auto-advance on click**: User clicks an option, it highlights briefly (300ms), then the next question slides in
+- **Progress dots**: 4 small dots at the top showing which question you're on (replaces the progress bar)
+- **Step counter**: Small "1 of 4" label
+- **No Next/Back buttons**: Clicking an option IS the action. Add a small back arrow in the top-left for corrections
+- **Final step auto-submits**: When the user answers question 4, it auto-calls `onSubmit`
+- **Slide animation**: Each question slides in from the right, slides out to the left
 
-## 2. Make email magic link non-blocking in `Signup.tsx`
+## Technical Changes
 
-**File:** `src/pages/Signup.tsx`
+### File: `src/components/signup/QualificationFlow.tsx` (full rewrite)
 
-After calling `signInWithOtp({ email })`, instead of stopping at `VERIFYING_EMAIL` and waiting for the user to click the magic link, immediately transition to `VERIFYING_PHONE` and auto-trigger the phone verification step. The email is still sent in the background but doesn't gate progress.
-
-Key change in `handleAuthSubmit` (~line 306-311): After the email OTP call, skip setting state to `VERIFYING_EMAIL` and instead call `triggerPhoneVerification(payload.phone)` directly.
-
-## 3. Bypass OTP_GATE entirely in `Signup2.tsx`
-
-**File:** `src/pages/Signup2.tsx`
-
-- **`handleTheaterComplete`** (~line 219): Instead of transitioning to `OTP_GATE` and sending an OTP, immediately set `otpVerified = true` and transition to `REVEAL` (if analysis is ready) or stay in a waiting state that auto-transitions.
-- **`handleVerifyOtp`** (~line 234): Make it always succeed without calling the backend -- set `otpVerified = true` immediately.
-- **The `OTP_GATE` overlay** (~line 380): Will naturally not render since `otpVerified` is set to `true` before the phase even reaches `OTP_GATE`.
-
-## 4. Bypass phone OTP in `Signup.tsx`
-
-**File:** `src/pages/Signup.tsx`
-
-- **`handleVerifyOtp`** (~line 322): Skip `supabase.auth.verifyOtp()` entirely. Accept any code as valid and proceed to `POLLING_ANALYSIS` or `QUALIFYING`.
-- **`triggerPhoneVerification`** (~line 163): Skip `supabase.auth.updateUser({ phone })`. Just transition the state directly.
-
-## Summary of files changed
-
-| File | Change |
-|------|--------|
-| `supabase/functions/send-otp/index.ts` | Remove rate-limiting block |
-| `src/pages/Signup.tsx` | Email non-blocking + OTP auto-accept |
-| `src/pages/Signup2.tsx` | Skip OTP_GATE, auto-verify |
-
-All changes are clearly marked as testing overrides so they can be reverted later.
+- Wrap in a fixed overlay div with `inset-0 z-50 flex items-center justify-center bg-black/60`
+- Use `focus-trap` behavior via `onKeyDown` escape handling and `aria-modal="true"`
+- Each option click: set state, wait 300ms, advance step (or submit on step 4)
+- Replace Card with a centered panel (`max-w-md w-full mx-4 rounded-2xl bg-card p-6 shadow-2xl`)
+- Add `animate-in slide-in-from-right` on step transitions
+- Progress indicator: 4 dots, filled up to current step
+- Back arrow (ChevronLeft icon) in top-left, disabled on step 1
