@@ -28,6 +28,7 @@ import { getOrCreateClientId, getOrCreateSessionId } from "@/lib/tracking";
 import { getLeadAnchor } from "@/lib/leadAnchor";
 import type { SourceTool } from "@/types/sourceTool";
 import { scheduleWhenIdle } from "@/lib/deferredInit";
+import excludesLaborImg from "@/assets/excludes-labor-warning.webp";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -1191,8 +1192,8 @@ export function ExitIntentModal({ sourceTool, hasConverted = false, onSuccess }:
                 {/* Cyan ambient glow */}
                 <div className="absolute -inset-4 rounded-xl bg-cyan-500/10 blur-2xl" />
                 <img
-                  src="/lovable-uploads/ai_decoded_b_1_1.webp"
-                  alt="Forensic Ally analysis preview"
+                  src={excludesLaborImg}
+                  alt="The Lifetime Warranty Loophole - Excludes Labor Warning"
                   className="relative w-48 h-auto max-h-56 object-contain rounded-xl border border-slate-700/50 shadow-lg"
                 />
               </div>
