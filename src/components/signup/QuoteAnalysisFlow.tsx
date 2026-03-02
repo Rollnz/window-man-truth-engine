@@ -16,7 +16,7 @@ async function callOrchestrateQuoteAnalysis(payload: { account_id: string; quote
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(payload),
