@@ -104,10 +104,8 @@ export function UrgencyTicker({
   const totalCount = useCountUp(isVisible ? total : 0, 2500);
   const todayCount = useCountUp(isVisible && showToday ? today : 0, 2500);
   const permitFlagsCount = Math.max(1, Math.min(6, Math.round(todayCount * 0.35)));
-  const minHeightClass = size === 'lg' ? 'min-h-[48px] sm:min-h-[56px]' : size === 'md' ? 'min-h-[40px] sm:min-h-[48px]' : 'min-h-[32px] sm:min-h-[36px]';
-
   return (
-    <div ref={ref} className={cn("shadow-none flex items-end justify-center border-0 border-[#e3e3e3]/0", minHeightClass, className)}>
+    <div ref={ref} className={cn("shadow-none flex items-end justify-center", className)}>
       <div
         className={cn(
           "inline-flex items-center divide-x rounded-lg border overflow-hidden whitespace-nowrap",
