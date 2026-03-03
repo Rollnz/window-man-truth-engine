@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import HowItWorksSteps from "@/components/signup3/HowItWorksSteps";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import {
@@ -323,7 +324,7 @@ function HeroSection() {
       </div>
     </section>
   );
-}
+}<HowItWorksSteps />
 
 /* ══════════════════════════════════════════════════════════
    SCENE 2 — FEATURES
