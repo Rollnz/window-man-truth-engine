@@ -193,6 +193,10 @@ const styleSheet = `
     100% { transform: scaleX(1); opacity: 1; }
   }
 
+  .stepCard:hover .borderBeam {
+    opacity: 1;
+  }
+
   /* Burst class driven by engine */
   .stepCard--burst .borderBeam {
     opacity: 1 !important;
