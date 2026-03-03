@@ -2,10 +2,10 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { HowItWorksRegistry, useHowItWorksEngine, CardHandle } from "./useHowItWorksEngine";
 
 // Example assets (swap for your real imports)
-import step1 from "@/assets/steps/step1_1.webp";
-import step2 from "@/assets/steps/step2_1.webp";
-import step3 from "@/assets/steps/step3_1.webp";
-import step4 from "@/assets/steps/step4.webp";
+import step1 from "@/assets/step1_upload_your_quote";
+import step2 from "@/assets/step2_ ai_analyzes_5_pillars";
+import step2 from "@/assets/step3_get_your_instant_gradecard";
+import step4 from "@/assets/step4_connect_with_contractors";
 
 // Optional: reduced motion helper
 function useReducedMotion() {
@@ -175,4 +175,5 @@ export default function HowItWorksSteps() {
       </div>
     </section>
   );
+
 }
