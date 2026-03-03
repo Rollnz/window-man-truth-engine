@@ -1,85 +1,107 @@
 
 
-# Milestone 1: Universal Thank You Page
+# Premium Quote Analysis Email Template
 
-## Goal
-Create a single canonical post-submit page at `/thank-you` that all lead capture forms can redirect to. Fires one non-OPT tracking event. Displays dynamic content based on `?source=` query param.
+## Assessment: What Already Exists vs What's Needed
 
-## Files to Create
+**Item 1 (AI structured JSON) — ALREADY DONE.** The `quote-scanner` edge function already returns structured JSON with `overallScore`, `finalGrade`, `warnings[]`, `missingItems[]`, `summary`, `pricePerOpening`, and all pillar scores. This is persisted to `quote_analyses.analysis_json`. No prompt changes needed.
 
-### 1. `src/pages/ThankYou.tsx` (~120 lines)
+**Item 2-4 — Need building.** The current `quote-scanner-results` email (lines 328-367 of `send-email-notification`) is a basic inline HTML string with just `overallScore`, `warningsCount`, and `firstName`. It doesn't query the database for the full analysis, and it doesn't use React Email.
 
-**What it does:**
-- Reads `?source=` and `?leadId=` from URL search params
-- Reads `firstName` from `useSessionData()` for personalization ("Thank you, Mike!")
-- If `leadId` param exists, syncs it to Golden Thread via `useLeadIdentity().setLeadId()`
-- Renders a clean confirmation card with:
-  - Success icon (CheckCircle2 from lucide)
-  - Dynamic headline based on source (e.g., "Your Quote Analysis is Ready" vs "We'll Be in Touch")
-  - Expectation-setting copy ("A specialist will reach out within 24 hours")
-  - Primary CTA: Link to `/ai-scanner` ("Scan Your Quote Now")
-  - Secondary CTA: Link to `/consultation` ("Book a Free Consultation")
-  - AI voice assistant phone number (+15614685571) as tertiary CTA
-- Uses existing Tailwind tokens, no new design system
+## Existing Modules to Reuse
 
-**Tracking (on mount, once):**
+- `supabase/functions/_shared/email-templates/signup.tsx` — pattern for React Email + Deno imports
+- `supabase/functions/send-email-notification/index.ts` — delivery via Resend (lines 659-671)
+- `supabase/functions/save-lead/index.ts` lines 1283-1293 — trigger point that sends `leadId`
+- `quote_analyses` table — has `analysis_json`, `lead_id`, all pillar scores
+
+## Minimal Change Plan (4 steps)
+
+### Step 1: Create `supabase/functions/_shared/email-templates/quote-analysis.tsx`
+
+React Email component using `npm:@react-email/components@0.0.22` (same version as auth templates).
+
+**Props interface:**
 ```ts
-trackEvent('thankyou_page_view', {
-  source: sourceParam,        // e.g. 'quote-scanner', 'consultation', 'estimate'
-  lead_id: leadId || undefined,
-  conversion_complete: true,
-});
+interface QuoteAnalysisEmailProps {
+  firstName: string;
+  overallScore: number;
+  finalGrade: string;
+  warnings: string[];
+  missingItems: string[];
+  summary: string;
+  safetyScore: number;
+  scopeScore: number;
+  priceScore: number;
+  finePrintScore: number;
+  warrantyScore: number;
+  pricePerOpening: string;
+  vaultUrl: string;
+}
 ```
-- This is a NON-OPT event via `trackEvent()` from `src/lib/gtm.ts`
-- No value/currency attached
-- No new event names invented
 
-**Source-to-content mapping (simple switch):**
+**Design:**
+- Dark header (#070A0F) with logo via `<Img src="https://itswindowman.com/icon-512.webp" />`
+- Score circle: large bold number with color-coded border (green >= 70, gold >= 40, red < 40)
+- Grade badge next to score
+- 5 pillar score bars as simple table rows with percentage labels
+- Red flags section: each warning as a card row with ⚠️ prefix, light border
+- Missing items section: each item as a card row with ❌ prefix
+- Summary paragraph
+- White body background per email best practices (dark header only)
+- Primary CTA: "View Full Results" → `vaultUrl`
+- Secondary CTA: "Get a Transparent Quote" → consultation
+- Footer: "Window Truth Engine by Its Window Man"
+- All CSS inlined via React Email's `style` props (Gmail/Outlook safe)
+- Font stack: `'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`
 
-| `?source=` | Headline | Primary CTA |
-|---|---|---|
-| `quote-scanner` | "Your Quote Analysis is Ready" | "View Your Results" -> `/ai-scanner` |
-| `consultation` | "Consultation Request Received" | "Scan a Quote While You Wait" -> `/ai-scanner` |
-| `estimate` | "Your Estimate Request is Submitted" | "Scan Your Quote" -> `/ai-scanner` |
-| `beat-your-quote` | "We're Finding You a Better Deal" | "Track Your Results" -> `/vault` |
-| (default) | "Thank You!" | "Explore Our Tools" -> `/tools` |
+### Step 2: Update `send-email-notification/index.ts` — enrich data from DB
 
-## Files to Modify
+In the `quote-scanner-results` case (line 328), before rendering:
 
-### 2. `src/config/navigation.ts`
-- Add `THANK_YOU: '/thank-you'` to the `ROUTES` object
-- Add `/thank-you` to `FUNNEL_ROUTES` array (hides sticky footer/floating CTAs on this page)
+1. Import `render` from `npm:@react-email/render@0.0.12` and the template
+2. If `data.leadId` exists, query `quote_analyses` table using service role client:
+   ```ts
+   const { data: analysis } = await supabase
+     .from('quote_analyses')
+     .select('analysis_json')
+     .eq('lead_id', data.leadId)
+     .order('created_at', { ascending: false })
+     .limit(1)
+     .maybeSingle();
+   ```
+3. Extract full analysis data (warnings array, summary, pillar scores, grade, pricePerOpening)
+4. Render the React Email component to HTML string via `render()`
+5. Fall back to current inline HTML if DB query fails (graceful degradation)
 
-### 3. `src/App.tsx`
-- Add lazy import: `const ThankYou = lazy(() => import("./pages/ThankYou"));`
-- Add route inside the `<Route element={<PublicLayout />}>` block: `<Route path="/thank-you" element={<ThankYou />} />`
+This requires adding a Supabase service-role client at the top of the function (it already has the import but may not initialize one for this case).
 
-## What This Does NOT Do (Scope Control)
-- Does NOT change any existing form's `onSuccess` behavior yet -- forms keep their inline success states for now
-- Does NOT add Stripe or payment logic
-- Does NOT create new tracking events beyond `thankyou_page_view`
-- Does NOT restyle existing components
+### Step 3: Update `save-lead/index.ts` — pass `leadId` (already done)
+
+Line 1291 already passes `leadId` in the email trigger payload. No change needed.
+
+### Step 4: No changes to `quote-scanner/index.ts`
+
+The AI prompt and structured output are already correct. No modifications.
 
 ## Events Fired
-| Event Name | Fired Via | Payload |
-|---|---|---|
-| `thankyou_page_view` | `trackEvent()` from `src/lib/gtm.ts` | `{ source, lead_id, conversion_complete: true }` |
 
-No OPT events. No value/currency.
+No new tracking events. The existing `notification_sent` attribution event (lines 685-700) continues to fire with `email_type: 'quote-scanner-results'`.
+
+## Files Changed
+
+| File | Action |
+|---|---|
+| `supabase/functions/_shared/email-templates/quote-analysis.tsx` | **Create** — React Email template |
+| `supabase/functions/send-email-notification/index.ts` | **Modify** — replace `quote-scanner-results` case with DB query + React Email render |
 
 ## Definition of Done
-- [ ] `/thank-you` renders with brand-consistent styling
-- [ ] `?source=quote-scanner` shows scanner-specific headline and CTA
-- [ ] `?leadId=<uuid>` syncs to Golden Thread on mount
-- [ ] `thankyou_page_view` fires exactly once in dataLayer on page load
-- [ ] Route is wired in `App.tsx` inside `PublicLayout`
-- [ ] `ROUTES.THANK_YOU` exists in navigation config
-- [ ] Page is in `FUNNEL_ROUTES` (no floating CTA clutter)
-- [ ] Mobile responsive, matches existing page styling
-- [ ] `prefers-reduced-motion` respected (no gratuitous animations)
 
-## Technical Notes
-- The `useLeadFormSubmit` hook already has a `redirectTo` option -- once this page exists, future milestones can wire forms to redirect here by passing `redirectTo: '/thank-you?source=xxx&leadId=yyy'`
-- The page uses `replace: true` pattern when navigated to (handled by the redirecting form, not the page itself) to prevent back-button re-submissions
-- No database reads needed -- all data comes from URL params + sessionData
+- [ ] Template renders a premium dark-header email with score gauge, pillar bars, red flags cards, and summary
+- [ ] `send-email-notification` queries `quote_analyses` by `lead_id` for full data
+- [ ] "View Full Results" CTA links to `/vault` with leadId
+- [ ] Falls back to current HTML if no analysis found in DB
+- [ ] All CSS inlined (no `<style>` blocks) for Gmail/Outlook compatibility
+- [ ] No new tracking events, no new dependencies beyond `@react-email/render@0.0.12`
+- [ ] Edge function deploys without errors
 
