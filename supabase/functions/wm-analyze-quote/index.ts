@@ -555,7 +555,7 @@ Deno.serve(async (req) => {
 
   // ─── BUILD ENVELOPE ───
   const envelope = {
-    meta: { trace_id, analysis_version: "2.2", model_used: modelId, processing_time_ms: processingTimeMs, timestamp: new Date().toISOString() },
+    meta: { trace_id, analysis_version: "wm_rubric_v3.0", model_used: modelId, processing_time_ms: processingTimeMs, timestamp: new Date().toISOString() },
     preview: {
       score: scored.overallScore, grade: scored.finalGrade,
       risk_level: forensic.riskLevel,
