@@ -3,9 +3,9 @@ import { HowItWorksRegistry, useHowItWorksEngine, CardHandle } from "./useHowItW
 
 // Example assets (swap for your real imports)
 import step1 from "@/assets/step1_upload_your_quote.webp";
-import step2 from "@/assets/step2_ai_analyzes_5_pillars.webp";
+import step2 from "@/assets/step2_ ai_analyzes_5_pillars.webp";
 import step3 from "@/assets/step3_get_your_instant_gradecard.webp";
-import step4 from "@/assets/step4_connect_with_contractors.webp";
+import step4 from "@/assets/step4 _connect_with_contractors.webp";
 
 // Optional: reduced motion helper
 function useReducedMotion() {
