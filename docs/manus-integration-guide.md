@@ -121,8 +121,10 @@ All error responses follow this shape:
 
 ```json
 {
-  "error_code": "FILE_FETCH_FAILED",
-  "message": "Human-readable description"
+  "error": {
+    "code": "FILE_FETCH_FAILED",
+    "message": "Human-readable description"
+  }
 }
 ```
 
