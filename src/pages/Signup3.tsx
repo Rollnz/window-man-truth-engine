@@ -164,6 +164,40 @@ const styleSheet = `
     animation: borderOrbit 4s linear infinite;
   }
 
+
+  @keyframes flyInLeft {
+    0% { transform: translateX(-110px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+  .animate-fly-in-left {
+    animation: flyInLeft 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes flyInRight {
+    0% { transform: translateX(110px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+  .animate-fly-in-right {
+    animation: flyInRight 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes popUp {
+    0% { transform: scale(0.84) translateY(24px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .animate-pop-up {
+    animation: popUp 0.72s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  @keyframes beamTint {
+    0% { filter: hue-rotate(0deg) saturate(1); }
+    50% { filter: hue-rotate(42deg) saturate(1.05); }
+    100% { filter: hue-rotate(205deg) saturate(1.05); }
+  }
+  .animate-beam-tint {
+    animation: borderOrbit 4.5s linear infinite, beamTint 6s ease-in-out infinite;
+  }
+
   @keyframes dataPulse {
     0%   { transform: translateX(-10%); opacity: 0; }
     10%  { opacity: 1; }
@@ -191,6 +225,10 @@ const styleSheet = `
     0%   { transform: scaleX(0); opacity: 0; }
     30%  { opacity: 1; }
     100% { transform: scaleX(1); opacity: 1; }
+  }
+
+  .stepCard:hover .borderBeam {
+    opacity: 1;
   }
 
   /* Burst class driven by engine */
