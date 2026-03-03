@@ -324,7 +324,6 @@ function HeroSection() {
       </div>
     </section>
   );
-}<HowItWorksSteps />
 
 /* ══════════════════════════════════════════════════════════
    SCENE 2 — FEATURES
@@ -534,9 +533,10 @@ export default function Signup3() {
       <style>{styleSheet}</style>
 
       <div className="min-h-screen" style={{ backgroundColor: "var(--bg-terminal)" }}>
-        <Signup3Header />
-        <HeroSection />
-        <FeatureSection />
+         <Signup3Header />
+         <HeroSection />
+         <HowItWorksSteps />
+         <FeatureSection />
       </div>
     </>
   );
