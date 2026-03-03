@@ -3,9 +3,8 @@ import { useEffect, useRef } from "react";
 export type CardHandle = {
   root: HTMLDivElement;
   borderBeam?: HTMLDivElement | null;
-  // Optional: hook can fire callbacks; DOM-driven roulette/leverage can be built on top.
-  // gradeEl?: HTMLSpanElement | null;
-  // priceEl?: HTMLSpanElement | null;
+  gradeEl?: HTMLSpanElement | null;
+  priceEl?: HTMLSpanElement | null;
 };
 
 export type HowItWorksRegistry = {
@@ -30,6 +29,7 @@ export type HowItWorksOptions = {
   pulseEasing?: (p: number) => number;
 
   // Rare events only (threshold crossings). Keep these imperative.
+  onBurst?: (cardIndex: number) => void;
   onStep3?: () => void;
   onStep4?: () => void;
 
@@ -259,6 +259,7 @@ export function useHowItWorksEngine(
           const card = r.cards[i];
           if (card?.root) {
             triggerBurst(card, classBurst, engine.timeouts);
+            if (opts.onBurst) opts.onBurst(i);
 
             // Rare hooks: only on Step 3/4 thresholds (if defined)
             if (i === 2 && opts.onStep3) opts.onStep3();

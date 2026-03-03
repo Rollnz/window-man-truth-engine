@@ -138,6 +138,70 @@ const styleSheet = `
                       linear-gradient(to bottom, rgba(30, 41, 59, 0.3) 1px, transparent 1px);
     background-size: 40px 40px;
   }
+
+  /* ── How It Works: Cinematic Keyframes ── */
+  @keyframes scanReveal {
+    0%   { clip-path: inset(0 100% 0 0); opacity: 0; }
+    15%  { opacity: 1; }
+    100% { clip-path: inset(0 0 0 0); opacity: 1; }
+  }
+  .animate-scan-reveal {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+    animation: scanReveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes borderOrbit {
+    0%   { --orbit-angle: 0deg; }
+    100% { --orbit-angle: 360deg; }
+  }
+  @property --orbit-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+  .animate-border-orbit {
+    animation: borderOrbit 4s linear infinite;
+  }
+
+  @keyframes dataPulse {
+    0%   { transform: translateX(-10%); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateX(110%); opacity: 0; }
+  }
+  .animate-data-pulse {
+    animation: dataPulse 3.5s ease-in-out infinite;
+  }
+
+  @keyframes sonarPing {
+    0%   { transform: scale(0); opacity: 0.7; }
+    100% { transform: scale(2.5); opacity: 0; }
+  }
+
+  @keyframes gradeRoulette {
+    0%   { color: #ef4444; }
+    25%  { color: #f59e0b; }
+    50%  { color: #f59e0b; }
+    75%  { color: #10b981; }
+    100% { color: #10b981; }
+  }
+
+  @keyframes laserSlash {
+    0%   { transform: scaleX(0); opacity: 0; }
+    30%  { opacity: 1; }
+    100% { transform: scaleX(1); opacity: 1; }
+  }
+
+  /* Burst class driven by engine */
+  .stepCard--burst .borderBeam {
+    opacity: 1 !important;
+    transition: opacity 0.15s ease-out;
+  }
+  .stepCard--shadowPulse {
+    box-shadow: 0 0 30px rgba(0,217,255,0.15), inset 0 0 20px rgba(0,217,255,0.05);
+    transition: box-shadow 0.3s ease-out;
+  }
 `;
 
 /* ── Ticking Counter Hook ────────────────────────────────── */
