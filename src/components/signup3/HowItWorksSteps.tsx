@@ -3,9 +3,9 @@ import { HowItWorksRegistry, useHowItWorksEngine, CardHandle } from "./useHowItW
 
 // Example assets (swap for your real imports)
 import step1 from "@/assets/step1_upload_your_quote.webp";
-import step2 from "@/assets/step2_ ai_analyzes_5_pillars.webp";
+import step2 from "@/assets/step2_ai_analyzes_5_pillars.webp";
 import step3 from "@/assets/step3_get_your_instant_gradecard.webp";
-import step4 from "@/assets/step4 _connect_with_contractors.webp";
+import step4 from "@/assets/step4_connect_with_contractors.webp";
 
 // Optional: reduced motion helper
 function useReducedMotion() {
@@ -27,19 +27,9 @@ type Step = {
   image: string;
 };
 
-function StepCard({
-  step,
-  register,
-}: {
-  step: Step;
-  register: (node: HTMLDivElement | null) => void;
-}) {
+function StepCard({ step, register }: { step: Step; register: (node: HTMLDivElement | null) => void }) {
   return (
-    <div
-      ref={register}
-      className="stepCard relative p-1 rounded-2xl"
-      style={{ contain: "layout style paint" }}
-    >
+    <div ref={register} className="stepCard relative p-1 rounded-2xl" style={{ contain: "layout style paint" }}>
       {/* Layer 0: static blur glass (no transforms here) */}
       <div className="absolute inset-0 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/5" />
 
@@ -78,7 +68,7 @@ export default function HowItWorksSteps() {
       { title: "3. Get Your Instant Grade", desc: "A–F letter grade + detailed breakdown.", image: step3 },
       { title: "4. Connect with Contractors", desc: "Match with fair-priced pros or negotiate.", image: step4 },
     ],
-    []
+    [],
   );
 
   // Registry holds live nodes + derived measurements. Mutated intentionally (no state).
@@ -175,6 +165,4 @@ export default function HowItWorksSteps() {
       </div>
     </section>
   );
-
 }
-
