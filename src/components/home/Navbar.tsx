@@ -5,6 +5,7 @@ import { Vault, LogIn, Menu, X, Sun, Moon, Phone } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { ROUTES } from '@/config/navigation';
+import windowManLogo from '@/assets/windowman_logo_400.webp';
 
 interface NavbarProps {
   funnelMode?: boolean;
@@ -92,9 +93,12 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background md:bg-background/80 md:backdrop-blur-md border-b border-border">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between relative">
         {/* Logo */}
-        <Link to={ROUTES.HOME} className="flex items-center gap-2 font-bold text-lg">
-          <img src="/icon-512.webp" alt="Its Window Man Logo" width={36} height={36} className="w-9 h-9 object-contain" fetchPriority="high" />
-          <span className="text-primary">Its Window Man</span>
+        <Link to={ROUTES.HOME} className="flex items-center gap-2">
+          <img src={windowManLogo} alt="WindowMan Logo" width={36} height={36} className="h-9 w-auto object-contain" fetchPriority="high" />
+          <span className="text-xl font-bold tracking-tight">
+            <span className="text-foreground">Window</span>
+            <span className="text-primary">Man</span>
+          </span>
         </Link>
 
         {/* Desktop Navigation - Hidden in Funnel Mode */}
@@ -110,7 +114,7 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
               Intel Library
             </Link>
             <Link to={ROUTES.BEAT_YOUR_QUOTE} className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5">
-              <img src="/icon-512.webp" alt="" width={16} height={16} className="w-4 h-4 rounded-full object-contain" />
+              <img src={windowManLogo} alt="" width={16} height={16} className="w-4 h-4 rounded-full object-contain" />
               Beat Your Quote
             </Link>
             
@@ -217,7 +221,7 @@ export function Navbar({ funnelMode = false }: NavbarProps) {
           </Link>
           <Link to={ROUTES.BEAT_YOUR_QUOTE} className="block text-sm font-medium text-primary hover:text-primary/80 min-h-[44px] flex items-center" onClick={() => setMobileMenuOpen(false)}>
             <span className="flex items-center gap-2">
-              <img src="/icon-512.webp" alt="" width={16} height={16} className="w-4 h-4 rounded-full object-contain" />
+              <img src={windowManLogo} alt="" width={16} height={16} className="w-4 h-4 rounded-full object-contain" />
               Beat Your Quote
             </span>
           </Link>
