@@ -21,3 +21,5 @@ project_id = "kffoximblqwcnznwvugu"
     verify_jwt = false
   [functions.verify-otp]
     verify_jwt = false
+  [functions.wm-analyze-quote]
+    verify_jwt = false
