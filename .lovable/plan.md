@@ -1,107 +1,133 @@
 
 
-# Premium Quote Analysis Email Template
+# Plan: External Analysis API (`wm-analyze-quote` Edge Function)
 
-## Assessment: What Already Exists vs What's Needed
+## Why This Exists
 
-**Item 1 (AI structured JSON) — ALREADY DONE.** The `quote-scanner` edge function already returns structured JSON with `overallScore`, `finalGrade`, `warnings[]`, `missingItems[]`, `summary`, `pricePerOpening`, and all pillar scores. This is persisted to `quote_analyses.analysis_json`. No prompt changes needed.
+Manus (your external app) needs to call your Lovable analysis engine. Today, the `quote-scanner` edge function is tightly coupled to your frontend (expects base64, fires internal tracking, uses internal session/lead IDs). Manus needs a clean service-to-service endpoint that:
 
-**Item 2-4 — Need building.** The current `quote-scanner-results` email (lines 328-367 of `send-email-notification`) is a basic inline HTML string with just `overallScore`, `warningsCount`, and `firstName`. It doesn't query the database for the full analysis, and it doesn't use React Email.
+1. Accepts a `file_url` (signed S3 URL) instead of raw base64
+2. Returns a structured **AnalysisEnvelope** with `preview` (safe for unauthenticated display) and `full` (complete dashboard data)
+3. Authenticates via a shared secret (HMAC bearer token)
+4. Returns `trace_id` and `analysis_version` for debugging
+
+## What Should Be Included Beyond Your Spec
+
+- **`envelope.meta`**: Include `analysis_version`, `trace_id`, `model_used`, `processing_time_ms` — Manus needs these for its own debugging/audit trail.
+- **`envelope.preview`**: A sanitized subset (score, grade, warning count, risk level, headline) that Manus can show *before* the user unlocks the full report. This is NOT computed by blurring `full` — it's a distinct projection.
+- **`envelope.full.dashboard`**: The complete structured data (pillar scores, warnings array, missing items, forensic summary, extracted identity, questions to ask). This is what populates the UI.
+- **Input validation via Zod** on the Manus side request (not just shape — also `file_url` must be HTTPS, `mime_type` must be image/* or application/pdf).
+- **Error contract**: Structured error responses with `code` + `message` so Manus can programmatically handle `INVALID_QUOTE`, `AI_UNAVAILABLE`, `RATE_LIMITED`, `AUTH_FAILED`.
+
+## What This Does NOT Do
+
+- Does NOT fire internal tracking events (no `wm_event_log`, no `logAttributionEvent`) — Manus has its own tracking
+- Does NOT persist to `quote_analyses` table — Manus stores its own copy
+- Does NOT touch the frontend or any existing edge functions
 
 ## Existing Modules to Reuse
 
-- `supabase/functions/_shared/email-templates/signup.tsx` — pattern for React Email + Deno imports
-- `supabase/functions/send-email-notification/index.ts` — delivery via Resend (lines 659-671)
-- `supabase/functions/save-lead/index.ts` lines 1283-1293 — trigger point that sends `leadId`
-- `quote_analyses` table — has `analysis_json`, `lead_id`, all pillar scores
+| Module | Reuse |
+|---|---|
+| `supabase/functions/quote-scanner/schema.ts` | `ExtractionSignalsJsonSchema`, `ExtractionSignals` type, `sanitizeForPrompt()` |
+| `supabase/functions/quote-scanner/rubric.ts` | `EXTRACTION_RUBRIC`, `USER_PROMPT_TEMPLATE` |
+| `supabase/functions/quote-scanner/scoring.ts` | `scoreFromSignals()` — the deterministic engine |
+| `supabase/functions/quote-scanner/forensic.ts` | `generateForensicSummary()`, `extractIdentity()` |
+| `supabase/functions/quote-scanner/guards.ts` | `corsHeaders`, `handleGuardError` |
 
-## Minimal Change Plan (4 steps)
+Zero new scoring logic. The AI is only used for extraction; everything else is deterministic reuse.
 
-### Step 1: Create `supabase/functions/_shared/email-templates/quote-analysis.tsx`
+## Minimal Change Plan (3 steps)
 
-React Email component using `npm:@react-email/components@0.0.22` (same version as auth templates).
+### Step 1: Add shared secret
 
-**Props interface:**
+Use `add_secret` to request `WM_ANALYZE_QUOTE_SECRET` from you. This is the bearer token Manus will send in its `Authorization` header.
+
+### Step 2: Create `supabase/functions/wm-analyze-quote/index.ts`
+
+Single file, ~180 lines. Logic:
+
+1. **Auth gate**: Verify `Authorization: Bearer <WM_ANALYZE_QUOTE_SECRET>` matches the secret. Return 401 if not.
+2. **Parse + validate** request body with Zod:
+   ```ts
+   {
+     file_url: string (HTTPS URL),
+     mime_type: "image/png" | "image/jpeg" | "image/webp" | "application/pdf",
+     opening_count?: number,
+     area_name?: string,
+     notes_from_calculator?: string,
+     trace_id: string (UUID, required — Manus generates this)
+   }
+   ```
+3. **Fetch the file** from `file_url` → convert to base64 (same format the AI gateway expects). Fail with `FILE_FETCH_FAILED` if the URL is unreachable or returns non-200.
+4. **Call AI gateway** with `EXTRACTION_RUBRIC` + `ExtractionSignalsJsonSchema` (identical to `quote-scanner`).
+5. **Run deterministic pipeline**: `scoreFromSignals()` → `generateForensicSummary()` → `extractIdentity()`.
+6. **Build AnalysisEnvelope** and return:
+
 ```ts
-interface QuoteAnalysisEmailProps {
-  firstName: string;
-  overallScore: number;
-  finalGrade: string;
-  warnings: string[];
-  missingItems: string[];
-  summary: string;
-  safetyScore: number;
-  scopeScore: number;
-  priceScore: number;
-  finePrintScore: number;
-  warrantyScore: number;
-  pricePerOpening: string;
-  vaultUrl: string;
+{
+  meta: {
+    trace_id: string,
+    analysis_version: "2.2",
+    model_used: string,
+    processing_time_ms: number,
+    timestamp: string
+  },
+  preview: {
+    score: number,
+    grade: string,
+    risk_level: "critical" | "high" | "moderate" | "acceptable",
+    headline: string,
+    warning_count: number,
+    missing_item_count: number
+  },
+  full: {
+    dashboard: {
+      overall_score, final_grade, safety_score, scope_score,
+      price_score, fine_print_score, warranty_score,
+      price_per_opening, warnings[], missing_items[], summary
+    },
+    forensic: {
+      headline, risk_level, statute_citations[],
+      questions_to_ask[], positive_findings[],
+      hard_cap_applied, hard_cap_reason, hard_cap_statute
+    },
+    extracted_identity: {
+      contractor_name, license_number, noa_numbers[]
+    }
+  }
 }
 ```
 
-**Design:**
-- Dark header (#070A0F) with logo via `<Img src="https://itswindowman.com/icon-512.webp" />`
-- Score circle: large bold number with color-coded border (green >= 70, gold >= 40, red < 40)
-- Grade badge next to score
-- 5 pillar score bars as simple table rows with percentage labels
-- Red flags section: each warning as a card row with ⚠️ prefix, light border
-- Missing items section: each item as a card row with ❌ prefix
-- Summary paragraph
-- White body background per email best practices (dark header only)
-- Primary CTA: "View Full Results" → `vaultUrl`
-- Secondary CTA: "Get a Transparent Quote" → consultation
-- Footer: "Window Truth Engine by Its Window Man"
-- All CSS inlined via React Email's `style` props (Gmail/Outlook safe)
-- Font stack: `'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`
+### Step 3: Wire config.toml
 
-### Step 2: Update `send-email-notification/index.ts` — enrich data from DB
+Add `[functions.wm-analyze-quote]` with `verify_jwt = false` (auth is handled by the shared secret, not Supabase JWT).
 
-In the `quote-scanner-results` case (line 328), before rendering:
+## Error Contract
 
-1. Import `render` from `npm:@react-email/render@0.0.12` and the template
-2. If `data.leadId` exists, query `quote_analyses` table using service role client:
-   ```ts
-   const { data: analysis } = await supabase
-     .from('quote_analyses')
-     .select('analysis_json')
-     .eq('lead_id', data.leadId)
-     .order('created_at', { ascending: false })
-     .limit(1)
-     .maybeSingle();
-   ```
-3. Extract full analysis data (warnings array, summary, pillar scores, grade, pricePerOpening)
-4. Render the React Email component to HTML string via `render()`
-5. Fall back to current inline HTML if DB query fails (graceful degradation)
-
-This requires adding a Supabase service-role client at the top of the function (it already has the import but may not initialize one for this case).
-
-### Step 3: Update `save-lead/index.ts` — pass `leadId` (already done)
-
-Line 1291 already passes `leadId` in the email trigger payload. No change needed.
-
-### Step 4: No changes to `quote-scanner/index.ts`
-
-The AI prompt and structured output are already correct. No modifications.
+| HTTP Status | Code | When |
+|---|---|---|
+| 401 | `AUTH_FAILED` | Missing or invalid bearer token |
+| 400 | `VALIDATION_ERROR` | Bad request body (Zod details in response) |
+| 422 | `INVALID_QUOTE` | AI determined document is not a window quote |
+| 502 | `FILE_FETCH_FAILED` | Could not download from `file_url` |
+| 429 | `RATE_LIMITED` | AI gateway rate limit |
+| 500 | `AI_UNAVAILABLE` | AI gateway error |
 
 ## Events Fired
 
-No new tracking events. The existing `notification_sent` attribution event (lines 685-700) continues to fire with `email_type: 'quote-scanner-results'`.
-
-## Files Changed
-
-| File | Action |
-|---|---|
-| `supabase/functions/_shared/email-templates/quote-analysis.tsx` | **Create** — React Email template |
-| `supabase/functions/send-email-notification/index.ts` | **Modify** — replace `quote-scanner-results` case with DB query + React Email render |
+None. This is a stateless service-to-service API. Manus owns its own tracking.
 
 ## Definition of Done
 
-- [ ] Template renders a premium dark-header email with score gauge, pillar bars, red flags cards, and summary
-- [ ] `send-email-notification` queries `quote_analyses` by `lead_id` for full data
-- [ ] "View Full Results" CTA links to `/vault` with leadId
-- [ ] Falls back to current HTML if no analysis found in DB
-- [ ] All CSS inlined (no `<style>` blocks) for Gmail/Outlook compatibility
-- [ ] No new tracking events, no new dependencies beyond `@react-email/render@0.0.12`
-- [ ] Edge function deploys without errors
+- [ ] `WM_ANALYZE_QUOTE_SECRET` secret stored
+- [ ] `POST /wm-analyze-quote` authenticates via bearer token
+- [ ] Fetches image from `file_url`, runs extraction + deterministic scoring
+- [ ] Returns `AnalysisEnvelope` with `meta`, `preview`, and `full` sections
+- [ ] `preview` is a distinct projection, not blurred `full`
+- [ ] `trace_id` round-trips from request to response
+- [ ] Invalid quotes return 422 with `INVALID_QUOTE` code
+- [ ] No internal tracking events fired
+- [ ] No writes to `quote_analyses` table
+- [ ] Edge function deploys and is callable from external origin
 
