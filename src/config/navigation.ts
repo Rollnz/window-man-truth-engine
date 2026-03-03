@@ -48,6 +48,9 @@ export const ROUTES = {
   FREE_ESTIMATE: '/free-estimate',
   IMPACT_WINDOW_CALCULATOR: '/impact-window-calculator',
 
+  // Conversion
+  THANK_YOU: '/thank-you',
+
   // User Management
   AUTH: '/auth',
   SIGNUP: '/signup',
@@ -103,6 +106,7 @@ export const FUNNEL_ROUTES = [
   '/sample-report',
   '/beat-your-quote',
   '/signup',
+  '/thank-you',
 ] as const;
 
 export const ROUTE_REDIRECTS = {

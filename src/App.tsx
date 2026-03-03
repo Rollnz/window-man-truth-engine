@@ -72,6 +72,7 @@ const SampleReport = lazy(() => import("./pages/SampleReport"));
 const Signup = lazy(() => import("./pages/Signup"));
 const Signup2 = lazy(() => import("./pages/Signup2"));
 const Signup3 = lazy(() => import("./pages/Signup3"));
+const ThankYou = lazy(() => import("./pages/ThankYou"));
 
 // Semantic Pillar Pages
 const WindowCostTruth = lazy(() => import("./pages/WindowCostTruth"));
@@ -139,6 +140,7 @@ function AppContent() {
           <Route path="/fair-price-quiz" element={<FairPriceQuiz />} />
           <Route path="/consultation" element={<Consultation />} />
           <Route path="/sample-report" element={<SampleReport />} />
+          <Route path="/thank-you" element={<ThankYou />} />
           {/* Semantic Pillar Pages */}
           <Route path="/window-cost-truth" element={<WindowCostTruth />} />
           <Route path="/window-risk-and-code" element={<WindowRiskAndCode />} />
