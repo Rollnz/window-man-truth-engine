@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { logAttributionEvent } from "../_shared/attributionLogger.ts";
+import { render } from 'npm:@react-email/render@0.0.12';
+import { QuoteAnalysisEmail } from '../_shared/email-templates/quote-analysis.tsx';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -620,8 +622,67 @@ serve(async (req) => {
       );
     }
 
-    // Generate email content
-    const { subject, html } = generateEmailContent(payload);
+    // Generate email content — enriched for quote-scanner-results
+    let subject: string;
+    let html: string;
+
+    if (type === 'quote-scanner-results' && leadId) {
+      // Attempt to enrich from DB using React Email template
+      try {
+        const supabaseService = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        );
+
+        const { data: analysisRow } = await supabaseService
+          .from('quote_analyses')
+          .select('analysis_json, overall_score, safety_score, scope_score, price_score, fine_print_score, warranty_score, price_per_opening')
+          .eq('lead_id', leadId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (analysisRow?.analysis_json) {
+          const aj = analysisRow.analysis_json as Record<string, unknown>;
+          const vaultUrl = `https://itswindowman.com/vault?leadId=${leadId}`;
+
+          const emailHtml = render(
+            QuoteAnalysisEmail({
+              firstName: (data.firstName as string) || '',
+              overallScore: analysisRow.overall_score ?? (aj.overallScore as number) ?? 0,
+              finalGrade: (aj.finalGrade as string) || 'N/A',
+              warnings: Array.isArray(aj.warnings)
+                ? (aj.warnings as Array<Record<string, string>>).map((w) => w.text || w.message || String(w))
+                : [],
+              missingItems: Array.isArray(aj.missingItems)
+                ? (aj.missingItems as Array<Record<string, string>>).map((m) => m.text || m.item || String(m))
+                : [],
+              summary: (aj.summary as string) || '',
+              safetyScore: analysisRow.safety_score ?? 0,
+              scopeScore: analysisRow.scope_score ?? 0,
+              priceScore: analysisRow.price_score ?? 0,
+              finePrintScore: analysisRow.fine_print_score ?? 0,
+              warrantyScore: analysisRow.warranty_score ?? 0,
+              pricePerOpening: analysisRow.price_per_opening || '',
+              vaultUrl,
+            })
+          );
+
+          subject = `Your Quote Has Been Analyzed – Score: ${analysisRow.overall_score}/100`;
+          html = emailHtml;
+          console.log('[QuoteAnalysisEmail] Rendered premium React Email template');
+        } else {
+          // No analysis found — fall back
+          console.warn('[QuoteAnalysisEmail] No analysis_json found for leadId, using fallback');
+          ({ subject, html } = generateEmailContent(payload));
+        }
+      } catch (renderErr) {
+        console.error('[QuoteAnalysisEmail] React Email render failed, using fallback:', renderErr);
+        ({ subject, html } = generateEmailContent(payload));
+      }
+    } else {
+      ({ subject, html } = generateEmailContent(payload));
+    }
 
     // Check for Resend API key
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
