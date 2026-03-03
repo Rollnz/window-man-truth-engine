@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type RefObject } from "react";
 import HowItWorksSteps from "@/components/signup3/HowItWorksSteps";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
@@ -163,7 +163,7 @@ const useCounter = (end: number, duration = 2000, startPlaying = true) => {
 };
 
 /* ── Intersection Observer Hook ──────────────────────────── */
-const useOnScreen = (options?: IntersectionObserverInit): [React.RefObject<HTMLDivElement>, boolean] => {
+const useOnScreen = (options?: IntersectionObserverInit): [RefObject<HTMLDivElement>, boolean] => {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -324,6 +324,7 @@ function HeroSection() {
       </div>
     </section>
   );
+}
 
 /* ══════════════════════════════════════════════════════════
    SCENE 2 — FEATURES
