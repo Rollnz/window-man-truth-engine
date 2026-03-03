@@ -324,6 +324,7 @@ function HeroSection() {
       </div>
     </section>
   );
+}
 
 /* ══════════════════════════════════════════════════════════
    SCENE 2 — FEATURES
