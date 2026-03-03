@@ -1,133 +1,113 @@
 
 
-# Plan: External Analysis API (`wm-analyze-quote` Edge Function)
+# Assessment: `wm-analyze-quote` is Already Built
 
-## Why This Exists
+The function at `supabase/functions/wm-analyze-quote/index.ts` (585 lines) is **fully implemented and deployed**. Here's the audit against your checklist:
 
-Manus (your external app) needs to call your Lovable analysis engine. Today, the `quote-scanner` edge function is tightly coupled to your frontend (expects base64, fires internal tracking, uses internal session/lead IDs). Manus needs a clean service-to-service endpoint that:
+## Checklist Status
 
-1. Accepts a `file_url` (signed S3 URL) instead of raw base64
-2. Returns a structured **AnalysisEnvelope** with `preview` (safe for unauthenticated display) and `full` (complete dashboard data)
-3. Authenticates via a shared secret (HMAC bearer token)
-4. Returns `trace_id` and `analysis_version` for debugging
+| Requirement | Status | Notes |
+|---|---|---|
+| Auth gate (Bearer WM_ANALYZE_QUOTE_SECRET) | **Done** (line 473-476) | Validates secret, returns 401 AUTH_FAILED |
+| Zod body validation | **Done** (line 27-34) | file_url (HTTPS), mime_type, trace_id (UUID), opening_count, area_name, notes |
+| Fetch file_url → base64 | **Done** (line 488-500) | Returns 502 FILE_FETCH_FAILED on error |
+| Gemini call w/ EXTRACTION_RUBRIC + ExtractionSignalsJsonSchema | **Done** (line 509-525) | Uses `response_format: json_schema` for structured output |
+| scoreFromSignals(signals, openingCountHint) | **Done** (line 551) | Full deterministic scoring inlined |
+| generateForensicSummary() | **Done** (line 552) | Citations, questions, positive findings |
+| extractIdentity() | **Done** (line 553) | Contractor name, license, NOA numbers |
+| AnalysisEnvelope: meta | **Done** (line 558) | trace_id, model_used, processing_time_ms, timestamp |
+| AnalysisEnvelope: preview | **Done** (line 559-564) | score, grade, risk_level, headline, counts |
+| AnalysisEnvelope: full.dashboard | **Done** (line 566-572) | All pillar scores, warnings[], missing_items[], summary |
+| AnalysisEnvelope: full.forensic | **Done** (line 573-578) | statute_citations, questions_to_ask, positive_findings, hard_cap |
+| AnalysisEnvelope: full.extracted_identity | **Done** (line 579) | contractor_name, license_number, noa_numbers |
+| INVALID_QUOTE 422 | **Done** (line 548) | |
+| RATE_LIMITED 429 | **Done** (line 534-535) | |
+| AI_UNAVAILABLE 500 | **Done** (line 528, 536) | |
+| FILE_FETCH_FAILED 502 | **Done** (line 491, 499) | |
+| config.toml verify_jwt = false | **Done** | Already wired |
+| WM_ANALYZE_QUOTE_SECRET stored | **Done** | Secret was added via add_secret |
 
-## What Should Be Included Beyond Your Spec
+## One Gap: `analysis_version`
 
-- **`envelope.meta`**: Include `analysis_version`, `trace_id`, `model_used`, `processing_time_ms` — Manus needs these for its own debugging/audit trail.
-- **`envelope.preview`**: A sanitized subset (score, grade, warning count, risk level, headline) that Manus can show *before* the user unlocks the full report. This is NOT computed by blurring `full` — it's a distinct projection.
-- **`envelope.full.dashboard`**: The complete structured data (pillar scores, warnings array, missing items, forensic summary, extracted identity, questions to ask). This is what populates the UI.
-- **Input validation via Zod** on the Manus side request (not just shape — also `file_url` must be HTTPS, `mime_type` must be image/* or application/pdf).
-- **Error contract**: Structured error responses with `code` + `message` so Manus can programmatically handle `INVALID_QUOTE`, `AI_UNAVAILABLE`, `RATE_LIMITED`, `AUTH_FAILED`.
+Your checklist says: *Set `analysis_version: "wm_rubric_v3"` (or semver)*. Currently it's `"2.2"` (line 558). This should be updated to a meaningful versioned identifier like `"wm_rubric_v3.0"` so Manus can track which rubric+scoring logic produced each result.
 
-## What This Does NOT Do
+## Two Improvements Worth Making
 
-- Does NOT fire internal tracking events (no `wm_event_log`, no `logAttributionEvent`) — Manus has its own tracking
-- Does NOT persist to `quote_analyses` table — Manus stores its own copy
-- Does NOT touch the frontend or any existing edge functions
+### 1. Bump `analysis_version` to `"wm_rubric_v3.0"`
 
-## Existing Modules to Reuse
+Single line change. This gives Manus a queryable version string that changes when you update rubric or scoring logic.
 
-| Module | Reuse |
-|---|---|
-| `supabase/functions/quote-scanner/schema.ts` | `ExtractionSignalsJsonSchema`, `ExtractionSignals` type, `sanitizeForPrompt()` |
-| `supabase/functions/quote-scanner/rubric.ts` | `EXTRACTION_RUBRIC`, `USER_PROMPT_TEMPLATE` |
-| `supabase/functions/quote-scanner/scoring.ts` | `scoreFromSignals()` — the deterministic engine |
-| `supabase/functions/quote-scanner/forensic.ts` | `generateForensicSummary()`, `extractIdentity()` |
-| `supabase/functions/quote-scanner/guards.ts` | `corsHeaders`, `handleGuardError` |
+### 2. No separate `GEMINI_API_KEY` needed
 
-Zero new scoring logic. The AI is only used for extraction; everything else is deterministic reuse.
+Your checklist mentions a separate `GEMINI_API_KEY`. This is **not needed** — the function already uses `LOVABLE_API_KEY` (auto-provisioned) to call the Lovable AI Gateway, which routes to Gemini. The AI key concern is already handled. Two secrets remain correct: `LOVABLE_API_KEY` (auto) + `WM_ANALYZE_QUOTE_SECRET` (manual).
 
-## Minimal Change Plan (3 steps)
+## What Manus Needs From You
 
-### Step 1: Add shared secret
+Share this exact endpoint configuration:
 
-Use `add_secret` to request `WM_ANALYZE_QUOTE_SECRET` from you. This is the bearer token Manus will send in its `Authorization` header.
-
-### Step 2: Create `supabase/functions/wm-analyze-quote/index.ts`
-
-Single file, ~180 lines. Logic:
-
-1. **Auth gate**: Verify `Authorization: Bearer <WM_ANALYZE_QUOTE_SECRET>` matches the secret. Return 401 if not.
-2. **Parse + validate** request body with Zod:
-   ```ts
-   {
-     file_url: string (HTTPS URL),
-     mime_type: "image/png" | "image/jpeg" | "image/webp" | "application/pdf",
-     opening_count?: number,
-     area_name?: string,
-     notes_from_calculator?: string,
-     trace_id: string (UUID, required — Manus generates this)
-   }
-   ```
-3. **Fetch the file** from `file_url` → convert to base64 (same format the AI gateway expects). Fail with `FILE_FETCH_FAILED` if the URL is unreachable or returns non-200.
-4. **Call AI gateway** with `EXTRACTION_RUBRIC` + `ExtractionSignalsJsonSchema` (identical to `quote-scanner`).
-5. **Run deterministic pipeline**: `scoreFromSignals()` → `generateForensicSummary()` → `extractIdentity()`.
-6. **Build AnalysisEnvelope** and return:
-
-```ts
-{
-  meta: {
-    trace_id: string,
-    analysis_version: "2.2",
-    model_used: string,
-    processing_time_ms: number,
-    timestamp: string
-  },
-  preview: {
-    score: number,
-    grade: string,
-    risk_level: "critical" | "high" | "moderate" | "acceptable",
-    headline: string,
-    warning_count: number,
-    missing_item_count: number
-  },
-  full: {
-    dashboard: {
-      overall_score, final_grade, safety_score, scope_score,
-      price_score, fine_print_score, warranty_score,
-      price_per_opening, warnings[], missing_items[], summary
-    },
-    forensic: {
-      headline, risk_level, statute_citations[],
-      questions_to_ask[], positive_findings[],
-      hard_cap_applied, hard_cap_reason, hard_cap_statute
-    },
-    extracted_identity: {
-      contractor_name, license_number, noa_numbers[]
-    }
-  }
-}
+```text
+URL:     https://kffoximblqwcnznwvugu.supabase.co/functions/v1/wm-analyze-quote
+Method:  POST
+Auth:    Authorization: Bearer <WM_ANALYZE_QUOTE_SECRET value>
 ```
 
-### Step 3: Wire config.toml
+And the **response Zod schema** for Manus to validate:
 
-Add `[functions.wm-analyze-quote]` with `verify_jwt = false` (auth is handled by the shared secret, not Supabase JWT).
+```typescript
+const AnalysisEnvelopeSchema = z.object({
+  meta: z.object({
+    trace_id: z.string().uuid(),
+    analysis_version: z.string(),
+    model_used: z.string(),
+    processing_time_ms: z.number(),
+    timestamp: z.string(),
+  }),
+  preview: z.object({
+    score: z.number().int().min(0).max(100),
+    grade: z.string(),
+    risk_level: z.enum(["critical", "high", "moderate", "acceptable"]),
+    headline: z.string(),
+    warning_count: z.number().int(),
+    missing_item_count: z.number().int(),
+  }),
+  full: z.object({
+    dashboard: z.object({
+      overall_score: z.number(),
+      final_grade: z.string(),
+      safety_score: z.number(),
+      scope_score: z.number(),
+      price_score: z.number(),
+      fine_print_score: z.number(),
+      warranty_score: z.number(),
+      price_per_opening: z.string(),
+      warnings: z.array(z.string()),
+      missing_items: z.array(z.string()),
+      summary: z.string(),
+    }),
+    forensic: z.object({
+      headline: z.string(),
+      risk_level: z.enum(["critical", "high", "moderate", "acceptable"]),
+      statute_citations: z.array(z.string()),
+      questions_to_ask: z.array(z.string()),
+      positive_findings: z.array(z.string()),
+      hard_cap_applied: z.boolean(),
+      hard_cap_reason: z.string().nullable(),
+      hard_cap_statute: z.string().nullable(),
+    }),
+    extracted_identity: z.object({
+      contractor_name: z.string().nullable(),
+      license_number: z.string().nullable(),
+      noa_numbers: z.array(z.string()),
+    }),
+  }),
+});
+```
 
-## Error Contract
+## Proposed Change
 
-| HTTP Status | Code | When |
-|---|---|---|
-| 401 | `AUTH_FAILED` | Missing or invalid bearer token |
-| 400 | `VALIDATION_ERROR` | Bad request body (Zod details in response) |
-| 422 | `INVALID_QUOTE` | AI determined document is not a window quote |
-| 502 | `FILE_FETCH_FAILED` | Could not download from `file_url` |
-| 429 | `RATE_LIMITED` | AI gateway rate limit |
-| 500 | `AI_UNAVAILABLE` | AI gateway error |
+**File:** `supabase/functions/wm-analyze-quote/index.ts`
 
-## Events Fired
+Update line 558: change `analysis_version: "2.2"` → `analysis_version: "wm_rubric_v3.0"`
 
-None. This is a stateless service-to-service API. Manus owns its own tracking.
-
-## Definition of Done
-
-- [ ] `WM_ANALYZE_QUOTE_SECRET` secret stored
-- [ ] `POST /wm-analyze-quote` authenticates via bearer token
-- [ ] Fetches image from `file_url`, runs extraction + deterministic scoring
-- [ ] Returns `AnalysisEnvelope` with `meta`, `preview`, and `full` sections
-- [ ] `preview` is a distinct projection, not blurred `full`
-- [ ] `trace_id` round-trips from request to response
-- [ ] Invalid quotes return 422 with `INVALID_QUOTE` code
-- [ ] No internal tracking events fired
-- [ ] No writes to `quote_analyses` table
-- [ ] Edge function deploys and is callable from external origin
+That is the only code change needed. Everything else is already built and deployed.
 
