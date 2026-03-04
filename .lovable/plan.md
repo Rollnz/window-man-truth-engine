@@ -1,37 +1,74 @@
+# Full Audit: Extraction Logic, Rubrics & Orchestration Flow
 
+---
 
-# Plan: Create `/scanner-brain` Directory
+## 1. Every File Containing an AI Prompt for Quote Analysis
 
-## Key Finding
-`generateSafePreview` does **not exist** anywhere in the codebase. Your barrel file references it, but it needs to either be created or removed. I'll create a minimal implementation that generates the blurred/teaser preview data (warning count, risk level, grade) since that's what the UI teaser screen needs.
+| # | File | Prompt/Rubric | Purpose |
+|---|------|---------------|---------|
+| 1 | `supabase/functions/quote-scanner/rubric.ts` | `EXTRACTION_RUBRIC` | **Canonical source.** Signal extraction for consumer-facing scanner. ~180 lines, 6 phases. |
+| 2 | `supabase/functions/quote-scanner/rubric.ts` | `GRADING_RUBRIC` | Short 3-line system prompt for "question" mode (follow-up Q&A about a quote). |
+| 3 | `supabase/functions/quote-scanner/rubric.ts` | `USER_PROMPT_TEMPLATE()` | Builds the user-role message with optional hints (opening count, area, notes). |
+| 4 | `supabase/functions/wm-analyze-quote/index.ts` (line 164) | `EXTRACTION_RUBRIC` (inlined copy) | **Duplicate.** Compressed version of #1 for Manus API. Same signals, shorter prose. |
+| 5 | `supabase/functions/wm-analyze-quote/index.ts` (line 241) | `buildUserPrompt()` (inlined copy) | Duplicate of #3. |
+| 6 | `supabase/functions/quote-scanner/index.ts` (line 215) | Inline email prompt | "You are a professional negotiation assistant. Draft a polite but firm email..." |
+| 7 | `supabase/functions/quote-scanner/index.ts` (line 227) | Inline phoneScript prompt | Negotiation coach: Opening, The Ask, Objection Handling. |
+| 8 | `supabase/functions/analyze-consultation-quote/index.ts` (line 143) | **Completely different rubric** | "Forensic Sales Intelligence Analyst" — extracts itemized openings, competitor name, measurements, colors, installation type, warranty, red flags, sales angle. Schema v2 via tool calling. |
+| 9 | `supabase/functions/expert-chat/index.ts` (line 151) | Expert chat system prompt | Window consultant persona with dynamic context injection (cost of inaction, reality check score, etc.). |
+| 10 | `supabase/functions/roleplay-chat/index.ts` (line 9) | `SYSTEM_PROMPT` | "The Closer" — high-pressure salesman roleplay training. Not extraction. |
+| 11 | `supabase/functions/slide-over-chat/index.ts` (line 116) | `buildSystemPrompt()` | "Hurricane Hero" persona — site-wide Q&A chat. Not extraction. |
+| 12 | `supabase/functions/generate-quote/index.ts` (line 117) | Inline estimator prompt | Cost estimate generator for the Quote Builder tool. Not extraction. |
 
-## Files to Create (5 files)
+---
 
-### 1. `scanner-brain/schema.ts`
-- Source: `supabase/functions/quote-scanner/schema.ts`
-- Change: `import { z } from "./deps.ts"` → `import { z } from "zod"`
-- Remove: `QuoteScannerRequestSchema` (edge-function-specific)
-- Keep: `ExtractionSignals`, `AnalysisData`, `ExtractionSignalsJsonSchema`, `sanitizeForPrompt`, `AnalysisContextSchema`
+## 2. Multiple Versions
 
-### 2. `scanner-brain/rubric.ts`
-- Source: `supabase/functions/quote-scanner/rubric.ts`
-- Change: `import { sanitizeForPrompt } from "./schema.ts"` → `from "./schema"`
-- Keep all exports unchanged
+**THREE distinct rubric families:**
 
-### 3. `scanner-brain/scoring.ts`
-- Source: `supabase/functions/quote-scanner/scoring.ts`
-- Change: `import type { ... } from "./schema.ts"` → `from "./schema"`
-- **Add** `generateSafePreview(scored: ScoredResult)` — returns a preview-safe subset: `{ grade, warningCount, riskLevel, hasCriticalCap }` for the blurred teaser UI
-- Export: `scoreFromSignals`, `calculateLetterGrade`, `generateSafePreview`, `ScoredResult`, `HardCapResult`
+### Family A: Consumer Scanner Rubric (EXTRACTION_RUBRIC)
+- **Canonical source:** `quote-scanner/rubric.ts`
+- **Inlined copy:** `wm-analyze-quote/index.ts` (compressed but semantically identical)
+- **Output:** `ExtractionSignals` JSON (37 fields) → `scoreFromSignals()` → letter grade, pillar scores, warnings, missing items
+- **Version:** `wm_rubric_v3.0`
 
-### 4. `scanner-brain/forensic.ts`
-- Source: `supabase/functions/quote-scanner/forensic.ts`
-- Change imports: drop `.ts` extensions
-- Keep all exports unchanged
+### Family B: Sales Intelligence Rubric (analyze-consultation-quote)
+- **Location:** `analyze-consultation-quote/index.ts` (self-contained)
+- **Output:** Schema v2 JSON — `project_overview`, `itemized_openings[]`, `installation_scope`, `warranty`, `detected_markup_level`, `red_flags`, `sales_angle`
+- **Model:** `google/gemini-2.5-flash` (hardcoded)
 
-### 5. `scanner-brain/index.ts` (barrel)
-Exactly as you specified, with `BRAIN_VERSION = "3.0.0"` and all re-exports including the new `generateSafePreview`.
+### Family C: Support Prompts (not extraction)
+- `expert-chat`, `roleplay-chat`, `slide-over-chat`, `generate-quote`
 
-## Zero Logic Changes
-All scoring, forensic, and rubric logic is copied verbatim. The only new code is the ~10-line `generateSafePreview` helper.
+---
 
+## 3. Orchestration Flow
+
+```
+USER → upload-quote → quote-scanner (dedup → AI extraction → scoring → forensic → persist → return)
+     → Frontend renders Results Dashboard
+     → orchestrate-quote-analysis (after signup)
+     → DB trigger → pending_calls → call-dispatcher → PhoneCall.bot
+```
+
+Key: No AI-based data cleaning. All transformation is deterministic via `scoring.ts` + `forensic.ts`.
+
+---
+
+## 4. Canonical Scanner Brain (Files to Decouple)
+
+1. `quote-scanner/rubric.ts` — EXTRACTION_RUBRIC + USER_PROMPT_TEMPLATE
+2. `quote-scanner/schema.ts` — ExtractionSignals interface + JSON schema + sanitizeForPrompt
+3. `quote-scanner/scoring.ts` — scoreFromSignals + calculateLetterGrade + applyHardCaps + applyCurve
+4. `quote-scanner/forensic.ts` — generateForensicSummary + extractIdentity
+
+---
+
+## 5. Drift Risk
+
+`wm-analyze-quote/index.ts` inlines copies of all canonical logic. Any change to `quote-scanner/*.ts` must be manually mirrored.
+
+---
+
+## 6. Phone Agent Gap
+
+PhoneCall.bot only receives `grade` + `overall_score` + basic lead info. It does NOT get warnings, forensic summary, or extraction signals.
