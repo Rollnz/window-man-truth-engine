@@ -3,7 +3,7 @@
 // Large string constants for AI extraction and grading
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { sanitizeForPrompt } from "./schema";
+import { sanitizeForPrompt } from "./schema.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // EXTRACTION RUBRIC (AI Extracts Signals Only)

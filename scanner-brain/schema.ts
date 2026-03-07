@@ -1,27 +1,8 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // SCHEMA DEFINITIONS
-// Zod validation schemas, JSON schema for AI, TypeScript interfaces
+// TypeScript interfaces, JSON schema for AI, prompt sanitization
+// Zero external dependencies — safe for both Node.js and Deno runtimes
 // ═══════════════════════════════════════════════════════════════════════════
-
-import { z } from "zod";
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ZOD VALIDATION SCHEMAS
-// ═══════════════════════════════════════════════════════════════════════════
-
-export const AnalysisContextSchema = z.object({
-  overallScore: z.number().int().min(0).max(100).optional(),
-  finalGrade: z.string().optional(),
-  safetyScore: z.number().int().min(0).max(100).optional(),
-  scopeScore: z.number().int().min(0).max(100).optional(),
-  priceScore: z.number().int().min(0).max(100).optional(),
-  finePrintScore: z.number().int().min(0).max(100).optional(),
-  warrantyScore: z.number().int().min(0).max(100).optional(),
-  pricePerOpening: z.string().max(50).optional(),
-  warnings: z.array(z.string().max(500)).max(10).optional(),
-  missingItems: z.array(z.string().max(500)).max(10).optional(),
-  summary: z.string().max(1000).optional(),
-}).passthrough();
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PROMPT SANITIZATION
