@@ -3,7 +3,7 @@
 // Hybrid Rubric: Hard caps, curving, and weighted scoring
 // ═══════════════════════════════════════════════════════════════════════════
 
-import type { ExtractionSignals, AnalysisData } from "./schema";
+import type { ExtractionSignals, AnalysisData } from "./schema.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HARD CAP TYPES (Safeguard 2: Explicit pass to forensic.ts)

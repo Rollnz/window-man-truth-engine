@@ -12,15 +12,13 @@ import {
   checkRateLimit, 
   handleGuardError 
 } from "./guards.ts";
-import { 
-  QuoteScannerRequestSchema, 
-  ExtractionSignalsJsonSchema, 
-  sanitizeForPrompt 
-} from "./schema.ts";
-import type { ExtractionSignals } from "./schema.ts";
-import { EXTRACTION_RUBRIC, GRADING_RUBRIC, USER_PROMPT_TEMPLATE } from "./rubric.ts";
-import { scoreFromSignals } from "./scoring.ts";
-import { generateForensicSummary, extractIdentity } from "./forensic.ts";
+import { QuoteScannerRequestSchema } from "./validation.ts";
+// ── Scanner Brain: Single Source of Truth ──
+import { ExtractionSignalsJsonSchema, sanitizeForPrompt } from "../../../scanner-brain/schema.ts";
+import type { ExtractionSignals } from "../../../scanner-brain/schema.ts";
+import { EXTRACTION_RUBRIC, GRADING_RUBRIC, USER_PROMPT_TEMPLATE } from "../../../scanner-brain/rubric.ts";
+import { scoreFromSignals } from "../../../scanner-brain/scoring.ts";
+import { generateForensicSummary, extractIdentity } from "../../../scanner-brain/forensic.ts";
 import { logAttributionEvent } from "../_shared/attributionLogger.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════

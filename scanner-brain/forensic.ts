@@ -4,8 +4,8 @@
 // Safeguard 2: Consumes hardCapReason explicitly from scoring.ts
 // ═══════════════════════════════════════════════════════════════════════════
 
-import type { ExtractionSignals } from "./schema";
-import type { ScoredResult } from "./scoring";
+import type { ExtractionSignals } from "./schema.ts";
+import type { ScoredResult } from "./scoring.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FORENSIC SUMMARY TYPES
