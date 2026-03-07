@@ -65,6 +65,7 @@ const Terms = lazy(() => import("./pages/legal/Terms"));
 const BeatYourQuote = lazy(() => import("./pages/BeatYourQuote"));
 const FairPriceQuiz = lazy(() => import("./pages/FairPriceQuiz"));
 const ButtonAudit = lazy(() => import("./pages/ButtonAudit"));
+const ScoringPlayground = lazy(() => import("./pages/debug/ScoringPlayground"));
 const Proof = lazy(() => import("./pages/Proof"));
 const Consultation = lazy(() => import("./pages/Consultation"));
 const Audit = lazy(() => import("./pages/Audit"));
@@ -186,6 +187,7 @@ function AppContent() {
         
         {/* Internal dev tools (no footer) */}
         <Route path="/button-audit" element={<ButtonAudit />} />
+        <Route path="/debug/scoring" element={<ScoringPlayground />} />
       </Routes>
       
       {/* Session expired overlay — preserves form state */}
