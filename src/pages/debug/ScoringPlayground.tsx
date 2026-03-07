@@ -220,7 +220,7 @@ export default function ScoringPlayground() {
       const newWeights = { ...prev, [pillar]: val };
       // Proportionally redistribute remaining weight
       if (otherSum > 0) {
-        const remaining = 1 0 - val;
+        const remaining = 1.0 - val;
         const scale = remaining / otherSum;
         others.forEach(k => { newWeights[k] = Math.max(0, prev[k] * scale); });
       }
