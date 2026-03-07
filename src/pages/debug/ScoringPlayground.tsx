@@ -8,12 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   Shield, FileText, DollarSign, AlertTriangle, Award,
-  RotateCcw, Copy, ChevronDown,
+  RotateCcw, Copy, Upload, Code, Beaker, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
+import { copyToClipboard } from "@/utils/clipboard";
 
 // Import the real engine
 import {
@@ -21,13 +23,23 @@ import {
   generateSafePreview,
   generateForensicSummary,
   extractIdentity,
+  DEFAULT_WEIGHTS,
 } from "../../../scanner-brain/index";
 import type { ExtractionSignals } from "../../../scanner-brain/schema";
+import type { PillarWeights } from "../../../scanner-brain/scoring";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DEFAULT SIGNALS — a "blank slate" valid quote
+// CURVE FUNCTION (mirrored from scoring.ts for X-Ray display)
 // ═══════════════════════════════════════════════════════════════════════════
+function applyCurveLocal(score: number): number {
+  if (score <= 70) return score;
+  const excess = score - 70;
+  return Math.round(70 + (30 * Math.pow(excess / 30, 1.8)));
+}
 
+// ═══════════════════════════════════════════════════════════════════════════
+// DEFAULT SIGNALS
+// ═══════════════════════════════════════════════════════════════════════════
 const DEFAULT_SIGNALS: ExtractionSignals = {
   isValidQuote: true,
   validityReason: "Test scenario",
@@ -75,11 +87,10 @@ const DEFAULT_SIGNALS: ExtractionSignals = {
 // ═══════════════════════════════════════════════════════════════════════════
 // PRESETS
 // ═══════════════════════════════════════════════════════════════════════════
-
 const PRESETS: Record<string, { label: string; signals: Partial<ExtractionSignals> }> = {
-  perfect: { label: "✅ Perfect Quote", signals: {} },
+  perfect: { label: "✅ Perfect", signals: {} },
   average: {
-    label: "😐 Average FL Quote",
+    label: "😐 Average",
     signals: {
       hasComplianceIdentifier: false, hasNOANumber: false, noaNumberValue: null,
       hasGlassBuildDetail: false, hasDemoInstallDetail: false, hasSpecificMaterials: false,
@@ -89,12 +100,9 @@ const PRESETS: Record<string, { label: string; signals: Partial<ExtractionSignal
       warrantyDurationYears: null, hasLifetimeWarranty: false, hasTransferableWarranty: false,
     },
   },
-  noLicense: {
-    label: "🚨 No License",
-    signals: { licenseNumberPresent: false, licenseNumberValue: null },
-  },
+  noLicense: { label: "🚨 No License", signals: { licenseNumberPresent: false, licenseNumberValue: null } },
   scam: {
-    label: "💀 Total Scam",
+    label: "💀 Scam",
     signals: {
       licenseNumberPresent: false, licenseNumberValue: null,
       hasComplianceKeyword: false, hasComplianceIdentifier: false,
@@ -112,16 +120,12 @@ const PRESETS: Record<string, { label: string; signals: Partial<ExtractionSignal
       warrantyDurationYears: null, hasLifetimeWarranty: false, hasTransferableWarranty: false,
     },
   },
-  invalid: {
-    label: "📄 Not a Quote",
-    signals: { isValidQuote: false, validityReason: "This is a grocery receipt" },
-  },
+  invalid: { label: "📄 Not a Quote", signals: { isValidQuote: false, validityReason: "Grocery receipt" } },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// COMPONENT
+// HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
-
 function gradeColor(grade: string): string {
   if (grade.startsWith("A")) return "text-green-400";
   if (grade.startsWith("B")) return "text-blue-400";
@@ -140,13 +144,13 @@ function riskBadge(level: string) {
   return <Badge variant="outline" className={colors[level] || ""}>{level.toUpperCase()}</Badge>;
 }
 
-function PillarBar({ label, score, icon }: { label: string; score: number; icon: React.ReactNode }) {
+function PillarBar({ label, score, icon, weightPct }: { label: string; score: number; icon: React.ReactNode; weightPct: number }) {
   const pct = Math.min(score, 100);
   const color = pct >= 70 ? "bg-green-500" : pct >= 40 ? "bg-yellow-500" : "bg-red-500";
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-sm">
-        <span className="flex items-center gap-1.5 text-muted-foreground">{icon}{label}</span>
+        <span className="flex items-center gap-1.5 text-muted-foreground">{icon}{label} ({weightPct}%)</span>
         <span className="font-mono font-bold">{score}</span>
       </div>
       <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -167,9 +171,38 @@ function ToggleRow({ label, checked, onChange, danger }: {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// WEIGHT SLIDER COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
+function WeightSlider({ label, value, onChange, icon }: {
+  label: string; value: number; onChange: (v: number) => void; icon: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-sm">
+        <span className="flex items-center gap-1.5 text-muted-foreground">{icon}{label}</span>
+        <span className="font-mono font-bold text-primary">{Math.round(value * 100)}%</span>
+      </div>
+      <Slider
+        aria-label={`${label} weight`}
+        min={0}
+        max={60}
+        step={1}
+        value={[Math.round(value * 100)]}
+        onValueChange={([v]) => onChange(v / 100)}
+      />
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
 export default function ScoringPlayground() {
   const [signals, setSignals] = useState<ExtractionSignals>({ ...DEFAULT_SIGNALS });
   const [openingHint, setOpeningHint] = useState<number | null>(null);
+  const [weights, setWeights] = useState<PillarWeights>({ ...DEFAULT_WEIGHTS });
+  const [jsonInput, setJsonInput] = useState("");
 
   const update = useCallback(<K extends keyof ExtractionSignals>(key: K, val: ExtractionSignals[K]) => {
     setSignals(prev => ({ ...prev, [key]: val }));
@@ -180,45 +213,120 @@ export default function ScoringPlayground() {
     if (preset) setSignals({ ...DEFAULT_SIGNALS, ...preset.signals });
   }, []);
 
-  // Run the real engine
-  const scored = useMemo(() => scoreFromSignals(signals, openingHint), [signals, openingHint]);
+  const updateWeight = useCallback((pillar: keyof PillarWeights, val: number) => {
+    setWeights(prev => {
+      const others = Object.keys(prev).filter(k => k !== pillar) as (keyof PillarWeights)[];
+      const otherSum = others.reduce((s, k) => s + prev[k], 0);
+      const newWeights = { ...prev, [pillar]: val };
+      // Proportionally redistribute remaining weight
+      if (otherSum > 0) {
+        const remaining = 1 0 - val;
+        const scale = remaining / otherSum;
+        others.forEach(k => { newWeights[k] = Math.max(0, prev[k] * scale); });
+      }
+      return newWeights;
+    });
+  }, []);
+
+  const weightSum = useMemo(() => 
+    Math.round((weights.safety + weights.scope + weights.price + weights.finePrint + weights.warranty) * 100), 
+    [weights]
+  );
+
+  // Run engine with custom weights
+  const scored = useMemo(() => scoreFromSignals(signals, openingHint, weights), [signals, openingHint, weights]);
+  const defaultScored = useMemo(() => scoreFromSignals(signals, openingHint), [signals, openingHint]);
   const preview = useMemo(() => generateSafePreview(scored), [scored]);
   const forensic = useMemo(() => generateForensicSummary(signals, scored), [signals, scored]);
   const identity = useMemo(() => extractIdentity(signals), [signals]);
 
-  const copyJson = () => {
-    navigator.clipboard.writeText(JSON.stringify({ signals, scored, preview, forensic, identity }, null, 2));
+  // Math X-Ray calculations
+  const xray = useMemo(() => {
+    const w = weights;
+    const pillars = [
+      { name: "Safety", score: scored.safetyScore, weight: w.safety },
+      { name: "Scope", score: scored.scopeScore, weight: w.scope },
+      { name: "Price", score: scored.priceScore, weight: w.price },
+      { name: "Fine Print", score: scored.finePrintScore, weight: w.finePrint },
+      { name: "Warranty", score: scored.warrantyScore, weight: w.warranty },
+    ];
+    const weighted = pillars.map(p => ({ ...p, points: p.score * p.weight }));
+    const rawTotal = Math.round(weighted.reduce((s, p) => s + p.points, 0));
+    const curved = applyCurveLocal(rawTotal);
+    const capped = scored.hardCap.applied ? Math.min(curved, scored.hardCap.ceiling) : curved;
+    return { pillars: weighted, rawTotal, curved, capped };
+  }, [scored, weights]);
+
+  // JSON Importer
+  const importJson = useCallback(() => {
+    try {
+      const parsed = JSON.parse(jsonInput);
+      // Support both raw signals and wrapped objects
+      const signalsObj = parsed.signals ?? parsed;
+      if (typeof signalsObj.isValidQuote !== "boolean") {
+        toast.error("Invalid JSON: missing isValidQuote field");
+        return;
+      }
+      setSignals({ ...DEFAULT_SIGNALS, ...signalsObj });
+      toast.success("Signals imported — toggles updated");
+      setJsonInput("");
+    } catch {
+      toast.error("Invalid JSON — check your paste");
+    }
+  }, [jsonInput]);
+
+  // Export Engine Settings
+  const exportSettings = useCallback(() => {
+    const code = `// Updated pillar weights — generated from Master Control Room
+// Paste into scanner-brain/scoring.ts → DEFAULT_WEIGHTS
+export const DEFAULT_WEIGHTS: PillarWeights = {
+  safety: ${weights.safety.toFixed(2)},   // ${Math.round(weights.safety * 100)}%
+  scope: ${weights.scope.toFixed(2)},    // ${Math.round(weights.scope * 100)}%
+  price: ${weights.price.toFixed(2)},    // ${Math.round(weights.price * 100)}%
+  finePrint: ${weights.finePrint.toFixed(2)}, // ${Math.round(weights.finePrint * 100)}%
+  warranty: ${weights.warranty.toFixed(2)},  // ${Math.round(weights.warranty * 100)}%
+};`;
+    copyToClipboard(code);
+    toast.success("TypeScript code copied to clipboard");
+  }, [weights]);
+
+  const copyFullState = () => {
+    copyToClipboard(JSON.stringify({ signals, weights, scored, preview, forensic, identity }, null, 2));
     toast.success("Full state copied to clipboard");
   };
 
+  const scoreDelta = scored.overallScore - defaultScored.overallScore;
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">🧪 Scoring Playground</h1>
-            <p className="text-sm text-muted-foreground">Live rubric tuning — toggle signals and watch scores update instantly</p>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Beaker className="h-6 w-6 text-primary" /> Master Control Room
+            </h1>
+            <p className="text-sm text-muted-foreground">Live rubric tuning • Math X-Ray • JSON import • Weight experiments</p>
           </div>
           <div className="flex gap-2 flex-wrap">
             {Object.entries(PRESETS).map(([key, { label }]) => (
               <Button key={key} variant="outline" size="sm" onClick={() => applyPreset(key)}>{label}</Button>
             ))}
-            <Button variant="ghost" size="sm" onClick={() => setSignals({ ...DEFAULT_SIGNALS })}>
-              <RotateCcw className="h-4 w-4 mr-1" />Reset
+            <Button variant="ghost" size="sm" onClick={() => { setSignals({ ...DEFAULT_SIGNALS }); setWeights({ ...DEFAULT_WEIGHTS }); }}>
+              <RotateCcw className="h-4 w-4 mr-1" />Reset All
             </Button>
-            <Button variant="ghost" size="sm" onClick={copyJson}>
+            <Button variant="ghost" size="sm" onClick={copyFullState}>
               <Copy className="h-4 w-4 mr-1" />JSON
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT: Signal Controls */}
-          <div className="lg:col-span-1 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* LEFT COL: Signal Controls */}
+          <div className="lg:col-span-3 space-y-4">
             <ScrollArea className="h-[calc(100vh-200px)]">
               <div className="space-y-4 pr-4">
-                {/* Document Validity */}
+                {/* Document */}
                 <Card>
                   <CardHeader className="pb-2"><CardTitle className="text-sm">Document</CardTitle></CardHeader>
                   <CardContent className="space-y-2">
@@ -238,7 +346,7 @@ export default function ScoringPlayground() {
                   </CardContent>
                 </Card>
 
-                {/* Safety Signals */}
+                {/* Safety */}
                 <Card>
                   <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-1"><Shield className="h-4 w-4" />Safety</CardTitle></CardHeader>
                   <CardContent className="space-y-1">
@@ -261,7 +369,7 @@ export default function ScoringPlayground() {
                   </CardContent>
                 </Card>
 
-                {/* Scope Signals */}
+                {/* Scope */}
                 <Card>
                   <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-1"><FileText className="h-4 w-4" />Scope</CardTitle></CardHeader>
                   <CardContent className="space-y-1">
@@ -314,8 +422,8 @@ export default function ScoringPlayground() {
             </ScrollArea>
           </div>
 
-          {/* RIGHT: Live Results */}
-          <div className="lg:col-span-2 space-y-4">
+          {/* CENTER COL: Results + X-Ray */}
+          <div className="lg:col-span-5 space-y-4">
             {/* Grade Hero */}
             <Card>
               <CardContent className="pt-6">
@@ -323,6 +431,11 @@ export default function ScoringPlayground() {
                   <div className="text-center">
                     <div className={`text-6xl font-black ${gradeColor(scored.finalGrade)}`}>{scored.finalGrade}</div>
                     <div className="text-sm text-muted-foreground mt-1">Overall: {scored.overallScore}/100</div>
+                    {scoreDelta !== 0 && (
+                      <div className={`text-xs mt-1 font-mono ${scoreDelta > 0 ? "text-green-400" : "text-red-400"}`}>
+                        {scoreDelta > 0 ? "+" : ""}{scoreDelta} vs default weights
+                      </div>
+                    )}
                   </div>
                   <div className="text-right space-y-2">
                     {riskBadge(preview.riskLevel)}
@@ -341,15 +454,68 @@ export default function ScoringPlayground() {
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm">Pillar Breakdown</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <PillarBar label="Safety (30%)" score={scored.safetyScore} icon={<Shield className="h-3 w-3" />} />
-                <PillarBar label="Scope (25%)" score={scored.scopeScore} icon={<FileText className="h-3 w-3" />} />
-                <PillarBar label="Price (20%)" score={scored.priceScore} icon={<DollarSign className="h-3 w-3" />} />
-                <PillarBar label="Fine Print (15%)" score={scored.finePrintScore} icon={<AlertTriangle className="h-3 w-3" />} />
-                <PillarBar label="Warranty (10%)" score={scored.warrantyScore} icon={<Award className="h-3 w-3" />} />
+                <PillarBar label="Safety" score={scored.safetyScore} icon={<Shield className="h-3 w-3" />} weightPct={Math.round(weights.safety * 100)} />
+                <PillarBar label="Scope" score={scored.scopeScore} icon={<FileText className="h-3 w-3" />} weightPct={Math.round(weights.scope * 100)} />
+                <PillarBar label="Price" score={scored.priceScore} icon={<DollarSign className="h-3 w-3" />} weightPct={Math.round(weights.price * 100)} />
+                <PillarBar label="Fine Print" score={scored.finePrintScore} icon={<AlertTriangle className="h-3 w-3" />} weightPct={Math.round(weights.finePrint * 100)} />
+                <PillarBar label="Warranty" score={scored.warrantyScore} icon={<Award className="h-3 w-3" />} weightPct={Math.round(weights.warranty * 100)} />
               </CardContent>
             </Card>
 
-            {/* Warnings + Missing Items */}
+            {/* Math X-Ray Panel */}
+            <Accordion type="single" collapsible>
+              <AccordionItem value="xray">
+                <AccordionTrigger className="text-sm font-semibold">
+                  <span className="flex items-center gap-1.5"><Eye className="h-4 w-4 text-primary" /> Math X-Ray</span>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-3 font-mono text-xs">
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                      <p className="text-muted-foreground font-sans text-xs font-semibold mb-2">Step 1: Weighted Pillar Sum</p>
+                      {xray.pillars.map(p => (
+                        <div key={p.name} className="flex justify-between">
+                          <span>{p.name}: {p.score} × {(p.weight * 100).toFixed(0)}%</span>
+                          <span className="text-primary">= {p.points.toFixed(1)} pts</span>
+                        </div>
+                      ))}
+                      <Separator className="my-2" />
+                      <div className="flex justify-between font-bold">
+                        <span>Raw Total (rounded)</span>
+                        <span>{xray.rawTotal}</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                      <p className="text-muted-foreground font-sans text-xs font-semibold mb-2">Step 2: Exponential Curve</p>
+                      {xray.rawTotal <= 70 ? (
+                        <p className="text-foreground">Score ≤ 70 → no curve applied → <span className="text-primary font-bold">{xray.curved}</span></p>
+                      ) : (
+                        <>
+                          <p className="text-foreground">excess = {xray.rawTotal} - 70 = {xray.rawTotal - 70}</p>
+                          <p className="text-foreground">curved = 70 + (30 × ({xray.rawTotal - 70}/30)^1.8)</p>
+                          <p className="text-foreground">curved = <span className="text-primary font-bold">{xray.curved}</span></p>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                      <p className="text-muted-foreground font-sans text-xs font-semibold mb-2">Step 3: Hard Cap</p>
+                      {scored.hardCap.applied ? (
+                        <>
+                          <p className="text-red-400">Cap applied: ceiling = {scored.hardCap.ceiling}</p>
+                          <p className="text-foreground">min({xray.curved}, {scored.hardCap.ceiling}) = <span className="text-red-400 font-bold">{xray.capped}</span></p>
+                          <p className="text-red-400/70">{scored.hardCap.reason} {scored.hardCap.statute && `(${scored.hardCap.statute})`}</p>
+                        </>
+                      ) : (
+                        <p className="text-green-400">No cap → final = <span className="font-bold">{xray.capped}</span></p>
+                      )}
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            {/* Warnings + Missing */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm text-red-400">⚠️ Warnings ({scored.warnings.length})</CardTitle></CardHeader>
@@ -366,7 +532,7 @@ export default function ScoringPlayground() {
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm text-yellow-400">📋 Missing Items ({scored.missingItems.length})</CardTitle></CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-sm text-yellow-400">📋 Missing ({scored.missingItems.length})</CardTitle></CardHeader>
                 <CardContent>
                   {scored.missingItems.length === 0 ? (
                     <p className="text-sm text-muted-foreground">None</p>
@@ -384,13 +550,11 @@ export default function ScoringPlayground() {
             {/* Summary */}
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm">Summary</CardTitle></CardHeader>
-              <CardContent>
-                <p className="text-sm text-foreground">{scored.summary}</p>
-              </CardContent>
+              <CardContent><p className="text-sm text-foreground">{scored.summary}</p></CardContent>
             </Card>
 
-            {/* Forensic Summary (Collapsible) */}
-            <Accordion type="single" collapsible defaultValue="forensic">
+            {/* Forensic */}
+            <Accordion type="single" collapsible>
               <AccordionItem value="forensic">
                 <AccordionTrigger className="text-sm font-semibold">Forensic Summary</AccordionTrigger>
                 <AccordionContent>
@@ -399,25 +563,19 @@ export default function ScoringPlayground() {
                     {forensic.statuteCitations.length > 0 && (
                       <div>
                         <p className="text-xs font-semibold text-muted-foreground mb-1">Statute Citations:</p>
-                        {forensic.statuteCitations.map((c, i) => (
-                          <p key={i} className="text-xs text-red-300">• {c}</p>
-                        ))}
+                        {forensic.statuteCitations.map((c, i) => <p key={i} className="text-xs text-red-300">• {c}</p>)}
                       </div>
                     )}
                     {forensic.questionsToAsk.length > 0 && (
                       <div>
                         <p className="text-xs font-semibold text-muted-foreground mb-1">Questions to Ask:</p>
-                        {forensic.questionsToAsk.map((q, i) => (
-                          <p key={i} className="text-xs text-foreground">• {q}</p>
-                        ))}
+                        {forensic.questionsToAsk.map((q, i) => <p key={i} className="text-xs text-foreground">• {q}</p>)}
                       </div>
                     )}
                     {forensic.positiveFindings.length > 0 && (
                       <div>
-                        <p className="text-xs font-semibold text-muted-foreground mb-1">Positive Findings:</p>
-                        {forensic.positiveFindings.map((p, i) => (
-                          <p key={i} className="text-xs text-green-400">✓ {p}</p>
-                        ))}
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Positive:</p>
+                        {forensic.positiveFindings.map((p, i) => <p key={i} className="text-xs text-green-400">✓ {p}</p>)}
                       </div>
                     )}
                   </div>
@@ -445,6 +603,62 @@ export default function ScoringPlayground() {
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
+          </div>
+
+          {/* RIGHT COL: Weights + JSON Import + Export */}
+          <div className="lg:col-span-4 space-y-4">
+            {/* Weight Sliders */}
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-1.5">
+                    <Beaker className="h-4 w-4 text-primary" /> Pillar Weights
+                  </CardTitle>
+                  <Badge variant={weightSum === 100 ? "outline" : "destructive"} className="font-mono text-xs">
+                    Σ = {weightSum}%
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <WeightSlider label="Safety" value={weights.safety} onChange={v => updateWeight("safety", v)} icon={<Shield className="h-3 w-3" />} />
+                <WeightSlider label="Scope" value={weights.scope} onChange={v => updateWeight("scope", v)} icon={<FileText className="h-3 w-3" />} />
+                <WeightSlider label="Price" value={weights.price} onChange={v => updateWeight("price", v)} icon={<DollarSign className="h-3 w-3" />} />
+                <WeightSlider label="Fine Print" value={weights.finePrint} onChange={v => updateWeight("finePrint", v)} icon={<AlertTriangle className="h-3 w-3" />} />
+                <WeightSlider label="Warranty" value={weights.warranty} onChange={v => updateWeight("warranty", v)} icon={<Award className="h-3 w-3" />} />
+                <Separator />
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => setWeights({ ...DEFAULT_WEIGHTS })}>
+                    <RotateCcw className="h-3 w-3 mr-1" />Reset Weights
+                  </Button>
+                  <Button variant="default" size="sm" className="flex-1" onClick={exportSettings}>
+                    <Code className="h-3 w-3 mr-1" />Export Code
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* JSON Importer */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-1.5">
+                  <Upload className="h-4 w-4 text-primary" /> Import AI JSON
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Paste a raw ExtractionSignals JSON from a failed scan or database record. Toggles update instantly.
+                </p>
+                <Textarea
+                  placeholder='{"isValidQuote": true, "totalPriceFound": true, ...}'
+                  value={jsonInput}
+                  onChange={e => setJsonInput(e.target.value)}
+                  className="font-mono text-xs h-40"
+                />
+                <Button variant="default" size="sm" className="w-full" onClick={importJson} disabled={!jsonInput.trim()}>
+                  <Upload className="h-3 w-3 mr-1" />Import & Score
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
