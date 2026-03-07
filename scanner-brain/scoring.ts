@@ -137,10 +137,30 @@ function applyCurve(score: number): number {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// PILLAR WEIGHTS (Configurable)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface PillarWeights {
+  safety: number;   // default 0.30
+  scope: number;    // default 0.25
+  price: number;    // default 0.20
+  finePrint: number; // default 0.15
+  warranty: number;  // default 0.10
+}
+
+export const DEFAULT_WEIGHTS: PillarWeights = {
+  safety: 0.30,
+  scope: 0.25,
+  price: 0.20,
+  finePrint: 0.15,
+  warranty: 0.10,
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MAIN SCORING FUNCTION
 // ═══════════════════════════════════════════════════════════════════════════
 
-export function scoreFromSignals(signals: ExtractionSignals, openingCountHint: number | null): ScoredResult {
+export function scoreFromSignals(signals: ExtractionSignals, openingCountHint: number | null, customWeights?: PillarWeights): ScoredResult {
   const warnings: string[] = [];
   const missingItems: string[] = [];
 
@@ -341,12 +361,13 @@ export function scoreFromSignals(signals: ExtractionSignals, openingCountHint: n
   const hardCap = applyHardCaps(signals, warnings);
 
   // PHASE 8: Overall Score + Curving
+  const w = customWeights ?? DEFAULT_WEIGHTS;
   let rawOverallScore = Math.round(
-    safetyScore * 0.30 +
-    scopeScore * 0.25 +
-    priceScore * 0.20 +
-    finePrintScore * 0.15 +
-    warrantyScore * 0.10
+    safetyScore * w.safety +
+    scopeScore * w.scope +
+    priceScore * w.price +
+    finePrintScore * w.finePrint +
+    warrantyScore * w.warranty
   );
 
   // Apply curve to make 90+ rare
