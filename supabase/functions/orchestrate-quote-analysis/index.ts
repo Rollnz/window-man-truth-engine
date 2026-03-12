@@ -28,6 +28,16 @@ interface AnalysisData {
   summary?: string;
 }
 
+interface AccountRecord {
+  id?: string;
+  account_id?: string;
+  email?: string;
+  supabase_user_id?: string | null;
+  client_id?: string | null;
+  session_id?: string | null;
+}
+
+
 function buildSuccessResponse(
   quoteAnalysisId: string,
   grade: string,
@@ -95,18 +105,65 @@ Deno.serve(async (req) => {
       auth: { persistSession: false },
     });
 
-    // Derive account_id from authenticated user (prevents IDOR)
-    const { data: account, error: accountError } = await supabase
+    // Derive account from authenticated user
+    const { data: accountRows, error: accountLookupError } = await supabase
       .from('accounts')
-      .select('id, client_id, session_id')
+      .select('*')
       .eq('supabase_user_id', userId)
-      .single();
+      .limit(1);
 
-    if (accountError || !account) {
+    if (accountLookupError) {
+      return jsonResponse({ success: false, error: 'ACCOUNT_LOOKUP_FAILED', message: accountLookupError.message }, 500);
+    }
+
+    let account: AccountRecord | null = accountRows?.[0] ?? null;
+
+    // Self-heal legacy unlinked accounts: if email matches and supabase_user_id is null, claim it.
+    if (!account && authedUser.email) {
+      const { data: emailMatchRows, error: emailMatchError } = await supabase
+        .from('accounts')
+        .select('*')
+        .ilike('email', authedUser.email)
+        .limit(1);
+
+      if (emailMatchError) {
+        return jsonResponse({ success: false, error: 'ACCOUNT_LOOKUP_FAILED', message: emailMatchError.message }, 500);
+      }
+
+      const emailMatch = (emailMatchRows?.[0] ?? null) as AccountRecord | null;
+
+      if (emailMatch && !emailMatch.supabase_user_id) {
+        const rowId = emailMatch.id ?? emailMatch.account_id;
+        const rowIdColumn = emailMatch.id ? 'id' : 'account_id';
+
+        if (rowId) {
+          const { data: claimedRows, error: claimError } = await supabase
+            .from('accounts')
+            .update({ supabase_user_id: userId, updated_at: new Date().toISOString() })
+            .eq(rowIdColumn, rowId)
+            .select('*')
+            .limit(1);
+
+          if (claimError) {
+            return jsonResponse({ success: false, error: 'ACCOUNT_LINK_FAILED', message: claimError.message }, 500);
+          }
+
+          account = (claimedRows?.[0] ?? null) as AccountRecord | null;
+        }
+      } else if (emailMatch && emailMatch.supabase_user_id === userId) {
+        account = emailMatch;
+      }
+    }
+
+    if (!account) {
       return jsonResponse({ success: false, error: 'ACCOUNT_NOT_FOUND', message: 'No account linked to this user' }, 404);
     }
 
-    const account_id = account.id;
+    const account_id = account.id ?? account.account_id;
+
+    if (!account_id) {
+      return jsonResponse({ success: false, error: 'ACCOUNT_SCHEMA_ERROR', message: 'Account row is missing primary key' }, 500);
+    }
 
     // Parse request body (only quote_analysis_id needed now)
     const body = await req.json();

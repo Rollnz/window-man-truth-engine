@@ -696,7 +696,7 @@ serve(async (req) => {
         // 1. Check for existing account by email
         const { data: existingAccounts, error: accountLookupError } = await supabase
           .from('accounts')
-          .select('id, first_name, last_name, phone, utm_source, gclid, fbc, msclkid, gbraid, wbraid, ttclid, client_id')
+          .select('*')
           .eq('email', normalizedEmail)
           .order('created_at', { ascending: false })
           .limit(1);
@@ -706,12 +706,14 @@ serve(async (req) => {
           throw new Error('Database error while checking account');
         }
 
-        const existingAccount = existingAccounts && existingAccounts.length > 0 ? existingAccounts[0] : null;
+        const existingAccount = existingAccounts && existingAccounts.length > 0
+          ? (existingAccounts[0] as Record<string, unknown>)
+          : null;
 
         if (existingAccount) {
           // 2a. UPDATE existing account
           // CRITICAL: DO NOT overwrite first_name, last_name, phone, or email
-          leadId = existingAccount.id;
+          leadId = String(existingAccount.account_id ?? existingAccount.id);
           console.log('[TrafficCop] Found existing account:', leadId, '- updating attribution only');
 
           const accountUpdate: Record<string, unknown> = {
@@ -740,9 +742,16 @@ serve(async (req) => {
           if (!existingAccount.gclid && attribution?.gclid) {
             accountUpdate.gclid = attribution.gclid;
           }
-          if (!existingAccount.fbc && (attribution?.fbc || attribution?.fbp)) {
-            accountUpdate.fbc = attribution?.fbc;
-            accountUpdate.fbp = attribution?.fbp;
+          const existingFbc = (existingAccount.fbc ?? existingAccount._fbc) as string | null | undefined;
+          const existingFbp = (existingAccount.fbp ?? existingAccount._fbp) as string | null | undefined;
+          if (!existingFbc && (attribution?.fbc || attribution?.fbp)) {
+            if ('_fbc' in existingAccount || '_fbp' in existingAccount) {
+              accountUpdate._fbc = attribution?.fbc;
+              accountUpdate._fbp = attribution?.fbp;
+            } else {
+              accountUpdate.fbc = attribution?.fbc;
+              accountUpdate.fbp = attribution?.fbp;
+            }
           }
           if (!existingAccount.msclkid && attribution?.msclkid) {
             accountUpdate.msclkid = attribution.msclkid;
@@ -784,10 +793,12 @@ serve(async (req) => {
             accountUpdate.client_id = clientId;
           }
 
+          const accountIdColumn = 'account_id' in existingAccount ? 'account_id' : 'id';
+
           const { error: updateError } = await supabase
             .from('accounts')
             .update(accountUpdate)
-            .eq('id', leadId);
+            .eq(accountIdColumn, leadId);
 
           if (updateError) {
             console.error('[TrafficCop] Error updating account:', updateError);
@@ -818,7 +829,7 @@ serve(async (req) => {
           const { data: newAccount, error: insertError } = await supabase
             .from('accounts')
             .insert(accountRecord)
-            .select('id')
+            .select('*')
             .single();
 
           if (insertError || !newAccount) {
@@ -826,7 +837,7 @@ serve(async (req) => {
             throw new Error('Database error while creating account');
           }
 
-          leadId = newAccount.id;
+          leadId = String((newAccount as Record<string, unknown>).account_id ?? (newAccount as Record<string, unknown>).id);
           console.log('[TrafficCop] Created new account:', leadId);
 
           // Trigger admin notification for new vault signup
