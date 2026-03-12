@@ -528,7 +528,7 @@ export default function Signup() {
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Don't Have a Quote Yet?</h2>
             <p className="text-sm text-muted-foreground">
-              Create your free Vault now and scan later. Takes ~30 seconds.
+              Create a free account now and scan later. Takes ~30 seconds.
             </p>
 
             <div className="space-y-2">
