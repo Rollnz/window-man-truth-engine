@@ -14,8 +14,8 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [hasPassword, setHasPassword] = useState<boolean | null>(null);
 
-  // Fetch password status from profiles table
-  const fetchPasswordStatus = useCallback(async (userId: string) => {
+  // Fetch password status from profiles table with retry
+  const fetchPasswordStatus = useCallback(async (userId: string, retryCount = 0) => {
     const { data, error } = await supabase
       .from('profiles')
       .select('has_password')
@@ -24,9 +24,16 @@ export function useAuth() {
     
     if (!error && data) {
       setHasPassword(data.has_password);
+    } else if (error && retryCount < 2) {
+      // Profile may not be created yet (trigger delay) — retry after brief wait
+      setTimeout(() => fetchPasswordStatus(userId, retryCount + 1), 1000);
     } else {
-      // Profile might not exist yet, default to false
-      setHasPassword(false);
+      // After retries, check if user has identities with password provider
+      const { data: { user } } = await supabase.auth.getUser();
+      const hasPasswordIdentity = user?.identities?.some(
+        (i) => i.provider === 'email' && (user as any).confirmed_at
+      ) ?? false;
+      setHasPassword(hasPasswordIdentity);
     }
   }, []);
 

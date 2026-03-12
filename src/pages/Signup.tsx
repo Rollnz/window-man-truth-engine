@@ -160,7 +160,6 @@ export default function Signup() {
   }, []);
 
   // ── Trigger phone verification SMS (idempotent) ───────────────────────
-  // ── TESTING MODE: Skip actual phone verification ────────────────
   const triggerPhoneVerification = useCallback(
     async (storedPhone: string): Promise<boolean> => {
       if (smsTriggeredRef.current) return false;
@@ -170,9 +169,25 @@ export default function Signup() {
       ssSet(SS.state, SignupState.VERIFYING_PHONE);
       setAuthOpen(true);
 
-      // TESTING MODE: Skip supabase.auth.updateUser({ phone })
-      toast({ title: "TESTING MODE: Phone step bypassed" });
-      return true;
+      try {
+        const { status, errorText } = await callEdgeJson(
+          "initiate-lead-verification",
+          { phone: storedPhone },
+        );
+
+        if (status >= 400) {
+          toast({ title: "Verification failed", description: errorText || "Could not send SMS. Please try again.", variant: "destructive" });
+          smsTriggeredRef.current = false;
+          return false;
+        }
+
+        toast({ title: "Code sent", description: "Check your phone for a 6-digit verification code." });
+        return true;
+      } catch (e: any) {
+        toast({ title: "SMS error", description: e?.message || "Please try again.", variant: "destructive" });
+        smsTriggeredRef.current = false;
+        return false;
+      }
     },
     [toast],
   );
@@ -299,12 +314,11 @@ export default function Signup() {
         updateFields({ firstName: payload.first_name, lastName: payload.last_name, email: payload.email, phone: payload.phone, leadId: data.leadId });
 
         const redirectUrl = `${window.location.origin}/signup`;
-        // TESTING MODE: Send email in background but don't block on it
+        // Send magic link in background (non-blocking — email confirmation not gated)
         supabase.auth.signInWithOtp({ email: payload.email, options: { emailRedirectTo: redirectUrl } });
 
-        // Skip VERIFYING_EMAIL — go straight to phone verification
+        // Proceed to phone verification (primary verification gate)
         await triggerPhoneVerification(payload.phone);
-        toast({ title: "TESTING MODE", description: "Email sent in background. Skipping email gate." });
       } catch (e: any) {
         toast({ title: "Signup failed", description: e?.message ?? "Please try again.", variant: "destructive" });
         setState(SignupState.AUTH_GATE);
@@ -315,20 +329,38 @@ export default function Signup() {
   );
 
   // ── Verify phone OTP ────────────────────────────────────────────────
-  // ── TESTING MODE: Auto-accept any OTP code ────────────────────
   const handleVerifyOtp = useCallback(
-    async (_token: string) => {
-      // Clear auth-related persisted keys
-      ssDel(SS.state);
-      ssDel(SS.phone);
-      ssDel(SS.profile);
+    async (token: string) => {
+      const storedPhone = phone ?? ssGet<string>(SS.phone);
+      if (!storedPhone) {
+        toast({ title: "Error", description: "Phone number not found. Please start over.", variant: "destructive" });
+        return;
+      }
 
-      setAuthOpen(false);
-      setNeedsReenterPhone(false);
-      toast({ title: "TESTING MODE", description: "Phone verification bypassed." });
-      setState(flow === "has_quote" ? SignupState.POLLING_ANALYSIS : SignupState.QUALIFYING);
+      try {
+        const { status, data, errorText } = await callEdgeJson<{ valid: boolean; status: string }>(
+          "verify-otp",
+          { phone: storedPhone, code: token },
+        );
+
+        if (status >= 400 || !data?.valid) {
+          throw new Error(errorText || "Invalid or expired code. Please try again.");
+        }
+
+        // OTP approved — update accounts.phone_verified_at via save-lead or directly
+        ssDel(SS.state);
+        ssDel(SS.phone);
+        ssDel(SS.profile);
+
+        setAuthOpen(false);
+        setNeedsReenterPhone(false);
+        toast({ title: "Phone verified", description: "Your number has been confirmed." });
+        setState(flow === "has_quote" ? SignupState.POLLING_ANALYSIS : SignupState.QUALIFYING);
+      } catch (e: any) {
+        toast({ title: "Verification failed", description: e?.message || "Please try again.", variant: "destructive" });
+      }
     },
-    [flow, toast],
+    [flow, phone, toast],
   );
 
   // ── Flow B: qualification ───────────────────────────────────────────

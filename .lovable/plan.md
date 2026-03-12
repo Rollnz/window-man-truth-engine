@@ -1,95 +1,74 @@
-
-
-# Authentication Audit: Current State Analysis
-
-## Overview
-
-The project has **two distinct auth systems** operating in parallel, serving different user journeys. Here is what I found, what's broken, and what needs attention.
+# Full Audit: Extraction Logic, Rubrics & Orchestration Flow
 
 ---
 
-## System 1: `/auth` Page (Traditional Email Auth)
+## 1. Every File Containing an AI Prompt for Quote Analysis
 
-**Components:** `LoginForm`, `SignupForm`, `SetPasswordForm`, `ForgotPasswordForm`, `ResetPasswordForm`
-**Flow:** Email magic link → set password → email+password login thereafter
-
-### Status: Structurally Sound, Minor Issues
-
-**What works:**
-- Login with email/password via `signInWithPassword`
-- Signup sends magic link via `signInWithOtp`, redirects to `/auth?mode=set-password`
-- Password reset flow: sends reset email, redirects to `/auth?mode=reset-password`
-- Password strength validation (8 chars, uppercase, lowercase, number)
-- Session-expired overlay with graceful recovery
-- 401 refresh lock (singleton promise, no thundering herd)
-
-**Issues found:**
-
-1. **Hardcoded white text in ForgotPasswordForm** (lines 74-79): The "Check your email" confirmation uses `text-white` and `className="text-white"` instead of theme-aware classes (`text-foreground`, `text-muted-foreground`). This will be invisible on light themes.
-
-2. **No "resend magic link" on SignupForm**: The email-sent state only offers "try again with a different email." There's no way to resend to the same email without re-entering it.
-
-3. **`has_password` profile field dependency**: The auth flow relies on `profiles.has_password` to route users to set-password vs. vault. If the profile trigger fails or is delayed, the user could get stuck in a loop or be redirected incorrectly. No fallback or retry logic exists.
+| # | File | Prompt/Rubric | Purpose |
+|---|------|---------------|---------|
+| 1 | `supabase/functions/quote-scanner/rubric.ts` | `EXTRACTION_RUBRIC` | **Canonical source.** Signal extraction for consumer-facing scanner. ~180 lines, 6 phases. |
+| 2 | `supabase/functions/quote-scanner/rubric.ts` | `GRADING_RUBRIC` | Short 3-line system prompt for "question" mode (follow-up Q&A about a quote). |
+| 3 | `supabase/functions/quote-scanner/rubric.ts` | `USER_PROMPT_TEMPLATE()` | Builds the user-role message with optional hints (opening count, area, notes). |
+| 4 | `supabase/functions/wm-analyze-quote/index.ts` (line 164) | `EXTRACTION_RUBRIC` (inlined copy) | **Duplicate.** Compressed version of #1 for Manus API. Same signals, shorter prose. |
+| 5 | `supabase/functions/wm-analyze-quote/index.ts` (line 241) | `buildUserPrompt()` (inlined copy) | Duplicate of #3. |
+| 6 | `supabase/functions/quote-scanner/index.ts` (line 215) | Inline email prompt | "You are a professional negotiation assistant. Draft a polite but firm email..." |
+| 7 | `supabase/functions/quote-scanner/index.ts` (line 227) | Inline phoneScript prompt | Negotiation coach: Opening, The Ask, Objection Handling. |
+| 8 | `supabase/functions/analyze-consultation-quote/index.ts` (line 143) | **Completely different rubric** | "Forensic Sales Intelligence Analyst" — extracts itemized openings, competitor name, measurements, colors, installation type, warranty, red flags, sales angle. Schema v2 via tool calling. |
+| 9 | `supabase/functions/expert-chat/index.ts` (line 151) | Expert chat system prompt | Window consultant persona with dynamic context injection (cost of inaction, reality check score, etc.). |
+| 10 | `supabase/functions/roleplay-chat/index.ts` (line 9) | `SYSTEM_PROMPT` | "The Closer" — high-pressure salesman roleplay training. Not extraction. |
+| 11 | `supabase/functions/slide-over-chat/index.ts` (line 116) | `buildSystemPrompt()` | "Hurricane Hero" persona — site-wide Q&A chat. Not extraction. |
+| 12 | `supabase/functions/generate-quote/index.ts` (line 117) | Inline estimator prompt | Cost estimate generator for the Quote Builder tool. Not extraction. |
 
 ---
 
-## System 2: `/signup` Page (Conversion Funnel Auth)
+## 2. Multiple Versions
 
-**Components:** `AuthModal`, `OtpGate`, custom `callEdgeJson` wrapper
-**Flow:** Upload quote or start no-quote → save-lead → magic link (background) → SMS OTP → qualification/analysis
+**THREE distinct rubric families:**
 
-### Status: IN TESTING MODE — Multiple Bypasses Active
+### Family A: Consumer Scanner Rubric (EXTRACTION_RUBRIC)
+- **Canonical source:** `quote-scanner/rubric.ts`
+- **Inlined copy:** `wm-analyze-quote/index.ts` (compressed but semantically identical)
+- **Output:** `ExtractionSignals` JSON (37 fields) → `scoreFromSignals()` → letter grade, pillar scores, warnings, missing items
+- **Version:** `wm_rubric_v3.0`
 
-**Critical findings:**
+### Family B: Sales Intelligence Rubric (analyze-consultation-quote)
+- **Location:** `analyze-consultation-quote/index.ts` (self-contained)
+- **Output:** Schema v2 JSON — `project_overview`, `itemized_openings[]`, `installation_scope`, `warranty`, `detected_markup_level`, `red_flags`, `sales_angle`
+- **Model:** `google/gemini-2.5-flash` (hardcoded)
 
-1. **Phone verification is completely bypassed** (Signup.tsx lines 164-178): `triggerPhoneVerification` does nothing — it sets state to `VERIFYING_PHONE` and toasts "TESTING MODE: Phone step bypassed" without calling any Twilio function or `supabase.auth.updateUser({ phone })`.
-
-2. **OTP verification is completely bypassed** (Signup.tsx lines 319-331): `handleVerifyOtp` accepts any token, clears state, and proceeds. It never calls `verify-otp` or `verify-lead-otp`. Toast says "TESTING MODE: Phone verification bypassed."
-
-3. **Email verification is skipped** (Signup.tsx line 305): Comment says "Skip VERIFYING_EMAIL — go straight to phone verification." The magic link is fired in the background without awaiting it, and the user is never gated on email confirmation.
-
-4. **Rate limiting removed from `send-otp`** (send-otp/index.ts line 35): Comment says "TESTING MODE: Rate limiting removed." In production, this means unlimited OTP sends per phone number per hour.
-
-### Edge Functions — Phone Auth Stack
-
-| Function | Purpose | Status |
-|---|---|---|
-| `send-otp` | Sends SMS via Twilio Verify | Works, but rate limiting disabled |
-| `verify-otp` | Checks OTP code via Twilio Verify | Works, but never called from `/signup` |
-| `initiate-lead-verification` | Lookup (VOIP block) + send OTP | Works, includes line_type_intelligence |
-| `verify-lead-otp` | Verify OTP + insert lead to DB | Works, but only used by `ScannerLeadCaptureModal` |
-
-**Duplication issue:** `send-otp` and `initiate-lead-verification` both send OTPs via Twilio Verify. The difference is `initiate-lead-verification` adds a Twilio Lookup step to block VOIP/landlines. Two functions doing overlapping work.
+### Family C: Support Prompts (not extraction)
+- `expert-chat`, `roleplay-chat`, `slide-over-chat`, `generate-quote`
 
 ---
 
-## Summary of What Needs Fixing
+## 3. Orchestration Flow
 
-### Priority 1: Remove Testing Bypasses from `/signup`
-The entire phone verification pipeline on the `/signup` page is non-functional. Three bypasses need to be reverted:
-- Re-enable `triggerPhoneVerification` to actually call `initiate-lead-verification`
-- Re-enable `handleVerifyOtp` to call `verify-otp` with the real code
-- Decide whether email verification should gate the user or remain background-only
+```
+USER → upload-quote → quote-scanner (dedup → AI extraction → scoring → forensic → persist → return)
+     → Frontend renders Results Dashboard
+     → orchestrate-quote-analysis (after signup)
+     → DB trigger → pending_calls → call-dispatcher → PhoneCall.bot
+```
 
-### Priority 2: Restore Rate Limiting on `send-otp`
-The 5-per-phone-per-hour rate limit was removed. This is a cost/abuse vector in production.
-
-### Priority 3: Fix ForgotPasswordForm Styling
-Replace hardcoded `text-white` classes with theme-aware tokens.
-
-### Priority 4: Consolidate OTP Edge Functions
-`send-otp` and `initiate-lead-verification` overlap. Consider whether `send-otp` (no Lookup) is still needed or if all paths should use `initiate-lead-verification` (Lookup + send).
-
-### Priority 5: `has_password` Resilience
-Add a fallback if `profiles.has_password` query fails — currently defaults to `false`, which forces users into set-password flow even if they already have one.
+Key: No AI-based data cleaning. All transformation is deterministic via `scoring.ts` + `forensic.ts`.
 
 ---
 
-## What's Working Well (No Action Needed)
-- Auth refresh lock (singleton promise deduplication)
-- Session-expired overlay (custom event, no hard redirect)
-- AuthGuard redirect with return-to path
-- `ScannerLeadCaptureModal` phone verification (uses `initiate-lead-verification` + `verify-lead-otp` correctly)
-- Twilio Verify integration in edge functions
-- Password strength validation and UX
+## 4. Canonical Scanner Brain (Files to Decouple)
 
+1. `quote-scanner/rubric.ts` — EXTRACTION_RUBRIC + USER_PROMPT_TEMPLATE
+2. `quote-scanner/schema.ts` — ExtractionSignals interface + JSON schema + sanitizeForPrompt
+3. `quote-scanner/scoring.ts` — scoreFromSignals + calculateLetterGrade + applyHardCaps + applyCurve
+4. `quote-scanner/forensic.ts` — generateForensicSummary + extractIdentity
+
+---
+
+## 5. Drift Risk
+
+`wm-analyze-quote/index.ts` inlines copies of all canonical logic. Any change to `quote-scanner/*.ts` must be manually mirrored.
+
+---
+
+## 6. Phone Agent Gap
+
+PhoneCall.bot only receives `grade` + `overall_score` + basic lead info. It does NOT get warnings, forensic summary, or extraction signals.

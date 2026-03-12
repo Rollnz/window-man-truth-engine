@@ -87,10 +87,31 @@ export function SignupForm({ onLogin }: SignupFormProps) {
           </p>
           <Button 
             variant="link" 
+            onClick={async () => {
+              setIsSubmitting(true);
+              try {
+                const { error: resendError } = await signUp(email);
+                if (resendError) {
+                  toast({ title: "Error", description: resendError.message, variant: "destructive" });
+                } else {
+                  toast({ title: "Email resent", description: "Check your inbox for a new verification link." });
+                }
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            className="p-0 h-auto"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Resending...' : 'Resend verification email'}
+          </Button>
+          <span className="text-muted-foreground text-sm"> or </span>
+          <Button 
+            variant="link" 
             onClick={() => setEmailSent(false)}
             className="p-0 h-auto"
           >
-            try again with a different email
+            try a different email
           </Button>
         </div>
       </div>
