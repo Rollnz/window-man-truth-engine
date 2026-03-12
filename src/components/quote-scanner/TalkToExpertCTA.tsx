@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Phone, ShieldCheck } from 'lucide-react';
 import { trackEvent } from '@/lib/gtm';
 
@@ -5,7 +6,8 @@ interface TalkToExpertCTAProps {
   leadId?: string | null;
 }
 
-export function TalkToExpertCTA({ leadId }: TalkToExpertCTAProps) {
+export const TalkToExpertCTA = React.forwardRef<HTMLDivElement, TalkToExpertCTAProps>(
+  function TalkToExpertCTA({ leadId }, ref) {
   const handleClick = () => {
     trackEvent('cta_click', {
       location: 'post_scan_primary',
@@ -15,7 +17,7 @@ export function TalkToExpertCTA({ leadId }: TalkToExpertCTAProps) {
   };
 
   return (
-    <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 space-y-4">
+    <div ref={ref} className="rounded-xl border border-primary/20 bg-primary/5 p-6 space-y-4">
       <div className="flex items-center gap-2">
         <Phone className="w-5 h-5 text-primary" />
         <h3 className="text-lg font-bold text-foreground">Talk to a Window Expert</h3>
@@ -40,4 +42,4 @@ export function TalkToExpertCTA({ leadId }: TalkToExpertCTAProps) {
       </div>
     </div>
   );
-}
+});
