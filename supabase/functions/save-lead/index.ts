@@ -713,7 +713,7 @@ serve(async (req) => {
         if (existingAccount) {
           // 2a. UPDATE existing account
           // CRITICAL: DO NOT overwrite first_name, last_name, phone, or email
-          leadId = existingAccount.id;
+          leadId = String(existingAccount.account_id ?? existingAccount.id);
           console.log('[TrafficCop] Found existing account:', leadId, '- updating attribution only');
 
           const accountUpdate: Record<string, unknown> = {
