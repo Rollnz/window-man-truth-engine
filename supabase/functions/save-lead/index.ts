@@ -793,10 +793,12 @@ serve(async (req) => {
             accountUpdate.client_id = clientId;
           }
 
+          const accountIdColumn = 'account_id' in existingAccount ? 'account_id' : 'id';
+
           const { error: updateError } = await supabase
             .from('accounts')
             .update(accountUpdate)
-            .eq('id', leadId);
+            .eq(accountIdColumn, leadId);
 
           if (updateError) {
             console.error('[TrafficCop] Error updating account:', updateError);
