@@ -193,7 +193,7 @@ export function StepProgressSequence({
                 className={cn(
                   'w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-colors duration-200',
                   done
-                    ? 'bg-green-500 text-white'
+                    ? 'bg-primary text-primary-foreground'
                     : active
                       ? 'border-2 border-primary'
                       : 'border-2 border-muted-foreground/30',
