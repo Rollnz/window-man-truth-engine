@@ -16,6 +16,7 @@ import { useCanonicalScore } from '@/hooks/useCanonicalScore';
 import { logScannerCompleted } from '@/lib/highValueSignals';
 import type { QuoteAnalysisResult } from '@/hooks/useQuoteScanner';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { useAuth } from '@/hooks/useAuth';
 import type { ExplainScoreFormData } from '@/types/audit';
 
 // ═══════════════════════════════════════════════════════════════════════════
