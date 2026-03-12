@@ -13,12 +13,12 @@ import {
   handleGuardError 
 } from "./guards.ts";
 import { QuoteScannerRequestSchema } from "./validation.ts";
-// ── Scanner Brain: Single Source of Truth ──
-import { ExtractionSignalsJsonSchema, sanitizeForPrompt } from "../../../scanner-brain/schema.ts";
-import type { ExtractionSignals } from "../../../scanner-brain/schema.ts";
-import { EXTRACTION_RUBRIC, GRADING_RUBRIC, USER_PROMPT_TEMPLATE } from "../../../scanner-brain/rubric.ts";
-import { scoreFromSignals } from "../../../scanner-brain/scoring.ts";
-import { generateForensicSummary, extractIdentity } from "../../../scanner-brain/forensic.ts";
+// ── Scanner Brain: Single Source of Truth (/_shared/scanner-brain) ──
+import { ExtractionSignalsJsonSchema, sanitizeForPrompt } from "../_shared/scanner-brain/schema.ts";
+import type { ExtractionSignals } from "../_shared/scanner-brain/schema.ts";
+import { EXTRACTION_RUBRIC, GRADING_RUBRIC, USER_PROMPT_TEMPLATE } from "../_shared/scanner-brain/rubric.ts";
+import { scoreFromSignals } from "../_shared/scanner-brain/scoring.ts";
+import { generateForensicSummary, extractIdentity } from "../_shared/scanner-brain/forensic.ts";
 import { logAttributionEvent } from "../_shared/attributionLogger.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════

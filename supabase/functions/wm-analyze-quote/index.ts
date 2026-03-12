@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
   // ─── INVALID QUOTE ───
   if (!extracted.isValidQuote) return errorResponse(422, "INVALID_QUOTE", extracted.validityReason || "Document is not a window/door quote");
 
-  // ─── DETERMINISTIC PIPELINE (from scanner-brain SSOT) ───
+  // ─── DETERMINISTIC PIPELINE (from _shared/scanner-brain SSOT) ───
   const scored = scoreFromSignals(extracted, opening_count ?? null);
   const forensic = generateForensicSummary(extracted, scored);
   const identity = extractIdentity(extracted);
