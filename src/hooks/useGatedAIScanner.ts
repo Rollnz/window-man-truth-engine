@@ -168,6 +168,8 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
   const { toast } = useToast();
   const { sessionData, sessionId, updateField } = useSessionData();
   const { leadId: existingLeadId, isVerifiedLead } = useLeadIdentity();
+  const { isAuthenticated } = useAuth();
+  const shouldBypassGate = isVerifiedLead || isAuthenticated;
   const { awardScore } = useCanonicalScore();
 
   const [state, setState] = useState<GatedAIScannerState>(INITIAL_STATE);
