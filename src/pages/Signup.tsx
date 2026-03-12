@@ -437,10 +437,7 @@ export default function Signup() {
               </Button>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Zap className="h-4 w-4 text-primary" />
-              Thousands of Florida homeowners scanned this month
-            </div>
+            <UrgencyTicker variant="homepage" size="sm" showToday showPermitFlags={false} />
           </div>
 
           <Card className="p-6 space-y-3 border-border/40">
