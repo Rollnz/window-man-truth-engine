@@ -10,7 +10,7 @@ export function SampleQuoteDocument({ className }: SampleQuoteDocumentProps) {
       className={cn(
         "absolute inset-3 md:inset-4 rounded-lg overflow-hidden",
         "bg-card/80 border border-dashed border-border/60",
-        "font-mono text-muted-foreground/50",
+        "font-mono text-foreground",
         "p-3 md:p-5 space-y-2.5",
         className
       )}
@@ -70,7 +70,7 @@ export function SampleQuoteDocument({ className }: SampleQuoteDocumentProps) {
       </div>
 
       {/* Fine Print */}
-      <div className="pt-1.5 space-y-0.5 text-[7px] md:text-[8px] opacity-60 leading-tight">
+      <div className="pt-1.5 space-y-0.5 text-[7px] md:text-[8px] opacity-80 leading-tight">
         <p>* Subject to final measurement. Pricing may vary.</p>
         <p>* 20-year product warranty. 1-year labor warranty.</p>
         <p>* "Subject to remeasure" clause applies to all line items.</p>
