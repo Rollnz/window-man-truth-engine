@@ -4,7 +4,7 @@
 // Auth: Bearer token (WM_ANALYZE_QUOTE_SECRET)
 // No internal tracking, no DB writes
 //
-// All scoring/forensic/rubric logic imported from /scanner-brain (SSOT)
+// All scoring/forensic/rubric logic imported from /_shared/scanner-brain (SSOT)
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
