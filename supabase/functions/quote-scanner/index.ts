@@ -513,7 +513,10 @@ Format the output with clear section headers and make it easy to read during a p
         console.error('[quote-scanner] wm_event_log logging exception (non-fatal):', ledgerErr);
       }
 
-      return new Response(JSON.stringify(responsePayload), {
+      return new Response(JSON.stringify({
+        ...responsePayload,
+        analysisId: insertedAnalysis?.id ?? null,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {

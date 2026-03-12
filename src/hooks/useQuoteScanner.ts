@@ -22,6 +22,7 @@ export interface QuoteAnalysisResult {
   missingItems: string[];
   summary: string;
   analyzedAt?: string;
+  analysisId?: string | null;
   // Forensic Authority Fields (Hybrid Rubric)
   forensic?: ForensicSummary;
   extractedIdentity?: ExtractedIdentity;

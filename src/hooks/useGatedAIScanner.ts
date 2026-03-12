@@ -44,6 +44,7 @@ interface GatedAIScannerState {
   fileType: string | null;
   fileSize: number | null;
   analysisResult: QuoteAnalysisResult | null;
+  analysisId: string | null;
   leadId: string | null;
   isModalOpen: boolean;
   isLoading: boolean;
@@ -117,6 +118,35 @@ async function compressImage(file: File, maxBytes = 4_000_000): Promise<{ base64
 // INITIAL STATE
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ── localStorage helpers for analysisId durability ──────────────────
+const ANALYSIS_ID_KEY = 'wm_pending_analysis_id';
+const ANALYSIS_ID_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+function persistAnalysisId(id: string): void {
+  try {
+    localStorage.setItem(ANALYSIS_ID_KEY, JSON.stringify({
+      id,
+      expires: Date.now() + ANALYSIS_ID_TTL_MS,
+    }));
+  } catch (e) { console.warn('[useGatedAIScanner] persistAnalysisId failed:', e); }
+}
+
+function readAnalysisId(): string | null {
+  try {
+    const raw = localStorage.getItem(ANALYSIS_ID_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Date.now() < parsed.expires) return parsed.id;
+    // Expired — clean up
+    localStorage.removeItem(ANALYSIS_ID_KEY);
+    return null;
+  } catch { localStorage.removeItem(ANALYSIS_ID_KEY); return null; }
+}
+
+function clearAnalysisId(): void {
+  try { localStorage.removeItem(ANALYSIS_ID_KEY); } catch {}
+}
+
 const INITIAL_STATE: GatedAIScannerState = {
   phase: 'idle',
   file: null,
@@ -125,6 +155,7 @@ const INITIAL_STATE: GatedAIScannerState = {
   fileType: null,
   fileSize: null,
   analysisResult: null,
+  analysisId: null,
   leadId: null,
   isModalOpen: false,
   isLoading: false,
@@ -172,7 +203,11 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
   const shouldBypassGate = isVerifiedLead || isAuthenticated;
   const { awardScore } = useCanonicalScore();
 
-  const [state, setState] = useState<GatedAIScannerState>(INITIAL_STATE);
+  const [state, setState] = useState<GatedAIScannerState>(() => {
+    // Initialize analysisId from localStorage (with TTL validation) for tab-recovery
+    const storedAnalysisId = readAnalysisId();
+    return { ...INITIAL_STATE, analysisId: storedAnalysisId };
+  });
   const scanAttemptIdRef = useRef<string>('');
 
   const { submit: submitLead, isSubmitting: isLeadSubmitting } = useLeadFormSubmit({
@@ -266,14 +301,25 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
       updateField('quoteAnalysisResult', resultWithTimestamp);
       clearPersistedState();
 
+      // TODO: In phone-first auth, move this capture to the otp_pending transition
+      // — revealed phase will not exist on the upload page
+      const capturedAnalysisId = resultWithTimestamp.analysisId ?? null;
+
       setState(prev => ({
         ...prev,
         phase: 'revealed',
         analysisResult: resultWithTimestamp,
+        analysisId: capturedAnalysisId,
         imageBase64: base64,
         mimeType,
         isLoading: false,
       }));
+
+      // Persist analysisId to localStorage with 30min TTL for durability
+      // across tab suspension (e.g. user switching to SMS app for OTP on low-RAM Android)
+      if (capturedAnalysisId) {
+        persistAnalysisId(capturedAnalysisId);
+      }
     } catch (err) {
       console.error('[useGatedAIScanner] Analysis error:', err);
       const message = getErrorMessage(err);
@@ -439,9 +485,10 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
   // ── reset ───────────────────────────────────────────────────────────
   const reset = useCallback(() => {
     if (state.filePreviewUrl) URL.revokeObjectURL(state.filePreviewUrl);
-    setState(INITIAL_STATE);
+    setState({ ...INITIAL_STATE, analysisId: null });
     scanAttemptIdRef.current = '';
     clearPersistedState();
+    clearAnalysisId();
   }, [state.filePreviewUrl]);
 
   return {
