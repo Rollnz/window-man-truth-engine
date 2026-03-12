@@ -696,7 +696,7 @@ serve(async (req) => {
         // 1. Check for existing account by email
         const { data: existingAccounts, error: accountLookupError } = await supabase
           .from('accounts')
-          .select('id, first_name, last_name, phone, utm_source, gclid, fbc, msclkid, gbraid, wbraid, ttclid, client_id')
+          .select('*')
           .eq('email', normalizedEmail)
           .order('created_at', { ascending: false })
           .limit(1);
@@ -706,7 +706,9 @@ serve(async (req) => {
           throw new Error('Database error while checking account');
         }
 
-        const existingAccount = existingAccounts && existingAccounts.length > 0 ? existingAccounts[0] : null;
+        const existingAccount = existingAccounts && existingAccounts.length > 0
+          ? (existingAccounts[0] as Record<string, unknown>)
+          : null;
 
         if (existingAccount) {
           // 2a. UPDATE existing account
