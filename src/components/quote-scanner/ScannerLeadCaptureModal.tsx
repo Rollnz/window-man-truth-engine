@@ -233,6 +233,59 @@ export function ScannerLeadCaptureModal({
     }
   };
 
+  // OTP verification handler
+  const handleOtpVerify = useCallback(async (code: string) => {
+    setIsVerifying(true);
+    setOtpError(null);
+
+    try {
+      const { data: result, error } = await invokeEdgeFunction('verify-lead-otp', {
+        body: {
+          phone: otpPhone,
+          code,
+          leadData: {
+            email: contactData?.email,
+            firstName: contactData?.firstName,
+            lastName: contactData?.lastName,
+            sourceTool: 'quote-scanner' satisfies SourceTool,
+          },
+        },
+      });
+
+      if (error || !result?.success) {
+        setOtpError(result?.error || 'Incorrect code, please try again.');
+        setIsVerifying(false);
+        return;
+      }
+
+      trackEvent('scanner_otp_verified', {
+        source_tool: 'quote-scanner',
+      });
+
+      // Move to analysis step and trigger file analysis
+      setStep('analysis');
+
+      if (pendingProjectData) {
+        await onFileSelect(pendingProjectData.file);
+      }
+    } catch (err) {
+      console.error('[ScannerModal] OTP verify error:', err);
+      setOtpError('Verification failed. Please try again.');
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [otpPhone, contactData, pendingProjectData, onFileSelect]);
+
+  // OTP resend handler
+  const handleOtpResend = useCallback(async () => {
+    const { error } = await invokeEdgeFunction('initiate-lead-verification', {
+      body: { phone: otpPhone },
+    });
+    if (error) {
+      toast.error('Failed to resend code. Please try again.');
+    }
+  }, [otpPhone]);
+
   // Step 3: Analysis complete
   const handleAnalysisComplete = useCallback(() => {
     onAnalysisComplete();
