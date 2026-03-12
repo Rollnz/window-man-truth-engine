@@ -2,17 +2,32 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { NOIR, EASE_EXPO_OUT, DURATION } from '@/lib/motion-tokens';
-import { Lock } from 'lucide-react';
+import { Lock, Phone } from 'lucide-react';
+import { SUPPORT_PHONE } from '@/lib/supportContact';
 
 interface OtpGateProps {
   phone: string;
   onVerify: (code: string) => Promise<void>;
   onResend: () => Promise<void>;
+  onChangeNumber?: () => void;
   isVerifying: boolean;
   error: string | null;
+  maxAttempts?: number;
+  attemptsUsed?: number;
+  supportPhone?: string;
 }
 
-export function OtpGate({ phone, onVerify, onResend, isVerifying, error }: OtpGateProps) {
+export function OtpGate({
+  phone,
+  onVerify,
+  onResend,
+  onChangeNumber,
+  isVerifying,
+  error,
+  maxAttempts = 2,
+  attemptsUsed = 0,
+  supportPhone = SUPPORT_PHONE,
+}: OtpGateProps) {
   const [code, setCode] = useState('');
   const [cooldown, setCooldown] = useState(60);
   const [shaking, setShaking] = useState(false);
@@ -57,7 +72,24 @@ export function OtpGate({ phone, onVerify, onResend, isVerifying, error }: OtpGa
     setCooldown(60);
   }, [cooldown, onResend]);
 
+  // Reset cooldown when phone changes (new SMS sent to new number)
+  const phoneRef = useRef(phone);
+  useEffect(() => {
+    if (phone !== phoneRef.current) {
+      phoneRef.current = phone;
+      setCooldown(60);
+      setCode('');
+    }
+  }, [phone]);
+
+  // Expose resetCooldown for parent
+  const resetCooldown = useCallback((seconds = 60) => {
+    setCooldown(seconds);
+  }, []);
+
   const maskedPhone = phone.length >= 4 ? `(•••) •••-${phone.slice(-4)}` : phone;
+
+  const isLockedOut = attemptsUsed >= maxAttempts;
 
   return (
     <div
@@ -120,6 +152,34 @@ export function OtpGate({ phone, onVerify, onResend, isVerifying, error }: OtpGa
         >
           {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
         </Button>
+
+        {/* Change Number / Locked Out Fallback */}
+        {onChangeNumber && (
+          <div className="pt-1">
+            {isLockedOut ? (
+              <div className="space-y-1.5">
+                <p className="text-xs text-white/40">Having trouble?</p>
+                <a
+                  href={`tel:${supportPhone.replace(/[^0-9+]/g, '')}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
+                  style={{ color: NOIR.cyan }}
+                >
+                  <Phone className="w-3 h-3" />
+                  Call us at {supportPhone} to verify manually
+                </a>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={onChangeNumber}
+                disabled={isVerifying}
+                className="text-[11px] text-white/35 hover:text-white/60 transition-colors underline underline-offset-2 disabled:opacity-30"
+              >
+                Wrong number? Change it here.
+              </button>
+            )}
+          </div>
+        )}
 
         <p className="text-[9px] font-mono text-white/20">SECURE VERIFICATION • AES-256</p>
       </div>

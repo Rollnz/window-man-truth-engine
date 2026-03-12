@@ -22,13 +22,9 @@ type ModalStep = 'contact' | 'project' | 'otp' | 'analysis';
 interface ScannerLeadCaptureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** Called when analysis is complete with results ready */
   onAnalysisComplete: () => void;
-  /** Called when file is selected, triggers actual analysis */
   onFileSelect: (file: File) => Promise<void>;
-  /** Whether the AI analysis is in progress */
   isAnalyzing: boolean;
-  /** Pre-fill from session data */
   sessionData?: {
     firstName?: string;
     lastName?: string;
@@ -37,13 +33,6 @@ interface ScannerLeadCaptureModalProps {
   };
 }
 
-/**
- * ScannerLeadCaptureModal - 3-step lead capture flow for Quote Scanner
- * 
- * Step 1: Contact (first name, last name, email)
- * Step 2: Project details (phone, window count, quote price, beat-my-quote checkbox) + upload trigger
- * Step 3: 5-second theatrical analysis loading
- */
 export function ScannerLeadCaptureModal({
   isOpen,
   onClose,
@@ -70,15 +59,18 @@ export function ScannerLeadCaptureModal({
     file: File;
   } | null>(null);
 
+  // ── Change-number state ──────────────────────────────────
+  const [attemptsUsed, setAttemptsUsed] = useState(0);
+  const [previousPhone, setPreviousPhone] = useState<string | null>(null);
+
   const { sessionData, updateField } = useSessionData();
-  const { setLeadId } = useLeadIdentity();
+  const { leadId, setLeadId } = useLeadIdentity();
   const { awardScore } = useScore();
 
-  // Reset state when modal opens
+  // Reset state when modal closes
   const handleOpenChange = useCallback((open: boolean) => {
     if (!open) {
       onClose();
-      // Reset after animation
       setTimeout(() => {
         setStep('contact');
         setContactData(null);
@@ -87,23 +79,23 @@ export function ScannerLeadCaptureModal({
         setOtpError(null);
         setIsVerifying(false);
         setPendingProjectData(null);
+        setAttemptsUsed(0);
+        setPreviousPhone(null);
       }, 300);
     }
   }, [onClose]);
 
   // Step 1: Contact submission
   const handleContactSubmit = async (data: { firstName: string; lastName: string; email: string }) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
-    
+
     try {
       const clientId = getOrCreateClientId();
       const sessionId = getOrCreateSessionId();
       const attribution = getAttributionData();
-
-      // Normalize names
       const { firstName, lastName } = normalizeNameFields(data.firstName, data.lastName);
 
-      // Save lead via edge function
       const { data: result, error } = await invokeEdgeFunction('save-lead', {
         body: {
           email: data.email,
@@ -120,26 +112,24 @@ export function ScannerLeadCaptureModal({
 
       if (error) throw error;
 
-      const leadId = result?.leadId;
-      if (leadId) {
-        setLeadId(leadId);
-        updateField('leadId', leadId);
+      const newLeadId = result?.leadId;
+      if (newLeadId) {
+        setLeadId(newLeadId);
+        updateField('leadId', newLeadId);
         updateField('email', data.email);
         updateField('firstName', firstName);
         updateField('lastName', lastName);
 
-        // Track lead capture via wmLead
         await wmLead(
-          { leadId, email: data.email, firstName, lastName },
+          { leadId: newLeadId, email: data.email, firstName, lastName },
           { source_tool: 'quote-scanner' },
         );
 
-        // Award Truth Engine points
         try {
           await awardScore({
             eventType: 'LEAD_CAPTURED',
             sourceEntityType: 'lead',
-            sourceEntityId: leadId,
+            sourceEntityId: newLeadId,
           });
         } catch (e) {
           console.error('[ScannerModal] Score award failed:', e);
@@ -149,11 +139,7 @@ export function ScannerLeadCaptureModal({
       setContactData({ firstName, lastName, email: data.email });
       setStep('project');
 
-      // Track modal progression
-      trackEvent('scanner_step1_complete', {
-        source_tool: 'quote-scanner',
-      });
-
+      trackEvent('scanner_step1_complete', { source_tool: 'quote-scanner' });
     } catch (error) {
       console.error('[ScannerModal] Contact submit error:', error);
       toast.error('Something went wrong. Please try again.');
@@ -162,7 +148,7 @@ export function ScannerLeadCaptureModal({
     }
   };
 
-  // Step 2: Project details + file upload
+  // Step 2: Project details + file upload → initiate OTP
   const handleProjectSubmit = async (data: {
     phone: string;
     windowCount: string;
@@ -170,29 +156,24 @@ export function ScannerLeadCaptureModal({
     wantsBeatQuote: boolean;
     file: File;
   }) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      // Update session with project details
       updateField('phone', data.phone);
       if (data.windowCount) {
         updateField('windowCount', parseInt(data.windowCount, 10));
       }
 
-      // Update lead with phone if we have a leadId
-      const leadId = sessionData.leadId;
-      if (leadId && data.phone) {
-        // Update lead via CRM function
+      const currentLeadId = leadId || sessionData.leadId;
+      if (currentLeadId && data.phone) {
         await invokeEdgeFunction('crm-leads', {
           body: {
-            leadId,
-            updates: {
-              phone: data.phone,
-            },
+            leadId: currentLeadId,
+            updates: { phone: data.phone },
           },
         });
 
-        // Track project details event
         trackEvent('scanner_project_details', {
           source_tool: 'quote-scanner',
           window_count: data.windowCount || undefined,
@@ -201,11 +182,10 @@ export function ScannerLeadCaptureModal({
         });
       }
 
-      // Store project data and initiate OTP verification
       setPendingProjectData(data);
       setOtpPhone(data.phone);
 
-      // Send OTP via Twilio Verify
+      // Send OTP
       const { data: otpResult, error: otpError } = await invokeEdgeFunction('initiate-lead-verification', {
         body: { phone: data.phone },
       });
@@ -217,13 +197,13 @@ export function ScannerLeadCaptureModal({
         return;
       }
 
-      // Move to OTP step
+      // Track attempts from backend response
+      if (typeof otpResult?.attemptsUsed === 'number') {
+        setAttemptsUsed(otpResult.attemptsUsed);
+      }
+
       setStep('otp');
-
-      trackEvent('scanner_otp_sent', {
-        source_tool: 'quote-scanner',
-      });
-
+      trackEvent('scanner_otp_sent', { source_tool: 'quote-scanner' });
     } catch (error) {
       console.error('[ScannerModal] Project submit error:', error);
       toast.error('Upload failed. Please try again.');
@@ -235,6 +215,7 @@ export function ScannerLeadCaptureModal({
 
   // OTP verification handler
   const handleOtpVerify = useCallback(async (code: string) => {
+    if (isVerifying) return;
     setIsVerifying(true);
     setOtpError(null);
 
@@ -258,11 +239,8 @@ export function ScannerLeadCaptureModal({
         return;
       }
 
-      trackEvent('scanner_otp_verified', {
-        source_tool: 'quote-scanner',
-      });
+      trackEvent('scanner_otp_verified', { source_tool: 'quote-scanner' });
 
-      // Move to analysis step and trigger file analysis
       setStep('analysis');
 
       if (pendingProjectData) {
@@ -279,18 +257,105 @@ export function ScannerLeadCaptureModal({
   // OTP resend handler
   const handleOtpResend = useCallback(async () => {
     const { error } = await invokeEdgeFunction('initiate-lead-verification', {
-      body: { phone: otpPhone },
+      body: { phone: otpPhone, leadId: leadId || sessionData.leadId, previousPhone: otpPhone },
     });
     if (error) {
       toast.error('Failed to resend code. Please try again.');
     }
-  }, [otpPhone]);
+  }, [otpPhone, leadId, sessionData.leadId]);
 
-  // Step 3: Analysis complete
+  // ── Change Number handler ────────────────────────────────
+  const handleChangeNumber = useCallback(() => {
+    // Store the current (wrong) phone as previousPhone
+    setPreviousPhone(otpPhone);
+    // Clear OTP error
+    setOtpError(null);
+    // Go back to project step so they can fix the number
+    setStep('project');
+
+    trackEvent('scanner_change_number_clicked', {
+      source_tool: 'quote-scanner',
+      attempts_used: attemptsUsed,
+    });
+  }, [otpPhone, attemptsUsed]);
+
+  // Corrected number submission (re-entry from project step after change)
+  const handleCorrectedProjectSubmit = async (data: {
+    phone: string;
+    windowCount: string;
+    quotePrice: string;
+    wantsBeatQuote: boolean;
+    file: File;
+  }) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    const currentLeadId = leadId || sessionData.leadId;
+
+    try {
+      setPendingProjectData(data);
+
+      // Call initiate-lead-verification with leadId + previousPhone for server-side tracking
+      const { data: otpResult, error: otpErr } = await invokeEdgeFunction('initiate-lead-verification', {
+        body: {
+          phone: data.phone,
+          leadId: currentLeadId,
+          previousPhone: previousPhone || otpPhone,
+        },
+      });
+
+      // Always sync attemptsUsed from backend response
+      if (typeof otpResult?.attemptsUsed === 'number') {
+        setAttemptsUsed(otpResult.attemptsUsed);
+      }
+
+      if (otpErr) {
+        toast.error('Failed to send verification code. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Handle specific error codes
+      if (otpResult?.error === 'max_attempts_reached') {
+        setAttemptsUsed(otpResult.attemptsUsed ?? 2);
+        // Go to OTP screen to show the "Call us" fallback
+        setOtpPhone(data.phone);
+        setStep('otp');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (otpResult?.error) {
+        // VOIP rejection or other error — stay on project step
+        toast.error(otpResult.error);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Success — update phone and go to OTP
+      setOtpPhone(data.phone);
+      setStep('otp');
+
+      trackEvent('scanner_otp_resent_new_number', {
+        source_tool: 'quote-scanner',
+        attempts_used: otpResult?.attemptsUsed ?? attemptsUsed,
+      });
+    } catch (error) {
+      console.error('[ScannerModal] Corrected number submit error:', error);
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Analysis complete
   const handleAnalysisComplete = useCallback(() => {
     onAnalysisComplete();
     onClose();
   }, [onAnalysisComplete, onClose]);
+
+  // Determine which project submit handler to use
+  const projectSubmitHandler = previousPhone ? handleCorrectedProjectSubmit : handleProjectSubmit;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -309,8 +374,9 @@ export function ScannerLeadCaptureModal({
 
         {step === 'project' && (
           <ScannerStep2Project
-            onSubmit={handleProjectSubmit}
+            onSubmit={projectSubmitHandler}
             isLoading={isSubmitting}
+            initialPhone={previousPhone || undefined}
           />
         )}
 
@@ -319,8 +385,11 @@ export function ScannerLeadCaptureModal({
             phone={otpPhone}
             onVerify={handleOtpVerify}
             onResend={handleOtpResend}
+            onChangeNumber={handleChangeNumber}
             isVerifying={isVerifying}
             error={otpError}
+            attemptsUsed={attemptsUsed}
+            maxAttempts={2}
           />
         )}
 
