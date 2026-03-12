@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Zap } from "lucide-react";
+import { Shield, Zap, Sparkles, CheckCircle2 } from "lucide-react";
+import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
 import { UrgencyTicker } from "@/components/social-proof/UrgencyTicker";
 import { formatPhoneDisplay, stripPhone } from "@/lib/phone-mask";
 import handScannerImg from "@/assets/hero/hand_scanner.webp";
@@ -480,10 +481,7 @@ export default function Signup() {
 
       <WindowManFeatureImage className="lg:hidden" />
 
-      {/* PowerToolFlow — mobile only, between hero and upload zone */}
-      <div className="lg:hidden px-4 py-8">
-        <PowerToolFlow />
-      </div>
+      {/* PowerToolFlow removed from mobile-only — now in callout card below */}
 
       {/* StepProgressSequence — mobile only, between PowerToolFlow and upload zone */}
       <div className="lg:hidden px-4 pb-8">
@@ -494,67 +492,100 @@ export default function Signup() {
         />
       </div>
 
-      {/* Split Conversion Zone */}
+      {/* Upload Zone — Full Width */}
       <section className="py-12 px-4 border-t border-border/40" id="upload-zone">
-        <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2">
-          {/* Flow A */}
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold">I Have a Quote</h2>
-              <p className="text-sm text-muted-foreground">PDF or image</p>
-            </div>
-
-            <QuoteUploadZone
-              onFileSelect={handleFileSelect}
-              isAnalyzing={state === SignupState.UPLOADING}
-              hasResult={false}
-              imagePreview={null}
-            />
-
-            {flow === "has_quote" && state !== SignupState.IDLE && (
-              <QuoteAnalysisFlow
-                state={state}
-                accountId={accountId}
-                quoteAnalysisId={quoteAnalysisId}
-                onNeedAuth={() => {
-                  setAuthOpen(true);
-                  setState(SignupState.AUTH_GATE);
-                }}
-                onAnalysisReady={handleAnalysisReady}
-              />
-            )}
+        <div className="mx-auto max-w-2xl space-y-4">
+          <div>
+            <h2 className="text-xl font-bold">I Have a Quote</h2>
+            <p className="text-sm text-muted-foreground">PDF or image</p>
           </div>
 
-          {/* Flow B */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">Don't Have a Quote Yet?</h2>
-            <p className="text-sm text-muted-foreground">
-              Create a free account now and scan later. Takes ~30 seconds.
-            </p>
+          <QuoteUploadZone
+            onFileSelect={handleFileSelect}
+            isAnalyzing={state === SignupState.UPLOADING}
+            hasResult={false}
+            imagePreview={null}
+          />
 
-            <div className="space-y-2">
-              <Button className="w-full rounded-xl" onClick={handleNoQuote}>
-                Create Account &amp; Scan Later
-              </Button>
-              <p className="text-xs text-muted-foreground text-center">
-                Enter email + phone to activate access. No credit card.
+          {flow === "has_quote" && state !== SignupState.IDLE && (
+            <QuoteAnalysisFlow
+              state={state}
+              accountId={accountId}
+              quoteAnalysisId={quoteAnalysisId}
+              onNeedAuth={() => {
+                setAuthOpen(true);
+                setState(SignupState.AUTH_GATE);
+              }}
+              onAnalysisReady={handleAnalysisReady}
+            />
+          )}
+        </div>
+      </section>
+
+      {/* PowerToolFlow — Premium Callout Card */}
+      <AnimateOnScroll duration={600} threshold={0.2}>
+        <section className="px-4 py-10 group">
+          <div className="relative max-w-2xl mx-auto">
+            {/* Ambient glow — GPU-only (opacity + blur) */}
+            <div className="absolute -inset-4 rounded-3xl bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-2xl pointer-events-none" />
+
+            {/* Card */}
+            <div className="relative rounded-3xl border border-border/40 bg-card/40 backdrop-blur-sm p-8 text-center space-y-4 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/40">
+              {/* Trust badge */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-2">
+                <Sparkles className="w-3 h-3 animate-pulse" />
+                100% Free AI Demo
+              </div>
+
+              <h3 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">
+                Want to test the AI first?
+              </h3>
+
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Run a free demo scan to see how the Truth Engine catches hidden fees, inflated pricing, and missing scope items.
+              </p>
+
+              <PowerToolFlow />
+
+              <p className="text-xs text-muted-foreground inline-flex items-center justify-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                Takes 30 seconds. No credit card required.
               </p>
             </div>
-
-            {flow === "no_quote" && state === SignupState.QUALIFYING && (
-              <QualificationFlow onSubmit={handleQualifySubmit} />
-            )}
-
-            {flow === "no_quote" && state === SignupState.REVEAL && flowBResult && (
-              <Card className="p-6 space-y-2 border-primary/30">
-                <h3 className="text-lg font-bold text-primary">Vault Activated</h3>
-                <p className="text-sm text-muted-foreground">{flowBResult.message}</p>
-                <p className="text-xs text-muted-foreground">
-                  Score: {flowBResult.score} • Event: {flowBResult.event_type} (${flowBResult.event_value})
-                </p>
-              </Card>
-            )}
           </div>
+        </section>
+      </AnimateOnScroll>
+
+      {/* Don't Have a Quote Yet? — Deprioritized */}
+      <section className="px-4 py-10">
+        <div className="mx-auto max-w-2xl space-y-4 text-center">
+          <h2 className="text-xl font-bold">Don't Have a Quote Yet?</h2>
+          <p className="text-sm text-muted-foreground">
+            Create a free account now and scan later. Takes ~30 seconds.
+          </p>
+
+          <div className="space-y-2">
+            <Button className="w-full max-w-sm mx-auto rounded-xl" onClick={handleNoQuote}>
+              Create Account &amp; Scan Later
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Enter email + phone to activate access. No credit card.
+            </p>
+          </div>
+
+          {flow === "no_quote" && state === SignupState.QUALIFYING && (
+            <QualificationFlow onSubmit={handleQualifySubmit} />
+          )}
+
+          {flow === "no_quote" && state === SignupState.REVEAL && flowBResult && (
+            <Card className="p-6 space-y-2 border-primary/30 text-left">
+              <h3 className="text-lg font-bold text-primary">Vault Activated</h3>
+              <p className="text-sm text-muted-foreground">{flowBResult.message}</p>
+              <p className="text-xs text-muted-foreground">
+                Score: {flowBResult.score} • Event: {flowBResult.event_type} (${flowBResult.event_value})
+              </p>
+            </Card>
+          )}
         </div>
       </section>
 
