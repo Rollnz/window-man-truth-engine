@@ -4,6 +4,7 @@ import { TrustModal } from '@/components/forms/TrustModal';
 import { ScannerStep1Contact } from './steps/ScannerStep1Contact';
 import { ScannerStep2Project } from './steps/ScannerStep2Project';
 import { ScannerStep3Analysis } from './steps/ScannerStep3Analysis';
+import { OtpGate } from '@/components/signup2/OtpGate';
 import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
@@ -16,7 +17,7 @@ import { normalizeNameFields } from '@/components/ui/NameInputPair';
 import { toast } from 'sonner';
 import type { SourceTool } from '@/types/sourceTool';
 
-type ModalStep = 'contact' | 'project' | 'analysis';
+type ModalStep = 'contact' | 'project' | 'otp' | 'analysis';
 
 interface ScannerLeadCaptureModalProps {
   isOpen: boolean;
@@ -58,6 +59,16 @@ export function ScannerLeadCaptureModal({
     lastName: string;
     email: string;
   } | null>(null);
+  const [otpPhone, setOtpPhone] = useState('');
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [pendingProjectData, setPendingProjectData] = useState<{
+    phone: string;
+    windowCount: string;
+    quotePrice: string;
+    wantsBeatQuote: boolean;
+    file: File;
+  } | null>(null);
 
   const { sessionData, updateField } = useSessionData();
   const { setLeadId } = useLeadIdentity();
@@ -72,6 +83,10 @@ export function ScannerLeadCaptureModal({
         setStep('contact');
         setContactData(null);
         setIsSubmitting(false);
+        setOtpPhone('');
+        setOtpError(null);
+        setIsVerifying(false);
+        setPendingProjectData(null);
       }, 300);
     }
   }, [onClose]);
@@ -186,11 +201,28 @@ export function ScannerLeadCaptureModal({
         });
       }
 
-      // Move to analysis step
-      setStep('analysis');
+      // Store project data and initiate OTP verification
+      setPendingProjectData(data);
+      setOtpPhone(data.phone);
 
-      // Trigger actual file analysis
-      await onFileSelect(data.file);
+      // Send OTP via Twilio Verify
+      const { data: otpResult, error: otpError } = await invokeEdgeFunction('initiate-lead-verification', {
+        body: { phone: data.phone },
+      });
+
+      if (otpError || !otpResult?.success) {
+        const errMsg = otpResult?.error || 'Failed to send verification code. Please try again.';
+        toast.error(errMsg);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Move to OTP step
+      setStep('otp');
+
+      trackEvent('scanner_otp_sent', {
+        source_tool: 'quote-scanner',
+      });
 
     } catch (error) {
       console.error('[ScannerModal] Project submit error:', error);
@@ -200,6 +232,59 @@ export function ScannerLeadCaptureModal({
       setIsSubmitting(false);
     }
   };
+
+  // OTP verification handler
+  const handleOtpVerify = useCallback(async (code: string) => {
+    setIsVerifying(true);
+    setOtpError(null);
+
+    try {
+      const { data: result, error } = await invokeEdgeFunction('verify-lead-otp', {
+        body: {
+          phone: otpPhone,
+          code,
+          leadData: {
+            email: contactData?.email,
+            firstName: contactData?.firstName,
+            lastName: contactData?.lastName,
+            sourceTool: 'quote-scanner' satisfies SourceTool,
+          },
+        },
+      });
+
+      if (error || !result?.success) {
+        setOtpError(result?.error || 'Incorrect code, please try again.');
+        setIsVerifying(false);
+        return;
+      }
+
+      trackEvent('scanner_otp_verified', {
+        source_tool: 'quote-scanner',
+      });
+
+      // Move to analysis step and trigger file analysis
+      setStep('analysis');
+
+      if (pendingProjectData) {
+        await onFileSelect(pendingProjectData.file);
+      }
+    } catch (err) {
+      console.error('[ScannerModal] OTP verify error:', err);
+      setOtpError('Verification failed. Please try again.');
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [otpPhone, contactData, pendingProjectData, onFileSelect]);
+
+  // OTP resend handler
+  const handleOtpResend = useCallback(async () => {
+    const { error } = await invokeEdgeFunction('initiate-lead-verification', {
+      body: { phone: otpPhone },
+    });
+    if (error) {
+      toast.error('Failed to resend code. Please try again.');
+    }
+  }, [otpPhone]);
 
   // Step 3: Analysis complete
   const handleAnalysisComplete = useCallback(() => {
@@ -226,6 +311,16 @@ export function ScannerLeadCaptureModal({
           <ScannerStep2Project
             onSubmit={handleProjectSubmit}
             isLoading={isSubmitting}
+          />
+        )}
+
+        {step === 'otp' && (
+          <OtpGate
+            phone={otpPhone}
+            onVerify={handleOtpVerify}
+            onResend={handleOtpResend}
+            isVerifying={isVerifying}
+            error={otpError}
           />
         )}
 

@@ -16,6 +16,7 @@ import { useCanonicalScore } from '@/hooks/useCanonicalScore';
 import { logScannerCompleted } from '@/lib/highValueSignals';
 import type { QuoteAnalysisResult } from '@/hooks/useQuoteScanner';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
+import { useAuth } from '@/hooks/useAuth';
 import type { ExplainScoreFormData } from '@/types/audit';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -167,6 +168,8 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
   const { toast } = useToast();
   const { sessionData, sessionId, updateField } = useSessionData();
   const { leadId: existingLeadId, isVerifiedLead } = useLeadIdentity();
+  const { isAuthenticated } = useAuth();
+  const shouldBypassGate = isVerifiedLead || isAuthenticated;
   const { awardScore } = useCanonicalScore();
 
   const [state, setState] = useState<GatedAIScannerState>(INITIAL_STATE);
@@ -295,12 +298,13 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
       file_size_kb: Math.round(file.size / 1024),
     });
 
-    if (isVerifiedLead) {
-      // Known lead — skip modal, persist state, go straight to analyzing
+    if (shouldBypassGate) {
+      // Known lead or authenticated user — skip modal, go straight to analyzing
       trackEvent('gate_auto_bypassed', {
         lead_id: existingLeadId,
         source: 'ai-scanner',
         scan_attempt_id: scanAttemptId,
+        bypass_reason: isAuthenticated ? 'supabase_auth' : 'verified_lead',
       });
 
       persistState({
@@ -343,7 +347,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
     });
 
     trackModalOpen({ modalName: 'quote_upload_gate' });
-  }, [isVerifiedLead, existingLeadId, runAnalysis]);
+  }, [shouldBypassGate, existingLeadId, runAnalysis]);
 
   // ── closeModal → locked ─────────────────────────────────────────────
   const closeModal = useCallback(() => {
