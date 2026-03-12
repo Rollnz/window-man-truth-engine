@@ -17,6 +17,7 @@ import { UrgencyTicker } from "@/components/social-proof/UrgencyTicker";
 import { formatPhoneDisplay, stripPhone } from "@/lib/phone-mask";
 import handScannerImg from "@/assets/hero/hand_scanner.webp";
 import PowerToolFlow from "@/components/PowerToolFlow";
+import { WindowManFeatureImage } from "@/components/brand/WindowManFeatureImage";
 
 // ── Types ──────────────────────────────────────────────────────────────
 export type SignupFlow = "has_quote" | "no_quote";
@@ -464,6 +465,8 @@ export default function Signup() {
           </Card>
         </div>
       </section>
+
+      <WindowManFeatureImage className="lg:hidden" />
 
       {/* PowerToolFlow — mobile only, between hero and upload zone */}
       <div className="lg:hidden px-4 py-8">
