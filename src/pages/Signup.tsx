@@ -414,6 +414,15 @@ export default function Signup() {
       {/* Hero */}
       <section className="py-16 px-4">
         <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2 lg:items-center">
+          {/* Mobile hero image — hidden on desktop where the right column is visible */}
+          <div className="flex justify-center lg:hidden col-span-full mb-4">
+            <img
+              src={handScannerImg}
+              alt="Hand holding phone scanning a contractor quote with Window Man AI"
+              className="w-72 h-auto drop-shadow-2xl"
+              loading="eager"
+            />
+          </div>
           <div className="space-y-6">
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
               Scan Your Quote. Beat Your Contractors.
