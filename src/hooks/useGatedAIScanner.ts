@@ -118,6 +118,35 @@ async function compressImage(file: File, maxBytes = 4_000_000): Promise<{ base64
 // INITIAL STATE
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ── localStorage helpers for analysisId durability ──────────────────
+const ANALYSIS_ID_KEY = 'wm_pending_analysis_id';
+const ANALYSIS_ID_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+function persistAnalysisId(id: string): void {
+  try {
+    localStorage.setItem(ANALYSIS_ID_KEY, JSON.stringify({
+      id,
+      expires: Date.now() + ANALYSIS_ID_TTL_MS,
+    }));
+  } catch (e) { console.warn('[useGatedAIScanner] persistAnalysisId failed:', e); }
+}
+
+function readAnalysisId(): string | null {
+  try {
+    const raw = localStorage.getItem(ANALYSIS_ID_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Date.now() < parsed.expires) return parsed.id;
+    // Expired — clean up
+    localStorage.removeItem(ANALYSIS_ID_KEY);
+    return null;
+  } catch { localStorage.removeItem(ANALYSIS_ID_KEY); return null; }
+}
+
+function clearAnalysisId(): void {
+  try { localStorage.removeItem(ANALYSIS_ID_KEY); } catch {}
+}
+
 const INITIAL_STATE: GatedAIScannerState = {
   phase: 'idle',
   file: null,
@@ -126,6 +155,7 @@ const INITIAL_STATE: GatedAIScannerState = {
   fileType: null,
   fileSize: null,
   analysisResult: null,
+  analysisId: null,
   leadId: null,
   isModalOpen: false,
   isLoading: false,
