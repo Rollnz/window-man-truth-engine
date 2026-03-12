@@ -297,14 +297,25 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
       updateField('quoteAnalysisResult', resultWithTimestamp);
       clearPersistedState();
 
+      // TODO: In phone-first auth, move this capture to the otp_pending transition
+      // — revealed phase will not exist on the upload page
+      const capturedAnalysisId = resultWithTimestamp.analysisId ?? null;
+
       setState(prev => ({
         ...prev,
         phase: 'revealed',
         analysisResult: resultWithTimestamp,
+        analysisId: capturedAnalysisId,
         imageBase64: base64,
         mimeType,
         isLoading: false,
       }));
+
+      // Persist analysisId to localStorage with 30min TTL for durability
+      // across tab suspension (e.g. user switching to SMS app for OTP on low-RAM Android)
+      if (capturedAnalysisId) {
+        persistAnalysisId(capturedAnalysisId);
+      }
     } catch (err) {
       console.error('[useGatedAIScanner] Analysis error:', err);
       const message = getErrorMessage(err);
