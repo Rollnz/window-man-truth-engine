@@ -1,58 +1,74 @@
+# Full Audit: Extraction Logic, Rubrics & Orchestration Flow
 
+---
 
-# Plan: Comprehensive Scanner Brain Test Suite
+## 1. Every File Containing an AI Prompt for Quote Analysis
 
-The existing `scanner-brain/scoring.test.ts` already has basic happy/sad path tests. The `vitest.config.ts` already includes `scanner-brain/**/*.{test,spec}.{js,ts,jsx,tsx}`. So this is about **expanding coverage** with edge cases that matter for the app's core mission: protecting Florida homeowners from predatory window contractors.
+| # | File | Prompt/Rubric | Purpose |
+|---|------|---------------|---------|
+| 1 | `supabase/functions/quote-scanner/rubric.ts` | `EXTRACTION_RUBRIC` | **Canonical source.** Signal extraction for consumer-facing scanner. ~180 lines, 6 phases. |
+| 2 | `supabase/functions/quote-scanner/rubric.ts` | `GRADING_RUBRIC` | Short 3-line system prompt for "question" mode (follow-up Q&A about a quote). |
+| 3 | `supabase/functions/quote-scanner/rubric.ts` | `USER_PROMPT_TEMPLATE()` | Builds the user-role message with optional hints (opening count, area, notes). |
+| 4 | `supabase/functions/wm-analyze-quote/index.ts` (line 164) | `EXTRACTION_RUBRIC` (inlined copy) | **Duplicate.** Compressed version of #1 for Manus API. Same signals, shorter prose. |
+| 5 | `supabase/functions/wm-analyze-quote/index.ts` (line 241) | `buildUserPrompt()` (inlined copy) | Duplicate of #3. |
+| 6 | `supabase/functions/quote-scanner/index.ts` (line 215) | Inline email prompt | "You are a professional negotiation assistant. Draft a polite but firm email..." |
+| 7 | `supabase/functions/quote-scanner/index.ts` (line 227) | Inline phoneScript prompt | Negotiation coach: Opening, The Ask, Objection Handling. |
+| 8 | `supabase/functions/analyze-consultation-quote/index.ts` (line 143) | **Completely different rubric** | "Forensic Sales Intelligence Analyst" — extracts itemized openings, competitor name, measurements, colors, installation type, warranty, red flags, sales angle. Schema v2 via tool calling. |
+| 9 | `supabase/functions/expert-chat/index.ts` (line 151) | Expert chat system prompt | Window consultant persona with dynamic context injection (cost of inaction, reality check score, etc.). |
+| 10 | `supabase/functions/roleplay-chat/index.ts` (line 9) | `SYSTEM_PROMPT` | "The Closer" — high-pressure salesman roleplay training. Not extraction. |
+| 11 | `supabase/functions/slide-over-chat/index.ts` (line 116) | `buildSystemPrompt()` | "Hurricane Hero" persona — site-wide Q&A chat. Not extraction. |
+| 12 | `supabase/functions/generate-quote/index.ts` (line 117) | Inline estimator prompt | Cost estimate generator for the Quote Builder tool. Not extraction. |
 
-## What to Add
+---
 
-### 1. Hard Cap Edge Cases (Florida Statute Enforcement)
-The app's core value proposition is statutory protection. Every cap path needs isolated testing:
-- **Owner-builder language** (F.S. 489.103) → cap at 25
-- **Deposit exactly 50%** → no cap (boundary); **51%** → cap at 55 (F.S. 501.137)
-- **Payment before completion** (F.S. 489.126) → cap at 40
-- **Tempered-only risk** without laminated → cap at 30
-- **Multiple caps simultaneously** → lowest ceiling wins (e.g., no license + high deposit = 25, not 55)
-- **Cap priority**: verify that when both no-license (25) and deposit-over-50 (55) apply, the result is 25
+## 2. Multiple Versions
 
-### 2. Price Per Opening Scenarios
-This is what homeowners compare — it must be accurate:
-- No price found → "N/A"
-- No opening count → "N/A"
-- Zero openings → "N/A" (no division by zero)
-- `openingCountHint` fallback when `openingCountEstimate` is null
-- Rounding to nearest $50
+**THREE distinct rubric families:**
 
-### 3. Price Score Brackets
-The sweet spot ($1200–$1800) should score highest. Test all 5 brackets:
-- Below $1000 → 40
-- $1000–$1199 → 65
-- $1200–$1800 → 95
-- $1801–$2500 → 75
-- Over $2500 → 55 (or 65 with premium indicators)
+### Family A: Consumer Scanner Rubric (EXTRACTION_RUBRIC)
+- **Canonical source:** `quote-scanner/rubric.ts`
+- **Inlined copy:** `wm-analyze-quote/index.ts` (compressed but semantically identical)
+- **Output:** `ExtractionSignals` JSON (37 fields) → `scoreFromSignals()` → letter grade, pillar scores, warnings, missing items
+- **Version:** `wm_rubric_v3.0`
 
-### 4. Curve Function Behavior
-- Score ≤70 → unchanged
-- Score 71 → barely above 70
-- Score 100 raw → curved down significantly (A+ should be rare)
+### Family B: Sales Intelligence Rubric (analyze-consultation-quote)
+- **Location:** `analyze-consultation-quote/index.ts` (self-contained)
+- **Output:** Schema v2 JSON — `project_overview`, `itemized_openings[]`, `installation_scope`, `warranty`, `detected_markup_level`, `red_flags`, `sales_angle`
+- **Model:** `google/gemini-2.5-flash` (hardcoded)
 
-### 5. Custom Weights (Dynamic Weight Injection)
-- Verify custom weights shift pillar emphasis (e.g., safety=1.0 and all else 0 → overall = safety score)
+### Family C: Support Prompts (not extraction)
+- `expert-chat`, `roleplay-chat`, `slide-over-chat`, `generate-quote`
 
-### 6. Warning and Missing Item Caps
-- Verify warnings capped at 6 items max
-- Verify missing items capped at 6 items max
+---
 
-### 7. Forensic Summary Edge Cases
-- Score exactly at risk-level boundaries (30, 50, 70)
-- Quote with all positives but one hard cap → still shows positives? (no — score < 75 after cap)
-- Questions generated for each deficiency type
+## 3. Orchestration Flow
 
-### 8. Safe Preview Boundary Tests
-- Score 30 → critical, score 31 → high, score 50 → high, score 51 → moderate, score 70 → moderate, score 71 → acceptable
-- `hasCriticalCap` only true when cap ceiling ≤ 30
+```
+USER → upload-quote → quote-scanner (dedup → AI extraction → scoring → forensic → persist → return)
+     → Frontend renders Results Dashboard
+     → orchestrate-quote-analysis (after signup)
+     → DB trigger → pending_calls → call-dispatcher → PhoneCall.bot
+```
 
-### Files to Modify
-- **`scanner-brain/scoring.test.ts`** — rewrite with comprehensive edge case coverage (~200 lines)
-- **`vitest.config.ts`** — already includes scanner-brain glob, no changes needed
+Key: No AI-based data cleaning. All transformation is deterministic via `scoring.ts` + `forensic.ts`.
 
+---
+
+## 4. Canonical Scanner Brain (Files to Decouple)
+
+1. `quote-scanner/rubric.ts` — EXTRACTION_RUBRIC + USER_PROMPT_TEMPLATE
+2. `quote-scanner/schema.ts` — ExtractionSignals interface + JSON schema + sanitizeForPrompt
+3. `quote-scanner/scoring.ts` — scoreFromSignals + calculateLetterGrade + applyHardCaps + applyCurve
+4. `quote-scanner/forensic.ts` — generateForensicSummary + extractIdentity
+
+---
+
+## 5. Drift Risk
+
+`wm-analyze-quote/index.ts` inlines copies of all canonical logic. Any change to `quote-scanner/*.ts` must be manually mirrored.
+
+---
+
+## 6. Phone Agent Gap
+
+PhoneCall.bot only receives `grade` + `overall_score` + basic lead info. It does NOT get warnings, forensic summary, or extraction signals.
