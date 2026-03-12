@@ -481,10 +481,7 @@ export default function Signup() {
 
       <WindowManFeatureImage className="lg:hidden" />
 
-      {/* PowerToolFlow — mobile only, between hero and upload zone */}
-      <div className="lg:hidden px-4 py-8">
-        <PowerToolFlow />
-      </div>
+      {/* PowerToolFlow removed from mobile-only — now in callout card below */}
 
       {/* StepProgressSequence — mobile only, between PowerToolFlow and upload zone */}
       <div className="lg:hidden px-4 pb-8">
