@@ -203,7 +203,11 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
   const shouldBypassGate = isVerifiedLead || isAuthenticated;
   const { awardScore } = useCanonicalScore();
 
-  const [state, setState] = useState<GatedAIScannerState>(INITIAL_STATE);
+  const [state, setState] = useState<GatedAIScannerState>(() => {
+    // Initialize analysisId from localStorage (with TTL validation) for tab-recovery
+    const storedAnalysisId = readAnalysisId();
+    return { ...INITIAL_STATE, analysisId: storedAnalysisId };
+  });
   const scanAttemptIdRef = useRef<string>('');
 
   const { submit: submitLead, isSubmitting: isLeadSubmitting } = useLeadFormSubmit({
