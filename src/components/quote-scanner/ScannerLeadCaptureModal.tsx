@@ -83,6 +83,10 @@ export function ScannerLeadCaptureModal({
         setStep('contact');
         setContactData(null);
         setIsSubmitting(false);
+        setOtpPhone('');
+        setOtpError(null);
+        setIsVerifying(false);
+        setPendingProjectData(null);
       }, 300);
     }
   }, [onClose]);
