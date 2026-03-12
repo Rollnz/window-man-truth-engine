@@ -18,6 +18,17 @@ import { formatPhoneDisplay, stripPhone } from "@/lib/phone-mask";
 import handScannerImg from "@/assets/hero/hand_scanner.webp";
 import PowerToolFlow from "@/components/PowerToolFlow";
 import { WindowManFeatureImage } from "@/components/brand/WindowManFeatureImage";
+import { StepProgressSequence } from "@/components/ui/StepProgressSequence";
+
+const QUOTE_ANALYSIS_STEPS = [
+  { id: 'ocr', label: 'Reading your quote...', duration: 2000 },
+  { id: 'extract', label: 'Extracting line items...', duration: 2500 },
+  { id: 'safety', label: 'Checking safety compliance...', duration: 2000 },
+  { id: 'scope', label: 'Analyzing scope completeness...', duration: 2000 },
+  { id: 'price', label: 'Evaluating pricing...', duration: 1500 },
+  { id: 'finePrint', label: 'Reviewing fine print...', duration: 2000 },
+  { id: 'report', label: 'Generating your report...', duration: 1500 },
+];
 
 // ── Types ──────────────────────────────────────────────────────────────
 export type SignupFlow = "has_quote" | "no_quote";
