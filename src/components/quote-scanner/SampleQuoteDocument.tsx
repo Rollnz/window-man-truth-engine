@@ -70,7 +70,7 @@ export function SampleQuoteDocument({ className }: SampleQuoteDocumentProps) {
       </div>
 
       {/* Fine Print */}
-      <div className="pt-1.5 space-y-0.5 text-[7px] md:text-[8px] opacity-60 leading-tight">
+      <div className="pt-1.5 space-y-0.5 text-[7px] md:text-[8px] opacity-80 leading-tight">
         <p>* Subject to final measurement. Pricing may vary.</p>
         <p>* 20-year product warranty. 1-year labor warranty.</p>
         <p>* "Subject to remeasure" clause applies to all line items.</p>
