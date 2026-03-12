@@ -298,12 +298,13 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
       file_size_kb: Math.round(file.size / 1024),
     });
 
-    if (isVerifiedLead) {
-      // Known lead — skip modal, persist state, go straight to analyzing
+    if (shouldBypassGate) {
+      // Known lead or authenticated user — skip modal, go straight to analyzing
       trackEvent('gate_auto_bypassed', {
         lead_id: existingLeadId,
         source: 'ai-scanner',
         scan_attempt_id: scanAttemptId,
+        bypass_reason: isAuthenticated ? 'supabase_auth' : 'verified_lead',
       });
 
       persistState({
