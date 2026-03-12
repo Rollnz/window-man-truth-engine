@@ -742,9 +742,16 @@ serve(async (req) => {
           if (!existingAccount.gclid && attribution?.gclid) {
             accountUpdate.gclid = attribution.gclid;
           }
-          if (!existingAccount.fbc && (attribution?.fbc || attribution?.fbp)) {
-            accountUpdate.fbc = attribution?.fbc;
-            accountUpdate.fbp = attribution?.fbp;
+          const existingFbc = (existingAccount.fbc ?? existingAccount._fbc) as string | null | undefined;
+          const existingFbp = (existingAccount.fbp ?? existingAccount._fbp) as string | null | undefined;
+          if (!existingFbc && (attribution?.fbc || attribution?.fbp)) {
+            if ('_fbc' in existingAccount || '_fbp' in existingAccount) {
+              accountUpdate._fbc = attribution?.fbc;
+              accountUpdate._fbp = attribution?.fbp;
+            } else {
+              accountUpdate.fbc = attribution?.fbc;
+              accountUpdate.fbp = attribution?.fbp;
+            }
           }
           if (!existingAccount.msclkid && attribution?.msclkid) {
             accountUpdate.msclkid = attribution.msclkid;
