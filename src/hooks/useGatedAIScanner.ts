@@ -485,9 +485,10 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
   // ── reset ───────────────────────────────────────────────────────────
   const reset = useCallback(() => {
     if (state.filePreviewUrl) URL.revokeObjectURL(state.filePreviewUrl);
-    setState(INITIAL_STATE);
+    setState({ ...INITIAL_STATE, analysisId: null });
     scanAttemptIdRef.current = '';
     clearPersistedState();
+    clearAnalysisId();
   }, [state.filePreviewUrl]);
 
   return {

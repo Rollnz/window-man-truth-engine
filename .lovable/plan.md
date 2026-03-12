@@ -72,3 +72,50 @@ Key: No AI-based data cleaning. All transformation is deterministic via `scoring
 ## 6. Phone Agent Gap
 
 PhoneCall.bot only receives `grade` + `overall_score` + basic lead info. It does NOT get warnings, forensic summary, or extraction signals.
+
+---
+
+## 7. Phone-First Auth Architecture (NEW)
+
+### Root Dependency: `analysisId` Flow
+
+The entire phone-first auth architecture depends on `analysisId` (UUID from `quote_analyses` table) flowing from the backend to the frontend and surviving the OTP round-trip.
+
+### Data Flow
+
+```
+quote-scanner edge function
+  → DB insert into quote_analyses (returns id)
+  → Response includes analysisId: insertedAnalysis?.id ?? null
+  → Frontend captures in GatedAIScannerState.analysisId
+  → Persisted to localStorage with 30-minute TTL (key: wm_pending_analysis_id)
+  → OTP handler reads from localStorage after phone verification
+  → Redirect to /audit/result/:analysisId
+```
+
+### Why localStorage (not sessionStorage)
+
+On low-RAM Android devices — the primary demographic for Florida homeowners — the OS terminates browser tabs when the user switches to their SMS app to read the OTP code. `sessionStorage` is destroyed on tab termination. `localStorage` with a 30-minute TTL survives this scenario.
+
+**TTL Strategy:**
+- Write: `{ id: analysisId, expires: Date.now() + 30min }` immediately after AI response
+- Read: Validate `Date.now() < expires` on every access; remove if expired
+- Clear: After successful redirect to result page, or on hook reset
+
+### Null analysisId Fallback
+
+If `wm_pending_analysis_id` is not found in storage after OTP verification (DB insert failed, storage cleared, TTL expired), redirect to `/audit?recovered=true` prompting the user to re-upload.
+
+### Known Issue: Duplicate Uploads
+
+The `quote_analyses` table has a UNIQUE constraint on `image_hash`. If someone uploads the same file twice, the insert fails, `insertedAnalysis` is null, and the response returns `analysisId: null`. The fix is an upsert or select-on-conflict at the edge function level — deferred to a follow-up task.
+
+### Build Order (Phone-First Auth)
+
+1. ✅ **Patch quote-scanner** → return `analysisId` in response
+2. ✅ **Update types** → `QuoteAnalysisResult.analysisId`
+3. ✅ **Update useGatedAIScanner** → capture, persist to localStorage with TTL, expose in return
+4. 🔲 **Build VOIP lookup edge function** → Twilio Lookup, reject non-mobile
+5. 🔲 **Replace custom OTP with Supabase Phone Auth** → `signInWithOtp({ phone })` / `verifyOtp()`
+6. 🔲 **Build `/audit/result/:analysisId` page** → authenticated result display
+7. 🔲 **Remove magic link flow** → clean up dead code
