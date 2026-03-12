@@ -201,11 +201,28 @@ export function ScannerLeadCaptureModal({
         });
       }
 
-      // Move to analysis step
-      setStep('analysis');
+      // Store project data and initiate OTP verification
+      setPendingProjectData(data);
+      setOtpPhone(data.phone);
 
-      // Trigger actual file analysis
-      await onFileSelect(data.file);
+      // Send OTP via Twilio Verify
+      const { data: otpResult, error: otpError } = await invokeEdgeFunction('initiate-lead-verification', {
+        body: { phone: data.phone },
+      });
+
+      if (otpError || !otpResult?.success) {
+        const errMsg = otpResult?.error || 'Failed to send verification code. Please try again.';
+        toast.error(errMsg);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Move to OTP step
+      setStep('otp');
+
+      trackEvent('scanner_otp_sent', {
+        source_tool: 'quote-scanner',
+      });
 
     } catch (error) {
       console.error('[ScannerModal] Project submit error:', error);
