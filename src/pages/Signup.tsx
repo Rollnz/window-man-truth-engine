@@ -330,20 +330,38 @@ export default function Signup() {
   );
 
   // ── Verify phone OTP ────────────────────────────────────────────────
-  // ── TESTING MODE: Auto-accept any OTP code ────────────────────
   const handleVerifyOtp = useCallback(
-    async (_token: string) => {
-      // Clear auth-related persisted keys
-      ssDel(SS.state);
-      ssDel(SS.phone);
-      ssDel(SS.profile);
+    async (token: string) => {
+      const storedPhone = phone ?? ssGet<string>(SS.phone);
+      if (!storedPhone) {
+        toast({ title: "Error", description: "Phone number not found. Please start over.", variant: "destructive" });
+        return;
+      }
 
-      setAuthOpen(false);
-      setNeedsReenterPhone(false);
-      toast({ title: "TESTING MODE", description: "Phone verification bypassed." });
-      setState(flow === "has_quote" ? SignupState.POLLING_ANALYSIS : SignupState.QUALIFYING);
+      try {
+        const { status, data, errorText } = await callEdgeJson<{ valid: boolean; status: string }>(
+          "verify-otp",
+          { phone: storedPhone, code: token },
+        );
+
+        if (status >= 400 || !data?.valid) {
+          throw new Error(errorText || "Invalid or expired code. Please try again.");
+        }
+
+        // OTP approved — update accounts.phone_verified_at via save-lead or directly
+        ssDel(SS.state);
+        ssDel(SS.phone);
+        ssDel(SS.profile);
+
+        setAuthOpen(false);
+        setNeedsReenterPhone(false);
+        toast({ title: "Phone verified", description: "Your number has been confirmed." });
+        setState(flow === "has_quote" ? SignupState.POLLING_ANALYSIS : SignupState.QUALIFYING);
+      } catch (e: any) {
+        toast({ title: "Verification failed", description: e?.message || "Please try again.", variant: "destructive" });
+      }
     },
-    [flow, toast],
+    [flow, phone, toast],
   );
 
   // ── Flow B: qualification ───────────────────────────────────────────
