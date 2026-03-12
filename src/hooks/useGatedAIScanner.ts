@@ -347,7 +347,7 @@ export function useGatedAIScanner(): UseGatedAIScannerReturn {
     });
 
     trackModalOpen({ modalName: 'quote_upload_gate' });
-  }, [isVerifiedLead, existingLeadId, runAnalysis]);
+  }, [shouldBypassGate, existingLeadId, runAnalysis]);
 
   // ── closeModal → locked ─────────────────────────────────────────────
   const closeModal = useCallback(() => {
