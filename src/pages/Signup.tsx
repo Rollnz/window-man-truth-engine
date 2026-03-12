@@ -536,7 +536,7 @@ export default function Signup() {
                 Create Account &amp; Scan Later
               </Button>
               <p className="text-xs text-muted-foreground text-center">
-                You'll verify email + phone to activate Vault access. No credit card.
+                Enter email + phone to activate access. No credit card.
               </p>
             </div>
 
