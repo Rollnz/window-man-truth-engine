@@ -28,6 +28,16 @@ interface AnalysisData {
   summary?: string;
 }
 
+interface AccountRecord {
+  id?: string;
+  account_id?: string;
+  email?: string;
+  supabase_user_id?: string | null;
+  client_id?: string | null;
+  session_id?: string | null;
+}
+
+
 function buildSuccessResponse(
   quoteAnalysisId: string,
   grade: string,
