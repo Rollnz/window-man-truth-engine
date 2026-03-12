@@ -314,6 +314,16 @@ export function ScannerLeadCaptureModal({
           />
         )}
 
+        {step === 'otp' && (
+          <OtpGate
+            phone={otpPhone}
+            onVerify={handleOtpVerify}
+            onResend={handleOtpResend}
+            isVerifying={isVerifying}
+            error={otpError}
+          />
+        )}
+
         {step === 'analysis' && (
           <ScannerStep3Analysis
             onComplete={handleAnalysisComplete}
