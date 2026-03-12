@@ -314,12 +314,11 @@ export default function Signup() {
         updateFields({ firstName: payload.first_name, lastName: payload.last_name, email: payload.email, phone: payload.phone, leadId: data.leadId });
 
         const redirectUrl = `${window.location.origin}/signup`;
-        // TESTING MODE: Send email in background but don't block on it
+        // Send magic link in background (non-blocking — email confirmation not gated)
         supabase.auth.signInWithOtp({ email: payload.email, options: { emailRedirectTo: redirectUrl } });
 
-        // Skip VERIFYING_EMAIL — go straight to phone verification
+        // Proceed to phone verification (primary verification gate)
         await triggerPhoneVerification(payload.phone);
-        toast({ title: "TESTING MODE", description: "Email sent in background. Skipping email gate." });
       } catch (e: any) {
         toast({ title: "Signup failed", description: e?.message ?? "Please try again.", variant: "destructive" });
         setState(SignupState.AUTH_GATE);
