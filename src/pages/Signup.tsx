@@ -454,17 +454,27 @@ export default function Signup() {
             <UrgencyTicker variant="homepage" size="sm" showToday showPermitFlags={false} />
           </div>
 
-          <Card className="p-6 space-y-3 border-border/40">
-            <h3 className="font-semibold text-lg">What you'll get</h3>
-            <ul className="space-y-1 text-sm text-muted-foreground list-disc pl-4">
-              <li>Final grade (A− to F) + pillar scores</li>
-              <li>Hidden fees, commission traps, and scope omissions</li>
-              <li>Negotiation bullets tailored to your quote</li>
-            </ul>
-            <p className="text-xs text-muted-foreground pt-2">
-              Security-first Vault access. Email + phone verification required to unlock results.
-            </p>
-          </Card>
+          <div className="flex flex-col items-center gap-0">
+            <div className="relative z-10 -mb-6">
+              <img
+                src={handScannerImg}
+                alt="Hand holding phone scanning a contractor quote with Window Man AI"
+                className="w-72 lg:w-80 max-h-[300px] object-contain drop-shadow-2xl"
+                loading="eager"
+              />
+            </div>
+            <Card className="p-6 pt-10 space-y-3 border-border/40 w-full">
+              <h3 className="font-semibold text-lg">What you'll get</h3>
+              <ul className="space-y-1 text-sm text-muted-foreground list-disc pl-4">
+                <li>Final grade (A− to F) + pillar scores</li>
+                <li>Hidden fees, commission traps, and scope omissions</li>
+                <li>Negotiation bullets tailored to your quote</li>
+              </ul>
+              <p className="text-xs text-muted-foreground pt-2">
+                Security-first Vault access. Email + phone verification required to unlock results.
+              </p>
+            </Card>
+          </div>
         </div>
       </section>
 
