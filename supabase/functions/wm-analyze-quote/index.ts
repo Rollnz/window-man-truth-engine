@@ -10,12 +10,12 @@
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 // ── Scanner Brain: Single Source of Truth ──
-import { ExtractionSignalsJsonSchema, sanitizeForPrompt } from "../../../scanner-brain/schema.ts";
-import type { ExtractionSignals } from "../../../scanner-brain/schema.ts";
-import { EXTRACTION_RUBRIC, USER_PROMPT_TEMPLATE } from "../../../scanner-brain/rubric.ts";
-import { scoreFromSignals } from "../../../scanner-brain/scoring.ts";
-import { generateForensicSummary, extractIdentity } from "../../../scanner-brain/forensic.ts";
-import { BRAIN_VERSION } from "../../../scanner-brain/index.ts";
+import { ExtractionSignalsJsonSchema, sanitizeForPrompt } from "../_shared/scanner-brain/schema.ts";
+import type { ExtractionSignals } from "../_shared/scanner-brain/schema.ts";
+import { EXTRACTION_RUBRIC, USER_PROMPT_TEMPLATE } from "../_shared/scanner-brain/rubric.ts";
+import { scoreFromSignals } from "../_shared/scanner-brain/scoring.ts";
+import { generateForensicSummary, extractIdentity } from "../_shared/scanner-brain/forensic.ts";
+import { BRAIN_VERSION } from "../_shared/scanner-brain/index.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CORS
