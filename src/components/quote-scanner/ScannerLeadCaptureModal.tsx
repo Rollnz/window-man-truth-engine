@@ -59,6 +59,16 @@ export function ScannerLeadCaptureModal({
     lastName: string;
     email: string;
   } | null>(null);
+  const [otpPhone, setOtpPhone] = useState('');
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [pendingProjectData, setPendingProjectData] = useState<{
+    phone: string;
+    windowCount: string;
+    quotePrice: string;
+    wantsBeatQuote: boolean;
+    file: File;
+  } | null>(null);
 
   const { sessionData, updateField } = useSessionData();
   const { setLeadId } = useLeadIdentity();
