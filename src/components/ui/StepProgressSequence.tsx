@@ -211,7 +211,7 @@ export function StepProgressSequence({
                 className={cn(
                   'text-sm',
                   done
-                    ? 'text-green-600 dark:text-green-400'
+                    ? 'text-primary'
                     : active
                       ? 'text-foreground'
                       : 'text-muted-foreground',
