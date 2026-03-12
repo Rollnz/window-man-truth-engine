@@ -18,6 +18,8 @@ interface ScannerStep2ProjectProps {
     file: File;
   }) => void;
   isLoading?: boolean;
+  /** Pre-fill the phone input (e.g. after "Change Number" from OTP screen) */
+  initialPhone?: string;
 }
 
 /**
