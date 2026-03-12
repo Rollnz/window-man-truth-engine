@@ -17,6 +17,7 @@ import { UrgencyTicker } from "@/components/social-proof/UrgencyTicker";
 import { formatPhoneDisplay, stripPhone } from "@/lib/phone-mask";
 import handScannerImg from "@/assets/hero/hand_scanner.webp";
 import PowerToolFlow from "@/components/PowerToolFlow";
+import { WindowManFeatureImage } from "@/components/brand/WindowManFeatureImage";
 
 // ── Types ──────────────────────────────────────────────────────────────
 export type SignupFlow = "has_quote" | "no_quote";
