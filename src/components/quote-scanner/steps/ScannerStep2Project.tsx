@@ -18,6 +18,8 @@ interface ScannerStep2ProjectProps {
     file: File;
   }) => void;
   isLoading?: boolean;
+  /** Pre-fill the phone input (e.g. after "Change Number" from OTP screen) */
+  initialPhone?: string;
 }
 
 /**
@@ -28,6 +30,7 @@ interface ScannerStep2ProjectProps {
 export function ScannerStep2Project({
   onSubmit,
   isLoading = false,
+  initialPhone,
 }: ScannerStep2ProjectProps) {
   const [windowCount, setWindowCount] = useState('');
   const [quotePrice, setQuotePrice] = useState('');
@@ -35,7 +38,7 @@ export function ScannerStep2Project({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { values, setValue, hasError, getError, validateAll } = useFormValidation({
-    initialValues: { phone: '' },
+    initialValues: { phone: initialPhone || '' },
     schemas: { phone: commonSchemas.phone },
     formatters: { phone: formatPhoneNumber },
   });

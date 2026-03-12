@@ -638,6 +638,9 @@ export type Database = {
           name: string | null
           original_session_id: string | null
           phone: string | null
+          phone_change_attempts: number
+          phone_change_locked_at: string | null
+          phone_change_log: Json
           qualification_completed_at: string | null
           referrer: string | null
           session_data: Json | null
@@ -715,6 +718,9 @@ export type Database = {
           name?: string | null
           original_session_id?: string | null
           phone?: string | null
+          phone_change_attempts?: number
+          phone_change_locked_at?: string | null
+          phone_change_log?: Json
           qualification_completed_at?: string | null
           referrer?: string | null
           session_data?: Json | null
@@ -792,6 +798,9 @@ export type Database = {
           name?: string | null
           original_session_id?: string | null
           phone?: string | null
+          phone_change_attempts?: number
+          phone_change_locked_at?: string | null
+          phone_change_log?: Json
           qualification_completed_at?: string | null
           referrer?: string | null
           session_data?: Json | null
