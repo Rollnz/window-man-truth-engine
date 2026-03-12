@@ -16,6 +16,7 @@ import { Shield, Zap } from "lucide-react";
 import { UrgencyTicker } from "@/components/social-proof/UrgencyTicker";
 import { formatPhoneDisplay, stripPhone } from "@/lib/phone-mask";
 import handScannerImg from "@/assets/hero/hand_scanner.webp";
+import PowerToolFlow from "@/components/PowerToolFlow";
 
 // ── Types ──────────────────────────────────────────────────────────────
 export type SignupFlow = "has_quote" | "no_quote";
@@ -463,6 +464,11 @@ export default function Signup() {
           </Card>
         </div>
       </section>
+
+      {/* PowerToolFlow — mobile only, between hero and upload zone */}
+      <div className="lg:hidden px-4 py-8">
+        <PowerToolFlow />
+      </div>
 
       {/* Split Conversion Zone */}
       <section className="py-12 px-4 border-t border-border/40" id="upload-zone">
