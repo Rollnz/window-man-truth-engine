@@ -4,6 +4,7 @@ import { TrustModal } from '@/components/forms/TrustModal';
 import { ScannerStep1Contact } from './steps/ScannerStep1Contact';
 import { ScannerStep2Project } from './steps/ScannerStep2Project';
 import { ScannerStep3Analysis } from './steps/ScannerStep3Analysis';
+import { OtpGate } from '@/components/signup2/OtpGate';
 import { invokeEdgeFunction } from '@/lib/edgeFunction';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useLeadIdentity } from '@/hooks/useLeadIdentity';
@@ -16,7 +17,7 @@ import { normalizeNameFields } from '@/components/ui/NameInputPair';
 import { toast } from 'sonner';
 import type { SourceTool } from '@/types/sourceTool';
 
-type ModalStep = 'contact' | 'project' | 'analysis';
+type ModalStep = 'contact' | 'project' | 'otp' | 'analysis';
 
 interface ScannerLeadCaptureModalProps {
   isOpen: boolean;
