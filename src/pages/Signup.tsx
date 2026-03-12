@@ -466,6 +466,8 @@ export default function Signup() {
         </div>
       </section>
 
+      <WindowManFeatureImage className="lg:hidden" />
+
       {/* PowerToolFlow — mobile only, between hero and upload zone */}
       <div className="lg:hidden px-4 py-8">
         <PowerToolFlow />
