@@ -6,9 +6,9 @@ import {
   generateForensicSummary,
   extractIdentity,
   DEFAULT_WEIGHTS,
-} from './index';
-import type { ExtractionSignals } from './schema';
-import type { PillarWeights } from './scoring';
+} from '../../supabase/functions/_shared/scanner-brain/index';
+import type { ExtractionSignals } from '../../supabase/functions/_shared/scanner-brain/schema';
+import type { PillarWeights } from '../../supabase/functions/_shared/scanner-brain/scoring';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // BASE FIXTURES

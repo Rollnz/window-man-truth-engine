@@ -5,8 +5,8 @@ import {
   generateSafePreview,
   generateForensicSummary,
   extractIdentity,
-} from './index';
-import type { ExtractionSignals } from './schema';
+} from '../../supabase/functions/_shared/scanner-brain/index';
+import type { ExtractionSignals } from '../../supabase/functions/_shared/scanner-brain/schema';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // BASE FIXTURES — spread & override for each scenario

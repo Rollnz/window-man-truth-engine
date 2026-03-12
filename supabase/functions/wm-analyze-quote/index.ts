@@ -4,18 +4,18 @@
 // Auth: Bearer token (WM_ANALYZE_QUOTE_SECRET)
 // No internal tracking, no DB writes
 //
-// All scoring/forensic/rubric logic imported from /scanner-brain (SSOT)
+// All scoring/forensic/rubric logic imported from /_shared/scanner-brain (SSOT)
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 // ── Scanner Brain: Single Source of Truth ──
-import { ExtractionSignalsJsonSchema, sanitizeForPrompt } from "../../../scanner-brain/schema.ts";
-import type { ExtractionSignals } from "../../../scanner-brain/schema.ts";
-import { EXTRACTION_RUBRIC, USER_PROMPT_TEMPLATE } from "../../../scanner-brain/rubric.ts";
-import { scoreFromSignals } from "../../../scanner-brain/scoring.ts";
-import { generateForensicSummary, extractIdentity } from "../../../scanner-brain/forensic.ts";
-import { BRAIN_VERSION } from "../../../scanner-brain/index.ts";
+import { ExtractionSignalsJsonSchema, sanitizeForPrompt } from "../_shared/scanner-brain/schema.ts";
+import type { ExtractionSignals } from "../_shared/scanner-brain/schema.ts";
+import { EXTRACTION_RUBRIC, USER_PROMPT_TEMPLATE } from "../_shared/scanner-brain/rubric.ts";
+import { scoreFromSignals } from "../_shared/scanner-brain/scoring.ts";
+import { generateForensicSummary, extractIdentity } from "../_shared/scanner-brain/forensic.ts";
+import { BRAIN_VERSION } from "../_shared/scanner-brain/index.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CORS
@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
   // ─── INVALID QUOTE ───
   if (!extracted.isValidQuote) return errorResponse(422, "INVALID_QUOTE", extracted.validityReason || "Document is not a window/door quote");
 
-  // ─── DETERMINISTIC PIPELINE (from scanner-brain SSOT) ───
+  // ─── DETERMINISTIC PIPELINE (from _shared/scanner-brain SSOT) ───
   const scored = scoreFromSignals(extracted, opening_count ?? null);
   const forensic = generateForensicSummary(extracted, scored);
   const identity = extractIdentity(extracted);

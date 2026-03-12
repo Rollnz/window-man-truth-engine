@@ -17,16 +17,16 @@ import {
 import { toast } from "sonner";
 import { copyToClipboard } from "@/utils/clipboard";
 
-// Import the real engine
+// Import the real engine (from _shared/scanner-brain)
 import {
   scoreFromSignals,
   generateSafePreview,
   generateForensicSummary,
   extractIdentity,
   DEFAULT_WEIGHTS,
-} from "../../../scanner-brain/index";
-import type { ExtractionSignals } from "../../../scanner-brain/schema";
-import type { PillarWeights } from "../../../scanner-brain/scoring";
+} from "../../../supabase/functions/_shared/scanner-brain/index";
+import type { ExtractionSignals } from "../../../supabase/functions/_shared/scanner-brain/schema";
+import type { PillarWeights } from "../../../supabase/functions/_shared/scanner-brain/scoring";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CURVE FUNCTION (mirrored from scoring.ts for X-Ray display)
