@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useState } from 'react';
 import { MessageSquare, Send, Loader2, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,8 @@ interface QuoteQAProps {
   disabled: boolean;
 }
 
-export function QuoteQA({ answer, isAsking, onAsk, disabled }: QuoteQAProps) {
+export const QuoteQA = React.forwardRef<HTMLDivElement, QuoteQAProps>(
+  function QuoteQA({ answer, isAsking, onAsk, disabled }, ref) {
   const [question, setQuestion] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -21,7 +23,7 @@ export function QuoteQA({ answer, isAsking, onAsk, disabled }: QuoteQAProps) {
   };
 
   return (
-    <div className="rounded-xl border bg-card p-6 space-y-4">
+    <div ref={ref} className="rounded-xl border bg-card p-6 space-y-4">
       <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
         <MessageSquare className="w-4 h-4" />
         <span>Ask the AI Expert</span>
@@ -68,4 +70,4 @@ export function QuoteQA({ answer, isAsking, onAsk, disabled }: QuoteQAProps) {
       )}
     </div>
   );
-}
+});
