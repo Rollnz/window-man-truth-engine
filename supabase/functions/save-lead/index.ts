@@ -829,7 +829,7 @@ serve(async (req) => {
           const { data: newAccount, error: insertError } = await supabase
             .from('accounts')
             .insert(accountRecord)
-            .select('id')
+            .select('*')
             .single();
 
           if (insertError || !newAccount) {
@@ -837,7 +837,7 @@ serve(async (req) => {
             throw new Error('Database error while creating account');
           }
 
-          leadId = newAccount.id;
+          leadId = String((newAccount as Record<string, unknown>).account_id ?? (newAccount as Record<string, unknown>).id);
           console.log('[TrafficCop] Created new account:', leadId);
 
           // Trigger admin notification for new vault signup
