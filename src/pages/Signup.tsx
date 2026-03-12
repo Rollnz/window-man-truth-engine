@@ -484,6 +484,15 @@ export default function Signup() {
         <PowerToolFlow />
       </div>
 
+      {/* StepProgressSequence — mobile only, between PowerToolFlow and upload zone */}
+      <div className="lg:hidden px-4 pb-8">
+        <StepProgressSequence
+          steps={QUOTE_ANALYSIS_STEPS}
+          title="Analyzing Your Quote"
+          subtitle="Our AI is reviewing your document"
+        />
+      </div>
+
       {/* Split Conversion Zone */}
       <section className="py-12 px-4 border-t border-border/40" id="upload-zone">
         <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2">
