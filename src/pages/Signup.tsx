@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Shield, Zap } from "lucide-react";
 import { UrgencyTicker } from "@/components/social-proof/UrgencyTicker";
 import { formatPhoneDisplay, stripPhone } from "@/lib/phone-mask";
+import handScannerImg from "@/assets/hero/hand_scanner.webp";
 
 // ── Types ──────────────────────────────────────────────────────────────
 export type SignupFlow = "has_quote" | "no_quote";
