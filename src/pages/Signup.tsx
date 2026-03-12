@@ -160,7 +160,6 @@ export default function Signup() {
   }, []);
 
   // ── Trigger phone verification SMS (idempotent) ───────────────────────
-  // ── TESTING MODE: Skip actual phone verification ────────────────
   const triggerPhoneVerification = useCallback(
     async (storedPhone: string): Promise<boolean> => {
       if (smsTriggeredRef.current) return false;
@@ -170,9 +169,25 @@ export default function Signup() {
       ssSet(SS.state, SignupState.VERIFYING_PHONE);
       setAuthOpen(true);
 
-      // TESTING MODE: Skip supabase.auth.updateUser({ phone })
-      toast({ title: "TESTING MODE: Phone step bypassed" });
-      return true;
+      try {
+        const { status, errorText } = await callEdgeJson(
+          "initiate-lead-verification",
+          { phone: storedPhone },
+        );
+
+        if (status >= 400) {
+          toast({ title: "Verification failed", description: errorText || "Could not send SMS. Please try again.", variant: "destructive" });
+          smsTriggeredRef.current = false;
+          return false;
+        }
+
+        toast({ title: "Code sent", description: "Check your phone for a 6-digit verification code." });
+        return true;
+      } catch (e: any) {
+        toast({ title: "SMS error", description: e?.message || "Please try again.", variant: "destructive" });
+        smsTriggeredRef.current = false;
+        return false;
+      }
     },
     [toast],
   );
