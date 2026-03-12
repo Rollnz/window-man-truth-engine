@@ -44,6 +44,7 @@ interface GatedAIScannerState {
   fileType: string | null;
   fileSize: number | null;
   analysisResult: QuoteAnalysisResult | null;
+  analysisId: string | null;
   leadId: string | null;
   isModalOpen: boolean;
   isLoading: boolean;
