@@ -465,6 +465,11 @@ export default function Signup() {
         </div>
       </section>
 
+      {/* PowerToolFlow — mobile only, between hero and upload zone */}
+      <div className="lg:hidden px-4 py-8">
+        <PowerToolFlow />
+      </div>
+
       {/* Split Conversion Zone */}
       <section className="py-12 px-4 border-t border-border/40" id="upload-zone">
         <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2">
