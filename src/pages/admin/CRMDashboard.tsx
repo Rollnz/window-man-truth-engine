@@ -96,11 +96,13 @@ export default function CRMDashboard() {
     }
   };
 
-  // Re-fetch when quote filters change
+  // Re-fetch when quote filters change — only after auth is confirmed
   useEffect(() => {
-    handleRefresh();
+    if (isAuthenticated && isAdmin) {
+      handleRefresh();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quoteTab]);
+  }, [quoteTab, isAuthenticated, isAdmin]);
 
   const handleRecalculateScores = async () => {
     setIsRecalculating(true);
