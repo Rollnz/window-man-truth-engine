@@ -52,12 +52,7 @@ export default function CRMDashboard() {
     updateLeadStatus 
   } = useCRMLeads();
 
-  // Check admin access
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/auth?redirect=/admin/crm');
-    }
-  }, [authLoading, isAuthenticated, navigate]);
+  // Auth guard is handled at the route level by AuthGuard
 
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
 

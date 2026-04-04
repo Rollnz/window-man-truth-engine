@@ -166,8 +166,8 @@ function AppContent() {
         <Route path="/vault" element={<Vault />} />
         <Route path="/audit" element={<Audit />} />
         
-        {/* Admin Routes - wrapped with AdminLayout for global search */}
-        <Route element={<AdminLayout />}>
+        {/* Admin Routes - wrapped with AuthGuard + AdminLayout for global search */}
+        <Route element={<AuthGuard><AdminLayout /></AuthGuard>}>
           <Route path="/admin" element={<AdminHome />} />
           <Route path="/admin/leads" element={<Navigate to="/admin/crm" replace />} />
           <Route path="/admin/analytics" element={<Analytics />} />
