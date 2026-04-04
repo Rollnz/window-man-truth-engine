@@ -52,12 +52,7 @@ export default function CRMDashboard() {
     updateLeadStatus 
   } = useCRMLeads();
 
-  // Check admin access
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/auth?redirect=/admin/crm');
-    }
-  }, [authLoading, isAuthenticated, navigate]);
+  // Auth guard is handled at the route level by AuthGuard
 
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
 
@@ -101,11 +96,13 @@ export default function CRMDashboard() {
     }
   };
 
-  // Re-fetch when quote filters change
+  // Re-fetch when quote filters change — only after auth is confirmed
   useEffect(() => {
-    handleRefresh();
+    if (isAuthenticated && isAdmin) {
+      handleRefresh();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quoteTab]);
+  }, [quoteTab, isAuthenticated, isAdmin]);
 
   const handleRecalculateScores = async () => {
     setIsRecalculating(true);
