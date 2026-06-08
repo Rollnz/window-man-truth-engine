@@ -16,6 +16,7 @@ import { AdminLayout } from "@/layouts/AdminLayout";
 import { GTMDebugPanel } from "@/components/debug/GTMDebugPanel";
 import { EMQValidatorOverlay } from "@/components/debug/EMQValidatorOverlay";
 import { SessionExpiredOverlay } from "@/components/auth/SessionExpiredOverlay";
+import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 
 
 // Critical path - load immediately
@@ -210,9 +211,11 @@ const App = () => (
           <Sonner />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <ScrollToTop />
-            <Suspense fallback={<PageLoader />}>
-              <AppContent />
-            </Suspense>
+            <ErrorBoundary title="Page failed to load">
+              <Suspense fallback={<PageLoader />}>
+                <AppContent />
+              </Suspense>
+            </ErrorBoundary>
           </BrowserRouter>
         </TooltipProvider>
       </ScoreProvider>

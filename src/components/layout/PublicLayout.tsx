@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { SilentAllyInterceptor } from '@/components/authority/SilentAllyInterceptor';
 import { TwilioDiagnostic } from '@/components/dev/TwilioDiagnostic';
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 
 // Below-fold components — lazy loaded to keep initial bundle minimal
 const UnifiedFooter = lazy(() =>
@@ -29,7 +30,9 @@ export function PublicLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       {/* Full footer at page bottom */}

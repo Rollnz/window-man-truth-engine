@@ -21,7 +21,6 @@ interface TrackingHealthViewProps {
 export function TrackingHealthView({ dateRange, onStatusChange }: TrackingHealthViewProps) {
   const [data, setData] = useState<TrackingHealthData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasLoaded, setHasLoaded] = useState(false);
   const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false);
   const { toast } = useToast();
 
@@ -71,19 +70,10 @@ export function TrackingHealthView({ dateRange, onStatusChange }: TrackingHealth
     }
   }, [dateRange, toast, onStatusChange]);
 
-  // Initial load
+  // Initial load + re-fetch when dateRange changes
   useEffect(() => {
-    if (!hasLoaded) {
-      fetchHealthData();
-      setHasLoaded(true);
-    }
-  }, [hasLoaded, fetchHealthData]);
-
-  // Re-fetch when dateRange changes (but only if already loaded)
-  useEffect(() => {
-    if (hasLoaded) {
-      fetchHealthData();
-    }
+    fetchHealthData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange.startDate, dateRange.endDate]);
 
   const handleRetryAll = async () => {
