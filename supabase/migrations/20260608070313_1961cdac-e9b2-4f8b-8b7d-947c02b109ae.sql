@@ -1,0 +1,1 @@
+UPDATE public.call_agents SET enabled = true, updated_at = now() WHERE source_tool = 'manual_dispatch';
