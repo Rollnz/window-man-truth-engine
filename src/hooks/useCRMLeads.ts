@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { CRMLead, LeadStatus, DisqualificationReason } from '@/types/crm';
 import { trackEvent } from '@/lib/gtm';
 import { invokeEdgeFunction } from '@/lib/edgeFunction';
@@ -47,6 +48,8 @@ export function useCRMLeads(): UseCRMLeadsReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+
 
   const fetchLeads = useCallback(async (startDate?: string, endDate?: string, options?: { hasQuote?: boolean; analyzed?: boolean }) => {
     setIsLoading(true);
@@ -214,10 +217,12 @@ export function useCRMLeads(): UseCRMLeadsReturn {
     return leads.filter(lead => lead.status === status);
   }, [leads]);
 
-  // Set up realtime subscription
+  // Set up realtime subscription — gated on authenticated user
   useEffect(() => {
+    if (!user?.id) return;
+
     const channel = supabase
-      .channel('wm_leads_changes')
+      .channel(`wm_leads_changes_${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -229,7 +234,7 @@ export function useCRMLeads(): UseCRMLeadsReturn {
           if (payload.eventType === 'INSERT') {
             setLeads(prev => [payload.new as CRMLead, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
-            setLeads(prev => prev.map(lead => 
+            setLeads(prev => prev.map(lead =>
               lead.id === payload.new.id ? payload.new as CRMLead : lead
             ));
           } else if (payload.eventType === 'DELETE') {
@@ -242,7 +247,7 @@ export function useCRMLeads(): UseCRMLeadsReturn {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user?.id]);
 
   // Initial fetch
   useEffect(() => {

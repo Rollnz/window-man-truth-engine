@@ -28,6 +28,8 @@ export function useQuoteAnalyses() {
   const { user } = useAuth();
 
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchAnalyses() {
       setIsLoading(true);
       setError(null);
@@ -36,16 +38,20 @@ export function useQuoteAnalyses() {
         // If user is not authenticated, RLS won't allow SELECT
         // so we skip the fetch entirely
         if (!user) {
-          setAnalyses([]);
-          setIsLoading(false);
+          if (!cancelled) {
+            setAnalyses([]);
+            setIsLoading(false);
+          }
           return;
         }
 
         const { data, error: fetchError } = await supabase
           .from('quote_analyses')
-          .select('*')
+          .select('id, created_at, overall_score, safety_score, scope_score, price_score, fine_print_score, warranty_score, price_per_opening, warnings_count, missing_items_count, analysis_json')
           .order('created_at', { ascending: false })
           .limit(10);
+
+        if (cancelled) return;
 
         if (fetchError) {
           console.error('[useQuoteAnalyses] Fetch error:', fetchError.message);
@@ -55,15 +61,20 @@ export function useQuoteAnalyses() {
           setAnalyses((data as QuoteAnalysis[]) || []);
         }
       } catch (err) {
+        if (cancelled) return;
         console.error('[useQuoteAnalyses] Unexpected error:', err);
         setError('Failed to load analyses');
         setAnalyses([]);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
 
     fetchAnalyses();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   // Get the most recent analysis (for Vault card display)

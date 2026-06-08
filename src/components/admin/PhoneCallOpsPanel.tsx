@@ -212,7 +212,7 @@ export function PhoneCallOpsPanel() {
       // Fetch pending calls
       const { data: pendingData, error: pendingError } = await supabase
         .from('pending_calls')
-        .select('*')
+        .select('id, call_request_id, source_tool, status, scheduled_for, attempt_count, phone_e164, last_error, updated_at')
         .order('scheduled_for', { ascending: true })
         .limit(100);
 

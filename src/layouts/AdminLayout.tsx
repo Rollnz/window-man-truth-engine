@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { GlobalLeadSearch } from '@/components/admin/GlobalLeadSearch';
 import { GlobalSearchProvider } from '@/contexts/GlobalSearchContext';
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 
 /**
  * Shared layout for all admin routes
@@ -9,7 +10,9 @@ import { GlobalSearchProvider } from '@/contexts/GlobalSearchContext';
 export function AdminLayout() {
   return (
     <GlobalSearchProvider>
-      <Outlet />
+      <ErrorBoundary title="Admin section error" showRetry>
+        <Outlet />
+      </ErrorBoundary>
       <GlobalLeadSearch />
     </GlobalSearchProvider>
   );
