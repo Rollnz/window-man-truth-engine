@@ -1,0 +1,193 @@
+{
+  "$schema_note": "Hybrid manifest: directory-globs cover bulk source trees; critical/secret-risk and integration files are listed explicitly. Generated from live filesystem inspection — no invented paths.",
+  "generated_for_project_ref": "kffoximblqwcnznwvugu",
+  "categories": {
+    "root_config": [
+      { "path": "package.json",          "required": true, "category": "root_config", "migration_notes": "Dependencies, scripts. Required.",                                "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "package-lock.json",     "required": false,"category": "root_config", "migration_notes": "npm lockfile. Keep if using npm.",                                "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "pnpm-lock.yaml",        "required": false,"category": "root_config", "migration_notes": "pnpm lockfile. Preferred per blueprint.",                         "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "bun.lock",              "required": false,"category": "root_config", "migration_notes": "bun lockfile. Keep only if using bun; otherwise delete.",         "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "bun.lockb",             "required": false,"category": "root_config", "migration_notes": "bun binary lockfile. Same rule as bun.lock.",                     "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "vite.config.ts",        "required": true, "category": "root_config", "migration_notes": "Vite build config. Required.",                                    "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "vitest.config.ts",      "required": true, "category": "root_config", "migration_notes": "Unit test config.",                                               "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "tsconfig.json",         "required": true, "category": "root_config", "migration_notes": "TS root config.",                                                 "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "tsconfig.app.json",     "required": true, "category": "root_config", "migration_notes": "TS app config.",                                                  "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "tsconfig.node.json",    "required": true, "category": "root_config", "migration_notes": "TS node tooling config.",                                         "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "tailwind.config.ts",    "required": true, "category": "root_config", "migration_notes": "Design tokens — DO NOT strip per memory.",                        "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "postcss.config.js",     "required": true, "category": "root_config", "migration_notes": "Tailwind PostCSS pipeline.",                                      "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "eslint.config.js",      "required": true, "category": "root_config", "migration_notes": "Lint rules.",                                                     "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "components.json",       "required": true, "category": "root_config", "migration_notes": "shadcn/ui CLI config.",                                           "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "index.html",            "required": true, "category": "root_config", "migration_notes": "Vite entry. Review for inline GTM/Meta pixel IDs.",               "contains_secret_risk": true,  "browser_exposed": true  },
+      { "path": "playwright.config.ts",  "required": true, "category": "root_config", "migration_notes": "E2E config.",                                                     "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "playwright-fixture.ts", "required": true, "category": "root_config", "migration_notes": "E2E fixtures.",                                                   "contains_secret_risk": false, "browser_exposed": false },
+      { "path": ".env",                  "required": false,"category": "root_config", "migration_notes": "DO NOT migrate. Recreate from .env.example.",                     "contains_secret_risk": true,  "browser_exposed": true  },
+      { "path": ".env.example",          "required": true, "category": "root_config", "migration_notes": "Template only — never real values.",                              "contains_secret_risk": false, "browser_exposed": false }
+    ],
+
+    "src": [
+      { "glob": "src/main.tsx",                       "required": true, "category": "src",                  "migration_notes": "App entry.",                                          "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/App.tsx",                        "required": true, "category": "src",                  "migration_notes": "Router + providers.",                                  "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/index.css",                      "required": true, "category": "src",                  "migration_notes": "Global tokens — DO NOT strip per memory.",            "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/vite-env.d.ts",                  "required": true, "category": "src",                  "migration_notes": "Vite type shim.",                                      "contains_secret_risk": false, "browser_exposed": false }
+    ],
+
+    "src_integrations": [
+      { "path": "src/integrations/supabase/client.ts",  "required": true, "category": "src_integrations", "migration_notes": "Reads VITE_SUPABASE_URL, VITE_SUPABASE_PROJECT_ID, VITE_SUPABASE_PUBLISHABLE_KEY. DO NOT EDIT — auto-generated.", "contains_secret_risk": false, "browser_exposed": true },
+      { "path": "src/integrations/supabase/types.ts",   "required": true, "category": "src_integrations", "migration_notes": "Auto-generated DB types. Regenerate after target DB is up.",                                                       "contains_secret_risk": false, "browser_exposed": true },
+      { "path": "src/integrations/lovable/index.ts",    "required": false,"category": "src_integrations", "migration_notes": "Lovable-managed OAuth wrapper. Remove if not using Lovable Cloud auth in target.",                                "contains_secret_risk": false, "browser_exposed": true }
+    ],
+
+    "src_components": [
+      { "glob": "src/components/**/*",   "required": true, "category": "src_components", "migration_notes": "~450 files. Includes shadcn/ui, ErrorBoundary, LeadModalV2, PhoneCallOpsPanel, EstimateSlidePanel, etc.", "contains_secret_risk": false, "browser_exposed": true }
+    ],
+
+    "src_pages": [
+      { "glob": "src/pages/**/*", "required": true, "category": "src_pages", "migration_notes": "~30 public pages + admin/* protected pages. Routed in App.tsx.", "contains_secret_risk": false, "browser_exposed": true }
+    ],
+
+    "src_hooks": [
+      { "glob": "src/hooks/**/*", "required": true, "category": "src_hooks", "migration_notes": "~50 hooks. Includes useAuth, useCRMLeads (realtime), useQuoteAnalyses, useLeadFormSubmit.", "contains_secret_risk": false, "browser_exposed": true }
+    ],
+
+    "src_lib": [
+      { "glob": "src/lib/**/*",            "required": true, "category": "src_lib", "migration_notes": "Utilities, attribution, tracking, edgeFunction wrapper, auth refresh lock, secureUUID, scoring engines.", "contains_secret_risk": false, "browser_exposed": true },
+      { "path": "src/lib/edgeFunction.ts", "required": true, "category": "src_lib", "migration_notes": "Centralized edge-function invoker. Calls Supabase functions.",                                              "contains_secret_risk": false, "browser_exposed": true },
+      { "path": "src/lib/tracking.ts",     "required": true, "category": "src_lib", "migration_notes": "GTM dataLayer + wm_ events. PII must be SHA-256 hashed (per memory).",                                       "contains_secret_risk": true,  "browser_exposed": true },
+      { "glob": "src/contexts/**/*",       "required": true, "category": "src_lib", "migration_notes": "React contexts (ScoreContext, AudioPlaybackContext, GlobalSearchContext).",                                  "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/services/**/*",       "required": true, "category": "src_lib", "migration_notes": "analytics.ts and other client services.",                                                                    "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/config/**/*",         "required": true, "category": "src_lib", "migration_notes": "aiModel, navigation, auditConfig, etc.",                                                                     "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/constants/**/*",      "required": true, "category": "src_lib", "migration_notes": "Static labels and style maps.",                                                                              "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/types/**/*",          "required": true, "category": "src_lib", "migration_notes": "Type definitions.",                                                                                          "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/data/**/*",           "required": true, "category": "src_lib", "migration_notes": "Static content (windowData, quizData, intel, roleplay, etc.).",                                              "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/styles/**/*",         "required": true, "category": "src_lib", "migration_notes": "design-system.ts + impact-window.css.",                                                                      "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/utils/**/*",          "required": true, "category": "src_lib", "migration_notes": "Helpers (clipboard, gemini, relativeTime, quoteCalculatorConstants).",                                       "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/assets/**/*",         "required": true, "category": "src_lib", "migration_notes": "Bundled assets (imported by components).",                                                                   "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/layouts/**/*",        "required": true, "category": "src_lib", "migration_notes": "AdminLayout, etc.",                                                                                          "contains_secret_risk": false, "browser_exposed": true },
+      { "glob": "src/test/**/*",           "required": true, "category": "src_lib", "migration_notes": "Vitest setup.",                                                                                              "contains_secret_risk": false, "browser_exposed": false }
+    ],
+
+    "public": [
+      { "glob": "public/**/*",               "required": true, "category": "public", "migration_notes": "Static assets served at site root.",            "contains_secret_risk": false, "browser_exposed": true },
+      { "path": "public/robots.txt",         "required": true, "category": "public", "migration_notes": "SEO.",                                          "contains_secret_risk": false, "browser_exposed": true },
+      { "path": "public/sitemap.xml",        "required": true, "category": "public", "migration_notes": "Update absolute URLs to target domain.",        "contains_secret_risk": false, "browser_exposed": true },
+      { "path": "public/BingSiteAuth.xml",   "required": false,"category": "public", "migration_notes": "Bing Webmaster verification — regenerate.",     "contains_secret_risk": true,  "browser_exposed": true }
+    ],
+
+    "supabase_config": [
+      { "path": "supabase/config.toml", "required": true, "category": "supabase_config", "migration_notes": "Auto-managed. project_id changes per target. Contains 11 functions with verify_jwt = false — REVIEW each before exposing publicly: admin-trigger-analysis, analyze-consultation-quote, auth-email-hook, initiate-lead-verification, log-event, orchestrate-quote-analysis, send-otp, verify-lead-exists, verify-lead-otp, verify-otp, wm-analyze-quote.", "contains_secret_risk": false, "browser_exposed": false }
+    ],
+
+    "supabase_functions": [
+      { "glob": "supabase/functions/_shared/**/*",  "required": true, "category": "supabase_shared",    "migration_notes": "adminAuth, attributionLogger, leadId, sourceTools, writeLedgerEvent, email-templates/, scanner-brain/.", "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "supabase/functions/admin-analytics/index.ts",            "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-attribution/index.ts",          "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-attribution-roas/index.ts",     "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-call-activity/index.ts",        "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-direct-dial/index.ts",          "required": true,  "category": "supabase_functions", "migration_notes": "Twilio/PhoneCall.bot — requires call_agents row.",        "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-executive-profit/index.ts",     "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-fix-attribution/index.ts",      "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-global-search/index.ts",        "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-lead-detail/index.ts",          "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-mark-spam/index.ts",            "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-phonecallbot-health/index.ts",  "required": true,  "category": "supabase_functions", "migration_notes": "PhoneCall.bot health check.",                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-quotes/index.ts",               "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-reprocess-lead-event/index.ts", "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-retry-failed-events/index.ts",  "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-revenue/index.ts",              "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-smoke-test/index.ts",           "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-tracking-health/index.ts",      "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-trigger-analysis/index.ts",     "required": true,  "category": "supabase_functions", "migration_notes": "verify_jwt=false. PUBLIC-CALLABLE — review.",              "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-update-call-agent/index.ts",    "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/admin-webhook-receipts/index.ts",     "required": true,  "category": "supabase_functions", "migration_notes": "Admin-only.",                                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/analyze-consultation-quote/index.ts", "required": true,  "category": "supabase_functions", "migration_notes": "verify_jwt=false. AI quote analysis. LOVABLE_API_KEY.",   "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/analyze-evidence/index.ts",           "required": true,  "category": "supabase_functions", "migration_notes": "AI evidence analysis. LOVABLE_API_KEY.",                  "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/auth-email-hook/index.ts",            "required": true,  "category": "supabase_functions", "migration_notes": "verify_jwt=false. Supabase Auth email hook. Resend.",      "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/auth-email-hook/deno.json",           "required": true,  "category": "supabase_functions", "migration_notes": "Per-function Deno config.",                              "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "supabase/functions/call-dispatcher/index.ts",            "required": true,  "category": "supabase_functions", "migration_notes": "PhoneCall.bot dispatcher.",                              "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/check-tracking-health/index.ts",      "required": true,  "category": "supabase_functions", "migration_notes": "Tracking health.",                                       "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/crm-disposition/index.ts",            "required": true,  "category": "supabase_functions", "migration_notes": "Admin CRM.",                                             "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/crm-leads/index.ts",                  "required": true,  "category": "supabase_functions", "migration_notes": "Admin CRM list.",                                        "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/email-vault-summary/index.ts",        "required": true,  "category": "supabase_functions", "migration_notes": "Resend email vault summary.",                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/enqueue-manual-call/index.ts",        "required": true,  "category": "supabase_functions", "migration_notes": "Manual call enqueue.",                                   "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/enqueue-phonecall/index.ts",          "required": true,  "category": "supabase_functions", "migration_notes": "Enqueue PhoneCall.bot call.",                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/expert-chat/index.ts",                "required": true,  "category": "supabase_functions", "migration_notes": "Lovable AI Gateway chat.",                               "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/generate-quote/index.ts",             "required": true,  "category": "supabase_functions", "migration_notes": "Quote generator.",                                       "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/get-ticker-stats/index.ts",           "required": true,  "category": "supabase_functions", "migration_notes": "Public ticker stats.",                                   "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "supabase/functions/initiate-lead-verification/index.ts", "required": true,  "category": "supabase_functions", "migration_notes": "verify_jwt=false. Lead phone-first gate (Twilio).",       "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/log-event/index.ts",                  "required": true,  "category": "supabase_functions", "migration_notes": "verify_jwt=false. Public event logger.",                  "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/mark-qualified-conversion/index.ts",  "required": true,  "category": "supabase_functions", "migration_notes": "Mark conversion (Meta CAPI).",                           "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/notify-dead-letter/index.ts",         "required": true,  "category": "supabase_functions", "migration_notes": "Dead-letter notifier (Resend).",                         "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/orchestrate-quote-analysis/index.ts", "required": true,  "category": "supabase_functions", "migration_notes": "verify_jwt=false. Scanner orchestrator. LOVABLE_API_KEY.", "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/phone-call-outcome/index.ts",         "required": true,  "category": "supabase_functions", "migration_notes": "PhoneCall.bot outcome webhook.",                         "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/qualify-flow-b/index.ts",             "required": true,  "category": "supabase_functions", "migration_notes": "Signup qualification scoring.",                          "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/quote-scanner/deps.ts",               "required": true,  "category": "supabase_functions", "migration_notes": "Quote scanner deps.",                                    "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "supabase/functions/quote-scanner/guards.ts",             "required": true,  "category": "supabase_functions", "migration_notes": "Quote scanner guards.",                                  "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "supabase/functions/quote-scanner/validation.ts",         "required": true,  "category": "supabase_functions", "migration_notes": "Quote scanner validation.",                              "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "supabase/functions/roleplay-chat/index.ts",              "required": true,  "category": "supabase_functions", "migration_notes": "Roleplay AI chat.",                                      "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/save-lead/index.ts",                  "required": true,  "category": "supabase_functions", "migration_notes": "Lead capture standard (SHA-256 PII).",                    "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/score-event/index.ts",                "required": true,  "category": "supabase_functions", "migration_notes": "Scoring ownership validation v4.",                        "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/send-email-notification/index.ts",    "required": true,  "category": "supabase_functions", "migration_notes": "Resend email.",                                          "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/send-otp/index.ts",                   "required": true,  "category": "supabase_functions", "migration_notes": "verify_jwt=false. Twilio Verify SMS OTP.",                "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/signal/index.ts",                     "required": true,  "category": "supabase_functions", "migration_notes": "Signal firewall (wm_ prefix only).",                      "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/slide-over-chat/index.ts",            "required": true,  "category": "supabase_functions", "migration_notes": "Slide-over AI concierge chat.",                          "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/sync-session/index.ts",               "required": true,  "category": "supabase_functions", "migration_notes": "Session registration protocol v1.",                      "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/test-call-agent/index.ts",            "required": true,  "category": "supabase_functions", "migration_notes": "Test call agent.",                                       "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/track/index.ts",                      "required": true,  "category": "supabase_functions", "migration_notes": "Public tracking endpoint. Meta CAPI forwarding.",         "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/trigger-phone-call/index.ts",         "required": true,  "category": "supabase_functions", "migration_notes": "Triggers PhoneCall.bot call.",                           "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/update-lead-qualification/index.ts",  "required": true,  "category": "supabase_functions", "migration_notes": "Lead qualification updater.",                            "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/upload-document/index.ts",            "required": true,  "category": "supabase_functions", "migration_notes": "Document upload (Storage).",                             "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/upload-quote/index.ts",               "required": true,  "category": "supabase_functions", "migration_notes": "Quote upload sync-batch architecture v2.",                "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/verify-lead-exists/index.ts",         "required": true,  "category": "supabase_functions", "migration_notes": "verify_jwt=false. Lead existence check.",                 "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/verify-lead-otp/index.ts",            "required": true,  "category": "supabase_functions", "migration_notes": "verify_jwt=false. Lead OTP verify (Twilio).",             "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/verify-otp/index.ts",                 "required": true,  "category": "supabase_functions", "migration_notes": "verify_jwt=false. OTP verify (Twilio).",                  "contains_secret_risk": true,  "browser_exposed": false },
+      { "path": "supabase/functions/wm-analyze-quote/index.ts",           "required": true,  "category": "supabase_functions", "migration_notes": "verify_jwt=false. Stateless quote analyzer (Manus handover).","contains_secret_risk": true, "browser_exposed": false },
+      { "path": "supabase/functions/wm-api/index.ts",                     "required": true,  "category": "supabase_functions", "migration_notes": "Public WM API surface.",                                 "contains_secret_risk": true,  "browser_exposed": false },
+      { "glob": "supabase/functions/**/*.test.ts",                        "required": false, "category": "supabase_functions", "migration_notes": "Deno tests — keep for parity.",                          "contains_secret_risk": false, "browser_exposed": false }
+    ],
+
+    "supabase_migrations": [
+      { "glob": "supabase/migrations/*.sql", "required": true, "category": "supabase_migrations", "migration_notes": "88 timestamped SQL migrations. Apply in filename order. NEVER run supabase db push against production until target project ref is confirmed.", "contains_secret_risk": false, "browser_exposed": false }
+    ],
+
+    "scripts": [
+      { "path": "scripts/validate-structured-data.ts",           "required": false, "category": "scripts", "migration_notes": "SEO JSON-LD validator.",                  "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "scripts/verify-source-tools.ts",                "required": false, "category": "scripts", "migration_notes": "Source-tool registry verifier.",          "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "scripts/bundle-migration.mjs",                  "required": true,  "category": "scripts", "migration_notes": "NEW — produced by this blueprint.",       "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "scripts/validate-env.mjs",                      "required": true,  "category": "scripts", "migration_notes": "NEW — produced by this blueprint.",       "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "scripts/smoke-test-edge-functions.mjs",         "required": true,  "category": "scripts", "migration_notes": "NEW — produced by this blueprint.",       "contains_secret_risk": false, "browser_exposed": false }
+    ],
+
+    "tests": [
+      { "glob": "e2e/**/*",                "required": true, "category": "tests", "migration_notes": "Playwright suites: attribution, golden-thread, modal regression, scanner-flow.", "contains_secret_risk": false, "browser_exposed": false },
+      { "glob": "tests/**/*",              "required": true, "category": "tests", "migration_notes": "scanner-brain isomorphic tests.",                                                  "contains_secret_risk": false, "browser_exposed": false },
+      { "glob": "src/**/__tests__/**/*",   "required": true, "category": "tests", "migration_notes": "Co-located unit tests.",                                                           "contains_secret_risk": false, "browser_exposed": false }
+    ],
+
+    "docs": [
+      { "glob": "docs/**/*",                         "required": true, "category": "docs", "migration_notes": "GTM + Manus + forms-modal inventory.", "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "README.md",                         "required": true, "category": "docs", "migration_notes": "Top-level project README.",            "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "context.md",                        "required": true, "category": "docs", "migration_notes": "Operating context.",                   "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "Summary.md",                        "required": true, "category": "docs", "migration_notes": "Project summary.",                     "contains_secret_risk": false, "browser_exposed": false },
+      { "glob": "PHASE_*.md",                        "required": false,"category": "docs", "migration_notes": "Historical phase audits.",             "contains_secret_risk": false, "browser_exposed": false },
+      { "glob": "GTM_*.md",                          "required": false,"category": "docs", "migration_notes": "GTM audit docs.",                      "contains_secret_risk": false, "browser_exposed": false },
+      { "glob": "OPTION_A_*.md",                     "required": false,"category": "docs", "migration_notes": "Option-A audits.",                     "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "AUDIT_SUMMARY.md",                  "required": false,"category": "docs", "migration_notes": "Audit summary.",                       "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "IMMEDIATE_ACTIONS.md",              "required": false,"category": "docs", "migration_notes": "Action log.",                          "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "PROGRESS_REPORT.md",                "required": false,"category": "docs", "migration_notes": "Progress log.",                        "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "SEO_COVERAGE_REPORT.md",            "required": false,"category": "docs", "migration_notes": "SEO report.",                          "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "ROAS_Overlay_Notes.md",             "required": false,"category": "docs", "migration_notes": "ROAS notes.",                          "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "Step3_ROAS_Test_Report.md",         "required": false,"category": "docs", "migration_notes": "ROAS test.",                           "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "LEAD_MODAL_UI_ACTION_PLAN.md",      "required": false,"category": "docs", "migration_notes": "UI plan.",                             "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "PHASE1_IMPLEMENTATION_GUIDE.md",    "required": false,"category": "docs", "migration_notes": "Phase 1 guide.",                       "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "GTM_DATA_LAYER_COMPLETE_AUDIT.md",  "required": false,"category": "docs", "migration_notes": "Data-layer audit.",                    "contains_secret_risk": false, "browser_exposed": false },
+      { "glob": ".memory/**/*",                      "required": false,"category": "docs", "migration_notes": "Project memory notes.",                "contains_secret_risk": false, "browser_exposed": false },
+      { "glob": ".lovable/**/*",                     "required": false,"category": "docs", "migration_notes": "Lovable plan scratch.",                "contains_secret_risk": false, "browser_exposed": false }
+    ],
+
+    "unknown_or_review_required": [
+      { "path": ".env",                              "required": false, "category": "unknown_or_review_required", "migration_notes": "Live env. DO NOT migrate. Recreate from .env.example in target. May contain values that must be rotated.", "contains_secret_risk": true, "browser_exposed": true },
+      { "path": "node_modules/",                     "required": false, "category": "unknown_or_review_required", "migration_notes": "EXCLUDE. Reinstall in target.",                                                                            "contains_secret_risk": false, "browser_exposed": false },
+      { "path": "supabase/.branches/ supabase/.temp/", "required": false, "category": "unknown_or_review_required", "migration_notes": "Local CLI scratch — exclude.",                                                                          "contains_secret_risk": false, "browser_exposed": false }
+    ]
+  }
+}
