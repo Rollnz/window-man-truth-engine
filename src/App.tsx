@@ -43,7 +43,6 @@ const CalculateEstimate = lazy(() => import("./pages/CalculateEstimate"));
 const Tools = lazy(() => import("./pages/Tools"));
 const Vault = lazy(() => import("./pages/Vault"));
 const Auth = lazy(() => import("./pages/Auth"));
-const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const AttributionDashboard = lazy(() => import("./pages/admin/AttributionDashboard"));
 const AttributionHealthDashboard = lazy(() => import("./pages/admin/AttributionHealthDashboard"));
@@ -162,7 +161,6 @@ function AppContent() {
             Auth, Vault, Admin - no marketing footer
         ============================================ */}
         <Route path="/auth" element={<Auth />} />
-        <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/signup2" element={<Signup2 />} />
         <Route path="/signup3" element={<Signup3 />} />
