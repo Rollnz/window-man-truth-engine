@@ -140,7 +140,6 @@ function AppContent() {
           <Route path="/defense" element={<Defense />} />
           <Route path="/roleplay" element={<Roleplay />} />
           <Route path="/beat-your-quote" element={<BeatYourQuote />} />
-          <Route path="/scan" element={<QuoteFirstLanding />} />
           <Route path="/fair-price-quiz" element={<FairPriceQuiz />} />
           <Route path="/consultation" element={<Consultation />} />
           <Route path="/sample-report" element={<SampleReport />} />
@@ -168,6 +167,7 @@ function AppContent() {
         <Route path="/signup3" element={<Signup3 />} />
         <Route path="/vault" element={<Vault />} />
         <Route path="/audit" element={<Audit />} />
+        <Route path="/scan" element={<QuoteFirstLanding />} />
         
         {/* Admin Routes - wrapped with AuthGuard + AdminLayout for global search */}
         <Route element={<AuthGuard><AdminLayout /></AuthGuard>}>
