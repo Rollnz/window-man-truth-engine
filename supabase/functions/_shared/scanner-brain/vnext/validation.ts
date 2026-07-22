@@ -730,9 +730,12 @@ export function validateCanonicalExtractionV1(input: unknown): ValidationResult 
           seenIds.add(pc.product_configuration_id);
           if (Array.isArray(pc.applies_to_line_item_ids)) {
             pc.applies_to_line_item_ids.forEach((refId, j) => {
+              // Referential integrity (Sprint 04C): every non-empty refId
+              // MUST resolve to a real non-null line_item_id, regardless of
+              // whether line_items is empty or populated only with null IDs.
               if (
                 typeof refId === "string" &&
-                Array.isArray(items) && items.length > 0 &&
+                refId.length > 0 &&
                 !lineItemIds.has(refId)
               ) {
                 issues.push({
@@ -741,6 +744,7 @@ export function validateCanonicalExtractionV1(input: unknown): ValidationResult 
                 });
               }
             });
+
           }
         }
       });
