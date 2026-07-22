@@ -314,10 +314,19 @@ function checkLineItem(item: unknown, path: string, issues: ValidationIssue[]): 
     return;
   }
   checkKeys(item, path, LINE_ITEM_KEYS, issues);
-  checkNullableString(item.line_item_id, `${path}.line_item_id`, issues);
+  // line_item_id: null OR non-empty bounded string. (Uniqueness enforced at root.)
+  if (item.line_item_id !== null) {
+    checkBoundedString(
+      item.line_item_id,
+      `${path}.line_item_id`,
+      { minLength: 1, maxLength: STRING_LIMITS.LINE_ITEM_ID },
+      issues,
+    );
+  }
   checkNullableString(item.description, `${path}.description`, issues);
-  if (item.quantity !== null && (!Number.isInteger(item.quantity) || (item.quantity as number) < 0)) {
-    issues.push({ path: `${path}.quantity`, message: "quantity must be a non-negative integer or null" });
+  // Anomaly-preserving (Sprint 04B): integer or null; Layer 4 flags negatives.
+  if (item.quantity !== null && !Number.isInteger(item.quantity)) {
+    issues.push({ path: `${path}.quantity`, message: "quantity must be an integer or null" });
   }
   checkNullableString(item.opening_location, `${path}.opening_location`, issues);
   checkNullableString(item.product_type, `${path}.product_type`, issues);
@@ -333,6 +342,7 @@ function checkLineItem(item: unknown, path: string, issues: ValidationIssue[]): 
   checkConfidence(item.confidence, `${path}.confidence`, issues);
   checkEvidenceArray(item.evidence, `${path}.evidence`, issues);
 }
+
 
 const MILESTONE_KEYS = [
   "label",
