@@ -514,3 +514,65 @@ Deno.test("04B: rejects overlong line_item_id (>64)", () => {
   assertEquals(r.valid, false);
 });
 
+
+// ── Sprint 04C — Referential-integrity closure (empty line_items) ─────────
+//
+// A ProductConfiguration.applies_to_line_item_ids[] reference must resolve
+// to a real non-null line_item_id EVEN WHEN line_items is empty or contains
+// only null IDs.
+
+const stubPC = (appliesTo: string[]) => ({
+  product_configuration_id: "pc-x",
+  manufacturer: null, brand: null, series: null, model: null,
+  noa_identifier: null, florida_approval_identifier: null,
+  dp_rating: null, impact_designation: null,
+  glass_package: null, low_e: null, argon: null,
+  tint: null, glass_makeup: null, frame_material: null,
+  applies_to_line_item_ids: appliesTo,
+  confidence: 0.5,
+  evidence: [],
+});
+
+Deno.test("04C-A: empty line_items + ghost reference → INVALID", () => {
+  const bad = structuredClone(fixtureD_unrelated);
+  bad.quote.product_configurations = [stubPC(["ghost-li"]) as never];
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+  const msg = r.issues.map((i) => i.message).join(" | ");
+  assertStringIncludes(msg, "references unknown line_item_id");
+});
+
+Deno.test("04C-B: empty line_items + empty references → VALID", () => {
+  const good = structuredClone(fixtureD_unrelated);
+  good.quote.product_configurations = [stubPC([]) as never];
+  const r = validateCanonicalExtractionV1(good);
+  assertEquals(r.valid, true, JSON.stringify(r.issues));
+});
+
+Deno.test("04C-C: only null line_item_id + ghost reference → INVALID", () => {
+  const bad = structuredClone(fixtureD_unrelated);
+  // Add a single line item with a null id; aggregate flag must be false when
+  // line_items is non-empty.
+  bad.quote.line_items_aggregate_only = false;
+  bad.quote.line_items = [{
+    line_item_id: null,
+    description: null, quantity: null, opening_location: null,
+    product_type: null, width: null, height: null,
+    manufacturer: null, brand: null, series: null, model: null,
+    unit_price: null, extended_price: null,
+    product_configuration_id: null,
+    confidence: 0.4, evidence: [],
+  }] as never;
+  bad.quote.product_configurations = [stubPC(["ghost-li"]) as never];
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+  const msg = r.issues.map((i) => i.message).join(" | ");
+  assertStringIncludes(msg, "references unknown line_item_id");
+});
+
+Deno.test("04C-D: valid existing line-item reference remains VALID", () => {
+  // fixtureA already exercises real references; assert baseline stays valid
+  // to guard against regression from the reference-check tightening.
+  const r = validateCanonicalExtractionV1(fixtureA_wellStructuredQuote);
+  assertEquals(r.valid, true, JSON.stringify(r.issues));
+});
