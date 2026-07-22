@@ -186,8 +186,13 @@ function checkEvidenceArray(v: unknown, path: string, issues: ValidationIssue[])
     if (e.page !== null && (!Number.isInteger(e.page) || (e.page as number) < 1)) {
       issues.push({ path: `${p}.page`, message: "must be null or positive integer" });
     }
-    checkNullableString(e.text, `${p}.text`, issues);
-    checkNullableString(e.location_hint, `${p}.location_hint`, issues);
+    checkNullableBoundedString(e.text, `${p}.text`, STRING_LIMITS.EVIDENCE_TEXT, issues);
+    checkNullableBoundedString(
+      e.location_hint,
+      `${p}.location_hint`,
+      STRING_LIMITS.EVIDENCE_LOCATION_HINT,
+      issues,
+    );
   });
 }
 
@@ -201,8 +206,8 @@ function checkMoney(v: unknown, path: string, issues: ValidationIssue[]): void {
   if (typeof v.value !== "number" || !Number.isFinite(v.value)) {
     issues.push({ path: `${path}.value`, message: "money.value must be a finite number" });
   }
-  checkNullableString(v.currency, `${path}.currency`, issues);
-  checkNullableString(v.formatted, `${path}.formatted`, issues);
+  checkNullableBoundedString(v.currency, `${path}.currency`, STRING_LIMITS.MONEY_CURRENCY, issues);
+  checkNullableBoundedString(v.formatted, `${path}.formatted`, STRING_LIMITS.MONEY_FORMATTED, issues);
 }
 
 function checkPhone(v: unknown, path: string, issues: ValidationIssue[]): void {
@@ -212,11 +217,15 @@ function checkPhone(v: unknown, path: string, issues: ValidationIssue[]): void {
     return;
   }
   checkKeys(v, path, ["raw_value", "context_hint"], issues);
-  if (typeof v.raw_value !== "string") {
-    issues.push({ path: `${path}.raw_value`, message: "must be string" });
-  }
-  checkNullableString(v.context_hint, `${path}.context_hint`, issues);
+  checkBoundedString(v.raw_value, `${path}.raw_value`, { maxLength: STRING_LIMITS.PHONE_RAW }, issues);
+  checkNullableBoundedString(
+    v.context_hint,
+    `${path}.context_hint`,
+    STRING_LIMITS.PHONE_CONTEXT_HINT,
+    issues,
+  );
 }
+
 
 function checkAddress(v: unknown, path: string, issues: ValidationIssue[]): void {
   if (v === null) return;
