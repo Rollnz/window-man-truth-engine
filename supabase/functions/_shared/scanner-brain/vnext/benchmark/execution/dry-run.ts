@@ -15,7 +15,7 @@ import {
   NORMALIZER_VERSION,
   SCORER_VERSION,
 } from "../benchmark-types.ts";
-import { THRESHOLDS_VERSION } from "../benchmark-thresholds.ts";
+import { THRESHOLD_CONFIG_VERSION } from "../benchmark-thresholds.ts";
 import type { CorpusInventory, GoldenDocumentManifest } from "../corpus/manifest-types.ts";
 import { isAuthoritative } from "../corpus/manifest-validator.ts";
 
@@ -74,7 +74,7 @@ function buildManifest(
     normalizer_version: NORMALIZER_VERSION,
     scorer_version: SCORER_VERSION,
     metric_version: METRIC_VERSION,
-    threshold_config_version: THRESHOLDS_VERSION,
+    threshold_config_version: THRESHOLD_CONFIG_VERSION,
     timestamp: "1970-01-01T00:00:00.000Z",
     latency_ms,
     tokens: { prompt: 0, completion: 0, total: 0 },
@@ -227,7 +227,7 @@ export function runOfflineBenchmarkDryRun(inputs: DryRunInputs): DryRunResult {
     normalizer_version: NORMALIZER_VERSION,
     scorer_version: SCORER_VERSION,
     metric_version: METRIC_VERSION,
-    threshold_config_version: THRESHOLDS_VERSION,
+    threshold_config_version: THRESHOLD_CONFIG_VERSION,
     systems,
     documents: inventory.documents.map((d) => d.document_id),
     scorecards,

@@ -5,7 +5,7 @@ import {
   NORMALIZER_VERSION,
   SCORER_VERSION,
 } from "../benchmark-types.ts";
-import { THRESHOLDS_VERSION } from "../benchmark-thresholds.ts";
+import { THRESHOLD_CONFIG_VERSION } from "../benchmark-thresholds.ts";
 import {
   VNEXT_ADAPTER_VERSION,
   VNEXT_PINNED_MODEL,
@@ -62,7 +62,7 @@ export function buildExecutionConfig(
     normalizer_version: NORMALIZER_VERSION,
     scorer_version: SCORER_VERSION,
     metric_version: METRIC_VERSION,
-    threshold_config_version: THRESHOLDS_VERSION,
+    threshold_config_version: THRESHOLD_CONFIG_VERSION,
     systems: [
       {
         system_id: "vnext",
