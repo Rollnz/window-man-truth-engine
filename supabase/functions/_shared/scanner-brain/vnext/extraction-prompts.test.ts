@@ -130,11 +130,15 @@ Deno.test("ownership: line_items and product_configurations are owned by the SAM
 
 // ── Non-overlap: each pass's owned fields do not appear in other passes' rules ──
 
+const B_FIELDS = ["quote.metadata", "quote.pricing", "quote.payment", "quote.opening_count", "quote.line_items_aggregate_only"];
+const C_FIELDS = ["quote.scope", "quote.warranties", "quote.terms"];
+const D_FIELDS = ["quote.line_items", "quote.product_configurations"];
+const A_FIELDS = ["classification", "entities", "extraction_meta"];
 const OTHER_OWNED_FIELDS: Record<"A" | "B" | "C" | "D", readonly string[]> = {
-  A: ["quote.metadata", "quote.pricing", "quote.payment", "quote.scope", "quote.warranties", "quote.terms", "quote.line_items", "quote.product_configurations"],
-  B: ["classification", "entities", "quote.scope", "quote.warranties", "quote.terms", "quote.line_items", "quote.product_configurations"],
-  C: ["classification", "entities", "quote.metadata", "quote.pricing", "quote.payment", "quote.line_items", "quote.product_configurations"],
-  D: ["classification", "entities", "quote.metadata", "quote.pricing", "quote.payment", "quote.scope", "quote.warranties", "quote.terms"],
+  A: [...B_FIELDS, ...C_FIELDS, ...D_FIELDS],
+  B: [...A_FIELDS, ...C_FIELDS, ...D_FIELDS],
+  C: [...A_FIELDS, ...B_FIELDS, ...D_FIELDS],
+  D: [...A_FIELDS, ...B_FIELDS, ...C_FIELDS],
 };
 
 Deno.test("scope: each pass rule block instructs 'You own ONLY <its fields>'", () => {
