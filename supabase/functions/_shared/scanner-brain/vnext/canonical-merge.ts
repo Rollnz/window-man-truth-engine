@@ -28,31 +28,47 @@ import {
 // This map is asserted at test time against the canonical schema to
 // guarantee no field ever becomes unowned as the contract evolves.
 
-export type PartitionOwner = "twoPassA" | "twoPassB" | "shared_metadata";
+// Sprint 05C — architecture selected: FOUR_PASS_PARALLEL_CANONICAL_MERGE.
+// The two-pass owners (`twoPassA`/`twoPassB`) are retained as ALIASES so
+// legacy `mergeTwoPass` callers and existing consistency tests continue to
+// compile. The canonical, live-serving architecture is four-pass.
+export type PartitionOwner =
+  | "passA"
+  | "passB"
+  | "passC"
+  | "passD"
+  | "shared_metadata"
+  // legacy aliases (still exported for back-compat; do not use in new code)
+  | "twoPassA"
+  | "twoPassB";
 
 export const PARTITION_OWNERSHIP: Readonly<Record<string, PartitionOwner>> = {
   // Shared: every partition must echo the same literal contract_version.
   // Merge asserts equality; conflicts fail closed.
   contract_version: "shared_metadata",
 
-  // Pass A owns document-level facts and everything except line-level detail.
-  classification: "twoPassA",
-  entities: "twoPassA",
-  extraction_meta: "twoPassA",
-  "quote.metadata": "twoPassA",
-  "quote.pricing": "twoPassA",
-  "quote.payment": "twoPassA",
-  "quote.opening_count": "twoPassA",
-  "quote.line_items_aggregate_only": "twoPassA",
-  "quote.scope": "twoPassA",
-  "quote.warranties": "twoPassA",
-  "quote.terms": "twoPassA",
+  // Pass A — document-level facts.
+  classification: "passA",
+  entities: "passA",
+  extraction_meta: "passA",
 
-  // Pass B owns line-level detail. `line_items` and `product_configurations`
+  // Pass B — quote header (metadata + pricing + payment + opening summary).
+  "quote.metadata": "passB",
+  "quote.pricing": "passB",
+  "quote.payment": "passB",
+  "quote.opening_count": "passB",
+  "quote.line_items_aggregate_only": "passB",
+
+  // Pass C — quote scope + warranties + terms.
+  "quote.scope": "passC",
+  "quote.warranties": "passC",
+  "quote.terms": "passC",
+
+  // Pass D — quote line-level detail. `line_items` and `product_configurations`
   // MUST stay together in this pass to preserve line_item_id ↔
   // product_configuration_id coherence.
-  "quote.line_items": "twoPassB",
-  "quote.product_configurations": "twoPassB",
+  "quote.line_items": "passD",
+  "quote.product_configurations": "passD",
 };
 
 // ── Coverage assertion (schema-evolution guard) ────────────────────────────
@@ -213,4 +229,124 @@ export function mergeTwoPass(
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FOUR-PASS MERGE (Sprint 05C — selected architecture)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface FourPassAOutput {
+  contract_version: string;
+  classification: CanonicalExtractionV1["classification"];
+  entities: CanonicalExtractionV1["entities"];
+  extraction_meta: CanonicalExtractionV1["extraction_meta"];
+}
+
+export interface FourPassBOutput {
+  contract_version: string;
+  quote: Pick<
+    QuoteFacts,
+    "metadata" | "pricing" | "payment" | "opening_count" | "line_items_aggregate_only"
+  >;
+}
+
+export interface FourPassCOutput {
+  contract_version: string;
+  quote: Pick<QuoteFacts, "scope" | "warranties" | "terms">;
+}
+
+export interface FourPassDOutput {
+  contract_version: string;
+  quote: Pick<QuoteFacts, "line_items" | "product_configurations">;
+}
+
+export interface FourPassInputs {
+  passA: FourPassAOutput | null | undefined;
+  passB: FourPassBOutput | null | undefined;
+  passC: FourPassCOutput | null | undefined;
+  passD: FourPassDOutput | null | undefined;
+}
+
+/**
+ * Deterministic four-pass canonical merge.
+ *
+ * Enforces:
+ *   - every partition present
+ *   - every partition's `contract_version` equals canonical
+ *   - every partition is an object with the required `quote` sub-object (B/C/D)
+ *   - exact partition ownership (fields outside a partition's authority are
+ *     defensively ignored; only the owned keys are copied through)
+ *   - final merged object passes `validateCanonicalExtractionV1()`
+ *
+ * No LLM resolves merge conflicts. Any missing/mismatched partition fails
+ * closed with a structured error.
+ */
+export function mergeFourPass(inputs: FourPassInputs): MergeResult {
+  const { passA, passB, passC, passD } = inputs;
+
+  if (!passA) return { ok: false, error: "missing pass A output" };
+  if (!passB) return { ok: false, error: "missing pass B output" };
+  if (!passC) return { ok: false, error: "missing pass C output" };
+  if (!passD) return { ok: false, error: "missing pass D output" };
+
+  if (
+    !isPlainObject(passA) ||
+    !isPlainObject(passB) ||
+    !isPlainObject(passC) ||
+    !isPlainObject(passD)
+  ) {
+    return { ok: false, error: "partition outputs must be objects" };
+  }
+
+  const versions = [passA.contract_version, passB.contract_version, passC.contract_version, passD.contract_version];
+  if (versions.some((v) => v !== CANONICAL_CONTRACT_VERSION)) {
+    return {
+      ok: false,
+      error: "contract_version mismatch across partitions",
+      details: { expected: CANONICAL_CONTRACT_VERSION, versions },
+    };
+  }
+
+  if (
+    !isPlainObject(passB.quote) ||
+    !isPlainObject(passC.quote) ||
+    !isPlainObject(passD.quote)
+  ) {
+    return { ok: false, error: "pass B/C/D outputs must include 'quote' object" };
+  }
+
+  // Defensively pick only owned keys from each partition — anything else is
+  // dropped. This prevents a rogue partition from silently overwriting
+  // another partition's authoritative field.
+  const quote: QuoteFacts = {
+    metadata: passB.quote.metadata,
+    pricing: passB.quote.pricing,
+    payment: passB.quote.payment,
+    opening_count: passB.quote.opening_count,
+    line_items_aggregate_only: passB.quote.line_items_aggregate_only,
+    scope: passC.quote.scope,
+    warranties: passC.quote.warranties,
+    terms: passC.quote.terms,
+    line_items: passD.quote.line_items,
+    product_configurations: passD.quote.product_configurations,
+  };
+
+  const merged: CanonicalExtractionV1 = {
+    contract_version: CANONICAL_CONTRACT_VERSION,
+    classification: passA.classification,
+    entities: passA.entities,
+    quote,
+    extraction_meta: passA.extraction_meta,
+  };
+
+  const validation = validateCanonicalExtractionV1(merged);
+  if (!validation.valid) {
+    return {
+      ok: false,
+      error: "merged canonical object failed validateCanonicalExtractionV1",
+      validation,
+    };
+  }
+
+  return { ok: true, value: merged, validation };
 }

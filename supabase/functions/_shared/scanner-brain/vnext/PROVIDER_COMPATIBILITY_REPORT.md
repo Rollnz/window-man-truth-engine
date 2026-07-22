@@ -1,7 +1,8 @@
-# Sprint 05 — Provider + Document Transport Compatibility Report
+# Sprint 05 → 05C — Provider + Document Transport Compatibility Report
 
 **Namespace:** `supabase/functions/_shared/scanner-brain/vnext/`
-**Status:** Empirical DEV/TEST probe complete. No production side effects.
+**Status (Sprint 05):** Empirical DEV/TEST probe complete. No production side effects.
+**Status (Sprint 05C):** ✅ `FOUR_PASS_PARALLEL_CANONICAL_MERGE` adopted and proven end-to-end. Lossless `$defs`/`$ref` compaction was empirically shown *not* to bypass the provider ceiling — the provider expands references internally before evaluating (compact canonical 13,583 B and compact `quoteCore` 6,916 B both HTTP 400). Full four-pass concurrent smoke returned 4×200 in 4,570 ms wall-clock (vs 13,795 ms sequential; 3.0× speedup). See `SCHEMA_TRANSPORT_PLAN.md` §5, §7, §11, and §13 for the transport decision, `mergeFourPass` semantics, unblock of Sprint 06, and the compaction addendum. The Sprint 05 findings below remain accurate for the baseline probes and are unchanged.
 
 ---
 
