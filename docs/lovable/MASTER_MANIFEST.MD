@@ -19,6 +19,53 @@
 | Applies To | Quote-First paid-acquisition landing experience through Truth Report and inbound-call conversion |
 | Supersedes | Ad hoc conversational specifications for this funnel where they conflict with this manifest |
 
+## 00.0 Version History
+
+### v1.1.0 — Architectural Lock Amendment
+
+Records architectural decisions formally approved after v1.0 publication. No prior canonical requirements are rescinded. This amendment adds the following locks:
+
+1. **BeatYourQuote Freeze Boundary** — `/beat-your-quote` and all files under `src/components/beat-your-quote/**` are a READ-ONLY VISUAL REFERENCE / DONOR for Quote-First development. Quote-First MAY reuse visual concepts, static assets, atmosphere, layout ideas, and intentionally shared primitives, but MUST NOT modify `/beat-your-quote` unless a future explicitly approved sprint authorizes it. The new `/scan` experience is a distinct production funnel.
+
+2. **Portable `QuoteFirstFlow` Boundary** — `QuoteFirstHero` belongs to the acquisition landing layer. `QuoteFirstFlow` begins post-file-selection and MUST accept an explicit `{ file: File; onReset: () => void }` contract. `QuoteFirstFlow` MUST NOT depend on `QuoteFirstHero`, `BeatYourQuote`, specific Meta ad copy, one landing-page shell, or one acquisition channel. Any future Meta / Nextdoor / organic / partner landing shell MUST be able to select a file and hand it to the same `QuoteFirstFlow` unchanged.
+
+3. **V1 OTP Policy** — Mandatory OTP is NOT part of V1 between upload and full Truth Report. Canonical V1 sequence: Upload → Real Scan → Partial Reveal → Editable OCR Identity → NO MANDATORY OTP → Two-Tap Qualification → Full Truth Report. The architecture MAY preserve a future progressive-verification seam for actions that genuinely require phone possession (explicit SMS delivery, callback scheduling, account-sensitive actions). Full Truth Report access in V1 MUST NOT require OTP. The system MUST distinguish `extracted phone candidate`, `confirmed phone`, `phone verification status`, `communication consent`, and `marketing/SMS consent` as separate concepts — they MUST NOT be collapsed.
+
+4. **Dual-Repo Donor Boundary** — Active implementation repository: `Rollnz/window-man-truth-engine`. Read-only donor/reference repository: `Mongoloyd/wm-mvp` @ branch `forensic_report_v2`. The donor is architectural/logic reference only. Never assume donor file paths exist in the active repository; never import across repositories; never copy donor components wholesale without dependency analysis; never mutate the donor from this project workflow. Adapt concepts only after validating them against the active project.
+
+5. **Five-Layer Scanner Contract** — The canonical target contract for the WindowMan scanner is defined in [`/docs/lovable/SCANNER_CONTRACT.md`](./SCANNER_CONTRACT.md). Layers: (1) Document Classification, (2) Entity Extraction with distinct Homeowner / Property / Contractor / Salesperson groups, (3) Quote Facts, (4) Derived Analysis with FOUND / NOT FOUND / INFERENCE epistemic distinction, (5) User Context (post-reveal, user-supplied). All future scanner implementation, prompt, and scoring work MUST be auditable against that contract.
+
+6. **Exact V1 Post-Upload Sequence** — The canonical V1 UX funnel is:
+
+```text
+UPLOAD FIRST
+      ↓
+IMMEDIATE REAL SCAN IN-PLACE
+      ↓
+PARTIAL PERSONALIZED REVEAL
+      ↓
+EDITABLE OCR IDENTITY DOSSIER
+      ↓
+NO MANDATORY OTP
+      ↓
+QUESTION 1 OF 2 — TRANSACTION STATE
+      ↓
+QUESTION 2 OF 2 — DECISION REASON
+      ↓
+PERSONALIZED TRUTH REPORT
+      ↓
+CONTEXTUAL INBOUND CALL CTA
+```
+
+The page MUST NOT jump to a separate scanner route after upload. The same primary visual stage transforms in-place through the experience.
+
+### v1.0.0 — Initial Approved Specification
+
+Original manifest as previously published below.
+
+---
+
+
 ## 00.1 Source-of-Truth Statement
 
 This document is the canonical, version-controlled specification for the WindowMan Quote-First acquisition experience.
