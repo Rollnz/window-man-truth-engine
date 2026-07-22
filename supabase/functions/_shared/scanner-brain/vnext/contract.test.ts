@@ -339,3 +339,178 @@ Deno.test("JSON Schema quote uses product_configurations (plural)", () => {
   assert(quote.required.includes("product_configurations"));
   assert(!quote.required.includes("products"));
 });
+
+// ── Sprint 04B — Integer anomaly parity ───────────────────────────────────
+
+Deno.test("04B: PRESERVES negative line-item quantity anomaly", () => {
+  const good = structuredClone(fixtureA_wellStructuredQuote);
+  good.quote.line_items[0].quantity = -1;
+  const r = validateCanonicalExtractionV1(good);
+  assertEquals(r.valid, true, JSON.stringify(r.issues));
+});
+
+Deno.test("04B: PRESERVES negative opening_count anomaly", () => {
+  const good = structuredClone(fixtureA_wellStructuredQuote);
+  (good.quote.opening_count as { value: unknown }).value = -2;
+  const r = validateCanonicalExtractionV1(good);
+  assertEquals(r.valid, true, JSON.stringify(r.issues));
+});
+
+Deno.test("04B: still rejects non-integer line-item quantity", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  (bad.quote.line_items[0] as unknown as { quantity: unknown }).quantity = 1.5;
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+Deno.test("04B: still rejects non-integer opening_count", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  (bad.quote.opening_count as { value: unknown }).value = 2.5;
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+// ── Sprint 04B — String-length parity ─────────────────────────────────────
+
+const STR = (n: number) => "x".repeat(n);
+
+Deno.test("04B: rejects overlong evidence.text (>240)", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  bad.entities.homeowner.name.evidence[0].text = STR(241);
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+Deno.test("04B: rejects overlong evidence.location_hint (>120)", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  bad.entities.homeowner.name.evidence[0].location_hint = STR(121);
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+Deno.test("04B: rejects overlong phone raw_value (>64)", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  (bad.entities.homeowner.phone.value as { raw_value: string }).raw_value = STR(65);
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+Deno.test("04B: rejects overlong phone context_hint (>64)", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  (bad.entities.homeowner.phone.value as { context_hint: string }).context_hint = STR(65);
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+Deno.test("04B: rejects overlong money.currency (>8)", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  (bad.quote.pricing.total_price.value as { currency: string }).currency = "TOOLONGCUR";
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+Deno.test("04B: rejects overlong money.formatted (>40)", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  (bad.quote.pricing.total_price.value as { formatted: string }).formatted = STR(41);
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+Deno.test("04B: rejects overlong product_configuration_id (>64)", () => {
+  const bad = structuredClone(fixtureF_mixedProductQuote);
+  const overlong = STR(65);
+  bad.quote.product_configurations[0].product_configuration_id = overlong;
+  // Update the referencing line item too so the reference still resolves —
+  // isolating the failure to the length constraint.
+  bad.quote.line_items[0].product_configuration_id = overlong;
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+Deno.test("04B: rejects empty product_configuration_id", () => {
+  const bad = structuredClone(fixtureF_mixedProductQuote);
+  bad.quote.product_configurations[0].product_configuration_id = "";
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+Deno.test("04B: rejects overlong applies_to_line_item_ids entry (>64)", () => {
+  const bad = structuredClone(fixtureF_mixedProductQuote);
+  bad.quote.product_configurations[0].applies_to_line_item_ids = [STR(65)];
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+Deno.test("04B: rejects overlong classification_reason (>500)", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  bad.classification.classification_reason = STR(501);
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+Deno.test("04B: rejects overlong extraction_meta warning (>500)", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  bad.extraction_meta.warnings = [STR(501)];
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+// ── Sprint 04B — Schema parity assertions ─────────────────────────────────
+
+Deno.test("04B: JSON Schema pins product_configuration_id minLength=1", () => {
+  const pc = (CanonicalExtractionV1JsonSchema as unknown as {
+    properties: {
+      quote: {
+        properties: {
+          product_configurations: {
+            items: { properties: { product_configuration_id: { minLength: number } } };
+          };
+        };
+      };
+    };
+  }).properties.quote.properties.product_configurations.items.properties.product_configuration_id;
+  assertEquals(pc.minLength, 1);
+});
+
+// ── Sprint 04B — Line-item ID integrity ───────────────────────────────────
+
+Deno.test("04B: rejects duplicate non-null line_item_id", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  bad.quote.line_items[1].line_item_id = bad.quote.line_items[0].line_item_id;
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+  const msg = r.issues.map((i) => i.message).join(" | ");
+  assertStringIncludes(msg, "duplicate line_item_id");
+});
+
+Deno.test("04B: multiple null line_item_id values remain valid", () => {
+  const good = structuredClone(fixtureA_wellStructuredQuote);
+  good.quote.line_items[0].line_item_id = null;
+  good.quote.line_items[1].line_item_id = null;
+  // Drop the product-config back-references that point to old IDs so
+  // referential integrity isolates the null-ID scenario.
+  good.quote.product_configurations[0].applies_to_line_item_ids = [];
+  good.quote.line_items[0].product_configuration_id = null;
+  good.quote.line_items[1].product_configuration_id = null;
+  const r = validateCanonicalExtractionV1(good);
+  assertEquals(r.valid, true, JSON.stringify(r.issues));
+});
+
+Deno.test("04B: rejects empty-string line_item_id", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  bad.quote.line_items[0].line_item_id = "";
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+
+Deno.test("04B: rejects overlong line_item_id (>64)", () => {
+  const bad = structuredClone(fixtureA_wellStructuredQuote);
+  const overlong = STR(65);
+  bad.quote.line_items[0].line_item_id = overlong;
+  // Keep the product-config reference pointing to the same (overlong) ID so
+  // the referential check does not spuriously fail first.
+  bad.quote.product_configurations[0].applies_to_line_item_ids = [overlong, "2"];
+  const r = validateCanonicalExtractionV1(bad);
+  assertEquals(r.valid, false);
+});
+

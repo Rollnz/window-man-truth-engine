@@ -90,6 +90,68 @@ function checkNullableString(v: unknown, path: string, issues: ValidationIssue[]
   }
 }
 
+/**
+ * Length-parity helpers — these mirror the maxLength/minLength constraints
+ * declared in schema.ts. Do NOT invent new limits: every value here has a
+ * matching JSON Schema constraint.
+ */
+export const STRING_LIMITS = {
+  EVIDENCE_TEXT: 240,
+  EVIDENCE_LOCATION_HINT: 120,
+  MONEY_CURRENCY: 8,
+  MONEY_FORMATTED: 40,
+  PHONE_RAW: 64,
+  PHONE_CONTEXT_HINT: 64,
+  PRODUCT_CONFIG_ID: 64,
+  APPLIES_TO_LINE_ITEM_ID: 64,
+  LINE_ITEM_ID: 64,
+  CLASSIFICATION_REASON: 500,
+  WARNING: 500,
+} as const;
+
+function checkNullableBoundedString(
+  v: unknown,
+  path: string,
+  maxLength: number,
+  issues: ValidationIssue[],
+): void {
+  if (v === null) return;
+  if (typeof v !== "string") {
+    issues.push({ path, message: "must be string or null" });
+    return;
+  }
+  if (v.length > maxLength) {
+    issues.push({
+      path,
+      message: `exceeds maxLength ${maxLength} (got ${v.length})`,
+    });
+  }
+}
+
+function checkBoundedString(
+  v: unknown,
+  path: string,
+  opts: { minLength?: number; maxLength: number },
+  issues: ValidationIssue[],
+): void {
+  if (typeof v !== "string") {
+    issues.push({ path, message: "must be string" });
+    return;
+  }
+  if (opts.minLength !== undefined && v.length < opts.minLength) {
+    issues.push({
+      path,
+      message: `below minLength ${opts.minLength} (got ${v.length})`,
+    });
+  }
+  if (v.length > opts.maxLength) {
+    issues.push({
+      path,
+      message: `exceeds maxLength ${opts.maxLength} (got ${v.length})`,
+    });
+  }
+}
+
 function checkNullableInt(v: unknown, path: string, issues: ValidationIssue[]): void {
   if (v === null) return;
   if (!Number.isInteger(v)) issues.push({ path, message: "must be integer or null" });
@@ -108,6 +170,7 @@ function checkNullableBool(v: unknown, path: string, issues: ValidationIssue[]):
   }
 }
 
+
 function checkEvidenceArray(v: unknown, path: string, issues: ValidationIssue[]): void {
   if (!Array.isArray(v)) {
     issues.push({ path, message: "evidence must be an array" });
@@ -123,8 +186,13 @@ function checkEvidenceArray(v: unknown, path: string, issues: ValidationIssue[])
     if (e.page !== null && (!Number.isInteger(e.page) || (e.page as number) < 1)) {
       issues.push({ path: `${p}.page`, message: "must be null or positive integer" });
     }
-    checkNullableString(e.text, `${p}.text`, issues);
-    checkNullableString(e.location_hint, `${p}.location_hint`, issues);
+    checkNullableBoundedString(e.text, `${p}.text`, STRING_LIMITS.EVIDENCE_TEXT, issues);
+    checkNullableBoundedString(
+      e.location_hint,
+      `${p}.location_hint`,
+      STRING_LIMITS.EVIDENCE_LOCATION_HINT,
+      issues,
+    );
   });
 }
 
@@ -138,8 +206,8 @@ function checkMoney(v: unknown, path: string, issues: ValidationIssue[]): void {
   if (typeof v.value !== "number" || !Number.isFinite(v.value)) {
     issues.push({ path: `${path}.value`, message: "money.value must be a finite number" });
   }
-  checkNullableString(v.currency, `${path}.currency`, issues);
-  checkNullableString(v.formatted, `${path}.formatted`, issues);
+  checkNullableBoundedString(v.currency, `${path}.currency`, STRING_LIMITS.MONEY_CURRENCY, issues);
+  checkNullableBoundedString(v.formatted, `${path}.formatted`, STRING_LIMITS.MONEY_FORMATTED, issues);
 }
 
 function checkPhone(v: unknown, path: string, issues: ValidationIssue[]): void {
@@ -149,11 +217,15 @@ function checkPhone(v: unknown, path: string, issues: ValidationIssue[]): void {
     return;
   }
   checkKeys(v, path, ["raw_value", "context_hint"], issues);
-  if (typeof v.raw_value !== "string") {
-    issues.push({ path: `${path}.raw_value`, message: "must be string" });
-  }
-  checkNullableString(v.context_hint, `${path}.context_hint`, issues);
+  checkBoundedString(v.raw_value, `${path}.raw_value`, { maxLength: STRING_LIMITS.PHONE_RAW }, issues);
+  checkNullableBoundedString(
+    v.context_hint,
+    `${path}.context_hint`,
+    STRING_LIMITS.PHONE_CONTEXT_HINT,
+    issues,
+  );
 }
+
 
 function checkAddress(v: unknown, path: string, issues: ValidationIssue[]): void {
   if (v === null) return;
@@ -242,10 +314,19 @@ function checkLineItem(item: unknown, path: string, issues: ValidationIssue[]): 
     return;
   }
   checkKeys(item, path, LINE_ITEM_KEYS, issues);
-  checkNullableString(item.line_item_id, `${path}.line_item_id`, issues);
+  // line_item_id: null OR non-empty bounded string. (Uniqueness enforced at root.)
+  if (item.line_item_id !== null) {
+    checkBoundedString(
+      item.line_item_id,
+      `${path}.line_item_id`,
+      { minLength: 1, maxLength: STRING_LIMITS.LINE_ITEM_ID },
+      issues,
+    );
+  }
   checkNullableString(item.description, `${path}.description`, issues);
-  if (item.quantity !== null && (!Number.isInteger(item.quantity) || (item.quantity as number) < 0)) {
-    issues.push({ path: `${path}.quantity`, message: "quantity must be a non-negative integer or null" });
+  // Anomaly-preserving (Sprint 04B): integer or null; Layer 4 flags negatives.
+  if (item.quantity !== null && !Number.isInteger(item.quantity)) {
+    issues.push({ path: `${path}.quantity`, message: "quantity must be an integer or null" });
   }
   checkNullableString(item.opening_location, `${path}.opening_location`, issues);
   checkNullableString(item.product_type, `${path}.product_type`, issues);
@@ -261,6 +342,7 @@ function checkLineItem(item: unknown, path: string, issues: ValidationIssue[]): 
   checkConfidence(item.confidence, `${path}.confidence`, issues);
   checkEvidenceArray(item.evidence, `${path}.evidence`, issues);
 }
+
 
 const MILESTONE_KEYS = [
   "label",
@@ -315,9 +397,12 @@ function checkProductConfig(pc: unknown, path: string, issues: ValidationIssue[]
     return;
   }
   checkKeys(pc, path, PRODUCT_CONFIG_KEYS, issues);
-  if (typeof pc.product_configuration_id !== "string" || pc.product_configuration_id.length === 0) {
-    issues.push({ path: `${path}.product_configuration_id`, message: "must be a non-empty string" });
-  }
+  checkBoundedString(
+    pc.product_configuration_id,
+    `${path}.product_configuration_id`,
+    { minLength: 1, maxLength: STRING_LIMITS.PRODUCT_CONFIG_ID },
+    issues,
+  );
   for (const k of [
     "manufacturer",
     "brand",
@@ -340,17 +425,18 @@ function checkProductConfig(pc: unknown, path: string, issues: ValidationIssue[]
     issues.push({ path: `${path}.applies_to_line_item_ids`, message: "must be an array" });
   } else {
     pc.applies_to_line_item_ids.forEach((id, i) => {
-      if (typeof id !== "string") {
-        issues.push({
-          path: `${path}.applies_to_line_item_ids[${i}]`,
-          message: "must be string",
-        });
-      }
+      checkBoundedString(
+        id,
+        `${path}.applies_to_line_item_ids[${i}]`,
+        { minLength: 1, maxLength: STRING_LIMITS.APPLIES_TO_LINE_ITEM_ID },
+        issues,
+      );
     });
   }
   checkConfidence(pc.confidence, `${path}.confidence`, issues);
   checkEvidenceArray(pc.evidence, `${path}.evidence`, issues);
 }
+
 
 // ── root validator ────────────────────────────────────────────────────────
 
@@ -445,9 +531,13 @@ export function validateCanonicalExtractionV1(input: unknown): ValidationResult 
       });
     }
     checkConfidence(cls.classification_confidence, "$.classification.classification_confidence", issues);
-    if (typeof cls.classification_reason !== "string") {
-      issues.push({ path: "$.classification.classification_reason", message: "must be string" });
-    }
+    checkBoundedString(
+      cls.classification_reason,
+      "$.classification.classification_reason",
+      { maxLength: STRING_LIMITS.CLASSIFICATION_REASON },
+      issues,
+    );
+
     if (cls.page_count !== null && (!Number.isInteger(cls.page_count) || (cls.page_count as number) < 1)) {
       issues.push({ path: "$.classification.page_count", message: "must be null or a positive integer" });
     }
@@ -593,17 +683,31 @@ export function validateCanonicalExtractionV1(input: unknown): ValidationResult 
       }
       items.forEach((it, i) => {
         checkLineItem(it, `$.quote.line_items[${i}]`, issues);
-        if (isObject(it) && typeof it.line_item_id === "string") {
+        // Uniqueness: non-null / non-empty line_item_id MUST be unique.
+        // Multiple null (or empty) IDs are permitted.
+        if (
+          isObject(it) &&
+          typeof it.line_item_id === "string" &&
+          it.line_item_id.length > 0
+        ) {
+          if (lineItemIds.has(it.line_item_id)) {
+            issues.push({
+              path: `$.quote.line_items[${i}].line_item_id`,
+              message: `duplicate line_item_id "${it.line_item_id}"`,
+            });
+          }
           lineItemIds.add(it.line_item_id);
         }
       });
     }
 
+    // Anomaly-preserving (Sprint 04B): integer only; Layer 4 flags negatives.
     checkFact(quote.opening_count, "$.quote.opening_count", issues, (v, p) => {
-      if (!Number.isInteger(v) || (v as number) < 0) {
-        issues.push({ path: p, message: "opening_count value must be a non-negative integer" });
+      if (!Number.isInteger(v)) {
+        issues.push({ path: p, message: "opening_count value must be an integer" });
       }
     });
+
 
     // product_configurations — plural
     const pcs = quote.product_configurations;
@@ -701,10 +805,14 @@ export function validateCanonicalExtractionV1(input: unknown): ValidationResult 
       issues.push({ path: "$.extraction_meta.warnings", message: "must be an array" });
     } else {
       em.warnings.forEach((w, i) => {
-        if (typeof w !== "string") {
-          issues.push({ path: `$.extraction_meta.warnings[${i}]`, message: "must be string" });
-        }
+        checkBoundedString(
+          w,
+          `$.extraction_meta.warnings[${i}]`,
+          { maxLength: STRING_LIMITS.WARNING },
+          issues,
+        );
       });
+
     }
   }
 
