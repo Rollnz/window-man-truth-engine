@@ -196,16 +196,20 @@ export function classifyEvidence(
 
   if (gt && sc) {
     if (gt === sc) return "EXACT_OR_NORMALIZED_MATCH";
-    if (sc.length >= 6 && (gt.includes(sc) || sc.includes(gt))) return "TEXT_CONTAINMENT_SUPPORTED";
+    if (sc.length >= 6 && (gt.includes(sc) || sc.includes(gt))) {
+      return "TEXT_CONTAINMENT_SUPPORTED";
+    }
+    // Both texts exist, neither contains the other → text disagrees.
+    if (gtPage != null && scannerPage != null && gtPage !== scannerPage) {
+      return "PAGE_REFERENCE_WRONG";
+    }
+    return "UNSUPPORTED";
   }
   if (gtPage != null && scannerPage != null) {
-    if (gtPage === scannerPage) {
-      return gt || sc ? "TEXT_CONTAINMENT_SUPPORTED" : "PAGE_MATCH_SUPPORTED";
-    }
+    if (gtPage === scannerPage) return "PAGE_MATCH_SUPPORTED";
     return "PAGE_REFERENCE_WRONG";
   }
   if (sc && !gt) return "HUMAN_REVIEW_REQUIRED";
-  if (sc && gt) return "UNSUPPORTED";
   return "MISSING";
 }
 
