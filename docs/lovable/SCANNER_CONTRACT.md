@@ -270,7 +270,56 @@ Layer 5 is **not OCR**. It is supplied or confirmed by the homeowner after Layer
 
 ### 5.2 Canonical Decision Reason
 
-Captured through the dynamic second qualification question. The available reason set is dynamic on the preceding transaction state and is defined in the manifest's qualification specification.
+Captured through the dynamic second qualification question. The reason set is conditioned on the preceding transaction state.
+
+The **canonical human-facing display labels** for these reasons are the property of [`MASTER_MANIFEST.MD`](./MASTER_MANIFEST.MD) and MUST NOT be redefined here. This section defines the **machine-readable reason codes** that data pipelines, analytics, database columns, and downstream logic MUST use as the stable canonical state. Display copy MUST NOT be stored as the canonical state.
+
+#### 5.2.1 Reason Codes — `already_signed`
+
+```text
+price_made_sense
+trusted_company_salesperson
+product_brand_felt_right
+financing_payments_worked
+reviews_reputation_strong
+ready_to_get_it_done
+other
+```
+
+#### 5.2.2 Reason Codes — `still_deciding`
+
+```text
+price
+comparing_other_quotes
+unclear_whats_included
+products_specifications
+payment_terms_financing
+trust_concern
+timing
+other
+```
+
+#### 5.2.3 Reason Codes — `passed`
+
+```text
+price_too_high
+wanted_more_quotes
+quote_confusing_vague
+trust_concern
+products_specifications
+payment_terms_financing
+chose_another_company
+timing
+other
+```
+
+#### 5.2.4 Contract Rules
+
+- Machine-readable enum values in 5.2.1–5.2.3 are the canonical state and belong to this document.
+- Locked human-facing display labels/copy belong to `MASTER_MANIFEST.MD`.
+- Downstream analytics, database rows, edge functions, report logic, and CRM state MUST use the stable reason **codes** rather than storing display copy as canonical state.
+- If a manifest-defined display label has no code above, the code MUST be added here in a follow-up amendment before that label ships to production data pipelines.
+- The `other` code MUST always remain available in each transaction state to accommodate free-text or unmapped user input.
 
 ### 5.3 Additional Conceptual Fields
 
