@@ -13,8 +13,6 @@
 //   • contains ZERO prompt/business logic (all logic lives in the core)
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-
 import {
   createLovableGatewayProviderCaller,
   FAILURE_CODES,
@@ -22,6 +20,15 @@ import {
   SUPPORTED_MIME_TYPES,
   type OrchestratorInput,
 } from "../_shared/scanner-brain/vnext/four-pass-orchestrator.ts";
+
+// Inline CORS — matches repository convention (see get-ticker-stats/index.ts).
+// The `npm:@supabase/supabase-js@2/cors` subpath is not proven in this
+// repo's Deno edge runtime; localized repair per Sprint 06C.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
 const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
 
