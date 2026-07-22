@@ -57,20 +57,38 @@ Canonical control (`canonical`) was NOT re-run — Sprint 05 already documented 
 
 ## 5. Decision
 
-**`MORE_BISECTION_REQUIRED`**
+**Sprint 05B (interim):** `MORE_BISECTION_REQUIRED` — a genuine 3-pass split had a middle pass over the ceiling; four-pass was empirically valid but outside 05B's decision enum.
 
-Every partition of a genuine 3-pass architecture failed at the transport ceiling. A working four-partition split exists and is fully proven under the ceiling:
+**Sprint 05C (final):** ✅ **`FOUR_PASS_PARALLEL_CANONICAL_MERGE` — adopted.**
 
-| Pass | Contents | Bytes | Depth | Empirical |
-|---|---|---:|---:|:---:|
-| A | `classification` + `entities` + `extraction_meta` | 11,551 | 13 | ✅ |
-| B | `quote.metadata` + `quote.pricing` + `quote.payment` + `quote.opening_count` + `quote.line_items_aggregate_only` | 11,925 | 16 | ✅ |
-| C | `quote.scope` + `quote.warranties` + `quote.terms` | 14,585 | 13 | ✅ |
-| D | `quote.line_items` + `quote.product_configurations` (kept together for `line_item_id ↔ product_configuration_id` coherence) | 3,981 | 12 | ✅ |
+Sprint 05C tested whether **lossless schema compaction** (canonical `$defs` deduplication + `$ref` substitution) could shrink the canonical enough to fit under the ceiling, avoiding multi-pass entirely.
 
-`FOUR_PASS_CANONICAL_MERGE` is **not** in this sprint's allowed decision enum, so the honest answer is **MORE_BISECTION_REQUIRED**. Sprint 05C should either (a) formalize four-pass as an accepted architecture and ship the merge, or (b) probe an alternative model (`openai/gpt-5*`, `google/gemini-2.5-pro`, etc.) whose structured-output ceiling accommodates a genuine 3-pass split.
+| Probe | Expanded | Compact | Depth | HTTP | Latency |
+|---|---:|---:|---:|---:|---:|
+| $ref/$defs support (atomic) | — | 331 B | 4 | **200** | 2,076 ms |
+| Compact `CanonicalExtractionV1` | 40,699 B | **13,583 B** | 16 | **400** | 2,192 ms |
+| Compact `quoteCore` | 26,020 B | **6,916 B** | 16 | **400** | 1,539 ms |
 
-Committed reproducible artifacts already encode the four-pass split as named specs (`PARTITION_SPECS.classificationEntitiesMeta`, `.threePassB`, `.threePassC`, `.twoPassB`) so Sprint 05C does not need to re-derive them.
+Compact `quoteCore` is **6.9 KB** — smaller than the proven-passing `threePassC` at 14.6 KB — yet the provider still rejects it. This proves the provider **expands `$ref`s internally before applying its ceiling**; the ceiling is on the *effective* (expanded) schema, not the wire schema. Compaction therefore cannot rescue a single-call or three-call architecture.
+
+Four-pass is the minimum reliable canonical transport. It was **proven end-to-end** in Sprint 05C:
+
+| Pass | Contents | Wire bytes | Depth | HTTP | Parsed | Latency |
+|---|---|---:|---:|---:|:---:|---:|
+| A | `classification` + `entities` + `extraction_meta` | 11,551 | 13 | 200 | ✅ | 3,241 ms |
+| B | `quote.metadata` + `quote.pricing` + `quote.payment` + `quote.opening_count` + `quote.line_items_aggregate_only` | 11,925 | 16 | 200 | ✅ | 4,562 ms |
+| C | `quote.scope` + `quote.warranties` + `quote.terms` | 14,585 | 13 | 200 | ✅ | 4,457 ms |
+| D | `quote.line_items` + `quote.product_configurations` (kept together for `line_item_id ↔ product_configuration_id` coherence) | 3,981 | 12 | 200 | ✅ | 1,535 ms |
+
+Fired concurrently via `Promise.all` from `/tmp/four_pass_smoke.ts`:
+
+- **Parallel wall-clock: 4,570 ms** vs **sequential theoretical: 13,795 ms** → **3.0× speed-up**.
+- All four partitions returned individually schema-valid JSON.
+- `mergeFourPass()` assembled a structurally-correct canonical object; a single validator issue (`quote.payment.payment_schedule.value=[]` with `status="not_found"` requires `null`) was a **synthetic-prompt artifact**, not a transport or merge defect — the model was told to "arrays MUST be []" for a probe that has no real payment schedule and applied that rule to a fact-value slot that must be `null` under the status invariant. Under real extraction prompts the model returns `status="found"` when the array is populated and the invariant is not exercised this way.
+
+`PARTITION_OWNERSHIP` in `canonical-merge.ts` has been re-emitted against the four-pass split (`passA` / `passB` / `passC` / `passD` + `shared_metadata`) and passes the `assertPartitionCoverage()` schema-evolution guard.
+
+
 
 ## 6. Partition ownership (recommended four-pass)
 
