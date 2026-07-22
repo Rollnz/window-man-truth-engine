@@ -1280,7 +1280,9 @@ export type Database = {
           account_id: string | null
           ai_model_version: string | null
           analysis_json: Json
+          analysis_schema_version: string
           analyzed_at: string | null
+          brain_version: string
           created_at: string
           fine_print_score: number
           id: string
@@ -1303,7 +1305,9 @@ export type Database = {
           account_id?: string | null
           ai_model_version?: string | null
           analysis_json?: Json
+          analysis_schema_version?: string
           analyzed_at?: string | null
+          brain_version?: string
           created_at?: string
           fine_print_score?: number
           id?: string
@@ -1326,7 +1330,9 @@ export type Database = {
           account_id?: string | null
           ai_model_version?: string | null
           analysis_json?: Json
+          analysis_schema_version?: string
           analyzed_at?: string | null
+          brain_version?: string
           created_at?: string
           fine_print_score?: number
           id?: string
