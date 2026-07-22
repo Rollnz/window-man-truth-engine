@@ -167,6 +167,12 @@ function AppContent() {
         <Route path="/signup3" element={<Signup3 />} />
         <Route path="/vault" element={<Vault />} />
         <Route path="/audit" element={<Audit />} />
+
+        {/* ============================================
+            STANDALONE ACQUISITION ROUTE
+            Quote-First single-action shell — no Navbar, no footer,
+            no floating CTAs. Preserves single-action focus.
+        ============================================ */}
         <Route path="/scan" element={<QuoteFirstLanding />} />
         
         {/* Admin Routes - wrapped with AuthGuard + AdminLayout for global search */}
