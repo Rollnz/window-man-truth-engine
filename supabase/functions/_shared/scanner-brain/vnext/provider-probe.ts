@@ -177,6 +177,7 @@ if (import.meta.main) {
     "twoPassB",
     "threePassB",
     "threePassC",
+    "threePassA_bundled",
     "canonical",
   ];
   if (!arg || !valid.includes(arg)) {
