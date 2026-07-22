@@ -1,26 +1,18 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// SCANNER-BRAIN vNEXT — STRICT JSON SCHEMA
-//
-// This JSON Schema mirrors the TypeScript contract in `./types.ts` and is
-// designed to be usable as an AI structured-output schema in a later sprint.
+// SCANNER-BRAIN vNEXT — STRICT JSON SCHEMA (Sprint 04A)
 //
 // STRICTNESS RULES
 //   - `additionalProperties: false` everywhere.
 //   - All object properties are enumerated in `required`.
-//   - Nullability is deliberate (`type: [..., "null"]`), never implicit.
+//   - Nullability is deliberate (`type: [..., "null"]`).
 //   - Enums are exhaustive.
-//   - Booleans are used ONLY for genuine binary facts, never as a proxy for
-//     "not found".
 //   - Confidence values are numbers constrained to [0, 1].
-//
-// This module has zero external dependencies.
+//   - Numeric facts intentionally do NOT enforce business ranges (e.g. no
+//     0..100 cap on deposit_percentage) so that Layer 3 preserves anomalies
+//     for Layer 4 to evaluate.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { CANONICAL_CONTRACT_VERSION } from "./constants.ts";
-
-// ───────────────────────────────────────────────────────────────────────────
-// Reusable building blocks
-// ───────────────────────────────────────────────────────────────────────────
 
 const factEvidence = {
   type: "object",
@@ -38,13 +30,8 @@ const factStatusEnum = {
   enum: ["found", "not_found", "uncertain"],
 } as const;
 
-const confidence = {
-  type: "number",
-  minimum: 0,
-  maximum: 1,
-} as const;
+const confidence = { type: "number", minimum: 0, maximum: 1 } as const;
 
-/** Wrap a value schema in the ExtractedFact<T> envelope. */
 function factOf<T extends object>(valueSchema: T | { type: string | string[] }) {
   return {
     type: "object",
@@ -80,23 +67,23 @@ const moneyAmount = {
 const phoneCandidate = {
   type: ["object", "null"],
   additionalProperties: false,
-  required: ["raw_value", "normalized_candidate"],
+  required: ["raw_value", "context_hint"],
   properties: {
     raw_value: { type: "string", maxLength: 64 },
-    normalized_candidate: { type: ["string", "null"], maxLength: 32 },
+    context_hint: { type: ["string", "null"], maxLength: 64 },
   },
 } as const;
 
 const addressCandidate = {
   type: ["object", "null"],
   additionalProperties: false,
-  required: ["street_address", "city", "state", "zip", "full_address"],
+  required: ["street_address", "city", "state", "zip", "raw_display_address"],
   properties: {
     street_address: nullableString,
     city: nullableString,
     state: nullableString,
     zip: nullableString,
-    full_address: nullableString,
+    raw_display_address: nullableString,
   },
 } as const;
 
@@ -119,14 +106,17 @@ const paymentMilestone = {
     "amount",
     "percentage",
     "due_date_or_timing",
+    "confidence",
     "evidence",
   ],
   properties: {
     label: nullableString,
     trigger_or_milestone: nullableString,
     amount: moneyAmount,
-    percentage: { type: ["number", "null"], minimum: 0, maximum: 100 },
+    // Anomalies preserved: no 0..100 bound. Must be finite when non-null.
+    percentage: nullableNumber,
     due_date_or_timing: nullableString,
+    confidence,
     evidence: { type: "array", items: factEvidence },
   },
 } as const;
@@ -148,6 +138,8 @@ const quoteLineItem = {
     "model",
     "unit_price",
     "extended_price",
+    "product_configuration_id",
+    "confidence",
     "evidence",
   ],
   properties: {
@@ -164,6 +156,56 @@ const quoteLineItem = {
     model: nullableString,
     unit_price: moneyAmount,
     extended_price: moneyAmount,
+    product_configuration_id: nullableString,
+    confidence,
+    evidence: { type: "array", items: factEvidence },
+  },
+} as const;
+
+const productConfiguration = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "product_configuration_id",
+    "manufacturer",
+    "brand",
+    "series",
+    "model",
+    "noa_identifier",
+    "florida_approval_identifier",
+    "dp_rating",
+    "impact_designation",
+    "glass_package",
+    "low_e",
+    "argon",
+    "tint",
+    "glass_makeup",
+    "frame_material",
+    "applies_to_line_item_ids",
+    "confidence",
+    "evidence",
+  ],
+  properties: {
+    product_configuration_id: { type: "string", maxLength: 64 },
+    manufacturer: nullableString,
+    brand: nullableString,
+    series: nullableString,
+    model: nullableString,
+    noa_identifier: nullableString,
+    florida_approval_identifier: nullableString,
+    dp_rating: nullableString,
+    impact_designation: nullableString,
+    glass_package: nullableString,
+    low_e: nullableBool,
+    argon: nullableBool,
+    tint: nullableString,
+    glass_makeup: nullableString,
+    frame_material: nullableString,
+    applies_to_line_item_ids: {
+      type: "array",
+      items: { type: "string", maxLength: 64 },
+    },
+    confidence,
     evidence: { type: "array", items: factEvidence },
   },
 } as const;
@@ -178,7 +220,6 @@ const documentClassification = {
     "classification_confidence",
     "readability",
     "page_count",
-    "is_supported_for_quote_analysis",
     "classification_reason",
   ],
   properties: {
@@ -201,7 +242,6 @@ const documentClassification = {
       enum: ["excellent", "good", "partial", "poor", "unreadable"],
     },
     page_count: { type: ["integer", "null"], minimum: 1 },
-    is_supported_for_quote_analysis: { type: "boolean" },
     classification_reason: { type: "string", maxLength: 500 },
   },
 } as const;
@@ -224,22 +264,13 @@ const property = {
   type: "object",
   additionalProperties: false,
   required: ["address"],
-  properties: {
-    address: factOf(addressCandidate),
-  },
+  properties: { address: factOf(addressCandidate) },
 } as const;
 
 const contractor = {
   type: "object",
   additionalProperties: false,
-  required: [
-    "company_name",
-    "license_number",
-    "address",
-    "phone",
-    "email",
-    "website",
-  ],
+  required: ["company_name", "license_number", "address", "phone", "email", "website"],
   properties: {
     company_name: factOf(nullableString),
     license_number: factOf(nullableString),
@@ -307,11 +338,8 @@ const paymentFacts = {
   ],
   properties: {
     deposit_amount: factOf(moneyAmount),
-    deposit_percentage: factOf({
-      type: ["number", "null"],
-      minimum: 0,
-      maximum: 100,
-    }),
+    // Anomaly-preserving: numeric-only, no 0..100 cap.
+    deposit_percentage: factOf(nullableNumber),
     financing_offered: factOf(nullableBool),
     financing_provider: factOf(nullableString),
     financing_terms: factOf(nullableString),
@@ -319,35 +347,6 @@ const paymentFacts = {
       type: ["array", "null"],
       items: paymentMilestone,
     }),
-  },
-} as const;
-
-const productFacts = {
-  type: "object",
-  additionalProperties: false,
-  required: [
-    "noa_identifier",
-    "florida_approval_identifier",
-    "dp_rating",
-    "impact_designation",
-    "glass_package",
-    "low_e",
-    "argon",
-    "tint",
-    "glass_makeup",
-    "frame_material",
-  ],
-  properties: {
-    noa_identifier: factOf(nullableString),
-    florida_approval_identifier: factOf(nullableString),
-    dp_rating: factOf(nullableString),
-    impact_designation: factOf(nullableString),
-    glass_package: factOf(nullableString),
-    low_e: factOf(nullableBool),
-    argon: factOf(nullableBool),
-    tint: factOf(nullableString),
-    glass_makeup: factOf(nullableString),
-    frame_material: factOf(nullableString),
   },
 } as const;
 
@@ -430,7 +429,7 @@ const quoteFacts = {
     "line_items",
     "line_items_aggregate_only",
     "opening_count",
-    "products",
+    "product_configurations",
     "scope",
     "warranties",
     "terms",
@@ -442,7 +441,7 @@ const quoteFacts = {
     line_items: { type: "array", items: quoteLineItem },
     line_items_aggregate_only: { type: "boolean" },
     opening_count: factOf(nullableInt),
-    products: productFacts,
+    product_configurations: { type: "array", items: productConfiguration },
     scope: scopeFacts,
     warranties: warrantyFacts,
     terms: contractTerms,
