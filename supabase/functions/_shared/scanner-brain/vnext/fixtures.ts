@@ -238,7 +238,7 @@ export const fixtureA_wellStructuredQuote: CanonicalExtractionV1 = {
       waterproofing: notFound(),
       sealant: found("Silicone sealant at perimeter"),
       anchoring: found("Tapcons per manufacturer instructions"),
-      stucco_repair: uncertain(null, 0.3),
+      stucco_repair: uncertain<string>(null, 0.3),
       drywall_repair: notFound(),
       paint_repair: notFound(),
       cleanup: found("Daily jobsite cleanup"),

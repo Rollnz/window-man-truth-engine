@@ -176,7 +176,7 @@ Deno.test("PRESERVES mixed-currency line item vs pricing currency", () => {
 // ── Validator ↔ Schema parity (structural rejections) ─────────────────────
 
 Deno.test("rejects unknown root property", () => {
-  const bad = structuredClone(fixtureA_wellStructuredQuote) as Record<string, unknown>;
+  const bad = structuredClone(fixtureA_wellStructuredQuote) as unknown as Record<string, unknown>;
   bad.rogue_field = 1;
   const r = validateCanonicalExtractionV1(bad);
   assertEquals(r.valid, false);
@@ -185,7 +185,7 @@ Deno.test("rejects unknown root property", () => {
 
 Deno.test("rejects unknown nested property inside classification", () => {
   const bad = structuredClone(fixtureA_wellStructuredQuote);
-  (bad.classification as Record<string, unknown>).extra = "no";
+  (bad.classification as unknown as Record<string, unknown>).extra = "no";
   const r = validateCanonicalExtractionV1(bad);
   assertEquals(r.valid, false);
   assert(r.issues.some((i) => i.path === "$.classification.extra"));
@@ -193,7 +193,7 @@ Deno.test("rejects unknown nested property inside classification", () => {
 
 Deno.test("rejects missing required scope key", () => {
   const bad = structuredClone(fixtureA_wellStructuredQuote);
-  delete (bad.quote.scope as Record<string, unknown>).installation;
+  delete (bad.quote.scope as unknown as Record<string, unknown>).installation;
   const r = validateCanonicalExtractionV1(bad);
   assertEquals(r.valid, false);
   assert(r.issues.some((i) => i.path === "$.quote.scope.installation"));
@@ -208,7 +208,7 @@ Deno.test("rejects malformed phone candidate (missing raw_value)", () => {
 
 Deno.test("rejects malformed address candidate (unknown key)", () => {
   const bad = structuredClone(fixtureA_wellStructuredQuote);
-  const addr = bad.entities.homeowner.mailing_address.value as Record<string, unknown>;
+  const addr = bad.entities.homeowner.mailing_address.value as unknown as Record<string, unknown>;
   addr.country = "US"; // not in schema
   const r = validateCanonicalExtractionV1(bad);
   assertEquals(r.valid, false);
@@ -216,7 +216,7 @@ Deno.test("rejects malformed address candidate (unknown key)", () => {
 
 Deno.test("rejects malformed evidence entry (missing page)", () => {
   const bad = structuredClone(fixtureA_wellStructuredQuote);
-  (bad.entities.homeowner.name.evidence[0] as Record<string, unknown>) = {
+  (bad.entities.homeowner.name.evidence[0] as unknown as Record<string, unknown>) = {
     text: "x",
     location_hint: "y",
   };
@@ -233,7 +233,7 @@ Deno.test("rejects malformed MoneyAmount (non-numeric value)", () => {
 
 Deno.test("rejects malformed line-item width dimension", () => {
   const bad = structuredClone(fixtureA_wellStructuredQuote);
-  (bad.quote.line_items[0] as Record<string, unknown>).width = { value: "wide", unit: "in" };
+  (bad.quote.line_items[0] as unknown as Record<string, unknown>).width = { value: "wide", unit: "in" };
   const r = validateCanonicalExtractionV1(bad);
   assertEquals(r.valid, false);
 });
@@ -242,21 +242,21 @@ Deno.test("rejects malformed payment milestone (missing confidence)", () => {
   const bad = structuredClone(fixtureA_wellStructuredQuote);
   const sched = bad.quote.payment.payment_schedule.value;
   assert(sched);
-  delete (sched[0] as Record<string, unknown>).confidence;
+  delete (sched[0] as unknown as Record<string, unknown>).confidence;
   const r = validateCanonicalExtractionV1(bad);
   assertEquals(r.valid, false);
 });
 
 Deno.test("rejects missing required entity field (homeowner.email)", () => {
   const bad = structuredClone(fixtureA_wellStructuredQuote);
-  delete (bad.entities.homeowner as Record<string, unknown>).email;
+  delete (bad.entities.homeowner as unknown as Record<string, unknown>).email;
   const r = validateCanonicalExtractionV1(bad);
   assertEquals(r.valid, false);
 });
 
 Deno.test("rejects malformed product configuration (missing id)", () => {
   const bad = structuredClone(fixtureF_mixedProductQuote);
-  delete (bad.quote.product_configurations[0] as Record<string, unknown>).product_configuration_id;
+  delete (bad.quote.product_configurations[0] as unknown as Record<string, unknown>).product_configuration_id;
   const r = validateCanonicalExtractionV1(bad);
   assertEquals(r.valid, false);
 });
@@ -290,7 +290,7 @@ Deno.test("rejects duplicate product_configuration_id", () => {
 
 Deno.test("rejects line item missing confidence", () => {
   const bad = structuredClone(fixtureA_wellStructuredQuote);
-  delete (bad.quote.line_items[0] as Record<string, unknown>).confidence;
+  delete (bad.quote.line_items[0] as unknown as Record<string, unknown>).confidence;
   const r = validateCanonicalExtractionV1(bad);
   assertEquals(r.valid, false);
 });
