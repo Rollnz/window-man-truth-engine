@@ -683,8 +683,10 @@ export function validateCanonicalExtractionV1(input: unknown): ValidationResult 
       }
       items.forEach((it, i) => {
         checkLineItem(it, `$.quote.line_items[${i}]`, issues);
-        // Uniqueness: non-null / non-empty line_item_id MUST be unique.
-        // Multiple null (or empty) IDs are permitted.
+        // Uniqueness: non-null line_item_id MUST be unique.
+        // Multiple null line_item_id values are permitted; empty-string
+        // line_item_id values are rejected upstream by checkLineItem
+        // (minLength=1), so any string reaching here has length > 0.
         if (
           isObject(it) &&
           typeof it.line_item_id === "string" &&
@@ -728,9 +730,12 @@ export function validateCanonicalExtractionV1(input: unknown): ValidationResult 
           seenIds.add(pc.product_configuration_id);
           if (Array.isArray(pc.applies_to_line_item_ids)) {
             pc.applies_to_line_item_ids.forEach((refId, j) => {
+              // Referential integrity (Sprint 04C): every non-empty refId
+              // MUST resolve to a real non-null line_item_id, regardless of
+              // whether line_items is empty or populated only with null IDs.
               if (
                 typeof refId === "string" &&
-                Array.isArray(items) && items.length > 0 &&
+                refId.length > 0 &&
                 !lineItemIds.has(refId)
               ) {
                 issues.push({
@@ -739,6 +744,7 @@ export function validateCanonicalExtractionV1(input: unknown): ValidationResult 
                 });
               }
             });
+
           }
         }
       });
