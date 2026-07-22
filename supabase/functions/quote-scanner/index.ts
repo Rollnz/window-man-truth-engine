@@ -19,6 +19,7 @@ import type { ExtractionSignals } from "../_shared/scanner-brain/schema.ts";
 import { EXTRACTION_RUBRIC, GRADING_RUBRIC, USER_PROMPT_TEMPLATE } from "../_shared/scanner-brain/rubric.ts";
 import { scoreFromSignals } from "../_shared/scanner-brain/scoring.ts";
 import { generateForensicSummary, extractIdentity } from "../_shared/scanner-brain/forensic.ts";
+import { BRAIN_VERSION, ANALYSIS_SCHEMA_VERSION } from "../_shared/scanner-brain/index.ts";
 import { logAttributionEvent } from "../_shared/attributionLogger.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
