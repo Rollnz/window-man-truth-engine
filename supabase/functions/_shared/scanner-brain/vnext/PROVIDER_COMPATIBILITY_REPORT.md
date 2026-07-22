@@ -168,3 +168,53 @@ Do **not** begin vNext prompt engineering, shadow scanner, Layer 4 scoring, PDF 
 ---
 
 *This report proves TRANSPORT COMPATIBILITY only. It does not measure OCR accuracy, entity accuracy, line-item accuracy, evidence accuracy, finding quality, pricing intelligence, legal correctness, Truth Report quality, or conversion performance.*
+
+---
+
+## Sprint 05B — Canonical Schema Bisection
+
+**Live call budget:** 8 / 8 consumed.
+**Baseline:** current `main` (post-Sprint 05, canonical contract unchanged).
+**Environment:** identical to Sprint 05 — Lovable AI Gateway `/v1/chat/completions`, `google/gemini-3-flash-preview`, `response_format: json_schema strict:true`.
+**Full analysis and reproducibility instructions:** see [`SCHEMA_TRANSPORT_PLAN.md`](./SCHEMA_TRANSPORT_PLAN.md).
+
+### Reproducible probe artifacts (new this sprint)
+
+| File | Purpose |
+| --- | --- |
+| `schema-projections.ts` | Programmatic projection utility (`projectSchema`, `buildProjection`, `PARTITION_SPECS`). Deep-clones the canonical schema; never mutates it. |
+| `provider-probe.ts` | Deno-runnable probe: prints structural metrics + HTTP status only. Never logs the API key, Authorization header, or response body content. |
+| `canonical-merge.ts` | Pure local `mergeTwoPass` + `assertPartitionCoverage` (schema-evolution guard). No remote calls, no DB writes. |
+| `schema-projections.test.ts` | 13 tests covering projection, ownership coverage, and merge Tests A–E. |
+| `SCHEMA_TRANSPORT_PLAN.md` | This sprint's architecture decision, ownership map, evolution guard, and Sprint 05C recommendation. |
+
+### Bisection results (live)
+
+Sizes are `stableStringify` bytes (sorted keys, deterministic).
+
+| Probe | Bytes | Depth | HTTP | Latency | JSON parsed |
+|---|---:|---:|---:|---:|:---:|
+| classificationEntitiesMeta | 11,551 | 13 | **200** | 5,936 ms | ✅ |
+| quoteFull | 29,543 | 16 | **400** | 2,031 ms | — |
+| quoteCore | 26,020 | 16 | **400** | 1,605 ms | — |
+| quoteDetail (≡ twoPassB) | 3,981 | 12 | **200** | 1,465 ms | ✅ |
+| twoPassA | 37,187 | 16 | **400** | 1,944 ms | — |
+| threePassB (quote header) | 11,925 | 16 | **200** | 4,567 ms | ✅ |
+| threePassC (scope/warr/terms) | 14,585 | 13 | **200** | 4,604 ms | ✅ |
+| threePassA_bundled | 23,093 | 16 | **400** | 1,470 ms | — |
+
+Every failure returned the same opaque upstream `INVALID_ARGUMENT` (Google AI Studio) with no keyword-level detail. Failures cluster ≥ ~23 KB at depth 16; every projection ≤ ~15 KB passed regardless of depth. **We do NOT claim an exact numeric provider limit.**
+
+### Architecture decision
+
+**`MORE_BISECTION_REQUIRED`.**
+
+Neither a two-pass (`twoPassA` failed) nor a genuine three-pass (`quoteCore` and `threePassA_bundled` both failed) architecture fits under the observed ceiling for this model. A **four-partition** split whose members are individually proven does exist (classification+entities+meta / quote header / quote scope+warranties+terms / line_items+product_configurations), but `FOUR_PASS_CANONICAL_MERGE` is not in this sprint's allowed decision enum.
+
+Sprint 05C must either broaden the enum to formalize four-pass, or probe an alternate model whose structured-output ceiling permits a genuine 3-pass split — see `SCHEMA_TRANSPORT_PLAN.md` §11.
+
+### Isolation
+
+- No production data touched. No DB writes. No migrations authored or applied. No Edge Functions deployed or modified. No frontend, routing, tracking, GTM, Meta CAPI, auth, RLS, Storage, Twilio, or config changes.
+- No canonical vNext files modified (`types.ts`, `schema.ts`, `validation.ts`, `constants.ts`, `contract.test.ts`).
+- Sole external side effect: 8 bounded LIVE AI provider calls against DEV/TEST `LOVABLE_API_KEY` with synthetic non-PII schema-echo prompts.
