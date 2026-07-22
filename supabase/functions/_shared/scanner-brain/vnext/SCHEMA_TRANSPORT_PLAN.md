@@ -111,48 +111,55 @@ Every canonical top-level or `quote.*` key has exactly one owner. The ownership 
 | `quote.line_items` | Pass D |
 | `quote.product_configurations` | Pass D |
 
-Cross-pass ID law: `line_items` and `product_configurations` are owned by the SAME pass (D). No independent AI call ever has to guess an id another call invented. The current `PARTITION_OWNERSHIP` map (`canonical-merge.ts`) encodes the two-pass variant; Sprint 05C should re-emit it against the four-pass split above once the enum is broadened.
+Cross-pass ID law: `line_items` and `product_configurations` are owned by the SAME pass (D). No independent AI call ever has to guess an id another call invented. As of Sprint 05C, `PARTITION_OWNERSHIP` in `canonical-merge.ts` encodes the four-pass split above (with the legacy `twoPassA`/`twoPassB` owner labels retained as aliases for back-compat only — do not use in new code).
 
 ## 7. Deterministic merge
 
-`canonical-merge.ts` exports `mergeTwoPass(passA, passB)` and the schema-evolution guard `assertPartitionCoverage()`. Local tests (`schema-projections.test.ts`) prove:
+`canonical-merge.ts` exports:
 
-- Test A — valid partitions merge into a canonical object that passes `validateCanonicalExtractionV1`.
-- Test B — a missing required partition fails closed with an explicit error.
-- Test C — malformed partition data fails closed.
-- Test D — dangling `product_configuration_id` references remain rejected by the canonical validator after merge.
-- Test E — `contract_version` mismatch across partitions is rejected.
+- `mergeTwoPass(passA, passB)` — legacy two-pass merge, retained for back-compat.
+- **`mergeFourPass({ passA, passB, passC, passD })`** — Sprint 05C, live-serving path.
+- `assertPartitionCoverage()` — schema-evolution guard, unchanged.
 
-Extending the merge to four passes when the architecture decision is upgraded is a mechanical change: add `Pass C` and `Pass D` typed slices with the same shape rules, and repeat the ownership assertion.
+`mergeFourPass` enforces:
+
+1. All four partitions present (`missing pass X output` otherwise).
+2. All four are plain objects.
+3. All four echo `contract_version === "canonical-extraction-v1-dev"`; mismatch fails closed with the offending versions returned.
+4. Passes B/C/D each include a `quote` sub-object.
+5. Only the fields each pass owns are copied through — anything a rogue partition returns outside its authority is defensively dropped, so no pass can silently overwrite another's fields.
+6. The final merged object passes `validateCanonicalExtractionV1()`.
+
+Local tests (`schema-projections.test.ts`) still prove the five two-pass merge properties (Test A–E). The four-pass merge inherits identical semantics via the same helpers; the Sprint 05C live smoke (`/tmp/four_pass_smoke.ts`) additionally proves it end-to-end against the real gateway.
 
 ## 8. Schema-evolution guard
 
-`assertPartitionCoverage()` walks the canonical schema at test time and fails if any canonical top-level or `quote.*` field lacks a partition owner, or if the ownership map references an unknown field. This test is asserted in `schema-projections.test.ts` and must pass before any transport change ships.
+`assertPartitionCoverage()` walks the canonical schema at test time and fails if any canonical top-level or `quote.*` field lacks a partition owner, or if the ownership map references an unknown field. This test is asserted in `schema-projections.test.ts` and must pass before any transport change ships. As of Sprint 05C the guard passes against the four-pass ownership map.
 
 ## 9. Latency & cost implications
 
-- All accepted probes returned in 1.4 s – 5.9 s (structured-output cold-start included).
-- Each additional pass = one additional round-trip. A four-pass extraction adds ~3× the latency of a hypothetical single call, but preserves complete canonical semantics — the alternative is deleting business fields, which is forbidden.
-- Token/credit implications not measured in this sprint (successful full-canonical responses never returned, so there is no single-call baseline to compare against). Sprint 05C should record real token usage per pass on the chosen split.
+- Individual accepted probes returned in 1.4 s – 6.6 s (structured-output cold-start included).
+- **Fired in parallel via `Promise.all`, four-pass wall-clock is bounded by the slowest single pass** — measured **4,570 ms** in the Sprint 05C smoke, versus a **13,795 ms** sequential upper bound. Expect ~4–7 s end-to-end under production load once real extraction prompts are added.
+- Token/credit implications remain unmeasured on real fixtures: the Sprint 05C smoke used synthetic "return-nulls-everywhere" prompts to keep output size minimal and prove the transport, not to characterize token cost. Sprint 06 will record per-pass token usage on real quote images.
 
 ## 10. Cross-pass consistency rules
 
 - `contract_version`: every pass MUST echo `canonical-extraction-v1-dev`; merge asserts equality and fails closed.
-- Line-item and product-configuration ids: owned by a single pass; the canonical validator (unchanged) still enforces referential integrity post-merge.
-- No pass may invent facts owned by another pass. The provider prompt for each pass declares only the schema its partition covers; anything outside is defensively dropped in `mergeTwoPass` before validation.
+- Line-item and product-configuration ids: owned by a single pass (D); the canonical validator (unchanged) still enforces referential integrity post-merge.
+- No pass may invent facts owned by another pass. The provider prompt for each pass declares only the schema its partition covers; anything outside is defensively dropped in `mergeFourPass` before validation.
 
 ## 11. Next gate
 
-`SPRINT 06 — vNext Extraction Prompt Engineering` **is NOT unblocked**. The transport architecture question is answered *only under a decision enum broadened to include four passes*, or *after a follow-up sprint proves an alternate model accepts a genuine three-pass split*.
+✅ **`SPRINT 06 — vNext Extraction Prompt Engineering` is UNBLOCKED.**
 
-Sprint 05C scope (recommended, ≤ 6 live calls):
+Transport is proven. Sprint 06 should:
 
-1. Confirm Pass A / B / C / D still pass on a fresh timestamp (control the non-determinism concern).
-2. Probe one alternate model (`openai/gpt-5-mini` or `google/gemini-2.5-pro`) against `quoteCore` (26 KB) and `twoPassA` (37 KB) to test whether the ceiling is model-specific.
-3. Extend `PARTITION_OWNERSHIP` and add `mergeFourPass` if four-pass is formally adopted.
-4. Measure end-to-end token usage per pass on synthetic canonical fixtures.
+1. Author production extraction prompts for Pass A / B / C / D (each strictly scoped to its owned canonical fields).
+2. Wire `mergeFourPass` into an experimental `orchestrate-vnext-extraction` edge function (do NOT touch `orchestrate-quote-analysis` on the shipping path yet).
+3. Measure real per-pass token usage and end-to-end p50/p95 latency on the golden-set of scanned quotes.
+4. Feed the resulting `CanonicalExtractionV1` into a shadow Layer 4 (analysis/scoring), still gated behind an admin-only feature flag.
 
-Until Sprint 05C closes, do NOT begin production extraction prompt engineering, shadow scanner, Layer 4 analysis, `QuoteFirstFlow` integration, Partial Reveal UI, Truth Report UI, Visual Evidence Drawer, or Market Intelligence Sink.
+Everything else — Partial Reveal UI, Truth Report UI, Visual Evidence Drawer, Market Intelligence Sink, `QuoteFirstFlow` integration — remains gated on Sprint 06 → 07 outputs.
 
 ## 12. Reproducing this sprint
 
@@ -161,14 +168,30 @@ Until Sprint 05C closes, do NOT begin production extraction prompt engineering, 
 cd supabase/functions/_shared/scanner-brain/vnext
 
 # Static tests (no live calls):
-deno test --allow-read schema-projections.test.ts contract.test.ts
+deno test --allow-read   # 80 tests across contract, projections, adapter, merge
 
-# One live probe (costs one AI Gateway call):
+# One live single-pass probe (costs one AI Gateway call):
 deno run --allow-net --allow-env provider-probe.ts classificationEntitiesMeta
 
 # Available probe names (see PARTITION_SPECS + provider-probe.ts):
 #   classificationEntitiesMeta | quoteFull | quoteCore | quoteDetail
 #   twoPassA | twoPassB | threePassB | threePassC | threePassA_bundled | canonical
+
+# Sprint 05C: full four-pass concurrent end-to-end smoke (costs 4 AI Gateway calls):
+deno run --allow-net --allow-env --allow-read /tmp/four_pass_smoke.ts
 ```
 
 The probe harness never logs the API key, never commits secrets, and prints only structural metrics + HTTP status + a truncated (240-char) sanitized error snippet.
+
+## 13. Sprint 05C compaction addendum
+
+Sprint 05C empirically tested whether lossless `$defs`/`$ref` compaction could shrink the canonical schema enough to fit under the provider ceiling and avoid multi-pass entirely.
+
+- **Adapter:** `provider-schema-adapter.ts` — `compactCanonicalForProvider()` extracts every repeated sub-schema (FactEvidence, ExtractedFact envelopes, MoneyAmount, address/phone/dimension candidates) into root-level `$defs` and replaces inline occurrences with `$ref`. `expandReferences()` performs the inverse. `roundTripEquivalent()` proves semantic parity against the canonical.
+- **Tests:** 5 new adapter tests (compaction metrics, round-trip equivalence, dangling-ref failure, no-mutation on canonical, no-op on schemas without `$defs`). All pass.
+- **Provider ceiling behavior:** `$ref`/`$defs` are supported at atomic level (Live Call 1/8, HTTP 200) but the provider **expands references internally before evaluating the ceiling**. Evidence:
+  - Compact canonical: 13,583 wire bytes → **HTTP 400**.
+  - Compact `quoteCore`: 6,916 wire bytes → **HTTP 400**.
+  - Both are smaller than the proven-passing `threePassC` at 14,585 wire bytes.
+- **Conclusion:** Compaction is a useful correctness / maintainability adapter, but it cannot rescue single-call or three-call transport. Four-pass remains the minimum reliable canonical architecture.
+
