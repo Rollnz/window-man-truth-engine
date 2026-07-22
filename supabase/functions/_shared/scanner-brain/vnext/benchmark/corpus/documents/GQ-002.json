@@ -1,0 +1,22 @@
+{
+  "document_id": "GQ-002",
+  "corpus_version": "gq-v1-pre",
+  "source_type": "synthetic",
+  "archetypes": ["SYNTHETIC_CONTROL", "SPARSE_ESTIMATE"],
+  "sha256": "0000000000000000000000000000000000000000000000000000000000000002",
+  "asset": {
+    "logical_asset_reference": "synthetic://gq-002/sparse-anti-hallucination.pdf",
+    "mime_type": "application/pdf",
+    "page_count": 1
+  },
+  "dataset_split": "holdout",
+  "annotation_version": "1.0.0",
+  "annotation_status": "locked",
+  "review_status": "agreed",
+  "adjudication_status": "not_required",
+  "locked": true,
+  "pii_review_status": "synthetic",
+  "known_prompt_exposure": "none",
+  "ground_truth_reference": "synthetic-ground-truth://GQ-002",
+  "notes": "Synthetic sparse-quote control to detect fabrication behavior. Not representative of real-world accuracy."
+}

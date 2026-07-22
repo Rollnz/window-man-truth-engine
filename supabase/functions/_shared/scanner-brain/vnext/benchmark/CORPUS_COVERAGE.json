@@ -1,0 +1,135 @@
+{
+  "corpus_version": "gq-v1-pre",
+  "totals": {
+    "documents": 2,
+    "development": 1,
+    "holdout": 1,
+    "synthetic": 2,
+    "deidentified_real": 0,
+    "pii_verified": 2,
+    "pii_pending": 0,
+    "locked": 2,
+    "pending_review": 0
+  },
+  "archetype_coverage": {
+    "CLEAN_SIMPLE_ESTIMATE": {
+      "covered_by": [
+        "GQ-001"
+      ],
+      "count": 1,
+      "status": "COVERED"
+    },
+    "DETAILED_MULTI_PAGE": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "MULTI_PRODUCT": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "ENTITY_AMBIGUITY": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "SPARSE_ESTIMATE": {
+      "covered_by": [
+        "GQ-002"
+      ],
+      "count": 1,
+      "status": "COVERED"
+    },
+    "FINANCING_HEAVY": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "SIGNED_CONTRACT": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "POOR_QUALITY_SCAN": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "HANDWRITTEN": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "AGGREGATE_ONLY": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "CONFLICTING_REVISIONS": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "NON_QUOTE": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "TABLE_HEAVY": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "VERY_LONG": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "MIXED_WINDOWS_DOORS": {
+      "covered_by": [],
+      "count": 0,
+      "status": "MISSING"
+    },
+    "SYNTHETIC_CONTROL": {
+      "covered_by": [
+        "GQ-001",
+        "GQ-002"
+      ],
+      "count": 2,
+      "status": "COVERED"
+    }
+  },
+  "missing_required_archetypes": [
+    "DETAILED_MULTI_PAGE",
+    "MULTI_PRODUCT",
+    "ENTITY_AMBIGUITY",
+    "FINANCING_HEAVY",
+    "SIGNED_CONTRACT",
+    "POOR_QUALITY_SCAN",
+    "AGGREGATE_ONLY",
+    "CONFLICTING_REVISIONS",
+    "NON_QUOTE",
+    "TABLE_HEAVY"
+  ],
+  "mime_distribution": {
+    "application/pdf": 2
+  },
+  "page_count_distribution": {
+    "p1_2": 2,
+    "p3_7": 0,
+    "p8_14": 0,
+    "p15_plus": 0
+  },
+  "synthetic_vs_real": {
+    "synthetic": 2,
+    "deidentified_real": 0
+  },
+  "ready_for_authoritative_execution": false,
+  "readiness_blockers": [
+    "NO_DEIDENTIFIED_REAL_DOCUMENTS",
+    "CORPUS_BELOW_MINIMUM_13",
+    "HOLDOUT_BELOW_MINIMUM_5",
+    "REQUIRED_ARCHETYPES_MISSING"
+  ]
+}

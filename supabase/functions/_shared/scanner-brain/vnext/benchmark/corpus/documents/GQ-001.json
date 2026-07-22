@@ -1,0 +1,22 @@
+{
+  "document_id": "GQ-001",
+  "corpus_version": "gq-v1-pre",
+  "source_type": "synthetic",
+  "archetypes": ["SYNTHETIC_CONTROL", "CLEAN_SIMPLE_ESTIMATE"],
+  "sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+  "asset": {
+    "logical_asset_reference": "synthetic://gq-001/clean-simple-estimate.pdf",
+    "mime_type": "application/pdf",
+    "page_count": 2
+  },
+  "dataset_split": "development",
+  "annotation_version": "1.0.0",
+  "annotation_status": "locked",
+  "review_status": "agreed",
+  "adjudication_status": "not_required",
+  "locked": true,
+  "pii_review_status": "synthetic",
+  "known_prompt_exposure": "none",
+  "ground_truth_reference": "synthetic-ground-truth://GQ-001",
+  "notes": "Synthetic control — deterministic known-value baseline. Not representative of real-world accuracy."
+}

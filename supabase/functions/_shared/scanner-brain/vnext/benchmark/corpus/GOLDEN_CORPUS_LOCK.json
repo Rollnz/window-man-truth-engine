@@ -1,0 +1,36 @@
+{
+  "corpus_version": "gq-v1-pre",
+  "generated_at": "1970-01-01T00:00:00.000Z",
+  "document_count": 2,
+  "documents": [
+    {
+      "document_id": "GQ-001",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+      "dataset_split": "development",
+      "annotation_version": "1.0.0",
+      "locked": true,
+      "pii_review_status": "synthetic",
+      "known_prompt_exposure": "none",
+      "archetypes": [
+        "CLEAN_SIMPLE_ESTIMATE",
+        "SYNTHETIC_CONTROL"
+      ]
+    },
+    {
+      "document_id": "GQ-002",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000002",
+      "dataset_split": "holdout",
+      "annotation_version": "1.0.0",
+      "locked": true,
+      "pii_review_status": "synthetic",
+      "known_prompt_exposure": "none",
+      "archetypes": [
+        "SPARSE_ESTIMATE",
+        "SYNTHETIC_CONTROL"
+      ]
+    }
+  ],
+  "corpus_identity_hash": "53e5182517afde25e75a6517d00b89e8a8a0754f6e51aab82e1a712742c70738",
+  "capability_matrix_version": "cap-matrix-v1.0.0",
+  "threshold_config_version": "t-v1"
+}
