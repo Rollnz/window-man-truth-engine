@@ -3542,4 +3542,3 @@ REJOIN PRIMARY QUOTE-FIRST FUNNEL
 The Quote-First experience MUST minimize friction before the homeowner demonstrates meaningful intent, progressively earn the right to request information, classify the homeowner at peak curiosity, deliver genuine personalized decision-support value, and only then escalate the highest-value users toward an appropriate inbound human conversation.
 
 ```
-```
