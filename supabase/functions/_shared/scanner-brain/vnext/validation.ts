@@ -397,9 +397,12 @@ function checkProductConfig(pc: unknown, path: string, issues: ValidationIssue[]
     return;
   }
   checkKeys(pc, path, PRODUCT_CONFIG_KEYS, issues);
-  if (typeof pc.product_configuration_id !== "string" || pc.product_configuration_id.length === 0) {
-    issues.push({ path: `${path}.product_configuration_id`, message: "must be a non-empty string" });
-  }
+  checkBoundedString(
+    pc.product_configuration_id,
+    `${path}.product_configuration_id`,
+    { minLength: 1, maxLength: STRING_LIMITS.PRODUCT_CONFIG_ID },
+    issues,
+  );
   for (const k of [
     "manufacturer",
     "brand",
@@ -422,17 +425,18 @@ function checkProductConfig(pc: unknown, path: string, issues: ValidationIssue[]
     issues.push({ path: `${path}.applies_to_line_item_ids`, message: "must be an array" });
   } else {
     pc.applies_to_line_item_ids.forEach((id, i) => {
-      if (typeof id !== "string") {
-        issues.push({
-          path: `${path}.applies_to_line_item_ids[${i}]`,
-          message: "must be string",
-        });
-      }
+      checkBoundedString(
+        id,
+        `${path}.applies_to_line_item_ids[${i}]`,
+        { minLength: 1, maxLength: STRING_LIMITS.APPLIES_TO_LINE_ITEM_ID },
+        issues,
+      );
     });
   }
   checkConfidence(pc.confidence, `${path}.confidence`, issues);
   checkEvidenceArray(pc.evidence, `${path}.evidence`, issues);
 }
+
 
 // ── root validator ────────────────────────────────────────────────────────
 
