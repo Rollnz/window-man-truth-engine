@@ -19,6 +19,7 @@ import type { ExtractionSignals } from "../_shared/scanner-brain/schema.ts";
 import { EXTRACTION_RUBRIC, GRADING_RUBRIC, USER_PROMPT_TEMPLATE } from "../_shared/scanner-brain/rubric.ts";
 import { scoreFromSignals } from "../_shared/scanner-brain/scoring.ts";
 import { generateForensicSummary, extractIdentity } from "../_shared/scanner-brain/forensic.ts";
+import { BRAIN_VERSION, ANALYSIS_SCHEMA_VERSION } from "../_shared/scanner-brain/index.ts";
 import { logAttributionEvent } from "../_shared/attributionLogger.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -148,15 +149,20 @@ Deno.serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       );
 
-      // Check for cached analysis (deduplication)
+      // Check for cached analysis (version-aware deduplication).
+      // Cache hit requires SAME image_hash AND SAME brain_version AND SAME
+      // analysis_schema_version. Historical `legacy-unversioned` rows are
+      // intentionally NOT returned as hits for a current explicit version.
       const { data: cachedAnalysis } = await supabaseClient
         .from('quote_analyses')
         .select('analysis_json, created_at, id, lead_id')
         .eq('image_hash', imageHash)
+        .eq('brain_version', BRAIN_VERSION)
+        .eq('analysis_schema_version', ANALYSIS_SCHEMA_VERSION)
         .maybeSingle();
 
       if (cachedAnalysis) {
-        console.log(`[QuoteScanner] CACHE HIT - hash=${imageHash.substring(0, 12)}... id=${cachedAnalysis.id}`);
+        console.log(`[QuoteScanner] CACHE HIT - hash=${imageHash.substring(0, 12)}... brain=${BRAIN_VERSION} schema=${ANALYSIS_SCHEMA_VERSION} id=${cachedAnalysis.id}`);
         
         // Update lead_id if we now have one and cached record doesn't
         if (leadId && !cachedAnalysis.lead_id) {
@@ -172,7 +178,7 @@ Deno.serve(async (req) => {
         });
       }
       
-      console.log(`[QuoteScanner] CACHE MISS - hash=${imageHash.substring(0, 12)}... proceeding with AI analysis`);
+      console.log(`[QuoteScanner] CACHE MISS - hash=${imageHash.substring(0, 12)}... brain=${BRAIN_VERSION} schema=${ANALYSIS_SCHEMA_VERSION} proceeding with AI analysis`);
     }
 
     // Build messages based on mode
@@ -413,6 +419,8 @@ Format the output with clear section headers and make it easy to read during a p
         lead_id: leadId || null,
         quote_file_id: null, // Files not currently persisted to storage
         image_hash: imageHash!,
+        brain_version: BRAIN_VERSION,
+        analysis_schema_version: ANALYSIS_SCHEMA_VERSION,
         overall_score: scored.overallScore,
         safety_score: scored.safetyScore,
         scope_score: scored.scopeScore,

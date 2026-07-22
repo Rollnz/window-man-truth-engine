@@ -6,7 +6,7 @@
 |---|---|
 | Document ID | `WM-SCANNER-AUDIT-001` |
 | Audited Repository | `Rollnz/window-man-truth-engine` (this workspace) |
-| Audited Ref | Working tree at Sprint 02 execution time (2026-07-22). No commit SHA pinned by this sprint. |
+| Audited Ref | Source SHA `81538915754c2f3a6e282b7ae7142fdbb880d493` (2026-07-22). Files under `src/**` and `supabase/functions/**` were unchanged between the prior source commit and the audit commit. |
 | Target Contract | [`SCANNER_CONTRACT.md`](./SCANNER_CONTRACT.md) v1.0.0 |
 | Parent Manifest | [`MASTER_MANIFEST.MD`](./MASTER_MANIFEST.MD) v1.1.0 |
 | Status | `AUDIT COMPLETE — READ ONLY. No implementation delivered.` |
@@ -400,7 +400,7 @@ Against `EXTRACTION_RUBRIC`:
 
 Ordered phases. No implementation is delivered in this sprint.
 
-1. **Phase A — Schema versioning & cache safety.** Introduce a `brain_version` (or `analysis_schema_version`) column on `quote_analyses` and encode it into the dedup key. Prerequisite for any coexistence of old and new extraction shapes.
+1. **Phase A — Schema versioning & cache safety.** Version-safe coexistence of old and new extraction shapes requires THREE coupled changes, not just a new column: (a) persist both `brain_version` and `analysis_schema_version` on every `quote_analyses` write, sourced from the `_shared/scanner-brain` SSOT; (b) filter the quote-scanner cache lookup on all three of `image_hash`, `brain_version`, and `analysis_schema_version`; and (c) replace the existing `UNIQUE(image_hash)` constraint with version-aware `UNIQUE(image_hash, brain_version, analysis_schema_version)` so the same file may be re-analyzed under a new version as a distinct row. Historical rows are backfilled as `legacy-unversioned` and preserved untouched. Prerequisite for any coexistence of old and new extraction shapes.
 2. **Phase B — Canonical adapter skeleton.** Create `src/features/quote-first/adapter/` (name TBD). Move shared compression into `src/lib/`. Route `QuoteFirstFlow` through the adapter to today's `quote-scanner` (behavior unchanged).
 3. **Phase C — Absence-as-failure remediation (surface).** Behind a feature flag, soften copy in `warnings[]` and `statuteCitations[]` so that NOT FOUND phrases as "not visible in the uploaded document" instead of "the contractor is unlicensed / non-compliant." Deterministic engine unchanged.
 4. **Phase D — Layer 1 upgrade.** Replace binary `isValidQuote` with a `document_type` enum + `classification_confidence` + `readability` in the AI response, and surface an "uncertain" state to the reveal UI.
