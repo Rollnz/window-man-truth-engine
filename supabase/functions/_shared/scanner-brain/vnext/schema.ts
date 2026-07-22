@@ -143,7 +143,7 @@ const quoteLineItem = {
     "evidence",
   ],
   properties: {
-    line_item_id: nullableString,
+    line_item_id: { type: ["string", "null"], minLength: 1, maxLength: 64 },
     description: nullableString,
     quantity: nullableInt,
     opening_location: nullableString,
