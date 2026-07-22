@@ -683,8 +683,10 @@ export function validateCanonicalExtractionV1(input: unknown): ValidationResult 
       }
       items.forEach((it, i) => {
         checkLineItem(it, `$.quote.line_items[${i}]`, issues);
-        // Uniqueness: non-null / non-empty line_item_id MUST be unique.
-        // Multiple null (or empty) IDs are permitted.
+        // Uniqueness: non-null line_item_id MUST be unique.
+        // Multiple null line_item_id values are permitted; empty-string
+        // line_item_id values are rejected upstream by checkLineItem
+        // (minLength=1), so any string reaching here has length > 0.
         if (
           isObject(it) &&
           typeof it.line_item_id === "string" &&
