@@ -683,17 +683,31 @@ export function validateCanonicalExtractionV1(input: unknown): ValidationResult 
       }
       items.forEach((it, i) => {
         checkLineItem(it, `$.quote.line_items[${i}]`, issues);
-        if (isObject(it) && typeof it.line_item_id === "string") {
+        // Uniqueness: non-null / non-empty line_item_id MUST be unique.
+        // Multiple null (or empty) IDs are permitted.
+        if (
+          isObject(it) &&
+          typeof it.line_item_id === "string" &&
+          it.line_item_id.length > 0
+        ) {
+          if (lineItemIds.has(it.line_item_id)) {
+            issues.push({
+              path: `$.quote.line_items[${i}].line_item_id`,
+              message: `duplicate line_item_id "${it.line_item_id}"`,
+            });
+          }
           lineItemIds.add(it.line_item_id);
         }
       });
     }
 
+    // Anomaly-preserving (Sprint 04B): integer only; Layer 4 flags negatives.
     checkFact(quote.opening_count, "$.quote.opening_count", issues, (v, p) => {
-      if (!Number.isInteger(v) || (v as number) < 0) {
-        issues.push({ path: p, message: "opening_count value must be a non-negative integer" });
+      if (!Number.isInteger(v)) {
+        issues.push({ path: p, message: "opening_count value must be an integer" });
       }
     });
+
 
     // product_configurations — plural
     const pcs = quote.product_configurations;
