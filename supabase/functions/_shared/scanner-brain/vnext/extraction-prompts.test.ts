@@ -155,7 +155,7 @@ Deno.test("scope: pass rule blocks explicitly disclaim other passes' fields", ()
   for (const pass of ["A", "B", "C", "D"] as const) {
     const rules = passRulesOnly(pass);
     assert(
-      /do NOT extract/i.test(rules) || /You do NOT extract/i.test(rules),
+      /do NOT\s+extract/i.test(rules) || /You do NOT\s+extract/i.test(rules),
       `pass ${pass} rules missing 'do NOT extract' disclaimer`,
     );
   }
