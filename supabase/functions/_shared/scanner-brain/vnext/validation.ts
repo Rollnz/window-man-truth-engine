@@ -90,6 +90,68 @@ function checkNullableString(v: unknown, path: string, issues: ValidationIssue[]
   }
 }
 
+/**
+ * Length-parity helpers — these mirror the maxLength/minLength constraints
+ * declared in schema.ts. Do NOT invent new limits: every value here has a
+ * matching JSON Schema constraint.
+ */
+export const STRING_LIMITS = {
+  EVIDENCE_TEXT: 240,
+  EVIDENCE_LOCATION_HINT: 120,
+  MONEY_CURRENCY: 8,
+  MONEY_FORMATTED: 40,
+  PHONE_RAW: 64,
+  PHONE_CONTEXT_HINT: 64,
+  PRODUCT_CONFIG_ID: 64,
+  APPLIES_TO_LINE_ITEM_ID: 64,
+  LINE_ITEM_ID: 64,
+  CLASSIFICATION_REASON: 500,
+  WARNING: 500,
+} as const;
+
+function checkNullableBoundedString(
+  v: unknown,
+  path: string,
+  maxLength: number,
+  issues: ValidationIssue[],
+): void {
+  if (v === null) return;
+  if (typeof v !== "string") {
+    issues.push({ path, message: "must be string or null" });
+    return;
+  }
+  if (v.length > maxLength) {
+    issues.push({
+      path,
+      message: `exceeds maxLength ${maxLength} (got ${v.length})`,
+    });
+  }
+}
+
+function checkBoundedString(
+  v: unknown,
+  path: string,
+  opts: { minLength?: number; maxLength: number },
+  issues: ValidationIssue[],
+): void {
+  if (typeof v !== "string") {
+    issues.push({ path, message: "must be string" });
+    return;
+  }
+  if (opts.minLength !== undefined && v.length < opts.minLength) {
+    issues.push({
+      path,
+      message: `below minLength ${opts.minLength} (got ${v.length})`,
+    });
+  }
+  if (v.length > opts.maxLength) {
+    issues.push({
+      path,
+      message: `exceeds maxLength ${opts.maxLength} (got ${v.length})`,
+    });
+  }
+}
+
 function checkNullableInt(v: unknown, path: string, issues: ValidationIssue[]): void {
   if (v === null) return;
   if (!Number.isInteger(v)) issues.push({ path, message: "must be integer or null" });
@@ -107,6 +169,7 @@ function checkNullableBool(v: unknown, path: string, issues: ValidationIssue[]):
     issues.push({ path, message: "must be boolean or null" });
   }
 }
+
 
 function checkEvidenceArray(v: unknown, path: string, issues: ValidationIssue[]): void {
   if (!Array.isArray(v)) {
