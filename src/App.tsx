@@ -75,6 +75,7 @@ const Signup = lazy(() => import("./pages/Signup"));
 const Signup2 = lazy(() => import("./pages/Signup2"));
 const Signup3 = lazy(() => import("./pages/Signup3"));
 const ThankYou = lazy(() => import("./pages/ThankYou"));
+const QuoteFirstLanding = lazy(() => import("./pages/QuoteFirstLanding"));
 
 // Semantic Pillar Pages
 const WindowCostTruth = lazy(() => import("./pages/WindowCostTruth"));
@@ -166,6 +167,7 @@ function AppContent() {
         <Route path="/signup3" element={<Signup3 />} />
         <Route path="/vault" element={<Vault />} />
         <Route path="/audit" element={<Audit />} />
+        <Route path="/scan" element={<QuoteFirstLanding />} />
         
         {/* Admin Routes - wrapped with AuthGuard + AdminLayout for global search */}
         <Route element={<AuthGuard><AdminLayout /></AuthGuard>}>
