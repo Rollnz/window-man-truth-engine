@@ -1,11 +1,14 @@
 import { SEO } from '@/components/SEO';
-import { QuoteFirstHeader, QuoteFirstFlow } from '@/features/quote-first';
+import { QuoteFirstHeader, QuoteFirstStage } from '@/features/quote-first';
 
 /**
  * /scan — Quote-First acquisition landing.
  *
- * Sprint 01 foundation. Distinct from /beat-your-quote (frozen visual donor).
+ * Sprint 01A foundation. Distinct from /beat-your-quote (frozen visual donor).
  * No Navbar, no UnifiedFooter, no long-form marketing sections.
+ *
+ * The Hero → Flow swap happens in-place inside QuoteFirstStage — the visual
+ * stage transforms rather than navigating or appending sections.
  */
 export default function QuoteFirstLanding() {
   return (
@@ -17,7 +20,7 @@ export default function QuoteFirstLanding() {
       />
       <QuoteFirstHeader />
       <main>
-        <QuoteFirstFlow />
+        <QuoteFirstStage />
       </main>
     </div>
   );
