@@ -1,10 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // SCANNER-BRAIN vNEXT — BARREL
-//
-// This namespace is EXPERIMENTAL and NOT wired to any runtime.
-// The production/current scanner is `../index.ts`.
-//
-// See ./README.md for the full architectural note.
+// Experimental namespace. NOT wired to any runtime. See README.md.
 // ═══════════════════════════════════════════════════════════════════════════
 
 export {
@@ -34,7 +30,7 @@ export type {
   PaymentFacts,
   DimensionValue,
   QuoteLineItem,
-  ProductFacts,
+  ProductConfiguration,
   ScopeFacts,
   WarrantyFacts,
   ContractTerms,

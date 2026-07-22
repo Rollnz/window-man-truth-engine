@@ -1,18 +1,25 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// SCANNER-BRAIN vNEXT — CANONICAL TYPED EXTRACTION CONTRACT
+// SCANNER-BRAIN vNEXT — CANONICAL TYPED EXTRACTION CONTRACT (Sprint 04A)
 //
 // Layers covered by this contract:
 //   Layer 1 — Document Classification
 //   Layer 2 — Entity Extraction   (Homeowner / Property / Contractor / Salesperson)
 //   Layer 3 — Quote Facts          (Metadata / Pricing / Payment / Line Items /
-//                                    Products / Scope / Warranties / Terms)
+//                                    Product Configurations / Scope / Warranties / Terms)
 //
 // Layers 4 (Derived Analysis) and 5 (User Context / UI) are OUT OF SCOPE.
 //
-// GUIDING PRINCIPLE
-//   AI extracts observable evidence.
-//   Deterministic logic (in a later sprint) interprets that evidence.
-//   The AI MUST NOT judge fairness, legality, quality, or grade.
+// GUIDING PRINCIPLE — EXTRACTION FIDELITY vs BUSINESS VALIDITY
+//   Layer 3 records what the document literally says. It does NOT judge
+//   whether values are plausible, legal, fair, or good. Anomalies (e.g. a
+//   120% deposit, a negative total, mixed currencies) are preserved
+//   verbatim; deterministic Layer 4 later flags them.
+//
+// AI-AUTHORED vs DETERMINISTIC
+//   The AI authors only observable facts + evidence. It MUST NOT be asked
+//   to normalize phone numbers, reconstruct addresses, decide analysis
+//   eligibility, or reconcile currency conflicts. Those belong to
+//   deterministic post-processing.
 //
 // Zero external dependencies. Safe for Deno + Node.js.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -21,40 +28,19 @@
 // Global Fact Envelope
 // ───────────────────────────────────────────────────────────────────────────
 
-/**
- * Provenance of an extracted fact.
- *
- * `page` is 1-indexed when the source document is paginated.
- * `text` is a short verbatim snippet of the supporting text (max ~240 chars).
- * `location_hint` is a coarse positional hint (e.g. "top-right header",
- * "line item 3", "payment schedule table").
- */
 export interface FactEvidence {
   page: number | null;
   text: string | null;
   location_hint: string | null;
 }
 
-/**
- * Fact status semantics — DO NOT collapse `not_found` into `false`.
- *
- *   "found"       — Information was located in the document.
- *                   `value` MUST be non-null.
- *                   `confidence` reflects extraction confidence.
- *   "not_found"   — Information was NOT located in the document.
- *                   `value` MUST be null.
- *                   Does NOT mean the fact is false, absent, illegal, or bad.
- *   "uncertain"   — A candidate may exist but cannot be confidently asserted.
- *                   `value` MAY be a candidate or null.
- *                   `confidence` MUST reflect the uncertainty.
- */
 export type FactStatus = "found" | "not_found" | "uncertain";
 
 /**
- * Envelope for every important extracted fact.
- *
- * `confidence` is a normalized real number in the closed interval [0.0, 1.0].
- * UI thresholds are intentionally NOT defined by this contract.
+ * Envelope for every important top-level extracted fact.
+ * Note: repeated structured records (line items, payment milestones, product
+ * configurations) use a compact record-level {confidence, evidence} rather
+ * than wrapping every inner field in this envelope. See README.
  */
 export interface ExtractedFact<T> {
   status: FactStatus;
@@ -84,70 +70,50 @@ export type Readability =
   | "poor"
   | "unreadable";
 
+/**
+ * AI-authored classification only.
+ *
+ * REMOVED (relative to Sprint 04): `is_supported_for_quote_analysis`.
+ * Analysis eligibility is a deterministic downstream decision derived from
+ * `document_type` + `readability`; the AI MUST NOT decide runtime routing.
+ */
 export interface DocumentClassification {
-  /** Canonical document type — MUST NOT be collapsed to a boolean. */
   document_type: DocumentType;
-  /** Confidence of the classification itself, in [0.0, 1.0]. */
   classification_confidence: number;
-  /** Deterministic readability bucket. */
   readability: Readability;
-  /** Total pages detected in the source document. `null` if unknown. */
   page_count: number | null;
-  /**
-   * Whether this document is currently supported for downstream quote analysis
-   * by the vNext contract. Deterministic; not a subjective quality judgement.
-   */
-  is_supported_for_quote_analysis: boolean;
-  /**
-   * Short human-readable reason for the classification decision.
-   * Never a legal/quality judgement.
-   */
   classification_reason: string;
 }
 
 // ───────────────────────────────────────────────────────────────────────────
 // Layer 2 — Entities
 // ───────────────────────────────────────────────────────────────────────────
-//
-// ENTITY SEPARATION LAW
-//   Each entity is an independent candidate space.
-//   The scanner MUST NEVER assume "first phone found" = homeowner phone,
-//   "first email found" = homeowner email, or similar structural collapses.
-//
-// PHONE / EMAIL / ADDRESS SEMANTICS
-//   These are *extracted* candidates from the document only.
-//   They are NOT verified. They MUST NOT be treated as OTP-confirmed
-//   or consent-granted communication targets.
-// ───────────────────────────────────────────────────────────────────────────
 
 /**
- * A phone-number candidate captured from the document.
+ * A phone-number candidate captured verbatim from the document.
  *
- * `raw_value` preserves the original textual representation.
- * `normalized_candidate` is an optional E.164-style normalization
- *   attempted by the extractor. It is NOT authoritative — no verification.
- *
- * Explicit non-fields (intentionally absent, reserved for later sprints):
- *   - confirmed_phone
- *   - phone_verification_status
- *   - communication_consent
+ * The AI MUST NOT attempt E.164 normalization; that is a deterministic
+ * post-processing concern. An optional `context_hint` may capture context
+ * explicitly present next to the number (e.g. "office", "cell", "US").
  */
 export interface PhoneCandidate {
   raw_value: string;
-  normalized_candidate: string | null;
+  context_hint: string | null;
 }
 
 /**
  * A postal address candidate captured from the document.
- * All parts are optional — some documents only provide a partial address.
+ *
+ * `raw_display_address` is preserved ONLY when the source document itself
+ * prints a complete single-line address. It MUST NOT be reconstructed by
+ * the AI from the components; reconstruction is deterministic.
  */
 export interface AddressCandidate {
   street_address: string | null;
   city: string | null;
   state: string | null;
   zip: string | null;
-  /** Reconstructed single-line form when the extractor can produce one. */
-  full_address: string | null;
+  raw_display_address: string | null;
 }
 
 export interface HomeownerEntity {
@@ -157,10 +123,6 @@ export interface HomeownerEntity {
   mailing_address: ExtractedFact<AddressCandidate>;
 }
 
-/**
- * Property / project location — the site the work will be performed at.
- * Frequently but not always equal to the homeowner's mailing address.
- */
 export interface PropertyEntity {
   address: ExtractedFact<AddressCandidate>;
 }
@@ -191,17 +153,11 @@ export interface EntitySet {
 // Layer 3 — Quote Facts
 // ───────────────────────────────────────────────────────────────────────────
 
-/**
- * A deterministic monetary amount.
- * Canonical values MUST be numeric — never the *only* representation being
- * a formatted currency string. `formatted` is retained for provenance.
- */
 export interface MoneyAmount {
-  /** Numeric value in the smallest full unit of `currency` (e.g. dollars). */
+  /** Numeric value in units of `currency`. May be negative or unusual —
+   *  Layer 3 preserves what the document states. */
   value: number;
-  /** ISO-4217 code (e.g. "USD"). May be null if the doc omits currency. */
   currency: string | null;
-  /** Original formatted representation as it appeared in the document. */
   formatted: string | null;
 }
 
@@ -209,12 +165,12 @@ export interface MoneyAmount {
 
 export interface QuoteMetadata {
   quote_number: ExtractedFact<string>;
-  quote_date: ExtractedFact<string>;       // ISO-8601 (YYYY-MM-DD) when parseable
-  expiration_date: ExtractedFact<string>;  // ISO-8601 (YYYY-MM-DD) when parseable
+  quote_date: ExtractedFact<string>;
+  expiration_date: ExtractedFact<string>;
 }
 
 export interface PricingFacts {
-  currency: ExtractedFact<string>;         // ISO-4217 (e.g. "USD")
+  currency: ExtractedFact<string>;
   subtotal: ExtractedFact<MoneyAmount>;
   discounts: ExtractedFact<MoneyAmount>;
   taxes: ExtractedFact<MoneyAmount>;
@@ -224,56 +180,50 @@ export interface PricingFacts {
 // ── B. Payment / Financing ─────────────────────────────────────────────────
 
 /**
- * A single milestone in a payment schedule.
+ * A single milestone in a payment schedule (repeated-record shape).
  *
- * PAYMENT SCHEDULE REQUIREMENT
- *   The schedule as a whole is an *array* — never reduced to a boolean.
- *   Fields inside a milestone may themselves be null if the document is silent.
+ * Percentage MAY exceed 100 if the document literally states so; Layer 4
+ * evaluates plausibility. When numeric, it MUST be finite.
  */
 export interface PaymentMilestone {
-  /** Short label as written in the doc, e.g. "Deposit", "At install start". */
   label: string | null;
-  /** Milestone trigger, e.g. "signing", "delivery", "final inspection". */
   trigger_or_milestone: string | null;
   amount: MoneyAmount | null;
-  /** Percentage of total, 0..100. Null if not stated. */
   percentage: number | null;
-  /** Free-form timing string (e.g. "Net 30", "Due 2026-08-01"). */
   due_date_or_timing: string | null;
+  confidence: number;
   evidence: FactEvidence[];
 }
 
 export interface PaymentFacts {
   deposit_amount: ExtractedFact<MoneyAmount>;
-  /** 0..100, or null. */
+  /** May be any finite number; anomalies (e.g. 120) preserved for Layer 4. */
   deposit_percentage: ExtractedFact<number>;
-  /** Whether financing is offered per the document's own statements. */
   financing_offered: ExtractedFact<boolean>;
   financing_provider: ExtractedFact<string>;
   financing_terms: ExtractedFact<string>;
-  /**
-   * Ordered array of milestones as written.
-   * Empty array is valid ONLY when explicitly no schedule is present.
-   * Prefer status=`not_found` on the enclosing schedule when absent.
-   */
   payment_schedule: ExtractedFact<PaymentMilestone[]>;
 }
 
 // ── C. Openings / Line Items ───────────────────────────────────────────────
 
 export interface DimensionValue {
-  /** Numeric value in `unit`. Null if only qualitatively described. */
   value: number | null;
-  /** e.g. "in", "ft", "mm". Null if unstated. */
   unit: string | null;
 }
 
 /**
- * One line item as it appears in the document.
+ * One line item as it appears in the document (repeated-record shape).
  *
- * FALLBACK RULE — Individual line items MUST NOT be fabricated. If reliable
- * per-item extraction is impossible, use `line_items_aggregate_only` on
- * QuoteFacts and leave `line_items` empty.
+ * FALLBACK RULE — Line items MUST NOT be fabricated. If reliable per-item
+ * extraction is impossible, leave `line_items` empty and set
+ * `line_items_aggregate_only=true`. Aggregate-only does NOT imply
+ * `opening_count` is known.
+ *
+ * `product_configuration_id` associates this item with one entry in
+ * `product_configurations[]` when the association is unambiguous. If the
+ * association is uncertain, leave it null and let the configuration point
+ * back via `applies_to_line_item_ids`.
  */
 export interface QuoteLineItem {
   line_item_id: string | null;
@@ -289,33 +239,49 @@ export interface QuoteLineItem {
   model: string | null;
   unit_price: MoneyAmount | null;
   extended_price: MoneyAmount | null;
+  product_configuration_id: string | null;
+  confidence: number;
   evidence: FactEvidence[];
 }
 
-// ── D. Product / Performance Facts ─────────────────────────────────────────
+// ── D. Product / Performance Configurations ────────────────────────────────
 //
-// Facts represent EXPLICIT STATEMENTS in the document. The extractor MUST
-// NOT infer performance claims that are not written.
+// A quote may bundle multiple product configurations (e.g. PGT WinGuard 5500
+// single-hungs + separate sliding-glass-doors). A single global product
+// spec CANNOT faithfully represent this. `product_configurations` is a
+// plural array; each entry is a repeated-record with its own confidence
+// and evidence. Associations to line items are captured explicitly on
+// either side; the AI MUST NOT fabricate an association.
 // ───────────────────────────────────────────────────────────────────────────
 
-export interface ProductFacts {
-  noa_identifier: ExtractedFact<string>;
-  florida_approval_identifier: ExtractedFact<string>;
-  dp_rating: ExtractedFact<string>;
-  impact_designation: ExtractedFact<string>;
-  glass_package: ExtractedFact<string>;
-  low_e: ExtractedFact<boolean>;
-  argon: ExtractedFact<boolean>;
-  tint: ExtractedFact<string>;
-  glass_makeup: ExtractedFact<string>;
-  frame_material: ExtractedFact<string>;
+export interface ProductConfiguration {
+  product_configuration_id: string;
+
+  manufacturer: string | null;
+  brand: string | null;
+  series: string | null;
+  model: string | null;
+
+  noa_identifier: string | null;
+  florida_approval_identifier: string | null;
+  dp_rating: string | null;
+  impact_designation: string | null;
+
+  glass_package: string | null;
+  low_e: boolean | null;
+  argon: boolean | null;
+  tint: string | null;
+  glass_makeup: string | null;
+  frame_material: string | null;
+
+  /** Line-item IDs this configuration explicitly applies to. May be empty. */
+  applies_to_line_item_ids: string[];
+
+  confidence: number;
+  evidence: FactEvidence[];
 }
 
 // ── E. Scope Facts ─────────────────────────────────────────────────────────
-//
-// Every scope fact preserves found / not_found / uncertain semantics.
-// Absence MUST NOT be represented as `false`.
-// ───────────────────────────────────────────────────────────────────────────
 
 export interface ScopeFacts {
   installation: ExtractedFact<string>;
@@ -359,18 +325,11 @@ export interface QuoteFacts {
   metadata: QuoteMetadata;
   pricing: PricingFacts;
   payment: PaymentFacts;
-  /**
-   * When per-item extraction is not reliably possible, this array MUST be
-   * empty and `line_items_aggregate_only` MUST be true. Do not invent items.
-   */
   line_items: QuoteLineItem[];
   line_items_aggregate_only: boolean;
-  /**
-   * Total opening count as stated by the document. Independent of
-   * `line_items.length` — do not derive one from the other.
-   */
   opening_count: ExtractedFact<number>;
-  products: ProductFacts;
+  /** Plural — a quote may contain multiple distinct product configurations. */
+  product_configurations: ProductConfiguration[];
   scope: ScopeFacts;
   warranties: WarrantyFacts;
   terms: ContractTerms;
@@ -381,12 +340,7 @@ export interface QuoteFacts {
 // ───────────────────────────────────────────────────────────────────────────
 
 export interface ExtractionMeta {
-  /** Overall extractor self-assessed confidence, in [0.0, 1.0]. */
   extraction_confidence: number;
-  /**
-   * Extractor-emitted warnings ABOUT the extraction process itself
-   * (e.g. "page 3 unreadable"). Never a legal or quality judgement.
-   */
   warnings: string[];
 }
 
@@ -395,10 +349,13 @@ export interface ExtractionMeta {
 // ───────────────────────────────────────────────────────────────────────────
 
 export interface CanonicalExtractionV1 {
-  /** Pinned to CANONICAL_CONTRACT_VERSION at emission time. */
   contract_version: string;
   classification: DocumentClassification;
   entities: EntitySet;
   quote: QuoteFacts;
   extraction_meta: ExtractionMeta;
 }
+
+// Deprecated alias — retained as a type export for consumers that referenced
+// ProductFacts. New code MUST use `ProductConfiguration[]`.
+export type ProductFacts = never;
