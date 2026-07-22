@@ -149,15 +149,20 @@ Deno.serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       );
 
-      // Check for cached analysis (deduplication)
+      // Check for cached analysis (version-aware deduplication).
+      // Cache hit requires SAME image_hash AND SAME brain_version AND SAME
+      // analysis_schema_version. Historical `legacy-unversioned` rows are
+      // intentionally NOT returned as hits for a current explicit version.
       const { data: cachedAnalysis } = await supabaseClient
         .from('quote_analyses')
         .select('analysis_json, created_at, id, lead_id')
         .eq('image_hash', imageHash)
+        .eq('brain_version', BRAIN_VERSION)
+        .eq('analysis_schema_version', ANALYSIS_SCHEMA_VERSION)
         .maybeSingle();
 
       if (cachedAnalysis) {
-        console.log(`[QuoteScanner] CACHE HIT - hash=${imageHash.substring(0, 12)}... id=${cachedAnalysis.id}`);
+        console.log(`[QuoteScanner] CACHE HIT - hash=${imageHash.substring(0, 12)}... brain=${BRAIN_VERSION} schema=${ANALYSIS_SCHEMA_VERSION} id=${cachedAnalysis.id}`);
         
         // Update lead_id if we now have one and cached record doesn't
         if (leadId && !cachedAnalysis.lead_id) {
@@ -173,7 +178,7 @@ Deno.serve(async (req) => {
         });
       }
       
-      console.log(`[QuoteScanner] CACHE MISS - hash=${imageHash.substring(0, 12)}... proceeding with AI analysis`);
+      console.log(`[QuoteScanner] CACHE MISS - hash=${imageHash.substring(0, 12)}... brain=${BRAIN_VERSION} schema=${ANALYSIS_SCHEMA_VERSION} proceeding with AI analysis`);
     }
 
     // Build messages based on mode
