@@ -419,6 +419,8 @@ Format the output with clear section headers and make it easy to read during a p
         lead_id: leadId || null,
         quote_file_id: null, // Files not currently persisted to storage
         image_hash: imageHash!,
+        brain_version: BRAIN_VERSION,
+        analysis_schema_version: ANALYSIS_SCHEMA_VERSION,
         overall_score: scored.overallScore,
         safety_score: scored.safetyScore,
         scope_score: scored.scopeScore,
