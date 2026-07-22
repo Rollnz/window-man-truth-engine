@@ -28,31 +28,47 @@ import {
 // This map is asserted at test time against the canonical schema to
 // guarantee no field ever becomes unowned as the contract evolves.
 
-export type PartitionOwner = "twoPassA" | "twoPassB" | "shared_metadata";
+// Sprint 05C — architecture selected: FOUR_PASS_PARALLEL_CANONICAL_MERGE.
+// The two-pass owners (`twoPassA`/`twoPassB`) are retained as ALIASES so
+// legacy `mergeTwoPass` callers and existing consistency tests continue to
+// compile. The canonical, live-serving architecture is four-pass.
+export type PartitionOwner =
+  | "passA"
+  | "passB"
+  | "passC"
+  | "passD"
+  | "shared_metadata"
+  // legacy aliases (still exported for back-compat; do not use in new code)
+  | "twoPassA"
+  | "twoPassB";
 
 export const PARTITION_OWNERSHIP: Readonly<Record<string, PartitionOwner>> = {
   // Shared: every partition must echo the same literal contract_version.
   // Merge asserts equality; conflicts fail closed.
   contract_version: "shared_metadata",
 
-  // Pass A owns document-level facts and everything except line-level detail.
-  classification: "twoPassA",
-  entities: "twoPassA",
-  extraction_meta: "twoPassA",
-  "quote.metadata": "twoPassA",
-  "quote.pricing": "twoPassA",
-  "quote.payment": "twoPassA",
-  "quote.opening_count": "twoPassA",
-  "quote.line_items_aggregate_only": "twoPassA",
-  "quote.scope": "twoPassA",
-  "quote.warranties": "twoPassA",
-  "quote.terms": "twoPassA",
+  // Pass A — document-level facts.
+  classification: "passA",
+  entities: "passA",
+  extraction_meta: "passA",
 
-  // Pass B owns line-level detail. `line_items` and `product_configurations`
+  // Pass B — quote header (metadata + pricing + payment + opening summary).
+  "quote.metadata": "passB",
+  "quote.pricing": "passB",
+  "quote.payment": "passB",
+  "quote.opening_count": "passB",
+  "quote.line_items_aggregate_only": "passB",
+
+  // Pass C — quote scope + warranties + terms.
+  "quote.scope": "passC",
+  "quote.warranties": "passC",
+  "quote.terms": "passC",
+
+  // Pass D — quote line-level detail. `line_items` and `product_configurations`
   // MUST stay together in this pass to preserve line_item_id ↔
   // product_configuration_id coherence.
-  "quote.line_items": "twoPassB",
-  "quote.product_configurations": "twoPassB",
+  "quote.line_items": "passD",
+  "quote.product_configurations": "passD",
 };
 
 // ── Coverage assertion (schema-evolution guard) ────────────────────────────
