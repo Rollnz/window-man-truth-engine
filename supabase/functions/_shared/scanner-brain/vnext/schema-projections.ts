@@ -239,6 +239,24 @@ export const PARTITION_SPECS = {
     keepQuoteKeys: ["line_items", "product_configurations"] as const,
     title: "CanonicalExtractionV1__TwoPass_B",
   },
+  /** Three-pass PASS B — Quote header (metadata + pricing + payment + opening flags). */
+  threePassB: {
+    keepTopLevel: ["quote"] as const,
+    keepQuoteKeys: [
+      "metadata",
+      "pricing",
+      "payment",
+      "opening_count",
+      "line_items_aggregate_only",
+    ] as const,
+    title: "CanonicalExtractionV1__ThreePass_B_Header",
+  },
+  /** Three-pass PASS C — Quote scope + warranties + terms. */
+  threePassC: {
+    keepTopLevel: ["quote"] as const,
+    keepQuoteKeys: ["scope", "warranties", "terms"] as const,
+    title: "CanonicalExtractionV1__ThreePass_C_ScopeWarrantiesTerms",
+  },
 } as const;
 
 export type PartitionName = keyof typeof PARTITION_SPECS;
