@@ -185,6 +185,28 @@ Layer 3 extracts the canonical factual envelope of the quote. Every field return
 
 If information is not stated or cannot be reliably extracted, the scanner MUST return `null` / `unknown` / `not_found`. It MUST NOT guess. It MUST NOT convert absence into fact.
 
+### 3.7 Fact Provenance (Auditability)
+
+Important extracted quote facts SHOULD preserve provenance sufficient for later auditability. Where available, each fact SHOULD conceptually carry:
+
+- `value`
+- `confidence`
+- `source_page`
+- `source_text_or_reference`
+
+Provenance is especially important for the following high-consequence facts, which downstream analysis, reporting, and any statutory framing may reference:
+
+- `total_price`
+- contractor identity (`company_name`, `license_number`)
+- `opening_count`
+- payment terms (`deposit`, `payment_schedule`, `financing`)
+- product identity (`manufacturer`, `series`, `model`)
+- compliance identifiers (NOA / FL approval / DP rating)
+- warranty statements (labor and product)
+- scope statements (installation, permits, repair)
+
+This section clarifies the target requirement only. It does not force one implementation schema in this sprint.
+
 ---
 
 ## LAYER 4 — DERIVED ANALYSIS
