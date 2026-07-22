@@ -6,7 +6,7 @@
 |---|---|
 | Document ID | `WM-SCANNER-AUDIT-001` |
 | Audited Repository | `Rollnz/window-man-truth-engine` (this workspace) |
-| Audited Ref | Working tree at Sprint 02 execution time (2026-07-22). No commit SHA pinned by this sprint. |
+| Audited Ref | Source SHA `81538915754c2f3a6e282b7ae7142fdbb880d493` (2026-07-22). Files under `src/**` and `supabase/functions/**` were unchanged between the prior source commit and the audit commit. |
 | Target Contract | [`SCANNER_CONTRACT.md`](./SCANNER_CONTRACT.md) v1.0.0 |
 | Parent Manifest | [`MASTER_MANIFEST.MD`](./MASTER_MANIFEST.MD) v1.1.0 |
 | Status | `AUDIT COMPLETE — READ ONLY. No implementation delivered.` |
