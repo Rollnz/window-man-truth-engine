@@ -186,7 +186,7 @@ const productConfiguration = {
     "evidence",
   ],
   properties: {
-    product_configuration_id: { type: "string", maxLength: 64 },
+    product_configuration_id: { type: "string", minLength: 1, maxLength: 64 },
     manufacturer: nullableString,
     brand: nullableString,
     series: nullableString,
@@ -203,8 +203,9 @@ const productConfiguration = {
     frame_material: nullableString,
     applies_to_line_item_ids: {
       type: "array",
-      items: { type: "string", maxLength: 64 },
+      items: { type: "string", minLength: 1, maxLength: 64 },
     },
+
     confidence,
     evidence: { type: "array", items: factEvidence },
   },
