@@ -531,9 +531,13 @@ export function validateCanonicalExtractionV1(input: unknown): ValidationResult 
       });
     }
     checkConfidence(cls.classification_confidence, "$.classification.classification_confidence", issues);
-    if (typeof cls.classification_reason !== "string") {
-      issues.push({ path: "$.classification.classification_reason", message: "must be string" });
-    }
+    checkBoundedString(
+      cls.classification_reason,
+      "$.classification.classification_reason",
+      { maxLength: STRING_LIMITS.CLASSIFICATION_REASON },
+      issues,
+    );
+
     if (cls.page_count !== null && (!Number.isInteger(cls.page_count) || (cls.page_count as number) < 1)) {
       issues.push({ path: "$.classification.page_count", message: "must be null or a positive integer" });
     }
