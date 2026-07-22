@@ -1,4 +1,4 @@
-````markdown
+
 # WindowMan Quote-First Acquisition Experience
 ## MASTER MANIFEST
 
