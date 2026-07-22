@@ -805,10 +805,14 @@ export function validateCanonicalExtractionV1(input: unknown): ValidationResult 
       issues.push({ path: "$.extraction_meta.warnings", message: "must be an array" });
     } else {
       em.warnings.forEach((w, i) => {
-        if (typeof w !== "string") {
-          issues.push({ path: `$.extraction_meta.warnings[${i}]`, message: "must be string" });
-        }
+        checkBoundedString(
+          w,
+          `$.extraction_meta.warnings[${i}]`,
+          { maxLength: STRING_LIMITS.WARNING },
+          issues,
+        );
       });
+
     }
   }
 
