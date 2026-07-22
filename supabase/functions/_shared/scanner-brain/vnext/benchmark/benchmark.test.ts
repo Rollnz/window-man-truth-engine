@@ -178,7 +178,7 @@ Deno.test("T10 shared vs expanded capability reporting is separated", () => {
 Deno.test("T11 money & date equivalence; ambiguous date → HUMAN_REVIEW_REQUIRED", () => {
   assertEquals(moneyEquivalent("$12,500.00", 12500).kind, "equal");
   assertEquals(moneyEquivalent(100, 101).kind, "not_equal");
-  assertEquals(dateEquivalent("2026-01-15", "01/15/2026").kind, "human_review_required");
+  assertEquals(dateEquivalent("2026-02-03", "02/03/2026").kind, "human_review_required");
   assertEquals(dateEquivalent("2026-01-15", "01/25/2026").kind, "not_equal");
   assertEquals(nameEquivalent("Alex Testhome", "alex  testhome ").kind, "equal");
   assertEquals(addressEquivalent("123 Main St 33101", "999 Other Rd 90210").kind, "not_equal");

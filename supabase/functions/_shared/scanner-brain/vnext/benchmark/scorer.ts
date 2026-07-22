@@ -72,6 +72,9 @@ export function scoreDocument(input: ScoreDocumentInput): DocumentScorecard {
   let unsupported_by_system = 0;
   let human_review_required = 0;
   let infra_failures = 0;
+  let anomaly: { expected: number; preserved: number } = { expected: 0, preserved: 0 };
+  let cross = { valid: 0, dangling: 0, incorrect: 0, missing: 0 };
+  const line_items_ambiguous = 0;
 
   if (input.infra_failure) {
     infra_failures++;
@@ -167,7 +170,7 @@ export function scoreDocument(input: ScoreDocumentInput): DocumentScorecard {
     }
   }
 
-  const anomaly = checkAnomalyPreservation(input.document, input.output);
+  anomaly = checkAnomalyPreservation(input.document, input.output);
   if (anomaly.expected > anomaly.preserved) {
     for (const a of input.document.facts.filter((f) => f.anomaly)) {
       const asserted = byField.get(a.semantic_field);
@@ -180,9 +183,8 @@ export function scoreDocument(input: ScoreDocumentInput): DocumentScorecard {
     }
   }
 
-  const cross = checkCrossReferenceCoherence(input.output, input.expected_associations);
+  cross = checkCrossReferenceCoherence(input.output, input.expected_associations);
 
-  const line_items_ambiguous = 0; // Wired here so shape stays complete; caller may increment via metrics helpers.
 
   function finalize(): DocumentScorecard {
     return {
