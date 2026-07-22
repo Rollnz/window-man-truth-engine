@@ -15,7 +15,7 @@
 | Canonical Repository Path | `/docs/lovable/MASTER_MANIFEST.md` |
 | Product Owner | WindowMan |
 | Specification Owner | WindowMan Product / CRO Architecture |
-| Last Updated | `IMPLEMENTATION DECISION TO VALIDATE: Populate repository-controlled date at commit time` |
+| Last Updated | `2026-07-22` |
 | Applies To | Quote-First paid-acquisition landing experience through Truth Report and inbound-call conversion |
 | Supersedes | Ad hoc conversational specifications for this funnel where they conflict with this manifest |
 
@@ -3588,4 +3588,3 @@ REJOIN PRIMARY QUOTE-FIRST FUNNEL
 
 The Quote-First experience MUST minimize friction before the homeowner demonstrates meaningful intent, progressively earn the right to request information, classify the homeowner at peak curiosity, deliver genuine personalized decision-support value, and only then escalate the highest-value users toward an appropriate inbound human conversation.
 
-```
