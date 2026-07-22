@@ -15,7 +15,7 @@
 | Canonical Repository Path | `/docs/lovable/MASTER_MANIFEST.md` |
 | Product Owner | WindowMan |
 | Specification Owner | WindowMan Product / CRO Architecture |
-| Last Updated | `IMPLEMENTATION DECISION TO VALIDATE: Populate repository-controlled date at commit time` |
+| Last Updated | `2026-07-22` |
 | Applies To | Quote-First paid-acquisition landing experience through Truth Report and inbound-call conversion |
 | Supersedes | Ad hoc conversational specifications for this funnel where they conflict with this manifest |
 
