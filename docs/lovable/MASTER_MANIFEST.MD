@@ -10,7 +10,7 @@
 |---|---|
 | Manifest ID | `WM-QF-MANIFEST-001` |
 | Document Title | WindowMan Quote-First Acquisition Experience — Master Manifest |
-| Version | `1.0.0` |
+| Version | `1.1.0` |
 | Status | `APPROVED SPECIFICATION — READY FOR SPRINT DERIVATION` |
 | Canonical Repository Path | `/docs/lovable/MASTER_MANIFEST.md` |
 | Product Owner | WindowMan |
