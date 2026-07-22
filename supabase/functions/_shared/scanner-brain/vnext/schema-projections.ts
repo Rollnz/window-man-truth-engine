@@ -257,6 +257,23 @@ export const PARTITION_SPECS = {
     keepQuoteKeys: ["scope", "warranties", "terms"] as const,
     title: "CanonicalExtractionV1__ThreePass_C_ScopeWarrantiesTerms",
   },
+  /**
+   * Bundled Pass A candidate for a genuine 3-pass architecture:
+   * classification + entities + extraction_meta + quote header
+   * (metadata, pricing, payment, opening_count, line_items_aggregate_only).
+   * ~23 KB, depth 16 — near the observed ceiling; empirically tested.
+   */
+  threePassA_bundled: {
+    keepTopLevel: ["classification", "entities", "extraction_meta", "quote"] as const,
+    keepQuoteKeys: [
+      "metadata",
+      "pricing",
+      "payment",
+      "opening_count",
+      "line_items_aggregate_only",
+    ] as const,
+    title: "CanonicalExtractionV1__ThreePass_A_Bundled",
+  },
 } as const;
 
 export type PartitionName = keyof typeof PARTITION_SPECS;
