@@ -1,11 +1,14 @@
-# Schema Transport Plan — Sprint 05B outcome
+# Schema Transport Plan — Sprint 05B → 05C outcome
 
 **Namespace:** `supabase/functions/_shared/scanner-brain/vnext/`
 **Canonical contract version:** `canonical-extraction-v1-dev`
 **Sprint 05B live call budget:** 8 / 8 consumed
-**Status:** Architecture decision **MORE_BISECTION_REQUIRED** — see §5.
+**Sprint 05C live call budget:** 8 / 8 consumed
+**Sprint 05C decision:** ✅ **FOUR_PASS_PARALLEL_CANONICAL_MERGE — adopted and empirically proven end-to-end.**
+**Compaction outcome:** `$ref`/`$defs` are supported at atomic level, but the provider expands references internally BEFORE evaluating the schema ceiling; a **13,583-byte** compact canonical AND a **6,916-byte** compact `quoteCore` both still return HTTP 400 `INVALID_ARGUMENT`. Lossless compaction cannot bypass the ceiling. See §5 and §13.
 
 ---
+
 
 ## 1. What Sprint 05B measured
 
