@@ -175,6 +175,8 @@ if (import.meta.main) {
     "quoteDetail",
     "twoPassA",
     "twoPassB",
+    "threePassB",
+    "threePassC",
     "canonical",
   ];
   if (!arg || !valid.includes(arg)) {
