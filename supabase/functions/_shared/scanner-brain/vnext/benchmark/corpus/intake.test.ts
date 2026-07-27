@@ -120,10 +120,10 @@ Deno.test("annotation edits require a new annotation_version", () => {
     {
       fact_id: "F1",
       semantic_field: "quote.total",
-      expected_status: "present",
+      expected_status: "found",
       value: 100,
       evidence: [],
-      certainty: "certain",
+      certainty: "definite",
       severity: "critical",
     },
   ];
