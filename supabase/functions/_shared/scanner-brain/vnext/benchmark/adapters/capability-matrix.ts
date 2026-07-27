@@ -44,27 +44,33 @@ export const VNEXT_CAPABILITIES: SystemCapabilityDeclaration = {
   ],
 };
 
+// Sprint 07B.2 — corrected to reflect what Brain 3 (legacy-signals-v1) ACTUALLY
+// emits. Brain 3 has no homeowner/property/salesperson extraction, no line
+// items, no product configurations, no evidence spans and no per-field
+// confidence. Capabilities are declared from Brain 3 behavior, never from what
+// the benchmark normalizer is able to represent.
 export const BRAIN3_CAPABILITIES: SystemCapabilityDeclaration = {
   system_id: "brain3",
-  adapter_version: "v0.1.0-readonly",
+  adapter_version: "v1.0.0-safe-runner",
   capabilities: [
-    { capability: CAPABILITIES.CLASSIFICATION, state: "PARTIALLY_SUPPORTED" },
-    { capability: CAPABILITIES.ENTITY_HOMEOWNER, state: "SUPPORTED" },
-    { capability: CAPABILITIES.ENTITY_PROPERTY, state: "PARTIALLY_SUPPORTED" },
-    { capability: CAPABILITIES.ENTITY_CONTRACTOR, state: "SUPPORTED" },
+    { capability: CAPABILITIES.CLASSIFICATION, state: "PARTIALLY_SUPPORTED", note: "boolean isValidQuote only" },
+    { capability: CAPABILITIES.ENTITY_HOMEOWNER, state: "UNSUPPORTED" },
+    { capability: CAPABILITIES.ENTITY_PROPERTY, state: "UNSUPPORTED" },
+    { capability: CAPABILITIES.ENTITY_CONTRACTOR, state: "PARTIALLY_SUPPORTED", note: "name + license number only" },
     { capability: CAPABILITIES.ENTITY_SALESPERSON, state: "UNSUPPORTED" },
     { capability: CAPABILITIES.ENTITY_ROLE_SEPARATION, state: "UNSUPPORTED" },
-    { capability: CAPABILITIES.PRICING_FACTS, state: "SUPPORTED" },
-    { capability: CAPABILITIES.PAYMENT_SCHEDULE, state: "PARTIALLY_SUPPORTED" },
-    { capability: CAPABILITIES.LINE_ITEMS, state: "SUPPORTED" },
-    { capability: CAPABILITIES.PRODUCT_CONFIGURATIONS, state: "PARTIALLY_SUPPORTED" },
+    { capability: CAPABILITIES.PRICING_FACTS, state: "PARTIALLY_SUPPORTED", note: "total + deposit percentage only" },
+    { capability: CAPABILITIES.PAYMENT_SCHEDULE, state: "UNSUPPORTED", note: "boolean risk flags, no schedule" },
+    { capability: CAPABILITIES.LINE_ITEMS, state: "UNSUPPORTED" },
+    { capability: CAPABILITIES.PRODUCT_CONFIGURATIONS, state: "UNSUPPORTED" },
     { capability: CAPABILITIES.CROSS_REFERENCES, state: "UNSUPPORTED" },
-    { capability: CAPABILITIES.EVIDENCE_WITH_PAGE, state: "PARTIALLY_SUPPORTED" },
-    { capability: CAPABILITIES.CONFIDENCE, state: "PARTIALLY_SUPPORTED" },
-    { capability: CAPABILITIES.STATUS_SEMANTICS, state: "PARTIALLY_SUPPORTED" },
-    { capability: CAPABILITIES.ANOMALY_PRESERVATION, state: "PARTIALLY_SUPPORTED" },
+    { capability: CAPABILITIES.EVIDENCE_WITH_PAGE, state: "UNSUPPORTED" },
+    { capability: CAPABILITIES.CONFIDENCE, state: "UNSUPPORTED" },
+    { capability: CAPABILITIES.STATUS_SEMANTICS, state: "PARTIALLY_SUPPORTED", note: "found/not_found only, no uncertain" },
+    { capability: CAPABILITIES.ANOMALY_PRESERVATION, state: "PARTIALLY_SUPPORTED", note: "raw numerics preserved (e.g. deposit %)" },
   ],
 };
+
 
 export const WMMVP_CAPABILITIES: SystemCapabilityDeclaration = {
   system_id: "wmmvp",
