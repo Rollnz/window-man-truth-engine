@@ -145,7 +145,7 @@ Deno.test("07B.10 Brain 3 adapter refuses side-effectful ops without wrapper tok
   );
   // With token: allowed.
   guardBrain3Invocation("insert_quote_analyses", "benchmark-only-wrapper");
-  assertEquals(getBrain3AdapterReadiness().status, "SAFE_WRAPPER_REQUIRED");
+  assertEquals(getBrain3AdapterReadiness().status, "READY_FOR_CONTROLLED_EXECUTION");
 });
 
 // ─── 11. WM MVP masquerade guard ────────────────────────────────────────

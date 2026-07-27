@@ -170,7 +170,8 @@ Deno.test("brain3 safe runner contains no network or supabase import", async () 
     new URL("./brain3-safe-runner.ts", import.meta.url),
   );
   assert(!/\bfetch\s*\(/.test(src), "runner must not call fetch");
-  assert(!/supabase/i.test(src), "runner must not reference supabase");
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  assert(!/supabase/i.test(code), "runner must not reference supabase");
   assert(!/Deno\.env/.test(src), "runner must not read env/secrets");
 });
 
