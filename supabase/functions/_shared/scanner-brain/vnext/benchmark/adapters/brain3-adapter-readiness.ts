@@ -1,10 +1,9 @@
-// Sprint 07B — Brain 3 adapter readiness (READ-ONLY inspection).
-// Brain 3 today (supabase/functions/quote-scanner, _shared/scanner-brain) writes
-// to `quote_analyses`, updates cache columns keyed on (image_hash, brain_version,
-// analysis_schema_version) and emits tracking events. Any benchmark invocation
-// must be routed through a benchmark-only wrapper that suppresses those writes.
+// Sprint 07B.2 — Brain 3 adapter readiness (safe wrapper RESOLVED).
+// The benchmark-only safe runner isolates every known Brain 3 side effect
+// behind injected fail-closed dependencies while invoking the actual
+// Brain 3 extraction/scoring code path unchanged.
 
-export const BRAIN3_ADAPTER_VERSION = "brain3-adapter-v0.2.0-wrapper-required";
+export const BRAIN3_ADAPTER_VERSION = "brain3-adapter-v1.0.0-safe-runner";
 
 export type Brain3Status =
   | "READY_FOR_CONTROLLED_EXECUTION"
@@ -18,14 +17,16 @@ export interface Brain3AdapterReadiness {
   status: Brain3Status;
   known_side_effects: string[];
   required_wrapper_guards: string[];
+  implemented_wrapper_guards: string[];
   fairness_notes: string[];
+  remaining_risks: string[];
 }
 
 export function getBrain3AdapterReadiness(): Brain3AdapterReadiness {
   return {
     system_id: "brain3",
     adapter_version: BRAIN3_ADAPTER_VERSION,
-    status: "SAFE_WRAPPER_REQUIRED",
+    status: "READY_FOR_CONTROLLED_EXECUTION",
     known_side_effects: [
       "INSERT/UPSERT into public.quote_analyses (versioned cache).",
       "Updates ai_pre_analysis on public.quote_files.",
@@ -33,15 +34,26 @@ export function getBrain3AdapterReadiness(): Brain3AdapterReadiness {
       "Uses live Lovable AI Gateway credentials.",
     ],
     required_wrapper_guards: [
-      "Route Brain 3 through a benchmark-only in-memory Supabase client that no-ops writes.",
+      "Route Brain 3 through a benchmark-only client that no-ops writes.",
       "Disable tracking sinks (wm_events, GTM/CAPI) at the boundary.",
-      "Force cache reads to MISS so benchmark runs measure actual extraction, not cached rows.",
-      "Fail-closed if any known-side-effect path is reached without an approved wrapper token.",
+      "Force cache reads to MISS so benchmark runs measure actual extraction.",
+      "Fail-closed if any known-side-effect path is reached.",
+    ],
+    implemented_wrapper_guards: [
+      "brain3-safe-runner.ts imports Brain 3 intelligence READ-ONLY (rubric/schema/scoring/forensic) and contains no Supabase client, no fetch, and no cache access.",
+      "All persistence/cache/tracking/communications/storage surfaces are injected fail-closed stubs that throw BRAIN3_SIDE_EFFECT_ATTEMPT and record the violation.",
+      "Provider access is an injected function — the runner cannot originate a network call on its own.",
+      "Cache is structurally absent, so every benchmark run is a real extraction (no cached-row measurement).",
+      "Native Brain 3 output is preserved verbatim; normalization is a separate module.",
     ],
     fairness_notes: [
-      "Do not modify Brain 3 prompts, schema, or scoring to make it 'benchmark-friendly'.",
-      "Adapter must invoke the actual current extraction code path.",
-      "Any prompt/schema modification must be published as a separate adapter version, not a silent tweak.",
+      "Brain 3 prompts, schema, and scoring are imported unmodified from the shipping modules.",
+      "The request body mirrors supabase/functions/quote-scanner (mode=analyze) exactly.",
+      "Capability declarations reflect only what legacy-signals-v1 actually emits.",
+    ],
+    remaining_risks: [
+      "Model pinning: the shipping function reads AI_MODEL_VERSION at runtime; the benchmark must pin the model explicitly in the frozen execution config.",
+      "Brain 3 emits no evidence spans, so evidence-support metrics are structurally UNSUPPORTED rather than failing.",
     ],
   };
 }
@@ -52,8 +64,7 @@ export class Brain3SideEffectGuardError extends Error {
   }
 }
 
-// Minimal invariant used by tests: a benchmark invocation must not be permitted
-// to call a known side-effect path without an explicit wrapper token.
+// Minimal invariant retained from Sprint 07B.
 export function guardBrain3Invocation(op: string, wrapperToken?: string): void {
   const SIDE_EFFECT_OPS = new Set([
     "insert_quote_analyses",
