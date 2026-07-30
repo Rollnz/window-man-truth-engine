@@ -49,7 +49,7 @@ export const PII_SEVERITY: Record<PiiKind, PiiSeverity> = {
 };
 
 /** Matches any redaction token emitted by this scanner. */
-export const REDACTION_TOKEN_RE = /\[REDACTED_[A-Z_]+_\d+\]/g;
+export const REDACTION_TOKEN_RE = /\[REDACTED_[A-Z0-9_]+_\d+\]/g;
 
 interface Detector {
   kind: PiiKind;
