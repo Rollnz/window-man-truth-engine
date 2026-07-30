@@ -26,7 +26,7 @@ export const CORPUS_COVERAGE = ${json.trimEnd()} as const;
 export type CorpusCoverageSnapshot = typeof CORPUS_COVERAGE;
 `;
 await Deno.writeTextFile(
-  new URL("../../../../../../../../src/data/corpusCoverage.ts", import.meta.url).pathname,
+  new URL("../../../../../../../src/data/corpusCoverage.ts", import.meta.url).pathname,
   mirror,
 );
 
