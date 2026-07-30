@@ -1,71 +1,125 @@
+# Audit of your prompt: **81/100** (up from 72 — but 3 factual defects remain)
 
-# Sprint 07B — Golden Corpus Assembly & Adapter Readiness
+## Verified against the repo (reads done this turn)
 
-## Honest posture up front
+| Claim in your prompt | Reality |
+|---|---|
+| "Vitest test suite ... 187 tests" | **Wrong runner.** `corpus/corpus.test.ts` and `corpus/intake.test.ts` are **Deno tests** (`Deno.test`, `https://deno.land/std@0.224.0/assert`). `vitest.config.ts` only includes `src/**` and `tests/scanner-brain/**` — a `corpus/intake-pipeline.test.ts` written in Vitest would **never run** and the suite would still say 187. New corpus tests must be Deno tests. |
+| Import `../../benchmark/CORPUS_COVERAGE.json` from the component | **Path is wrong.** From `src/components/benchmark/` the real path is `../../../supabase/functions/_shared/scanner-brain/vnext/benchmark/CORPUS_COVERAGE.json`. Also `tsconfig.app.json` `include: ["src"]`, so that file is outside the TS program — typing must be declared locally in the component, not inferred. |
+| "no hardcoded Tailwind color utilities" | Correct and enforced by project memory (Command Center Noir, `#0F1419` / `#00D9FF`). |
+| 13 required archetypes | `REQUIRED_ARCHETYPES` in `coverage-report.ts` has **12** entries; `CORPUS_COVERAGE.json` tracks **16** total archetypes. "13" is the *minimum document count* (`TARGET_CORPUS.total_min`). The dashboard will render all 16 with the 12 required ones flagged, and show the 13-doc target in the header. |
 
-The Lovable sandbox contains **zero real (de-identified) homeowner window quotes**. The sprint explicitly forbids fabricating a "real-world" corpus to hit a quota. Therefore the honest final gate for this pass will be:
+Remaining real gaps your critique missed: runner mismatch, the 12-vs-13 archetype conflation, and the fact that `intake-checklist.ts` already implements the checklist/step content (do not duplicate it).
 
-**`CORPUS_INPUT_REQUIRED`**
+## Five moves ahead — what this becomes
 
-That is not a failure — it is the correct Phase-29 outcome. We will still build every piece of infrastructure so that as soon as real de-identified PDFs are provided, Sprint 07C can execute immediately.
+1. **Now:** a fail-closed local scrubber that makes real quotes safe to annotate.
+2. **Next:** the staging manifests feed `mergeStagingIntoInventory` → `gq-v1` promotion, unblocking Sprint 07C's `CORPUS_INPUT_REQUIRED` gate.
+3. **Then:** the coverage matrix becomes the operator console for corpus assembly — "which archetype do I need to go find next" instead of reading JSON.
+4. **Then:** the same PII scanner is reusable as a pre-flight guard on real scanner uploads (log-safe findings, no raw values) — a compliance asset, not just a benchmark tool.
+5. **End state:** every scanner prompt/model change is scored against a locked, privacy-verified corpus with a public archetype scoreboard. That is the difference between "our AI seems good" and defensible evidence you can show a partner.
 
-## Scope (all under `supabase/functions/_shared/scanner-brain/vnext/benchmark/`)
+---
 
-### Phase 0 — 07A preflight
-- Verify all 07A files exist (already confirmed) and re-run existing 151-test suite as baseline. No repairs unless a defect surfaces.
+# Implementation
 
-### Corpus infrastructure (new files)
-- `corpus/manifest-types.ts` — TypeScript contract for `GoldenDocumentManifest`, `AnnotationRecord`, `ReviewRecord`, `AdjudicationRecord`, `pii_review_status`, `dataset_split`, `known_prompt_exposure`, archetype enum.
-- `corpus/manifest-validator.ts` — deterministic validator that rejects missing sha256 / split / annotation / PII status / unlocked authoritative rows.
-- `corpus/corpus-lock.ts` — pure function that deterministically hashes the manifest set into a `GOLDEN_CORPUS_LOCK.json` snapshot.
-- `corpus/coverage-report.ts` — computes archetype/MIME/page-count coverage; emits JSON + Markdown.
-- `corpus/documents/` — one manifest JSON per synthetic control doc (2 controls only, clearly labeled `source_type: synthetic`, `known_prompt_exposure: none`).
-- `corpus/GOLDEN_CORPUS_LOCK.json` — generated snapshot for the 2 synthetic controls (marked `corpus_version: "gq-v1-pre"` — infrastructure preview, not authoritative).
+## A. `corpus/pii-scanner.ts` (new, Deno)
 
-### Adapter readiness (extend existing adapters folder)
-- `adapters/vnext-adapter-readiness.ts` — pinned model policy (`google/gemini-3-flash-preview`), version capture, mock-only readiness assertions. Returns `READY_FOR_CONTROLLED_EXECUTION`.
-- `adapters/brain3-adapter-readiness.ts` — READ-ONLY inspection of `supabase/functions/quote-scanner` and `_shared/scanner-brain`; classifies as `SAFE_WRAPPER_REQUIRED` (Brain 3 today writes to `quote_analyses` and touches tracking — needs a benchmark-only wrapper before scored execution).
-- `adapters/wmmvp-adapter-readiness.ts` — no donor code present in this repo → `REFERENCE_RUNTIME_NOT_AVAILABLE`; may only participate as `PROMPT_SCHEMA_REFERENCE_ONLY` and MUST be excluded from the runtime accuracy leaderboard.
+```ts
+export const PII_SCANNER_VERSION = "pii-scanner-v1.0.0";
+export type PiiKind =
+  | "EMAIL" | "PHONE" | "STREET_ADDRESS" | "ZIP4" | "SSN"
+  | "CREDIT_CARD" | "DOB" | "ACCOUNT_ID" | "PERSON_NAME";
+export type PiiSeverity = "critical" | "high" | "medium";
 
-### Execution config freeze
-- `execution/benchmark-execution-config.ts` — versioned frozen config referencing corpus version, capability matrix version, scorer/normalizer/metric/threshold versions, model policy, repetition plan, call-budget estimate (documents × systems × 4 passes for vNext, N=1 for Brain 3, 0 for WM MVP runtime).
-- `execution/call-budget.ts` — deterministic structural estimate; no dollar figures.
+export interface PiiFinding {
+  kind: PiiKind;
+  severity: PiiSeverity;
+  match_span: { start: number; end: number };   // offsets only
+  redaction_token: string;                       // e.g. [REDACTED_EMAIL_1]
+  // NOTE: the raw matched value is never stored, logged or serialized.
+}
+export interface PiiScanResult {
+  scanner_version: string;
+  findings: PiiFinding[];
+  substitutions: Record<string, string>; // token -> stable ordinal token (no raw keys)
+  scrubbed_text: string;
+}
+```
+Detectors (deterministic, ordered by severity so overlapping matches resolve predictably):
+`EMAIL`, `PHONE` (US, 5 formats), `SSN`, `CREDIT_CARD` (digit-group + **Luhn** check), `DOB`, `ZIP4`, `STREET_ADDRESS` (number + street-type keyword), `ACCOUNT_ID` (`acct|account|loan|license|lic#|policy` + alnum run), `PERSON_NAME` (label-anchored only: `Customer:`, `Homeowner:`, `Sold To:` — avoids false positives on product names).
 
-### Dry-run pipeline
-- `execution/dry-run.ts` — wires locked synthetic manifests + mock adapter outputs through: select → runner → normalize → score → aggregate → gate → JSON report. Zero provider calls.
+**Substitution law:** sequential-per-kind, stable within one document — first distinct email → `[REDACTED_EMAIL_1]`, its every later occurrence → the same token; a second distinct email → `[REDACTED_EMAIL_2]`. Matching is case- and whitespace-normalized so `John Doe` / `JOHN DOE` collapse to one token. Deterministic, so unit tests assert exact output. No random names, no hashes (hashes are reversible against a small candidate set — a real privacy risk).
 
-### Documentation (Markdown, benchmark-scoped)
-- `GOLDEN_CORPUS_PROTOCOL.md` — corpus purpose, privacy, intake, versioning, lock procedure, synthetic-control policy.
-- `GOLDEN_CORPUS_PRIVACY_PROTOCOL.md` — sensitive-field list, de-identification rules, stable-replacement law, metadata sanitation, PII review states.
-- `ADAPTER_READINESS_REPORT.md` — per-system readiness classifications with the honest ceiling for WM MVP.
-- `CORPUS_COVERAGE.md` + `CORPUS_COVERAGE.json` — coverage report for the 2 synthetic controls, listing every MISSING archetype as an intake requirement.
-- `BENCHMARK_EXECUTION_PLAN.md` — Sprint 07C procedure, frozen versions, blind/holdout policy, contamination policy, repeatability plan, cost budget.
-- `SPRINT_07B_REPORT.md` — the final Sprint 07B report with the single gate `CORPUS_INPUT_REQUIRED` and exact intake checklist.
+## B. `corpus/intake-pipeline.ts` (new, Deno)
 
-### Tests (new file: `corpus/corpus.test.ts`)
-All 15 required Sprint 07B tests, offline only:
-1. Manifest missing hash/split/annotation/PII fails validator.
-2. `deidentified_pending_review` cannot be authoritative.
-3. Unlocked truth cannot produce authoritative benchmark score.
-4. Ground-truth mutation requires new `annotation_version`.
-5. Corpus lock hash is deterministic for identical inputs.
-6. No document may belong to both development and holdout.
-7. Coverage report identifies missing target archetypes accurately.
-8. Aggregate report separates synthetic vs deidentified-real.
-9. vNext adapter cannot silently drift model/version.
-10. Brain 3 adapter guard rejects invocations that would trigger DB writes in tests.
-11. WM MVP static reference mode cannot masquerade as runtime-ready.
-12. Capability matrix freeze — scored config references one immutable version.
-13. Changing prompt/model/thresholds/corpus/scorer changes benchmark identity hash.
-14. Dry-run end-to-end produces a complete comparison report with 0 provider calls.
-15. No provider calls asserted across suite.
+```ts
+export interface DocumentPayload {
+  id: string;                                  // caller-local, non-PII
+  mime_type: string;
+  page_count: number;
+  raw_text: string;                            // extracted text layer
+  structured?: Record<string, unknown>;        // optional parsed fields
+  metadata?: Record<string, unknown>;          // stripped before staging
+}
+export type ScreeningStatus = "clean" | "requires_scrub" | "blocked";
 
-## What is NOT modified
-- Any file under `src/**`, migrations, `supabase/config.toml`, production edge functions, vNext core files (`types.ts`, `schema.ts`, `validation.ts`, `four-pass-orchestrator.ts`, prompts, canonical-merge).
-- No secrets, no RLS, no auth, no Twilio, no tracking, no deployment, no live AI calls.
+export class PiiPromotionBlockedError extends Error {
+  readonly code = "PII_PROMOTION_BLOCKED";
+  constructor(readonly reasons: string[]) { super(`PII_PROMOTION_BLOCKED: ${reasons.join(",")}`); }
+}
+export class UnscrubbedAssetError extends Error { readonly code = "UNSCRUBBED_ASSET"; }
 
-## Final gate returned
-`CORPUS_INPUT_REQUIRED` with an exact acquisition checklist (missing archetypes 1–15, target 8–12 dev + 5–10 holdout de-identified real documents, PII-review verification steps).
+export interface StagingIO {                    // injected — no ambient fs
+  writeTextFile(path: string, contents: string): Promise<void>;
+  mkdir(path: string): Promise<void>;
+}
+export function screenDocument(p: DocumentPayload): { status: ScreeningStatus; scan: PiiScanResult };
+export function scrubDocument(p: DocumentPayload): { payload: DocumentPayload; scan: PiiScanResult };
+export function stageDocument(p: DocumentPayload, io: StagingIO, opts?): Promise<StagedDocument>;
+export function assertPromotable(m: GoldenDocumentManifest, findings: PiiFinding[]): void;
+```
+- `screenDocument` never mutates; `blocked` when a `critical` finding sits inside `structured` (a field we cannot safely rewrite).
+- `scrubDocument` rewrites `raw_text` **and** string leaves of `structured`, drops `metadata` entirely, and asserts invariants: line count, every number/currency token, and table column counts are byte-identical pre/post scrub. Violation → `UnscrubbedAssetError`.
+- `stageDocument` refuses to write anything whose re-scan still yields findings, then writes `staging/<id>.scrubbed.json` + `staging/manifests/<id>.json` through the injected IO — nothing touches the real filesystem in tests.
+- `assertPromotable` throws `PiiPromotionBlockedError` when: any finding remains, `pii_review_status` is not `synthetic`/`deidentified_verified`, or `validateDocumentManifest()` returns issues.
 
-## Recommended next sprint
-**Sprint 07B.1 — Golden Corpus Intake & De-Identification Completion** (per Phase 36 rules for the returned gate). Sprint 07C is explicitly NOT recommended yet.
+## C. `corpus/staging-manifest.ts` (new, Deno)
+
+```ts
+export class LockedRecordImmutableError extends Error { readonly code = "LOCKED_RECORD_IMMUTABLE"; }
+export const STAGING_CORPUS_VERSION = "gq-v1-staging";
+export function createStagingManifest(input): GoldenDocumentManifest; // locked:false,
+  // pii_review_status:"deidentified_pending_review", source_type:"deidentified_real",
+  // annotation_status:"not_started", adjudication_status:"not_required"
+export function mergeStagingIntoInventory(
+  base: CorpusInventory, staged: GoldenDocumentManifest[],
+): CorpusInventory; // pure; throws LockedRecordImmutableError on collision with
+                    // locked===true or corpus_version==="gq-v1"
+```
+Validation is delegated to the existing `manifest-validator.ts` — no duplicated rules.
+
+## D. `.gitignore` additions
+
+```
+# Golden corpus — never commit real or staged documents
+**/benchmark/corpus/staging/
+**/benchmark/corpus/raw/
+```
+
+## E. `src/components/benchmark/ArchetypeCoverageMatrix.tsx` (only `src/**` file)
+
+- `export const ArchetypeCoverageMatrix = React.forwardRef<HTMLDivElement, Props>(...)` **plus** a `export default` — both, so mounting later can't fail on import style. `Props = { className?: string }`; data is imported, not passed.
+- Import: `import coverage from "../../../supabase/functions/_shared/scanner-brain/vnext/benchmark/CORPUS_COVERAGE.json";` with a locally declared `CoverageShape` interface (that file is outside `tsconfig.app.json`'s `include`).
+- Status per archetype: **Complete** = covered and required; **Partial** = covered only by synthetic controls (`SYNTHETIC_CONTROL` co-tag); **Missing** = count 0. Required archetypes get a "REQUIRED" chip; optional ones render muted.
+- Header strip: documents (2) vs 13-doc target with a progress bar, dev/holdout, synthetic vs de-identified real, PII verified/pending, readiness verdict, blocker list.
+- Styling: semantic tokens only (`bg-background`, `text-foreground`, `text-muted-foreground`, `border-border`, `text-primary` for cyan, `bg-card/60 backdrop-blur`), responsive `grid sm:grid-cols-2 lg:grid-cols-4`. No route registration, no other `src` edits.
+
+## F. Tests — `corpus/intake.pii.test.ts` (**Deno**, offline, zero provider calls)
+
+~16 `Deno.test` cases: per-detector positive + negative vectors; Luhn rejects an invalid card; findings carry no raw values; same value → same token, distinct values → distinct tokens; case-insensitive collapse; numeric totals / line count / column count preserved; `structured` string leaves scrubbed and `metadata` dropped; `screenDocument` returns `blocked` for critical structured PII; `stageDocument` writes nothing when findings remain (asserted via a mock `StagingIO`); `assertPromotable` throws `PiiPromotionBlockedError`; `mergeStagingIntoInventory` throws `LockedRecordImmutableError` on `GQ-001`, and succeeds for a fresh id returning a new object with `base` unmutated.
+
+Run with `deno test` over the benchmark dir; existing 187 stay untouched → **≥203 green**.
+
+## Out of scope
+No changes to scanner logic, prompts, edge functions, routes, migrations, DB, or `CORPUS_COVERAGE.json` contents. No real PII enters git or any database.
