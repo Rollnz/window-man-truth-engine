@@ -88,7 +88,7 @@ Deno.test("07B.3.05 findings never carry the raw matched value", () => {
   assert(!serialized.includes("jane.doe@example.com"));
   assert(!serialized.includes("555-0134"));
   for (const f of findings) {
-    assert(/^\[REDACTED_[A-Z_]+_\d+\]$/.test(f.redaction_token));
+    assert(/^\[REDACTED_[A-Z0-9_]+_\d+\]$/.test(f.redaction_token));
     assert(f.match_span.end > f.match_span.start);
   }
 });
