@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Golden corpus local-only intake (never commit real quote assets)
+supabase/functions/_shared/scanner-brain/vnext/benchmark/corpus/staging/
+supabase/functions/_shared/scanner-brain/vnext/benchmark/corpus/intake-raw/
